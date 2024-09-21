@@ -1,5 +1,4 @@
-# kag
-KAG是蚂蚁机器引擎团队基于医疗、政务等蚂蚁核心业务场景，打磨并沉淀，基于LLM的私域知识库自动图谱 构建&amp;可信问答技术方案
+# KAG
+KAG is a private domain knowledge base automatic graph construction & trusted question and answer technical solution based on LLM, which was polished and accumulated by the Ant Machine Engine team based on Ant's core business scenarios such as medical care and government affairs.
 
-# 即将开源，敬请期待!
-# open source soon, so stay tuned!
+# Open source soon, Please stay tuned!
