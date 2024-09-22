@@ -5,7 +5,7 @@ We Introduce professional domain knowledge service framework: **Knowledge Augmen
 
 We compared KAG with existing RAG methods in multi-hop Q&A. The results show that KAG performs significantly better than the state-of-the-art methods, with a relative improvement from 19.6% to 33.5% in F1. We apply KAG to two professional knowledge Q&A tasks of Ant Group, including E-Goverment Q&A and E-Health Q&A, and has achieved significant improvement in professionalism compared with RAG method. 
 
-We will soon natively support KAG on the open source KG engine OpenSPG, allowing developers to more easily build rigorous knowledge decision-making or convenient information retrieval services.
+The open-source release of KAG is on its way. We kindly invite you to subscribe and look forward to your support and feedback.
 
 
 # Open source soon, Please stay tuned!
