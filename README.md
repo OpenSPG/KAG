@@ -6,3 +6,26 @@ We Introduce professional domain knowledge service framework: **Knowledge Augmen
 We compared KAG with existing RAG methods in multi-hop Q&A. The results show that KAG performs significantly better than the state-of-the-art methods, with a relative improvement from 19.6% to 33.5% in F1. We apply KAG to two professional knowledge Q&A tasks of Ant Group, including E-Goverment Q&A and E-Health Q&A, and has achieved significant improvement in professionalism compared with RAG method. 
 
 **The open-source release of KAG is on its way. We kindly invite you to subscribe and look forward to your support and feedback.**
+
+
+# Cite
+
+If you use this software, please cite it as below:
+
+```bibtex
+@article{liang2024kag,
+  title={KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation},
+  author={Liang, Lei and Sun, Mengshu and Gui, Zhengke and Zhu, Zhongshu and Jiang, Zhouyu and Zhong, Ling and Qu, Yuan and Zhao, Peilong and Bo, Zhongpu and Yang, Jin and others},
+  journal={arXiv preprint arXiv:2409.13731},
+  year={2024}
+}
+
+@article{yikgfabric,
+  title={KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection},
+  author={Yi, Peng and Liang, Lei and Da Zhang, Yong Chen and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and Zhou, Jun}
+}
+```
+
+# License
+
+[Apache License 2.0](LICENSE)
