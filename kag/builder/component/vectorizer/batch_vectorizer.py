@@ -79,6 +79,8 @@ class EmbeddingVectorManager(object):
 
     def _generate_vectors(self, vectorizer, text_batch):
         texts = list(text_batch)
+        if not texts:
+            return []
         vectors = vectorizer.vectorize(texts)
         return vectors
 
