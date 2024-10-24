@@ -1,0 +1,14 @@
+/*.whl
+/*.egg-info/
+/build/
+# *.json
+*.jsonl
+# *.csv
+#*.txt
+*.log
+*.out
+*.key
+*.jc
+*.pyc
+/dist
+.vscode/
