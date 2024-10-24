@@ -142,7 +142,7 @@ docker compose -f docker-compose.yml up -d
 
 #### 3.1.2 Use the product
 
-Navigate to the default url of the KAG product with your browser: <http:// 127.0.0.1:8887>
+Navigate to the default url of the KAG product with your browser: <http://127.0.0.1:8887>
 
 See the [Product](https://openspg.yuque.com/ndx6g9/wc9oyq/rgd8ecefccwd1ga5) guide for detailed introduction.
 
