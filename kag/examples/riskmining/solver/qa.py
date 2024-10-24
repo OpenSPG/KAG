@@ -128,17 +128,18 @@ if __name__ == "__main__":
     )
 
     project_id = os.getenv("KAG_PROJECT_ID")
-    sc = ReasonerClient("http://127.0.0.1:8887", project_id, )
+    host_addr = os.getenv("KAG_PROJECT_HOST_ADDR")
+    sc = ReasonerClient(host_addr, project_id, )
     param = {
         "spg.reasoner.plan.pretty.print.logger.enable": "true"
 
     }
 
-#     ret = sc.syn_execute("""MATCH
-#     (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
-# RETURN u.name
-#     """, **param)
-#     print(ret)
+    ret = sc.syn_execute("""MATCH
+    (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
+RETURN u.name
+    """, **param)
+    print(ret)
 
     evaObj = EvaQA(configFilePath=configFilePath)
     print(evaObj.qa("裘**是否有风险？"))
