@@ -11,18 +11,16 @@
 # or implied.
 
 from kag.common.vectorizer.batch_vectorizer import Neo4jBatchVectorizer
-from kag.common.vectorizer.contriever_vectorizer import ContrieverVectorizer
-from kag.common.vectorizer.local_vectorizer import LocalVectorizer
 from kag.common.vectorizer.local_bge_m3_vectorizer import LocalBGEM3Vectorizer
+from kag.common.vectorizer.local_bge_vectorizer import LocalBGEVectorizer
 from kag.common.vectorizer.openai_vectorizer import OpenAIVectorizer
 from kag.common.vectorizer.vectorizer import Vectorizer
 
 
 __all__ = [
     "Neo4jBatchVectorizer",
-    "ContrieverVectorizer",
-    "LocalVectorizer",
     "LocalBGEM3Vectorizer",
+    "LocalBGEVectorizer",
     "OpenAIVectorizer",
     "Vectorizer",
 ]

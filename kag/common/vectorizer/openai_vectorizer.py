@@ -25,7 +25,7 @@ EmbeddingVector = Iterable[float]
 
 class OpenAIVectorizer(Vectorizer):
     """
-    Invoke OpenAI embedding services to turn texts into embedding vectors.
+    Invoke OpenAI or OpenAI-compatible embedding services to turn texts into embedding vectors.
     """
 
     def __init__(self, config: Dict[str, Any]):

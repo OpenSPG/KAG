@@ -8,13 +8,14 @@ Create your new knext project from knext cli tool.
     description = A knext demo project showcasing KAG features.
     namespace = KagDemo
     project_dir = kagdemo
-    host_addr = http://localhost:8887   
-
+    host_addr = http://localhost:8887
 
     [vectorizer]
-    vectorizer = knext.common.vectorizer.LocalVectorizer
-    path = ~/.cache/vectorizer/BAAI/bge-base-en-v1.5
-    url = https://alps-common.oss-cn-hangzhou-zmf.aliyuncs.com/alps/huaidong.xhd/Documents/models/BAAI-bge-base-en-v1.5.tar.gz
+    vectorizer = knext.common.vectorizer.OpenAIVectorizer
+    model = bge-m3
+    api_key = EMPTY
+    base_url = http://127.0.0.1:11434/v1
+    vector_dimensions = 1024
 
     [llm]
     client_type = ollama
@@ -39,7 +40,7 @@ Create your new knext project from knext cli tool.
     level = INFO
 
     ```
-* Run command: 
+* Run command:
   ```sh
   kag project create --config_path example.cfg
   ```
@@ -48,7 +49,7 @@ Create your new knext project from knext cli tool.
   * Edit the schema in {project_dir}/schema/{project_name}.schema
   * Run command in work directory {project_dir}:
     ```sh
-    knext schema commit 
+    knext schema commit
     ```
 * **Define your BuilderChain**:
   * In the {project_dir}/builder/indexer.py, define your BuilderChain by extend the BuilderChainABC class and override the build method. For example:
@@ -75,7 +76,7 @@ Create your new knext project from knext cli tool.
         }
 
         class KagDemoBuildChain(BuilderChainABC):
-            
+
             def build(self, **kwargs):
                 file_path = kwargs.get("file_path","a.docx")
                 suffix = file_path.split(".")[-1]
@@ -87,14 +88,14 @@ Create your new knext project from knext cli tool.
                 project_id = int(os.getenv("KAG_PROJECT_ID"))
                 extractor = KAGExtractor(project_id=project_id)
                 writer = KGWriter()
-                
+
                 chain = reader >> length_splitter >> outline_splitter >> extractor >> writer
                 return chain
-            
+
         def buildKG(test_file,**kwargs):
             chain = KagDemoBuildChain(file_path = test_file)
             chain.invoke(test_file, max_workers=10)
-            
+
 
         if __name__ == "__main__":
             init_kag_config(os.path.join(file_path,"../../../tests/builder/component/test_config.cfg"))
@@ -155,7 +156,7 @@ Create your new knext project from knext cli tool.
     ```sh
     python {project_dir}/solver/evaFor{project_name}.py
     ```
-  
+
 
 ## Restore project
 If you have a project locally but do **not** have in spgserver, **restore** cmd will recover your local project in the spgserver, for example:
