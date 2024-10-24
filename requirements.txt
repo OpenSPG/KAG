@@ -18,10 +18,10 @@ pydantic==2.5.2
 requests==2.31.0
 setuptools==60.2.0
 psutil
-Jinja2==3.0.3
+Jinja2>=3.0.3
 cachetools==5.3.2
-numpy==1.23.1
-langchain-text-splitters==0.0.1
+numpy>=1.23.1
+langchain-text-splitters
 langchain-community
 pypdf
 pandas
