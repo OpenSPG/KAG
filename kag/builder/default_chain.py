@@ -76,7 +76,7 @@ class DefaultStructuredBuilderChain(BuilderChainABC):
             chain: The constructed processing chain.
         """
         file_path = kwargs.get("file_path")
-        source = get_reader(file_path)()
+        source = get_reader(file_path)(output_type="Dict")
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         sink = KGWriter()
 
