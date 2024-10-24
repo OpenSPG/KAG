@@ -1,6 +1,6 @@
 import unittest
 import os
-from kag.common.vectorizer.vectorizer import Vectorizer
+from kag.common.vectorizer import Vectorizer
 
 class TestOllamaVectorizer(unittest.TestCase):
 
