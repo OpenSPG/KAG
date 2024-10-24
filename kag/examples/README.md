@@ -11,7 +11,7 @@ Create your new knext project from knext cli tool.
     host_addr = http://localhost:8887
 
     [vectorizer]
-    vectorizer = knext.common.vectorizer.OpenAIVectorizer
+    vectorizer = kag.common.vectorizer.OpenAIVectorizer
     model = bge-m3
     api_key = EMPTY
     base_url = http://127.0.0.1:11434/v1
