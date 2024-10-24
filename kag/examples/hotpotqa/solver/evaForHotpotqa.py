@@ -111,8 +111,8 @@ if __name__ == "__main__":
     delay_run(hours=0)
     evaObj = EvaForHotpotqa()
 
-    filePath = "./data/hotpotqa_qa_train.json"
-    #filePath = "./data/hotpotqa_qa_sub.json"
+    # filePath = "./data/hotpotqa_qa_train.json"
+    filePath = "./data/hotpotqa_qa_sub.json"
 
     start_time = time.time()
     qaFilePath = os.path.join(
