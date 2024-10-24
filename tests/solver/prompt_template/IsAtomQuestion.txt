@@ -1,0 +1,18 @@
+要求: 
+1. 根据question，判断这个问题从逻辑上是不是一个原子问题，不需要再拆解的那种
+2. 是需要回答是或者否
+
+例子1:
+llm_input:钱学森的妻子的爸爸是谁?
+llm_output: 否
+
+例子2:
+llm_input:钱学森的妻子是谁?
+llm_output:是
+
+根据以上的要求和例子，判断以下问题是不是一个被解决的问题?
+llm_input: 
+question:$question
+answer:$$answer
+llm_output:
+'''

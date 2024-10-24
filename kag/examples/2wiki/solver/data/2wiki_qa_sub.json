@@ -1,0 +1,262 @@
+[
+    {
+        "_id": "83bf3b5a0bd911eba7f7acde48001122",
+        "type": "compositional",
+        "question": "When did Lothair Ii's mother die?",
+        "context": [
+            [
+                "Teutberga",
+                [
+                    "Teutberga( died 11 November 875) was a queen of Lotharingia by marriage to Lothair II.",
+                    "She was a daughter of Bosonid Boso the Elder and sister of Hucbert, the lay- abbot of St. Maurice's Abbey."
+                ]
+            ],
+            [
+                "Theodred II (Bishop of Elmham)",
+                [
+                    "Theodred II was a medieval Bishop of Elmham.",
+                    "The date of Theodred's consecration unknown, but the date of his death was sometime between 995 and 997."
+                ]
+            ],
+            [
+                "Lambert, Margrave of Tuscany",
+                [
+                    "Lambert( died after 938) was the second son of Adalbert II of Tuscany and Bertha, daughter of Lothair II of Lotharingia.",
+                    "He succeeded his elder brother, Guy, as count and duke of Lucca and margrave of Tuscany on his death in 928 or 929 without heirs.",
+                    "In 931, before 17 October, Hugh, King of Italy, disowned and removed Lambert, giving Tuscany and the familial possession of Lucca to his brother Boso.",
+                    "Hugh was Guy and Lambert's half- brother, as they had the same mother.",
+                    "When Guy died, Hugh married Guy's widow, Marozia."
+                ]
+            ],
+            [
+                "Etan Boritzer",
+                [
+                    "Etan Boritzer( born 1950) is an American writer of children \u2019s literature who is best known for his book\" What is God?\" first published in 1989.",
+                    "His best selling\" What is?\" illustrated children's book series on character education and difficult subjects for children is a popular teaching guide for parents, teachers and child- life professionals.",
+                    "Boritzer gained national critical acclaim after\" What is God?\" was published in 1989 although the book has caused controversy from religious fundamentalists for its universalist views.",
+                    "The other current books in the\" What is?\" series include",
+                    "What is Love?,",
+                    "What is Death?,",
+                    "What is Beautiful?,",
+                    "What is Funny?,",
+                    "What is Right?,",
+                    "What is Peace?,",
+                    "What is Money?,",
+                    "What is Dreaming?,",
+                    "What is a Friend?,",
+                    "What is True?,",
+                    "What is a Family?,",
+                    "What is a Feeling?\"",
+                    "The series is now also translated into 15 languages.",
+                    "Boritzer was first published in 1963 at the age of 13 when he wrote an essay in his English class at Wade Junior High School in the Bronx, New York on the assassination of John F. Kennedy.",
+                    "His essay was included in a special anthology by New York City public school children compiled and published by the New York City Department of Education.",
+                    "Boritzer now lives in Venice, California and maintains his publishing office there also.",
+                    "He has helped numerous other authors to get published through\" How to Get Your Book Published!\" programs.",
+                    "Boritzer is also a yoga teacher who teaches regular classes locally and guest- teaches nationally.",
+                    "He is also recognized nationally as an erudite speaker on\" The Teachings of the Buddha.\""
+                ]
+            ],
+            [
+                "Lothair II",
+                [
+                    "Lothair II (835 \u2013) was the king of Lotharingia from 855 until his death.",
+                    "He was the second son of Emperor Lothair I and Ermengarde of Tours.",
+                    "He was married to Teutberga (died 875), daughter of Boso the Elder."
+                ]
+            ],
+            [
+                "Ermengarde of Tours",
+                [
+                    "Ermengarde of Tours (d. 20 March 851) was the daughter of Hugh of Tours, a member of the Etichonen family.",
+                    "In October 821 in Thionville, she married the Carolingian Emperor Lothair I of the Franks (795\u2013855).",
+                    "In 849, two years before her death, she made a donation to the abbey Erstein in the Elsass, in which she is buried.",
+                    "Lothair and Ermengarde had eight children:"
+                ]
+            ],
+            [
+                "Bertha, daughter of Lothair II",
+                [
+                    "Bertha( 863- 8 \u2013 March 925 in Lucca) was countess of Arles by marriage to Theobald of Arles, and margravine of Tuccany by marriage to Adalbert II of Tuscany.",
+                    "She served as regent of Lucca and Tuscany from 915 until 916 during the minority of her son Guy of Tuscany.",
+                    "She was described as beautiful, spirited, and courageous, and her influence over her spouse was, coupled with ambition, attributed to have involved her husbands in many wars.",
+                    "She was the second illegitimate daughter of Lothair II, King of Lotharingia, by his concubine Waldrada."
+                ]
+            ],
+            [
+                "Adolf I of Lotharingia",
+                [
+                    "Adolf I of Lotharingia, count of Keldachgau, Vogt of Deutz from 1008 until 1018, was the son of Hermann I\" Pusillus\"( the Little Pfalzgraf), count palatine of Lotharingia.",
+                    "He left three sons:"
+                ]
+            ],
+            [
+                "Waldrada of Lotharingia",
+                [
+                    "Waldrada was the mistress, and later the wife, of Lothair II of Lotharingia."
+                ]
+            ],
+            [
+                "Theobald of Arles",
+                [
+                    "Theobald( c. 854-895), count of Arles, was a Frank from the Bosonid- family.",
+                    "He was a son of Hucbert and married Bertha, an illegitimate daughter of Lothair II, King of Lotharingia, who was renowned for her beauty and spirit.",
+                    "They had two sons Hugh of Italy and Boso of Tuscany."
+                ]
+            ]
+        ],
+        "entity_ids": "Q298945_Q235653",
+        "supporting_facts": [
+            [
+                "Lothair II",
+                1
+            ],
+            [
+                "Ermengarde of Tours",
+                0
+            ]
+        ],
+        "evidences": [
+            [
+                "Lothair II",
+                "mother",
+                "Ermengarde of Tours"
+            ],
+            [
+                "Ermengarde of Tours",
+                "date of death",
+                "20 March 851"
+            ]
+        ],
+        "answer": "20 March 851",
+        "evidences_id": [
+            [
+                "Q298945",
+                "mother",
+                "Q235653"
+            ],
+            [
+                "Q235653",
+                "date of death",
+                "date_information"
+            ]
+        ],
+        "answer_id": null
+    },
+    {
+        "_id": "a80d84e7096d11ebbdb0ac1f6bf848b6",
+        "type": "comparison",
+        "question": "Which film was released first, Aas Ka Panchhi or Phoolwari?",
+        "context": [
+            [
+                "The Wonderful World of Captain Kuhio",
+                [
+                    "The film was released in Japan on 10 October 2009."
+                ]
+            ],
+            [
+                "Coney Island Baby (film)",
+                [
+                    "Coney Island Baby is a 2003 comedy- drama in which film producer Amy Hobby made her directorial debut.",
+                    "Karl Geary wrote the film and Tanya Ryno was the film's producer.",
+                    "The music was composed by Ryan Shore.",
+                    "The film was shot in Sligo, Ireland, which is known locally as\" Coney Island\".",
+                    "The film was screened at the Newport International Film Festival.",
+                    "Hobby won the Jury Award for\" Best First Time Director\".",
+                    "The film made its premiere television broadcast on the Sundance Channel."
+                ]
+            ],
+            [
+                "Lloyd (film)",
+                [
+                    "Lloyd is a 2001 American comedy film.",
+                    "The film was released on May 4, 2001."
+                ]
+            ],
+            [
+                "Rakka (film)",
+                [
+                    "The film was released on YouTube and Steam on 14 June 2017."
+                ]
+            ],
+            [
+                "Empties",
+                [
+                    "Empties is a 2007 film directed by Jan Sv\u011br\u00e1k and written by his father Zden\u011bk Sv\u011br\u00e1k, who also stars in the film.",
+                    "It was released first in the Czech Republic in March 2007.",
+                    "The film is a comedy from the same team which made Kolya."
+                ]
+            ],
+            [
+                "Invasion of the Neptune Men",
+                [
+                    "The film was released in 1961 in Japan and was later released in the United States on television.",
+                    "In 1998, the film was featured on an episode of\" Mystery Science Theater 3000\"."
+                ]
+            ],
+            [
+                "Single Video Theory",
+                [
+                    "Single Video Theory is a music documentary directed by Mark Pellington that follows the making of \"Yield\", the fifth album by the American alternative rock band Pearl Jam.",
+                    "It was released first on VHS on August 4, 1998, and then on DVD on November 24, 1998."
+                ]
+            ],
+            [
+                "Aas Ka Panchhi",
+                [
+                    "Aas Ka Panchhi is a 1961 Hindi movie produced by J. Om Prakash.",
+                    "It is written by Mohan Kumar and Rajinder Singh Bedi and directed by Mohan Kumar.",
+                    "The film stars Rajendra Kumar, Vyjayanthimala and Leela Chitnis.",
+                    "The films music is by Shankar Jaikishan.",
+                    "The film became a box office hit."
+                ]
+            ],
+            [
+                "Bommalattam (2008 film)",
+                [
+                    "Bommalattam is a 2008 Indian Tamil film directed by Bharathiraja starring Arjun Sarja and Nana Patekar in the lead roles.",
+                    "Originally filmed in Hindi under the title\" Cinema\", the film was released first in Tamil.",
+                    "Hindi version retitled\" Final Cut of Director\" had a limited release in 2016.",
+                    "This marked Nana Patekar's Tamil film debut."
+                ]
+            ],
+            [
+                "Phoolwari",
+                [
+                    "Phoolwari( The Bower) is a 1946 Indian Bollywood film.",
+                    "It was the third highest grossing Indian film of 1946.",
+                    "The film was directed by Chaturbhuj Doshi for Ranjit Studios and is cited as one of the important films of actor Motilal.",
+                    "Music was composed by Hansraj Behl, while the lyricist was Pandit Indra.",
+                    "Motilal's co-stars in the film were Khursheed, Madhubala, Dixit, Nazira and Tiwari."
+                ]
+            ]
+        ],
+        "entity_ids": "Q4662676_Q7188342",
+        "supporting_facts": [
+            [
+                "Aas Ka Panchhi",
+                0
+            ],
+            [
+                "Phoolwari",
+                0
+            ]
+        ],
+        "evidences": [
+            [
+                "Aas Ka Panchhi",
+                "publication date",
+                "1961"
+            ],
+            [
+                "Phoolwari",
+                "publication date",
+                "1946"
+            ]
+        ],
+        "answer": "Phoolwari",
+        "evidences_id": [
+
+        ],
+        "answer_id": "Q7188342"
+    }
+]
