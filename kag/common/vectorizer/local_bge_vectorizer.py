@@ -11,34 +11,30 @@
 
 import io
 import os
-import sys
-import tarfile
 import threading
+import tarfile
 import requests
 from typing import Any, Union, Iterable, Dict
 from kag.common.vectorizer.vectorizer import Vectorizer
 
+
 EmbeddingVector = Iterable[float]
 
 
-class ContrieverVectorizer(Vectorizer):
+class LocalBGEVectorizer(Vectorizer):
     """
-    Invoke local embedding models to turn texts into embedding vectors.
+    Invoke local bge embedding models to turn texts into embedding vectors.
     """
 
     _local_model_map = {}
     _lock = threading.Lock()
 
     def __init__(self, config: Dict[str, Any]):
-        import torch
-
         path = config.get("path")
-
         if path is None:
             message = "model path is required"
             raise RuntimeError(message)
-
-        url = config.get("url", None)
+        url = config.get("url")
         path = os.path.expanduser(path)
         config_path = os.path.join(path, "config.json")
         if not os.path.isfile(config_path):
@@ -46,23 +42,23 @@ class ContrieverVectorizer(Vectorizer):
                 message = f"model not found at {path!r}, nor model url specified"
                 raise RuntimeError(message)
             self._download_model(path, url)
-        if path not in sys.path:
-            sys.path.insert(0, path)
-        device = config.get("device")
-        if device is None or device == "auto":
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        normalize = config.get("normalize", False)
+        default_chinese_query_instruction_for_retrieval = "为这个句子生成表示以用于向量检索："
+        default_english_query_instruction_for_retrieval = "Represent this sentence for searching relevant passages:"
+        if "BAAI/bge-base-zh-v1.5" in path:
+            default_query_instruction_for_retrieval = default_chinese_query_instruction_for_retrieval
+        else:
+            default_query_instruction_for_retrieval = default_english_query_instruction_for_retrieval
+        query_instruction_for_retrieval = config.get("query_instruction_for_retrieval", default_query_instruction_for_retrieval)
         self._path = path
         self._url = url
-        self._normalize = normalize
-        self._device = device
+        self._query_instruction_for_retrieval = query_instruction_for_retrieval
         self._vector_dimensions = self._get_vector_dimensions(config)
         with self._lock:
             if path in self._local_model_map:
-                self._model, self._tokenizer = self._local_model_map[path]
+                self._model = self._local_model_map[path]
             else:
-                self._model, self._tokenizer = self._load_model(path)
-                self._local_model_map[path] = self._model, self._tokenizer
+                self._model = self._load_model(path)
+                self._local_model_map[path] = self._model
 
     @classmethod
     def _from_config(cls, config: Dict[str, Any]) -> Vectorizer:
@@ -88,15 +84,13 @@ class ContrieverVectorizer(Vectorizer):
             raise RuntimeError(message)
 
     def _load_model(self, path):
+        from FlagEmbedding import FlagModel
 
-        from facebookresearch.contriever.src.contriever import Contriever
-        from transformers import AutoTokenizer
-
-        print(f"Loading facebook/contriever from {self._path!r} with normalize={self._normalize!r}")
-        model = Contriever.from_pretrained(self._path).to(self._device)
-        tokenizer = AutoTokenizer.from_pretrained(self._path)
-
-        return model, tokenizer
+        print(f"Loading FlagModel from {path!r} with query_instruction_for_retrieval={self._query_instruction_for_retrieval!r}")
+        model = FlagModel(path,
+                          query_instruction_for_retrieval=self._query_instruction_for_retrieval,
+                          use_fp16=True)
+        return model
 
     @property
     def vector_dimensions(self):
@@ -107,9 +101,7 @@ class ContrieverVectorizer(Vectorizer):
             return self._vector_dimensions
         return 768
 
-    def vectorize(
-            self, texts: Union[str, Iterable[str]]
-    ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
+    def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
         Vectorize a text string into an embedding vector or multiple text strings into
         multiple embedding vectors.
@@ -119,14 +111,12 @@ class ContrieverVectorizer(Vectorizer):
         :return: embedding vectors of the texts
         :rtype: EmbeddingVector or Iterable[EmbeddingVector]
         """
-        return_1d = False
-        if isinstance(texts, str):
-            texts = [texts]
-            return_1d = True
-        inputs = self._tokenizer(
-            texts, padding=True, truncation=True, return_tensors="pt"
-        ).to(self._device)
-        embeddings = self._model(**inputs, normalize=self._normalize).detach().cpu().numpy().tolist()
-        if return_1d:
-            return embeddings[0]
-        return embeddings
+        result = self._model.encode(texts)
+        return result.tolist()
+
+if __name__ == "__main__":
+    from kag.common.env import init_kag_config
+    init_kag_config('/Users/zhangxinhong.zxh/workspace/openspgapp/openspg/python/kag/kag/common/vectorizer/vectorizer.cfg')
+    config = eval(os.environ['KAG_VECTORIZER'])
+    vectorizer = Vectorizer.from_config(config)
+    print(vectorizer.vectorize("你好"))

@@ -23,7 +23,7 @@ EmbeddingVector = Iterable[float]
 
 class LocalBGEM3Vectorizer(Vectorizer):
     """
-    Invoke local embedding models to turn texts into embedding vectors.
+    Invoke local bge-m3 embedding models to turn texts into embedding vectors.
     """
 
     _local_model_map = {}
