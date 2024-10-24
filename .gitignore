@@ -12,3 +12,4 @@
 *.pyc
 /dist
 .vscode/
+__pycache__/
