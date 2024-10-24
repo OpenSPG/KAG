@@ -6,7 +6,7 @@ import numpy as np
 
 from kag.common.env import init_kag_config
 from kag.common.graphstore.neo4j_graph_store import Neo4jClient
-from kag.common.vectorizer.vectorizer import Vectorizer
+from kag.common.vectorizer import Vectorizer
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
 from kag.solver.implementation.default_reasoner import DefaultReasoner
 from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
