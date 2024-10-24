@@ -209,7 +209,7 @@ kag
 
 #### 4.1.2 kag-solver Extension
 
-The kag-solver executes solver-pipelines consisting of reason, generator, and reflector components. KAG provides default reason, generator, and reflector. Developers can also provide custom implementations based on the following APIs:
+The kag-solver executes solver-pipelines consisting of reasoner, generator, and reflector components. KAG provides default reasoner, generator, and reflector. Developers can also provide custom implementations based on the following APIs:
 
 ```text
 kag
