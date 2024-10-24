@@ -135,11 +135,11 @@ if __name__ == "__main__":
 
     }
 
-    ret = sc.syn_execute("""MATCH
-    (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
-RETURN u.name
-    """, **param)
-    print(ret)
+#     ret = sc.syn_execute("""MATCH
+#     (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
+# RETURN u.name
+#     """, **param)
+#     print(ret)
 
     evaObj = EvaQA(configFilePath=configFilePath)
     print(evaObj.qa("裘**是否有风险？"))
