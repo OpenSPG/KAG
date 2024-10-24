@@ -1,4 +1,7 @@
 # KAG
+
+[中文版文档](./README_cn.md)
+
 The recently developed retrieval-augmented generation (RAG) technology enables the efficient construction of domain-specific applications. However, it also faces limitations such as the ambiguity of embedding vector similarity, unclear knowledge boundaries, and insensitivity to logic rules (such as numbers, time, expert rules), etc., which hinders the effectiveness of professional knowledge services. 
 
 We Introduce professional domain knowledge service framework: **Knowledge Augmented Generation (KAG)** to improve generation and reasoning performance by bidirectionally enhancing large language model(LLM)s and knowledge graph(KG)s, including five key enhancements: we use 1) LLMfriendly knowledge semantic representation, 2) Mutual-indexing between knowledge graph and original chunks, and 3) Knowledge alignment based on semantic reasoning to improve the completeness and accuracy of the acquired knowledge. Meanwhile, we use 4) Logical-form-guided hybrid reasoning and solving and 3) to improve the logical rigor and explainability of question answering(Q&A). And finally, we use 5) Model for KAG to reduce the cost of knowledge acquisition and Q&A. 
