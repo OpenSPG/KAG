@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 
-from kag.common.vectorizer.vectorizer import Vectorizer
+from kag.common.vectorizer import Vectorizer
 
 
 def cosine_similarity(vector1, vector2):

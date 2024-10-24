@@ -3,7 +3,7 @@ import unittest
 
 from kag.common.env import init_kag_config
 from kag.common.graphstore.neo4j_graph_store import Neo4jClient
-from kag.common.vectorizer.vectorizer import Vectorizer
+from kag.common.vectorizer import Vectorizer
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
 from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
 from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
