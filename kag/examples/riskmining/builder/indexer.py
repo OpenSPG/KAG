@@ -9,6 +9,8 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+
+import os
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.default_chain import DefaultStructuredBuilderChain
 from kag.common.env import init_kag_config
@@ -67,29 +69,30 @@ class RiskMiningPersonFundTransPersonChain(RiskMiningRelationChain):
 
 
 def import_data():
-    init_kag_config("../kag_config.cfg")
-    RiskMiningEntityChain(spg_type_name="Cert").invoke("data/Cert.csv")
-    RiskMiningEntityChain(spg_type_name="App").invoke("data/App.csv")
-    RiskMiningEntityChain(spg_type_name="Company").invoke("data/Company.csv")
+    file_path = os.path.dirname(__file__)
+    init_kag_config(os.path.join(file_path, "../kag_config.cfg"))
+    RiskMiningEntityChain(spg_type_name="Cert").invoke(os.path.join(file_path, "data/Cert.csv"))
+    RiskMiningEntityChain(spg_type_name="App").invoke(os.path.join(file_path, "data/App.csv"))
+    RiskMiningEntityChain(spg_type_name="Company").invoke(os.path.join(file_path, "data/Company.csv"))
     RiskMiningRelationChain(spg_type_name="Company_hasCert_Cert").invoke(
-        "data/Company_hasCert_Cert.csv"
+        os.path.join(file_path, "data/Company_hasCert_Cert.csv")
     )
-    RiskMiningEntityChain(spg_type_name="Device").invoke("data/Device.csv")
+    RiskMiningEntityChain(spg_type_name="Device").invoke(os.path.join(file_path, "data/Device.csv"))
     RiskMiningPersonFundTransPersonChain(
         spg_type_name="Person_fundTrans_Person"
-    ).invoke("data/Person_fundTrans_Person.csv")
+    ).invoke(os.path.join(file_path, "data/Person_fundTrans_Person.csv"))
     RiskMiningRelationChain(spg_type_name="Person_hasCert_Cert").invoke(
-        "data/Person_hasCert_Cert.csv"
+        os.path.join(file_path, "data/Person_hasCert_Cert.csv")
     )
     RiskMiningRelationChain(
         spg_type_name="Person_hasDevice_Device"
-    ).invoke("data/Person_hasDevice_Device.csv")
+    ).invoke(os.path.join(file_path, "data/Person_hasDevice_Device.csv"))
     RiskMiningRelationChain(
         spg_type_name="Person_holdShare_Company"
-    ).invoke("data/Person_holdShare_Company.csv")
-    RiskMiningEntityChain(spg_type_name="Person").invoke("data/Person.csv")
-    RiskMiningEntityChain(spg_type_name="TaxOfRiskApp").invoke("data/TaxOfRiskApp.csv")
-    RiskMiningEntityChain(spg_type_name="TaxOfRiskUser").invoke("data/TaxOfRiskUser.csv")
+    ).invoke(os.path.join(file_path, "data/Person_holdShare_Company.csv"))
+    RiskMiningEntityChain(spg_type_name="Person").invoke(os.path.join(file_path, "data/Person.csv"))
+    RiskMiningEntityChain(spg_type_name="TaxOfRiskApp").invoke(os.path.join(file_path, "data/TaxOfRiskApp.csv"))
+    RiskMiningEntityChain(spg_type_name="TaxOfRiskUser").invoke(os.path.join(file_path, "data/TaxOfRiskUser.csv"))
 
 
 if __name__ == "__main__":
