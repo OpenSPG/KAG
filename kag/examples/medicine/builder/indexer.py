@@ -41,12 +41,13 @@ class DiseaseBuilderChain(BuilderChainABC):
 
 
 def import_data():
-    init_kag_config("../kag_config.cfg")
-    DefaultStructuredBuilderChain("HumanBodyPart").invoke(file_path=os.path.abspath("data/HumanBodyPart.csv"))
-    DefaultStructuredBuilderChain("HospitalDepartment").invoke(file_path=os.path.abspath("data/HospitalDepartment.csv"))
-    DiseaseBuilderChain().invoke(file_path=os.path.abspath("data/Disease.csv"))
+    file_path = os.path.dirname(__file__)
+    init_kag_config(os.path.join(file_path, "../kag_config.cfg"))
+    DefaultStructuredBuilderChain("HumanBodyPart").invoke(file_path=os.path.join(file_path,"data/HumanBodyPart.csv"))
+    DefaultStructuredBuilderChain("HospitalDepartment").invoke(file_path=os.path.join(file_path,"data/HospitalDepartment.csv"))
+    DiseaseBuilderChain().invoke(file_path=os.path.join(file_path,"data/Disease.csv"))
 
-    SPOBuilderChain().invoke(file_path=os.path.abspath("data/SPO.csv"))
+    SPOBuilderChain().invoke(file_path=os.path.join(file_path,"data/SPO.csv"))
 
 if __name__ == '__main__':
     import_data()

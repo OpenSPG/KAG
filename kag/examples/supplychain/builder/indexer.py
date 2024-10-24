@@ -117,31 +117,34 @@ class SupplyChainEventBuilderChain(DefaultStructuredBuilderChain):
         return chain
 
 def import_data():
-    init_kag_config("../kag_config.cfg")
+    file_path = os.path.dirname(__file__)
+    init_kag_config(os.path.join(file_path, "../kag_config.cfg"))
+
+
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="TaxOfCompanyEvent").invoke(
-        file_path="data/TaxOfCompanyEvent.csv"
+        file_path=os.path.join(file_path,"data/TaxOfCompanyEvent.csv")
     )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="TaxOfProdEvent").invoke(
-        file_path="data/TaxOfProdEvent.csv"
+        file_path=os.path.join(file_path,"data/TaxOfProdEvent.csv")
     )
-    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Trend").invoke(file_path="data/Trend.csv")
+    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Trend").invoke(file_path=os.path.join(file_path,"data/Trend.csv"))
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="Industry").invoke(
-        file_path="data/Industry.csv"
+        file_path=os.path.join(file_path,"data/Industry.csv")
     )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="Product").invoke(
-        file_path="data/Product.csv"
+        file_path=os.path.join(file_path,"data/Product.csv")
     )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="Company").invoke(
-        file_path="data/Company.csv"
+        file_path=os.path.join(file_path,"data/Company.csv")
     )
-    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Index").invoke(file_path="data/Index.csv")
-    SupplyChainPersonChain(spg_type_name="Person").invoke(file_path="data/Person.csv")
+    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Index").invoke(file_path=os.path.join(file_path,"data/Index.csv"))
+    SupplyChainPersonChain(spg_type_name="Person").invoke(file_path=os.path.join(file_path,"data/Person.csv"))
 
     SupplyChainCompanyFundTransCompanyChain(
         spg_type_name="Company_fundTrans_Company"
-    ).invoke(file_path="data/Company_fundTrans_Company.csv")
+    ).invoke(file_path=os.path.join(file_path,"data/Company_fundTrans_Company.csv"))
     SupplyChainEventBuilderChain(spg_type_name="ProductChainEvent").invoke(
-        file_path="data/ProductChainEvent.csv"
+        file_path=os.path.join(file_path,"data/ProductChainEvent.csv")
     )
 
 
