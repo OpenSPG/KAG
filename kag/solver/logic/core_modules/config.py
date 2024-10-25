@@ -16,5 +16,8 @@ class LogicFormConfiguration:
         # kg graph schema file path.
         self.schema_file_name = args.get("schema_file_name", "")
 
-        self.host_addr = args.get("KAG_PROJECT_HOST_ADDR", None) or os.getenv("KAG_PROJECT_HOST_ADDR", "http://127.0.0.1:8887")
+        self.host_addr = args.get("KAG_PROJECT_HOST_ADDR", None) or os.getenv("KAG_PROJECT_HOST_ADDR")
+
+        if not self.host_addr:
+            raise RuntimeError("init LogicFormConfiguration failed, not found params KAG_PROJECT_HOST_ADDR")
 

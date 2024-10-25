@@ -4,6 +4,7 @@ from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
 from kag.solver.logic.core_modules.common.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.op_executor.op_executor import OpExecutor
 from kag.solver.logic.core_modules.op_executor.op_retrieval.module.get_spo_executor import GetSPOExecutor
 from kag.solver.logic.core_modules.op_executor.op_retrieval.module.search_s import SearchS
@@ -16,11 +17,11 @@ logger = logging.getLogger()
 
 class RetrievalExecutor(OpExecutor):
     def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, retrieval_spo: KGRetrieverABC, el: EntityLinkerBase,
-                 dsl_runner: DslRunner, debug_info: dict):
+                 dsl_runner: DslRunner, debug_info: dict, text_similarity: TextSimilarity=None):
         super().__init__(nl_query, kg_graph, schema, debug_info)
         self.query_one_graph_cache = {}
         self.op_register_map = {
-            'get_spo': GetSPOExecutor(nl_query, kg_graph, schema, retrieval_spo, el, dsl_runner, self.query_one_graph_cache, self.debug_info),
+            'get_spo': GetSPOExecutor(nl_query, kg_graph, schema, retrieval_spo, el, dsl_runner, self.query_one_graph_cache, self.debug_info, text_similarity),
             'search_s': SearchS(nl_query, kg_graph, schema, self.debug_info)
         }
 

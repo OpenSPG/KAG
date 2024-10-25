@@ -18,7 +18,7 @@ class DefaultLFPlanner(LFPlannerABC):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        config = LogicFormConfiguration(**kwargs)
+        config = LogicFormConfiguration(kwargs)
         schema = SchemaUtils(config)
         schema.get_schema()
         std_schema = SchemaRetrieval(**kwargs)

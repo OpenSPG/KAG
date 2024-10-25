@@ -169,11 +169,11 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
 
 
 class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
-    def __init__(self):
+    def __init__(self, text_similarity: TextSimilarity = None):
         super().__init__()
         model = eval(os.getenv("KAG_LLM"))
         self.llm: LLMClient = LLMClient.from_config(model)
-        self.text_similarity = TextSimilarity()
+        self.text_similarity = text_similarity or TextSimilarity()
         self.cached_map = {}
 
         self.biz_scene = os.getenv("KAG_PROMPT_BIZ_SCENE", "default")

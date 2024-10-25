@@ -10,7 +10,6 @@
 # or implied.
 
 import os
-import json
 from tenacity import retry, stop_after_attempt
 
 from kag.common.base.prompt_op import PromptOp
@@ -26,7 +25,6 @@ from knext.reasoner.client import ReasonerClient
 from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
 from knext.project.client import ProjectClient
 from kag.common.utils import processing_phrases
-from kag.common.llm.client.llm_client import LLMClient
 from knext.search.client import SearchClient
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
@@ -48,7 +46,7 @@ class DefaultRetriever(ChunkRetrieverABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.schema_util = SchemaUtils(LogicFormConfiguration(**kwargs))
+        self.schema_util = SchemaUtils(LogicFormConfiguration(kwargs))
 
         self._init_search()
 
@@ -98,7 +96,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         Returns:
         The result returned by the service client, with the type and format depending on the used service.
         """
-        return self.llm.invoke({"input": query}, self.ner_prompt)
+        return self.llm_module.invoke({"input": query}, self.ner_prompt)
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, query: str, entities: List[Dict]):
@@ -116,7 +114,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         Returns:
         - The result of the remote service call, typically standardized named entity information.
         """
-        return self.llm.invoke(
+        return self.llm_module.invoke(
             {"input": query, "named_entities": entities}, self.std_prompt
         )
 
