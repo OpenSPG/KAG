@@ -30,6 +30,7 @@ class LocalBGEM3Vectorizer(Vectorizer):
     _lock = threading.Lock()
 
     def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
         path = config.get("path")
         if path is None:
             message = "model path is required"
@@ -44,7 +45,6 @@ class LocalBGEM3Vectorizer(Vectorizer):
             self._download_model(path, url)
         self._path = path
         self._url = url
-        self._vector_dimensions = self._get_vector_dimensions(config)
         with self._lock:
             if path in self._local_model_map:
                 self._model = self._local_model_map[path]
@@ -83,15 +83,6 @@ class LocalBGEM3Vectorizer(Vectorizer):
         print(f"Loading BGEM3FlagModel from {path!r}")
         model = BGEM3FlagModel(path, use_fp16=True)
         return model
-
-    @property
-    def vector_dimensions(self):
-        """
-        Dimension of generated embedding vectors.
-        """
-        if self._vector_dimensions is not None:
-            return self._vector_dimensions
-        return 1024
 
     def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
