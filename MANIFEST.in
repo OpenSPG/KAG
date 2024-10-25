@@ -1,0 +1,2 @@
+recursive-include kag *
+recursive-exclude kag/examples *
