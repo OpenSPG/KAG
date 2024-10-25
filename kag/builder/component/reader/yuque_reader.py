@@ -65,9 +65,3 @@ class YuqueReader(SourceReaderABC):
         chunks = self.markdown_reader.solve_content(id, title, content)
 
         return chunks
-
-if __name__ == "__main__":
-    llm_module = LLMClient.from_config("/Users/zhangxinhong.zxh/workspace/openspgapp/openspg/python/kag/tests/llm/config/ollama.yaml")
-    reader = YuqueReader("N400SPQifX4GkPVbHYekCRqklyQ0hqNMt4xiPSf5",llm_module = llm_module)
-    res = reader.invoke("https://yuque-api.antfin-inc.com/api/v2/repos/fg4znh/kg7h1z/docs/gokiiu")
-    a = 1
