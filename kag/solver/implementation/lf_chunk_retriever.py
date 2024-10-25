@@ -10,8 +10,8 @@ from kag.solver.logic.core_modules.retriver.retrieval_spo import logger
 
 
 class LFChunkRetriever(DefaultRetriever):
-    def __init__(self, project_id=None):
-        super().__init__(project_id=project_id)
+    def __init__(self, project_id=None, host_addr=None):
+        super().__init__(project_id=project_id, host_addr=host_addr)
         self.text_sim = TextSimilarity()
 
     def rerank(self, queries: List[str], passages: List[str]):
