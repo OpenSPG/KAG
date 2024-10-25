@@ -26,21 +26,22 @@ class SolverMain:
 
     def invoke(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
         # resp
-        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id)
+        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
 
         lf_planner = DefaultLFPlanner(KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr)
         lf_solver = LFSolver(
             kg_retriever=KGRetrieverByLlm(KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr),
             chunk_retriever=LFChunkRetriever(KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr),
             report_tool=report_tool,
-            KAG_PROJECT_ID=project_id
+            KAG_PROJECT_ID=project_id,
+            KAG_PROJECT_HOST_ADDR=host_addr
         )
         reason = DefaultReasoner(lf_planner=lf_planner, lf_solver=lf_solver, KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr)
         question = Question(query)
         question.id = 0
         resp = SolverPipeline(reasoner=reason, KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr)
         answer, trace_log = resp.run(query)
-
+        print(trace_log)
         report_tool.report_node(question, answer, ReporterIntermediateProcessTool.STATE.FINISH)
         return answer
 
