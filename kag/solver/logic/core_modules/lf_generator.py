@@ -12,8 +12,8 @@ class LFGenerator(KagBaseModule):
     This class can be extended to implement custom generation strategies.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
         self.solve_question_prompt = PromptOp.load(self.biz_scene, "solve_question")(
             language=self.language
         )
