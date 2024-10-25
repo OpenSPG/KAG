@@ -23,6 +23,10 @@ class Vectorizer(ABC):
     Vectorizer turns texts into embedding vectors.
     """
 
+    def __init__(self, config: Dict[str, Any]):
+        self._config = config
+        self._vector_dimensions = None
+
     @classmethod
     def from_config(cls, config: Union[str, Path, Dict[str, Any]]) -> "Vectorizer":
         """
@@ -127,13 +131,25 @@ class Vectorizer(ABC):
         return value
 
     @property
-    @abstractmethod
     def vector_dimensions(self):
         """
         Dimension of generated embedding vectors.
         """
-        message = "abstract property vector_dimensions is not implemented"
-        raise NotImplementedError(message)
+        if self._vector_dimensions is not None:
+            return self._vector_dimensions
+        try:
+            example_input = "This is a test."
+            example_vector = self.vectorize(example_input)
+        except Exception as ex:
+            message = "embedding service is not available"
+            raise RuntimeError(message) from ex
+        value = self._get_vector_dimensions(self._config)
+        if value is not None and value != len(example_vector):
+            message = "invalid 'vector_dimensions', specified %d; " % value
+            message += "but the actual generated embedding vector is of %d dimensions" % len(example_vector)
+            raise RuntimeError(message)
+        self._vector_dimensions = len(example_vector)
+        return self._vector_dimensions
 
     @abstractmethod
     def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
