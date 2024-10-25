@@ -103,10 +103,3 @@ class LocalBGEM3Vectorizer(Vectorizer):
         """
         result = self._model.encode(texts)["dense_vecs"]
         return result.tolist()
-
-if __name__ == "__main__":
-    from kag.common.env import init_kag_config
-    init_kag_config('/Users/zhangxinhong.zxh/workspace/openspgapp/openspg/python/kag/kag/common/vectorizer/vectorizer.cfg')
-    config = eval(os.environ['KAG_VECTORIZER'])
-    vectorizer = Vectorizer.from_config(config)
-    print(vectorizer.vectorize("你好"))

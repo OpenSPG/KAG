@@ -80,10 +80,3 @@ class OpenAIVectorizer(Vectorizer):
             assert len(results) == len(texts)
             return results
         
-if __name__ == "__main__":
-    from kag.common.env import init_kag_config
-    init_kag_config('/Users/zhangxinhong.zxh/workspace/openspgapp/openspg/python/kag/kag/common/vectorizer/vectorizer.cfg')
-    config = eval(os.environ['KAG_VECTORIZER'])
-    print(config)
-    vectorizer = Vectorizer.from_config(config)
-    print(vectorizer.vectorize(["你好"]))
