@@ -202,7 +202,7 @@
 
 
 __package_name__ = "openspg-kag"
-__version__ = "0.0.3.20241022.2"
+__version__ = "0.5.20241024.2"
 
 from kag.common.env import init_env
 
