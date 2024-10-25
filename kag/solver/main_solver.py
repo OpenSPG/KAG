@@ -47,6 +47,6 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    res = SolverMain().invoke(1, 283, "钥匙有什么功能", True, host_addr="http://30.230.4.81:8887")
+    res = SolverMain().invoke(3, 283, "周杰伦在哪一年基于什么作品获得的全球畅销专辑榜”冠军的华语歌手", True, host_addr="http://127.0.0.1:8887")
     print("*" * 80)
     print("The Answer is: ", res)
