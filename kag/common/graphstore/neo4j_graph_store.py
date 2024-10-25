@@ -20,7 +20,6 @@ import schedule
 from neo4j import GraphDatabase
 
 from kag.common.graphstore.graph_store import GraphStore
-from kag.common.semantic_infer import SemanticEnhance
 from kag.common.utils import escape_single_quotes
 from knext.schema.model.base import IndexTypeEnum
 
@@ -175,8 +174,6 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         self.create_text_index(labels, property_keys)
         self.create_vector_index("Entity", "name")
         self.create_vector_index("Entity", "desc")
-        if bool(os.getenv("KAG_RETRIEVER_SEMANTIC_ENHANCE")):
-            self.create_vector_index(label=SemanticEnhance.concept_label, property_key="name")
         self.refresh_vector_index_meta(force=True)
 
     def _collect_text_index_info(self, schema_types):
