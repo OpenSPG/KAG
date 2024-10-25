@@ -1,8 +1,11 @@
 import os
 from string import Template
 
-from kag.common.llm.client import LLMClient
+from knext.project.client import ProjectClient
 
+from kag.common.llm.client import LLMClient
+import logging
+logger = logging.getLogger(__name__)
 
 class Question(object):
     """
@@ -90,6 +93,7 @@ class KagBaseModule(object):
 
     def __init__(
             self
+            , **kwargs
     ):
         """
         Initializes the KagBaseModule.
@@ -102,14 +106,25 @@ class KagBaseModule(object):
         
         If the module is computational, it initializes the state dictionary with the prompt template.
         """
+        self.host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv("KAG_PROJECT_HOST_ADDR")
+        self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
 
-        model = eval(os.getenv("KAG_LLM"))
-        llm_module = LLMClient.from_config(model)
+        self._init_llm()
+        self.biz_scene = kwargs.get("KAG_PROMPT_BIZ_SCENE") or os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
+        self.language = kwargs.get("KAG_PROMPT_LANGUAGE") or os.getenv("KAG_PROMPT_LANGUAGE", "en")
 
-        self.llm_module = llm_module
-        self.biz_scene = os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
-        self.language = os.getenv("KAG_PROMPT_LANGUAGE", "en")
 
+    def _init_llm(self):
+        llm_config = eval(os.getenv("KAG_LLM", "{}"))
+        try:
+            if self.project_id and self.host_addr:
+                project_id = int(self.project_id)
+                config = ProjectClient(host_addr=self.host_addr, project_id=project_id).get_config(self.project_id)
+                llm_config.update(config.get("llm", {}))
+        except Exception as e:
+            logger.warning(f"init llm from local config:{e}")
+            pass
+        self.llm_module = LLMClient.from_config(llm_config)
 
     def get_module_name(self):
         raise NotImplementedError

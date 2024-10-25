@@ -10,8 +10,8 @@ class DefaultGenerator(KAGGeneratorABC):
      The Generator class is an abstract base class for generating responses using a language model module.
      It initializes prompts for judging and generating responses based on the business scene and language settings.
      """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.generate_prompt = PromptOp.load(self.biz_scene, "resp_generator")(
             language=self.language
         )

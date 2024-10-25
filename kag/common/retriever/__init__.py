@@ -11,10 +11,8 @@
 # or implied.
 
 from kag.common.retriever.kag_retriever import DefaultRetriever
-from kag.common.retriever.semantic_retriever import SemanticRetriever
 from kag.common.retriever.retriever import Retriever
 __all__ = [
     "DefaultRetriever",
-    "SemanticRetriever",
     "Retriever"
 ]

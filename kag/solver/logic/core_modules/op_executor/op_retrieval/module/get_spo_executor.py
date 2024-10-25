@@ -25,7 +25,7 @@ class GetSPOExecutor(OpExecutor):
     """
     def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, retrieval_spo: KGRetrieverABC,
                  el: EntityLinkerBase,
-                 dsl_runner: DslRunner, query_one_graph_cache: dict, debug_info: dict):
+                 dsl_runner: DslRunner, query_one_graph_cache: dict, debug_info: dict, text_similarity: TextSimilarity=None):
         """
         Initializes the GetSPOExecutor with necessary components.
 
@@ -44,7 +44,8 @@ class GetSPOExecutor(OpExecutor):
         self.dsl_runner = dsl_runner
         self.query_one_graph_cache = query_one_graph_cache
         self.el = el
-        self.text_similarity = TextSimilarity()
+
+        self.text_similarity = text_similarity or TextSimilarity()
 
     def _find_relation_result(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], req_id: str):
         one_kg_graph = KgGraph()

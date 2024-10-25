@@ -4,16 +4,20 @@ import os
 import time
 from typing import List
 
+from kag.common.vectorizer import Vectorizer
 from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
 from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.common.utils import generate_random_string
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.lf_executor import LogicExecutor
 from kag.solver.logic.core_modules.lf_generator import LFGenerator
 from kag.solver.logic.core_modules.retriver.entity_linker import DefaultEntityLinker
+from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import DslRunnerOnGraphStore
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
+from knext.project.client import ProjectClient
 
 logger = logging.getLogger()
 
@@ -47,18 +51,24 @@ class LFSolver:
         self.kg_retriever = kg_retriever
         self.chunk_retriever = chunk_retriever
         self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
+        self.host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv("KAG_PROJECT_HOST_ADDR")
         if report_tool and report_tool.project_id:
             self.project_id = report_tool.project_id
 
-        self.schema = SchemaUtils(LogicFormConfiguration({
-                "project_id": self.project_id
-            }))
+        self.schema = SchemaUtils(LogicFormConfiguration(kwargs))
         self.schema.get_schema()
         self.std_schema = SchemaRetrieval(**kwargs)
         self.el = DefaultEntityLinker(None, self.kg_retriever)
-        self.generator = LFGenerator()
+        self.generator = LFGenerator(**kwargs)
         self.report_tool = report_tool
         self.last_iter_docs = []
+
+        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
+        if self.host_addr and self.project_id:
+            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
+            vectorizer_config.update(config.get("vectorizer", {}))
+        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
+        self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
 
     def _process_history(self, history):
         """
@@ -124,6 +134,11 @@ class LFSolver:
                 chunk_retriever=self.chunk_retriever,
                 std_schema=self.std_schema,
                 el=self.el,
+                text_similarity=self.text_similarity,
+                dsl_runner=DslRunnerOnGraphStore(self.project_id, self.schema, LogicFormConfiguration({
+                    "KAG_PROJECT_ID": self.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.host_addr
+                })),
                 generator=self.generator,
                 report_tool=self.report_tool,
                 req_id=generate_random_string(10)

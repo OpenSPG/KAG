@@ -10,7 +10,6 @@
 # or implied.
 
 import os
-import json
 from tenacity import retry, stop_after_attempt
 
 from kag.common.base.prompt_op import PromptOp
@@ -26,7 +25,6 @@ from knext.reasoner.client import ReasonerClient
 from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
 from knext.project.client import ProjectClient
 from kag.common.utils import processing_phrases
-from kag.common.llm.client.llm_client import LLMClient
 from knext.search.client import SearchClient
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
@@ -42,18 +40,18 @@ class DefaultRetriever(ChunkRetrieverABC):
 
     Parameters:
     - project_id (str, optional): Project ID to load specific project configurations.
-
+    - host_addr (str, optional): host addr to load specific server addr configurations.
     """
 
-    def __init__(self, project_id: str = None):
-        self.project_id = project_id or os.environ.get("KAG_PROJECT_ID")
-        self._init_llm()
-        self._init_search(self.project_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        biz_scene = os.getenv('KAG_PROMPT_BIZ_SCENE', 'default')
-        language = os.getenv('KAG_PROMPT_LANGUAGE', 'en')
-        self.ner_prompt = PromptOp.load(biz_scene, "question_ner")(language=language, project_id=self.project_id)
-        self.std_prompt = PromptOp.load(biz_scene, "std")(language=language)
+        self.schema_util = SchemaUtils(LogicFormConfiguration(kwargs))
+
+        self._init_search()
+
+        self.ner_prompt = PromptOp.load(self.biz_scene, "question_ner")(language=self.language, project_id=self.project_id)
+        self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
 
         self.pagerank_threshold = 0.9
         self.match_threshold = 0.8
@@ -68,26 +66,18 @@ class DefaultRetriever(ChunkRetrieverABC):
 
         self.with_semantic = True
 
-    def _init_llm(self):
-        llm_config = eval(os.getenv("KAG_LLM", "{}"))
-        project_id = int(self.project_id)
-        config = ProjectClient().get_config(project_id)
-        llm_config.update(config.get("llm", {}))
-        self.llm = LLMClient.from_config(llm_config)
-
-    def _init_search(self, project_id):
-        host_addr = os.getenv("KAG_PROJECT_HOST_ADDR")
-        self.schema_util = SchemaUtils(LogicFormConfiguration({
-            "project_id": project_id,
-            "host_addr": host_addr,
-        }))
-        self.sc: SearchClient = SearchClient(host_addr, int(project_id))
+    def _init_search(self):
+        self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
         vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
+        if self.host_addr and self.project_id:
+            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
+            vectorizer_config.update(config.get("vectorizer", {}))
+
         self.vectorizer = Vectorizer.from_config(
             vectorizer_config
         )
-        self.reason: ReasonerClient = ReasonerClient(host_addr, int(project_id))
-        self.graph_algo = GraphAlgoClient(host_addr, int(project_id))
+        self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
+        self.graph_algo = GraphAlgoClient(self.host_addr, self.project_id)
 
 
 
@@ -106,7 +96,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         Returns:
         The result returned by the service client, with the type and format depending on the used service.
         """
-        return self.llm.invoke({"input": query}, self.ner_prompt)
+        return self.llm_module.invoke({"input": query}, self.ner_prompt)
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, query: str, entities: List[Dict]):
@@ -124,7 +114,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         Returns:
         - The result of the remote service call, typically standardized named entity information.
         """
-        return self.llm.invoke(
+        return self.llm_module.invoke(
             {"input": query, "named_entities": entities}, self.std_prompt
         )
 
