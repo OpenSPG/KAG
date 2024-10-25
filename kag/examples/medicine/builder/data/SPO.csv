@@ -1,0 +1,15 @@
+S,P,O,properties
+Panic_disorder,has_symptom,Anxiety_and_nervousness,{"confidence": 1.0}
+Anxiety_and_nervousness,possible_disease,Panic_disorder,{"confidence": 1.0}
+Panic_disorder,has_symptom,Depression,{"confidence": 1.0}
+Depression,possible_disease,Panic_disorder,{"confidence": 1.0}
+Panic_disorder,has_symptom,Shortness_of_breath,{"confidence": 1.0}
+Shortness_of_breath,possible_disease,Panic_disorder,{"confidence": 1.0}
+Panic_disorder,has_symptom,Depressive_or_psychotic_symptoms,{"confidence": 1.0}
+Depressive_or_psychotic_symptoms,possible_disease,Panic_disorder,{"confidence": 1.0}
+Panic_disorder,has_symptom,Sharp_chest_pain,{"confidence": 1.0}
+Sharp_chest_pain,possible_disease,Panic_disorder,{"confidence": 1.0}
+Panic_disorder,has_symptom,Dizziness,{"confidence": 1.0}
+Dizziness,possible_disease,Panic_disorder,{"confidence": 1.0}
+Panic_disorder,has_symptom,Insomnia,{"confidence": 1.0}
+Insomnia,possible_disease,Panic_disorder,{"confidence": 1.0}

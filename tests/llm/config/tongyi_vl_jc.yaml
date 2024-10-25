@@ -1,0 +1,4 @@
+client_type: maas
+base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+api_key: sk-c0f43339d2c94d5ba3c990402d9f4efd
+model: qwen-vl-max
