@@ -32,6 +32,7 @@ class LogicExecutor:
                  schema: SchemaUtils, kg_retriever: KGRetrieverABC,
                  chunk_retriever: ChunkRetrieverABC, std_schema: SchemaRetrieval, el: EntityLinkerBase, generator,
                  dsl_runner: DslRunner,
+                 text_similarity: TextSimilarity=None,
                  req_id='',
                  need_detail=False, llm=None, report_tool=None, params=None):
         """
@@ -46,6 +47,7 @@ class LogicExecutor:
         :param el: Entity linker base instance.
         :param generator: Generator for generating answers.
         :param dsl_runner: DSL runner instance, can run cypher to query graph. Defaults to `None`.
+        :param text_similarity: convert text to vector, and compute similarity score
         :param req_id: Request identifier. Defaults to an empty string.
         :param need_detail: Flag indicating whether detailed information is needed. Defaults to `False`.
         :param llm: Language model instance. Defaults to `None`.
@@ -80,8 +82,7 @@ class LogicExecutor:
         }
         self.op_runner = OpRunner(self.kg_graph, llm, query, self.req_id)
         self.parser = ParseLogicForm(self.schema, std_schema)
-
-        self.text_similarity = TextSimilarity()
+        self.text_similarity = text_similarity or TextSimilarity()
         self.llm = llm
         self.generator = generator
         self.el = el
@@ -91,7 +92,7 @@ class LogicExecutor:
         # Initialize executors for different operations.
         self.retrieval_executor = RetrievalExecutor(query, self.kg_graph, self.schema, self.kg_retriever,
                                                     self.el,
-                                                    self.dsl_runner, self.debug_info)
+                                                    self.dsl_runner, self.debug_info, text_similarity)
         self.deduce_executor = DeduceExecutor(query, self.kg_graph, self.schema, self.op_runner, self.debug_info)
         self.sort_executor = SortExecutor(query, self.kg_graph, self.schema, self.debug_info)
         self.math_executor = MathExecutor(query, self.kg_graph, self.schema, self.debug_info)
