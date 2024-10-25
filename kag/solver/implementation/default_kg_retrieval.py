@@ -3,6 +3,8 @@ import os
 import time
 from typing import List
 
+from knext.project.client import ProjectClient
+
 from kag.common.vectorizer import Vectorizer
 from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
 from knext.search.client import SearchClient
@@ -31,22 +33,23 @@ class KGRetrieverByLlm(KGRetrieverABC):
     """
 
     def __init__(self, disable_exact_match=False, **kwargs):
-        host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv("KAG_PROJECT_HOST_ADDR")
-        project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
-        self.schema = SchemaUtils(LogicFormConfiguration({
-            "project_id": project_id
-        }))
+        super().__init__(**kwargs)
+
+        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
+        if self.host_addr and self.project_id:
+            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
+            vectorizer_config.update(config.get("vectorizer", {}))
+        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
+        self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
+        self.schema = SchemaUtils(LogicFormConfiguration(kwargs))
         self.schema.get_schema()
-        self.text_similarity = TextSimilarity()
+
         self.disable_exact_match = disable_exact_match
 
-        self.sc: SearchClient = SearchClient(host_addr, project_id)
-        self.dsl_runner: DslRunner = DslRunnerOnGraphStore(project_id, self.schema, LogicFormConfiguration({
-            "project_id": project_id,
-            "host_addr": host_addr
-        }))
-        self.vectorizer: Vectorizer = Vectorizer.from_config(eval(os.getenv("KAG_VECTORIZER")))
-        self.fuzzy_match = FuzzyMatchRetrievalSpo()
+        self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
+        self.dsl_runner: DslRunner = DslRunnerOnGraphStore(self.project_id, self.schema, LogicFormConfiguration(kwargs))
+
+        self.fuzzy_match = FuzzyMatchRetrievalSpo(text_similarity=self.text_similarity, llm=self.llm_module)
         self.exact_match = ExactMatchRetrievalSpo(self.schema)
         self.parser = ParseLogicForm(self.schema, None)
 

@@ -500,11 +500,9 @@ class OneHopGraphData:
                 if isinstance(self.s.prop.origin_prop_map[k], list):
                     for v in self.s.prop.origin_prop_map[k]:
                         if spo_text == str(v):
-                            # TODO
                             spo_list.append(self._prase_attribute_relation(p, v))
                 else:
                     if spo_text == str(self.s.prop.origin_prop_map[k]):
-                        # TODO
                         spo_list.append(self._prase_attribute_relation(p, spo_text))
         return spo_list
 

@@ -29,16 +29,18 @@ class DefaultReasoner(KagReasonerABC):
     - trace_log: List to log trace information.
     """
 
-    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None):
+    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs):
         super().__init__(
             lf_planner=lf_planner,
-            lf_solver=lf_solver
+            lf_solver=lf_solver,
+            **kwargs
         )
 
-        self.lf_planner = lf_planner or DefaultLFPlanner()
+        self.lf_planner = lf_planner or DefaultLFPlanner(**kwargs)
         self.lf_solver = lf_solver or LFSolver(
-            kg_retriever=KGRetrieverByLlm(),
-            chunk_retriever=LFChunkRetriever()
+            kg_retriever=KGRetrieverByLlm(**kwargs),
+            chunk_retriever=LFChunkRetriever(**kwargs),
+            **kwargs
         )
 
         self.sub_query_total = 0

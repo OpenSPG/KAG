@@ -33,7 +33,6 @@ class DefaultEntityLinker(EntityLinkerBase):
     def __init__(self, config, kg_retriever: KGRetrieverABC):
         super().__init__(config)
         self.recognition_threshold = float(0.8)
-        self.text_similarity = TextSimilarity()
         self.kg_retriever = kg_retriever
 
     def get_service_name(self):

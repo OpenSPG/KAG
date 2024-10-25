@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SolverPipeline:
     def __init__(self, max_run=3, reflector: KagReflectorABC = None, reasoner: KagReasonerABC = None,
-                 generator: KAGGeneratorABC = None):
+                 generator: KAGGeneratorABC = None, **kwargs):
         """
         Initializes the think-and-act loop class.
 
@@ -23,11 +23,11 @@ class SolverPipeline:
         :param generator: Generator instance for generating actions.
         """
         self.max_run = max_run
-        self.memory = DefaultMemory()
+        self.memory = DefaultMemory(**kwargs)
 
-        self.reflector = reflector or DefaultReflector()
-        self.reasoner = reasoner or DefaultReasoner()
-        self.generator = generator or DefaultGenerator()
+        self.reflector = reflector or DefaultReflector(**kwargs)
+        self.reasoner = reasoner or DefaultReasoner(**kwargs)
+        self.generator = generator or DefaultGenerator(**kwargs)
 
         self.trace_log = []
 
