@@ -9,18 +9,12 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import os
 from typing import Any, Union, Iterable, Dict
-
 from openai import OpenAI
-
 from kag.common.vectorizer.vectorizer import Vectorizer
 
 
-
 EmbeddingVector = Iterable[float]
-
-
 
 
 class OpenAIVectorizer(Vectorizer):
@@ -29,15 +23,13 @@ class OpenAIVectorizer(Vectorizer):
     """
 
     def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
         self.model = config.get("model","text-embedding-3-small")
         self.api_key = config.get("api_key")
         self.base_url = config.get("base_url")
         if not self.api_key:
             raise ValueError("OpenAI API key is not set")
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-        self._vector_dimensions = self._get_vector_dimensions(config)
-
-
 
     @classmethod
     def _from_config(cls, config: Dict[str, Any]) -> Vectorizer:
@@ -51,15 +43,6 @@ class OpenAIVectorizer(Vectorizer):
         """
         vectorizer = cls(config)
         return vectorizer
-
-    @property
-    def vector_dimensions(self):
-        """
-        Dimension of generated embedding vectors.
-        """
-        if self._vector_dimensions is not None:
-            return self._vector_dimensions
-        return 1536
 
     def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
@@ -79,4 +62,3 @@ class OpenAIVectorizer(Vectorizer):
         else:
             assert len(results) == len(texts)
             return results
-        
