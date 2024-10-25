@@ -13,6 +13,7 @@ from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.lf_executor import LogicExecutor
 from kag.solver.logic.core_modules.lf_generator import LFGenerator
 from kag.solver.logic.core_modules.retriver.entity_linker import DefaultEntityLinker
+from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import DslRunnerOnGraphStore
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 
 logger = logging.getLogger()
@@ -47,12 +48,11 @@ class LFSolver:
         self.kg_retriever = kg_retriever
         self.chunk_retriever = chunk_retriever
         self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
+        self.host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv("KAG_PROJECT_HOST_ADDR")
         if report_tool and report_tool.project_id:
             self.project_id = report_tool.project_id
 
-        self.schema = SchemaUtils(LogicFormConfiguration({
-                "project_id": self.project_id
-            }))
+        self.schema = SchemaUtils(LogicFormConfiguration(**kwargs))
         self.schema.get_schema()
         self.std_schema = SchemaRetrieval(**kwargs)
         self.el = DefaultEntityLinker(None, self.kg_retriever)
@@ -124,6 +124,10 @@ class LFSolver:
                 chunk_retriever=self.chunk_retriever,
                 std_schema=self.std_schema,
                 el=self.el,
+                dsl_runner=DslRunnerOnGraphStore(self.project_id, self.schema, LogicFormConfiguration({
+                    "KAG_PROJECT_ID": self.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.host_addr
+                })),
                 generator=self.generator,
                 report_tool=self.report_tool,
                 req_id=generate_random_string(10)

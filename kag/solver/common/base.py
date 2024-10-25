@@ -110,8 +110,8 @@ class KagBaseModule(object):
         self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
 
         self._init_llm()
-        self.biz_scene = os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
-        self.language = os.getenv("KAG_PROMPT_LANGUAGE", "en")
+        self.biz_scene = kwargs.get("KAG_PROMPT_BIZ_SCENE") or os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
+        self.language = kwargs.get("KAG_PROMPT_LANGUAGE") or os.getenv("KAG_PROMPT_LANGUAGE", "en")
 
 
     def _init_llm(self):
@@ -119,7 +119,7 @@ class KagBaseModule(object):
         try:
             if self.project_id and self.host_addr:
                 project_id = int(self.project_id)
-                config = ProjectClient(host_addr=self.host_addr, project_id=project_id).get_config(project_id)
+                config = ProjectClient(host_addr=self.host_addr, project_id=project_id).get_config(self.project_id)
                 llm_config.update(config.get("llm", {}))
         except Exception as e:
             logger.warning(f"init llm from local config:{e}")

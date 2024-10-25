@@ -33,24 +33,18 @@ class KGRetrieverByLlm(KGRetrieverABC):
     """
 
     def __init__(self, disable_exact_match=False, **kwargs):
-        host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv("KAG_PROJECT_HOST_ADDR")
-        project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
-        self.schema = SchemaUtils(LogicFormConfiguration({
-            "project_id": project_id
-        }))
+        super().__init__(**kwargs)
+        self.schema = SchemaUtils(LogicFormConfiguration(**kwargs))
         self.schema.get_schema()
         self.text_similarity = TextSimilarity()
         self.disable_exact_match = disable_exact_match
 
-        self.sc: SearchClient = SearchClient(host_addr, project_id)
-        self.dsl_runner: DslRunner = DslRunnerOnGraphStore(project_id, self.schema, LogicFormConfiguration({
-            "project_id": project_id,
-            "host_addr": host_addr
-        }))
+        self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
+        self.dsl_runner: DslRunner = DslRunnerOnGraphStore(self.project_id, self.schema, LogicFormConfiguration(**kwargs))
 
         vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if host_addr and project_id:
-            config = ProjectClient(host_addr=host_addr, project_id=project_id).get_config(project_id)
+        if self.host_addr and self.project_id:
+            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
             vectorizer_config.update(config.get("vectorizer", {}))
 
         self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)

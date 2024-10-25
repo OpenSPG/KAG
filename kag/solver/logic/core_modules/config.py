@@ -1,3 +1,6 @@
+import os
+
+
 class LogicFormConfiguration:
 
     def __init__(self, args={}):
@@ -6,10 +9,12 @@ class LogicFormConfiguration:
         self.prefix = args.get("prefix", "")
 
         # kg graph project ID.
-        self.project_id = args.get("project_id", "1")
+        self.project_id = args.get("KAG_PROJECT_ID", None) or os.getenv("KAG_PROJECT_ID")
+        if not self.project_id:
+            raise RuntimeError("init LogicFormConfiguration failed, not found params KAG_PROJECT_ID")
 
         # kg graph schema file path.
         self.schema_file_name = args.get("schema_file_name", "")
 
-        self.host_addr = args.get("host_addr", "http://127.0.0.1:8887")
+        self.host_addr = args.get("KAG_PROJECT_HOST_ADDR", None) or os.getenv("KAG_PROJECT_HOST_ADDR", "http://127.0.0.1:8887")
 

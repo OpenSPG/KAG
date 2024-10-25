@@ -5,11 +5,11 @@ from kag.solver.common.base import KagBaseModule
 
 
 class KagReflectorABC(KagBaseModule):
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Initializes the reflector.
         """
-        super().__init__()
+        super().__init__(**kwargs)
 
     def reflect_query(self, memory: KagMemoryABC, instruction: str) -> (bool, str):
         """
