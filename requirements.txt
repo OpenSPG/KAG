@@ -37,4 +37,4 @@ openai
 python-docx
 charset_normalizer==3.3.2
 pdfminer.six==20231228
-openspg-knext
+openspg-knext==0.5.20241025.1
