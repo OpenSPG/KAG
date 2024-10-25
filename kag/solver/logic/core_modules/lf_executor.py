@@ -31,7 +31,7 @@ class LogicExecutor:
     def __init__(self, query: str, project_id: str,
                  schema: SchemaUtils, kg_retriever: KGRetrieverABC,
                  chunk_retriever: ChunkRetrieverABC, std_schema: SchemaRetrieval, el: EntityLinkerBase, generator,
-                 dsl_runner: DslRunner = None,
+                 dsl_runner: DslRunner,
                  req_id='',
                  need_detail=False, llm=None, report_tool=None, params=None):
         """
@@ -59,12 +59,7 @@ class LogicExecutor:
         self.need_detail = need_detail
         self.req_id = req_id
         self.params = params
-        if dsl_runner is None:
-            self.dsl_runner = DslRunnerOnGraphStore(project_id, schema, LogicFormConfiguration({
-                "project_id": project_id
-            }))
-        else:
-            self.dsl_runner = dsl_runner
+        self.dsl_runner = dsl_runner
         self.schema = schema
         self.project_id = project_id
         self.nl_query = query

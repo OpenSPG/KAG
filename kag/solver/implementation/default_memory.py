@@ -5,8 +5,8 @@ from kag.interface.solver.kag_memory_abc import KagMemoryABC
 
 
 class DefaultMemory(KagMemoryABC):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.verify_prompt = PromptOp.load(self.biz_scene, "resp_verifier")(
             language=self.language
         )
