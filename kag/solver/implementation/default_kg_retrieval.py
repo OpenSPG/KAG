@@ -3,6 +3,8 @@ import os
 import time
 from typing import List
 
+from knext.project.client import ProjectClient
+
 from kag.common.vectorizer import Vectorizer
 from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
 from knext.search.client import SearchClient
@@ -45,7 +47,13 @@ class KGRetrieverByLlm(KGRetrieverABC):
             "project_id": project_id,
             "host_addr": host_addr
         }))
-        self.vectorizer: Vectorizer = Vectorizer.from_config(eval(os.getenv("KAG_VECTORIZER")))
+
+        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
+        if host_addr and project_id:
+            config = ProjectClient(host_addr=host_addr, project_id=project_id).get_config(project_id)
+            vectorizer_config.update(config.get("vectorizer", {}))
+
+        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
         self.fuzzy_match = FuzzyMatchRetrievalSpo()
         self.exact_match = ExactMatchRetrievalSpo(self.schema)
         self.parser = ParseLogicForm(self.schema, None)
