@@ -141,7 +141,7 @@ class Vectorizer(ABC):
             example_input = "This is a test."
             example_vector = self.vectorize(example_input)
         except Exception as ex:
-            message = "embedding service is not available"
+            message = "the embedding service is not available"
             raise RuntimeError(message) from ex
         value = self._get_vector_dimensions(self._config)
         if value is not None and value != len(example_vector):
