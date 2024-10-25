@@ -30,7 +30,7 @@ RetrievalResult = Iterable[Tuple[Item, float]]
 
 class SemanticRetriever(DefaultRetriever, SemanticEnhance):
     def __init__(self, project_id: str = None, **kwargs):
-        DefaultRetriever.__init__(self, project_id)
+        DefaultRetriever.__init__(self, **kwargs)
         SemanticEnhance.__init__(self, **kwargs)
         self.general_label = "Entity"
         self.max_expand = 2

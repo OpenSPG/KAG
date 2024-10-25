@@ -1,12 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from kag.solver.common.base import KagBaseModule
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import OneHopGraphData, KgGraph, EntityData
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 
 
-class KGRetrieverABC(ABC):
+class KGRetrieverABC(KagBaseModule, ABC):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     """
     A base class for knowledge graph retrieval strategies.
 
