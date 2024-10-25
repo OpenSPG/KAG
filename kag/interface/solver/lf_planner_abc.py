@@ -12,9 +12,7 @@ class LFPlannerABC(KagBaseModule, ABC):
     """
 
     def __init__(self, **kwargs):
-        super().__init__()
-        self.host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv("KAG_PROJECT_HOST_ADDR")
-        self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
+        super().__init__(**kwargs)
 
     @abstractmethod
     def lf_planing(self, question, llm_output=None) -> List[LFPlanResult]:

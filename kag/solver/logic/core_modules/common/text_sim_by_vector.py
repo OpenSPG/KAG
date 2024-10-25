@@ -22,11 +22,12 @@ def split_list(input_list, max_length=30):
 
 
 class TextSimilarity:
-    def __init__(self):
-        vec_config = eval(os.getenv("KAG_VECTORIZER"))
+    def __init__(self, vec_config=None):
         if vec_config is None:
-            message = "vectorizer config is required"
-            raise RuntimeError(message)
+            vec_config = eval(os.getenv("KAG_VECTORIZER"))
+            if vec_config is None:
+                message = "vectorizer config is required"
+                raise RuntimeError(message)
         self._vectorizer: Vectorizer = Vectorizer.from_config(vec_config)
 
         self.cached_embs = {}

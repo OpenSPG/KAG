@@ -24,26 +24,29 @@ from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
 class SolverMain:
 
-    def invoke(self, project_id: int, task_id: int, query: str, report_tool=True):
+    def invoke(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
         # resp
-        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id)
+        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
 
-        lf_planner = DefaultLFPlanner(KAG_PROJECT_ID=project_id)
+        lf_planner = DefaultLFPlanner(KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr)
         lf_solver = LFSolver(
-            kg_retriever=KGRetrieverByLlm(KAG_PROJECT_ID=project_id),
-            chunk_retriever=LFChunkRetriever(project_id=project_id),
+            kg_retriever=KGRetrieverByLlm(KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr),
+            chunk_retriever=LFChunkRetriever(KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr),
             report_tool=report_tool,
-            KAG_PROJECT_ID=project_id
+            KAG_PROJECT_ID=project_id,
+            KAG_PROJECT_HOST_ADDR=host_addr
         )
-        reason = DefaultReasoner(lf_planner=lf_planner, lf_solver=lf_solver)
+        reason = DefaultReasoner(lf_planner=lf_planner, lf_solver=lf_solver, KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr)
         question = Question(query)
         question.id = 0
-        resp = SolverPipeline(reasoner=reason)
+        resp = SolverPipeline(reasoner=reason, KAG_PROJECT_ID=project_id, KAG_PROJECT_HOST_ADDR=host_addr)
         answer, trace_log = resp.run(query)
+        print(trace_log)
         report_tool.report_node(question, answer, ReporterIntermediateProcessTool.STATE.FINISH)
         return answer
 
+
 if __name__ == "__main__":
-    res = SolverMain().invoke("10", None, "在哪一年周杰伦凭借什么专辑获得第22届台湾金曲奖的？", False)
+    res = SolverMain().invoke(3, 283, "周杰伦在哪一年基于什么作品获得的全球畅销专辑榜”冠军的华语歌手", True, host_addr="http://127.0.0.1:8887")
     print("*" * 80)
     print("The Answer is: ", res)

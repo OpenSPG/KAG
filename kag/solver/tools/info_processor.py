@@ -2,6 +2,7 @@ import json
 import logging
 from enum import Enum
 
+from knext.common.rest import ApiClient, Configuration
 from knext.reasoner.rest.models.ca_pipeline import CaPipeline
 from knext.reasoner.rest.models.edge import Edge
 from knext.reasoner.rest.models.node import Node
@@ -18,11 +19,12 @@ class ReporterIntermediateProcessTool:
 
     ROOT_ID = 0
 
-    def __init__(self, report_log=False, task_id=None, project_id=None):
+    def __init__(self, report_log=False, task_id=None, project_id=None, host_addr=None):
         self.report_log = report_log
         self.task_id = task_id
         self.project_id = project_id
-        self.client = ReasonerApi()
+        self.client: ReasonerApi = ReasonerApi(
+            api_client=ApiClient(configuration=Configuration(host=host_addr)))
 
     def report_pipeline(self, question, rewrite_question_list=[]):
         # print(question)
