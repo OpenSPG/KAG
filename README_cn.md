@@ -1,5 +1,7 @@
 # 大模型知识服务框架 KAG
 
+[English version](./README.md)
+
 ## 1. KAG 是什么
 
 检索增强生成（RAG）技术推动了领域应用与大模型结合。然而，RAG 存在着向量相似度与知识推理相关性差距大、对知识逻辑（如数值、时间关系、专家规则等）不敏感等问题，这些都阻碍了专业知识服务的落地。
@@ -232,7 +234,7 @@ kag
 
 #### 4.2.1 生成模型适配
 
-KAG 支持与 Qwen / DeepSeek / GPT 等 OpenAI 接口兼容的 MaaS 类 API 对接，也支持基于 vLLM/Ollama 加载的本地模型对接。开发者可基于 llm_client 接口，添加对自定义模型服务的支持。
+KAG 支持与 Qwen / DeepSeek / GPT 等 OpenAI 接口兼容的 MaaS 类 API 对接，也支持基于 vLLM / Ollama 加载的本地模型对接。开发者可基于 llm_client 接口，添加对自定义模型服务的支持。
 
 **大模型适配接口定义**
 
@@ -251,7 +253,7 @@ kag
 
 KAG 支持调用 OpenAI 类表示模型的接口调用，包括 OpenAI embedding service、Ollama 加载的 bge-en、bge-zh 等；也支持 local 方式完成模型的加载&使用。
 
-**大模型适配接口定义**
+**表示模型适配接口定义**
 
 ```text
 kag
@@ -273,17 +275,17 @@ kag
 
 ## 5. 后续计划
 
-* 领域知识注入，实现领域概念图与实体图的融合。
+* 领域知识注入，实现领域概念图与实体图的融合
 
-* kag-model 优化，实现构图&问答的效率提升。
+* kag-model 优化，实现构图&问答的效率提升
 
-* 知识逻辑约束的幻觉抑制。
+* 知识逻辑约束的幻觉抑制
 
 ## 6. 联系我们
 
-GitHub: <https://github.com/OpenSPG/KAG>
+**GitHub**: <https://github.com/OpenSPG/KAG>
 
-OpenSPG：<https://spg.openkg.cn/>
+**OpenSPG**: <https://spg.openkg.cn/>
 
 <img src="./_static/images/openspg-qr.png" alt="联系我们：OpenSPG 二维码" width="200">
 
