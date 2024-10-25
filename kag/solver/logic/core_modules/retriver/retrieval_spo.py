@@ -169,10 +169,10 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
 
 
 class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
-    def __init__(self, text_similarity: TextSimilarity = None):
+    def __init__(self, text_similarity: TextSimilarity = None, llm: LLMClient=None):
         super().__init__()
         model = eval(os.getenv("KAG_LLM"))
-        self.llm: LLMClient = LLMClient.from_config(model)
+        self.llm: LLMClient = llm or LLMClient.from_config(model)
         self.text_similarity = text_similarity or TextSimilarity()
         self.cached_map = {}
 
@@ -212,8 +212,8 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         if len(intersection) == 0:
             res = self._choosed_by_llm(query, p_mention, p_candis)
             if res != '':
-                res = res.replace("Output:", "output:")
                 try:
+                    res = res.replace("Output:", "output:")
                     if "output:" in res:
                         res = re.search('output:(.*)', res).group(1).strip()
                     if res != '':
