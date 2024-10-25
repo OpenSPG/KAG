@@ -49,7 +49,7 @@ class KGRetrieverByLlm(KGRetrieverABC):
         self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
         self.dsl_runner: DslRunner = DslRunnerOnGraphStore(self.project_id, self.schema, LogicFormConfiguration(kwargs))
 
-        self.fuzzy_match = FuzzyMatchRetrievalSpo(self.text_similarity)
+        self.fuzzy_match = FuzzyMatchRetrievalSpo(text_similarity=self.text_similarity, llm=self.llm_module)
         self.exact_match = ExactMatchRetrievalSpo(self.schema)
         self.parser = ParseLogicForm(self.schema, None)
 
