@@ -1,0 +1,228 @@
+namespace SupplyChain
+
+
+Industry(产业): ConceptType
+	hypernymPredicate: isA
+
+TaxOfProduct(产品分类): ConceptType
+	hypernymPredicate: isA
+
+Product(产品): EntityType
+	properties:
+		hasSupplyChain(供应链): Product
+		    constraint: MultiValue
+		belongToIndustry(所属产业): Industry
+		IND#belongTo(所属产品分类): TaxOfProduct
+
+Company(企业): EntityType
+	properties:
+		product(经营产品): Product
+			constraint: MultiValue
+		totalTransInAmt(总共流入金额): Float
+			rule: [[
+				Define (s:Company)-[p:totalTransInAmt]->(o:Float) {
+					STRUCTURE {
+						(inCompany:Company)-[fundIn:fundTrans]->(s)
+					}
+					CONSTRAINT {
+						otherTransSum("总共转入金额") = group(s).sum(fundIn.transAmt)
+						o = otherTransSum
+					}
+				}
+			]]
+		fundTrans1Month(近1月流出): Float
+			rule: [[
+			    Define (s:Company)-[p:fundTrans1Month]->(o:Float) {
+                    STRUCTURE {
+          	            (s)-[f:fundTrans]->(c:Company)
+                    }
+        	        CONSTRAINT {
+          	            R1("近1个月的流出资金"): date_diff(from_unix_time(now(), 'yyyyMMdd'),f.transDate) < 30
+          	            totalOut = group(s).sum(f.transAmt)
+          	            o = totalOut
+                    }
+                }
+            ]]
+		fundTrans3Month(近3月流出): Float
+			rule: [[
+			    Define (s:Company)-[p:fundTrans3Month]->(o:Float) {
+                    STRUCTURE {
+          	            (s)-[f:fundTrans]->(c:Company)
+                    }
+        	        CONSTRAINT {
+          	            R1("近3个月的流出资金"): date_diff(from_unix_time(now(), 'yyyyMMdd'),f.transDate) < 90
+          	            totalOut = group(s).sum(f.transAmt)
+          	            o = totalOut
+                    }
+                }
+            ]]
+		fundTrans6Month(近6月流出): Float
+			rule: [[
+			    Define (s:Company)-[p:fundTrans6Month]->(o:Float) {
+                    STRUCTURE {
+          	            (s)-[f:fundTrans]->(c:Company)
+                    }
+        	        CONSTRAINT {
+          	            R1("近6个月的流出资金"): date_diff(from_unix_time(now(), 'yyyyMMdd'),f.transDate) < 180
+          	            totalOut = group(s).sum(f.transAmt)
+          	            o = totalOut
+                    }
+                }
+            ]]
+		fundTrans1MonthIn(近1月流入): Float
+			rule: [[
+			    Define (s:Company)-[p:fundTrans1MonthIn]->(o:Integer) {
+                    STRUCTURE {
+          	            (s)<-[f:fundTrans]-(c:Company)
+                    }
+        	        CONSTRAINT {
+          	            R1("近1个月的流出资金"): date_diff(from_unix_time(now(), 'yyyyMMdd'),f.transDate) < 30
+          	            totalOut = group(s).sum(f.transAmt)
+          	            o = totalOut
+                    }
+                }
+            ]]
+		fundTrans3MonthIn(近3月流入): Float
+			rule: [[
+			    Define (s:Company)-[p:fundTrans3MonthIn]->(o:Float) {
+                    STRUCTURE {
+          	            (s)<-[f:fundTrans]-(c:Company)
+                    }
+        	        CONSTRAINT {
+          	            R1("近3个月的流出资金"): date_diff(from_unix_time(now(), 'yyyyMMdd'),f.transDate) < 90
+          	            totalOut = group(s).sum(f.transAmt)
+          	            o = totalOut
+                    }
+                }
+            ]]
+		fundTrans6MonthIn(近6月流入): Float
+			rule: [[
+			    Define (s:Company)-[p:fundTrans6MonthIn]->(o:Float) {
+                    STRUCTURE {
+          	            (s)<-[f:fundTrans]-(c:Company)
+                    }
+        	        CONSTRAINT {
+          	            R1("近6个月的流出资金"): date_diff(from_unix_time(now(), 'yyyyMMdd'),f.transDate) < 180
+          	            totalOut = group(s).sum(f.transAmt)
+          	            o = totalOut
+                    }
+                }
+            ]]
+		cashflowDiff1Month(近1个月资金流水差): Float
+			rule: [[
+			    Define (s:Company)-[p:cashflowDiff1Month]->(o:Float) {
+                      STRUCTURE{
+                        (s)
+                      }
+                      CONSTRAINT {
+                          // 此处引用特征3中的规则
+                          fundTrans1Month = rule_value(s.fundTrans1Month == null, 0, s.fundTrans1Month)
+                          fundTrans1MonthIn = rule_value(s.fundTrans1MonthIn == null, 0, s.fundTrans1MonthIn)
+                          o = fundTrans1Month - fundTrans1MonthIn
+                      }
+                }
+            ]]
+		cashflowDiff3Month(近3个月资金流水差): Float
+			rule: [[
+			    Define (s:Company)-[p:cashflowDiff3Month]->(o:Float) {
+                      STRUCTURE{
+                        (s)
+                      }
+                      CONSTRAINT {
+                              // 此处引用特征3中的规则
+                          fundTrans3Month = rule_value(s.fundTrans3Month == null, 0, s.fundTrans3Month)
+                          fundTrans3MonthIn = rule_value(s.fundTrans3MonthIn == null, 0, s.fundTrans3MonthIn)
+                          o = fundTrans3Month - fundTrans3MonthIn
+                      }
+                }
+            ]]
+		cashflowDiff6Month(近6个月资金流水差): Float
+			rule: [[
+			    Define (s:Company)-[p:cashflowDiff6Month]->(o:Float) {
+                  STRUCTURE{
+                    (s)
+                  }
+                  CONSTRAINT {
+                          fundTrans6Month = rule_value(s.fundTrans6Month == null, 0, s.fundTrans6Month)
+                          fundTrans6MonthIn = rule_value(s.fundTrans6MonthIn == null, 0, s.fundTrans6MonthIn)
+                          o = fundTrans6Month - fundTrans6MonthIn
+                  }
+                }
+            ]]
+	relations:
+		fundTrans(资金往来): Company
+			properties:
+				transDate(交易日期): Text
+				transAmt(交易金额): Integer
+		mainSupply(主要客户): Company
+			rule: [[
+			    Define (s:Company)-[p:mainSupply]->(o:Company) {
+                    STRUCTURE {
+                    	(s)-[:product]->(upProd:Product)-[:hasSupplyChain]->(downProd:Product)<-[:product]-(o),
+                    	(o)-[f:fundTrans]->(s)
+                    }
+                  	CONSTRAINT {
+                    	// 计算公司o的转入占比
+                    	targetTransSum("供应链公司转入金额") = group(s,o).sum(f.transAmt)
+                    	R1("占比必须超过50%"): targetTransSum*1.0/s.totalTransInAmt > 0.5
+                    }
+                }
+             ]]
+		belongToIndustry(所在行业): Industry
+			rule: [[
+			    Define (s:Company)-[p:belongToIndustry]->(o:Industry) {
+                    STRUCTURE {
+            	        (s)-[:product]->(c:Product)-[:belongToIndustry]->(o)
+                    }
+          	        CONSTRAINT {
+                    }
+                }
+    	    ]]
+		sameLegalRepresentative(共同法人): Company
+			rule: [[
+			    Define (s:Company)-[p:sameLegalRepresentative]->(o:Company) {
+                    STRUCTURE {
+          	            (s)<-[:legalRepresentative]-(u:Person)-[:legalRepresentative]->(o)
+                    }
+        	        CONSTRAINT {
+                    }
+                }
+            ]]
+
+Person(自然人): EntityType
+	properties:
+		age(年龄): Integer
+		certNo(证件号码): Text
+		legalRepresentative(法人代表): Company
+    		constraint: MultiValue
+
+Index(指标): ConceptType
+	hypernymPredicate: isA
+
+Trend(趋势): ConceptType
+	hypernymPredicate: isA
+
+TaxOfCompanyEvent(公司事件分类): ConceptType
+	hypernymPredicate: isA
+
+CompanyEvent(公司事件): EventType
+	properties:
+		subject(主体): Company
+		index(指标): Index
+		trend(趋势): Trend
+		IND#belongTo(属于): TaxOfCompanyEvent
+		CAU#leadTo(导致): CompanyEvent
+
+TaxOfProdEvent(产业链事件分类): ConceptType
+	hypernymPredicate: isA
+	relations:
+		CAU#leadTo(导致): TaxOfCompanyEvent
+
+ProductChainEvent(产业链事件): EventType
+	properties:
+		subject(主体): Product
+		index(指标): Index
+		trend(趋势): Trend
+		IND#belongTo(属于): TaxOfProdEvent
+	relations:
+		CAU#leadTo(导致): CompanyEvent

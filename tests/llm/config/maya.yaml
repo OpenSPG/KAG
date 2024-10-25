@@ -1,0 +1,4 @@
+client_type: maya
+scene_name: Qwen2_7B_Instruct_Knowledge
+chain_name: v1
+lora_name: humming-v25
