@@ -170,12 +170,3 @@ class LLMClient:
                 continue
         return results
     
-if __name__ == "__main__":
-    from kag.common.env import init_kag_config
-    configFilePath = "/ossfs/workspace/workspace/openspgapp/openspg/python/kag/kag/common/default_config.cfg"
-    init_kag_config(configFilePath)
-    model = eval(os.getenv("KAG_LLM"))
-    print(model)
-    llm = LLMClient.from_config(model)
-    res = llm("who are you?")
-    print(res)
