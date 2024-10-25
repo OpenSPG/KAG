@@ -56,7 +56,7 @@ class LFSolver:
         self.schema.get_schema()
         self.std_schema = SchemaRetrieval(**kwargs)
         self.el = DefaultEntityLinker(None, self.kg_retriever)
-        self.generator = LFGenerator()
+        self.generator = LFGenerator(**kwargs)
         self.report_tool = report_tool
         self.last_iter_docs = []
 
