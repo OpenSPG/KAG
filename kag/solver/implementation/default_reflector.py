@@ -6,7 +6,7 @@ from kag.interface.solver.kag_reflector_abc import KagReflectorABC
 
 
 class DefaultReflector(KagReflectorABC):
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         A class for rewriting instructions based on provided memory information.
 
@@ -14,7 +14,7 @@ class DefaultReflector(KagReflectorABC):
         - llm_module (Any): The LLM module to be used by this instance.
         - rewrite_prompt (PromptOp): The prompt operation for rewriting responses.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.refine_prompt = PromptOp.load(self.biz_scene, "resp_reflector")(
             language=self.language
         )

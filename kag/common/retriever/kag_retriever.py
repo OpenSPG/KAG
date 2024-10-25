@@ -42,20 +42,18 @@ class DefaultRetriever(ChunkRetrieverABC):
 
     Parameters:
     - project_id (str, optional): Project ID to load specific project configurations.
-
+    - host_addr (str, optional): host addr to load specific server addr configurations.
     """
 
-    def __init__(self, project_id: str = None, host_addr: str = None):
-        self.project_id = int(project_id or os.environ.get("KAG_PROJECT_ID"))
-        self.host_addr = host_addr or os.environ.get("KAG_PROJECT_HOST_ADDR")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        self._init_llm()
+        self.schema_util = SchemaUtils(LogicFormConfiguration(**kwargs))
+
         self._init_search()
 
-        biz_scene = os.getenv('KAG_PROMPT_BIZ_SCENE', 'default')
-        language = os.getenv('KAG_PROMPT_LANGUAGE', 'en')
-        self.ner_prompt = PromptOp.load(biz_scene, "question_ner")(language=language, project_id=self.project_id)
-        self.std_prompt = PromptOp.load(biz_scene, "std")(language=language)
+        self.ner_prompt = PromptOp.load(self.biz_scene, "question_ner")(language=self.language, project_id=self.project_id)
+        self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
 
         self.pagerank_threshold = 0.9
         self.match_threshold = 0.8
@@ -70,18 +68,7 @@ class DefaultRetriever(ChunkRetrieverABC):
 
         self.with_semantic = True
 
-    def _init_llm(self):
-        llm_config = eval(os.getenv("KAG_LLM", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
-            llm_config.update(config.get("llm", {}))
-        self.llm = LLMClient.from_config(llm_config)
-
     def _init_search(self):
-        self.schema_util = SchemaUtils(LogicFormConfiguration({
-            "project_id": self.project_id,
-            "host_addr": self.host_addr,
-        }))
         self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
         vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
         if self.host_addr and self.project_id:
