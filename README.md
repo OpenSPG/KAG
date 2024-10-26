@@ -1,4 +1,4 @@
-# KAG: Knwoledge Augmented Generation
+# KAG: Knowledge Augmented Generation
 
 [中文版文档](./README_cn.md)
 
