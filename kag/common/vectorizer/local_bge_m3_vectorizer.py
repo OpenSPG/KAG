@@ -18,12 +18,6 @@ from typing import Any, Union, Iterable, Dict
 from kag.common.vectorizer.vectorizer import Vectorizer
 
 
-try:
-    from FlagEmbedding import BGEM3FlagModel
-except ModuleNotFoundError:
-    pass
-
-
 EmbeddingVector = Iterable[float]
 
 
@@ -82,6 +76,8 @@ class LocalBGEM3Vectorizer(Vectorizer):
             raise RuntimeError(message)
 
     def _load_model(self, path):
+        # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
+        import sklearn
         from FlagEmbedding import BGEM3FlagModel
 
         print(f"Loading BGEM3FlagModel from {path!r}")
