@@ -24,31 +24,33 @@ from kag.common.llm.config import *
 
 logger = logging.getLogger(__name__)
 
-config_cls_map = {
-    "maas": OpenAIConfig,
-    "vllm": VLLMConfig,
-    "ollama": OllamaConfig,
-}
-
-def get_config_cls(config:dict):
-    client_type = config.get("client_type", None)
-    return config_cls_map.get(client_type, None)
-    
-def get_llm_cls(config: LLMConfig):
-    from kag.common.llm.client import VLLMClient,OpenAIClient,OllamaClient
-    return {
-        VLLMConfig: VLLMClient,
-        OpenAIConfig: OpenAIClient,
-        OllamaConfig: OllamaClient,
-    }[config.__class__]
-
 
 class LLMClient:
     # Define the model type
     model: str
 
+    config_cls_map = {
+        "maas": OpenAIConfig,
+        "vllm": VLLMConfig,
+        "ollama": OllamaConfig,
+    }
+
     def __init__(self, **kwargs):
         self.model = kwargs.get("model", None)
+    
+    @classmethod
+    def get_config_cls(self,config:dict):
+        client_type = config.get("client_type", None)
+        return LLMClient.config_cls_map.get(client_type, None)
+        
+    @classmethod
+    def get_llm_cls(self,config: LLMConfig):
+        from kag.common.llm.client import VLLMClient,OpenAIClient,OllamaClient
+        return {
+            VLLMConfig: VLLMClient,
+            OpenAIConfig: OpenAIClient,
+            OllamaConfig: OllamaClient,
+        }[config.__class__]
 
     @classmethod
     def from_config(cls, config: Union[str, dict]):
@@ -76,12 +78,12 @@ class LLMClient:
             # If config is already a dictionary, use it directly
             nn_config = config
         
-        config_cls = get_config_cls(nn_config)
+        config_cls = LLMClient.get_config_cls(nn_config)
         if config_cls is None:
             logger.error(f"Unsupported model type: {nn_config.get('client_type', None)}")
             raise ValueError(f"Unsupported model type")
         llm_config = config_cls(**nn_config)
-        llm_cls = get_llm_cls(llm_config)
+        llm_cls = LLMClient.get_llm_cls(llm_config)
         return llm_cls(llm_config)
         
             
