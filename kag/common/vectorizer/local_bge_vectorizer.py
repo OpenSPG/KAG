@@ -18,6 +18,12 @@ from typing import Any, Union, Iterable, Dict
 from kag.common.vectorizer.vectorizer import Vectorizer
 
 
+try:
+    from FlagEmbedding import FlagModel
+except ModuleNotFoundError:
+    pass
+
+
 EmbeddingVector = Iterable[float]
 
 
