@@ -15,20 +15,20 @@ from kag.common.llm.client import LLMClient
 
 class LLMConfigChecker(object):
     """
-    Check whether the vectorizer config is valid.
+    Check whether the llm config is valid.
     """
 
     def check(self, config: str) -> int:
         """
-        Check the vectorizer config.
+        Check the llm config.
 
-        * If the config is valid, return the actual embedding vector dimensions.
+        * If the config is valid, return length of the generated text.
 
         * If the config is invalid, raise a RuntimeError exception.
 
-        :param vectorizer_config: vectorizer config
-        :type vectorizer_config: str
-        :return: embedding vector dimensions
+        :param config: llm config
+        :type config: str
+        :return: length of the generated text
         :rtype: int
         :raises RuntimeError: if the config is invalid
         """
