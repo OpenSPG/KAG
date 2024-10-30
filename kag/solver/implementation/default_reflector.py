@@ -45,7 +45,7 @@ class DefaultReflector(KagReflectorABC):
             return True
 
         return self.llm_module.invoke({'memory': serialize_memory, 'instruction': instruction}, self.judge_prompt,
-                                      with_json_parse=False)
+                                      with_json_parse=False, with_except=True)
 
     @retry(stop=stop_after_attempt(3))
     def _refine_query(self, memory: KagMemoryABC, instruction: str):
@@ -62,7 +62,7 @@ class DefaultReflector(KagReflectorABC):
 
         update_reason_path = self.llm_module.invoke({"memory": serialize_memory, "instruction": instruction},
                                                     self.refine_prompt,
-                                                    with_json_parse=False)
+                                                    with_json_parse=False, with_except=True)
         if len(update_reason_path) == 0:
             return None
         return update_reason_path[0]

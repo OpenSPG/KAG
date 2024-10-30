@@ -198,7 +198,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
             'question': question,
             'mention': mention,
             'candis': candis
-        }, resp_plan_prompt, with_json_parse=False)
+        }, resp_plan_prompt, with_json_parse=False, with_except=True)
 
     def select_relation(self, p_mention, p_candis, query='', topk=1, params={}):
         if not p_mention:
@@ -210,19 +210,19 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         else:
             intersection = []
         if len(intersection) == 0:
-            res = self._choosed_by_llm(query, p_mention, p_candis)
-            if res != '':
-                try:
-                    res = res.replace("Output:", "output:")
-                    if "output:" in res:
-                        res = re.search('output:(.*)', res).group(1).strip()
-                    if res != '':
-                        res = json.loads(res.replace("'", '"'))
-                        for res_ in res:
-                            self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
-                            intersection.append(res_)
-                except:
-                    logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
+            res = ''
+            try:
+                res = self._choosed_by_llm(query, p_mention, p_candis)
+                res = res.replace("Output:", "output:")
+                if "output:" in res:
+                    res = re.search('output:(.*)', res).group(1).strip()
+                if res != '':
+                    res = json.loads(res.replace("'", '"'))
+                    for res_ in res:
+                        self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
+                        intersection.append(res_)
+            except:
+                logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
         return [[x, 1.0] for x in intersection]
 
     def find_best_match_p_name_by_model(self, query: str, p: str, candi_set: dict):

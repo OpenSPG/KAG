@@ -17,5 +17,5 @@ class MultiChoiceOp(OpExecutor):
         history_qa_pair = self.debug_info.get("sub_qa_pair", [])
         qa_pair = "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
         if_answered, answer = self.llm_module.invoke({'instruction': self.nl_query, 'memory': qa_pair},
-                                                     self.prompt, with_json_parse=False)
+                                                     self.prompt, with_json_parse=False, with_except=True)
         return [if_answered, answer]
