@@ -207,3 +207,9 @@ __version__ = "0.5-beta1"
 from kag.common.env import init_env
 
 init_env()
+
+try:
+    from kag_ant.common.env import _patch_kag_ant
+    _patch_kag_ant()
+except Exception as e:
+    pass
