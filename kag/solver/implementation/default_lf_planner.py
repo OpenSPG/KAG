@@ -65,7 +65,7 @@ class DefaultLFPlanner(LFPlannerABC):
         return self._split_sub_query(parsed_logic_nodes)
 
     def generate_logic_form(self, question: str):
-        return self.llm_module.invoke({'question': question}, self.logic_form_plan_prompt, with_json_parse=False)
+        return self.llm_module.invoke({'question': question}, self.logic_form_plan_prompt, with_json_parse=False, with_except=True)
 
     def parse_logic_form_llm_output(self, llm_output):
         _output_string = llm_output.replace("：", ":")
