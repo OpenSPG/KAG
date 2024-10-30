@@ -64,7 +64,7 @@ class LFGenerator(KagBaseModule):
                 'docs': str(docs),
                 'history': '\n'.join(history_qa)
             }
-        llm_output = self.llm_module.invoke(params, prompt, with_json_parse=False)
+        llm_output = self.llm_module.invoke(params, prompt, with_json_parse=False, with_except=True)
         logger.debug(f"sub_question:{question}\n sub_answer:{llm_output} prompt:\n{prompt}")
         if llm_output:
             return llm_output

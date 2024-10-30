@@ -22,4 +22,4 @@ class DefaultGenerator(KAGGeneratorABC):
         if solved_answer is not None:
             return solved_answer
         present_memory = memory.serialize_memory()
-        return self.llm_module.invoke({'memory': present_memory, 'instruction': instruction}, self.generate_prompt, with_json_parse=False)
+        return self.llm_module.invoke({'memory': present_memory, 'instruction': instruction}, self.generate_prompt, with_json_parse=False, with_except=True)

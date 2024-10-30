@@ -118,13 +118,15 @@ class LLMClient:
             return res
         return json_result
 
-    def invoke(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True):
+    def invoke(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True,
+               with_except: bool = False):
         """
         Call the model and process the result.
 
         :param variables: Variables used to build the prompt
         :param prompt_op: Prompt operation object for building and parsing prompts
         :param with_json_parse: Whether to attempt parsing the response as JSON
+        :param with_except: Whether to raise exception
         :return: Processed result list
         """
         result = []
@@ -141,6 +143,8 @@ class LLMClient:
         except Exception as e:
             import traceback
             logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
+            if with_except:
+                raise RuntimeError(f"call llm exception! llm output = {response} , llm input={prompt}, err={e}")
         return result
 
     def batch(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True) -> List:
