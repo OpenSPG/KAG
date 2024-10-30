@@ -18,5 +18,5 @@ class JudgementOp(OpExecutor):
         spo_info = self.kg_graph.to_evidence()
         information = str(spo_info) + "\n" + qa_pair
         if_answered, answer = self.llm_module.invoke({'instruction': self.nl_query, 'memory': information},
-                                                     self.prompt, with_json_parse=False)
+                                                     self.prompt, with_json_parse=False, with_except=True)
         return [if_answered, answer]
