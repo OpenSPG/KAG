@@ -27,6 +27,10 @@ class BuilderComponent(Component, ABC):
 
     project_id: str = None
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.config = ProjectClient().get_config(self.project_id)
+
     def _init_llm(self) -> LLMClient:
         """
         Initializes the Large Language Model (LLM) client.

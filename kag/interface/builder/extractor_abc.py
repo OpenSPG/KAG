@@ -23,6 +23,9 @@ class ExtractorABC(BuilderComponent, ABC):
     Interface for extracting sub graph (which contains a list of nodes and a list of edges) from chunks.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @property
     def input_types(self):
         return Chunk
