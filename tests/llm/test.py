@@ -9,7 +9,7 @@ dir = os.path.dirname(os.path.abspath(__file__))
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_path", type=str, default=os.path.join(dir,"config/zdfmng_deepseek.yaml"))
+    parser.add_argument("--config_path", type=str, default=os.path.join(dir,"config/ollama.yaml"))
     args = parser.parse_args()
     return args
 
