@@ -39,8 +39,9 @@ class KAGExtractor(ExtractorABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.llm = self._init_llm()
-        self.biz_scene = os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
-        self.language = os.getenv("KAG_PROMPT_LANGUAGE", "en")
+        self.prompt_config = self.config.get("prompt", {})
+        self.biz_scene = self.prompt_config.get("biz_scene") or os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
+        self.language = self.prompt_config.get("language") or os.getenv("KAG_PROMPT_LANGUAGE", "en")
         self.schema = SchemaClient(project_id=self.project_id).load()
         self.ner_prompt = PromptOp.load(self.biz_scene, "ner")(language=self.language, project_id=self.project_id)
         self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
