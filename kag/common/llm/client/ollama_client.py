@@ -26,6 +26,7 @@ from collections import defaultdict
 
 from openai import OpenAI
 import logging
+from ollama import Client
 
 import requests
 import traceback
@@ -47,32 +48,22 @@ class OllamaClient(LLMClient):
         self.model = llm_config.model
         self.base_url = llm_config.base_url
         self.param = {}
+        self.client = Client(host=self.base_url)
 
-    def sync_request(self, prompt,image):
+    def sync_request(self, prompt,image=None):
         # import pdb; pdb.set_trace()
-        self.param["prompt"] = prompt
-        self.param["model"] = self.model
-        self.param["stream"] = False
-        if image:
-            self.param["images"] = [image]
-        response = requests.post(
-            self.base_url,
-            data=json.dumps(self.param),
-            headers={"Content-Type": "application/json"},
-        )
-
-        data = response.json()
-        content = data["response"]
+        response = self.client.generate(model=self.model, prompt=prompt, stream=False)
+        content = response["response"]
         content = content.replace("&rdquo;", "”").replace("&ldquo;", "“")
         content = content.replace("&middot;", "")
+
         return content
 
     def __call__(self, prompt,image=None):
         return self.sync_request(prompt,image)
 
     def call_with_json_parse(self, prompt):
-        content = [{"role": "user", "content": prompt}]
-        rsp = self.sync_request(content)
+        rsp = self.sync_request(prompt)
         _end = rsp.rfind("```")
         _start = rsp.find("```json")
         if _end != -1 and _start != -1:
