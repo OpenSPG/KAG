@@ -43,7 +43,7 @@ class LLMConfigChecker(object):
 if __name__ == "__main__":
     config = '''
         {"client_type" :"ollama",
-        "base_url" : "http://localhost:11434/api/generate",
+        "base_url" : "http://localhost:11434/",
         "model" : "llama3.1" }
     '''
     config_checker = LLMConfigChecker()
