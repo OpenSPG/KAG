@@ -25,15 +25,11 @@ class BuilderComponent(Component, ABC):
     Abstract base class for all builder component.
     """
 
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.project_id = kwargs.get("project_id",None) or os.getenv("KAG_PROJECT_ID")
         self.config = ProjectClient().get_config(self.project_id)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.config = ProjectClient().get_config(self.project_id)
 
     def _init_llm(self) -> LLMClient:
         """
