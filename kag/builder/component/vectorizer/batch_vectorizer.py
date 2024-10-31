@@ -128,9 +128,9 @@ class EmbeddingVectorGenerator(object):
 
 class BatchVectorizer(VectorizerABC):
 
-    def __init__(self, project_id: str = None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = project_id or os.getenv("KAG_PROJECT_ID")
+        self.project_id = self.project_id or os.getenv("KAG_PROJECT_ID")
         self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
         self.vectorizer = Vectorizer.from_config(self.vectorizer_config)
