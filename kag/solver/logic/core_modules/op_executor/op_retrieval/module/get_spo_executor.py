@@ -25,7 +25,7 @@ class GetSPOExecutor(OpExecutor):
     """
     def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, retrieval_spo: KGRetrieverABC,
                  el: EntityLinkerBase,
-                 dsl_runner: DslRunner, query_one_graph_cache: dict, debug_info: dict, text_similarity: TextSimilarity=None):
+                 dsl_runner: DslRunner, query_one_graph_cache: dict, debug_info: dict, text_similarity: TextSimilarity=None,**kwargs):
         """
         Initializes the GetSPOExecutor with necessary components.
 
@@ -39,7 +39,7 @@ class GetSPOExecutor(OpExecutor):
             query_one_graph_cache (dict): Cache for storing results of one-hop graph queries.
             debug_info (dict): Debug information dictionary to record debugging information during parsing.
         """
-        super().__init__(nl_query, kg_graph, schema, debug_info)
+        super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
         self.retrieval_spo = retrieval_spo
         self.dsl_runner = dsl_runner
         self.query_one_graph_cache = query_one_graph_cache
