@@ -9,8 +9,8 @@ from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import D
 
 class GetExecutor(OpExecutor):
     def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, el: EntityLinkerBase,
-                 dsl_runner: DslRunner, cached_map: dict, debug_info: dict):
-        super().__init__(nl_query, kg_graph, schema, debug_info)
+                 dsl_runner: DslRunner, cached_map: dict, debug_info: dict, **kwargs):
+        super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
 
         self.el = el
         self.dsl_runner = dsl_runner
