@@ -14,8 +14,10 @@ from kag.solver.logic.core_modules.rule_runner.rule_runner import OpRunner
 
 
 class DeduceExecutor(OpExecutor):
-    def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, rule_runner: OpRunner, debug_info: dict):
-        super().__init__(nl_query, kg_graph, schema, debug_info)
+    def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, rule_runner: OpRunner, debug_info: dict,
+                 **kwargs):
+        super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
+        self.KAG_PROJECT_ID = kwargs.get('KAG_PROJECT_ID')
         self.rule_runner = rule_runner
         self.op_register_map = {
             'verify': self.rule_runner.run_verify_op,
@@ -25,10 +27,10 @@ class DeduceExecutor(OpExecutor):
 
     def _deduce_call(self, node: DeduceNode, req_id: str, param: dict) -> list:
         op_mapping = {
-            'choice': ChoiceOp(self.nl_query, self.kg_graph, self.schema, self.debug_info),
-            'multiChoice': MultiChoiceOp(self.nl_query, self.kg_graph, self.schema, self.debug_info),
-            'entailment': EntailmentOp(self.nl_query, self.kg_graph, self.schema, self.debug_info),
-            'judgement': JudgementOp(self.nl_query, self.kg_graph, self.schema, self.debug_info)
+            'choice': ChoiceOp(self.nl_query, self.kg_graph, self.schema, self.debug_info,KAG_PROJECT_ID = self.KAG_PROJECT_ID),
+            'multiChoice': MultiChoiceOp(self.nl_query, self.kg_graph, self.schema, self.debug_info,KAG_PROJECT_ID = self.KAG_PROJECT_ID),
+            'entailment': EntailmentOp(self.nl_query, self.kg_graph, self.schema, self.debug_info,KAG_PROJECT_ID = self.KAG_PROJECT_ID),
+            'judgement': JudgementOp(self.nl_query, self.kg_graph, self.schema, self.debug_info,KAG_PROJECT_ID = self.KAG_PROJECT_ID)
         }
         result = []
         for op in node.deduce_ops:
