@@ -18,9 +18,11 @@ from typing import Union, Optional
 
 import kag.common as common
 
+
 class ConfigParser(CP):
-    def __init__(self,defaults=None):
-        CP.__init__(self,defaults=defaults)
+    def __init__(self, defaults=None):
+        CP.__init__(self, defaults=defaults)
+
     def optionxform(self, optionstr):
         return optionstr
 
@@ -91,7 +93,6 @@ def get_cfg_files():
     return local_cfg, local_cfg_path
 
 
-
 def init_kag_config(config_path: Union[str, Path] = None):
     if not config_path or isinstance(config_path, Path) and not config_path.exists():
         config_path = DEFAULT_KAG_CONFIG_PATH
@@ -99,19 +100,42 @@ def init_kag_config(config_path: Union[str, Path] = None):
     kag_cfg.read(config_path)
     os.environ["KAG_PROJECT_ROOT_PATH"] = os.path.abspath(os.path.dirname(config_path))
 
+    try:
+        host_addr = kag_cfg["project"]["host_addr"]
+        project_id = int(kag_cfg["project"]["id"])
+        from knext.project.client import ProjectClient  # noqa
+
+        kag_cfg_server_side = ProjectClient(host_addr=host_addr).get_config(
+            int(project_id)
+        )
+    except:
+        kag_cfg_server_side = {}
     for section in kag_cfg.sections():
-        sec_cfg = {}
-        for key, value in kag_cfg.items(section):
-            item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{key}".upper()
-            os.environ[item_cfg_key] = value
-            sec_cfg[key] = value
+
+        local_sec_cfg = kag_cfg[section]
+        server_sec_cfg = kag_cfg_server_side.get(section, {})
+        sec_cfg = {**local_sec_cfg, **server_sec_cfg}
+
+        for k, v in sec_cfg.items():
+            item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{k}".upper()
+            os.environ[item_cfg_key] = v
+
+        # for key, value in kag_cfg.items(section):
+        #     item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{key}".upper()
+        #     os.environ[item_cfg_key] = value
+        #     sec_cfg[key] = value
         sec_cfg_key = f"{KAG_CFG_PREFIX}_{section}".upper()
         os.environ[sec_cfg_key] = str(sec_cfg)
-        if section == "log":
-            for key, value in kag_cfg.items(section):
-                if key == "level":
-                    logging.basicConfig(level=logging.getLevelName(value))
-                    # neo4j log level set to be default error
-                    logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
-                    logging.getLogger("neo4j.io").setLevel(logging.INFO)
-                    logging.getLogger("neo4j.pool").setLevel(logging.INFO)
+
+    log_level = os.environ.get(f"{KAG_CFG_PREFIX}_LOG_LEVEL", "INFO")
+
+    logging.basicConfig(level=logging.getLevelName(log_level))
+
+    logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
+    logging.getLogger("neo4j.io").setLevel(logging.INFO)
+    logging.getLogger("neo4j.pool").setLevel(logging.INFO)
+
+
+def merge_server_kag_config():
+
+    config = ProjectClient().get_config(self.project_id)

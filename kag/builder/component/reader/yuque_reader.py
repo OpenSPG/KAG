@@ -18,8 +18,6 @@ from kag.builder.model.chunk import Chunk
 from kag.interface.builder import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
-from kag.common.llm.client import LLMClient
-
 
 class YuqueReader(SourceReaderABC):
     def __init__(self, token: str, **kwargs):

@@ -11,90 +11,86 @@
 
 import io
 import os
+import logging
 import threading
-import tarfile
-import requests
 from typing import Any, Union, Iterable, Dict
-from kag.common.vectorizer.vectorizer import Vectorizer
+from kag.common.vectorizer.vectorizer import Vectorizer, EmbeddingVector
+
+logger = logging.getLogger()
 
 
-EmbeddingVector = Iterable[float]
+LOCAL_MODEL_MAP = {}
 
 
+@Vectorizer.register("bge")
 class LocalBGEVectorizer(Vectorizer):
     """
     Invoke local bge embedding models to turn texts into embedding vectors.
     """
 
-    _local_model_map = {}
-    _lock = threading.Lock()
-
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        path = config.get("path")
-        if path is None:
-            message = "model path is required"
-            raise RuntimeError(message)
-        url = config.get("url")
-        path = os.path.expanduser(path)
-        config_path = os.path.join(path, "config.json")
+    def __init__(
+        self,
+        path: str,
+        url: str = None,
+        query_instruction_for_retrieval: str = None,
+        vector_dimensions: int = None,
+    ):
+        super().__init__(vector_dimensions)
+        self.model_path = os.path.expanduser(path)
+        self.url = url
+        config_path = os.path.join(self.model_path, "config.json")
         if not os.path.isfile(config_path):
             if url is None:
                 message = f"model not found at {path!r}, nor model url specified"
                 raise RuntimeError(message)
-            self._download_model(path, url)
+            logger.info("Model file not found in path, start downloading...")
+            self._download_model(self.model_path, self.url)
         default_chinese_query_instruction_for_retrieval = "为这个句子生成表示以用于向量检索："
-        default_english_query_instruction_for_retrieval = "Represent this sentence for searching relevant passages:"
+        default_english_query_instruction_for_retrieval = (
+            "Represent this sentence for searching relevant passages:"
+        )
         if "BAAI/bge-base-zh-v1.5" in path:
-            default_query_instruction_for_retrieval = default_chinese_query_instruction_for_retrieval
+            default_query_instruction_for_retrieval = (
+                default_chinese_query_instruction_for_retrieval
+            )
         else:
-            default_query_instruction_for_retrieval = default_english_query_instruction_for_retrieval
-        query_instruction_for_retrieval = config.get("query_instruction_for_retrieval", default_query_instruction_for_retrieval)
-        self._path = path
-        self._url = url
-        self._query_instruction_for_retrieval = query_instruction_for_retrieval
-        with self._lock:
-            if path in self._local_model_map:
-                self._model = self._local_model_map[path]
-            else:
-                self._model = self._load_model(path)
-                self._local_model_map[path] = self._model
+            default_query_instruction_for_retrieval = (
+                default_english_query_instruction_for_retrieval
+            )
 
-    @classmethod
-    def _from_config(cls, config: Dict[str, Any]) -> Vectorizer:
-        """
-        Create vectorizer from `config`.
+        if query_instruction_for_retrieval:
+            self.query_instruction_for_retrieval = query_instruction_for_retrieval
+        else:
+            self.query_instruction_for_retrieval = (
+                default_query_instruction_for_retrieval
+            )
 
-        :param config: vectorizer config
-        :type config: Dict[str, Any]
-        :return: vectorizer instance
-        :rtype: Vectorizer
-        """
-        vectorizer = cls(config)
-        return vectorizer
-
-    def _download_model(self, path, url):
-        res = requests.get(url)
-        with io.BytesIO(res.content) as fileobj:
-            with tarfile.open(fileobj=fileobj) as tar:
-                tar.extractall(path=path)
-        config_path = os.path.join(path, "config.json")
-        if not os.path.isfile(config_path):
-            message = f"model config not found at {config_path!r}, url {url!r} specified an invalid model"
-            raise RuntimeError(message)
+        if self.model_path in LOCAL_MODEL_MAP:
+            logger.info("Found existing model, reuse.")
+            model = LOCAL_MODEL_MAP[self.model_path]
+        else:
+            model = self._load_model(self.model_path)
+            LOCAL_MODEL_MAP[self.model_path] = model
+        self.model = model
 
     def _load_model(self, path):
         # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
         import sklearn
         from FlagEmbedding import FlagModel
 
-        print(f"Loading FlagModel from {path!r} with query_instruction_for_retrieval={self._query_instruction_for_retrieval!r}")
-        model = FlagModel(path,
-                          query_instruction_for_retrieval=self._query_instruction_for_retrieval,
-                          use_fp16=True)
+        logger.info(
+            f"Loading FlagModel from {path!r} with query_instruction_for_retrieval={self.query_instruction_for_retrieval!r}"
+        )
+        model = FlagModel(
+            path,
+            query_instruction_for_retrieval=self.query_instruction_for_retrieval,
+            use_fp16=True,
+        )
         return model
 
-    def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
+    def vectorize(
+        self, texts: Union[str, Iterable[str]]
+    ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
         Vectorize a text string into an embedding vector or multiple text strings into
         multiple embedding vectors.
@@ -104,5 +100,62 @@ class LocalBGEVectorizer(Vectorizer):
         :return: embedding vectors of the texts
         :rtype: EmbeddingVector or Iterable[EmbeddingVector]
         """
-        result = self._model.encode(texts)
+        result = self.model.encode(texts)
+        return result.tolist()
+
+
+@Vectorizer.register("bge_m3")
+class LocalBGEM3Vectorizer(Vectorizer):
+    """
+    Invoke local bge-m3 embedding models to turn texts into embedding vectors.
+    """
+
+    # def __init__(self, config: Dict[str, Any]):
+    #     super().__init__(config)
+    def __init__(
+        self,
+        path: str,
+        url: str = None,
+        query_instruction_for_retrieval: str = None,
+        vector_dimensions: int = None,
+    ):
+        super().__init__(vector_dimensions)
+        self.url = url
+        self.model_path = os.path.expanduser(path)
+        config_path = os.path.join(self.model_path, "config.json")
+        if not os.path.isfile(config_path):
+            if url is None:
+                message = f"model not found at {path!r}, nor model url specified"
+                raise RuntimeError(message)
+            self._download_model(path, url)
+        if self.model_path in LOCAL_MODEL_MAP:
+            logger.info("Found existing model, reuse.")
+            model = LOCAL_MODEL_MAP[self.model_path]
+        else:
+            model = self._load_model(self.model_path)
+            LOCAL_MODEL_MAP[self.model_path] = model
+        self.model = model
+
+    def _load_model(self, path):
+        # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
+        import sklearn
+        from FlagEmbedding import BGEM3FlagModel
+
+        logger.info(f"Loading BGEM3FlagModel from {path!r}")
+        model = BGEM3FlagModel(path, use_fp16=True)
+        return model
+
+    def vectorize(
+        self, texts: Union[str, Iterable[str]]
+    ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
+        """
+        Vectorize a text string into an embedding vector or multiple text strings into
+        multiple embedding vectors.
+
+        :param texts: texts to vectorize
+        :type texts: str or Iterable[str]
+        :return: embedding vectors of the texts
+        :rtype: EmbeddingVector or Iterable[EmbeddingVector]
+        """
+        result = self.model.encode(texts)["dense_vecs"]
         return result.tolist()

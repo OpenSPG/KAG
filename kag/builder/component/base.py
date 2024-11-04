@@ -10,26 +10,28 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import os
-from abc import ABC
 from typing import List, Dict
 import logging
 
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from knext.project.client import ProjectClient
-from kag.common.llm.client import LLMClient
+from kag.common.llm import LLMClient
+from kag.common.registry import Registrable
 
 
-class BuilderComponent(Component, ABC):
+@Registrable.register("builder")
+class BuilderComponent(Component, Registrable):
     """
     Abstract base class for all builder component.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, project_id: int = None, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = kwargs.get("project_id",None) or os.getenv("KAG_PROJECT_ID")
+        if project_id is None:
+            project_id = int(os.getenv("KAG_PROJECT_ID"))
+        self.project_id = project_id
         self.config = ProjectClient().get_config(self.project_id)
-
 
     def _init_llm(self) -> LLMClient:
         """

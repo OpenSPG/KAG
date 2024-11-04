@@ -18,7 +18,7 @@ from kag.interface.builder import SplitterABC
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.model.chunk import Chunk
 from knext.common.base.runnable import Input, Output
-from kag.common.llm.client.llm_client import LLMClient
+from kag.common.llm import LLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ class SemanticSplitter(SplitterABC):
                     name=f"{org_chunk.name}#{split_name}",
                     content=item["content"],
                     abstract=item["name"],
-                    **org_chunk.kwargs
+                    **org_chunk.kwargs,
                 )
                 chunks.append(chunk)
             else:
@@ -123,11 +123,7 @@ class SemanticSplitter(SplitterABC):
                     name=f"{org_chunk.name}#{split_name}",
                     content=item["content"],
                 )
-                chunks.extend(
-                    self.semantic_chunk(
-                        innerChunk, chunk_size
-                    )
-                )
+                chunks.extend(self.semantic_chunk(innerChunk, chunk_size))
         return chunks
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:

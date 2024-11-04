@@ -1,4 +1,0 @@
-client_type: maas
-api_key: 
-base_url: https://api.openai.com/v1/chat/completions
-model: gpt-3.5-turbo

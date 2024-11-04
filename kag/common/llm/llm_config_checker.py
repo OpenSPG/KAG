@@ -10,7 +10,7 @@
 # or implied.
 
 import json
-from kag.common.llm.client import LLMClient
+from kag.common.llm.llm_client import LLMClient
 
 
 class LLMConfigChecker(object):
@@ -39,12 +39,13 @@ class LLMConfigChecker(object):
             return res
         except Exception as ex:
             raise RuntimeError(f"invalid llm config: {config}, for details: {ex}")
-        
+
+
 if __name__ == "__main__":
-    config = '''
+    config = """
         {"client_type" :"ollama",
         "base_url" : "http://localhost:11434/",
         "model" : "llama3.1" }
-    '''
+    """
     config_checker = LLMConfigChecker()
     res = config_checker.check(config)
