@@ -92,13 +92,13 @@ class LogicExecutor:
         # Initialize executors for different operations.
         self.retrieval_executor = RetrievalExecutor(query, self.kg_graph, self.schema, self.kg_retriever,
                                                     self.el,
-                                                    self.dsl_runner, self.debug_info, text_similarity)
-        self.deduce_executor = DeduceExecutor(query, self.kg_graph, self.schema, self.op_runner, self.debug_info)
-        self.sort_executor = SortExecutor(query, self.kg_graph, self.schema, self.debug_info)
-        self.math_executor = MathExecutor(query, self.kg_graph, self.schema, self.debug_info)
+                                                    self.dsl_runner, self.debug_info, text_similarity,KAG_PROJECT_ID = self.project_id)
+        self.deduce_executor = DeduceExecutor(query, self.kg_graph, self.schema, self.op_runner, self.debug_info, KAG_PROJECT_ID = self.project_id)
+        self.sort_executor = SortExecutor(query, self.kg_graph, self.schema, self.debug_info, KAG_PROJECT_ID = self.project_id)
+        self.math_executor = MathExecutor(query, self.kg_graph, self.schema, self.debug_info, KAG_PROJECT_ID = self.project_id)
         self.output_executor = OutputExecutor(query, self.kg_graph, self.schema, self.el,
                                               self.dsl_runner,
-                                              self.retrieval_executor.query_one_graph_cache, self.debug_info)
+                                              self.retrieval_executor.query_one_graph_cache, self.debug_info, KAG_PROJECT_ID = self.project_id)
 
         self.with_sub_answer = os.getenv("KAG_QA_WITH_SUB_ANSWER", True)
 

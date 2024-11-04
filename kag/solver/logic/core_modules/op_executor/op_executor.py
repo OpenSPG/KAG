@@ -13,7 +13,7 @@ class OpExecutor(KagBaseModule, ABC):
 
     Each subclass must implement the execution and judgment functions.
     """
-    def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, debug_info: dict):
+    def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, debug_info: dict, **kwargs):
         """
         Initializes the operator executor with necessary components.
 
@@ -23,7 +23,7 @@ class OpExecutor(KagBaseModule, ABC):
             schema (SchemaUtils): Semantic structure definition to assist in the parsing process.
             debug_info (dict): Debug information dictionary to record debugging information during parsing.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.kg_graph = kg_graph
         self.schema = schema
         self.nl_query = nl_query
