@@ -2,7 +2,6 @@ import os
 from string import Template
 
 from knext.project.client import ProjectClient
-
 from kag.common.llm import LLMClient
 import logging
 
@@ -111,12 +110,13 @@ class KagBaseModule(object):
             "KAG_PROJECT_HOST_ADDR"
         )
         self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
+        self.config = ProjectClient().get_config(self.project_id)
 
         self._init_llm()
         self.biz_scene = kwargs.get("KAG_PROMPT_BIZ_SCENE") or os.getenv(
             "KAG_PROMPT_BIZ_SCENE", "default"
         )
-        self.language = kwargs.get("KAG_PROMPT_LANGUAGE") or os.getenv(
+        self.language = self.config.get("prompt").get("language") or os.getenv(
             "KAG_PROMPT_LANGUAGE", "en"
         )
 
