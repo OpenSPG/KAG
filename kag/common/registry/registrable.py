@@ -738,7 +738,7 @@ class Registrable:
             )
             setattr(instant, "__original_parameters__", original_params)
             # if constructor takes kwargs, they can't be infered from constructor. Therefore we should record
-            # which attrs are created by kwargs to correctly restore the configs by `to_params`.
+            # which attrs are created by kwargs to correctly restore the configs by `to_config`.
             if accepts_kwargs:
                 remaining_kwargs = set(params)
                 params.clear()
@@ -750,15 +750,15 @@ class Registrable:
 
         return instant
 
-    def _to_params(self, v):
+    def _to_config(self, v):
         """iteratively convert v to params"""
         v_type = type(v)
-        if hasattr(v, "to_params"):
-            params = v.to_params()
+        if hasattr(v, "to_config"):
+            params = v.to_config()
         elif v_type in {collections.abc.Mapping, Mapping, Dict, dict}:
             params = {}
             for subk, subv in v.items():
-                params[subk] = self._to_params(subv)
+                params[subk] = self._to_config(subv)
         elif v_type in {
             collections.abc.Iterable,
             Iterable,
@@ -769,12 +769,12 @@ class Registrable:
             Set,
             set,
         }:
-            params = [self._to_params(x) for x in v]
+            params = [self._to_config(x) for x in v]
         else:
             params = v
         return params
 
-    def to_params(self) -> ConfigTree:
+    def to_config(self) -> ConfigTree:
         """
         convert object back to params.
         Note: If the object is not instantiated by from_config, we can't transfer it back.
@@ -797,20 +797,20 @@ class Registrable:
             # attrs of instance itself.
             if hasattr(self, k):
                 v = getattr(self, k)
-            if hasattr(v, "to_params"):
-                conf = v.to_params()
+            if hasattr(v, "to_config"):
+                conf = v.to_config()
             else:
-                conf = self._to_params(v)
+                conf = self._to_config(v)
             config[k] = conf
         return ConfigFactory.from_dict(config)
 
-    def to_params_with_constructor(self, constructor: str = None) -> ConfigTree:
+    def to_config_with_constructor(self, constructor: str = None) -> ConfigTree:
         """convert object back to params.
-        Different from `to_params`, this function can convert objects that are not instantiated by `from_config`,
+        Different from `to_config`, this function can convert objects that are not instantiated by `from_config`,
         but sometimes it may not give correct result.
         For example, suppose the class has more than one constructor, and we instantiated by constructorA but convert
         it to params of constructorB. So use it with caution.
-        One should always use `from_config` to instantiate the object and `to_params` to convert it back to params.
+        One should always use `from_config` to instantiate the object and `to_config` to convert it back to params.
         """
         config = {}
 
@@ -833,10 +833,10 @@ class Registrable:
             # get param instance from class attr
             v_instance = getattr(self, v.name, None)
 
-            if hasattr(v_instance, "to_params"):
-                conf = v_instance.to_params()
+            if hasattr(v_instance, "to_config"):
+                conf = v_instance.to_config()
             else:
-                conf = self._to_params(v_instance)
+                conf = self._to_config(v_instance)
             config[k] = conf
         if accepts_kwargs:
             for k in self.__from_config_kwargs__:
