@@ -11,7 +11,7 @@ six==1.16.0
 click==8.1.7
 dateutils==0.6.12
 certifi==2023.11.17
-urllib3==2.1.0
+urllib3==1.26.16
 python-dateutil==2.8.2
 networkx==3.1
 pydantic==2.5.2
@@ -37,5 +37,5 @@ openai
 python-docx
 charset_normalizer==3.3.2
 pdfminer.six==20231228
-openspg-knext==0.5.2b1
+openspg-knext==0.5.2b2
 ollama
