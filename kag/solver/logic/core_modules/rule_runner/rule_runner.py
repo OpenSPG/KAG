@@ -3,9 +3,16 @@ import time
 from enum import Enum
 
 from kag.solver.logic.core_modules.common.base_model import Identifer
-from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData, RelationData
-from kag.solver.logic.core_modules.parser.logic_node_parser import FilterNode, ExtractorNode, \
-    VerifyNode
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    KgGraph,
+    EntityData,
+    RelationData,
+)
+from kag.solver.logic.core_modules.parser.logic_node_parser import (
+    FilterNode,
+    ExtractorNode,
+    VerifyNode,
+)
 
 
 class MatchRes(Enum):
@@ -16,7 +23,7 @@ class MatchRes(Enum):
 
 
 class MatchInfo:
-    def __init__(self, res: MatchRes, desc: str = ''):
+    def __init__(self, res: MatchRes, desc: str = ""):
         self.res = res
         self.desc = desc
 
@@ -30,9 +37,9 @@ class MatchInfo:
         else:
             return "不相关"
 
+
 def trans_str_res_to_match(res: str):
-    if res is None or res == '' or "无相关信息" in res \
-            or "不相关" in res:
+    if res is None or res == "" or "无相关信息" in res or "不相关" in res:
         return MatchRes.UN_RELATED
     return MatchRes.RELATED
 
@@ -54,7 +61,7 @@ class RuleRunner:
             "exist": self.run_exists,
             "necessary": self.run_necessary,
             "collect_in": self.run_collect_in,
-            "collect_contains": self.run_collect_contains
+            "collect_contains": self.run_collect_contains,
         }
 
     def run_rule(self, op_name: str, left_value, right_value):
@@ -179,12 +186,13 @@ class StrRuleRunner(RuleRunner):
 
 
 class ModelRunner(StrRuleRunner):
-    def __init__(self, llm, kg_graph: KgGraph, query:str, req_id: str):
+    def __init__(self, llm, kg_graph: KgGraph, query: str, req_id: str):
         super().__init__()
         self.llm = llm
         self.kg_graph = kg_graph
         self.query = query
         self.req_id = req_id
+
     def _get_kg_graph_data(self):
         return self.kg_graph.to_spo()
 
@@ -198,7 +206,9 @@ class ModelRunner(StrRuleRunner):
             right_value, right_value, str(self._get_kg_graph_data())
         )
         res = self.llm.generate(prompt, max_output_len=100)
-        logging.info(f"ModelRunner {self.req_id} cost={time.time() - start_time} prompt={prompt} res={res}")
+        logging.info(
+            f"ModelRunner {self.req_id} cost={time.time() - start_time} prompt={prompt} res={res}"
+        )
         return MatchInfo(trans_str_res_to_match(res), res)
 
     def run_collect_in(self, left_value, right_value):
@@ -211,7 +221,9 @@ class ModelRunner(StrRuleRunner):
             right_value, right_value, str(self._get_kg_graph_data())
         )
         res = self.llm.generate(prompt, max_output_len=100)
-        logging.info(f"ModelRunner {self.req_id} cost={time.time() - start_time} prompt={prompt} res={res}")
+        logging.info(
+            f"ModelRunner {self.req_id} cost={time.time() - start_time} prompt={prompt} res={res}"
+        )
         return MatchInfo(trans_str_res_to_match(res), res)
 
     def run_collect_contains(self, left_value, right_value):
@@ -224,7 +236,9 @@ class ModelRunner(StrRuleRunner):
             right_value, right_value, str(self._get_kg_graph_data())
         )
         res = self.llm.generate(prompt, max_output_len=100)
-        logging.info(f"ModelRunner {self.req_id} cost={time.time() - start_time} prompt={prompt} res={res}")
+        logging.info(
+            f"ModelRunner {self.req_id} cost={time.time() - start_time} prompt={prompt} res={res}"
+        )
         return MatchInfo(trans_str_res_to_match(res), res)
 
 
@@ -238,7 +252,7 @@ class OpRunner:
             self.runner: ModelRunner = ModelRunner(llm, kg_graph, query, req_id)
         self.llm = llm
 
-    def _get_identifer_to_doc(self, alias:Identifer):
+    def _get_identifer_to_doc(self, alias: Identifer):
         data = self.kg_graph.get_entity_by_alias(alias)
         if data is None:
             return []
@@ -321,8 +335,8 @@ class OpRunner:
     def single_rule_dispatch(self, op_name: str, left_value, right_value):
         op_name = self._get_op_zh_2_en(op_name)
 
-        binary_op = ['equal', 'lt', 'gt', 'le', 'ge', 'in', 'contains', 'and', 'or']
-        unary_op = ['not']
+        binary_op = ["equal", "lt", "gt", "le", "ge", "in", "contains", "and", "or"]
+        unary_op = ["not"]
 
         if op_name in binary_op:
             return self.run_single_binary_exec_rule(op_name, left_value, right_value)
@@ -333,8 +347,8 @@ class OpRunner:
 
     def collect_rule_dispatch(self, op_name: str, left_value, right_value):
         op_name = self._get_op_zh_2_en(op_name)
-        collect_binary_op = ['match', 'contains', 'in']
-        collect_unary_op = ['exist', 'necessary']
+        collect_binary_op = ["match", "contains", "in"]
+        collect_unary_op = ["exist", "necessary"]
         if op_name in collect_unary_op:
             return self.run_collect_unary_exec_rule(op_name, left_value)
         elif op_name in collect_binary_op:
@@ -343,22 +357,24 @@ class OpRunner:
             # agg by self
             res = self.single_rule_dispatch(op_name, left_value, right_value)
             if res is not None and True in res.values():
-                return MatchInfo(MatchRes.MATCH, '')
-            return MatchInfo(MatchRes.UN_MATCH, '')
+                return MatchInfo(MatchRes.MATCH, "")
+            return MatchInfo(MatchRes.UN_MATCH, "")
 
     def run_collect_binary_exec_rule(self, op_name: str, left_value, right_value):
         collect_op_name_map = {
             "in": "collect_in",
             "contains": "collect_contains",
             "necessary": "necessary",
-            "match": "match"
+            "match": "match",
         }
         left_value = self._get_value_ins(left_value)
         right_value = self._get_value_ins(right_value)
         """
         res = MatchRes
         """
-        res: MatchRes = self.runner.op_map[collect_op_name_map[op_name]](left_value, right_value)
+        res: MatchRes = self.runner.op_map[collect_op_name_map[op_name]](
+            left_value, right_value
+        )
         return res
 
     def run_collect_unary_exec_rule(self, op_name: str, left_value):
@@ -377,7 +393,7 @@ class OpRunner:
             "必要": "necessary",
             "等于": "equal",
             "大于": "gt",
-            "小于": "lt"
+            "小于": "lt",
         }
         if op_name not in name_map.keys():
             return op_name
@@ -385,7 +401,10 @@ class OpRunner:
 
     def run_filter_op(self, f: FilterNode):
         # 对边不执行过滤
-        if isinstance(f.left_expr, Identifer) and f.left_expr in self.kg_graph.edge_alias:
+        if (
+            isinstance(f.left_expr, Identifer)
+            and f.left_expr in self.kg_graph.edge_alias
+        ):
             return
         res = self.single_rule_dispatch(f.op, f.left_expr, f.right_expr)
         failed_list = []
@@ -395,11 +414,9 @@ class OpRunner:
         self.kg_graph.rmv_ins(f.left_expr, failed_list)
 
     def run_extractor_op(self, f: ExtractorNode):
-        update_verify = VerifyNode("verify", {
-            "left_expr": f.alias_set,
-            "right_expr": self.query,
-            "op": "匹配"
-        })
+        update_verify = VerifyNode(
+            "verify", {"left_expr": f.alias_set, "right_expr": self.query, "op": "匹配"}
+        )
         return self.run_verify_op(update_verify)
 
     def run_verify_op(self, f: VerifyNode):
@@ -411,7 +428,7 @@ class OpRunner:
         verify_kg_graph.query_graph[p_alias_name] = {
             "s": s_alias_name,
             "p": p_alias_name,
-            "o": o_alias_name
+            "o": o_alias_name,
         }
         left_value = self._get_alias_to_doc(f.left_expr)
         if len(left_value) == 0:
@@ -434,7 +451,7 @@ class OpRunner:
         if len(description) > 0:
             s_entity_data.description = "\n\n".join(description)
         right_value = f.right_expr
-        if right_value is None or right_value == '':
+        if right_value is None or right_value == "":
             right_value = self.query
         right_value = self._get_alias_to_doc(right_value)
         match_info = self.collect_rule_dispatch(f.op, f.left_expr, f.right_expr)

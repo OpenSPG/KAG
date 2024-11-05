@@ -37,8 +37,11 @@ class TypeInfo:
 def parse_entity(raw_entity):
     if raw_entity is None:
         return []
-    entity_parts = re.findall(r'(?:`(.+?)`|([^|]+))', raw_entity)
-    return [part.replace('``', '|') if part else escaping_part for escaping_part, part in entity_parts]
+    entity_parts = re.findall(r"(?:`(.+?)`|([^|]+))", raw_entity)
+    return [
+        part.replace("``", "|") if part else escaping_part
+        for escaping_part, part in entity_parts
+    ]
 
 
 class SPOBase:
@@ -52,7 +55,7 @@ class SPOBase:
         return f"{self.alias_name}:{self.get_entity_first_type_or_en()}"
 
     def get_value_list_str(self):
-        return [f"{self.alias_name}.{k}={v}" for k,v in self.value_list]
+        return [f"{self.alias_name}.{k}={v}" for k, v in self.value_list]
 
     def get_mention_name(self):
         return ""
@@ -63,7 +66,9 @@ class SPOBase:
         if len(entity_types) == 0 and len(entity_zh_types) == 0:
             return None
         if None in entity_types and None in entity_zh_types:
-            raise RuntimeError(f"None type in entity type en {entity_types} zh {entity_zh_types}")
+            raise RuntimeError(
+                f"None type in entity type en {entity_types} zh {entity_zh_types}"
+            )
         if len(entity_types) > 0:
             return "|".join(entity_types)
         if len(entity_zh_types) > 0:
@@ -154,7 +159,7 @@ class SPORelation(SPOBase):
         rel_type_set = []
 
         # Split the input string into alias and entity_type_set parts
-        split_input = input_str.split(':', 1)
+        split_input = input_str.split(":", 1)
         alias = split_input[0]
         # If entity_type_set exists, process it further
         if len(split_input) > 1:
@@ -173,8 +178,15 @@ class SPORelation(SPOBase):
 
 
 class SPOEntity(SPOBase):
-    def __init__(self, entity_id=None, entity_type=None, entity_type_zh=None, entity_name=None, alias_name=None,
-                 is_attribute=False):
+    def __init__(
+        self,
+        entity_id=None,
+        entity_type=None,
+        entity_type_zh=None,
+        entity_name=None,
+        alias_name=None,
+        is_attribute=False,
+    ):
         super().__init__()
         self.is_attribute = is_attribute
         self.id_set = []
@@ -191,12 +203,15 @@ class SPOEntity(SPOBase):
             self.type_set.append(type_info)
 
     def __str__(self):
-        show = [f"{self.alias_name}:{self.get_entity_first_type_or_en()}{'' if self.entity_name is None else '[' + self.entity_name + ']'} "]
+        show = [
+            f"{self.alias_name}:{self.get_entity_first_type_or_en()}{'' if self.entity_name is None else '[' + self.entity_name + ']'} "
+        ]
         show = show + self.get_value_list_str()
         return ",".join(show)
 
     def get_mention_name(self):
         return self.entity_name
+
     def generate_id_key(self):
         if len(self.id_set) == 0:
             return None
@@ -210,13 +225,16 @@ class SPOEntity(SPOBase):
             return []
 
         id_type_info = list(itertools.product(self.id_set, self.type_set))
-        return [{
-            "alias": self.alias_name.alias_name,
-            "id": info[0],
-            "type": info[1].entity_type if '.' in info[1].entity_type else (
-                                                                               prefix + '.' if prefix is not None else '') +
-                                                                           info[1].entity_type
-        } for info in id_type_info]
+        return [
+            {
+                "alias": self.alias_name.alias_name,
+                "id": info[0],
+                "type": info[1].entity_type
+                if "." in info[1].entity_type
+                else (prefix + "." if prefix is not None else "") + info[1].entity_type,
+            }
+            for info in id_type_info
+        ]
 
     @staticmethod
     def parse_logic_form(input_str):
@@ -235,9 +253,9 @@ class SPOEntity(SPOBase):
         entity_type_set = parse_entity(entity_type_raw)
 
         # 解析entity_name和entity_id_set
-        entity_name = entity_name_raw.strip('][') if entity_name_raw else None
-        entity_name = entity_name.strip('`') if entity_name else None
-        entity_id_set = parse_entity(entity_id_raw.strip('][')) if entity_id_raw else []
+        entity_name = entity_name_raw.strip("][") if entity_name_raw else None
+        entity_name = entity_name.strip("`") if entity_name else None
+        entity_id_set = parse_entity(entity_id_raw.strip("][")) if entity_id_raw else []
 
         spo_entity = SPOEntity()
         spo_entity.id_set = entity_id_set
@@ -252,7 +270,14 @@ class SPOEntity(SPOBase):
 
 
 class Entity:
-    def __init__(self, entity_id=None, entity_type=None, entity_type_zh=None, entity_name=None, alias_name=None):
+    def __init__(
+        self,
+        entity_id=None,
+        entity_type=None,
+        entity_type_zh=None,
+        entity_name=None,
+        alias_name=None,
+    ):
         self.id = entity_id
         self.type = entity_type
         self.entity_type_zh = entity_type_zh
@@ -262,7 +287,9 @@ class Entity:
     def __repr__(self):
         return f"{[self.entity_name, self.alias_name]}:{self.id}({self.type, self.entity_type_zh})"
 
-    def save_args(self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None):
+    def save_args(
+        self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
+    ):
         self.id = id if id else self.id
         self.type = type if type else self.type
         self.entity_type_zh = entity_type_zh if entity_type_zh else self.entity_type_zh
@@ -271,37 +298,42 @@ class Entity:
 
     @staticmethod
     def parse_zh(entity_str):
-        alias, type_zh, name = '', '', ''
-        entity_str = entity_str.replace('：', ':')
-        match_alias_type_entity = re.match(r'(.*):(.*)\[(.*)\]', entity_str)
+        alias, type_zh, name = "", "", ""
+        entity_str = entity_str.replace("：", ":")
+        match_alias_type_entity = re.match(r"(.*):(.*)\[(.*)\]", entity_str)
         if match_alias_type_entity:
             alias, type_zh, name = match_alias_type_entity.groups()
         else:
-            match_alias_type = re.match(r'(.*):(.*)', entity_str)
+            match_alias_type = re.match(r"(.*):(.*)", entity_str)
             if match_alias_type:
                 alias, type_zh = match_alias_type.groups()
             else:
                 alias = entity_str
-        return Entity(entity_type_zh=type_zh.strip(), entity_name=name.strip(), alias_name=alias.strip())
+        return Entity(
+            entity_type_zh=type_zh.strip(),
+            entity_name=name.strip(),
+            alias_name=alias.strip(),
+        )
 
 
 class LogicNode:
     def __init__(self, operator, args):
         self.operator = operator
         self.args = args
-        self.sub_query = args.get('sub_query', '')
+        self.sub_query = args.get("sub_query", "")
 
     def __repr__(self):
         params = [f"{k}={v}" for k, v in self.args.items()]
-        params_str = ','.join(params)
+        params_str = ",".join(params)
         return f"{self.operator}({params_str})"
 
     def to_dict(self):
         return json.loads(self.to_json())
 
     def to_json(self):
-        return json.dumps(obj=self,
-                          default=lambda x: x.__dict__, sort_keys=False, indent=2)
+        return json.dumps(
+            obj=self, default=lambda x: x.__dict__, sort_keys=False, indent=2
+        )
 
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")
@@ -309,7 +341,7 @@ class LogicNode:
     def to_std(self, args):
         for key, value in args.items():
             self.args[key] = value
-        self.sub_query = args.get('sub_query', '')
+        self.sub_query = args.get("sub_query", "")
 
 
 class LFPlanResult:

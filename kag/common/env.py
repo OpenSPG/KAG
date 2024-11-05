@@ -108,7 +108,8 @@ def init_kag_config(config_path: Union[str, Path] = None):
         kag_cfg_server_side = ProjectClient(host_addr=host_addr).get_config(
             int(project_id)
         )
-    except:
+    except Exception as e:
+        print(f"Failed to get configuration from server, info: {e}")
         kag_cfg_server_side = {}
     for section in kag_cfg.sections():
 
@@ -134,8 +135,3 @@ def init_kag_config(config_path: Union[str, Path] = None):
     logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
     logging.getLogger("neo4j.io").setLevel(logging.INFO)
     logging.getLogger("neo4j.pool").setLevel(logging.INFO)
-
-
-def merge_server_kag_config():
-
-    config = ProjectClient().get_config(self.project_id)

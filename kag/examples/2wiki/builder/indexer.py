@@ -47,8 +47,8 @@ class TwowikiCorpusReader(SourceReaderABC):
         for idx, item in enumerate(corpus):
             chunk = Chunk(
                 id=str(idx),
-                name=item['title'],
-                content=item['text'],
+                name=item["title"],
+                content=item["text"],
             )
             chunks.append(chunk)
         return chunks
@@ -71,10 +71,8 @@ def buildKB(corpusFilePath):
     logger.info(f"\n\nbuildKB successfully for {corpusFilePath}\n\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     filePath = "./data/2wiki_sub_corpus.json"
     # filePath = "./data/2wiki_corpus.json"
-    corpusFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), filePath
-    )
+    corpusFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     buildKB(corpusFilePath)

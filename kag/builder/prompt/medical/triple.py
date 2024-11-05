@@ -11,7 +11,7 @@
 # or implied.
 
 import json
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 
 from kag.common.base.prompt_op import PromptOp
 

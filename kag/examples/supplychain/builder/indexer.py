@@ -17,18 +17,24 @@ from kag.common.env import init_kag_config
 from kag.builder.component import SPGTypeMapping, KGWriter, RelationMapping
 from kag.builder.component.reader.csv_reader import CSVReader
 from kag.examples.supplychain.builder.operator.event_kg_writer_op import EventKGWriter
-from kag.examples.supplychain.builder.operator.fund_date_process_op import FundDateProcessComponent
+from kag.examples.supplychain.builder.operator.fund_date_process_op import (
+    FundDateProcessComponent,
+)
 from knext.search.client import SearchClient
 from knext.builder.builder_chain_abc import BuilderChainABC
 from knext.search.client import SearchClient
 
 
 def company_link_func(prop_value, node):
-    sc = SearchClient(os.getenv("KAG_PROJECT_HOST_ADDR"), int(os.getenv("KAG_PROJECT_ID")))
+    sc = SearchClient(
+        os.getenv("KAG_PROJECT_HOST_ADDR"), int(os.getenv("KAG_PROJECT_ID"))
+    )
     company_id = []
-    records = sc.search_text(prop_value, label_constraints=["SupplyChain.Company"], topk=1)
+    records = sc.search_text(
+        prop_value, label_constraints=["SupplyChain.Company"], topk=1
+    )
     if records:
-        company_id.append(records[0]["node"]['id'])
+        company_id.append(records[0]["node"]["id"])
     return company_id
 
 
@@ -45,7 +51,9 @@ class SupplyChainPersonChain(BuilderChainABC):
             .add_property_mapping("id", "id")
             .add_property_mapping("age", "age")
             .add_property_mapping(
-                "legalRepresentative", "legalRepresentative", link_func=company_link_func
+                "legalRepresentative",
+                "legalRepresentative",
+                link_func=company_link_func,
             )
         )
         vectorizer = BatchVectorizer()
@@ -72,6 +80,7 @@ class SupplyChainCompanyFundTransCompanyChain(BuilderChainABC):
         vectorizer = BatchVectorizer()
         sink = KGWriter()
         return source >> date_process_op >> mapping >> vectorizer >> sink
+
 
 class SupplyChainDefaulStructuredBuilderChain(DefaultStructuredBuilderChain):
     def __init__(self, spg_type_name: str, **kwargs):
@@ -116,35 +125,41 @@ class SupplyChainEventBuilderChain(DefaultStructuredBuilderChain):
         chain = source >> mapping >> vectorizer >> sink
         return chain
 
+
 def import_data():
     file_path = os.path.dirname(__file__)
     init_kag_config(os.path.join(file_path, "../kag_config.cfg"))
 
-
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="TaxOfCompanyEvent").invoke(
-        file_path=os.path.join(file_path,"data/TaxOfCompanyEvent.csv")
+        file_path=os.path.join(file_path, "data/TaxOfCompanyEvent.csv")
     )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="TaxOfProdEvent").invoke(
-        file_path=os.path.join(file_path,"data/TaxOfProdEvent.csv")
+        file_path=os.path.join(file_path, "data/TaxOfProdEvent.csv")
     )
-    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Trend").invoke(file_path=os.path.join(file_path,"data/Trend.csv"))
+    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Trend").invoke(
+        file_path=os.path.join(file_path, "data/Trend.csv")
+    )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="Industry").invoke(
-        file_path=os.path.join(file_path,"data/Industry.csv")
+        file_path=os.path.join(file_path, "data/Industry.csv")
     )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="Product").invoke(
-        file_path=os.path.join(file_path,"data/Product.csv")
+        file_path=os.path.join(file_path, "data/Product.csv")
     )
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="Company").invoke(
-        file_path=os.path.join(file_path,"data/Company.csv")
+        file_path=os.path.join(file_path, "data/Company.csv")
     )
-    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Index").invoke(file_path=os.path.join(file_path,"data/Index.csv"))
-    SupplyChainPersonChain(spg_type_name="Person").invoke(file_path=os.path.join(file_path,"data/Person.csv"))
+    SupplyChainDefaulStructuredBuilderChain(spg_type_name="Index").invoke(
+        file_path=os.path.join(file_path, "data/Index.csv")
+    )
+    SupplyChainPersonChain(spg_type_name="Person").invoke(
+        file_path=os.path.join(file_path, "data/Person.csv")
+    )
 
     SupplyChainCompanyFundTransCompanyChain(
         spg_type_name="Company_fundTrans_Company"
-    ).invoke(file_path=os.path.join(file_path,"data/Company_fundTrans_Company.csv"))
+    ).invoke(file_path=os.path.join(file_path, "data/Company_fundTrans_Company.csv"))
     SupplyChainEventBuilderChain(spg_type_name="ProductChainEvent").invoke(
-        file_path=os.path.join(file_path,"data/ProductChainEvent.csv")
+        file_path=os.path.join(file_path, "data/ProductChainEvent.csv")
     )
 
 

@@ -41,7 +41,7 @@ class Node(object):
 
     @staticmethod
     def unique_key(spg_record):
-        return spg_record.spg_type_name + '_' + spg_record.get_property("name", "")
+        return spg_record.spg_type_name + "_" + spg_record.get_property("name", "")
 
     def to_dict(self):
         return {
@@ -61,7 +61,11 @@ class Node(object):
         )
 
     def __eq__(self, other):
-        return self.name == other.name and self.label == other.label and self.properties == other.properties
+        return (
+            self.name == other.name
+            and self.label == other.label
+            and self.properties == other.properties
+        )
 
 
 class Edge(object):
@@ -74,7 +78,12 @@ class Edge(object):
     properties: Dict[str, str]
 
     def __init__(
-            self, _id: str, from_node: Node, to_node: Node, label: str, properties: Dict[str, str]
+        self,
+        _id: str,
+        from_node: Node,
+        to_node: Node,
+        label: str,
+        properties: Dict[str, str],
     ):
         self.from_id = from_node.id
         self.from_type = from_node.label
@@ -88,12 +97,19 @@ class Edge(object):
 
     @classmethod
     def from_spg_record(
-            cls, s_idx, subject_record: SPGRecord, o_idx, object_record: SPGRecord, label: str
+        cls,
+        s_idx,
+        subject_record: SPGRecord,
+        o_idx,
+        object_record: SPGRecord,
+        label: str,
     ):
         from_node = Node.from_spg_record(s_idx, subject_record)
         to_node = Node.from_spg_record(o_idx, object_record)
 
-        return cls(_id="", from_node=from_node, to_node=to_node, label=label, properties={})
+        return cls(
+            _id="", from_node=from_node, to_node=to_node, label=label, properties={}
+        )
 
     def to_dict(self):
         return {
@@ -110,14 +126,28 @@ class Edge(object):
     def from_dict(cls, input: Dict):
         return cls(
             _id=input["id"],
-            from_node=Node(_id=input["from"], name=input["from"],label=input["fromType"], properties={}),
-            to_node=Node(_id=input["to"], name=input["to"], label=input["toType"], properties={}),
+            from_node=Node(
+                _id=input["from"],
+                name=input["from"],
+                label=input["fromType"],
+                properties={},
+            ),
+            to_node=Node(
+                _id=input["to"], name=input["to"], label=input["toType"], properties={}
+            ),
             label=input["label"],
             properties=input["properties"],
         )
 
     def __eq__(self, other):
-        return self.from_id == other.from_id and self.to_id == other.to_id and self.label == other.label and self.properties == other.properties and self.from_type == other.from_type and self.to_type == other.to_type
+        return (
+            self.from_id == other.from_id
+            and self.to_id == other.to_id
+            and self.label == other.label
+            and self.properties == other.properties
+            and self.from_type == other.from_type
+            and self.to_type == other.to_type
+        )
 
 
 class SubGraph(object):
@@ -135,12 +165,18 @@ class SubGraph(object):
         self.nodes.append(Node(_id=id, name=name, label=label, properties=properties))
         return self
 
-    def add_edge(self, s_id: str, s_label: str, p: str, o_id: str, o_label: str, properties=None):
+    def add_edge(
+        self, s_id: str, s_label: str, p: str, o_id: str, o_label: str, properties=None
+    ):
         if not properties:
             properties = dict()
         s_node = Node(_id=s_id, name=s_id, label=s_label, properties={})
         o_node = Node(_id=o_id, name=o_id, label=o_label, properties={})
-        self.edges.append(Edge(_id="", from_node=s_node, to_node=o_node, label=p, properties=properties))
+        self.edges.append(
+            Edge(
+                _id="", from_node=s_node, to_node=o_node, label=p, properties=properties
+            )
+        )
         return self
 
     def to_dict(self):
@@ -152,7 +188,7 @@ class SubGraph(object):
     def __repr__(self):
         return pprint.pformat(self.to_dict())
 
-    def merge(self, sub_graph: 'SubGraph'):
+    def merge(self, sub_graph: "SubGraph"):
         self.nodes.extend(sub_graph.nodes)
         self.edges.extend(sub_graph.edges)
 
@@ -164,21 +200,30 @@ class SubGraph(object):
         for record in spg_records:
             s_id = record.id
             s_name = record.name
-            s_label = record.spg_type_name.split('.')[-1]
+            s_label = record.spg_type_name.split(".")[-1]
             properties = record.properties
 
             spg_type = spg_types.get(record.spg_type_name)
             for prop_name, prop_value in record.properties.items():
                 if prop_name in spg_type.properties:
                     from knext.schema.model.property import Property
+
                     prop: Property = spg_type.properties.get(prop_name)
-                    o_label = prop.object_type_name.split('.')[-1]
+                    o_label = prop.object_type_name.split(".")[-1]
                     if o_label not in BASIC_TYPES:
-                        prop_value_list = prop_value.split(',')
+                        prop_value_list = prop_value.split(",")
                         for o_id in prop_value_list:
-                            sub_graph.add_edge(s_id=s_id, s_label=s_label, p=prop_name, o_id=o_id, o_label=o_label)
+                            sub_graph.add_edge(
+                                s_id=s_id,
+                                s_label=s_label,
+                                p=prop_name,
+                                o_id=o_id,
+                                o_label=o_label,
+                            )
                         properties.pop(prop_name)
-            sub_graph.add_node(id=s_id, name=s_name, label=s_label, properties=properties)
+            sub_graph.add_node(
+                id=s_id, name=s_name, label=s_label, properties=properties
+            )
 
         return sub_graph
 

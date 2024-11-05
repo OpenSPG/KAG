@@ -18,7 +18,6 @@ from kag.interface.builder import SplitterABC
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.model.chunk import Chunk
 from knext.common.base.runnable import Input, Output
-from kag.common.llm import LLMClient
 
 logger = logging.getLogger(__name__)
 

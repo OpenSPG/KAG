@@ -61,29 +61,36 @@ class DefaultLFPlanner(LFPlannerABC):
     def _parse_lf(self, question, sub_querys, logic_forms) -> List[LFPlanResult]:
         if sub_querys is None:
             sub_querys = []
-        parsed_logic_nodes = self.parser.parse_logic_form_set(logic_forms, sub_querys, question)
+        parsed_logic_nodes = self.parser.parse_logic_form_set(
+            logic_forms, sub_querys, question
+        )
         return self._split_sub_query(parsed_logic_nodes)
 
     def generate_logic_form(self, question: str):
-        return self.llm_module.invoke({'question': question}, self.logic_form_plan_prompt, with_json_parse=False, with_except=True)
+        return self.llm_module.invoke(
+            {"question": question},
+            self.logic_form_plan_prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
 
     def parse_logic_form_llm_output(self, llm_output):
         _output_string = llm_output.replace("：", ":")
         _output_string = llm_output.strip()
         sub_querys = []
         logic_forms = []
-        current_sub_query = ''
-        for line in _output_string.split('\n'):
+        current_sub_query = ""
+        for line in _output_string.split("\n"):
             line = line.strip()
-            if line.startswith('Step'):
-                sub_querys_regex = re.search('Step\d+:(.*)', line)
+            if line.startswith("Step"):
+                sub_querys_regex = re.search("Step\d+:(.*)", line)
                 if sub_querys_regex is not None:
                     sub_querys.append(sub_querys_regex.group(1))
                     current_sub_query = sub_querys_regex.group(1)
-            elif line.startswith('Output'):
+            elif line.startswith("Output"):
                 sub_querys.append("output")
-            elif line.startswith('Action'):
-                logic_forms_regex = re.search('Action\d+:(.*)', line)
+            elif line.startswith("Action"):
+                logic_forms_regex = re.search("Action\d+:(.*)", line)
                 if logic_forms_regex:
                     logic_forms.append(logic_forms_regex.group(1))
                     if len(logic_forms) - len(sub_querys) == 1:

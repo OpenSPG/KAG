@@ -73,9 +73,9 @@ class PromptOp(ABC):
         )
 
     def process_template_string_to_avoid_dollar_problem(self, template_string):
-        new_template_str = template_string.replace('$', '$$')
+        new_template_str = template_string.replace("$", "$$")
         for var in self.template_variables:
-            new_template_str = new_template_str.replace(f'$${var}', f'${var}')
+            new_template_str = new_template_str.replace(f"$${var}", f"${var}")
         return new_template_str
 
     def build_prompt(self, variables) -> str:
@@ -93,7 +93,9 @@ class PromptOp(ABC):
         """
 
         self.template_variables_value = variables
-        template_string = self.process_template_string_to_avoid_dollar_problem(self.template)
+        template_string = self.process_template_string_to_avoid_dollar_problem(
+            self.template
+        )
         template = Template(template_string)
         return template.substitute(**variables)
 
@@ -134,10 +136,10 @@ class PromptOp(ABC):
             os.path.join(os.getenv("KAG_PROJECT_ROOT_PATH", ""), "solver", "prompt"),
         ]
         module_paths = [
-            '.'.join([BUILDER_PROMPT_PATH, biz_scene, type]),
-            '.'.join([SOLVER_PROMPT_PATH, biz_scene, type]),
-            '.'.join([BUILDER_PROMPT_PATH, 'default', type]),
-            '.'.join([SOLVER_PROMPT_PATH, 'default', type]),
+            ".".join([BUILDER_PROMPT_PATH, biz_scene, type]),
+            ".".join([SOLVER_PROMPT_PATH, biz_scene, type]),
+            ".".join([BUILDER_PROMPT_PATH, "default", type]),
+            ".".join([SOLVER_PROMPT_PATH, "default", type]),
         ]
 
         def find_class_from_dir(dir, type):
@@ -160,7 +162,11 @@ class PromptOp(ABC):
             classes = inspect.getmembers(module, inspect.isclass)
             for class_name, class_obj in classes:
                 import kag
-                if issubclass(class_obj, kag.common.base.prompt_op.PromptOp) and inspect.getmodule(class_obj) == module:
+
+                if (
+                    issubclass(class_obj, kag.common.base.prompt_op.PromptOp)
+                    and inspect.getmodule(class_obj) == module
+                ):
                     return class_obj
             return None
 
@@ -181,4 +187,6 @@ class PromptOp(ABC):
             except ModuleNotFoundError:
                 continue
 
-        raise ValueError(f'Not support prompt with biz_scene[{biz_scene}] and type[{type}]')
+        raise ValueError(
+            f"Not support prompt with biz_scene[{biz_scene}] and type[{type}]"
+        )

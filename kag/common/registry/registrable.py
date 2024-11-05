@@ -5,7 +5,8 @@ import logging
 import functools
 import collections
 import traceback
-from pyhocon import ConfigList, ConfigTree, ConfigFactory
+from pathlib import Path
+from pyhocon import ConfigTree, ConfigFactory
 from pyhocon.exceptions import ConfigMissingException
 from copy import deepcopy
 from collections import defaultdict

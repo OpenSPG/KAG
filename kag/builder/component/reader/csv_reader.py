@@ -75,13 +75,18 @@ class CSVReader(SourceReaderABC):
             chunks = []
             basename, _ = os.path.splitext(os.path.basename(input))
             for idx, row in enumerate(data.to_dict(orient="records")):
-                kwargs = {k: v for k, v in row.items() if k not in [self.id_col, self.name_col, self.content_col]}
+                kwargs = {
+                    k: v
+                    for k, v in row.items()
+                    if k not in [self.id_col, self.name_col, self.content_col]
+                }
                 chunks.append(
                     Chunk(
-                        id=row.get(self.id_col) or Chunk.generate_hash_id(f"{input}#{idx}"),
+                        id=row.get(self.id_col)
+                        or Chunk.generate_hash_id(f"{input}#{idx}"),
                         name=row.get(self.name_col) or f"{basename}#{idx}",
                         content=row[self.content_col],
-                        **kwargs
+                        **kwargs,
                     )
                 )
             return chunks

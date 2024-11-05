@@ -13,7 +13,15 @@ class OpExecutor(KagBaseModule, ABC):
 
     Each subclass must implement the execution and judgment functions.
     """
-    def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, debug_info: dict, **kwargs):
+
+    def __init__(
+        self,
+        nl_query: str,
+        kg_graph: KgGraph,
+        schema: SchemaUtils,
+        debug_info: dict,
+        **kwargs
+    ):
         """
         Initializes the operator executor with necessary components.
 
@@ -29,20 +37,22 @@ class OpExecutor(KagBaseModule, ABC):
         self.nl_query = nl_query
         self.debug_info = debug_info
 
-    def executor(self, logic_node: LogicNode, req_id: str, param: dict) -> Union[KgGraph, list]:
+    def executor(
+        self, logic_node: LogicNode, req_id: str, param: dict
+    ) -> Union[KgGraph, list]:
         """
-         Executes the operation based on the given logic node.
+        Executes the operation based on the given logic node.
 
-         This method should be implemented by subclasses to define how the operation is executed.
+        This method should be implemented by subclasses to define how the operation is executed.
 
-         Parameters:
-             logic_node (LogicNode): The logic node that defines the operation to execute.
-             req_id (str): Request identifier.
-             param (dict): Parameters needed for the execution.
+        Parameters:
+            logic_node (LogicNode): The logic node that defines the operation to execute.
+            req_id (str): Request identifier.
+            param (dict): Parameters needed for the execution.
 
-         Returns:
-             Union[KgGraph, list]: The result of the operation, which could be a knowledge graph or a list.
-         """
+        Returns:
+            Union[KgGraph, list]: The result of the operation, which could be a knowledge graph or a list.
+        """
         pass
 
     def is_this_op(self, logic_node: LogicNode) -> bool:

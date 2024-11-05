@@ -10,13 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import os
 import json
-from pathlib import Path
 from typing import Union, Dict, List, Any
 import logging
 import traceback
-import yaml
 
 from kag.common.base.prompt_op import PromptOp
 from kag.common.registry import Registrable

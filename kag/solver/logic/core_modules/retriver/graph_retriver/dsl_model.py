@@ -45,6 +45,7 @@ class TableData:
         entity.data = json_dict["data"]
         return entity
 
+
 class RelationDetail:
     def __init__(self):
         self.start_entity_type_name = None
@@ -90,18 +91,18 @@ class GraphDetail:
     @staticmethod
     def from_dict(json_dict):
         graph_detail = GraphDetail()
-        nodes = json_dict['nodes']
+        nodes = json_dict["nodes"]
         if len(nodes) != 0:
             for node in nodes:
                 graph_detail.nodes.append(EntityDetail.from_dict(node))
 
-        edges = json_dict['edges']
+        edges = json_dict["edges"]
         if len(edges) != 0:
             for edge in edges:
                 graph_detail.edges.append(RelationDetail.from_dict(edge))
-        graph_detail.other = json_dict['other']
-        graph_detail.next_query_id = json_dict['nextQueryId']
-        graph_detail.view_level = ViewLevel[json_dict['viewLevel'].upper()]
+        graph_detail.other = json_dict["other"]
+        graph_detail.next_query_id = json_dict["nextQueryId"]
+        graph_detail.view_level = ViewLevel[json_dict["viewLevel"].upper()]
 
         if "tableDetail" in json_dict.keys() and json_dict["tableDetail"] is not None:
             graph_detail.tableData = TableData.from_dict(json_dict["tableDetail"])

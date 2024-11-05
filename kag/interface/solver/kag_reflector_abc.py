@@ -22,7 +22,9 @@ class KagReflectorABC(KagBaseModule):
             - refined_query: The refined query (string)
         """
         can_answer = self._can_answer(memory, instruction)
-        refined_query = self._refine_query(memory, instruction) if not can_answer else instruction
+        refined_query = (
+            self._refine_query(memory, instruction) if not can_answer else instruction
+        )
 
         return can_answer, refined_query
 

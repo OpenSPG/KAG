@@ -10,9 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from abc import ABC
-from typing import Type, List, Union
-
 from kag.builder.model.chunk import Chunk
 from kag.interface.builder import SplitterABC
 
@@ -27,7 +24,9 @@ class BaseTableSplitter(SplitterABC):
         split markdown format table into smaller markdown table
         """
         try:
-            return self._split_table(org_chunk=org_chunk, chunk_size=chunk_size, sep=sep)
+            return self._split_table(
+                org_chunk=org_chunk, chunk_size=chunk_size, sep=sep
+            )
         except Exception:
             return None
 
@@ -63,7 +62,7 @@ class BaseTableSplitter(SplitterABC):
                 name=f"{org_chunk.name}#{idx}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
-                **org_chunk.kwargs
+                **org_chunk.kwargs,
             )
             output.append(chunk)
         return output

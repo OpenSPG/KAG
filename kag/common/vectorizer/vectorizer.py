@@ -11,14 +11,12 @@
 
 import io
 import os
-import json
 import tarfile
 import requests
 import logging
 
-from pathlib import Path
 from kag.common.registry import Registrable
-from typing import Any, Union, Iterable, Optional, Dict
+from typing import Union, Iterable
 
 EmbeddingVector = Iterable[float]
 logger = logging.getLogger()

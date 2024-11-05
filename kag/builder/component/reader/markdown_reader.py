@@ -94,30 +94,28 @@ class MarkDownReader(SourceReaderABC):
                 html_table = str(tag)
                 table_df = pd.read_html(html_table)[0]
                 return f"{self.TABLE_CHUCK_FLAG}{table_df.to_markdown(index=False)}{self.TABLE_CHUCK_FLAG}"
-            except:
-                logging.warning("parse table tag to text error", exc_info=True)
+            except Exception as e:
+                logging.warning(f"parse table tag to text error: {e}", exc_info=True)
         return tag.text
 
     @retry(stop=stop_after_attempt(5))
-    def analyze_table(self, table,analyze_mathod="human"):
+    def analyze_table(self, table, analyze_mathod="human"):
         if analyze_mathod == "llm":
-            if self.llm_module == None:
+            if self.llm_module is None:
                 logging.INFO("llm_module is None, cannot use analyze_table")
                 return table
-            variables = {
-                "table": table
-            }
+            variables = {"table": table}
             response = self.llm_module.invoke(
-                variables = variables,
-                prompt_op = self.analyze_table_prompt,
-                with_json_parse=False
+                variables=variables,
+                prompt_op=self.analyze_table_prompt,
+                with_json_parse=False,
             )
-            if response is  None or response == "" or response == []:
+            if response is None or response == "" or response == []:
                 raise Exception("llm_module return None")
             return response
         else:
-            from io import StringIO
             import pandas as pd
+
             try:
                 df = pd.read_html(StringIO(table))[0]
             except Exception as e:
@@ -125,18 +123,16 @@ class MarkDownReader(SourceReaderABC):
                 return table
             content = ""
             for index, row in df.iterrows():
-                content+=f"第{index+1}行的数据如下:"
+                content += f"第{index+1}行的数据如下:"
                 for col_name, value in row.items():
-                    content+=f"{col_name}的值为{value}，"
-                content+='\n'
+                    content += f"{col_name}的值为{value}，"
+                content += "\n"
             return content
 
-    
     @retry(stop=stop_after_attempt(5))
     def analyze_img(self, img_url):
         response = requests.get(img_url)
         response.raise_for_status()
-        image_data = response.content
 
         pass
 
@@ -188,11 +184,11 @@ class MarkDownReader(SourceReaderABC):
         return tables
 
     def parse_level_tags(
-            self,
-            level_tags: list,
-            level: str,
-            parent_header: str = "",
-            cur_header: str = "",
+        self,
+        level_tags: list,
+        level: str,
+        parent_header: str = "",
+        cur_header: str = "",
     ):
         """
         Recursively parses level tags to organize them into a structured format.
@@ -264,10 +260,14 @@ class MarkDownReader(SourceReaderABC):
         if cur_level == final_level:
             cur_prefix = []
             for sublevel_tags in level_tags:
-                if (
-                        isinstance(sublevel_tags, tuple)
-                ):
-                    cur_prefix.append(self.to_text([sublevel_tags,]))
+                if isinstance(sublevel_tags, tuple):
+                    cur_prefix.append(
+                        self.to_text(
+                            [
+                                sublevel_tags,
+                            ]
+                        )
+                    )
                 else:
                     break
             cur_prefix = "\n".join(cur_prefix)
@@ -281,9 +281,7 @@ class MarkDownReader(SourceReaderABC):
         else:
             cur_prefix = []
             for sublevel_tags in level_tags:
-                if (
-                        isinstance(sublevel_tags, tuple)
-                ):
+                if isinstance(sublevel_tags, tuple):
                     cur_prefix.append(sublevel_tags[1].text)
                 else:
                     break
@@ -296,7 +294,9 @@ class MarkDownReader(SourceReaderABC):
                     output += self.cut(sublevel_tags, cur_level + 1, final_level)
             return output
 
-    def solve_content(self, id: str, title: str, content: str, **kwargs) -> List[Output]:
+    def solve_content(
+        self, id: str, title: str, content: str, **kwargs
+    ) -> List[Output]:
         """
         Converts Markdown content into structured chunks.
 
@@ -352,7 +352,9 @@ class MarkDownReader(SourceReaderABC):
             chunks.append(chunk)
         return chunks
 
-    def get_table_chuck(self, table_chunk_str: str, title: str, id: str, idx: int) -> Chunk:
+    def get_table_chuck(
+        self, table_chunk_str: str, title: str, id: str, idx: int
+    ) -> Chunk:
         """
         convert table chunk
         :param table_chunk_str:
@@ -369,7 +371,9 @@ class MarkDownReader(SourceReaderABC):
                 content=table_chunk_str,
             )
         table_markdown_str = matches[0]
-        html_table_str = markdown.markdown(table_markdown_str, extensions=["markdown.extensions.tables"])
+        html_table_str = markdown.markdown(
+            table_markdown_str, extensions=["markdown.extensions.tables"]
+        )
         try:
             df = pd.read_html(html_table_str)[0]
         except Exception as e:
@@ -377,7 +381,9 @@ class MarkDownReader(SourceReaderABC):
             df = pd.DataFrame()
 
         # 确认是表格Chunk，去除内容中的TABLE_CHUCK_FLAG
-        replaced_table_text = re.sub(pattern, f'\n{table_markdown_str}\n', table_chunk_str, flags=re.DOTALL)
+        replaced_table_text = re.sub(
+            pattern, f"\n{table_markdown_str}\n", table_chunk_str, flags=re.DOTALL
+        )
         return Chunk(
             id=Chunk.generate_hash_id(f"{id}#{idx}"),
             name=f"{title}#{idx}",
