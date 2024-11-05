@@ -111,8 +111,8 @@ class KagBaseModule(object):
 
         self._init_llm()
         self.biz_scene = kwargs.get("KAG_PROMPT_BIZ_SCENE") or os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
-        self.language = self.config.get("prompt").get("language") or os.getenv("KAG_PROMPT_LANGUAGE", "en")
-
+        self.language = self.config.get("prompt").get("language") if self.config.get("prompt") else None or os.getenv(
+            "KAG_PROMPT_LANGUAGE", "en")
 
     def _init_llm(self):
         llm_config = eval(os.getenv("KAG_LLM", "{}"))

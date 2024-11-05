@@ -77,7 +77,8 @@ class DslRunnerOnGraphStore(DslRunner):
         try:
             import json
             node = json.loads(node_str)
-        except:
+        except Exception as e:
+            logger.warning(f"_convert_node_to_json failed {e}")
             return {}
         return {
             'id': node['id'],
@@ -442,7 +443,7 @@ class DslRunnerOnGraphStore(DslRunner):
                     s_entity = EntityData()
                     s_entity.type = s_type_name
                     s_entity.type_zh = self._get_node_type_zh(s_type_name)
-                    s_entity.prop = Prop.from_dict(prop_values, s_entity.type, None)
+                    s_entity.prop = Prop.from_dict(prop_values, s_entity.type, self.schema)
                     s_entity.biz_id = s_biz_id
                     s_entity.name = prop_values["name"]
                     if "description" in prop_values.keys():
@@ -474,7 +475,7 @@ class DslRunnerOnGraphStore(DslRunner):
                     o_entity = EntityData()
                     o_entity.type = o_type_name
                     o_entity.type_zh = self._get_node_type_zh(o_type_name)
-                    o_entity.prop = Prop.from_dict(prop_values, o_entity.type, None)
+                    o_entity.prop = Prop.from_dict(prop_values, o_entity.type, self.schema)
                     o_entity.biz_id = o_biz_id
 
                     o_entity.name = prop_values["name"]
@@ -499,7 +500,7 @@ class DslRunnerOnGraphStore(DslRunner):
                 continue
             p_json = self._convert_edge_to_json(data[p_index])
             p_json = self._trans_normal_p_json(p_json, s_json, o_json)
-            rel = RelationData.from_dict(p_json, None)
+            rel = RelationData.from_dict(p_json, self.schema)
             # if rel.type in ['similarity', 'source']:
             #     continue
             if s_entity is None:

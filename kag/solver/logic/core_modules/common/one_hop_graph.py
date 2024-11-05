@@ -216,6 +216,7 @@ class RelationData:
         self.end_entity: EntityData = None
         self.end_alias = "o"
         self.type: str = None
+        self.type_zh: str = None
 
     def get_spo_type(self):
         return f"{self.from_type}_{self.type}_{self.end_type}"
@@ -240,7 +241,8 @@ class RelationData:
             "from_type": self.from_type,
             "end_entity_name": self.end_entity.name,
             "end_type": self.end_type,
-            "type": self.type
+            "type": self.type,
+            "type_zh": self.type_zh
         }
 
     def _get_entity_description(self, entity: EntityData):
@@ -287,22 +289,25 @@ class RelationData:
         from_entity_desc_str = "" if from_entity_desc is None else f"({from_entity_desc})"
         to_entity_desc = self._get_entity_description(self.end_entity)
         to_entity_desc_str = "" if to_entity_desc is None else f"({to_entity_desc})"
-        return f"({self.from_entity.name}{from_entity_desc_str} {self.type} {self.end_entity.name}{to_entity_desc_str})"
+        return f"({self.from_entity.name}{from_entity_desc_str} {self.type_zh} {self.end_entity.name}{to_entity_desc_str})"
 
     @staticmethod
     def from_dict(json_dict: dict, schema: SchemaUtils):
         rel = RelationData()
 
         rel.from_id = json_dict["__from_id__"]
-        rel.from_type = get_label_without_prefix(schema, json_dict["__from_id_type__"])
+        rel.from_type = json_dict["__from_id_type__"]
         rel.end_id = json_dict["__to_id__"]
-        rel.end_type = get_label_without_prefix(schema, json_dict["__to_id_type__"])
+        rel.end_type = json_dict["__to_id_type__"]
         rel.type = json_dict["__label__"]
-        spo_label_name = f"{rel.from_type}_{rel.type}_{rel.end_type}"
+        rel.type_zh = rel.type
+        from_type = get_label_without_prefix(schema, json_dict["__from_id_type__"])
+        end_type = get_label_without_prefix(schema, json_dict["__to_id_type__"])
+        spo_label_name = f"{from_type}_{rel.type}_{end_type}"
         rel.prop = Prop.from_dict(json_dict, spo_label_name, schema)
         if schema is not None:
             if spo_label_name in schema.spo_en_zh.keys():
-                rel.type = schema.get_spo_with_p(schema.spo_en_zh[spo_label_name])
+                rel.type_zh = schema.get_spo_with_p(schema.spo_en_zh[spo_label_name])
         return rel
 
     def revert_spo(self):
@@ -323,6 +328,7 @@ class RelationData:
     def from_prop_value(s: EntityData, p: str, o: EntityData):
         rel = RelationData()
         rel.type = p
+        rel.type_zh = p
 
         rel.from_id = s.biz_id
         rel.from_type = s.type
@@ -424,7 +430,7 @@ class OneHopGraphData:
             return attribute_name_set
         if len(self.s.prop.origin_prop_map) > 0:
             for k in self.s.prop.origin_prop_map.keys():
-                attribute_name_set.append(self._schema_attr_en_to_zh(k))
+                attribute_name_set.append(k)
         if len(self.s.prop.extend_prop_map) > 0:
             for k in self.s.prop.extend_prop_map.keys():
                 attribute_name_set.append(k)
@@ -526,7 +532,9 @@ class OneHopGraphData:
         if p in prop.keys():
             v_set = prop[p]
             for rel in v_set:
-                relation_value_set.append(self._prase_attribute_relation(p, str(rel)))
+                attr_spo = f"{self.s.name} {p} {rel}"
+                if spo_text == attr_spo:
+                    relation_value_set.append(self._prase_attribute_relation(p, str(rel)))
         return relation_value_set
 
 
@@ -560,10 +568,10 @@ class OneHopGraphData:
         relation_name_set = []
         if len(self.in_relations) > 0:
             for k in self.in_relations.keys():
-                relation_name_set.append(self.get_edge_en_to_zh(k))
+                relation_name_set.append(k)
         if len(self.out_relations) > 0:
             for k in self.out_relations.keys():
-                relation_name_set.append(self.get_edge_en_to_zh(k))
+                relation_name_set.append(k)
         return relation_name_set
 
 

@@ -52,6 +52,7 @@ class KGRetrieverByLlm(KGRetrieverABC):
         self.fuzzy_match = FuzzyMatchRetrievalSpo(text_similarity=self.text_similarity, llm=self.llm_module)
         self.exact_match = ExactMatchRetrievalSpo(self.schema)
         self.parser = ParseLogicForm(self.schema, None)
+        self.exact_match_threshold = kwargs.get("exact_match_threshold", 0.9)
 
     def retrieval_relation(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs) -> KgGraph:
         req_id = kwargs.get('req_id', '')
@@ -174,9 +175,10 @@ class KGRetrieverByLlm(KGRetrieverABC):
         for alias_name in total_one_kg_graph.entity_map.keys():
             for e in total_one_kg_graph.entity_map[alias_name]:
                 score = e.score
-                if score < 0.9:
+                if score < self.exact_match_threshold:
                     total_one_kg_graph.rmv_node_ins(alias_name, [e.biz_id])
-                    return total_one_kg_graph, False
+            if len(total_one_kg_graph.entity_map.get(alias_name, [])) == 0:
+                return total_one_kg_graph, False
         return total_one_kg_graph, matched_flag
 
     def _fuzzy_match_spo(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], req_id: str):

@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List
 
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
@@ -60,7 +61,10 @@ class DefaultReasoner(KagReasonerABC):
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
         # logic form planing
+        start_time = time.time()
         lf_nodes: List[LFPlanResult] = self.lf_planner.lf_planing(question)
+        logger.info(f"plan cost={time.time() - start_time} lf_nodes = {lf_nodes}")
+
 
         # logic form execution
         solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_solver.solve(question, lf_nodes)
