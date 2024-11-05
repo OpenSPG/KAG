@@ -49,7 +49,9 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def upsert_nodes(self, label, properties_list, id_key="id", extra_labels=("Entity",)):
+    def upsert_nodes(
+        self, label, properties_list, id_key="id", extra_labels=("Entity",)
+    ):
         """
         Insert or update multiple nodes.
 
@@ -112,10 +114,18 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def upsert_relationship(self, start_node_label, start_node_id_value,
-                            end_node_label, end_node_id_value,
-                            rel_type, properties, upsert_nodes=True,
-                            start_node_id_key="id", end_node_id_key="id"):
+    def upsert_relationship(
+        self,
+        start_node_label,
+        start_node_id_value,
+        end_node_label,
+        end_node_id_value,
+        rel_type,
+        properties,
+        upsert_nodes=True,
+        start_node_id_key="id",
+        end_node_id_key="id",
+    ):
         """
         Insert or update a relationship.
 
@@ -133,9 +143,16 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def upsert_relationships(self, start_node_label, end_node_label, rel_type,
-                             relationships, upsert_nodes=True, start_node_id_key="id",
-                             end_node_id_key="id"):
+    def upsert_relationships(
+        self,
+        start_node_label,
+        end_node_label,
+        rel_type,
+        relationships,
+        upsert_nodes=True,
+        start_node_id_key="id",
+        end_node_id_key="id",
+    ):
         """
         Insert or update multiple relationships.
 
@@ -151,9 +168,16 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def delete_relationship(self, start_node_label, start_node_id_value,
-                            end_node_label, end_node_id_value,
-                            rel_type, start_node_id_key="id", end_node_id_key="id"):
+    def delete_relationship(
+        self,
+        start_node_label,
+        start_node_id_value,
+        end_node_label,
+        end_node_id_value,
+        rel_type,
+        start_node_id_key="id",
+        end_node_id_key="id",
+    ):
         """
         Delete a specified relationship.
 
@@ -169,9 +193,16 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def delete_relationships(self, start_node_label, start_node_id_values,
-                             end_node_label, end_node_id_values, rel_type,
-                             start_node_id_key="id", end_node_id_key="id"):
+    def delete_relationships(
+        self,
+        start_node_label,
+        start_node_id_values,
+        end_node_label,
+        end_node_id_values,
+        rel_type,
+        start_node_id_key="id",
+        end_node_id_key="id",
+    ):
         """
         Delete multiple relationships.
 
@@ -211,9 +242,16 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def create_vector_index(self, label, property_key, index_name=None,
-                            vector_dimensions=768, metric_type="cosine",
-                            hnsw_m=None, hnsw_ef_construction=None):
+    def create_vector_index(
+        self,
+        label,
+        property_key,
+        index_name=None,
+        vector_dimensions=768,
+        metric_type="cosine",
+        hnsw_m=None,
+        hnsw_ef_construction=None,
+    ):
         """
         Create a vector index.
 
@@ -239,7 +277,9 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def text_search(self, query_string, label_constraints=None, topk=10, index_name=None):
+    def text_search(
+        self, query_string, label_constraints=None, topk=10, index_name=None
+    ):
         """
         Perform a text search.
 
@@ -255,7 +295,15 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def vector_search(self, label, property_key, query_text_or_vector, topk=10, index_name=None, ef_search=None):
+    def vector_search(
+        self,
+        label,
+        property_key,
+        query_text_or_vector,
+        topk=10,
+        index_name=None,
+        ef_search=None,
+    ):
         """
         Perform a vector search.
 

@@ -20,7 +20,6 @@ from knext.schema.client import OTHER_TYPE
 
 
 class SPOMapping(MappingABC):
-
     def __init__(self):
         super().__init__()
         self.s_type_col = None
@@ -39,7 +38,14 @@ class SPOMapping(MappingABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
-    def add_field_mappings(self, s_id_col: str, p_type_col: str, o_id_col: str, s_type_col: str = None, o_type_col: str = None):
+    def add_field_mappings(
+        self,
+        s_id_col: str,
+        p_type_col: str,
+        o_id_col: str,
+        s_type_col: str = None,
+        o_type_col: str = None,
+    ):
         self.s_type_col = s_type_col
         self.s_id_col = s_id_col
         self.p_type_col = p_type_col
@@ -86,14 +92,21 @@ class SPOMapping(MappingABC):
         sub_graph.add_node(id=o_id, name=o_id, label=o_type)
         sub_properties = {}
         if self.sub_property_col:
-            sub_properties = json.loads(record.get(self.sub_property_col, '{}'))
+            sub_properties = json.loads(record.get(self.sub_property_col, "{}"))
             sub_properties = {k: str(v) for k, v in sub_properties.items()}
         else:
             for target_name, source_names in self.sub_property_mapping.items():
                 for source_name in source_names:
                     value = record.get(source_name)
                     sub_properties[target_name] = value
-        sub_graph.add_edge(s_id=s_id, s_label=s_type, p=p, o_id=o_id, o_label=o_type, properties=sub_properties)
+        sub_graph.add_edge(
+            s_id=s_id,
+            s_label=s_type,
+            p=p,
+            o_id=o_id,
+            o_label=o_type,
+            properties=sub_properties,
+        )
         return sub_graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:

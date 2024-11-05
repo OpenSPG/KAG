@@ -12,7 +12,6 @@
 
 
 import json
-from typing import Union
 from openai import OpenAI
 import logging
 

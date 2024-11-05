@@ -14,7 +14,7 @@ from typing import Type, List, Union
 import re
 import os
 
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.builder.model.chunk import Chunk
 from kag.interface.builder.splitter_abc import SplitterABC
 from knext.common.base.runnable import Input, Output
 

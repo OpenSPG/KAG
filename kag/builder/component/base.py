@@ -54,9 +54,9 @@ class BuilderComponent(Component, Registrable):
             try:
                 config = ProjectClient().get_config(project_id)
                 llm_config.update(config.get("llm", {}))
-            except:
+            except Exception as e:
                 logging.warning(
-                    f"Failed to get project config for project id: {project_id}"
+                    f"Failed to get project config for project id: {project_id}, info: {e}"
                 )
         llm = LLMClient.from_config(llm_config)
         return llm

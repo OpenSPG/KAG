@@ -18,6 +18,7 @@ class EvaFor2wiki:
     """
     init for kag client
     """
+
     def __init__(self, configFilePath):
         self.configFilePath = configFilePath
         init_kag_config(self.configFilePath)
@@ -25,6 +26,7 @@ class EvaFor2wiki:
     """
         qa from knowledge base, 
     """
+
     def qa(self, query):
         # CA
         resp = SolverPipeline()
@@ -37,6 +39,7 @@ class EvaFor2wiki:
         parallel qa from knowledge base
         and getBenchmarks(em, f1, answer_similarity)
     """
+
     def parallelQaAndEvaluate(
         self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
@@ -115,9 +118,7 @@ if __name__ == "__main__":
 
     filePath = "./data/2wiki_qa_sub.json"
     # filePath = "./data/2wiki_qa.json"
-    qaFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), filePath
-    )
+    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
 
     start_time = time.time()
     resFilePath = os.path.join(
@@ -126,7 +127,7 @@ if __name__ == "__main__":
     total_metrics = evalObj.parallelQaAndEvaluate(
         qaFilePath, resFilePath, threadNum=20, upperLimit=1000
     )
-    total_metrics['cost'] = time.time() - start_time
+    total_metrics["cost"] = time.time() - start_time
     with open(f"./2wiki_metrics_{start_time}.json", "w") as f:
         json.dump(total_metrics, f)
 

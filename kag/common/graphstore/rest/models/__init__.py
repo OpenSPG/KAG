@@ -16,4 +16,6 @@ from kag.common.graphstore.rest.models.delete_vertex_request import DeleteVertex
 from kag.common.graphstore.rest.models.edge_record_instance import EdgeRecordInstance
 from kag.common.graphstore.rest.models.upsert_edge_request import UpsertEdgeRequest
 from kag.common.graphstore.rest.models.upsert_vertex_request import UpsertVertexRequest
-from kag.common.graphstore.rest.models.vertex_record_instance import VertexRecordInstance
+from kag.common.graphstore.rest.models.vertex_record_instance import (
+    VertexRecordInstance,
+)

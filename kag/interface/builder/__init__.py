@@ -25,5 +25,5 @@ __all__ = [
     "MappingABC",
     "AlignerABC",
     "SinkWriterABC",
-    "BuilderChainABC"
+    "BuilderChainABC",
 ]

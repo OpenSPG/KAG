@@ -1,0 +1,22 @@
+name: Alipay Cloud Devops Codescan
+on:
+  pull_request_target:
+jobs:
+  stc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: codeScan
+        uses: layotto/alipay-cloud-devops-codescan@main
+        with:
+          parent_uid: ${{ secrets.ALI_PID }}
+          private_key: ${{ secrets.ALI_PK }}
+          scan_type: stc
+  sca:
+    runs-on: ubuntu-latest
+    steps:
+      - name: codeScan
+        uses: layotto/alipay-cloud-devops-codescan@main
+        with:
+          parent_uid: ${{ secrets.ALI_PID }}
+          private_key: ${{ secrets.ALI_PK }}
+          scan_type: sca

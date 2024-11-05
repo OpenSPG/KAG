@@ -18,7 +18,6 @@ from knext.common.base.runnable import Input, Output
 from kag.common.vectorizer import Vectorizer
 from kag.interface.builder.vectorizer_abc import VectorizerABC
 from knext.schema.client import SchemaClient
-from knext.project.client import ProjectClient
 from knext.schema.model.base import IndexTypeEnum
 
 

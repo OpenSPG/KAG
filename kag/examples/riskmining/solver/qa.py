@@ -37,8 +37,9 @@ class EvaQA:
 
     def qaWithoutLogicForm(self, query):
         # CA
-        lf_solver = LFSolver(chunk_retriever=LFChunkRetriever(),
-                             kg_retriever=KGRetrieverByLlm())
+        lf_solver = LFSolver(
+            chunk_retriever=LFChunkRetriever(), kg_retriever=KGRetrieverByLlm()
+        )
         reasoner = DefaultReasoner(lf_planner=LFPlannerABC(), lf_solver=lf_solver)
         resp = SolverPipeline(reasoner=reasoner)
         answer, trace_log = resp.run(query)
@@ -51,7 +52,7 @@ class EvaQA:
     """
 
     def parallelQaAndEvaluate(
-            self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
+        self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
         def process_sample(data):
             try:
@@ -85,9 +86,9 @@ class EvaQA:
                 for sample_idx, sample in enumerate(qaList[:upperLimit])
             ]
             for future in tqdm(
-                    as_completed(futures),
-                    total=len(futures),
-                    desc="parallelQaAndEvaluate completing: ",
+                as_completed(futures),
+                total=len(futures),
+                desc="parallelQaAndEvaluate completing: ",
             ):
                 result = future.result()
                 if result is not None:
@@ -129,18 +130,17 @@ if __name__ == "__main__":
 
     project_id = os.getenv("KAG_PROJECT_ID")
     host_addr = os.getenv("KAG_PROJECT_HOST_ADDR")
-    sc = ReasonerClient(host_addr, project_id, )
-    param = {
-        "spg.reasoner.plan.pretty.print.logger.enable": "true"
+    sc = ReasonerClient(
+        host_addr,
+        project_id,
+    )
+    param = {"spg.reasoner.plan.pretty.print.logger.enable": "true"}
 
-    }
-
-#     ret = sc.syn_execute("""MATCH
-#     (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
-# RETURN u.name
-#     """, **param)
-#     print(ret)
+    #     ret = sc.syn_execute("""MATCH
+    #     (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
+    # RETURN u.name
+    #     """, **param)
+    #     print(ret)
 
     evaObj = EvaQA(configFilePath=configFilePath)
     print(evaObj.qa("裘**是否有风险？"))
-

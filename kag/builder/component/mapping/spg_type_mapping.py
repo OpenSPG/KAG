@@ -39,7 +39,9 @@ class SPGTypeMapping(MappingABC):
         fuse_op (FuseOpABC, optional): The user-defined fuse operator. Defaults to None.
     """
 
-    def __init__(self, spg_type_name: SPGTypeName, fuse_func: FuseFunc = None, **kwargs):
+    def __init__(
+        self, spg_type_name: SPGTypeName, fuse_func: FuseFunc = None, **kwargs
+    ):
         super().__init__(**kwargs)
         self.schema = SchemaClient(project_id=self.project_id).load()
         assert (

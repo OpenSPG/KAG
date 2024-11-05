@@ -85,9 +85,7 @@ class OpenIENERPrompt(PromptOp):
 
     template_zh = template_en
 
-    def __init__(
-            self, language: Optional[str] = "en", **kwargs
-    ):
+    def __init__(self, language: Optional[str] = "en", **kwargs):
         super().__init__(language, **kwargs)
         self.schema = SchemaClient(project_id=self.project_id).extract_types()
         self.template = Template(self.template).safe_substitute(schema=self.schema)

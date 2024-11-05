@@ -129,9 +129,9 @@ class SPGRecord:
         """
         property_value = self.get_property(property_name)
         if property_value:
-            property_value_list = property_value.split(',')
+            property_value_list = property_value.split(",")
             if value not in property_value_list:
-                self.properties[property_name] = property_value + ',' + value
+                self.properties[property_name] = property_value + "," + value
         else:
             self.properties[property_name] = value
         return self

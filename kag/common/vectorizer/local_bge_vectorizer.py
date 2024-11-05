@@ -9,11 +9,9 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import io
 import os
 import logging
-import threading
-from typing import Any, Union, Iterable, Dict
+from typing import Union, Iterable
 from kag.common.vectorizer.vectorizer import Vectorizer, EmbeddingVector
 
 logger = logging.getLogger()
@@ -75,7 +73,7 @@ class LocalBGEVectorizer(Vectorizer):
 
     def _load_model(self, path):
         # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
-        import sklearn
+        import sklearn  # noqa
         from FlagEmbedding import FlagModel
 
         logger.info(
@@ -138,7 +136,8 @@ class LocalBGEM3Vectorizer(Vectorizer):
 
     def _load_model(self, path):
         # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
-        import sklearn
+
+        import sklearn  # noqa
         from FlagEmbedding import BGEM3FlagModel
 
         logger.info(f"Loading BGEM3FlagModel from {path!r}")

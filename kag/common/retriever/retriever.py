@@ -117,7 +117,7 @@ class Retriever(ABC):
 
     @abstractmethod
     def retrieve(
-            self, queries: Union[str, Iterable[str]], top_k: int = 10
+        self, queries: Union[str, Iterable[str]], top_k: int = 10
     ) -> Union[RetrievalResult, Iterable[RetrievalResult]]:
         """
         Retrieve items for the given query or queries.
@@ -130,5 +130,3 @@ class Retriever(ABC):
         """
         message = "abstract method retrieve is not implemented"
         raise NotImplementedError(message)
-
-

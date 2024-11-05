@@ -42,7 +42,9 @@ class SPGExtractor(KAGExtractor):
                     self.spg_ner_types.append(type_name)
                     continue
             self.kag_ner_types.append(type_name)
-        self.kag_ner_prompt = PromptOp.load(self.biz_scene, "ner")(language=self.language, project_id=self.project_id)
+        self.kag_ner_prompt = PromptOp.load(self.biz_scene, "ner")(
+            language=self.language, project_id=self.project_id
+        )
         self.spg_ner_prompt = SPG_KGPrompt(self.spg_ner_types, self.language)
 
     @retry(stop=stop_after_attempt(3))
@@ -72,6 +74,7 @@ class SPGExtractor(KAGExtractor):
                     continue
                 if prop_name in spg_type.properties:
                     from knext.schema.model.property import Property
+
                     prop: Property = spg_type.properties.get(prop_name)
                     o_label = prop.object_type_name_en
                     if o_label not in BASIC_TYPES:
@@ -79,10 +82,18 @@ class SPGExtractor(KAGExtractor):
                             prop_value = [prop_value]
                         for o_name in prop_value:
                             sub_graph.add_node(id=o_name, name=o_name, label=o_label)
-                            sub_graph.add_edge(s_id=s_name, s_label=s_label, p=prop_name, o_id=o_name, o_label=o_label)
+                            sub_graph.add_edge(
+                                s_id=s_name,
+                                s_label=s_label,
+                                p=prop_name,
+                                o_id=o_name,
+                                o_label=o_label,
+                            )
                         tmp_properties.pop(prop_name)
             record["properties"] = tmp_properties
-            sub_graph.add_node(id=s_name, name=s_name, label=s_label, properties=properties)
+            sub_graph.add_node(
+                id=s_name, name=s_name, label=s_label, properties=properties
+            )
         return sub_graph, entities
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
@@ -102,7 +113,10 @@ class SPGExtractor(KAGExtractor):
         try:
             entities = self.named_entity_recognition(passage)
             sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
-            filtered_entities = [{k: v for k, v in ent.items() if k in ["entity", "category"]} for ent in entities]
+            filtered_entities = [
+                {k: v for k, v in ent.items() if k in ["entity", "category"]}
+                for ent in entities
+            ]
             triples = self.triples_extraction(passage, filtered_entities)
             std_entities = self.named_entity_standardization(passage, filtered_entities)
             self.append_official_name(entities, std_entities)

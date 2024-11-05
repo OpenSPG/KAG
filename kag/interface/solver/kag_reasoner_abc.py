@@ -24,7 +24,10 @@ class KagReasonerABC(KagBaseModule):
     - kg_direct: Number of direct knowledge graph queries.
     - trace_log: List to log trace information.
     """
-    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs):
+
+    def __init__(
+        self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
+    ):
         super().__init__(**kwargs)
 
     @abstractmethod

@@ -10,6 +10,8 @@ from knext.reasoner.rest.models.report_pipeline_request import ReportPipelineReq
 from knext.reasoner.rest.reasoner_api import ReasonerApi
 
 logger = logging.getLogger(__name__)
+
+
 class ReporterIntermediateProcessTool:
     class STATE(str, Enum):
         WAITING = "WAITING"
@@ -24,7 +26,8 @@ class ReporterIntermediateProcessTool:
         self.task_id = task_id
         self.project_id = project_id
         self.client: ReasonerApi = ReasonerApi(
-            api_client=ApiClient(configuration=Configuration(host=host_addr)))
+            api_client=ApiClient(configuration=Configuration(host=host_addr))
+        )
 
     def report_pipeline(self, question, rewrite_question_list=[]):
         # print(question)
@@ -35,10 +38,26 @@ class ReporterIntermediateProcessTool:
         pipeline = CaPipeline()
         pipeline.nodes = []
         pipeline.edges = []
-        pipeline.nodes.append(Node(id=self.ROOT_ID, state=self.STATE.WAITING, question=question.question, answer=None, logs=None))
+        pipeline.nodes.append(
+            Node(
+                id=self.ROOT_ID,
+                state=self.STATE.WAITING,
+                question=question.question,
+                answer=None,
+                logs=None,
+            )
+        )
         dep_question_list = []
         for item in rewrite_question_list:
-            pipeline.nodes.append(Node(id=item.id, state=self.STATE.WAITING, question=item.question, answer=None, logs=None))
+            pipeline.nodes.append(
+                Node(
+                    id=item.id,
+                    state=self.STATE.WAITING,
+                    question=item.question,
+                    answer=None,
+                    logs=None,
+                )
+            )
             if item.dependencies:
                 for dep_item in item.dependencies:
                     pipeline.edges.append(Edge(_from=dep_item.id, to=item.id))
@@ -54,12 +73,25 @@ class ReporterIntermediateProcessTool:
             if node.id not in to_list:
                 first_nodes.append(node.id)
         # str([n.question for n in pipeline.nodes if n.id != self.ROOT_ID])
-        pipeline.nodes.insert(0, Node(id=1, state=self.STATE.FINISH, question=question.question, answer=str([n.question for n in pipeline.nodes if n.id != self.ROOT_ID]), logs=None))
+        pipeline.nodes.insert(
+            0,
+            Node(
+                id=1,
+                state=self.STATE.FINISH,
+                question=question.question,
+                answer=str(
+                    [n.question for n in pipeline.nodes if n.id != self.ROOT_ID]
+                ),
+                logs=None,
+            ),
+        )
         for n in first_nodes:
             pipeline.edges.insert(0, Edge(_from=1, to=n))
         request = ReportPipelineRequest(task_id=self.task_id, pipeline=pipeline)
         if self.report_log:
-            self.client.reasoner_dialog_report_pipeline_post(report_pipeline_request=request)
+            self.client.reasoner_dialog_report_pipeline_post(
+                report_pipeline_request=request
+            )
         else:
             logger.info(request)
 
@@ -67,11 +99,18 @@ class ReporterIntermediateProcessTool:
         logs = self.format_logs(question.context)
         if not question.id:
             question.id = self.ROOT_ID
-        node = Node(id=(question.id+1 if question.id != 0 else 0), state=state, question=question.question, answer=answer,
-        logs=logs)
+        node = Node(
+            id=(question.id + 1 if question.id != 0 else 0),
+            state=state,
+            question=question.question,
+            answer=answer,
+            logs=logs,
+        )
         request = ReportPipelineRequest(task_id=self.task_id, node=node)
         if self.report_log:
-            self.client.reasoner_dialog_report_node_post(report_pipeline_request=request)
+            self.client.reasoner_dialog_report_node_post(
+                report_pipeline_request=request
+            )
         else:
             logger.info(request)
 

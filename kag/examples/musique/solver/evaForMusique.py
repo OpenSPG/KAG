@@ -35,8 +35,9 @@ class EvaForMusique:
 
     def qaWithoutLogicForm(self, query):
         # CA
-        lf_solver = LFSolver(chunk_retriever=LFChunkRetriever(),
-                             kg_retriever=KGRetrieverByLlm())
+        lf_solver = LFSolver(
+            chunk_retriever=LFChunkRetriever(), kg_retriever=KGRetrieverByLlm()
+        )
         reasoner = DefaultReasoner(lf_planner=LFPlannerABC(), lf_solver=lf_solver)
         resp = SolverPipeline(reasoner=reasoner)
         answer, trace_log = resp.run(query)
@@ -49,7 +50,7 @@ class EvaForMusique:
     """
 
     def parallelQaAndEvaluate(
-            self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
+        self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
         def process_sample(data):
             try:
@@ -83,9 +84,9 @@ class EvaForMusique:
                 for sample_idx, sample in enumerate(qaList[:upperLimit])
             ]
             for future in tqdm(
-                    as_completed(futures),
-                    total=len(futures),
-                    desc="parallelQaAndEvaluate completing: ",
+                as_completed(futures),
+                total=len(futures),
+                desc="parallelQaAndEvaluate completing: ",
             ):
                 result = future.result()
                 if result is not None:
@@ -124,11 +125,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
     filePath = "./data/musique_qa_sub.json"
-    #filePath = "./data/musique_qa_train.json"
+    # filePath = "./data/musique_qa_train.json"
 
-    qaFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), filePath
-    )
+    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"musique_res_{start_time}.json"
     )
@@ -136,7 +135,7 @@ if __name__ == "__main__":
         qaFilePath, resFilePath, threadNum=20, upperLimit=10000
     )
 
-    total_metrics['cost'] = time.time() - start_time
+    total_metrics["cost"] = time.time() - start_time
     with open(f"./musique_metrics_{start_time}.json", "w") as f:
         json.dump(total_metrics, f)
     print(total_metrics)

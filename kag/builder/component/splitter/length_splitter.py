@@ -10,7 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from typing import Type, List, Union
+from typing import Type, List
 
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from knext.common.base.runnable import Input, Output
@@ -55,7 +55,7 @@ class LengthSplitter(BaseTableSplitter):
         for idx, char in enumerate(content):
             if char in sentence_delimiters:
                 end = idx
-                tmp = content[start: end + 1].strip()
+                tmp = content[start : end + 1].strip()
                 if len(tmp) > 0:
                     output.append(tmp)
                 start = idx + 1
@@ -65,11 +65,11 @@ class LengthSplitter(BaseTableSplitter):
         return output
 
     def slide_window_chunk(
-            self,
-            org_chunk: Chunk,
-            chunk_size: int = 2000,
-            window_length: int = 300,
-            sep: str = "\n",
+        self,
+        org_chunk: Chunk,
+        chunk_size: int = 2000,
+        window_length: int = 300,
+        sep: str = "\n",
     ) -> List[Chunk]:
         """
         Splits the content into chunks using a sliding window approach.
@@ -84,7 +84,9 @@ class LengthSplitter(BaseTableSplitter):
             List[Chunk]: A list of Chunk objects.
         """
         if org_chunk.type == ChunkTypeEnum.Table:
-            table_chunks = self.split_table(org_chunk=org_chunk, chunk_size=chunk_size, sep=sep)
+            table_chunks = self.split_table(
+                org_chunk=org_chunk, chunk_size=chunk_size, sep=sep
+            )
             if table_chunks is not None:
                 return table_chunks
         content = self.split_sentence(org_chunk.content)
@@ -116,7 +118,7 @@ class LengthSplitter(BaseTableSplitter):
                 name=f"{org_chunk.name}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
-                **org_chunk.kwargs
+                **org_chunk.kwargs,
             )
             output.append(chunk)
         return output
@@ -133,17 +135,13 @@ class LengthSplitter(BaseTableSplitter):
             List[Output]: A list of split chunks.
         """
         cutted = []
-        if isinstance(input,list):
+        if isinstance(input, list):
             for item in input:
                 cutted.extend(
-                    self.slide_window_chunk(
-                        item, self.split_length, self.window_length
-                    )
+                    self.slide_window_chunk(item, self.split_length, self.window_length)
                 )
         else:
             cutted.extend(
-                self.slide_window_chunk(
-                    input, self.split_length, self.window_length
-                )
+                self.slide_window_chunk(input, self.split_length, self.window_length)
             )
         return cutted

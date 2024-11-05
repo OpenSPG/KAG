@@ -45,11 +45,11 @@ class QuestionNER(PromptOp):
 
     template_zh = template_en
 
-    def __init__(
-            self, language: Optional[str] = "en", **kwargs
-    ):
+    def __init__(self, language: Optional[str] = "en", **kwargs):
         super().__init__(language, **kwargs)
-        self.schema = ReasonerClient(project_id=self.project_id).get_reason_schema().keys()
+        self.schema = (
+            ReasonerClient(project_id=self.project_id).get_reason_schema().keys()
+        )
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property

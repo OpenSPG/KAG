@@ -7,8 +7,11 @@ from kag.common.vectorizer import Vectorizer
 
 
 def cosine_similarity(vector1, vector2):
-    cosine = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+    cosine = np.dot(vector1, vector2) / (
+        np.linalg.norm(vector1) * np.linalg.norm(vector2)
+    )
     return cosine
+
 
 def split_list(input_list, max_length=30):
     """
@@ -18,7 +21,9 @@ def split_list(input_list, max_length=30):
     :param max_length: The maximum length of each sublist
     :return: A list containing multiple sublists
     """
-    return [input_list[i:i + max_length] for i in range(0, len(input_list), max_length)]
+    return [
+        input_list[i : i + max_length] for i in range(0, len(input_list), max_length)
+    ]
 
 
 class TextSimilarity:
@@ -60,13 +65,15 @@ class TextSimilarity:
         return ret
 
     def text_sim_result(self, mention, candidates: List[str], topk=1, low_score=0.63):
-        '''
+        """
         output: [(candi_name, candi_score),...]
-        '''
+        """
         if mention is None:
             return []
         mention_emb = self.sentence_encode(mention)
-        candidates = [cand for cand in candidates if cand is not None and cand.strip() != '']
+        candidates = [
+            cand for cand in candidates if cand is not None and cand.strip() != ""
+        ]
         if len(candidates) == 0:
             return []
         candidates_emb = self.sentence_encode(candidates)
@@ -76,15 +83,17 @@ class TextSimilarity:
             if cosine < low_score:
                 continue
             candidates_dis[candidate] = cosine
-        candidates_dis = sorted(candidates_dis.items(), key=lambda x:x[-1], reverse=True)
+        candidates_dis = sorted(
+            candidates_dis.items(), key=lambda x: x[-1], reverse=True
+        )
         candis = candidates_dis[:topk]
         return candis
 
     def text_type_sim(self, mention, candidates, topk=1):
-        '''
+        """
         output: [(candi_name, candi_score),...]
-        '''
+        """
         res = self.text_sim_result(mention, candidates, topk)
         if len(res) == 0:
-            return [('Entity', 1.)]
+            return [("Entity", 1.0)]
         return res

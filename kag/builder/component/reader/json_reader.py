@@ -14,7 +14,6 @@ import json
 import os
 from typing import List, Type, Dict, Union
 
-from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.builder.model.chunk import Chunk
 from kag.interface.builder.reader_abc import SourceReaderABC
 from knext.common.base.runnable import Input, Output
