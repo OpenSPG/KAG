@@ -191,10 +191,9 @@ class KAGExtractor(ExtractorABC):
             if o_category is None:
                 o_category = OTHER_TYPE
                 sub_graph.add_node(tri[2], tri[2], o_category)
-
-            sub_graph.add_edge(
-                tri[0], s_category, to_camel_case(tri[1]), tri[2], o_category
-            )
+            edge_type = to_camel_case(tri[1])
+            if edge_type:
+                sub_graph.add_edge(tri[0], s_category, edge_type, tri[2], o_category)
 
         return sub_graph
 
