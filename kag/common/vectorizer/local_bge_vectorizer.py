@@ -136,6 +136,7 @@ class LocalBGEM3Vectorizer(Vectorizer):
 
     def _load_model(self, path):
         # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
+
         import sklearn  # noqa
         from FlagEmbedding import BGEM3FlagModel
 

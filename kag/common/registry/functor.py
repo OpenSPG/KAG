@@ -8,6 +8,7 @@ from kag.common.registry.registrable import (
     create_kwargs,
 )
 from types import FunctionType
+
 from typing import Type, Union, Callable, Dict, cast
 from functools import partial
 from pyhocon import ConfigTree, ConfigFactory
