@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Union
 from pyhocon import ConfigTree, ConfigFactory
-from kag_ant.common.registry import Registrable, Lazy, Functor
+from kag.common.registry import Registrable, Lazy, Functor
 import numpy as np
 
 
@@ -13,7 +13,7 @@ class MockModel(Registrable):
 
 @MockModel.register("Simple")
 class Simple(MockModel):
-    def __init__(self, name, age=999):
+    def __init__(self, name, age=None):
         pass
 
 
