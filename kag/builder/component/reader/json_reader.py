@@ -19,8 +19,6 @@ from kag.builder.model.chunk import Chunk
 from kag.interface.builder.reader_abc import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
-from kag.common.llm.client import LLMClient
-
 
 class JSONReader(SourceReaderABC):
     """
@@ -142,7 +140,8 @@ class JSONReader(SourceReaderABC):
                     continue
 
                 chunk = Chunk(
-                    id=item.get(self.id_col) or Chunk.generate_hash_id(f"{input}#{idx}"),
+                    id=item.get(self.id_col)
+                    or Chunk.generate_hash_id(f"{input}#{idx}"),
                     name=item.get(self.name_col) or f"{basename}#{idx}",
                     content=item.get(self.content_col),
                 )
@@ -152,13 +151,14 @@ class JSONReader(SourceReaderABC):
         else:
             return corpus
 
+
 if __name__ == "__main__":
     reader = JSONReader()
-    json_string = '''[
+    json_string = """[
             {
                 "title": "test_json", 
                 "text": "Test content"
             }
-        ]'''
-    chunks = reader.invoke(json_string,name_column="title",content_col = "text")
+        ]"""
+    chunks = reader.invoke(json_string, name_column="title", content_col="text")
     res = 1

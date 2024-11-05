@@ -31,7 +31,8 @@ class LLMConfigChecker(object):
         :rtype: str
         :raises RuntimeError: if the config is invalid
         """
-        from kag.common.llm.client import LLMClient
+        from kag.common.llm import LLMClient
+
         config = json.loads(config)
         llm_client = LLMClient.from_config(config)
         try:
@@ -39,12 +40,13 @@ class LLMConfigChecker(object):
             return res
         except Exception as ex:
             raise RuntimeError(f"invalid llm config: {config}, for details: {ex}")
-        
+
+
 if __name__ == "__main__":
-    config = '''
+    config = """
         {"client_type" :"ollama",
         "base_url" : "http://localhost:11434/",
         "model" : "llama3.1" }
-    '''
+    """
     config_checker = LLMConfigChecker()
     res = config_checker.check(config)

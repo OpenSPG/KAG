@@ -19,74 +19,14 @@ import traceback
 import yaml
 
 from kag.common.base.prompt_op import PromptOp
-from kag.common.llm.config import *
+from kag.common.registry import Registrable
 
 
 logger = logging.getLogger(__name__)
 
 
-class LLMClient:
-    # Define the model type
-    model: str
-
-    config_cls_map = {
-        "maas": OpenAIConfig,
-        "vllm": VLLMConfig,
-        "ollama": OllamaConfig,
-    }
-
-    def __init__(self, **kwargs):
-        self.model = kwargs.get("model", None)
-    
-    @classmethod
-    def get_config_cls(self,config:dict):
-        client_type = config.get("client_type", None)
-        return LLMClient.config_cls_map.get(client_type, None)
-        
-    @classmethod
-    def get_llm_cls(self,config: LLMConfig):
-        from kag.common.llm.client import VLLMClient,OpenAIClient,OllamaClient
-        return {
-            VLLMConfig: VLLMClient,
-            OpenAIConfig: OpenAIClient,
-            OllamaConfig: OllamaClient,
-        }[config.__class__]
-
-    @classmethod
-    def from_config(cls, config: Union[str, dict]):
-        """
-        Initialize an LLMClient instance from a configuration file or dictionary.
-
-        :param config: Path to a configuration file or a configuration dictionary
-        :return: Initialized LLMClient instance
-        :raises FileNotFoundError: If the configuration file is not found
-        :raises ValueError: If the model type is unsupported
-        """
-        if isinstance(config, str):
-            config_path = Path(config)
-            if config_path.is_file():
-                try:
-                    with open(config_path, "r") as f:
-                        nn_config = yaml.safe_load(f)
-                except:
-                    logger.error(f"Failed to parse config file")
-                    raise
-            else:
-                logger.error(f"Config file not found: {config}")
-                raise FileNotFoundError(f"Config file not found: {config}")
-        else:
-            # If config is already a dictionary, use it directly
-            nn_config = config
-        
-        config_cls = LLMClient.get_config_cls(nn_config)
-        if config_cls is None:
-            logger.error(f"Unsupported model type: {nn_config.get('client_type', None)}")
-            raise ValueError(f"Unsupported model type")
-        llm_config = config_cls(**nn_config)
-        llm_cls = LLMClient.get_llm_cls(llm_config)
-        return llm_cls(llm_config)
-        
-            
+@Registrable.register("base")
+class LLMClient(Registrable):
     def __call__(self, prompt: Union[str, dict, list]) -> str:
         """
         Perform inference on the given prompt and return the result.
@@ -109,7 +49,7 @@ class LLMClient:
         _end = res.rfind("```")
         _start = res.find("```json")
         if _end != -1 and _start != -1:
-            json_str = res[_start + len("```json"): _end].strip()
+            json_str = res[_start + len("```json") : _end].strip()
         else:
             json_str = res
         try:
@@ -118,8 +58,13 @@ class LLMClient:
             return res
         return json_result
 
-    def invoke(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True,
-               with_except: bool = False):
+    def invoke(
+        self,
+        variables: Dict[str, Any],
+        prompt_op: PromptOp,
+        with_json_parse: bool = True,
+        with_except: bool = False,
+    ):
         """
         Call the model and process the result.
 
@@ -136,18 +81,30 @@ class LLMClient:
             return result
         response = ""
         try:
-            response = self.call_with_json_parse(prompt=prompt) if with_json_parse else self(prompt)
+            response = (
+                self.call_with_json_parse(prompt=prompt)
+                if with_json_parse
+                else self(prompt)
+            )
             logger.debug(f"Response: {response}")
             result = prompt_op.parse_response(response, model=self.model, **variables)
             logger.debug(f"Result: {result}")
         except Exception as e:
             import traceback
+
             logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
-                raise RuntimeError(f"call llm exception! llm output = {response} , llm input={prompt}, err={e}")
+                raise RuntimeError(
+                    f"call llm exception! llm output = {response} , llm input={prompt}, err={e}"
+                )
         return result
 
-    def batch(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True) -> List:
+    def batch(
+        self,
+        variables: Dict[str, Any],
+        prompt_op: PromptOp,
+        with_json_parse: bool = True,
+    ) -> List:
         """
         Batch process prompts.
 
@@ -165,9 +122,15 @@ class LLMClient:
         for idx, prompt in enumerate(prompts, start=0):
             logger.debug(f"Prompt_{idx}: {prompt}")
             try:
-                response = self.call_with_json_parse(prompt=prompt) if with_json_parse else self(prompt)
+                response = (
+                    self.call_with_json_parse(prompt=prompt)
+                    if with_json_parse
+                    else self(prompt)
+                )
                 logger.debug(f"Response_{idx}: {response}")
-                result = prompt_op.parse_response(response, idx=idx, model=self.model, **variables)
+                result = prompt_op.parse_response(
+                    response, idx=idx, model=self.model, **variables
+                )
                 logger.debug(f"Result_{idx}: {result}")
                 results.extend(result)
             except Exception as e:
@@ -175,4 +138,3 @@ class LLMClient:
                 logger.debug(traceback.format_exc())
                 continue
         return results
-    

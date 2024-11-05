@@ -16,13 +16,14 @@ from typing import Union
 from openai import OpenAI
 import logging
 
-from kag.common.llm.client.llm_client import LLMClient
-from kag.common.llm.config import OpenAIConfig
+from kag.common.llm.llm_client import LLMClient
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+@LLMClient.register("maas")
+@LLMClient.register("openai")
 class OpenAIClient(LLMClient):
     """
     A client class for interacting with the OpenAI API.
@@ -44,20 +45,24 @@ class OpenAIClient(LLMClient):
         temperature (float): Sampling temperature.
         client (OpenAI): An instance of the OpenAI API client.
     """
+
     def __init__(
-            self,
-            llm_config:OpenAIConfig
+        self,
+        api_key: str,
+        base_url: str,
+        model: str,
+        stream: bool = False,
+        temperature: float = 0.7,
     ):
         # Initialize the OpenAIClient object
-        self.api_key = llm_config.api_key
-        self.base_url = llm_config.base_url
-        self.model = llm_config.model
-        self.stream = llm_config.stream
-        self.temperature = llm_config.temperature
+        self.api_key = api_key
+        self.base_url = base_url
+        self.model = model
+        self.stream = stream
+        self.temperature = temperature
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
 
-
-    def __call__(self, prompt:str, image_url:str=None):
+    def __call__(self, prompt: str, image_url: str = None):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -71,18 +76,12 @@ class OpenAIClient(LLMClient):
         if image_url:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": [
-                    {
-                        "type": "text",
-                        "text": prompt
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                        "url": image_url
-                        }
-                    }
-                    ]
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
                 },
             ]
             response = self.client.chat.completions.create(
@@ -93,7 +92,7 @@ class OpenAIClient(LLMClient):
             )
             rsp = response.choices[0].message.content
             return rsp
-            
+
         else:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
@@ -123,7 +122,7 @@ class OpenAIClient(LLMClient):
         _end = rsp.rfind("```")
         _start = rsp.find("```json")
         if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json"): _end].strip()
+            json_str = rsp[_start + len("```json") : _end].strip()
         else:
             json_str = rsp
         try:

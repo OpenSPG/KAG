@@ -10,8 +10,17 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+
+from kag.common.llm.llm_client import LLMClient
+from kag.common.llm.openai_client import OpenAIClient
+from kag.common.llm.vllm_client import VLLMClient
+from kag.common.llm.ollama_client import OllamaClient
 from kag.common.llm.llm_config_checker import LLMConfigChecker
 
 __all__ = [
-    "LLMConfigChecker"
+    "LLMClient",
+    "OpenAIClient",
+    "VLLMClient",
+    "OllamaClient",
+    "LLMConfigChecker",
 ]
