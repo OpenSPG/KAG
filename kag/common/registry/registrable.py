@@ -522,7 +522,7 @@ class Registrable:
             if name in registry:
                 if exist_ok:
                     message = (
-                        f"{name} has already been registered as {registry[name][0].__name__}, but "
+                        f"{name} of class {subclass} has already been registered as {registry[name][0].__name__}, but "
                         f"exist_ok=True, so overwriting with {cls.__name__}"
                     )
                     logger.info(message)

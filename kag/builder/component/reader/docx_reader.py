@@ -14,12 +14,13 @@ import os
 from typing import List, Type, Union
 
 from docx import Document
-
+from kag.common.llm import LLMClient
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
-from knext.common.base.runnable import Input, Output
-
+from kag.interface import SourceReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.common.conf import KAG_GLOBAL_CONF
+
+from knext.common.base.runnable import Input, Output
 
 
 def split_txt(content):
@@ -40,20 +41,16 @@ def split_txt(content):
     return res
 
 
+@SourceReaderABC.register("docx")
 class DocxReader(SourceReaderABC):
     """
     A class for reading Docx files, inheriting from SourceReader.
     This class is specifically designed to extract text content from Docx files and generate Chunk objects based on the extracted content.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.split_level = kwargs.get("split_level", 3)
-        self.split_using_outline = kwargs.get("split_using_outline", True)
-        self.outline_flag = True
-        self.llm = self._init_llm()
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        self.prompt = OutlinePrompt(language)
+    def __init__(self, llm: LLMClient = None):
+        self.llm = llm
+        self.prompt = OutlinePrompt(KAG_GLOBAL_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -161,7 +158,7 @@ class DocxReader(SourceReaderABC):
             )
             chunks.append(chunk)
 
-        if len(chunks) < 2:
+        if len(chunks) < 2 and self.llm is not None:
             chunks = self.outline_chunk(chunks, basename)
 
         if len(chunks) < 2:

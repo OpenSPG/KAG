@@ -16,11 +16,14 @@ from typing import List, Sequence, Type, Union
 
 import pdfminer.layout  # noqa
 
-from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
-from knext.common.base.runnable import Input, Output
-from kag.builder.prompt.outline_prompt import OutlinePrompt
 
+from kag.builder.model.chunk import Chunk
+from kag.interface import SourceReaderABC
+
+from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.common.llm import LLMClient
+from kag.common.conf import KAG_GLOBAL_CONF
+from knext.common.base.runnable import Input, Output
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTPage
@@ -34,23 +37,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@SourceReaderABC.register("pdf")
 class PDFReader(SourceReaderABC):
     """
     A PDF reader class that inherits from SourceReader.
-
-    Attributes:
-        if_split (bool): Whether to split the content by pages. Default is False.
-        use_pypdf (bool): Whether to use PyPDF2 for processing PDF files. Default is True.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.split_level = kwargs.get("split_level", 3)
-        self.split_using_outline = kwargs.get("split_using_outline", True)
-        self.outline_flag = True
-        self.llm = self._init_llm()
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        self.prompt = OutlinePrompt(language)
+    def __init__(self, llm: LLMClient = None, split_level: int = 3):
+
+        self.split_level = split_level
+        # self.split_using_outline = split_using_outline
+        # self.outline_flag = True
+        self.llm = llm
+        self.prompt = OutlinePrompt(KAG_GLOBAL_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -173,11 +172,12 @@ class PDFReader(SourceReaderABC):
         # get outline
         try:
             outlines = self.document.get_outlines()
+            outline_flag = True
         except Exception as e:
-            logger.warning(f"loading PDF file: {e}")
-            self.outline_flag = False
+            logger.warning(f"failed to get outline, info: {e}")
+            outline_flag = False
 
-        if not self.outline_flag:
+        if not outline_flag:
 
             with open(input, "rb") as file:
                 for idx, page_layout in enumerate(extract_pages(file)):
@@ -191,13 +191,13 @@ class PDFReader(SourceReaderABC):
                         content=content,
                     )
                     chunks.append(chunk)
-            try:
-                outline_chunks = self.outline_chunk(chunks, basename)
-            except Exception as e:
-                raise RuntimeError(f"Error loading PDF file: {e}")
-            if len(outline_chunks) > 0:
-                chunks = outline_chunks
-
+            if self.llm is not None:
+                try:
+                    outline_chunks = self.outline_chunk(chunks, basename)
+                except Exception as e:
+                    raise RuntimeError(f"Error loading PDF file: {e}")
+                if len(outline_chunks) > 0:
+                    chunks = outline_chunks
         else:
             split_words = []
 
@@ -240,12 +240,3 @@ class PDFReader(SourceReaderABC):
                 chunks.append(chunk)
 
         return chunks
-
-
-if __name__ == "__main__":
-    reader = PDFReader(split_using_outline=True)
-    pdf_path = os.path.join(
-        os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
-    )
-    chunk = reader.invoke(pdf_path)
-    print(chunk)

@@ -15,14 +15,13 @@ from typing import Union, Dict, List, Any
 import logging
 import traceback
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.common.registry import Registrable
 
 
 logger = logging.getLogger(__name__)
 
 
-@Registrable.register("base")
 class LLMClient(Registrable):
     def __call__(self, prompt: Union[str, dict, list]) -> str:
         """
@@ -58,7 +57,7 @@ class LLMClient(Registrable):
     def invoke(
         self,
         variables: Dict[str, Any],
-        prompt_op: PromptOp,
+        prompt_op: PromptABC,
         with_json_parse: bool = True,
         with_except: bool = False,
     ):
@@ -99,7 +98,7 @@ class LLMClient(Registrable):
     def batch(
         self,
         variables: Dict[str, Any],
-        prompt_op: PromptOp,
+        prompt_op: PromptABC,
         with_json_parse: bool = True,
     ) -> List:
         """

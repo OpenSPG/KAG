@@ -12,10 +12,9 @@
 
 import json
 import logging
-from abc import ABC
 from typing import List, Dict
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import BaseSpgType, SpgTypeEnum
 from knext.schema.model.schema_helper import SPGTypeName
@@ -24,7 +23,8 @@ from kag.builder.model.spg_record import SPGRecord
 logger = logging.getLogger(__name__)
 
 
-class SPGPrompt(PromptOp, ABC):
+@PromptABC.register("spg")
+class SPGPrompt(PromptABC):
     spg_types: Dict[str, BaseSpgType]
     ignored_types: List[str] = ["Chunk"]
     ignored_properties: List[str] = [
@@ -89,6 +89,9 @@ class SPGPrompt(PromptOp, ABC):
 
     def _render(self):
         raise NotImplementedError
+
+
+PromptABC.register("spg_kg")
 
 
 class SPG_KGPrompt(SPGPrompt):

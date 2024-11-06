@@ -15,10 +15,11 @@ from typing import List, Type, Dict
 import pandas as pd
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder.reader_abc import SourceReaderABC
+from kag.interface import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
 
+@SourceReaderABC.register("csv")
 class CSVReader(SourceReaderABC):
     """
     A class for reading CSV files, inheriting from `SourceReader`.
@@ -29,15 +30,20 @@ class CSVReader(SourceReaderABC):
         **kwargs: Additional keyword arguments passed to the parent class constructor.
     """
 
-    def __init__(self, output_type="Chunk", **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        output_type: str = "Chunk",
+        id_col: str = "id",
+        name_col: str = "name",
+        content_col: str = "content",
+    ):
         if output_type == "Dict":
             self.output_types = Dict[str, str]
         else:
             self.output_types = Chunk
-        self.id_col = kwargs.get("id_col", "id")
-        self.name_col = kwargs.get("name_col", "name")
-        self.content_col = kwargs.get("content_col", "content")
+        self.id_col = id_col
+        self.name_col = name_col
+        self.content_col = content_col
 
     @property
     def input_types(self) -> Type[Input]:
@@ -57,8 +63,7 @@ class CSVReader(SourceReaderABC):
 
         Args:
             input (Input): Input parameter, expected to be a string representing the path to the CSV file.
-            **kwargs: Additional keyword arguments, which may include `id_column`, `name_column`, `content_column`, etc.
-
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
         Returns:
             List[Output]:
                 - If `output_types` is `Chunk`, returns a list of Chunk objects.

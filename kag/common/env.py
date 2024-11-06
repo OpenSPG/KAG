@@ -11,53 +11,11 @@
 # or implied.
 import logging
 import os
-import sys
-from configparser import ConfigParser as CP
+import yaml
 from pathlib import Path
 from typing import Union, Optional
-
-import kag.common as common
-
-
-class ConfigParser(CP):
-    def __init__(self, defaults=None):
-        CP.__init__(self, defaults=defaults)
-
-    def optionxform(self, optionstr):
-        return optionstr
-
-
-LOCAL_SCHEMA_URL = "http://localhost:8887"
-DEFAULT_KAG_CONFIG_FILE_NAME = "default_config.cfg"
-DEFAULT_KAG_CONFIG_PATH = os.path.join(common.__path__[0], DEFAULT_KAG_CONFIG_FILE_NAME)
-KAG_CFG_PREFIX = "KAG"
-
-
-def init_env():
-    """Initialize environment to use command-line tool from inside a project
-    dir. This sets the Scrapy settings module and modifies the Python path to
-    be able to locate the project module.
-    """
-    project_cfg, root_path = get_config()
-
-    init_kag_config(Path(root_path) / "kag_config.cfg")
-
-
-def get_config():
-    """
-    Get kag config file as a ConfigParser.
-    """
-    local_cfg_path = _closest_cfg()
-    local_cfg = ConfigParser()
-    local_cfg.read(local_cfg_path)
-
-    projdir = ""
-    if local_cfg_path:
-        projdir = str(Path(local_cfg_path).parent)
-        if projdir not in sys.path:
-            sys.path.append(projdir)
-
-    return local_cfg, projdir
+from kag.common.conf import KAGConstants, KAG_GLOBAL_CONF
+from knext.project.client import ProjectClient
 
 
 def _closest_cfg(
@@ -71,67 +29,54 @@ def _closest_cfg(
     if prev_path is not None and str(path) == str(prev_path):
         return ""
     path = Path(path).resolve()
-    cfg_file = path / "kag_config.cfg"
+    cfg_file = path / KAGConstants.KAG_CONFIG_FILE_NAME
     if cfg_file.exists():
         return str(cfg_file)
     return _closest_cfg(path.parent, path)
 
 
-def get_cfg_files():
+def get_config(prod: bool = False):
     """
-    Get global and local kag config files and paths.
+    Get kag config file as a ConfigParser.
     """
-    local_cfg_path = _closest_cfg()
-    local_cfg = ConfigParser()
-    local_cfg.read(local_cfg_path)
+    if prod:
+        project_id = os.environ[KAGConstants.KAG_PROJECT_ID_KEY]
+        host_addr = os.environ[KAGConstants.KAG_HOST_ADDR_KEY]
+        config = ProjectClient(host_addr=host_addr).get_config(project_id)
+        return yaml.safe_load(config)
+    else:
+        config_file = _closest_cfg()
+        if os.path.exists(config_file):
+            with open(config_file, "r") as reader:
+                config = reader.read()
+            return yaml.safe_load(config)
+        else:
+            return {}
 
-    if local_cfg_path:
-        projdir = str(Path(local_cfg_path).parent)
-        if projdir not in sys.path:
-            sys.path.append(projdir)
 
-    return local_cfg, local_cfg_path
-
-
-def init_kag_config(config_path: Union[str, Path] = None):
-    if not config_path or isinstance(config_path, Path) and not config_path.exists():
-        config_path = DEFAULT_KAG_CONFIG_PATH
-    kag_cfg = ConfigParser()
-    kag_cfg.read(config_path)
-    os.environ["KAG_PROJECT_ROOT_PATH"] = os.path.abspath(os.path.dirname(config_path))
-
-    try:
-        host_addr = kag_cfg["project"]["host_addr"]
-        project_id = int(kag_cfg["project"]["id"])
-        from knext.project.client import ProjectClient  # noqa
-
-        kag_cfg_server_side = ProjectClient(host_addr=host_addr).get_config(
-            int(project_id)
-        )
-    except Exception as e:
-        print(f"Failed to get configuration from server, info: {e}")
-        kag_cfg_server_side = {}
-    for section in kag_cfg.sections():
-
-        local_sec_cfg = kag_cfg[section]
-        server_sec_cfg = kag_cfg_server_side.get(section, {})
-        sec_cfg = {**local_sec_cfg, **server_sec_cfg}
-
-        for k, v in sec_cfg.items():
-            item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{k}".upper()
-            os.environ[item_cfg_key] = v
-
-        # for key, value in kag_cfg.items(section):
-        #     item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{key}".upper()
-        #     os.environ[item_cfg_key] = value
-        #     sec_cfg[key] = value
-        sec_cfg_key = f"{KAG_CFG_PREFIX}_{section}".upper()
-        os.environ[sec_cfg_key] = str(sec_cfg)
-
-    log_level = os.environ.get(f"{KAG_CFG_PREFIX}_LOG_LEVEL", "INFO")
-
+def init_kag_config(config):
+    global_config = config.get(KAGConstants.GLOBAL_CONFIG_KEY, {})
+    KAG_GLOBAL_CONF.setup(**global_config)
+    log_conf = config.get("log", {})
+    if log_conf:
+        log_level = log_conf.get("level" "INFO")
+    else:
+        log_level = "INFO"
     logging.basicConfig(level=logging.getLevelName(log_level))
-
     logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
     logging.getLogger("neo4j.io").setLevel(logging.INFO)
     logging.getLogger("neo4j.pool").setLevel(logging.INFO)
+
+
+def init_env(prod: bool = False):
+    """Initialize environment to use command-line tool from inside a project
+    dir. This sets the Scrapy settings module and modifies the Python path to
+    be able to locate the project module.
+    """
+    config = get_config(prod)
+    init_kag_config(config)
+    if prod:
+        msg = "Done init config from server"
+    else:
+        msg = "Done init config from local file"
+    print(f"==================={msg}===================:\n{config}")

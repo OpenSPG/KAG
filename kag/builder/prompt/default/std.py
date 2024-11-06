@@ -11,12 +11,13 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OpenIEEntitystandardizationdPrompt(PromptOp):
+@PromptABC.register("std_default")
+class OpenIEEntitystandardizationdPrompt(PromptABC):
     template_en = """
 {
     "instruction": "The `input` field contains a user provided context. The `named_entities` field contains extracted named entities from the context, which may be unclear abbreviations, aliases, or slang. To eliminate ambiguity, please attempt to provide the official names of these entities based on the context and your own knowledge. Note that entities with the same meaning can only have ONE official name. Please respond in the format of a single JSONArray string without any explanation, as shown in the `output` field of the provided example.",
@@ -111,7 +112,7 @@ class OpenIEEntitystandardizationdPrompt(PromptOp):
 }    
     """
 
-    def __init__(self, language: Optional[str] = "en"):
+    def __init__(self, language: str = "en"):
         super().__init__(language)
 
     @property

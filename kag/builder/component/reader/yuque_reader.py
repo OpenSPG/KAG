@@ -13,17 +13,18 @@
 import requests
 from typing import Type, List
 
-from kag.builder.component.reader import MarkDownReader
+from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
+from kag.interface import SourceReaderABC
+from kag.common.llm import LLMClient
 from knext.common.base.runnable import Input, Output
 
 
+@SourceReaderABC.register("yuque")
 class YuqueReader(SourceReaderABC):
-    def __init__(self, token: str, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, token: str, llm: LLMClient = None, cut_depth: int = 1):
         self.token = token
-        self.markdown_reader = MarkDownReader(**kwargs)
+        self.markdown_reader = MarkDownReader(llm, cut_depth)
 
     @property
     def input_types(self) -> Type[Input]:

@@ -15,10 +15,11 @@ import os
 from typing import List, Type
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
+from kag.interface import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
 
+@SourceReaderABC.register("hotpotqa")
 class HotpotqaCorpusReader(SourceReaderABC):
     @property
     def input_types(self) -> Type[Input]:
@@ -48,6 +49,7 @@ class HotpotqaCorpusReader(SourceReaderABC):
         return chunks
 
 
+@SourceReaderABC.register("musique")
 class MusiqueCorpusReader(SourceReaderABC):
     @property
     def input_types(self) -> Type[Input]:
@@ -85,6 +87,7 @@ class MusiqueCorpusReader(SourceReaderABC):
         return chunks
 
 
+@SourceReaderABC.register("2wiki")
 class TwowikiCorpusReader(MusiqueCorpusReader):
     @property
     def input_types(self) -> Type[Input]:

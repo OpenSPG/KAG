@@ -19,6 +19,7 @@ from knext.common.base.runnable import Input, Output
 from knext.schema.client import OTHER_TYPE
 
 
+@MappingABC.register("spo")
 class SPOMapping(MappingABC):
     def __init__(self):
         super().__init__()

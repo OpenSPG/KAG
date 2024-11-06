@@ -11,7 +11,7 @@
 # or implied.
 from abc import ABC, abstractmethod
 
-from kag.builder.component.base import BuilderComponent
+from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
 

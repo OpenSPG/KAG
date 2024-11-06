@@ -11,12 +11,13 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OutlinePrompt(PromptOp):
+@PromptABC.register("outline")
+class OutlinePrompt(PromptABC):
     template_zh = """
 {
     "instruction": "\n请理解input字段中的文本内容，识别文本的结构和组成部分，并帮我提取出以下内容的标题，可能有多个标题分散在文本的各个地方，仅返属于原文的回标题文本即可，不要返回其他任何内容，须按照python list的格式回答，具体形式请遵从example字段中给出的若干例子。",
@@ -142,7 +143,7 @@ Article 17 Exceptions
 }    
     """
 
-    def __init__(self, language: Optional[str] = "zh"):
+    def __init__(self, language: str = "zh"):
         super().__init__(language)
 
     @property

@@ -14,11 +14,11 @@ import logging
 from typing import List, Dict
 
 from tenacity import retry, stop_after_attempt
-
-from kag.builder.component.extractor import KAGExtractor
+from kag.interface import ExtractorABC
+from kag.builder.component.extractor.kag_extractor import KAGExtractor
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.spg_prompt import SPG_KGPrompt
-from kag.common.base.prompt_op import PromptOp
+from kag.common.conf import KAG_GLOBAL_CONF
 from knext.common.base.runnable import Input, Output
 
 from knext.schema.client import BASIC_TYPES
@@ -26,26 +26,22 @@ from knext.schema.client import BASIC_TYPES
 logger = logging.getLogger(__name__)
 
 
+@ExtractorABC.register("spg", constructor="initialize", as_default=True)
 class SPGExtractor(KAGExtractor):
     """
     A Builder Component that extracting structured data from long texts by invoking large language model.
 
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.spg_ner_types, self.kag_ner_types = [], []
+    def create_extra_prompts(self):
+        self.spg_ner_types = []
         for type_name, spg_type in self.schema.items():
             properties = list(spg_type.properties.keys())
             for p in properties:
                 if p not in SPG_KGPrompt.ignored_properties:
                     self.spg_ner_types.append(type_name)
                     continue
-            self.kag_ner_types.append(type_name)
-        self.kag_ner_prompt = PromptOp.load(self.biz_scene, "ner")(
-            language=self.language, project_id=self.project_id
-        )
-        self.spg_ner_prompt = SPG_KGPrompt(self.spg_ner_types, self.language)
+        self.spg_ner_prompt = SPG_KGPrompt(self.spg_ner_types, KAG_GLOBAL_CONF.language)
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, passage: str):
@@ -57,7 +53,7 @@ class SPGExtractor(KAGExtractor):
             The result of the named entity recognition operation.
         """
         spg_ner_result = self.llm.batch({"input": passage}, self.spg_ner_prompt)
-        kag_ner_result = self.llm.invoke({"input": passage}, self.kag_ner_prompt)
+        kag_ner_result = self.llm.invoke({"input": passage}, self.ner_prompt)
         return spg_ner_result + kag_ner_result
 
     def assemble_sub_graph_with_spg_records(self, entities: List[Dict]):

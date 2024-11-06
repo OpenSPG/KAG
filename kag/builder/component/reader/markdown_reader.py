@@ -23,12 +23,18 @@ import pandas as pd
 from io import StringIO
 from tenacity import stop_after_attempt, retry
 
-from kag.interface.builder import SourceReaderABC
+from kag.interface import SourceReaderABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from knext.common.base.runnable import Output, Input
+from kag.common.llm import LLMClient
+from kag.common.conf import KAG_GLOBAL_CONF
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
+from knext.common.base.runnable import Output, Input
 
 
+logger = logging.getLogger(__name__)
+
+
+@SourceReaderABC.register("md")
 class MarkDownReader(SourceReaderABC):
     """
     A class for reading MarkDown files, inheriting from `SourceReader`.
@@ -41,12 +47,12 @@ class MarkDownReader(SourceReaderABC):
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 1, **kwargs):
-        super().__init__(**kwargs)
-        self.cut_depth = int(cut_depth)
-        self.llm_module = kwargs.get("llm_module", None)
-        self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
-        self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
+    def __init__(self, llm: LLMClient = None, cut_depth: int = 1):
+        self.llm = llm
+        self.cut_depth = cut_depth
+        self.analyze_table_prompt = AnalyzeTablePrompt(
+            language=KAG_GLOBAL_CONF.language
+        )
 
     @property
     def input_types(self) -> Type[Input]:
@@ -95,17 +101,17 @@ class MarkDownReader(SourceReaderABC):
                 table_df = pd.read_html(html_table)[0]
                 return f"{self.TABLE_CHUCK_FLAG}{table_df.to_markdown(index=False)}{self.TABLE_CHUCK_FLAG}"
             except Exception as e:
-                logging.warning(f"parse table tag to text error: {e}", exc_info=True)
+                logger.warning(f"parse table tag to text error: {e}", exc_info=True)
         return tag.text
 
     @retry(stop=stop_after_attempt(5))
     def analyze_table(self, table, analyze_mathod="human"):
         if analyze_mathod == "llm":
-            if self.llm_module is None:
-                logging.INFO("llm_module is None, cannot use analyze_table")
+            if self.llm is None:
+                logger.INFO("llm_module is None, cannot use analyze_table")
                 return table
             variables = {"table": table}
-            response = self.llm_module.invoke(
+            response = self.llm.invoke(
                 variables=variables,
                 prompt_op=self.analyze_table_prompt,
                 with_json_parse=False,
@@ -119,7 +125,7 @@ class MarkDownReader(SourceReaderABC):
             try:
                 df = pd.read_html(StringIO(table))[0]
             except Exception as e:
-                logging.warning(f"analyze_table error: {e}")
+                logger.warning(f"analyze_table error: {e}")
                 return table
             content = ""
             for index, row in df.iterrows():
@@ -377,7 +383,7 @@ class MarkDownReader(SourceReaderABC):
         try:
             df = pd.read_html(html_table_str)[0]
         except Exception as e:
-            logging.warning(f"get_table_chuck error: {e}")
+            logger.warning(f"get_table_chuck error: {e}")
             df = pd.DataFrame()
 
         # 确认是表格Chunk，去除内容中的TABLE_CHUCK_FLAG

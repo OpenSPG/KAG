@@ -11,12 +11,13 @@
 # or implied.
 
 from typing import Type, List
-
+from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from knext.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 
 
+@SplitterABC.register("length")
 class LengthSplitter(BaseTableSplitter):
     """
     A class for splitting text based on length, inheriting from Splitter.
@@ -26,10 +27,9 @@ class LengthSplitter(BaseTableSplitter):
         window_length (int): The length of the overlap between chunks.
     """
 
-    def __init__(self, split_length: int = 500, window_length: int = 100, **kwargs):
-        super().__init__(**kwargs)
-        self.split_length = int(split_length)
-        self.window_length = int(window_length)
+    def __init__(self, split_length: int = 500, window_length: int = 100):
+        self.split_length = split_length
+        self.window_length = window_length
 
     @property
     def input_types(self) -> Type[Input]:

@@ -9,16 +9,16 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import os
 from collections import defaultdict
 from typing import List
 
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
+from kag.common.conf import KAG_GLOBAL_CONF
 from kag.common.vectorizer import Vectorizer
-from kag.interface.builder.vectorizer_abc import VectorizerABC
+from kag.interface import VectorizerABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import IndexTypeEnum
+from knext.common.base.runnable import Input, Output
 
 
 class EmbeddingVectorPlaceholder(object):
@@ -127,14 +127,12 @@ class EmbeddingVectorGenerator(object):
 
 @VectorizerABC.register("batch")
 class BatchVectorizer(VectorizerABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.project_id = os.getenv("KAG_PROJECT_ID")
+    def __init__(self, vectorizer_model: Vectorizer):
+        super().__init__()
+        self.project_id = KAG_GLOBAL_CONF.project_id
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
-
-        self.vectorizer_config = os.environ["KAG_VECTORIZER"]
-        self.vectorizer = Vectorizer.from_config(eval(self.vectorizer_config))
+        self.vectorizer_model = vectorizer_model
 
     def _init_vec_meta(self):
         vec_meta = defaultdict(list)
@@ -168,7 +166,7 @@ class BatchVectorizer(VectorizerABC):
             properties.update(node.properties)
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
-        generator = EmbeddingVectorGenerator(self.vectorizer, self.vec_meta)
+        generator = EmbeddingVectorGenerator(self.vectorizer_model, self.vec_meta)
         generator.batch_generate(node_batch)
         for (node, properties), (_node_label, new_properties) in zip(
             node_list, node_batch

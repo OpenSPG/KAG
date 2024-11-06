@@ -11,15 +11,15 @@
 # or implied.
 import copy
 import logging
-import os
 from typing import Dict, Type, List
 
+from common.llm.llm_client import LLMClient
 from tenacity import stop_after_attempt, retry
 
 from kag.builder.prompt.spg_prompt import SPG_KGPrompt
-from kag.interface.builder import ExtractorABC
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import ExtractorABC, PromptABC
 from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
+from kag.common.conf import KAG_GLOBAL_CONF
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
@@ -30,30 +30,40 @@ from knext.schema.model.base import SpgTypeEnum
 logger = logging.getLogger(__name__)
 
 
+@ExtractorABC.register("kag", constructor="initialize", as_default=True)
 class KAGExtractor(ExtractorABC):
     """
     A class for extracting knowledge graph subgraphs from text using a large language model (LLM).
     Inherits from the Extractor base class.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.llm = self._init_llm()
-        self.prompt_config = self.config.get("prompt", {})
-        self.biz_scene = self.prompt_config.get("biz_scene") or os.getenv(
-            "KAG_PROMPT_BIZ_SCENE", "default"
-        )
-        self.language = self.prompt_config.get("language") or os.getenv(
-            "KAG_PROMPT_LANGUAGE", "en"
-        )
-        self.schema = SchemaClient(project_id=self.project_id).load()
-        self.ner_prompt = PromptOp.load(self.biz_scene, "ner")(
-            language=self.language, project_id=self.project_id
-        )
-        self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
-        self.triple_prompt = PromptOp.load(self.biz_scene, "triple")(
-            language=self.language
-        )
+    def __init__(
+        self,
+        llm: LLMClient,
+        ner_prompt: PromptABC = None,
+        std_prompt: PromptABC = None,
+        triple_prompt: PromptABC = None,
+    ):
+        self.llm = llm
+        self.schema = SchemaClient(project_id=KAG_GLOBAL_CONF.project_id()).load()
+        self.ner_prompt = ner_prompt
+        self.std_prompt = std_prompt
+        self.triple_prompt = triple_prompt
+
+        if self.ner_prompt is None:
+            self.ner_prompt = PromptABC.from_config(
+                {"type": "default_ner", "language": KAG_GLOBAL_CONF.language}
+            )
+        if self.std_prompt is None:
+            self.std_prompt = PromptABC.from_config(
+                {"type": "default_std", "language": KAG_GLOBAL_CONF.language}
+            )
+        if self.triple_prompt is None:
+            self.std_prompt = PromptABC.from_config(
+                {"type": "default_triple", "language": KAG_GLOBAL_CONF.language}
+            )
+
+    def create_extra_prompts(self):
         self.kg_types = []
         for type_name, spg_type in self.schema.items():
             if type_name in SPG_KGPrompt.ignored_types:
@@ -67,8 +77,23 @@ class KAGExtractor(ExtractorABC):
                     break
         if self.kg_types:
             self.kg_prompt = SPG_KGPrompt(
-                self.kg_types, language=self.language, project_id=self.project_id
+                self.kg_types,
+                language=KAG_GLOBAL_CONF.language,
+                project_id=KAG_GLOBAL_CONF.project_id,
             )
+        else:
+            self.kg_prompt = None
+
+    @classmethod
+    def initialize(
+        llm: LLMClient,
+        ner_prompt: PromptABC = None,
+        std_prompt: PromptABC = None,
+        triple_prompt: PromptABC = None,
+    ):
+        extractor = KAGExtractor(llm, ner_prompt, std_prompt, triple_prompt)
+        extractor.create_extra_prompts()
+        return extractor
 
     @property
     def input_types(self) -> Type[Input]:

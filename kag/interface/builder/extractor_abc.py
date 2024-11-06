@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from kag.builder.component.base import BuilderComponent
+from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
@@ -22,9 +22,6 @@ class ExtractorABC(BuilderComponent, ABC):
     """
     Interface for extracting sub graph (which contains a list of nodes and a list of edges) from chunks.
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     @property
     def input_types(self):

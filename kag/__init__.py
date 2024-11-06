@@ -1,3 +1,4 @@
+# flake8: noqa
 # Apache License
 # Version 2.0, January 2004
 # http://www.apache.org/licenses/
@@ -203,6 +204,11 @@
 
 __package_name__ = "openspg-kag"
 __version__ = "0.5.2-beta1"
+
+# Register Built-in Components
+import kag.interface
+import kag.builder.component
+import kag.builder.prompt
 
 from kag.common.env import init_env
 

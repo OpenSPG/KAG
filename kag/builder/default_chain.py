@@ -11,41 +11,20 @@
 # or implied.
 
 import logging
-import importlib
 import os
 
-from kag.builder.component import SPGTypeMapping, KGWriter
-from kag.builder.component.extractor import KAGExtractor
-from kag.builder.component.splitter import LengthSplitter
-from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
+from kag.builder.component import (
+    SPGTypeMapping,
+    KGWriter,
+    KAGExtractor,
+    LengthSplitter,
+    BatchVectorizer,
+)
+from interface.builder.reader_abc import SourceReaderABC
 from knext.common.base.chain import Chain
 from knext.builder.builder_chain_abc import BuilderChainABC
 
 logger = logging.getLogger(__name__)
-
-
-def get_reader(file_path: str):
-    file = os.path.basename(file_path)
-    suffix = file.split(".")[-1]
-    assert (
-        suffix.lower() in READER_MAPPING
-    ), f"{suffix} is not supported. Supported suffixes are: {list(READER_MAPPING.keys())}"
-    reader_path = READER_MAPPING.get(suffix.lower())
-    mod_path, class_name = reader_path.rsplit(".", 1)
-    module = importlib.import_module(mod_path)
-    reader_class = getattr(module, class_name)
-
-    return reader_class
-
-
-READER_MAPPING = {
-    "csv": "kag.builder.component.reader.csv_reader.CSVReader",
-    "json": "kag.builder.component.reader.json_reader.JSONReader",
-    "txt": "kag.builder.component.reader.txt_reader.TXTReader",
-    "pdf": "kag.builder.component.reader.pdf_reader.PDFReader",
-    "docx": "kag.builder.component.reader.docx_reader.DocxReader",
-    "md": "kag.builder.component.reader.markdown_reader.MarkdownReader",
-}
 
 
 class DefaultStructuredBuilderChain(BuilderChainABC):
@@ -78,7 +57,10 @@ class DefaultStructuredBuilderChain(BuilderChainABC):
             chain: The constructed processing chain.
         """
         file_path = kwargs.get("file_path")
-        source = get_reader(file_path)(output_type="Dict")
+        # source = get_reader(file_path)(output_type="Dict")
+        suffix = os.path.basename(file_path).split(".")[-1]
+        source = SourceReaderABC.from_config({"type": suffix})
+
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         sink = KGWriter()
 
@@ -131,7 +113,8 @@ class DefaultUnstructuredBuilderChain(BuilderChainABC):
         file_path = kwargs.get("file_path")
         split_length = kwargs.get("split_length")
         window_length = kwargs.get("window_length")
-        source = get_reader(file_path)()
+        suffix = os.path.basename(file_path).split(".")[-1]
+        source = SourceReaderABC.from_config({"type": suffix})
         splitter = LengthSplitter(split_length, window_length)
         extractor = KAGExtractor()
         vectorizer = BatchVectorizer()

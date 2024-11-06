@@ -12,8 +12,9 @@
 
 from typing import List, Type, Dict
 
-from kag.interface.builder import AlignerABC
+from kag.interface import AlignerABC
 from knext.schema.client import BASIC_TYPES
+from kag.common.conf import KAG_GLOBAL_CONF
 from kag.builder.model.spg_record import SPGRecord
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
@@ -21,10 +22,11 @@ from knext.schema.client import SchemaClient
 from knext.schema.model.base import ConstraintTypeEnum, BaseSpgType
 
 
+@AlignerABC.register("spg")
 class SPGPostProcessorAligner(AlignerABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.spg_types = SchemaClient(project_id=self.project_id).load()
+        self.spg_types = SchemaClient(project_id=KAG_GLOBAL_CONF.project_id).load()
 
     @property
     def input_types(self) -> Type[Input]:

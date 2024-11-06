@@ -11,12 +11,11 @@
 # or implied.
 from typing import List
 
-from kag.builder.component.base import BuilderComponent
+from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
 
 
-@BuilderComponent.register("vectorizer")
 class VectorizerABC(BuilderComponent):
     """
     Interface for vectorizer.

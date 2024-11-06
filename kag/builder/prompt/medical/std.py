@@ -11,12 +11,13 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OpenIEEntitystandardizationdPrompt(PromptOp):
+@PromptABC.register("std_medical")
+class OpenIEEntitystandardizationdPrompt(PromptABC):
 
     template_zh = """
 {
@@ -51,7 +52,7 @@ class OpenIEEntitystandardizationdPrompt(PromptOp):
 
     template_en = template_zh
 
-    def __init__(self, language: Optional[str] = "en"):
+    def __init__(self, language: str = "en"):
         super().__init__(language)
 
     @property

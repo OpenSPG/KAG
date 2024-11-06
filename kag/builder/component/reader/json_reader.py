@@ -15,10 +15,11 @@ import os
 from typing import List, Type, Dict, Union
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder.reader_abc import SourceReaderABC
+from kag.interface import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
 
+@SourceReaderABC.register("json")
 class JSONReader(SourceReaderABC):
     """
     A class for reading JSON files, inheriting from `SourceReader`.
@@ -29,15 +30,20 @@ class JSONReader(SourceReaderABC):
         **kwargs: Additional keyword arguments passed to the parent class constructor.
     """
 
-    def __init__(self, output_type="Chunk", **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        output_type: str = "Chunk",
+        id_col: str = "id",
+        name_col: str = "name",
+        content_col: str = "content",
+    ):
         if output_type == "Dict":
             self.output_types = Dict[str, str]
         else:
             self.output_types = Chunk
-        self.id_col = kwargs.get("id_col", "id")
-        self.name_col = kwargs.get("name_col", "name")
-        self.content_col = kwargs.get("content_col", "content")
+        self.id_col = id_col
+        self.name_col = name_col
+        self.content_col = content_col
 
     @property
     def input_types(self) -> Type[Input]:
@@ -96,14 +102,13 @@ class JSONReader(SourceReaderABC):
         """
         Parses the input string data and generates a list of Chunk objects or returns the original data.
 
-        This method supports receiving JSON-formatted strings. It extracts specific fields based on provided keyword arguments.
+        This method supports receiving JSON-formatted strings
         It can read from a file or directly parse a string. If the input data is in the expected format, it generates a list of Chunk objects;
         otherwise, it throws a ValueError if the input is not a JSON array or object.
 
         Args:
             input (str): The input data, which can be a JSON string or a file path.
-            **kwargs: Keyword arguments used to specify the field names for ID, name, and content.
-
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
         Returns:
             List[Output]: A list of Chunk objects or the original data.
 
@@ -111,12 +116,6 @@ class JSONReader(SourceReaderABC):
             ValueError: If the input data format is incorrect or parsing fails.
         """
 
-        id_col = kwargs.get("id_col", "id")
-        name_col = kwargs.get("name_col", "name")
-        content_col = kwargs.get("content_col", "content")
-        self.id_col = id_col
-        self.name_col = name_col
-        self.content_col = content_col
         try:
             if os.path.exists(input):
                 corpus = self._read_from_file(input)
@@ -149,15 +148,3 @@ class JSONReader(SourceReaderABC):
             return chunks
         else:
             return corpus
-
-
-if __name__ == "__main__":
-    reader = JSONReader()
-    json_string = """[
-            {
-                "title": "test_json", 
-                "text": "Test content"
-            }
-        ]"""
-    chunks = reader.invoke(json_string, name_column="title", content_col="text")
-    res = 1

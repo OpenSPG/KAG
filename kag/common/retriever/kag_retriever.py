@@ -10,9 +10,9 @@
 # or implied.
 
 import os
+from interface.common.prompt import PromptABC
 from tenacity import retry, stop_after_attempt
 
-from kag.common.base.prompt_op import PromptOp
 from kag.common.vectorizer import Vectorizer
 from knext.graph_algo.client import GraphAlgoClient
 from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
@@ -50,10 +50,13 @@ class DefaultRetriever(ChunkRetrieverABC):
 
         self._init_search()
 
-        self.ner_prompt = PromptOp.load(self.biz_scene, "question_ner")(
-            language=self.language, project_id=self.project_id
-        )
-        self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
+        # self.ner_prompt = PromptOp.load(self.biz_scene, "question_ner")(
+        #     language=self.language, project_id=self.project_id
+        # )
+        # self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
+
+        self.ner_prompt = PromptABC.from_config({"type": f"{self.biz_scene}_ner"})
+        self.std_prompt = PromptABC.from_config({"type": f"{self.biz_scene}_std"})
 
         self.pagerank_threshold = 0.9
         self.match_threshold = 0.8

@@ -11,7 +11,7 @@
 # or implied.
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SplitterABC
+from kag.interface import SplitterABC
 
 
 class BaseTableSplitter(SplitterABC):

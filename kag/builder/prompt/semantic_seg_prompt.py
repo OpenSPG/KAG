@@ -11,12 +11,13 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class SemanticSegPrompt(PromptOp):
+@PromptABC.register("semantic_seg")
+class SemanticSegPrompt(PromptABC):
     template_zh = """
 {
     "instruction": "\n请理解input字段中的文本内容，识别文本的结构和组成部分，并按照语义主题确定分割点，将其切分成互不重叠的若干小节。如果文章有章节等可识别的结构信息，请直接按照顶层结构进行切分。\n请按照schema定义的字段返回，包含小节摘要和小节起始点。须按照JSON字符串的格式回答。具体形式请遵从example字段中给出的若干例子。",
@@ -111,7 +112,7 @@ class SemanticSegPrompt(PromptOp):
 }    
     """
 
-    def __init__(self, language: Optional[str] = "zh"):
+    def __init__(self, language: str = "zh"):
         super().__init__(language)
 
     @property

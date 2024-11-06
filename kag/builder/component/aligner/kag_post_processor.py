@@ -13,10 +13,11 @@
 from typing import List, Sequence, Dict, Type
 
 from kag.builder.model.sub_graph import SubGraph
-from kag.interface.builder import AlignerABC
+from kag.interface import AlignerABC
 from knext.common.base.runnable import Input, Output
 
 
+@AlignerABC.register("kag")
 class KAGPostProcessorAligner(AlignerABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
