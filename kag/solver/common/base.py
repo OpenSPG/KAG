@@ -114,7 +114,6 @@ class KagBaseModule(object):
 
         self._init_llm()
         self.prompt_config = self.config.get("prompt", {})
-        logger.info(self.prompt_config)
         self.biz_scene = self.prompt_config.get("biz_scene") or os.getenv(
             "KAG_PROMPT_BIZ_SCENE", "default"
         )
