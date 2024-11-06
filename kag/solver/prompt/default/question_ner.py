@@ -12,13 +12,14 @@
 
 import json
 from string import Template
-from typing import List, Optional
-
-from kag.common.base.prompt_op import PromptOp
+from typing import List
+from kag.common.conf import KAG_GLOBAL_CONF
+from kag.interface import PromptABC
 from knext.reasoner.client import ReasonerClient
 
 
-class QuestionNER(PromptOp):
+@PromptABC.register("default_question_ner")
+class QuestionNER(PromptABC):
 
     template_en = """
     {
@@ -45,10 +46,12 @@ class QuestionNER(PromptOp):
 
     template_zh = template_en
 
-    def __init__(self, language: Optional[str] = "en", **kwargs):
+    def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
         self.schema = (
-            ReasonerClient(project_id=self.project_id).get_reason_schema().keys()
+            ReasonerClient(project_id=KAG_GLOBAL_CONF.project_id)
+            .get_reason_schema()
+            .keys()
         )
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 

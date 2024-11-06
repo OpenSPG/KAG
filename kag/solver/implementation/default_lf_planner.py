@@ -2,7 +2,7 @@ import os
 import re
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult, LogicNode
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -24,8 +24,8 @@ class DefaultLFPlanner(LFPlannerABC):
         std_schema = SchemaRetrieval(**kwargs)
         self.parser = ParseLogicForm(schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
-        self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan")(
-            language=self.language
+        self.logic_form_plan_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_logic_form_plan"}
         )
 
     # 需要把大模型生成结果记录下来

@@ -1,12 +1,13 @@
 import logging
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class SpoRetrieval(PromptOp):
+@PromptABC.register("default_spo_retrieval")
+class SpoRetrieval(PromptABC):
     template_zh = """示例 1:
 问题：Woman's Viewpoint 是一本英国出版物吗？
 SPO 提及：出版物[Woman's Viewpoint] 国籍 国家
@@ -57,9 +58,6 @@ Question：$question
 spo mention: $mention
 spo candications: $candis
 output: """
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

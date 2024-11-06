@@ -11,7 +11,7 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
 from kag.interface import PromptABC
 
@@ -178,9 +178,6 @@ class OpenIETriplePrompt(PromptABC):
     }
 }    
     """
-
-    def __init__(self, language: Optional[str] = "en"):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

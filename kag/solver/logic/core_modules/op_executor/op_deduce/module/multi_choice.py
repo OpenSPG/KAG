@@ -1,4 +1,4 @@
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.solver.logic.core_modules.common.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -15,8 +15,8 @@ class MultiChoiceOp(OpExecutor):
         **kwargs,
     ):
         super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
-        self.prompt = PromptOp.load(self.biz_scene, "deduce_multi_choice")(
-            language=self.language
+        self.prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_deduce_multi_choice"}
         )
 
     def executor(self, logic_node: LogicNode, req_id: str, param: dict) -> list:

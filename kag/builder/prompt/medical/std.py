@@ -52,9 +52,6 @@ class OpenIEEntitystandardizationdPrompt(PromptABC):
 
     template_en = template_zh
 
-    def __init__(self, language: str = "en"):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["input", "named_entities"]

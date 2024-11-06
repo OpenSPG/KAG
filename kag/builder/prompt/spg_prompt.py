@@ -19,6 +19,7 @@ from knext.schema.client import SchemaClient
 from knext.schema.model.base import BaseSpgType, SpgTypeEnum
 from knext.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
+from kag.common.conf import KAG_GLOBAL_CONF
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +43,13 @@ class SPGPrompt(PromptABC):
     def __init__(
         self,
         spg_type_names: List[SPGTypeName],
-        language: str = "zh",
+        language: str = "",
         **kwargs,
     ):
         super().__init__(language=language, **kwargs)
-        self.all_schema_types = SchemaClient(project_id=self.project_id).load()
+        self.all_schema_types = SchemaClient(
+            project_id=KAG_GLOBAL_CONF.project_id
+        ).load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:
             self.spg_types = self.all_schema_types
@@ -150,9 +153,7 @@ class SPG_KGPrompt(SPGPrompt):
 
     template_en: str = template_zh
 
-    def __init__(
-        self, spg_type_names: List[SPGTypeName], language: str = "zh", **kwargs
-    ):
+    def __init__(self, spg_type_names: List[SPGTypeName], language: str = "", **kwargs):
         super().__init__(spg_type_names=spg_type_names, language=language, **kwargs)
         self._render()
 

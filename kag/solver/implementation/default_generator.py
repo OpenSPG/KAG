@@ -1,6 +1,6 @@
 from tenacity import stop_after_attempt, retry
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 from kag.solver.implementation.default_memory import DefaultMemory
 
@@ -13,8 +13,9 @@ class DefaultGenerator(KAGGeneratorABC):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.generate_prompt = PromptOp.load(self.biz_scene, "resp_generator")(
-            language=self.language
+
+        self.generate_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_resp_generator"}
         )
 
     @retry(stop=stop_after_attempt(3))

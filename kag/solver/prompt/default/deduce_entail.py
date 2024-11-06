@@ -1,12 +1,13 @@
 import logging
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class DeduceEntail(PromptOp):
+@PromptABC.register("default_deduce_entail")
+class DeduceEntail(PromptABC):
     template_zh = (
         "根据提供的信息，请首先判断是否能够直接回答指令“$instruction”。如果可以直接回答，请直接回复答案，"
         "无需解释；如果不能直接回答但存在关联信息，请总结其中与指令“$instruction”相关的关键信息，并明确解释为何与指令相关；"
@@ -25,9 +26,6 @@ class DeduceEntail(PromptOp):
         "\nEnsure that the information provided comes directly and accurately from the retrieved document, "
         "without any speculation."
     )
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

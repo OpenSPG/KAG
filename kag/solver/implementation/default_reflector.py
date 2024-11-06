@@ -1,6 +1,6 @@
 from tenacity import retry, stop_after_attempt
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.interface.solver.kag_reflector_abc import KagMemoryABC
 from kag.interface.solver.kag_reflector_abc import KagReflectorABC
 
@@ -12,15 +12,15 @@ class DefaultReflector(KagReflectorABC):
 
         Attributes:
         - llm_module (Any): The LLM module to be used by this instance.
-        - rewrite_prompt (PromptOp): The prompt operation for rewriting responses.
+        - rewrite_prompt (PromptABC): The prompt operation for rewriting responses.
         """
         super().__init__(**kwargs)
-        self.refine_prompt = PromptOp.load(self.biz_scene, "resp_reflector")(
-            language=self.language
+        self.refine_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_resp_reflector"}
         )
 
-        self.judge_prompt = PromptOp.load(self.biz_scene, "resp_judge")(
-            language=self.language
+        self.judge_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_resp_judge"}
         )
 
     def _get_serialize_memory(self, memory: KagMemoryABC):

@@ -5,7 +5,7 @@ import re
 import time
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.common.llm import LLMClient
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
@@ -211,8 +211,9 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         return un_std_p
 
     def _choosed_by_llm(self, question, mention, candis):
-        resp_plan_prompt = PromptOp.load(self.biz_scene, "spo_retrieval")(
-            language=self.language
+
+        resp_plan_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_spo_retrieval"}
         )
         return self.llm.invoke(
             {"question": question, "mention": mention, "candis": candis},

@@ -1,12 +1,13 @@
 import logging
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class DeduceEntail(PromptOp):
+@PromptABC.register("default_deduce_multi_choice")
+class DeduceMutiChoice(PromptABC):
     template_zh = (
         "根据提供的选项及相关答案，请选择其中至少一个选项回答问题“$instruction”。"
         "无需解释；"
@@ -21,9 +22,6 @@ class DeduceEntail(PromptOp):
         "\nEnsure that the information provided comes directly and accurately from the retrieved document, "
         "without any speculation."
     )
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

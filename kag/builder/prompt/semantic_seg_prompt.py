@@ -112,9 +112,6 @@ class SemanticSegPrompt(PromptABC):
 }    
     """
 
-    def __init__(self, language: str = "zh"):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["input"]

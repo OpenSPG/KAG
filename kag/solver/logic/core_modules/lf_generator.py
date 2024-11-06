@@ -1,6 +1,6 @@
 import logging
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.solver.common.base import KagBaseModule
 
 logger = logging.getLogger(__name__)
@@ -14,17 +14,15 @@ class LFGenerator(KagBaseModule):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.solve_question_prompt = PromptOp.load(self.biz_scene, "solve_question")(
-            language=self.language
+        self.solve_question_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_solve_question"}
         )
-
-        self.solve_question_without_docs_prompt = PromptOp.load(
-            self.biz_scene, "solve_question_without_docs"
-        )(language=self.language)
-
-        self.solve_question_without_spo_prompt = PromptOp.load(
-            self.biz_scene, "solve_question_without_spo"
-        )(language=self.language)
+        self.solve_question_without_docs_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_solve_question_without_docs"}
+        )
+        self.solve_question_without_spo_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_solve_question_without_spo"}
+        )
 
     def generate_sub_answer(
         self, question: str, knowledge_graph: [], docs: [], history=[]
