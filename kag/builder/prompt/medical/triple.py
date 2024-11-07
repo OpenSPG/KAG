@@ -16,7 +16,7 @@ from typing import List
 from kag.interface import PromptABC
 
 
-@PromptABC.register("triple_medical")
+@PromptABC.register("medical_triple")
 class OpenIETriplePrompt(PromptABC):
 
     template_zh = """

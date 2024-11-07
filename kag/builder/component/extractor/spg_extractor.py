@@ -26,7 +26,7 @@ from knext.schema.client import BASIC_TYPES
 logger = logging.getLogger(__name__)
 
 
-@ExtractorABC.register("spg", constructor="initialize", as_default=True)
+@ExtractorABC.register("spg")
 class SPGExtractor(KAGExtractor):
     """
     A Builder Component that extracting structured data from long texts by invoking large language model.

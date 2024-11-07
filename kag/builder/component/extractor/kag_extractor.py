@@ -30,7 +30,7 @@ from knext.schema.model.base import SpgTypeEnum
 logger = logging.getLogger(__name__)
 
 
-@ExtractorABC.register("kag", constructor="initialize", as_default=True)
+@ExtractorABC.register("kag")
 class KAGExtractor(ExtractorABC):
     """
     A class for extracting knowledge graph subgraphs from text using a large language model (LLM).
@@ -45,23 +45,26 @@ class KAGExtractor(ExtractorABC):
         triple_prompt: PromptABC = None,
     ):
         self.llm = llm
-        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id()).load()
+        print(f"self.llm: {self.llm}")
+        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt
         self.triple_prompt = triple_prompt
 
+        biz_scene = KAG_PROJECT_CONF.biz_scene
         if self.ner_prompt is None:
             self.ner_prompt = PromptABC.from_config(
-                {"type": "default_ner", "language": KAG_PROJECT_CONF.language}
+                {"type": f"{biz_scene}_ner", "language": KAG_PROJECT_CONF.language}
             )
         if self.std_prompt is None:
             self.std_prompt = PromptABC.from_config(
-                {"type": "default_std", "language": KAG_PROJECT_CONF.language}
+                {"type": f"{biz_scene}_std", "language": KAG_PROJECT_CONF.language}
             )
         if self.triple_prompt is None:
-            self.std_prompt = PromptABC.from_config(
-                {"type": "default_triple", "language": KAG_PROJECT_CONF.language}
+            self.triple_prompt = PromptABC.from_config(
+                {"type": f"{biz_scene}_triple", "language": KAG_PROJECT_CONF.language}
             )
+        self.create_extra_prompts()
 
     def create_extra_prompts(self):
         self.kg_types = []
@@ -84,16 +87,20 @@ class KAGExtractor(ExtractorABC):
         else:
             self.kg_prompt = None
 
-    @classmethod
-    def initialize(
-        llm: LLMClient,
-        ner_prompt: PromptABC = None,
-        std_prompt: PromptABC = None,
-        triple_prompt: PromptABC = None,
-    ):
-        extractor = KAGExtractor(llm, ner_prompt, std_prompt, triple_prompt)
-        extractor.create_extra_prompts()
-        return extractor
+    # @classmethod
+    # def initialize(
+    #     llm: LLMClient,
+    #     ner_prompt: PromptABC = None,
+    #     std_prompt: PromptABC = None,
+    #     triple_prompt: PromptABC = None,
+    # ):
+    #     print(f"llm = {llm}")
+    #     print(ner_prompt)
+    #     print(std_prompt)
+    #     print(triple_prompt)
+    #     extractor = KAGExtractor(llm, ner_prompt, std_prompt, triple_prompt)
+    #     extractor.create_extra_prompts()
+    #     return extractor
 
     @property
     def input_types(self) -> Type[Input]:

@@ -1,8 +1,8 @@
 global: &global_config
   host_addr: http://127.0.0.1:8887
   project_id: 666
-  biz_scene: news
-  language: zh
+  biz_scene: default
+  language: en
 project: *global_config
 vectorizer:
   type: bge

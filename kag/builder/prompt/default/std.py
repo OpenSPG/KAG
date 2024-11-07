@@ -16,7 +16,7 @@ from typing import List
 from kag.interface import PromptABC
 
 
-@PromptABC.register("std_default")
+@PromptABC.register("default_std")
 class OpenIEEntitystandardizationdPrompt(PromptABC):
     template_en = """
 {

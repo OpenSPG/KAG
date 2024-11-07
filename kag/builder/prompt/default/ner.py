@@ -18,7 +18,7 @@ from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
 
-@PromptABC.register("ner_default")
+@PromptABC.register("default_ner")
 class OpenIENERPrompt(PromptABC):
 
     template_en = """

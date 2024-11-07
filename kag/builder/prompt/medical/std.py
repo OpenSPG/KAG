@@ -16,7 +16,7 @@ from typing import List
 from kag.interface import PromptABC
 
 
-@PromptABC.register("std_medical")
+@PromptABC.register("medical_std")
 class OpenIEEntitystandardizationdPrompt(PromptABC):
 
     template_zh = """

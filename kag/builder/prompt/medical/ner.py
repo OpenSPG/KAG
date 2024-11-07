@@ -18,7 +18,7 @@ from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
 
-@PromptABC.register("ner_medical")
+@PromptABC.register("medical_ner")
 class OpenIENERPrompt(PromptABC):
 
     template_zh = """
