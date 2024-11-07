@@ -15,7 +15,7 @@ from tenacity import retry, stop_after_attempt
 
 from kag.common.vectorizer import Vectorizer
 from knext.graph_algo.client import GraphAlgoClient
-from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
+from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from typing import List, Dict
 
 import numpy as np
@@ -23,16 +23,17 @@ import logging
 
 from knext.reasoner.client import ReasonerClient
 from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
-from knext.project.client import ProjectClient
-from kag.common.utils import processing_phrases
+
 from knext.search.client import SearchClient
+from kag.common.utils import processing_phrases
+from kag.common.conf import KAG_CONFIG
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 
 logger = logging.getLogger(__name__)
 
 
-class DefaultRetriever(ChunkRetrieverABC):
+class KAGRetriever(ChunkRetriever):
     """
     KAGRetriever class for retrieving and processing knowledge graph data from a graph database.
 
@@ -55,14 +56,18 @@ class DefaultRetriever(ChunkRetrieverABC):
         # )
         # self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
 
-        self.ner_prompt = PromptABC.from_config({"type": f"{self.biz_scene}_ner"})
+        self.ner_prompt = PromptABC.from_config(
+            {"type": f"{self.biz_scene}_question_ner"}
+        )
         self.std_prompt = PromptABC.from_config({"type": f"{self.biz_scene}_std"})
 
         self.pagerank_threshold = 0.9
         self.match_threshold = 0.8
         self.pagerank_weight = 0.5
 
-        self.reranker_model_path = os.getenv("KAG_RETRIEVER_RERANKER_MODEL_PATH")
+        self.reranker_model_path = KAG_CONFIG.all_config.get("retriever", {}).get(
+            "reranker_model_path"
+        )
         if self.reranker_model_path:
             from kag.common.reranker.reranker import BGEReranker
 
@@ -74,13 +79,7 @@ class DefaultRetriever(ChunkRetrieverABC):
 
     def _init_search(self):
         self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(
-                host_addr=self.host_addr, project_id=self.project_id
-            ).get_config(self.project_id)
-            vectorizer_config.update(config.get("vectorizer", {}))
-
+        vectorizer_config = KAG_CONFIG.all_config.get("vectorizer")
         self.vectorizer = Vectorizer.from_config(vectorizer_config)
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
         self.graph_algo = GraphAlgoClient(self.host_addr, self.project_id)

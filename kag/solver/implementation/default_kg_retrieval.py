@@ -5,8 +5,9 @@ from typing import List
 
 from knext.project.client import ProjectClient
 
+from kag.common.conf import KAG_CONFIG
 from kag.common.vectorizer import Vectorizer
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.solver.retriever.kg_retriever import KGRetriever
 from knext.search.client import SearchClient
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
@@ -40,7 +41,7 @@ import logging
 logger = logging.getLogger()
 
 
-class KGRetrieverByLlm(KGRetrieverABC):
+class KGRetrieverByLlm(KGRetriever):
     """
     A subclass of KGRetrieval that implements relation and entity retrieval using large language models.
 
@@ -51,12 +52,8 @@ class KGRetrieverByLlm(KGRetrieverABC):
     def __init__(self, disable_exact_match=False, **kwargs):
         super().__init__(**kwargs)
 
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(
-                host_addr=self.host_addr, project_id=self.project_id
-            ).get_config(self.project_id)
-            vectorizer_config.update(config.get("vectorizer", {}))
+        config = KAG_CONFIG.all_config
+        vectorizer_config = config.get("vectorizer", {})
         self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
         self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
         self.schema = SchemaUtils(LogicFormConfiguration(kwargs))

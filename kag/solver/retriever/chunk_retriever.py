@@ -1,10 +1,9 @@
-from abc import ABC, abstractmethod
 from typing import List
 
 from kag.solver.common.base import KagBaseModule
 
 
-class ChunkRetrieverABC(KagBaseModule, ABC):
+class ChunkRetriever(KagBaseModule):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -21,7 +20,6 @@ class ChunkRetrieverABC(KagBaseModule, ABC):
             Reranks the retrieved passages based on the given queries.
     """
 
-    @abstractmethod
     def recall_docs(self, query: str, top_k: int = 5, **kwargs) -> List[str]:
         """
         Recalls documents based on the given query.
@@ -36,7 +34,6 @@ class ChunkRetrieverABC(KagBaseModule, ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    @abstractmethod
     def rerank_docs(self, queries: List[str], passages: List[str]) -> List[str]:
         """
         Reranks the retrieved passages based on the given queries.

@@ -3,15 +3,14 @@ import os
 import time
 from typing import List
 
-from kag.common.graphstore.graph_store import GraphStore
-from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.common.conf import KAG_CONFIG
+from kag.solver.retriever.chunk_retriever import ChunkRetriever
+from kag.solver.retriever.kg_retriever import KGRetriever
 from kag.solver.common.base import Question
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.op_executor.op_deduce.deduce_executor import (
     DeduceExecutor,
 )
@@ -27,7 +26,6 @@ from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicFor
 from kag.solver.logic.core_modules.retriver.entity_linker import EntityLinkerBase
 from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import (
     DslRunner,
-    DslRunnerOnGraphStore,
 )
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 from kag.solver.logic.core_modules.rule_runner.rule_runner import OpRunner
@@ -42,8 +40,8 @@ class LogicExecutor:
         query: str,
         project_id: str,
         schema: SchemaUtils,
-        kg_retriever: KGRetrieverABC,
-        chunk_retriever: ChunkRetrieverABC,
+        kg_retriever: KGRetriever,
+        chunk_retriever: ChunkRetriever,
         std_schema: SchemaRetrieval,
         el: EntityLinkerBase,
         generator,
@@ -107,7 +105,9 @@ class LogicExecutor:
         self.generator = generator
         self.el = el
 
-        self.force_chunk_retriever = os.getenv("KAG_QA_FORCE_CHUNK_RETRIEVER", False)
+        self.force_chunk_retriever = KAG_CONFIG.all_config.get("qa", {}).get(
+            "force_chunk_retriever"
+        )
 
         # Initialize executors for different operations.
         self.retrieval_executor = RetrievalExecutor(
@@ -154,7 +154,9 @@ class LogicExecutor:
             KAG_PROJECT_ID=self.project_id,
         )
 
-        self.with_sub_answer = os.getenv("KAG_QA_WITH_SUB_ANSWER", True)
+        self.with_sub_answer = KAG_CONFIG.all_config.get("qa", {}).get(
+            "with_sub_answer", True
+        )
 
     def _convert_logic_nodes_2_question(
         self, logic_nodes: List[LFPlanResult]

@@ -209,7 +209,3 @@ __version__ = "0.5.2-beta1"
 import kag.interface
 import kag.builder.component
 import kag.builder.prompt
-
-from kag.common.env import init_env
-
-init_env()

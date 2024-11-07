@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import List
 
 from kag.solver.common.base import KagBaseModule
@@ -11,7 +10,7 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 
 
-class KGRetrieverABC(KagBaseModule, ABC):
+class KGRetriever(KagBaseModule):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -28,7 +27,6 @@ class KGRetrieverABC(KagBaseModule, ABC):
             Retrieves related entities based on the given entity mention.
     """
 
-    @abstractmethod
     def retrieval_relation(
         self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
     ) -> KgGraph:
@@ -42,7 +40,6 @@ class KGRetrieverABC(KagBaseModule, ABC):
             Returns KgGraph
         """
 
-    @abstractmethod
     def retrieval_entity(
         self, mention_entity: SPOEntity, topk=1, **kwargs
     ) -> List[EntityData]:

@@ -2,7 +2,7 @@ import os
 from typing import List
 
 import numpy as np
-
+from kag.common.conf import KAG_CONFIG
 from kag.common.vectorizer import Vectorizer
 
 
@@ -29,7 +29,7 @@ def split_list(input_list, max_length=30):
 class TextSimilarity:
     def __init__(self, vec_config=None):
         if vec_config is None:
-            vec_config = eval(os.getenv("KAG_VECTORIZER"))
+            vec_config = KAG_CONFIG.all_config.get("vectorizer")
             if vec_config is None:
                 message = "vectorizer config is required"
                 raise RuntimeError(message)

@@ -2,7 +2,7 @@ import logging
 import time
 from typing import List
 
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.solver.retriever.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import SPOEntity, LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
@@ -36,7 +36,7 @@ class GetSPOExecutor(OpExecutor):
         nl_query: str,
         kg_graph: KgGraph,
         schema: SchemaUtils,
-        retrieval_spo: KGRetrieverABC,
+        retrieval_spo: KGRetriever,
         el: EntityLinkerBase,
         dsl_runner: DslRunner,
         query_one_graph_cache: dict,
@@ -51,7 +51,7 @@ class GetSPOExecutor(OpExecutor):
             nl_query (str): Natural language query string.
             kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
             schema (SchemaUtils): Semantic structure definition to assist in the parsing process.
-            retrieval_spo (KGRetrieverABC): Retrieval object for SPO triples.
+            retrieval_spo (KGRetriever): Retrieval object for SPO triples.
             el (EntityLinkerBase): Entity linker for entity linking tasks.
             dsl_runner (DslRunner): Runner cypher for query graph database.
             query_one_graph_cache (dict): Cache for storing results of one-hop graph queries.

@@ -4,25 +4,21 @@ from typing import List
 
 import numpy as np
 
-from kag.common.retriever import DefaultRetriever
+from kag.solver.retriever.kag_retriever import KAGRetriever
+from kag.common.conf import KAG_CONFIG
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData
 from kag.solver.logic.core_modules.common.text_sim_by_vector import (
     TextSimilarity,
     cosine_similarity,
 )
 from kag.solver.logic.core_modules.retriver.retrieval_spo import logger
-from knext.project.client import ProjectClient
 
 
-class LFChunkRetriever(DefaultRetriever):
+class LFChunkRetriever(KAGRetriever):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(
-                host_addr=self.host_addr, project_id=self.project_id
-            ).get_config(self.project_id)
-            vectorizer_config.update(config.get("vectorizer", {}))
+        config = KAG_CONFIG.all_config
+        vectorizer_config = config.get("vectorizer", {})
         self.text_sim = TextSimilarity(vec_config=vectorizer_config)
 
     def rerank(self, queries: List[str], passages: List[str]):
