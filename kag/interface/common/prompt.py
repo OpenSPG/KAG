@@ -14,7 +14,7 @@ from abc import ABC
 from string import Template
 from typing import List
 from kag.common.registry import Registrable
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 
 
 @Registrable.register("prompt")
@@ -42,7 +42,7 @@ class PromptABC(Registrable, ABC):
             AssertionError: If the provided language is not supported.
         """
         if not language:
-            language = KAG_GLOBAL_CONF.language
+            language = KAG_PROJECT_CONF.language
         self.language = language
 
         if not hasattr(self, f"template_{self.language}"):
@@ -54,7 +54,7 @@ class PromptABC(Registrable, ABC):
 
     @property
     def project_id(self):
-        return KAG_GLOBAL_CONF.project_id
+        return KAG_PROJECT_CONF.project_id
 
     @property
     def template_variables(self) -> List[str]:

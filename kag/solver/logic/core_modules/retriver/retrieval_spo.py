@@ -7,7 +7,7 @@ from typing import List
 
 from kag.interface import PromptABC
 from kag.common.llm import LLMClient
-from kag.common.conf import KAG_CONFIG, KAG_GLOBAL_CONF
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
     EntityData,
@@ -198,8 +198,8 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         self.text_similarity = text_similarity or TextSimilarity()
         self.cached_map = {}
 
-        self.biz_scene = KAG_GLOBAL_CONF.biz_scene
-        self.language = KAG_GLOBAL_CONF.language
+        self.biz_scene = KAG_PROJECT_CONF.biz_scene
+        self.language = KAG_PROJECT_CONF.language
 
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_zh()

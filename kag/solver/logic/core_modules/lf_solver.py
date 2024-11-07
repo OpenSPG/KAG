@@ -5,7 +5,7 @@ import time
 from typing import List
 
 from kag.common.vectorizer import Vectorizer
-from kag.common.conf import KAG_GLOBAL_CONF, KAG_CONFIG
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult
@@ -58,8 +58,8 @@ class LFSolver:
 
         self.kg_retriever = kg_retriever
         self.chunk_retriever = chunk_retriever
-        self.project_id = KAG_GLOBAL_CONF.project_id
-        self.host_addr = KAG_GLOBAL_CONF.host_addr
+        self.project_id = KAG_PROJECT_CONF.project_id
+        self.host_addr = KAG_PROJECT_CONF.host_addr
         if report_tool and report_tool.project_id:
             self.project_id = report_tool.project_id
 

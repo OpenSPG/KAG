@@ -13,7 +13,7 @@
 import json
 from string import Template
 from typing import List
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
@@ -150,7 +150,7 @@ class OpenIENERPrompt(PromptABC):
     def __init__(self, language: str = ""):
         super().__init__(language)
         self.schema = SchemaClient(
-            project_id=KAG_GLOBAL_CONF.project_id
+            project_id=KAG_PROJECT_CONF.project_id
         ).extract_types()
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 

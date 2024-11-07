@@ -22,13 +22,14 @@ from knext.project.client import ProjectClient
 
 class KAGConstants(object):
     LOCAL_SCHEMA_URL = "http://localhost:8887"
-    DEFAULT_KAG_CONFIG_FILE_NAME = "default_config.cfg"
-    KAG_CONFIG_FILE_NAME = "kag_config.cfg"
+    DEFAULT_KAG_CONFIG_FILE_NAME = "default_config.yaml"
+    KAG_CONFIG_FILE_NAME = "kag_config.yaml"
     DEFAULT_KAG_CONFIG_PATH = os.path.join(__file__, DEFAULT_KAG_CONFIG_FILE_NAME)
     KAG_CFG_PREFIX = "KAG"
     GLOBAL_CONFIG_KEY = "global"
+    PROJECT_CONFIG_KEY = "project"
     KAG_PROJECT_ID_KEY = "KAG_PROJECT_ID"
-    KAG_HOST_ADDR_KEY = "KAG_HOST_ADDR"
+    KAG_HOST_ADDR_KEY = "KAG_PROJECT_HOST_ADDR"
     KAG_LANGUAGE_KEY = "KAG_LANGUAGE"
     KAG_BIZ_SCENE_KEY = "KAG_BIZ_SCENE"
 
@@ -70,13 +71,14 @@ def load_config(prod: bool = False):
     Get kag config file as a ConfigParser.
     """
     if prod:
-        project_id = os.environ[KAGConstants.KAG_PROJECT_ID_KEY]
-        host_addr = os.environ[KAGConstants.KAG_HOST_ADDR_KEY]
+        project_id = os.getenv(KAGConstants.KAG_PROJECT_ID_KEY)
+        host_addr = os.getenv(KAGConstants.KAG_HOST_ADDR_KEY)
         config = ProjectClient(host_addr=host_addr).get_config(project_id)
-        return yaml.safe_load(config)
+        return config
     else:
         config_file = _closest_cfg()
-        if os.path.exists(config_file):
+        if os.path.exists(config_file) and os.path.isfile(config_file):
+            print(f"found config file: {config_file}")
             with open(config_file, "r") as reader:
                 config = reader.read()
             return yaml.safe_load(config)
@@ -86,26 +88,16 @@ def load_config(prod: bool = False):
 
 def init_kag_config(config):
     global_config = config.get(KAGConstants.GLOBAL_CONFIG_KEY, {})
-    KAG_GLOBAL_CONF.setup(**global_config)
+    KAG_PROJECT_CONF.setup(**global_config)
     log_conf = config.get("log", {})
     if log_conf:
-        log_level = log_conf.get("level" "INFO")
+        log_level = log_conf.get("level", "INFO")
     else:
         log_level = "INFO"
     logging.basicConfig(level=logging.getLevelName(log_level))
     logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
     logging.getLogger("neo4j.io").setLevel(logging.INFO)
     logging.getLogger("neo4j.pool").setLevel(logging.INFO)
-
-
-# def init_env(prod: bool = False):
-#     """Initialize environment to use command-line tool from inside a project
-#     dir. This sets the Scrapy settings module and modifies the Python path to
-#     be able to locate the project module.
-#     """
-#     global KAG_CONF
-#     KAG_CONF = load_config(prod)
-#     init_kag_config(KAG_CONF)
 
 
 class KAGConfigMgr:
@@ -115,13 +107,12 @@ class KAGConfigMgr:
         self._is_initialize = False
 
     def initialize(self, prod: bool = True):
-        if not self._is_initialize:
-            self.prod = prod
-            self.config = load_config(prod)
-            global_config = self.config.get(KAGConstants.GLOBAL_CONFIG_KEY, {})
-            self.global_config.setup(**global_config)
-            init_kag_config(self.config)
-            self._is_initialize = True
+        self.prod = prod
+        self.config = load_config(prod)
+        global_config = self.config.get(KAGConstants.PROJECT_CONFIG_KEY, {})
+        self.global_config.setup(**global_config)
+        init_kag_config(self.config)
+        self._is_initialize = True
 
     @property
     def all_config(self):
@@ -130,12 +121,19 @@ class KAGConfigMgr:
 
 KAG_CONFIG = KAGConfigMgr()
 
-KAG_GLOBAL_CONF = KAG_CONFIG.global_config
+KAG_PROJECT_CONF = KAG_CONFIG.global_config
 
 
-def init_env(prod: bool = False):
+def init_env():
+    project_id = os.getenv(KAGConstants.KAG_PROJECT_ID_KEY)
+    host_addr = os.getenv(KAGConstants.KAG_HOST_ADDR_KEY)
+    if project_id and host_addr:
+        prod = True
+    else:
+        prod = False
     global KAG_CONFIG
     KAG_CONFIG.initialize(prod)
+
     if prod:
         msg = "Done init config from server"
     else:

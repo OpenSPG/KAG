@@ -18,7 +18,7 @@ from kag.interface import ExtractorABC
 from kag.builder.component.extractor.kag_extractor import KAGExtractor
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.spg_prompt import SPG_KGPrompt
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 from knext.schema.client import BASIC_TYPES
@@ -41,7 +41,9 @@ class SPGExtractor(KAGExtractor):
                 if p not in SPG_KGPrompt.ignored_properties:
                     self.spg_ner_types.append(type_name)
                     continue
-        self.spg_ner_prompt = SPG_KGPrompt(self.spg_ner_types, KAG_GLOBAL_CONF.language)
+        self.spg_ner_prompt = SPG_KGPrompt(
+            self.spg_ner_types, KAG_PROJECT_CONF.language
+        )
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, passage: str):

@@ -22,7 +22,7 @@ from knext.schema.model.base import SpgTypeEnum
 from knext.schema.model.schema_helper import (
     PropertyName,
 )
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface.builder.mapping_abc import MappingABC
 from kag.common.registry import Functor
 
@@ -38,7 +38,7 @@ class SPGTypeMapping(MappingABC):
     """
 
     def __init__(self, spg_type_name: str, fuse_func: Functor = None):
-        self.schema = SchemaClient(project_id=KAG_GLOBAL_CONF.project_id).load()
+        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         assert (
             spg_type_name in self.schema
         ), f"SPG type [{spg_type_name}] does not exist."

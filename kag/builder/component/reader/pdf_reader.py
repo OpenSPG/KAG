@@ -22,7 +22,7 @@ from kag.interface import SourceReaderABC
 
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.common.llm import LLMClient
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
@@ -49,7 +49,7 @@ class PDFReader(SourceReaderABC):
         # self.split_using_outline = split_using_outline
         # self.outline_flag = True
         self.llm = llm
-        self.prompt = OutlinePrompt(KAG_GLOBAL_CONF.language)
+        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:

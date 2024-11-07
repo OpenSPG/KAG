@@ -1,5 +1,5 @@
 import os
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 
 
 class LogicFormConfiguration:
@@ -9,7 +9,9 @@ class LogicFormConfiguration:
         self.prefix = args.get("prefix", "")
 
         # kg graph project ID.
-        self.project_id = args.get("KAG_PROJECT_ID", None) or KAG_GLOBAL_CONF.project_id
+        self.project_id = (
+            args.get("KAG_PROJECT_ID", None) or KAG_PROJECT_CONF.project_id
+        )
         if not self.project_id:
             raise RuntimeError(
                 "init LogicFormConfiguration failed, not found params KAG_PROJECT_ID"
@@ -19,7 +21,7 @@ class LogicFormConfiguration:
         self.schema_file_name = args.get("schema_file_name", "")
 
         self.host_addr = (
-            args.get("KAG_PROJECT_HOST_ADDR", None) or KAG_GLOBAL_CONF.host_addr
+            args.get("KAG_PROJECT_HOST_ADDR", None) or KAG_PROJECT_CONF.host_addr
         )
 
         if not self.host_addr:

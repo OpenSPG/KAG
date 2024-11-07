@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+import copy
 import unittest
 import os
 from unittest import TestCase
@@ -6,43 +9,61 @@ from unittest.mock import patch, mock_open, MagicMock
 from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.splitter.outline_splitter import OutlineSplitter
 from kag.builder.component.reader.docx_reader import DocxReader
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.common.env import init_kag_config
-
-init_kag_config(os.path.join(os.path.dirname(__file__),"test_config.cfg"))
 
 
-class TestLengthSplitter(TestCase):
+from kag.interface import SplitterABC
+from kag.builder.model.chunk import Chunk
 
-    def setUp(self):
-        self.splitter = LengthSplitter()
+llm_config = {
+    "type": "maas",
+    "base_url": "https://api.deepseek.com",
+    "api_key": "key",
+    "model": "deepseek-chat",
+}
 
-    def test_split_sentence(self):
-        sentence = "Hello World!This is a test. You and df aasd? sadq a asd !"
-        self.splitter.split_sentence(sentence)
-        self.assertEqual(len(self.splitter.split_sentence(sentence)), 4)
-    
-    @patch("kag.builder.component.splitter.length_splitter.LengthSplitter.slide_window_chunk")    
-    def test_invoke(self, mock_slide_window_chunk):
-        mock_slide_window_chunk.return_value = [Chunk(id = 1,name = "test",content = "Hello World!This is a test. You and df aasd? sadq a asd !")]
-        res = self.splitter.invoke("test")
-        self.assertEqual(len(res), 1)
-        
-class TestOutlineSplitter(TestCase):
-    
-    def setUp(self):
-        self.length_splitter = LengthSplitter(split_length=8000)
-        self.outline_splitter = OutlineSplitter()
-        self.docx_reader = DocxReader()
 
-    def test_invoke(self):
-        docx_path = os.path.join(os.path.dirname(__file__),"../data/test_docx.docx")
-        chunk = self.docx_reader.invoke(docx_path)
-        chunks = self.length_splitter.invoke(chunk)
-        chunks = self.outline_splitter.invoke(chunks)
-        print(chunks)
-    
-        
+def test_length_splitter():
+    splitter = SplitterABC.from_config(
+        {"type": "length", "split_length": 20, "window_length": 10}
+    )
+    content = "The quick brown fox jumps over the lazy dog. " * 4
+    sentences = splitter.split_sentence(content)
+    assert len(sentences) == 4
+
+    chunk = Chunk(id=1, name="test", content=content)
+    chunks = splitter.invoke(chunk)
+    assert len(chunks) > 1
+
+
+def test_outline_splitter():
+    splitter = SplitterABC.from_config(
+        {
+            "type": "outline",
+            "llm": copy.deepcopy(llm_config),
+        }
+    )
+    with open("../data/test_txt.txt", "r") as reader:
+        content = reader.read()
+    chunk = Chunk(id=1, name="test", content=content)
+
+    chunks = splitter.invoke(chunk)
+    assert len(chunks) > 0 and isinstance(chunks[0], Chunk)
+
+
+def test_semantic_splitter():
+    splitter = SplitterABC.from_config(
+        {
+            "type": "semantic",
+            "llm": copy.deepcopy(llm_config),
+        }
+    )
+    with open("../data/test_txt.txt", "r") as reader:
+        content = reader.read()
+    chunk = Chunk(id=1, name="test", content=content)
+
+    chunks = splitter.invoke(chunk)
+    assert len(chunks) > 0 and isinstance(chunks[0], Chunk)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,7 +16,7 @@ from typing import Dict, List
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import MappingABC
 
 
@@ -40,7 +40,7 @@ class RelationMapping(MappingABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        schema = SchemaClient(project_id=KAG_GLOBAL_CONF.project_id).load()
+        schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"
         assert object_name in schema, f"{object_name} is not a valid SPG type name"
         self.subject_type = schema.get(subject_name)

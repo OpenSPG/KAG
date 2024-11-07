@@ -17,7 +17,7 @@ from kag.interface import SplitterABC
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.model.chunk import Chunk
 from kag.common.llm import LLMClient
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class SemanticSplitter(SplitterABC):
             self.kept_char_pattern = re.compile(kept_char_pattern)
         self.split_length = split_length
         self.llm = llm
-        self.semantic_seg_op = SemanticSegPrompt(KAG_GLOBAL_CONF.language)
+        self.semantic_seg_op = SemanticSegPrompt(KAG_PROJECT_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:

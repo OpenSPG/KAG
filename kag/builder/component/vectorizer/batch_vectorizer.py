@@ -13,7 +13,7 @@ from collections import defaultdict
 from typing import List
 
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.vectorizer import Vectorizer
 from kag.interface import VectorizerABC
 from knext.schema.client import SchemaClient
@@ -129,7 +129,7 @@ class EmbeddingVectorGenerator(object):
 class BatchVectorizer(VectorizerABC):
     def __init__(self, vectorizer_model: Vectorizer):
         super().__init__()
-        self.project_id = KAG_GLOBAL_CONF.project_id
+        self.project_id = KAG_PROJECT_CONF.project_id
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
         self.vectorizer_model = vectorizer_model

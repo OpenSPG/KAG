@@ -3,7 +3,7 @@ from string import Template
 
 from knext.project.client import ProjectClient
 from kag.common.llm import LLMClient
-from kag.common.conf import KAG_GLOBAL_CONF, KAG_CONFIG
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 
 import logging
 
@@ -108,11 +108,11 @@ class KagBaseModule(object):
 
         If the module is computational, it initializes the state dictionary with the prompt template.
         """
-        self.host_addr = KAG_GLOBAL_CONF.host_addr
-        self.project_id = KAG_GLOBAL_CONF.project_id
+        self.host_addr = KAG_PROJECT_CONF.host_addr
+        self.project_id = KAG_PROJECT_CONF.project_id
         self.config = KAG_CONFIG.all_config
-        self.biz_scene = KAG_GLOBAL_CONF.biz_scene
-        self.language = KAG_GLOBAL_CONF.language
+        self.biz_scene = KAG_PROJECT_CONF.biz_scene
+        self.language = KAG_PROJECT_CONF.language
         self._init_llm()
 
     def _init_llm(self):

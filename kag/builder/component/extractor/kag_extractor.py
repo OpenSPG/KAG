@@ -13,13 +13,13 @@ import copy
 import logging
 from typing import Dict, Type, List
 
-from common.llm.llm_client import LLMClient
+from kag.common.llm.llm_client import LLMClient
 from tenacity import stop_after_attempt, retry
 
 from kag.builder.prompt.spg_prompt import SPG_KGPrompt
 from kag.interface import ExtractorABC, PromptABC
 from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
@@ -45,22 +45,22 @@ class KAGExtractor(ExtractorABC):
         triple_prompt: PromptABC = None,
     ):
         self.llm = llm
-        self.schema = SchemaClient(project_id=KAG_GLOBAL_CONF.project_id()).load()
+        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id()).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt
         self.triple_prompt = triple_prompt
 
         if self.ner_prompt is None:
             self.ner_prompt = PromptABC.from_config(
-                {"type": "default_ner", "language": KAG_GLOBAL_CONF.language}
+                {"type": "default_ner", "language": KAG_PROJECT_CONF.language}
             )
         if self.std_prompt is None:
             self.std_prompt = PromptABC.from_config(
-                {"type": "default_std", "language": KAG_GLOBAL_CONF.language}
+                {"type": "default_std", "language": KAG_PROJECT_CONF.language}
             )
         if self.triple_prompt is None:
             self.std_prompt = PromptABC.from_config(
-                {"type": "default_triple", "language": KAG_GLOBAL_CONF.language}
+                {"type": "default_triple", "language": KAG_PROJECT_CONF.language}
             )
 
     def create_extra_prompts(self):
@@ -78,8 +78,8 @@ class KAGExtractor(ExtractorABC):
         if self.kg_types:
             self.kg_prompt = SPG_KGPrompt(
                 self.kg_types,
-                language=KAG_GLOBAL_CONF.language,
-                project_id=KAG_GLOBAL_CONF.project_id,
+                language=KAG_PROJECT_CONF.language,
+                project_id=KAG_PROJECT_CONF.project_id,
             )
         else:
             self.kg_prompt = None

@@ -15,7 +15,7 @@ from typing import List, Type, Union
 from kag.interface import SplitterABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.builder.model.chunk import Chunk
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.llm import LLMClient
 from knext.common.base.runnable import Input, Output
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class OutlineSplitter(SplitterABC):
     def __init__(self, llm: LLMClient):
         self.llm = llm
-        self.prompt = OutlinePrompt(KAG_GLOBAL_CONF.language)
+        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:

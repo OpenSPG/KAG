@@ -16,7 +16,7 @@ from typing import Type, Dict, List
 from knext.graph_algo.client import GraphAlgoClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class KGWriter(SinkWriterABC):
     def __init__(self, project_id: int = None, **kwargs):
         super().__init__(**kwargs)
         if project_id is None:
-            self.project_id = KAG_GLOBAL_CONF.project_id
+            self.project_id = KAG_PROJECT_CONF.project_id
         else:
             self.project_id = project_id
         self.client = GraphAlgoClient(project_id=project_id)

@@ -18,7 +18,7 @@ from kag.common.llm import LLMClient
 from kag.builder.model.chunk import Chunk
 from kag.interface import SourceReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
-from kag.common.conf import KAG_GLOBAL_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 
 from knext.common.base.runnable import Input, Output
 
@@ -50,7 +50,7 @@ class DocxReader(SourceReaderABC):
 
     def __init__(self, llm: LLMClient = None):
         self.llm = llm
-        self.prompt = OutlinePrompt(KAG_GLOBAL_CONF.language)
+        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:
