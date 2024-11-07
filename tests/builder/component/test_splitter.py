@@ -2,24 +2,12 @@
 
 import copy
 import unittest
-import os
-from unittest import TestCase
-from unittest.mock import patch, mock_open, MagicMock
 
-from kag.builder.component.splitter.length_splitter import LengthSplitter
-from kag.builder.component.splitter.outline_splitter import OutlineSplitter
-from kag.builder.component.reader.docx_reader import DocxReader
-
-
+from kag.common.conf import KAG_CONFIG
 from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk
 
-llm_config = {
-    "type": "maas",
-    "base_url": "https://api.deepseek.com",
-    "api_key": "key",
-    "model": "deepseek-chat",
-}
+llm_config = KAG_CONFIG.all_config["llm"]
 
 
 def test_length_splitter():

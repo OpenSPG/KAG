@@ -57,9 +57,9 @@ class LengthSplitter(BaseTableSplitter):
                 end = idx
                 tmp = content[start : end + 1].strip()
                 if len(tmp) > 0:
-                    output.append(tmp)
+                    output.append(tmp.strip())
                 start = idx + 1
-        res = content[start:]
+        res = content[start:].strip()
         if len(res) > 0:
             output.append(res)
         return output
