@@ -27,7 +27,7 @@ class AlterOperationEnum(str, Enum):
     Delete = "DELETE"
 
 
-@SinkWriterABC.register("kg")
+@SinkWriterABC.register("kg", as_default=True)
 class KGWriter(SinkWriterABC):
     """
     A class that extends `SinkWriter` to handle writing data into a Neo4j knowledge graph.

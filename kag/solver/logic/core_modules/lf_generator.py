@@ -1,7 +1,7 @@
 import logging
 
-from kag.interface import PromptABC
-from kag.solver.common.base import KagBaseModule
+from kag.interface import PromptABC, KagBaseModule
+
 
 logger = logging.getLogger(__name__)
 

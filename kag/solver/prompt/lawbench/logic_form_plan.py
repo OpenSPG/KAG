@@ -1,5 +1,6 @@
 import logging
 
+from kag.interface import PromptABC
 from kag.solver.prompt.default.logic_form_plan import LogicFormPlanPrompt
 
 logger = logging.getLogger(__name__)

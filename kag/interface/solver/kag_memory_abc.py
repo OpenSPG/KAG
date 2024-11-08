@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from kag.solver.common.base import KagBaseModule
+from kag.interface.solver.base import KagBaseModule
 
 
 class KagMemoryABC(KagBaseModule, ABC):

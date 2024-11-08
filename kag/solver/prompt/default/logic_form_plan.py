@@ -1,6 +1,5 @@
 import logging
 import re
-from string import Template
 from typing import List
 
 from kag.interface import PromptABC

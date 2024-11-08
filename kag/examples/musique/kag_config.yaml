@@ -1,0 +1,49 @@
+project:
+  biz_scene: default
+  host_addr: http://121.40.150.147:8887
+  id: '9'
+  language: en
+  namespace: MuSiQue
+  project_id: 666
+
+llm: &extract_llm
+  api_key: key
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  type: maas
+
+chain:
+  extractor:
+    llm: *extract_llm
+    ner_prompt:
+      type: musique_ner
+    std_prompt:
+      type: musique_std
+    triple_prompt:
+      type: musique_triple
+    type: kag
+  reader:
+    type: musique
+  splitter:
+    split_length: 100000
+    type: length
+    window_length: 0
+  vectorizer:
+    type: batch
+    vectorizer_model:
+      path: ~/.cache/vectorizer/BAAI/bge-base-zh-v1.5
+      type: bge
+      vector_dimensions: 768
+  writer:
+    type: kg
+indexer:
+  similarity_threshold: 0.8
+  with_semantic: false
+
+log:
+  level: INFO
+retriever:
+  match_threshold: 0.8
+  pagerank_threshold: 0.9
+  top_k: 10
+  with_semantic: false

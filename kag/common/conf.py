@@ -138,4 +138,8 @@ def init_env():
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
-    print(f"==================={msg}===================:\n{KAG_CONFIG.all_config}")
+
+    print(f"==================={msg}===================")
+    import pprint
+
+    pprint.pprint(KAG_CONFIG.all_config, indent=2)

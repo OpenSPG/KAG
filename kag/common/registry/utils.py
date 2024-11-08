@@ -34,6 +34,7 @@ def import_modules_from_path(path: str) -> None:
     User can specify their custom packages and have their custom
     classes get loaded and registered.
     """
+    path = os.path.abspath(os.path.normpath(path))
     importlib.invalidate_caches()
     tmp = path.rsplit("/", 1)
     if len(tmp) == 1:

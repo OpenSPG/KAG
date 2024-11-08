@@ -11,7 +11,7 @@
 # or implied.
 
 import logging
-
+from typing import List
 from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)

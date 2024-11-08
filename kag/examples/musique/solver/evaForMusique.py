@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
+from kag.interface import LFPlannerABC
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
 from kag.solver.implementation.default_reasoner import DefaultReasoner
 from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever

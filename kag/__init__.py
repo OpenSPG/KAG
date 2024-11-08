@@ -209,6 +209,8 @@ __version__ = "0.5.2-beta1"
 import kag.interface
 import kag.builder.component
 import kag.builder.prompt
+import kag.solver.prompt
+
 from kag.common.conf import init_env
 
 init_env()

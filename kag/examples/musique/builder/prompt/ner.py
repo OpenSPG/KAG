@@ -12,13 +12,15 @@
 
 import json
 from string import Template
-from typing import List, Optional
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
 
-class OpenIENERPrompt(PromptOp):
+@PromptABC.register("musique_ner")
+class OpenIENERPrompt(PromptABC):
 
     template_en = """
     {
@@ -85,9 +87,11 @@ class OpenIENERPrompt(PromptOp):
 
     template_zh = template_en
 
-    def __init__(self, language: Optional[str] = "en", **kwargs):
-        super().__init__(language, **kwargs)
-        self.schema = SchemaClient(project_id=self.project_id).extract_types()
+    def __init__(self, language: str = ""):
+        super().__init__(language)
+        self.schema = SchemaClient(
+            project_id=KAG_PROJECT_CONF.project_id
+        ).extract_types()
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property

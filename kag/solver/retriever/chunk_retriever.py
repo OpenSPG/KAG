@@ -1,6 +1,6 @@
 from typing import List
 
-from kag.solver.common.base import KagBaseModule
+from kag.interface import KagBaseModule
 
 
 class ChunkRetriever(KagBaseModule):

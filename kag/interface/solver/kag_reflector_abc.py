@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
-from kag.solver.common.base import KagBaseModule
+from kag.interface.solver.base import KagBaseModule
 
 
 class KagReflectorABC(KagBaseModule):

@@ -18,7 +18,13 @@ from kag.interface.builder.aligner_abc import AlignerABC
 from kag.interface.builder.writer_abc import SinkWriterABC
 from kag.interface.builder.vectorizer_abc import VectorizerABC
 
-from knext.builder.builder_chain_abc import BuilderChainABC
+from kag.interface.solver.base import KagBaseModule, Question
+from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
+from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
+from kag.interface.solver.kag_reflector_abc import KagReflectorABC
+from kag.interface.solver.lf_planner_abc import LFPlannerABC
+from kag.interface.solver.lf_solver_abc import LFSolverABC
 
 
 __all__ = [
@@ -30,5 +36,12 @@ __all__ = [
     "AlignerABC",
     "SinkWriterABC",
     "VectorizerABC",
-    "BuilderChainABC",
+    "KagBaseModule",
+    "Question",
+    "KAGGeneratorABC",
+    "KagMemoryABC",
+    "KagReasonerABC",
+    "KagReflectorABC",
+    "LFPlannerABC",
+    "LFSolverABC",
 ]

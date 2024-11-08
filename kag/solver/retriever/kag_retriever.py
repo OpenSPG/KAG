@@ -9,8 +9,8 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import os
-from interface.common.prompt import PromptABC
+
+from kag.interface import PromptABC
 from tenacity import retry, stop_after_attempt
 
 from kag.common.vectorizer import Vectorizer

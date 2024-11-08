@@ -1,9 +1,8 @@
-import json
 import logging
-import os
 import time
 from typing import List
 
+from kag.interface import LFSolverABC
 from kag.common.vectorizer import Vectorizer
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
@@ -24,7 +23,7 @@ from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 logger = logging.getLogger()
 
 
-class LFSolver:
+class LFSolver(LFSolverABC):
     """
     Solver class that integrates various components to solve queries using logic forms.
     This class can't be extended to implement custom solver strategies.
