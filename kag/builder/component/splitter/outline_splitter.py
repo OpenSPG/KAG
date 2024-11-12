@@ -9,10 +9,10 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import logging 
+import logging
 import os
 import re
-from typing import List, Type,Union
+from typing import List, Type, Union
 
 from kag.interface.builder import SplitterABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
@@ -22,14 +22,15 @@ from kag.common.llm.client.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 
+
 class OutlineSplitter(SplitterABC):
-    
-    def __init__(self,**kwargs):
+
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.llm = self._init_llm()
         language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
         self.prompt = OutlinePrompt(language)
-        
+
     @property
     def input_types(self) -> Type[Input]:
         return Chunk
@@ -37,7 +38,7 @@ class OutlineSplitter(SplitterABC):
     @property
     def output_types(self) -> Type[Output]:
         return Chunk
-    
+
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]]) -> List[Chunk]:
         if isinstance(chunk, Chunk):
             chunk = [chunk]
@@ -48,36 +49,52 @@ class OutlineSplitter(SplitterABC):
         content = "\n".join([c.content for c in chunk])
         chunks = self.sep_by_outline(content, outlines)
         return chunks
-    
-    def sep_by_outline(self,content,outlines):
+
+    def sep_by_outline(self, content, outlines):
         position_check = []
         for outline in outlines:
             start = content.find(outline)
-            position_check.append((outline,start))
+            position_check.append((outline, start))
         chunks = []
-        for idx,pc in enumerate(position_check):
+        for idx, pc in enumerate(position_check):
             chunk = Chunk(
-                id = Chunk.generate_hash_id(f"{pc[0]}#{idx}"),
+                id=Chunk.generate_hash_id(f"{pc[0]}#{idx}"),
                 name=f"{pc[0]}#{idx}",
-                content=content[pc[1]:position_check[idx+1][1] if idx+1 < len(position_check) else len(position_check)],
+                content=content[
+                    pc[1] : (
+                        position_check[idx + 1][1]
+                        if idx + 1 < len(position_check)
+                        else len(position_check)
+                    )
+                ],
             )
             chunks.append(chunk)
         return chunks
-    
-    def invoke(self,input: Input, **kwargs) -> List[Chunk]:
+
+    def invoke(self, input: Input, **kwargs) -> List[Chunk]:
         chunks = self.outline_chunk(input)
         return chunks
+
 
 if __name__ == "__main__":
     from kag.builder.component.splitter.length_splitter import LengthSplitter
     from kag.builder.component.splitter.outline_splitter import OutlineSplitter
     from kag.builder.component.reader.docx_reader import DocxReader
+    from kag.builder.component.reader.txt_reader import TXTReader
     from kag.common.env import init_kag_config
-    init_kag_config(os.path.join(os.path.dirname(__file__),"../../../../tests/builder/component/test_config.cfg"))
-    docx_reader = DocxReader()
+
+    init_kag_config(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../../../../tests/builder/component/test_config.cfg",
+        )
+    )
+    docx_reader = TXTReader()
     length_splitter = LengthSplitter(split_length=8000)
     outline_splitter = OutlineSplitter()
-    docx_path = os.path.join(os.path.dirname(__file__),"../../../../tests/builder/data/test_docx.docx")
+    docx_path = os.path.join(
+        os.path.dirname(__file__), "../../../../tests/builder/data/儿科学_short.txt"
+    )
     # chain = docx_reader >> length_splitter >> outline_splitter
     chunk = docx_reader.invoke(docx_path)
     chunks = length_splitter.invoke(chunk)
