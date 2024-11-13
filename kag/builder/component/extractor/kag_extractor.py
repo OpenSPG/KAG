@@ -315,6 +315,9 @@ class KAGExtractor(ExtractorABC):
                 official_name = tmp_dict[key]
                 tmp_entity["official_name"] = official_name
 
+    def quoteStr(self, input: str) -> str:
+        return f"""{input}"""
+
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the semantic extractor to process input data.
@@ -327,7 +330,7 @@ class KAGExtractor(ExtractorABC):
             List[Output]: A list of processed results, containing subgraph information.
         """
         title = input.name
-        passage = title + "\n" + input.content
+        passage = self.quoteStr(title + "\n" + input.content)
 
         try:
             entities = self.named_entity_recognition(passage)
