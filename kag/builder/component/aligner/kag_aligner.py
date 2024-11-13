@@ -18,7 +18,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @AlignerABC.register("kag")
-class KAGPostProcessorAligner(AlignerABC):
+class KAGAligner(AlignerABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

@@ -1,0 +1,23 @@
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: en
+  namespace: MuSiQue
+  project_id: 666
+
+llm: &llm_conf
+  type: mock
+
+vectorizer: &vec
+  type: batch
+  vectorizer_model:
+    path: ~/.cache/vectorizer/BAAI/bge-base-zh-v1.5
+    type: bge
+    vector_dimensions: 768
+
+writer:
+  type: kg
+
+log:
+  level: INFO

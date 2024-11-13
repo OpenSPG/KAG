@@ -49,9 +49,9 @@ def buildKB(file_path):
 
     chain_config = KAG_CONFIG.all_config["chain"]
     chain = MusiqueBuilderChain.from_config(chain_config)
-    chain.invoke(file_path=file_path, max_workers=20)
+    chain.invoke(file_path=file_path, max_workers=1)
 
-    logger.info(f"\n\nbuildKB successfully for {corpusFilePath}\n\n")
+    logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
 
 
 if __name__ == "__main__":

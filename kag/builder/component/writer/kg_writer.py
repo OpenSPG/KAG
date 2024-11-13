@@ -81,4 +81,5 @@ class KGWriter(SinkWriterABC):
         """The calling interface provided for SPGServer."""
         _input = self.input_types.from_dict(input)
         _output = self.invoke(_input, alter_operation)  # noqa
+
         return None

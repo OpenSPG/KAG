@@ -16,16 +16,15 @@ from typing import Dict, Type, List
 from kag.common.llm.llm_client import LLMClient
 from tenacity import stop_after_attempt, retry
 
-from kag.builder.prompt.spg_prompt import SPG_KGPrompt
-from kag.interface import ExtractorABC, PromptABC
-from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
+from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
+
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
+from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
-from knext.schema.model.base import SpgTypeEnum
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +42,7 @@ class KAGExtractor(ExtractorABC):
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         triple_prompt: PromptABC = None,
+        external_graph: ExternalGraphLoaderABC = None,
     ):
         self.llm = llm
         print(f"self.llm: {self.llm}")
@@ -64,43 +64,7 @@ class KAGExtractor(ExtractorABC):
             self.triple_prompt = PromptABC.from_config(
                 {"type": f"{biz_scene}_triple", "language": KAG_PROJECT_CONF.language}
             )
-        self.create_extra_prompts()
-
-    def create_extra_prompts(self):
-        self.kg_types = []
-        for type_name, spg_type in self.schema.items():
-            if type_name in SPG_KGPrompt.ignored_types:
-                continue
-            if spg_type.spg_type_enum == SpgTypeEnum.Concept:
-                continue
-            properties = list(spg_type.properties.keys())
-            for p in properties:
-                if p not in SPG_KGPrompt.ignored_properties:
-                    self.kg_types.append(type_name)
-                    break
-        if self.kg_types:
-            self.kg_prompt = SPG_KGPrompt(
-                self.kg_types,
-                language=KAG_PROJECT_CONF.language,
-                project_id=KAG_PROJECT_CONF.project_id,
-            )
-        else:
-            self.kg_prompt = None
-
-    # @classmethod
-    # def initialize(
-    #     llm: LLMClient,
-    #     ner_prompt: PromptABC = None,
-    #     std_prompt: PromptABC = None,
-    #     triple_prompt: PromptABC = None,
-    # ):
-    #     print(f"llm = {llm}")
-    #     print(ner_prompt)
-    #     print(std_prompt)
-    #     print(triple_prompt)
-    #     extractor = KAGExtractor(llm, ner_prompt, std_prompt, triple_prompt)
-    #     extractor.create_extra_prompts()
-    #     return extractor
+        self.external_graph = external_graph
 
     @property
     def input_types(self) -> Type[Input]:
@@ -119,12 +83,34 @@ class KAGExtractor(ExtractorABC):
         Returns:
             The result of the named entity recognition operation.
         """
-        if self.kg_types:
-            kg_result = self.llm.invoke({"input": passage}, self.kg_prompt)
-        else:
-            kg_result = []
         ner_result = self.llm.invoke({"input": passage}, self.ner_prompt)
-        return kg_result + ner_result
+        if self.external_graph:
+            extra_ner_result = self.external_graph.ner(passage)
+        else:
+            extra_ner_result = []
+        output = []
+        dedup = set()
+        for item in extra_ner_result:
+            name = item.name
+            label = item.label
+            description = item.properties.get("desc", "")
+            semantic_type = item.properties.get("semanticType", label)
+            if name not in dedup:
+                dedup.add(name)
+                output.append(
+                    {
+                        "entity": name,
+                        "type": semantic_type,
+                        "category": label,
+                        "description": description,
+                    }
+                )
+        for item in ner_result:
+            name = item.get("entity", None)
+            if name and name not in dedup:
+                dedup.add(name)
+                output.append(item)
+        return output
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
@@ -357,9 +343,10 @@ class KAGExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
+
         title = input.name
         passage = title + "\n" + input.content
-
+        out = []
         try:
             entities = self.named_entity_recognition(passage)
             sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
@@ -371,10 +358,10 @@ class KAGExtractor(ExtractorABC):
             std_entities = self.named_entity_standardization(passage, filtered_entities)
             self.append_official_name(entities, std_entities)
             self.assemble_sub_graph(sub_graph, input, entities, triples)
-            return [sub_graph]
+            out.append(sub_graph)
         except Exception as e:
             import traceback
 
             traceback.print_exc()
             logger.info(e)
-        return []
+        return out

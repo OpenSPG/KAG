@@ -28,25 +28,42 @@ class KAGConstants(object):
     KAG_CFG_PREFIX = "KAG"
     GLOBAL_CONFIG_KEY = "global"
     PROJECT_CONFIG_KEY = "project"
-    KAG_PROJECT_ID_KEY = "KAG_PROJECT_ID"
-    KAG_HOST_ADDR_KEY = "KAG_PROJECT_HOST_ADDR"
-    KAG_LANGUAGE_KEY = "KAG_LANGUAGE"
-    KAG_BIZ_SCENE_KEY = "KAG_BIZ_SCENE"
+    KAG_NAMESPACE_KEY = "namespace"
+    KAG_PROJECT_ID_KEY = "id"
+    KAG_PROJECT_HOST_ADDR_KEY = "host_addr"
+    KAG_LANGUAGE_KEY = "language"
+    KAG_BIZ_SCENE_KEY = "biz_scene"
+    ENV_KAG_PROJECT_ID = "KAG_PROJECT_ID"
+    ENV_KAG_PROJECT_HOST_ADDR = "KAG_PROJECT_HOST_ADDR"
+    KAG_SIMILAR_EDGE_NAME = "similar"
+
+    KS8_ENV_TF_CONFIG = "TF_CONFIG"
+    K8S_ENV_MASTER_ADDR = "MASTER_ADDR"
+    K8S_ENV_MASTER_PORT = "MASTER_PORT"
+    K8S_ENV_WORLD_SIZE = "WORLD_SIZE"
+    K8S_ENV_RANK = "RANK"
+    K8S_ENV_POD_NAME = "POD_NAME"
 
 
 class KAGGlobalConf:
     def __init__(self):
-        pass
+        self._initialized = False
 
-    def setup(self, **kwargs):
-        self.project_id = kwargs.pop(KAGConstants.KAG_PROJECT_ID_KEY, "1")
-        self.host_addr = kwargs.pop(
-            KAGConstants.KAG_HOST_ADDR_KEY, "http://127.0.0.1:8887"
-        )
-        self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
-        self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+    def initialize(self, **kwargs):
+        if not self._initialized:
+            print(f"kwargs = {kwargs}")
+            self.project_id = kwargs.pop(KAGConstants.KAG_PROJECT_ID_KEY, "1")
+            self.host_addr = kwargs.pop(
+                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY, "http://127.0.0.1:8887"
+            )
+            self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
+            self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
+            self.namespace = kwargs.pop(KAGConstants.KAG_NAMESPACE_KEY, None)
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+            self._initialized = True
+        else:
+            print("KAGGlobalConf has been initialized and cannot be initialized again!")
 
 
 def _closest_cfg(
@@ -71,8 +88,8 @@ def load_config(prod: bool = False):
     Get kag config file as a ConfigParser.
     """
     if prod:
-        project_id = os.getenv(KAGConstants.KAG_PROJECT_ID_KEY)
-        host_addr = os.getenv(KAGConstants.KAG_HOST_ADDR_KEY)
+        project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
+        host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
         config = ProjectClient(host_addr=host_addr).get_config(project_id)
         return config
     else:
@@ -87,8 +104,6 @@ def load_config(prod: bool = False):
 
 
 def init_kag_config(config):
-    global_config = config.get(KAGConstants.GLOBAL_CONFIG_KEY, {})
-    KAG_PROJECT_CONF.setup(**global_config)
     log_conf = config.get("log", {})
     if log_conf:
         log_level = log_conf.get("level", "INFO")
@@ -110,7 +125,7 @@ class KAGConfigMgr:
         self.prod = prod
         self.config = load_config(prod)
         global_config = self.config.get(KAGConstants.PROJECT_CONFIG_KEY, {})
-        self.global_config.setup(**global_config)
+        self.global_config.initialize(**global_config)
         init_kag_config(self.config)
         self._is_initialize = True
 
@@ -126,7 +141,7 @@ KAG_PROJECT_CONF = KAG_CONFIG.global_config
 
 def init_env():
     project_id = os.getenv(KAGConstants.KAG_PROJECT_ID_KEY)
-    host_addr = os.getenv(KAGConstants.KAG_HOST_ADDR_KEY)
+    host_addr = os.getenv(KAGConstants.KAG_PROJECT_HOST_ADDR_KEY)
     if project_id and host_addr:
         prod = True
     else:

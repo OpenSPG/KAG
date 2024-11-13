@@ -17,7 +17,11 @@ from kag.interface.builder.mapping_abc import MappingABC
 from kag.interface.builder.aligner_abc import AlignerABC
 from kag.interface.builder.writer_abc import SinkWriterABC
 from kag.interface.builder.vectorizer_abc import VectorizerABC
-
+from kag.interface.builder.external_graph_abc import (
+    ExternalGraphLoaderABC,
+    MatchConfig,
+)
+from kag.interface.builder.postprocessor_abc import PostProcessorABC
 from kag.interface.solver.base import KagBaseModule, Question
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
@@ -36,6 +40,9 @@ __all__ = [
     "AlignerABC",
     "SinkWriterABC",
     "VectorizerABC",
+    "ExternalGraphLoaderABC",
+    "MatchConfig",
+    "PostProcessorABC",
     "KagBaseModule",
     "Question",
     "KAGGeneratorABC",

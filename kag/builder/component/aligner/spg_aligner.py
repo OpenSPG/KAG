@@ -23,7 +23,7 @@ from knext.schema.model.base import ConstraintTypeEnum, BaseSpgType
 
 
 @AlignerABC.register("spg")
-class SPGPostProcessorAligner(AlignerABC):
+class SPGAligner(AlignerABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.spg_types = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()

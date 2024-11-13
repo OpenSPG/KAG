@@ -10,10 +10,15 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+from kag.builder.component.external_graph.external_graph import (
+    DefaultExternalGraphLoader,
+)
 from kag.builder.component.extractor.kag_extractor import KAGExtractor
 from kag.builder.component.extractor.spg_extractor import SPGExtractor
-from kag.builder.component.aligner.kag_post_processor import KAGPostProcessorAligner
-from kag.builder.component.aligner.spg_post_processor import SPGPostProcessorAligner
+from kag.builder.component.aligner.kag_aligner import KAGAligner
+from kag.builder.component.aligner.spg_aligner import SPGAligner
+from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcessor
+
 from kag.builder.component.mapping.spg_type_mapping import SPGTypeMapping
 from kag.builder.component.mapping.relation_mapping import RelationMapping
 from kag.builder.component.mapping.spo_mapping import SPOMapping
@@ -38,10 +43,12 @@ from kag.builder.component.writer.kg_writer import KGWriter
 
 
 __all__ = [
+    "DefaultExternalGraphLoader",
     "KAGExtractor",
     "SPGExtractor",
-    "KAGPostProcessorAligner",
-    "SPGPostProcessorAligner",
+    "KAGAligner",
+    "SPGAligner",
+    "KAGPostProcessor",
     "KGWriter",
     "SPGTypeMapping",
     "RelationMapping",

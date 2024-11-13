@@ -57,7 +57,7 @@ class Node(object):
             _id=input["id"],
             name=input["name"],
             label=input["label"],
-            properties=input["properties"],
+            properties=input.get("properties", {}),
         )
 
     def __eq__(self, other):
@@ -136,7 +136,7 @@ class Edge(object):
                 _id=input["to"], name=input["to"], label=input["toType"], properties={}
             ),
             label=input["label"],
-            properties=input["properties"],
+            properties=input.get("properties", {}),
         )
 
     def __eq__(self, other):

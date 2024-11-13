@@ -203,3 +203,9 @@ def to_snake_case(name):
     words = re.findall("[A-Za-z][a-z0-9]*", name)
     result = "_".join(words).lower()
     return result
+
+
+def get_vector_field_name(property_key: str):
+    name = f"{property_key}_vector"
+    name = to_snake_case(name)
+    return "_" + name
