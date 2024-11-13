@@ -43,7 +43,7 @@ class SPGExtractor(KAGExtractor):
                     continue
             self.kag_ner_types.append(type_name)
         self.kag_ner_prompt = PromptOp.load(self.biz_scene, "ner")(language=self.language, project_id=self.project_id)
-        self.spg_ner_prompt = SPG_KGPrompt(self.spg_ner_types, self.language)
+        self.spg_ner_prompt = SPG_KGPrompt(self.spg_ner_types, self.language, project_id=self.project_id)
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, passage: str):
