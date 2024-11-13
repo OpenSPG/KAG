@@ -135,7 +135,57 @@ class SPG_KGPrompt(SPGPrompt):
     }
     """
 
-    template_en: str = template_zh
+    template_en: str = """
+    {
+        "instruction": "You are an expert in knowledge graph extraction. Based on the schema defined by constraints, extract all entities and their attributes from the input. For attributes not explicitly mentioned in the input, return NAN. Output the results in standard JSON format as a list.",
+        "schema": $schema,
+        "example": [
+        {
+            "input": "Thyroid nodules refer to lumps within the thyroid gland that can move up and down with swallowing, and they are a common clinical condition that can be caused by various etiologies. Clinically, many thyroid diseases, such as thyroid degeneration, inflammation, autoimmune conditions, and neoplasms, can present as nodules. Thyroid nodules can occur singly or in multiple forms; multiple nodules have a higher incidence than single nodules, but single nodules have a higher likelihood of being thyroid cancer. Patients typically have the option to register for consultation in general surgery, thyroid surgery, endocrinology, or head and neck surgery. Some patients can feel the nodules in the front of their neck. In most cases, thyroid nodules are asymptomatic, and thyroid function is normal. The probability of thyroid nodules progressing to other thyroid diseases is only about 1%. Some individuals may experience neck pain, a foreign body sensation in the throat, or a feeling of pressure. When spontaneous intracystic bleeding occurs in a thyroid nodule, the pain can be more intense. Treatment options generally include radioactive iodine therapy, Lugol's solution (a compound iodine oral solution), or antithyroid medications to suppress thyroid hormone secretion. Currently, commonly used antithyroid drugs are thiourea compounds, including propylthiouracil (PTU) and methylthiouracil (MTU) from the thiouracil class, and methimazole and carbimazole from the imidazole class.",
+            "schema": {
+                "Disease": {
+                    "properties": {
+                        "complication": "Disease",
+                        "commonSymptom": "Symptom",
+                        "applicableMedicine": "Medicine",
+                        "department": "HospitalDepartment",
+                        "diseaseSite": "HumanBodyPart"
+                    }
+                },"Medicine": {
+                    "properties": {
+                    }
+                }
+            }
+            "output": [
+                {
+                    "entity": "Thyroid Nodule",
+                    "category": "Disease",
+                    "properties": {
+                        "complication": "Thyroid Cancer",
+                        "commonSymptom": ["Neck Pain", "Foreign Body Sensation in the Throat", "Feeling of Pressure"],
+                        "applicableMedicine": ["Lugol's Solution (Compound Iodine Oral Solution)", "Propylthiouracil (PTU)", "Methylthiouracil (MTU)", "Methimazole", "Carbimazole"],\n            "department": ["General Surgery", "Thyroid Surgery", "Endocrinology", "Head and Neck Surgery"],\n            "diseaseSite": "Thyroid"\n        }\n    },\n    {\n        "entity": "Lugol's Solution (Compound Iodine Oral Solution)",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Propylthiouracil (PTU)",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Methylthiouracil (MTU)",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Methimazole",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Carbimazole",
+                    "category": "Medicine"
+                }
+            ],
+    "input": "$input"
+    }
+    """
 
     def __init__(
         self,
