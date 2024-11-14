@@ -14,7 +14,7 @@ import json
 from typing import Union, Dict, List, Any
 import logging
 import traceback
-
+from tenacity import retry, stop_after_attempt
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
 
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient(Registrable):
+    @retry(stop=stop_after_attempt(3))
     def __call__(self, prompt: Union[str, dict, list]) -> str:
         """
         Perform inference on the given prompt and return the result.
@@ -33,6 +34,7 @@ class LLMClient(Registrable):
         """
         raise NotImplementedError
 
+    @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt: Union[str, dict, list]):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.

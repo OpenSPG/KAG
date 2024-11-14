@@ -9,12 +9,15 @@ project:
 llm: &llm_conf
   type: mock
 
+
+vectorize_model: &vec_model
+  path: ~/.cache/vectorizer/BAAI/bge-base-en-v1.5
+  type: bge
+  vector_dimensions: 768
+
 vectorizer: &vec
   type: batch
-  vectorize_model:
-    path: ~/.cache/vectorizer/BAAI/bge-base-zh-v1.5
-    type: bge
-    vector_dimensions: 768
+  vectorize_model: *vec_model
 
 writer:
   type: kg

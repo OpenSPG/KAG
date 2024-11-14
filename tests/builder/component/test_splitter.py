@@ -51,7 +51,3 @@ def test_semantic_splitter():
 
     chunks = splitter.invoke(chunk)
     assert len(chunks) > 0 and isinstance(chunks[0], Chunk)
-
-
-if __name__ == "__main__":
-    unittest.main()

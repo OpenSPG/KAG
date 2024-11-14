@@ -4,7 +4,7 @@ global: &global_config
   biz_scene: default
   language: en
 project: *global_config
-vectorizer:
+vectorize_model:
   type: bge
   path: ~/.cache/vectorizer/BAAI/bge-base-zh-v1.5
   url: https://alps-common.oss-cn-hangzhou-zmf.aliyuncs.com/alps/huaidong.xhd/Documents/models/BAAI-bge-base-zh-v1.5.tar.gz

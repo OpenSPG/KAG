@@ -111,6 +111,8 @@ class SemanticSplitter(SplitterABC):
         """
         result = self.llm.invoke({"input": org_chunk.content}, self.semantic_seg_op)
         splitted = self.parse_llm_output(org_chunk.content, result)
+        if len(splitted) == 0:
+            return [org_chunk]
         logger.debug(f"splitted = {splitted}")
         chunks = []
         for idx, item in enumerate(splitted):

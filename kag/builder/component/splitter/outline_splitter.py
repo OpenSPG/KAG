@@ -44,6 +44,8 @@ class OutlineSplitter(SplitterABC):
         for c in chunk:
             outline = self.llm.invoke({"input": c.content}, self.prompt)
             outlines.extend(outline)
+        if len(outlines) == 0:
+            return chunk
         content = "\n".join([c.content for c in chunk])
         chunks = self.sep_by_outline(content, outlines)
         return chunks

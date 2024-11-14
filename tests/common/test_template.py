@@ -56,6 +56,3 @@ def test_render_template():
         set_render_contents(template_content, rendered_content)
         raise e
     set_render_contents(template_content, rendered_content)
-
-
-test_render_template()

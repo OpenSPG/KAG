@@ -238,10 +238,10 @@ def test_from_param_base():
     assert model.list_gaussian[-1].mean == 47
 
 
-def test_to_param():
+def test_to_config():
     params = gen_conf()
     model = ComplexGaussian.from_config(params)
-    reconstructed_params = model.to_params()
+    reconstructed_params = model.to_config()
     reconstructed_model = ComplexGaussian.from_config(reconstructed_params)
     assert len(reconstructed_model.list_gaussian) == 3
     assert reconstructed_model.list_gaussian[-1].mean == 47
@@ -252,14 +252,14 @@ def test_multi_constructor():
     # without type key, will use default_implementation
     params = ConfigFactory.from_dict({"count": 32})
     ins = BaseCount.from_config(params)
-    reconstructed_params = ins.to_params()
+    reconstructed_params = ins.to_config()
     assert reconstructed_params.count == 32
 
     params = ConfigFactory.from_dict(
         {"type": "from_list_of_ints", "int_list": [1, 2, 3]}
     )
     ins = BaseCount.from_config(params)
-    reconstructed_params = ins.to_params()
+    reconstructed_params = ins.to_config()
     assert reconstructed_params.type == "from_list_of_ints"
     assert reconstructed_params.int_list == [1, 2, 3]
 
@@ -267,7 +267,7 @@ def test_multi_constructor():
         {"type": "from_list_of_strings", "str_list": ["1", "2", "#", "*"]}
     )
     ins = BaseCount.from_config(params)
-    reconstructed_params = ins.to_params_with_constructor("from_list_of_strings")
+    reconstructed_params = ins.to_config_with_constructor("from_list_of_strings")
     assert reconstructed_params.type == "from_list_of_strings"
     assert reconstructed_params.str_list == ["1", "2", "#", "*"]
 
@@ -395,13 +395,13 @@ def test_functor():
         {"type": "simple", "name": "pyfunc", "age": [1, 2, 3]}
     )
     func = Functor.from_config(simple_conf)
-    reconstructed_conf = func.to_params()
+    reconstructed_conf = func.to_config()
     reconstructed_func = Functor.from_config(reconstructed_conf)
     assert reconstructed_func() == 6
 
     complex_conf = ConfigFactory.from_dict({"type": "complex", "gaussian": gen_conf()})
     func = Functor.from_config(complex_conf)
-    reconstructed_conf = func.to_params()
+    reconstructed_conf = func.to_config()
     reconstructed_func = Functor.from_config(reconstructed_conf)
     assert reconstructed_func() == (2, 3)
 

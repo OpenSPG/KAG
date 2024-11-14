@@ -15,7 +15,7 @@ import tarfile
 import requests
 import logging
 
-
+from tenacity import retry, stop_after_attempt
 from kag.common.registry import Registrable
 from typing import Union, Iterable
 
@@ -59,6 +59,7 @@ class VectorizeModelABC(Registrable):
             message = "the embedding service is not available"
             raise RuntimeError(message) from ex
 
+    @retry(stop=stop_after_attempt(3))
     def vectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:

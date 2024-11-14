@@ -13,8 +13,9 @@ import copy
 import logging
 from typing import List, Dict
 
+
 from tenacity import retry, stop_after_attempt
-from kag.interface import ExtractorABC
+from kag.interface import ExtractorABC, LLMClient, PromptABC, ExternalGraphLoaderABC
 from kag.builder.component.extractor.kag_extractor import KAGExtractor
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.spg_prompt import SPG_KGPrompt
@@ -32,6 +33,17 @@ class SPGExtractor(KAGExtractor):
     A Builder Component that extracting structured data from long texts by invoking large language model.
 
     """
+
+    def __init__(
+        self,
+        llm: LLMClient,
+        ner_prompt: PromptABC = None,
+        std_prompt: PromptABC = None,
+        triple_prompt: PromptABC = None,
+        external_graph: ExternalGraphLoaderABC = None,
+    ):
+        super().__init__(llm, ner_prompt, std_prompt, triple_prompt, external_graph)
+        self.create_extra_prompts()
 
     def create_extra_prompts(self):
         self.spg_ner_types = []
