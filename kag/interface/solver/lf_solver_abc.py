@@ -1,7 +1,8 @@
+from kag.common.registry import Registrable
 from abc import ABC, abstractmethod
 
 
-class LFSolverABC(ABC):
+class LFSolverABC(Registrable, ABC):
     """
     Initializes the base planner.
     """

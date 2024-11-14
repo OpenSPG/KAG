@@ -11,14 +11,11 @@
 
 from typing import Union, Iterable
 from openai import OpenAI
-from kag.common.vectorizer.vectorizer import Vectorizer
+from kag.interface import VectorizeModelABC, EmbeddingVector
 
 
-EmbeddingVector = Iterable[float]
-
-
-@Vectorizer.register("openai")
-class OpenAIVectorizer(Vectorizer):
+@VectorizeModelABC.register("openai")
+class OpenAIVectorizeModel(VectorizeModelABC):
     """
     Invoke OpenAI or OpenAI-compatible embedding services to turn texts into embedding vectors.
     """

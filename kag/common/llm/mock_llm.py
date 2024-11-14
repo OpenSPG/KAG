@@ -12,7 +12,7 @@
 
 
 import json
-from kag.common.llm.llm_client import LLMClient
+from kag.interface import LLMClient
 
 
 @LLMClient.register("mock")

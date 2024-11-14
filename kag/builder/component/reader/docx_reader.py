@@ -14,7 +14,7 @@ import os
 from typing import List, Type, Union
 
 from docx import Document
-from kag.common.llm import LLMClient
+from kag.interface import LLMClient
 from kag.builder.model.chunk import Chunk
 from kag.interface import SourceReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt

@@ -13,7 +13,7 @@ import copy
 import logging
 from typing import Dict, Type, List
 
-from kag.common.llm.llm_client import LLMClient
+from kag.interface import LLMClient
 from tenacity import stop_after_attempt, retry
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC

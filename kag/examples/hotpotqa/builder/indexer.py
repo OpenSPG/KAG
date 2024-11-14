@@ -8,72 +8,62 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import json
 import logging
-import os
-from typing import List, Type
-
+from kag.common.registry import Registrable, import_modules_from_path
 from kag.builder.component import KGWriter
-from kag.builder.component.extractor import KAGExtractor
-from kag.builder.component.splitter import LengthSplitter
-from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
-from kag.builder.model.chunk import Chunk
+from kag.interface import (
+    ExtractorABC,
+    SplitterABC,
+    VectorizerABC,
+    SourceReaderABC,
+    PostProcessorABC,
+)
 from knext.builder.builder_chain_abc import BuilderChainABC
-from kag.interface.builder import SourceReaderABC
-from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
+import_modules_from_path(".")
 
 
-class HotpotqaCorpusReader(SourceReaderABC):
-    @property
-    def input_types(self) -> Type[Input]:
-        """The type of input this Runnable object accepts specified as a type annotation."""
-        return str
+class HotpotqaBuilderChain(BuilderChainABC, Registrable):
+    def __init__(
+        self,
+        reader: SourceReaderABC,
+        splitter: SplitterABC,
+        extractor: ExtractorABC,
+        vectorizer: VectorizerABC,
+        post_processor: PostProcessorABC,
+        writer: KGWriter,
+    ):
+        self.reader = reader
+        self.splitter = splitter
+        self.extractor = extractor
+        self.vectorizer = vectorizer
+        self.post_processor = post_processor
 
-    @property
-    def output_types(self) -> Type[Output]:
-        """The type of output this Runnable object produces specified as a type annotation."""
-        return Chunk
+        self.writer = writer
 
-    def invoke(self, input: str, **kwargs) -> List[Output]:
-        if os.path.exists(str(input)):
-            with open(input, "r") as f:
-                corpus = json.load(f)
-        else:
-            corpus = json.loads(input)
-        chunks = []
-
-        for item_key, item_value in corpus.items():
-            chunk = Chunk(
-                id=item_key,
-                name=item_key,
-                content="\n".join(item_value),
-            )
-            chunks.append(chunk)
-        return chunks
-
-
-class HotpotBuilderChain(BuilderChainABC):
     def build(self, **kwargs):
-        source = HotpotqaCorpusReader()
-        splitter = LengthSplitter(split_length=2000)
-        extractor = KAGExtractor()
-        vectorizer = BatchVectorizer()
-        sink = KGWriter()
+        return (
+            self.reader
+            >> self.splitter
+            >> self.extractor
+            >> self.vectorizer
+            >> self.post_processor
+            >> self.writer
+        )
 
-        return source >> splitter >> extractor >> vectorizer >> sink
 
+def buildKB(file_path):
+    from kag.common.conf import KAG_CONFIG
 
-def buildKB(corpusFilePath):
-    HotpotBuilderChain().invoke(file_path=corpusFilePath, max_workers=20)
+    chain_config = KAG_CONFIG.all_config["chain"]
+    chain = HotpotqaBuilderChain.from_config(chain_config)
+    chain.invoke(file_path=file_path, max_workers=10)
 
-    logger.info(f"\n\nbuildKB successfully for {corpusFilePath}\n\n")
+    logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
 
 
 if __name__ == "__main__":
-    filePath = "./data/hotpotqa_sub_corpus.json"
-    # filePath = "./data/hotpotqa_train_corpus.json"
+    file_path = "./data/hotpotqa_sub_corpus.json"
 
-    corpusFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
-    buildKB(corpusFilePath)
+    buildKB(file_path)

@@ -1,17 +1,20 @@
-from abc import ABC, abstractmethod
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
+
+from abc import ABC
 
 from kag.interface.solver.base import KagBaseModule
 
 
 class LFPlannerABC(KagBaseModule, ABC):
-    """
-    Initializes the base planner.
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @abstractmethod
     def lf_planing(self, question, llm_output=None):
         """
         Method that should be implemented by all subclasses for planning logic.
@@ -24,4 +27,7 @@ class LFPlannerABC(KagBaseModule, ABC):
         Returns:
         list of LFPlanResult
         """
-        pass
+        return []
+
+
+LFPlannerABC.register("empty")(LFPlannerABC)

@@ -11,22 +11,6 @@ from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 
 
 class KGRetriever(KagBaseModule):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    """
-    A base class for knowledge graph retrieval strategies.
-
-    This class provides a template for implementing different retrieval strategies for relations and entities within a knowledge graph.
-
-    Methods:
-        retrieval_relation(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs) -> KgGraph:
-            Retrieves and standardizes relations based on the given node and one hop graph list.
-
-        retrieval_entity(entity_mention, topk=1, params={}):
-            Retrieves related entities based on the given entity mention.
-    """
-
     def retrieval_relation(
         self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
     ) -> KgGraph:

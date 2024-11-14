@@ -25,7 +25,7 @@ from tenacity import stop_after_attempt, retry
 
 from kag.interface import SourceReaderABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.common.llm import LLMClient
+from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input

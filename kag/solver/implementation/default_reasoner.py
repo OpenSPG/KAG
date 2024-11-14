@@ -1,17 +1,16 @@
 import logging
 from typing import List
 
-from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
-from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
+from kag.interface import KagReasonerABC, LFPlannerABC, LFSolverABC
+
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult
 from kag.solver.logic.core_modules.lf_solver import LFSolver
+from kag.interface import LLMClient
 
 logger = logging.getLogger()
 
 
+@KagReasonerABC.register("base", as_default=True)
 class DefaultReasoner(KagReasonerABC):
     """
     A processor class for handling logical form tasks in language processing.
@@ -31,16 +30,23 @@ class DefaultReasoner(KagReasonerABC):
     """
 
     def __init__(
-        self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
+        self,
+        lf_planner: LFPlannerABC = None,
+        lf_solver: LFSolver = None,
+        llm_client: LLMClient = None,
+        **kwargs,
     ):
-        super().__init__(lf_planner=lf_planner, lf_solver=lf_solver, **kwargs)
+        super().__init__(llm_client, **kwargs)
 
-        self.lf_planner = lf_planner or DefaultLFPlanner(**kwargs)
-        self.lf_solver = lf_solver or LFSolver(
-            kg_retriever=KGRetrieverByLlm(**kwargs),
-            chunk_retriever=LFChunkRetriever(**kwargs),
-            **kwargs,
-        )
+        self.lf_planner = lf_planner or LFPlannerABC.from_config({"type": "base"})
+
+        solver_config = {
+            "type": "base",
+            "kg_retriever": {"type": "base"},
+            "chunk_retriever": {"type": "kag_lf"},
+        }
+
+        self.lf_solver = lf_solver or LFSolverABC.from_config(solver_config)
 
         self.sub_query_total = 0
         self.kg_direct = 0

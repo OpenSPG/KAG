@@ -16,7 +16,7 @@ from kag.interface import SplitterABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.builder.model.chunk import Chunk
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.llm import LLMClient
+from kag.interface import LLMClient
 from knext.common.base.runnable import Input, Output
 
 

@@ -1,22 +1,26 @@
 from tenacity import stop_after_attempt, retry
 
-from kag.interface import PromptABC
-from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
+from kag.interface import PromptABC, KAGGeneratorABC
+from kag.interface import LLMClient
 from kag.solver.implementation.default_memory import DefaultMemory
 
 
+@KAGGeneratorABC.register("base", as_default=True)
 class DefaultGenerator(KAGGeneratorABC):
     """
     The Generator class is an abstract base class for generating responses using a language model module.
     It initializes prompts for judging and generating responses based on the business scene and language settings.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.generate_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_resp_generator"}
-        )
+    def __init__(
+        self, generate_prompt: PromptABC = None, llm_client: LLMClient = None, **kwargs
+    ):
+        super().__init__(llm_client, **kwargs)
+        if generate_prompt is None:
+            generate_prompt = PromptABC.from_config(
+                {"type": f"{self.biz_scene}_resp_generator"}
+            )
+        self.generate_prompt = generate_prompt
 
     @retry(stop=stop_after_attempt(3))
     def generate(self, instruction, memory: DefaultMemory):

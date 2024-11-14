@@ -6,7 +6,7 @@ import time
 from typing import List
 
 from kag.interface import PromptABC
-from kag.common.llm import LLMClient
+from kag.interface import LLMClient
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,

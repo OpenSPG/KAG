@@ -11,7 +11,7 @@ llm: &llm_conf
 
 vectorizer: &vec
   type: batch
-  vectorizer_model:
+  vectorize_model:
     path: ~/.cache/vectorizer/BAAI/bge-base-zh-v1.5
     type: bge
     vector_dimensions: 768

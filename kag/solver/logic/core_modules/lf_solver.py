@@ -3,7 +3,7 @@ import time
 from typing import List
 
 from kag.interface import LFSolverABC
-from kag.common.vectorizer import Vectorizer
+from kag.interface import VectorizeModelABC as Vectorizer
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.kg_retriever import KGRetriever
@@ -23,6 +23,7 @@ from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 logger = logging.getLogger()
 
 
+@LFSolverABC.register("base", as_default=True)
 class LFSolver(LFSolverABC):
     """
     Solver class that integrates various components to solve queries using logic forms.
@@ -33,6 +34,7 @@ class LFSolver(LFSolverABC):
         self,
         kg_retriever: KGRetriever = None,
         chunk_retriever: ChunkRetriever = None,
+        vectorize_model: Vectorizer = None,
         report_tool=None,
         **kwargs,
     ):
@@ -54,7 +56,6 @@ class LFSolver(LFSolverABC):
             raise ValueError(
                 "At least one of `kg_retriever` or `chunk_retriever` must be provided."
             )
-
         self.kg_retriever = kg_retriever
         self.chunk_retriever = chunk_retriever
         self.project_id = KAG_PROJECT_CONF.project_id
@@ -71,9 +72,10 @@ class LFSolver(LFSolverABC):
         self.last_iter_docs = []
 
         self.config = KAG_CONFIG.all_config
-        vectorizer_config = self.config.get("vectorizer", {})
-        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
-        self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
+        if vectorize_model is None:
+            vectorize_model = Vectorizer.from_config(self.config["vectorize_model"])
+        self.vectorize_model = vectorize_model
+        self.text_similarity = TextSimilarity(self.vectorize_model)
 
     def _process_history(self, history):
         """

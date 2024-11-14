@@ -4,9 +4,6 @@ from kag.interface import KagBaseModule
 
 
 class ChunkRetriever(KagBaseModule):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     """
     An abstract base class for chunk retrieval strategies.
 

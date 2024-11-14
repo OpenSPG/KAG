@@ -1,19 +1,29 @@
 from tenacity import retry, stop_after_attempt
 
-from kag.interface import PromptABC
-from kag.interface.solver.kag_memory_abc import KagMemoryABC
+from kag.interface import PromptABC, KagMemoryABC
+from kag.interface import LLMClient
 
 
+@KagMemoryABC.register("base", as_default=True)
 class DefaultMemory(KagMemoryABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.verify_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_resp_verifier"}
-        )
-        self.extractor_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_resp_extractor"}
-        )
-
+    def __init__(
+        self,
+        verify_prompt: PromptABC = None,
+        extractor_prompt: PromptABC = None,
+        llm_client: LLMClient = None,
+        **kwargs,
+    ):
+        super().__init__(llm_client, **kwargs)
+        if verify_prompt is None:
+            verify_prompt = PromptABC.from_config(
+                {"type": f"{self.biz_scene}_resp_verifier"}
+            )
+        self.verify_prompt = verify_prompt
+        if extractor_prompt is None:
+            extractor_prompt = PromptABC.from_config(
+                {"type": f"{self.biz_scene}_resp_extractor"}
+            )
+        self.extractor_prompt = extractor_prompt
         self.state_memory = []
         self.evidence_memory = []
         self.exact_answer = []

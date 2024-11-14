@@ -7,8 +7,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 from kag.common.benchmarks.evaluate import Evaluate
-from kag.common.env import init_kag_config
 from kag.solver.logic.solver_pipeline import SolverPipeline
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,8 @@ class EvaFor2wiki:
     init for kag client
     """
 
-    def __init__(self, configFilePath):
-        self.configFilePath = configFilePath
-        init_kag_config(self.configFilePath)
+    def __init__(self):
+        pass
 
     """
         qa from knowledge base, 
@@ -29,7 +29,7 @@ class EvaFor2wiki:
 
     def qa(self, query):
         # CA
-        resp = SolverPipeline()
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
         answer, traceLog = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
@@ -51,8 +51,8 @@ class EvaFor2wiki:
                 gold = sample["answer"]
                 prediction, traceLog = self.qa(question)
 
-                evaObj = Evaluate()
-                metrics = evaObj.getBenchMark([prediction], [gold])
+                evalObj = Evaluate()
+                metrics = evalObj.getBenchMark([prediction], [gold])
                 return sample_idx, sample_id, prediction, metrics, traceLog
             except Exception as e:
                 import traceback
@@ -111,24 +111,21 @@ class EvaFor2wiki:
 
 
 if __name__ == "__main__":
-    configFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), "../kag_config.cfg"
-    )
-    evalObj = EvaFor2wiki(configFilePath=configFilePath)
-
-    filePath = "./data/2wiki_qa_sub.json"
-    # filePath = "./data/2wiki_qa.json"
-    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
+    import_modules_from_path("./prompt")
+    evalObj = EvaFor2wiki()
 
     start_time = time.time()
+    filePath = "./data/2wiki_qa_sub.json"
+
+    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), f"2wiki_qa_res_{start_time}.json"
+        os.path.abspath(os.path.dirname(__file__)), f"2wiki_res_{start_time}.json"
     )
     total_metrics = evalObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=20, upperLimit=1000
+        qaFilePath, resFilePath, threadNum=20, upperLimit=10000
     )
+
     total_metrics["cost"] = time.time() - start_time
     with open(f"./2wiki_metrics_{start_time}.json", "w") as f:
         json.dump(total_metrics, f)
-
     print(total_metrics)

@@ -11,7 +11,6 @@
 # or implied.
 
 
-from kag.common.llm.llm_client import LLMClient
 from kag.common.llm.openai_client import OpenAIClient
 from kag.common.llm.vllm_client import VLLMClient
 from kag.common.llm.ollama_client import OllamaClient

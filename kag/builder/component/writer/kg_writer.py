@@ -70,6 +70,7 @@ class KGWriter(SinkWriterABC):
         Returns:
             List[Output]: A list of output objects (currently always [None]).
         """
+
         self.client.write_graph(
             sub_graph=input.to_dict(),
             operation=alter_operation,

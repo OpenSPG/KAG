@@ -1,7 +1,8 @@
 import os
 from string import Template
 
-from kag.common.llm import LLMClient
+from kag.common.registry import Registrable
+from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 
 
@@ -80,7 +81,7 @@ class Question(object):
         return repr_str
 
 
-class KagBaseModule(object):
+class KagBaseModule(Registrable):
 
     """
     KagBaseModule is an abstract base class designed to interact with language model (LLM) modules.
@@ -92,7 +93,7 @@ class KagBaseModule(object):
     If a computational context is indicated, it initializes and manages the state dictionary containing the prompt template.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, llm_client: LLMClient = None, **kwargs):
         """
         Initializes the KagBaseModule.
 
@@ -109,11 +110,10 @@ class KagBaseModule(object):
         self.config = KAG_CONFIG.all_config
         self.biz_scene = KAG_PROJECT_CONF.biz_scene
         self.language = KAG_PROJECT_CONF.language
-        self._init_llm()
-
-    def _init_llm(self):
-        llm_config = self.config["llm"]
-        self.llm_module = LLMClient.from_config(llm_config)
+        if llm_client is None:
+            llm_config = self.config["llm"]
+            llm_client = LLMClient.from_config(llm_config)
+        self.llm_module = llm_client
 
     def get_module_name(self):
         raise NotImplementedError

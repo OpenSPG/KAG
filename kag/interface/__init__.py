@@ -10,6 +10,9 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 from kag.interface.common.prompt import PromptABC
+from kag.interface.common.llm_client import LLMClient
+
+from kag.interface.common.vectorize_model import VectorizeModelABC, EmbeddingVector
 from kag.interface.builder.reader_abc import SourceReaderABC
 from kag.interface.builder.splitter_abc import SplitterABC
 from kag.interface.builder.extractor_abc import ExtractorABC
@@ -33,6 +36,9 @@ from kag.interface.solver.lf_solver_abc import LFSolverABC
 
 __all__ = [
     "PromptABC",
+    "LLMClient",
+    "VectorizeModelABC",
+    "EmbeddingVector",
     "SourceReaderABC",
     "SplitterABC",
     "ExtractorABC",

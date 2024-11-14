@@ -24,7 +24,7 @@ class MatchConfig(Registrable):
         self.threshold = threshold
 
 
-MatchConfig.register(MatchConfig, "base", as_default=True)
+MatchConfig.register("base", as_default=True)(MatchConfig)
 
 
 class ExternalGraphLoaderABC(BuilderComponent):

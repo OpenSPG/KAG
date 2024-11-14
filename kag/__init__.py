@@ -210,7 +210,9 @@ import kag.interface
 import kag.builder.component
 import kag.builder.prompt
 import kag.solver.prompt
-
+import kag.common.vectorize_model
+import kag.common.llm
+import kag.solver
 from kag.common.conf import init_env
 
 init_env()

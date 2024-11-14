@@ -1,17 +1,15 @@
 import logging
+from kag.common.registry import Registrable
+from kag.interface import KAGGeneratorABC, KagMemoryABC, KagReasonerABC, KagReflectorABC
 
-from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
-from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
-from kag.interface.solver.kag_reflector_abc import KagReflectorABC
-from kag.solver.implementation.default_generator import DefaultGenerator
-from kag.solver.implementation.default_memory import DefaultMemory
-from kag.solver.implementation.default_reasoner import DefaultReasoner
-from kag.solver.implementation.default_reflector import DefaultReflector
+# from kag.solver.implementation.default_generator import DefaultGenerator
+# from kag.solver.implementation.default_reasoner import DefaultReasoner
+# from kag.solver.implementation.default_reflector import DefaultReflector
 
 logger = logging.getLogger(__name__)
 
 
-class SolverPipeline:
+class SolverPipeline(Registrable):
     def __init__(
         self,
         max_run=3,
@@ -29,11 +27,12 @@ class SolverPipeline:
         :param generator: Generator instance for generating actions.
         """
         self.max_run = max_run
-        self.memory = DefaultMemory(**kwargs)
 
-        self.reflector = reflector or DefaultReflector(**kwargs)
-        self.reasoner = reasoner or DefaultReasoner(**kwargs)
-        self.generator = generator or DefaultGenerator(**kwargs)
+        self.memory = KagMemoryABC.from_config({"type": "base"})
+
+        self.reflector = reflector or KagReflectorABC.from_config({"type": "base"})
+        self.reasoner = reasoner or KagReasonerABC.from_config({"type": "base"})
+        self.generator = generator or KAGGeneratorABC.from_config({"type": "base"})
 
         self.trace_log = []
 

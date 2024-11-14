@@ -9,6 +9,8 @@ from tqdm import tqdm
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.solver.logic.solver_pipeline import SolverPipeline
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class EvaForHotpotqa:
 
     def qa(self, query):
         # CA
-        resp = SolverPipeline()
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
         answer, traceLog = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
@@ -109,6 +111,7 @@ class EvaForHotpotqa:
 
 
 if __name__ == "__main__":
+    import_modules_from_path("./prompt")
     delay_run(hours=0)
     evaObj = EvaForHotpotqa()
 

@@ -10,19 +10,19 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from kag.common.vectorizer.local_bge_vectorizer import (
-    LocalBGEVectorizer,
-    LocalBGEM3Vectorizer,
+from kag.common.vectorize_model.local_bge_model import (
+    LocalBGEVectorizeModel,
+    LocalBGEM3VectorizeModel,
 )
-from kag.common.vectorizer.openai_vectorizer import OpenAIVectorizer
-from kag.common.vectorizer.vectorizer import Vectorizer
-from kag.common.vectorizer.vectorizer_config_checker import VectorizerConfigChecker
+from kag.common.vectorize_model.openai_model import OpenAIVectorizeModel
+from kag.common.vectorize_model.vectorize_model_config_checker import (
+    VectorizeModelConfigChecker,
+)
 
 
 __all__ = [
-    "LocalBGEM3Vectorizer",
-    "LocalBGEVectorizer",
-    "OpenAIVectorizer",
-    "Vectorizer",
-    "VectorizerConfigChecker",
+    "LocalBGEM3VectorizeModel",
+    "LocalBGEVectorizeModel",
+    "OpenAIVectorizeModel",
+    "VectorizeModelConfigChecker",
 ]

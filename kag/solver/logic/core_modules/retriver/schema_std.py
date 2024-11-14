@@ -26,7 +26,7 @@ class SchemaRetrieval(KGRetrieverByLlm):
         typed_nodes = self.sc.search_vector(
             label=label,
             property_key="name",
-            query_vector=self.vectorizer.vectorize(mention_entity.entity_name),
+            query_vector=self.vectorize_model.vectorize(mention_entity.entity_name),
             topk=1,
         )
         recalled_entity = EntityData()

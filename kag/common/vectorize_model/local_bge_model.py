@@ -12,7 +12,7 @@
 import os
 import logging
 from typing import Union, Iterable
-from kag.common.vectorizer.vectorizer import Vectorizer, EmbeddingVector
+from kag.interface import VectorizeModelABC, EmbeddingVector
 
 logger = logging.getLogger()
 
@@ -20,8 +20,8 @@ logger = logging.getLogger()
 LOCAL_MODEL_MAP = {}
 
 
-@Vectorizer.register("bge")
-class LocalBGEVectorizer(Vectorizer):
+@VectorizeModelABC.register("bge")
+class LocalBGEVectorizeModel(VectorizeModelABC):
     """
     Invoke local bge embedding models to turn texts into embedding vectors.
     """
@@ -82,7 +82,7 @@ class LocalBGEVectorizer(Vectorizer):
         model = FlagModel(
             path,
             query_instruction_for_retrieval=self.query_instruction_for_retrieval,
-            use_fp16=True,
+            use_fp16=False,
         )
         return model
 
@@ -102,8 +102,8 @@ class LocalBGEVectorizer(Vectorizer):
         return result.tolist()
 
 
-@Vectorizer.register("bge_m3")
-class LocalBGEM3Vectorizer(Vectorizer):
+@VectorizeModelABC.register("bge_m3")
+class LocalBGEM3VectorizeModel(VectorizeModelABC):
     """
     Invoke local bge-m3 embedding models to turn texts into embedding vectors.
     """
@@ -114,7 +114,6 @@ class LocalBGEM3Vectorizer(Vectorizer):
         self,
         path: str,
         url: str = None,
-        query_instruction_for_retrieval: str = None,
         vector_dimensions: int = None,
     ):
         super().__init__(vector_dimensions)
@@ -141,7 +140,7 @@ class LocalBGEM3Vectorizer(Vectorizer):
         from FlagEmbedding import BGEM3FlagModel
 
         logger.info(f"Loading BGEM3FlagModel from {path!r}")
-        model = BGEM3FlagModel(path, use_fp16=True)
+        model = BGEM3FlagModel(path, use_fp16=False)
         return model
 
     def vectorize(

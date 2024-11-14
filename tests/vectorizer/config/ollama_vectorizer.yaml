@@ -1,5 +1,0 @@
-type: openai
-model: bge-m3
-api_key: EMPTY
-base_url: http://127.0.0.1:11434/v1
-vector_dimensions: 1024

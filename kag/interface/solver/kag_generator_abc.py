@@ -10,9 +10,6 @@ class KAGGeneratorABC(KagBaseModule, ABC):
     It initializes prompts for judging and generating responses based on the business scene and language settings.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     @abstractmethod
     def generate(self, instruction, memory: KagMemoryABC) -> str:
         raise NotImplementedError("Subclasses must implement this method")

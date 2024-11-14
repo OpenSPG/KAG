@@ -14,9 +14,9 @@ from typing import List
 
 from kag.builder.model.sub_graph import SubGraph
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.vectorizer import Vectorizer
+
 from kag.common.utils import get_vector_field_name
-from kag.interface import VectorizerABC
+from kag.interface import VectorizerABC, VectorizeModelABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import IndexTypeEnum
 from knext.common.base.runnable import Input, Output
@@ -127,12 +127,12 @@ class EmbeddingVectorGenerator(object):
 
 @VectorizerABC.register("batch")
 class BatchVectorizer(VectorizerABC):
-    def __init__(self, vectorizer_model: Vectorizer, batch_size: int = 1024):
+    def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 1024):
         super().__init__()
         self.project_id = KAG_PROJECT_CONF.project_id
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
-        self.vectorizer_model = vectorizer_model
+        self.vectorize_model = vectorize_model
         self.batch_size = batch_size
 
     def _init_vec_meta(self):
@@ -158,7 +158,7 @@ class BatchVectorizer(VectorizerABC):
             properties.update(node.properties)
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
-        generator = EmbeddingVectorGenerator(self.vectorizer_model, self.vec_meta)
+        generator = EmbeddingVectorGenerator(self.vectorize_model, self.vec_meta)
         generator.batch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(
             node_list, node_batch

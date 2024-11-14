@@ -77,9 +77,9 @@ class MusiqueCorpusReader(SourceReaderABC):
             corpusList = input
         chunks = []
 
-        for item in corpusList:
+        for idx, item in enumerate(corpusList):
             chunk = Chunk(
-                id=item[id_column],
+                id=f"{item[id_column]}#{idx}",
                 name=item[name_column],
                 content=item[content_column],
             )

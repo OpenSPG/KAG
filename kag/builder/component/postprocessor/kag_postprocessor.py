@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import logging
 from typing import List
 from kag.interface import PostProcessorABC
 from kag.interface import ExternalGraphLoaderABC
@@ -17,6 +18,9 @@ from kag.common.conf import KAGConstants, KAG_PROJECT_CONF
 from kag.common.utils import get_vector_field_name
 from knext.search.client import SearchClient
 from knext.schema.client import SchemaClient
+
+
+logger = logging.getLogger()
 
 
 @PostProcessorABC.register("base", as_default=True)
@@ -100,7 +104,15 @@ class KAGPostProcessor(PostProcessorABC):
         self._entity_link(graph, property_key, labels)
 
     def invoke(self, input):
+        origin_num_nodes = len(input.nodes)
+        origin_num_edges = len(input.edges)
         new_graph = self.filter_invalid_data(input)
         self.similarity_based_link(new_graph)
         self.external_graph_based_link(new_graph)
+
+        new_num_nodes = len(new_graph.nodes)
+        new_num_edges = len(new_graph.edges)
+        logger.debug(
+            f"origin: {origin_num_nodes}/{origin_num_edges}, processed: {new_num_nodes}/{new_num_edges}"
+        )
         return [new_graph]

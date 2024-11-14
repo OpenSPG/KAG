@@ -7,7 +7,7 @@ def test_batch_vectorizer():
     batch_vectorizer = VectorizerABC.from_config(
         {
             "type": "batch",
-            "vectorizer_model": {
+            "vectorize_model": {
                 "type": "bge",
                 "path": "~/.cache/vectorizer/BAAI/bge-base-zh-v1.5",
                 "url": "",

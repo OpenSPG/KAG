@@ -16,7 +16,7 @@ from typing import Type, List
 from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.builder.model.chunk import Chunk
 from kag.interface import SourceReaderABC
-from kag.common.llm import LLMClient
+from kag.interface import LLMClient
 from knext.common.base.runnable import Input, Output
 
 

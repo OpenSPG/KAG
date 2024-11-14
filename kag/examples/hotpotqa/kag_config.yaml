@@ -2,8 +2,8 @@ project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
   language: en
-  namespace: MuSiQue
-  id: 1
+  namespace: HotpotQA
+  id: 3
 
 
 vectorize_model: &vectorize_model_config
@@ -26,14 +26,14 @@ chain:
   extractor:
     llm: *llm_conf
     ner_prompt:
-      type: musique_ner
+      type: hotpotqa_ner
     std_prompt:
-      type: musique_std
+      type: hotpotqa_std
     triple_prompt:
-      type: musique_triple
+      type: hotpotqa_triple
     type: kag
   reader:
-    type: musique
+    type: hotpotqa
   splitter:
     split_length: 100000
     type: length

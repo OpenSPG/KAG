@@ -1,7 +1,7 @@
-import os
 import re
 from typing import List
 
+from kag.interface import LLMClient
 from kag.interface import PromptABC
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult, LogicNode
@@ -11,22 +11,30 @@ from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicFor
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 
 
+@LFPlannerABC.register("base", as_default=True)
 class DefaultLFPlanner(LFPlannerABC):
     """
     Planner class that extends the base planner functionality to generate sub-queries and logic forms.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        logic_form_plan_prompt: PromptABC = None,
+        llm_client: LLMClient = None,
+        **kwargs,
+    ):
+        super().__init__(llm_client, **kwargs)
         config = LogicFormConfiguration(kwargs)
         schema = SchemaUtils(config)
         schema.get_schema()
         std_schema = SchemaRetrieval(**kwargs)
         self.parser = ParseLogicForm(schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
-        self.logic_form_plan_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_logic_form_plan"}
-        )
+        if logic_form_plan_prompt is None:
+            logic_form_plan_prompt = PromptABC.from_config(
+                {"type": f"{self.biz_scene}_logic_form_plan"}
+            )
+        self.logic_form_plan_prompt = logic_form_plan_prompt
 
     # 需要把大模型生成结果记录下来
     def lf_planing(self, question, llm_output=None) -> List[LFPlanResult]:

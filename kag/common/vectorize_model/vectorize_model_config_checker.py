@@ -10,10 +10,9 @@
 # or implied.
 
 import json
-from kag.common.vectorizer.vectorizer import Vectorizer
 
 
-class VectorizerConfigChecker(object):
+class VectorizeModelConfigChecker:
     """
     Check whether the vectorizer config is valid.
     """
@@ -34,7 +33,9 @@ class VectorizerConfigChecker(object):
         """
         try:
             config = json.loads(vectorizer_config)
-            vectorizer = Vectorizer.from_config(config)
+            from kag.interface import VectorizeModelABC
+
+            vectorizer = VectorizeModelABC.from_config(config)
             vector_dimensions = vectorizer.vector_dimensions
             return vector_dimensions
         except Exception as ex:

@@ -9,10 +9,15 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
-import os
 from kag.common.registry import Registrable, import_modules_from_path
 from kag.builder.component import KGWriter
-from kag.interface import ExtractorABC, SplitterABC, VectorizerABC, SourceReaderABC
+from kag.interface import (
+    ExtractorABC,
+    SplitterABC,
+    VectorizerABC,
+    SourceReaderABC,
+    PostProcessorABC,
+)
 from knext.builder.builder_chain_abc import BuilderChainABC
 
 logger = logging.getLogger(__name__)
@@ -26,12 +31,15 @@ class MusiqueBuilderChain(BuilderChainABC, Registrable):
         splitter: SplitterABC,
         extractor: ExtractorABC,
         vectorizer: VectorizerABC,
+        post_processor: PostProcessorABC,
         writer: KGWriter,
     ):
         self.reader = reader
         self.splitter = splitter
         self.extractor = extractor
         self.vectorizer = vectorizer
+        self.post_processor = post_processor
+
         self.writer = writer
 
     def build(self, **kwargs):
@@ -40,6 +48,7 @@ class MusiqueBuilderChain(BuilderChainABC, Registrable):
             >> self.splitter
             >> self.extractor
             >> self.vectorizer
+            >> self.post_processor
             >> self.writer
         )
 
@@ -49,7 +58,7 @@ def buildKB(file_path):
 
     chain_config = KAG_CONFIG.all_config["chain"]
     chain = MusiqueBuilderChain.from_config(chain_config)
-    chain.invoke(file_path=file_path, max_workers=1)
+    chain.invoke(file_path=file_path, max_workers=10)
 
     logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
 
