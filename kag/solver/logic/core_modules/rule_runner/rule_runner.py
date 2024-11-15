@@ -2,7 +2,7 @@ import logging
 import time
 from enum import Enum
 
-from kag.solver.logic.core_modules.common.base_model import Identifer
+from kag.solver.logic.core_modules.common.base_model import Identifier
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
     EntityData,
@@ -252,7 +252,7 @@ class OpRunner:
             self.runner: ModelRunner = ModelRunner(llm, kg_graph, query, req_id)
         self.llm = llm
 
-    def _get_identifer_to_doc(self, alias: Identifer):
+    def _get_identifier_to_doc(self, alias:Identifier):
         data = self.kg_graph.get_entity_by_alias(alias)
         if data is None:
             return []
@@ -276,13 +276,13 @@ class OpRunner:
             alias_set = set(alias)
         ret_data = []
         for alias_ele in alias_set:
-            if isinstance(alias_ele, Identifer):
-                ret_data = ret_data + self._get_identifer_to_doc(alias_ele)
+            if isinstance(alias_ele, Identifier):
+                ret_data = ret_data + self._get_identifier_to_doc(alias_ele)
             else:
                 ret_data.append(alias)
         return ret_data
 
-    def _get_value_ins_identifer(self, alias: Identifer):
+    def _get_value_ins_identifier(self, alias: Identifier):
         data = self.kg_graph.get_entity_by_alias(alias)
         if data is None:
             return []
@@ -301,8 +301,8 @@ class OpRunner:
             alias_set = {alias}
         ret_data = []
         for alias_ele in alias_set:
-            if isinstance(alias_ele, Identifer):
-                ret_data = ret_data + self._get_value_ins_identifer(alias_ele)
+            if isinstance(alias_ele, Identifier):
+                ret_data = ret_data + self._get_value_ins_identifier(alias_ele)
             else:
                 return alias
         return ret_data
@@ -402,7 +402,7 @@ class OpRunner:
     def run_filter_op(self, f: FilterNode):
         # 对边不执行过滤
         if (
-            isinstance(f.left_expr, Identifer)
+            isinstance(f.left_expr, Identifier)
             and f.left_expr in self.kg_graph.edge_alias
         ):
             return

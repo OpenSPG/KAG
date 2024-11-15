@@ -4,7 +4,7 @@ import re
 from typing import List
 
 
-class Identifer:
+class Identifier:
     def __init__(self, alias_name):
         self.alias_name = alias_name
 
@@ -15,7 +15,7 @@ class Identifer:
         return self.alias_name
 
     def __eq__(self, other):
-        if isinstance(other, Identifer):
+        if isinstance(other, Identifier):
             return self.alias_name == other.alias_name
         if isinstance(other, str):
             return self.alias_name == other
@@ -46,7 +46,7 @@ def parse_entity(raw_entity):
 
 class SPOBase:
     def __init__(self):
-        self.alias_name: Identifer = None
+        self.alias_name: Identifier = None
         self.type_set: List[TypeInfo] = []
         self.is_attribute = False
         self.value_list = []
@@ -132,9 +132,9 @@ class SPORelation(SPOBase):
             type_info.entity_type = rel_type
             type_info.entity_type_zh = rel_type_zh
             self.type_set.append(type_info)
-        self.alias_name: Identifer = None
+        self.alias_name: Identifier = None
         if alias_name is not None:
-            self.alias_name = Identifer(alias_name)
+            self.alias_name = Identifier(alias_name)
 
         self.s: SPOBase = None
         self.o: SPOEntity = None
@@ -172,7 +172,7 @@ class SPORelation(SPOBase):
                 rel_type_set.append(entity_type_obj)
 
         rel = SPORelation()
-        rel.alias_name = Identifer(alias)
+        rel.alias_name = Identifier(alias)
         rel.type_set = rel_type_set
         return rel
 
@@ -191,9 +191,9 @@ class SPOEntity(SPOBase):
         self.is_attribute = is_attribute
         self.id_set = []
         self.entity_name = entity_name
-        self.alias_name: Identifer = None
+        self.alias_name: Identifier = None
         if alias_name is not None:
-            self.alias_name = Identifer(alias_name)
+            self.alias_name = Identifier(alias_name)
         if entity_id is not None:
             self.id_set.append(entity_id)
         if entity_type is not None or entity_type_zh is not None:
@@ -259,7 +259,7 @@ class SPOEntity(SPOBase):
 
         spo_entity = SPOEntity()
         spo_entity.id_set = entity_id_set
-        spo_entity.alias_name = Identifer(alias)
+        spo_entity.alias_name = Identifier(alias)
         spo_entity.entity_name = entity_name
         for entity_type in entity_type_set:
             entity_type_obj = TypeInfo()

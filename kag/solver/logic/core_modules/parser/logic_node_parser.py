@@ -95,11 +95,11 @@ def binary_expr_parse(input_str):
         value = value.rstrip("，")
         if key == "left_expr":
             if "," in value:
-                left_expr_list = list(set([Identifer(v) for v in value.split(",")]))
+                left_expr_list = list(set([Identifier(v) for v in value.split(",")]))
             elif "，" in value:
-                left_expr_list = list(set([Identifer(v) for v in value.split("，")]))
+                left_expr_list = list(set([Identifier(v) for v in value.split("，")]))
             else:
-                left_expr_list = [Identifer(value)]
+                left_expr_list = [Identifier(value)]
             if len(left_expr_list) == 1:
                 left_expr = left_expr_list[0]
             else:
@@ -345,8 +345,10 @@ class ExtractorNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         params = set(input_str.split(","))
-        alias_set = [Identifer(p) for p in params]
-        ex_node = ExtractorNode("extractor", {"alias_set": alias_set})
+        alias_set = [Identifier(p) for p in params]
+        ex_node = ExtractorNode("extractor", {
+            "alias_set": alias_set
+        })
         ex_node.alias_set = alias_set
         return ex_node
 
@@ -369,8 +371,8 @@ class GetNode(LogicNode):
         return GetNode(
             "get",
             {
-                "alias_name": Identifer(input_args[0]),
-                "alias_name_set": [Identifer(e) for e in input_args],
+                "alias_name": Identifier(input_args[0]),
+                "alias_name_set": [Identifier(e) for e in input_args],
             },
         )
 
