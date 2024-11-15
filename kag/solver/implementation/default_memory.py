@@ -20,9 +20,12 @@ class DefaultMemory(KagMemoryABC):
 
     @retry(stop=stop_after_attempt(3))
     def _verifier(self, supporting_fact, sub_instruction):
-        res = self.llm_module.invoke({'sub_instruction': sub_instruction,
-                                      'supporting_fact': supporting_fact}, self.verify_prompt,
-                                     with_json_parse=False, with_except=True)
+        res = self.llm_module.invoke(
+            {"sub_instruction": sub_instruction, "supporting_fact": supporting_fact},
+            self.verify_prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
         if res is None:
             return
         if res not in self.state_memory:
@@ -30,10 +33,14 @@ class DefaultMemory(KagMemoryABC):
 
     @retry(stop=stop_after_attempt(3))
     def _extractor(self, supporting_fact, instruction):
-        if supporting_fact is None or supporting_fact == '':
+        if supporting_fact is None or supporting_fact == "":
             return
-        evidence = self.llm_module.invoke({'supporting_fact': supporting_fact, 'instruction': instruction},
-                                          self.extractor_prompt, with_json_parse=False, with_except=True)
+        evidence = self.llm_module.invoke(
+            {"supporting_fact": supporting_fact, "instruction": instruction},
+            self.extractor_prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
         if evidence not in self.evidence_memory:
             self.evidence_memory.append(evidence)
 

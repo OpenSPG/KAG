@@ -12,8 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class SolverPipeline:
-    def __init__(self, max_run=3, reflector: KagReflectorABC = None, reasoner: KagReasonerABC = None,
-                 generator: KAGGeneratorABC = None, **kwargs):
+    def __init__(
+        self,
+        max_run=3,
+        reflector: KagReflectorABC = None,
+        reasoner: KagReasonerABC = None,
+        generator: KAGGeneratorABC = None,
+        **kwargs
+    ):
         """
         Initializes the think-and-act loop class.
 
@@ -33,35 +39,39 @@ class SolverPipeline:
 
     def run(self, question):
         """
-       Executes the core logic of the problem-solving system.
+        Executes the core logic of the problem-solving system.
 
-       Parameters:
-       - question (str): The question to be answered.
+        Parameters:
+        - question (str): The question to be answered.
 
-       Returns:
-       - tuple: answer, trace log
-       """
+        Returns:
+        - tuple: answer, trace log
+        """
         instruction = question
         if_finished = False
-        logger.debug('input instruction:{}'.format(instruction))
+        logger.debug("input instruction:{}".format(instruction))
         present_instruction = instruction
         run_cnt = 0
 
         while not if_finished and run_cnt < self.max_run:
             run_cnt += 1
-            logger.debug('present_instruction is:{}'.format(present_instruction))
+            logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log
-            solved_answer, supporting_fact, history_log = self.reasoner.reason(present_instruction)
+            solved_answer, supporting_fact, history_log = self.reasoner.reason(
+                present_instruction
+            )
 
             # Extract evidence from supporting facts
             self.memory.save_memory(solved_answer, supporting_fact, instruction)
 
-            history_log['present_instruction'] = present_instruction
-            history_log['present_memory'] = self.memory.serialize_memory()
+            history_log["present_instruction"] = present_instruction
+            history_log["present_memory"] = self.memory.serialize_memory()
             self.trace_log.append(history_log)
 
             # Reflect the current instruction based on the current memory and instruction
-            if_finished, present_instruction = self.reflector.reflect_query(self.memory, present_instruction)
+            if_finished, present_instruction = self.reflector.reflect_query(
+                self.memory, present_instruction
+            )
 
         response = self.generator.generate(instruction, self.memory)
         return response, self.trace_log

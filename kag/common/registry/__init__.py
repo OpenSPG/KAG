@@ -10,14 +10,16 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from kag.common.llm.config.openai import OpenAIConfig
-from kag.common.llm.config.base import LLMConfig
-from kag.common.llm.config.vllm import VLLMConfig
-from kag.common.llm.config.ollama import OllamaConfig
+from kag.common.registry.registrable import Registrable, ConfigurationError
+from kag.common.registry.lazy import Lazy
+from kag.common.registry.functor import Functor
+from kag.common.registry.utils import import_modules_from_path
+
 
 __all__ = [
-    "OpenAIConfig",
-    "LLMConfig",
-    "VLLMConfig",
-    "OllamaConfig"
+    "Registrable",
+    "ConfigurationError",
+    "Lazy",
+    "Functor",
+    "import_modules_from_path",
 ]

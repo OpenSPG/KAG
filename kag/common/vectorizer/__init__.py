@@ -10,8 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from kag.common.vectorizer.local_bge_m3_vectorizer import LocalBGEM3Vectorizer
-from kag.common.vectorizer.local_bge_vectorizer import LocalBGEVectorizer
+from kag.common.vectorizer.local_bge_vectorizer import (
+    LocalBGEVectorizer,
+    LocalBGEM3Vectorizer,
+)
 from kag.common.vectorizer.openai_vectorizer import OpenAIVectorizer
 from kag.common.vectorizer.vectorizer import Vectorizer
 from kag.common.vectorizer.vectorizer_config_checker import VectorizerConfigChecker

@@ -10,22 +10,28 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import os
-from abc import ABC
 from typing import List, Dict
 import logging
 
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from knext.project.client import ProjectClient
-from kag.common.llm.client import LLMClient
+from kag.common.llm import LLMClient
+from kag.common.registry import Registrable
 
 
-class BuilderComponent(Component, ABC):
+@Registrable.register("builder")
+class BuilderComponent(Component, Registrable):
     """
     Abstract base class for all builder component.
     """
 
-    project_id: str = None
+    def __init__(self, project_id: int = None, **kwargs):
+        super().__init__(**kwargs)
+        if project_id is None:
+            project_id = int(os.getenv("KAG_PROJECT_ID"))
+        self.project_id = project_id
+        self.config = ProjectClient().get_config(self.project_id)
 
     def _init_llm(self) -> LLMClient:
         """
@@ -48,9 +54,9 @@ class BuilderComponent(Component, ABC):
             try:
                 config = ProjectClient().get_config(project_id)
                 llm_config.update(config.get("llm", {}))
-            except:
+            except Exception as e:
                 logging.warning(
-                    f"Failed to get project config for project id: {project_id}"
+                    f"Failed to get project config for project id: {project_id}, info: {e}"
                 )
         llm = LLMClient.from_config(llm_config)
         return llm

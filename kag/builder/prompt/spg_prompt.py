@@ -27,7 +27,15 @@ logger = logging.getLogger(__name__)
 class SPGPrompt(PromptOp, ABC):
     spg_types: Dict[str, BaseSpgType]
     ignored_types: List[str] = ["Chunk"]
-    ignored_properties: List[str] = ["id", "name", "description", "stdId", "eventTime", "desc", "semanticType"]
+    ignored_properties: List[str] = [
+        "id",
+        "name",
+        "description",
+        "stdId",
+        "eventTime",
+        "desc",
+        "semanticType",
+    ]
     ignored_relations: List[str] = ["isA"]
     basic_types = {"Text": "文本", "Integer": "整型", "Float": "浮点型"}
 
@@ -43,7 +51,9 @@ class SPGPrompt(PromptOp, ABC):
         if not spg_type_names:
             self.spg_types = self.all_schema_types
         else:
-            self.spg_types = {k: v for k, v in self.all_schema_types.items() if k in spg_type_names}
+            self.spg_types = {
+                k: v for k, v in self.all_schema_types.items() if k in spg_type_names
+            }
         self.schema_list = []
 
         self._init_render_variables()
@@ -138,16 +148,9 @@ class SPG_KGPrompt(SPGPrompt):
     template_en: str = template_zh
 
     def __init__(
-        self,
-        spg_type_names: List[SPGTypeName],
-        language: str = "zh",
-        **kwargs
+        self, spg_type_names: List[SPGTypeName], language: str = "zh", **kwargs
     ):
-        super().__init__(
-            spg_type_names=spg_type_names,
-            language=language,
-            **kwargs
-        )
+        super().__init__(spg_type_names=spg_type_names, language=language, **kwargs)
         self._render()
 
     def build_prompt(self, variables: Dict[str, str]) -> str:
@@ -173,13 +176,19 @@ class SPG_KGPrompt(SPGPrompt):
     def _render(self):
         spo_list = []
         for type_name, spg_type in self.spg_types.items():
-            if spg_type.spg_type_enum not in [SpgTypeEnum.Entity, SpgTypeEnum.Concept, SpgTypeEnum.Event]:
+            if spg_type.spg_type_enum not in [
+                SpgTypeEnum.Entity,
+                SpgTypeEnum.Concept,
+                SpgTypeEnum.Event,
+            ]:
                 continue
             constraint = {}
             properties = {}
             properties.update(
                 {
-                    v.name: (f"{v.name_zh}" if not v.desc else f"{v.name_zh}，{v.desc}") if self.language == "zh" else (f"{v.name}" if not v.desc else f"{v.name}, {v.desc}")
+                    v.name: (f"{v.name_zh}" if not v.desc else f"{v.name_zh}，{v.desc}")
+                    if self.language == "zh"
+                    else (f"{v.name}" if not v.desc else f"{v.name}, {v.desc}")
                     for k, v in spg_type.properties.items()
                     if k not in self.ignored_properties
                 }
@@ -190,7 +199,9 @@ class SPG_KGPrompt(SPGPrompt):
                         f"{v.name_zh}，类型是{v.object_type_name_zh}"
                         if not v.desc
                         else f"{v.name_zh}，{v.desc}，类型是{v.object_type_name_zh}"
-                    ) if self.language == "zh" else (
+                    )
+                    if self.language == "zh"
+                    else (
                         f"{v.name}, the type is {v.object_type_name_en}"
                         if not v.desc
                         else f"{v.name}，{v.desc}, the type is {v.object_type_name_en}"

@@ -22,9 +22,11 @@ class CompanyLinkOp(LinkOpABC):
     bind_to = "Company"
 
     def invoke(self, source: Node, prop_value: str, target_type: str) -> List[str]:
-        sc = SearchClient(os.getenv("KAG_PROJECT_HOST_ADDR"), int(os.getenv("KAG_PROJECT_ID")))
+        sc = SearchClient(
+            os.getenv("KAG_PROJECT_HOST_ADDR"), int(os.getenv("KAG_PROJECT_ID"))
+        )
         company_id = []
         records = sc.search_text(prop_value, label_constraints=[target_type], topk=1)
         if records:
-            company_id.append(records[0]["node"]['id'])
+            company_id.append(records[0]["node"]["id"])
         return company_id

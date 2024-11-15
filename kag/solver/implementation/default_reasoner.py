@@ -11,6 +11,7 @@ from kag.solver.logic.core_modules.lf_solver import LFSolver
 
 logger = logging.getLogger()
 
+
 class DefaultReasoner(KagReasonerABC):
     """
     A processor class for handling logical form tasks in language processing.
@@ -29,18 +30,16 @@ class DefaultReasoner(KagReasonerABC):
     - trace_log: List to log trace information.
     """
 
-    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs):
-        super().__init__(
-            lf_planner=lf_planner,
-            lf_solver=lf_solver,
-            **kwargs
-        )
+    def __init__(
+        self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
+    ):
+        super().__init__(lf_planner=lf_planner, lf_solver=lf_solver, **kwargs)
 
         self.lf_planner = lf_planner or DefaultLFPlanner(**kwargs)
         self.lf_solver = lf_solver or LFSolver(
             kg_retriever=KGRetrieverByLlm(**kwargs),
             chunk_retriever=LFChunkRetriever(**kwargs),
-            **kwargs
+            **kwargs,
         )
 
         self.sub_query_total = 0
@@ -63,21 +62,22 @@ class DefaultReasoner(KagReasonerABC):
         lf_nodes: List[LFPlanResult] = self.lf_planner.lf_planing(question)
 
         # logic form execution
-        solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_solver.solve(question, lf_nodes)
+        solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_solver.solve(
+            question, lf_nodes
+        )
         # Generate supporting facts for sub question-answer pair
-        supporting_fact = '\n'.join(sub_qa_pair)
+        supporting_fact = "\n".join(sub_qa_pair)
 
         # Retrieve and rank documents
         sub_querys = [lf.query for lf in lf_nodes]
         if self.lf_solver.chunk_retriever:
-            docs = self.lf_solver.chunk_retriever.rerank_docs([question] + sub_querys, recall_docs)
+            docs = self.lf_solver.chunk_retriever.rerank_docs(
+                [question] + sub_querys, recall_docs
+            )
         else:
             logger.info("DefaultReasoner not enable chunk retriever")
             docs = []
-        history_log = {
-            'history': history_qa_log,
-            'rerank_docs': docs
-        }
+        history_log = {"history": history_qa_log, "rerank_docs": docs}
         if len(docs) > 0:
             # Append supporting facts for retrieved chunks
             supporting_fact += f"\nPassages:{str(docs)}"

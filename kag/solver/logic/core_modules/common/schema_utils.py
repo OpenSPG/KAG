@@ -50,7 +50,7 @@ class SchemaUtils:
         self.get_schema()
 
     def get_spo_with_p(self, spo):
-        _, p, _ = spo.split('_')
+        _, p, _ = spo.split("_")
         return p
 
     def get_label_within_prefix(self, label_name_without_prefix):
@@ -75,18 +75,14 @@ class SchemaUtils:
             attr_en_zh_tmp = self.attr_en_zh_by_label[label_name]
             attr_en_zh_tmp[name] = nameZh
         else:
-            attr_en_zh_tmp = {
-                name: nameZh
-            }
+            attr_en_zh_tmp = {name: nameZh}
         self.attr_en_zh_by_label[label_name] = attr_en_zh_tmp
 
         if label_name in self.attr_zh_en_by_label.keys():
             attr_zh_en_tmp = self.attr_zh_en_by_label[label_name]
             attr_zh_en_tmp[nameZh] = name
         else:
-            attr_zh_en_tmp = {
-                nameZh: name
-            }
+            attr_zh_en_tmp = {nameZh: name}
         self.attr_zh_en_by_label[label_name] = attr_zh_en_tmp
 
     def get_attr_en_zh_by_label(self, label_name):
@@ -108,18 +104,23 @@ class SchemaUtils:
                 continue
             # print('attribute:', attribute)
             attribute = json.loads(attribute)
-            if 'constraints' in attribute and 'name' in attribute['constraints'] and attribute['constraints'][
-                'name'] == "Enum":
-                enums = list(attribute['constraints']['value'].keys())
+            if (
+                "constraints" in attribute
+                and "name" in attribute["constraints"]
+                and attribute["constraints"]["name"] == "Enum"
+            ):
+                enums = list(attribute["constraints"]["value"].keys())
             else:
                 enums = None
-            if attribute['name'].startswith('kg') and attribute['name'].endswith('Raw'):
+            if attribute["name"].startswith("kg") and attribute["name"].endswith("Raw"):
                 continue
-            self.attr_zh_en[attribute['nameZh']] = attribute['name']
-            self.attr_en_zh[attribute['name']] = attribute['nameZh']
-            self.attr_enums[attribute['nameZh']] = enums
-            self._add_attr_with_label(label_name, attribute['nameZh'], attribute['name'])
-            attributes_namezh.append(attribute['nameZh'])
+            self.attr_zh_en[attribute["nameZh"]] = attribute["name"]
+            self.attr_en_zh[attribute["name"]] = attribute["nameZh"]
+            self.attr_enums[attribute["nameZh"]] = enums
+            self._add_attr_with_label(
+                label_name, attribute["nameZh"], attribute["name"]
+            )
+            attributes_namezh.append(attribute["nameZh"])
         return attributes_namezh
 
     def get_ext_json_prop(self):
@@ -152,7 +153,7 @@ class SchemaUtils:
             entity_default_attributes = [
                 '{"name": "name", "nameZh": "名称"}',
                 '{"name": "id", "nameZh": "实体主键"}',
-                '{"name": "description", "nameZh": "描述"}'
+                '{"name": "description", "nameZh": "描述"}',
             ]
             attributes += entity_default_attributes
             attributes_namezh = self.get_attr(name_en, attributes)
@@ -194,7 +195,9 @@ class SchemaUtils:
                 if o_name_zh not in self.node_edge:
                     self.node_edge[o_name_zh] = set()
                 self.node_edge[o_name_zh].add(p_name_zh)
-                r_attributes = self._convert_spg_attr_set(list(relation.sub_properties.values()))
+                r_attributes = self._convert_spg_attr_set(
+                    list(relation.sub_properties.values())
+                )
                 r_attributes_namezh = self.get_attr(name_en, r_attributes)
                 self.edge_attr[p_name_zh] = r_attributes_namezh
 
@@ -206,18 +209,24 @@ class SchemaUtils:
         # next(reader)
         node_attributes = {}
         for row in reader:
-            obj, name_zh, name_en, father_en, edge_direction, attributes = row[0], row[1], row[2], row[3], row[4], row[
-                                                                                                                   6:]
+            obj, name_zh, name_en, father_en, edge_direction, attributes = (
+                row[0],
+                row[1],
+                row[2],
+                row[3],
+                row[4],
+                row[6:],
+            )
             if "nodeType/edgeType" in obj:
                 continue
-            name_en = name_en.replace(self.prefix, '')
-            # if name_en in ['Event', 'ProductTaxon']:   
+            name_en = name_en.replace(self.prefix, "")
+            # if name_en in ['Event', 'ProductTaxon']:
             if father_en and father_en in node_attributes:
                 attributes += node_attributes[father_en]
             node_attributes[name_en] = attributes
-            if obj not in ['edge', 'inputEdge']:
+            if obj not in ["edge", "inputEdge"]:
                 # if name_zh in ['百科实体', '热点事件', '事件']:
-                if name_zh in ['百科实体']:
+                if name_zh in ["百科实体"]:
                     continue
                 self.nodes.add(name_zh)
                 self.node_zh_en[name_zh] = name_en
@@ -225,17 +234,16 @@ class SchemaUtils:
                 entity_default_attributes = [
                     '{"name": "name", "nameZh": "名称"}',
                     '{"name": "id", "nameZh": "实体主键"}',
-                    '{"name": "description", "nameZh": "描述"}'
+                    '{"name": "description", "nameZh": "描述"}',
                 ]
                 attributes += entity_default_attributes
                 attributes_namezh = self.get_attr(name_en, attributes)
                 self.node_attr[name_zh] = attributes_namezh
 
-
-            elif obj == 'edge':
-                s, p, o = name_zh.split('_')
+            elif obj == "edge":
+                s, p, o = name_zh.split("_")
                 # if s in ['百科实体', '热点事件', '事件'] or o in ['百科实体', '热点事件', '事件']:
-                if s in ['百科实体'] or o in ['百科实体']:
+                if s in ["百科实体"] or o in ["百科实体"]:
                     continue
                 if name_zh not in self.spo:
                     self.spo.add(name_zh)
@@ -246,7 +254,7 @@ class SchemaUtils:
                 self.so_p[(s, o)].add(p)
                 self.sp_o[(s, p)].add(o)
                 self.sp_o[(o, p)].add(s)
-                s_en, p_en, o_en = name_en.split('_')
+                s_en, p_en, o_en = name_en.split("_")
                 self.so_p_en[(s_en, o_en)].add(p_en)
                 self.sp_o_en[(s_en, p_en)].add(o_en)
                 self.op_s_en[(o_en, p_en)].add(s_en)
@@ -268,22 +276,27 @@ class SchemaUtils:
         f_node = open(path_node)
         f_edge = open(path_edge)
         for row in csv.DictReader(f_node):
-            name, id = row['name'], row['alias']
+            name, id = row["name"], row["alias"]
             self.nodes.add(name)
         for row in csv.DictReader(f_edge):
-            name = row['name']
+            name = row["name"]
             self.edges.add(name)
 
     def _convert_spg_attr_set(self, attr_set: List[Property]):
-        return [json.dumps({
-            'constraints': attr.to_dict().get('constraint', {}),
-            'name': attr.to_dict().get('name'),
-            'nameZh': attr.to_dict().get('name_zh')
-        }) for attr in attr_set]
+        return [
+            json.dumps(
+                {
+                    "constraints": attr.to_dict().get("constraint", {}),
+                    "name": attr.to_dict().get("name"),
+                    "nameZh": attr.to_dict().get("name_zh"),
+                }
+            )
+            for attr in attr_set
+        ]
 
 
 def generate_nodes_edges_hetero(schema):
-    '''
+    """
     nodes {
         hetero {
             "CommonSenseKG.Person" {
@@ -308,21 +321,27 @@ def generate_nodes_edges_hetero(schema):
             }
         }
     }
-    '''
+    """
     nodes_hetero, edges_hetero = defaultdict(dict), defaultdict(dict)
     for node in schema.nodes:
         node = schema.node_zh_en[node]
         features = []
         for attr in schema.node_attr[schema.node_en_zh[node]]:
             attr = schema.attr_zh_en[attr]
-            features.append(attr + ';Raw|use_fe=False;Direct;str')
-        node = schema.prefix + '.' + node
-        nodes_hetero[node] = {'fe': features}
+            features.append(attr + ";Raw|use_fe=False;Direct;str")
+        node = schema.prefix + "." + node
+        nodes_hetero[node] = {"fe": features}
 
     for spo in schema.spo_en:
-        s, p, o = spo.split('_')
-        edge = '_'.join([schema.prefix + '.' + s, p, schema.prefix + '.' + o])
-        edges_hetero[edge] = {'fe': []}
+        s, p, o = spo.split("_")
+        edge = "_".join([schema.prefix + "." + s, p, schema.prefix + "." + o])
+        edges_hetero[edge] = {"fe": []}
 
-    print('nodes_hetero:', json.dumps(nodes_hetero, indent=2).replace('"fe"', 'fe').replace('},', '}'))
-    print('edges_hetero:', json.dumps(edges_hetero, indent=2).replace('"fe"', 'fe').replace('},', '}'))
+    print(
+        "nodes_hetero:",
+        json.dumps(nodes_hetero, indent=2).replace('"fe"', "fe").replace("},", "}"),
+    )
+    print(
+        "edges_hetero:",
+        json.dumps(edges_hetero, indent=2).replace('"fe"', "fe").replace("},", "}"),
+    )

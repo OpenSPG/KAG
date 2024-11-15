@@ -51,7 +51,7 @@ class TXTReader(SourceReaderABC):
 
         try:
             if os.path.exists(input):
-                with open(input, "r", encoding='utf-8') as f:
+                with open(input, "r", encoding="utf-8") as f:
                     content = f.read()
             else:
                 content = input

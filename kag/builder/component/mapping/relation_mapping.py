@@ -40,7 +40,7 @@ class RelationMapping(MappingABC):
         subject_name: SPGTypeName,
         predicate_name: RelationName,
         object_name: SPGTypeName,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         schema = SchemaClient(project_id=self.project_id).load()

@@ -12,7 +12,7 @@
 import re
 import sys
 import json
-from typing import Type,Tuple
+from typing import Type, Tuple
 import inspect
 import os
 from pathlib import Path
@@ -70,6 +70,7 @@ def append_python_path(path: str) -> bool:
         return True
     return False
 
+
 def render_template(
     root_dir: Union[str, os.PathLike], file: Union[str, os.PathLike], **kwargs: Any
 ) -> None:
@@ -113,7 +114,7 @@ def copyfile(src: Path, dst: Path, **kwargs):
     _make_writable(dst)
     if dst.suffix != ".tmpl":
         return
-    render_template('/', dst, **kwargs)
+    render_template("/", dst, **kwargs)
 
 
 def remove_files_except(path, file, new_file):
@@ -194,8 +195,7 @@ def processing_phrases(phrase):
 def to_camel_case(phrase):
     s = processing_phrases(phrase).replace(" ", "_")
     return "".join(
-        word.capitalize() if i != 0 else word
-        for i, word in enumerate(s.split("_"))
+        word.capitalize() if i != 0 else word for i, word in enumerate(s.split("_"))
     )
 
 

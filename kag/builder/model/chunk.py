@@ -26,7 +26,7 @@ class Chunk:
         name: str,
         content: str,
         type: ChunkTypeEnum = ChunkTypeEnum.Text,
-        **kwargs
+        **kwargs,
     ):
         self.id = id
         self.name = name
@@ -59,7 +59,9 @@ class Chunk:
             "id": self.id,
             "name": self.name,
             "content": self.content,
-            "type": self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type,
+            "type": self.type.value
+            if isinstance(self.type, ChunkTypeEnum)
+            else self.type,
             "properties": self.kwargs,
         }
 

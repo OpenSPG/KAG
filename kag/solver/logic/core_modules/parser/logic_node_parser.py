@@ -1,20 +1,25 @@
 import logging
 import re
 
-from kag.solver.logic.core_modules.common.base_model import SPOBase, SPOEntity, SPORelation, Identifier, \
-    TypeInfo, LogicNode
+from kag.solver.logic.core_modules.common.base_model import (
+    SPOBase,
+    SPOEntity,
+    SPORelation,
+    Identifer,
+    TypeInfo,
+    LogicNode,
+)
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
-logger = logging.getLogger(__name__)\
-
+logger = logging.getLogger(__name__)
 
 # get_spg(s, p, o)
 class GetSPONode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
-        self.s: SPOBase = args.get('s', None)
-        self.p: SPOBase = args.get('p', None)
-        self.o: SPOBase = args.get('o', None)
+        self.s: SPOBase = args.get("s", None)
+        self.p: SPOBase = args.get("p", None)
+        self.o: SPOBase = args.get("o", None)
         self.sub_query = args.get("sub_query", None)
         self.query = args.get("query", None)
 
@@ -24,14 +29,14 @@ class GetSPONode(LogicNode):
     def to_std(self, args):
         for key, value in args.items():
             self.args[key] = value
-        self.s = args.get('s', self.s)
-        self.p = args.get('p', self.p)
-        self.o = args.get('o', self.o)
-        self.sub_query = args.get('sub_query', self.sub_query)
+        self.s = args.get("s", self.s)
+        self.p = args.get("p", self.p)
+        self.o = args.get("o", self.o)
+        self.sub_query = args.get("sub_query", self.sub_query)
 
     @staticmethod
     def parse_node(input_str):
-        equality_list = re.findall(r'([\w.]+=[^=]+)(,|，|$)', input_str)
+        equality_list = re.findall(r"([\w.]+=[^=]+)(,|，|$)", input_str)
         if len(equality_list) < 3:
             raise RuntimeError(f"parse {input_str} error not found s,p,o")
         spo_params = [e[0] for e in equality_list[:3]]
@@ -47,7 +52,7 @@ class GetSPONode(LogicNode):
         p = None
         o = None
         for spo_param in spo_params:
-            key, param = spo_param.split('=')
+            key, param = spo_param.split("=")
             if key == "s":
                 s = SPOEntity.parse_logic_form(param)
             elif key == "o":
@@ -60,17 +65,13 @@ class GetSPONode(LogicNode):
             raise RuntimeError(f"parse {str(spo_params)} error not found p")
         if o is None:
             raise RuntimeError(f"parse {str(spo_params)} error not found o")
-        return GetSPONode("get_spo", {
-            "s": s,
-            "p": p,
-            "o": o
-        })
+        return GetSPONode("get_spo", {"s": s, "p": p, "o": o})
 
     @staticmethod
     def parse_node_value(get_spo_node_op, value_params):
         for value_param in value_params:
             # a.value=123,b.brand=345
-            value_pair = re.findall(r'(?:[,\s]*(\w+)\.(\w+)=([^,，]+))', value_param)
+            value_pair = re.findall(r"(?:[,\s]*(\w+)\.(\w+)=([^,，]+))", value_param)
             for key, property, value in value_pair:
                 node = None
                 if key == "s":
@@ -83,15 +84,15 @@ class GetSPONode(LogicNode):
 
 
 def binary_expr_parse(input_str):
-    pattern = re.compile(r'(\w+)=((?:(?!\w+=).)*)')
+    pattern = re.compile(r"(\w+)=((?:(?!\w+=).)*)")
     matches = pattern.finditer(input_str)
     left_expr = None
     right_expr = None
     op = None
     for match in matches:
         key = match.group(1).strip()
-        value = match.group(2).strip().rstrip(',')
-        value = value.rstrip('，')
+        value = match.group(2).strip().rstrip(",")
+        value = value.rstrip("，")
         if key == "left_expr":
             if "," in value:
                 left_expr_list = list(set([Identifier(v) for v in value.split(",")]))
@@ -104,7 +105,7 @@ def binary_expr_parse(input_str):
             else:
                 left_expr = left_expr_list
         elif key == "right_expr":
-            if value != '':
+            if value != "":
                 right_expr = value
         elif key == "op":
             op = value
@@ -113,21 +114,17 @@ def binary_expr_parse(input_str):
 
     if op is None:
         raise RuntimeError(f"parse {input_str} error not found op")
-    return {
-        "left_expr": left_expr,
-        "right_expr": right_expr,
-        "op": op
-    }
+    return {"left_expr": left_expr, "right_expr": right_expr, "op": op}
 
 
 # filter(left_expr=alias, right_expr=other_alias or const_data, op=equal|lt|gt|le|ge|in|contains|and|or|not)
 class FilterNode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
-        self.left_expr = args.get('left_expr', None)
-        self.right_expr = args.get('right_expr', None)
-        self.op = args.get('op', None)
-        self.OP = 'equal|lt|gt|le|ge|in|contains|and|or|not'.split('|')
+        self.left_expr = args.get("left_expr", None)
+        self.right_expr = args.get("right_expr", None)
+        self.op = args.get("op", None)
+        self.OP = "equal|lt|gt|le|ge|in|contains|and|or|not".split("|")
 
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")
@@ -135,9 +132,9 @@ class FilterNode(LogicNode):
     def to_std(self, args):
         for key, value in args.items():
             self.args[key] = value
-        self.left_expr = args.get('left_expr', self.left_expr)
-        self.right_expr = args.get('right_expr', self.right_expr)
-        self.op = args.get('op', self.op)
+        self.left_expr = args.get("left_expr", self.left_expr)
+        self.right_expr = args.get("right_expr", self.right_expr)
+        self.op = args.get("op", self.op)
 
     @staticmethod
     def parse_node(input_str):
@@ -157,7 +154,7 @@ class CountNode(LogicNode):
 
     @staticmethod
     def parse_node(input_str, output_name):
-        args = {'alias_name': output_name, 'set': input_str}
+        args = {"alias_name": output_name, "set": input_str}
         return CountNode("count", args)
 
 
@@ -174,7 +171,7 @@ class SumNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         # count_alias=count(alias)
-        match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str)
+        match = re.match(r"(\w+)[\(\（](.*)[\)\）](->)?(.*)?", input_str)
         if not match:
             raise RuntimeError(f"parse logic form error {input_str}")
         # print('match:',match.groups())
@@ -182,9 +179,9 @@ class SumNode(LogicNode):
             operator, params, _, alias_name = match.groups()
         else:
             operator, params = match.groups()
-            alias_name = 'sum1'
-        params = params.replace('，', ',').split(',')
-        args = {'alias_name': alias_name, 'set': params}
+            alias_name = "sum1"
+        params = params.replace("，", ",").split(",")
+        args = {"alias_name": alias_name, "set": params}
         return SumNode("sum", args)
 
 
@@ -210,13 +207,15 @@ class SortNode(LogicNode):
 
     @staticmethod
     def parse_node(input_str):
-        equality_list = re.findall(r'([\w.]+=[^=]+)(,|，|$)', input_str)
+        equality_list = re.findall(r"([\w.]+=[^=]+)(,|，|$)", input_str)
         if len(equality_list) < 4:
-            raise RuntimeError(f"parse {input_str} error not found set,orderby,direction,limit")
+            raise RuntimeError(
+                f"parse {input_str} error not found set,orderby,direction,limit"
+            )
         params = [e[0] for e in equality_list[:4]]
         params_dict = {}
         for param in params:
-            key, value = param.split('=')
+            key, value = param.split("=")
             params_dict[key] = value
         return SortNode("sort", params_dict)
 
@@ -241,15 +240,24 @@ class CompareNode(LogicNode):
 
     @staticmethod
     def parse_node(input_str):
-        equality_list = re.findall(r'([\w.]+=[^=]+)(,|，|$)', input_str)
+        equality_list = re.findall(r"([\w.]+=[^=]+)(,|，|$)", input_str)
         if len(equality_list) < 2:
-            raise RuntimeError(f"parse {input_str} error not found set,orderby,direction,limit")
+            raise RuntimeError(
+                f"parse {input_str} error not found set,orderby,direction,limit"
+            )
         params = [e[0] for e in equality_list[:2]]
         params_dict = {}
         for param in params:
-            key, value = param.split('=')
-            if key == 'set':
-                value = value.strip().replace('，', ',').replace(' ', '').strip('[').strip(']').split(',')
+            key, value = param.split("=")
+            if key == "set":
+                value = (
+                    value.strip()
+                    .replace("，", ",")
+                    .replace(" ", "")
+                    .strip("[")
+                    .strip("]")
+                    .split(",")
+                )
             params_dict[key] = value
         return CompareNode("compare", params_dict)
 
@@ -266,19 +274,25 @@ class DeduceNode(LogicNode):
     def parse_node(input_str):
         ops = input_str.replace("op=", "")
         input_ops = ops.split(",")
-        return DeduceNode("deduce", {
-            "deduce_ops": input_ops
-        })
+        return DeduceNode("deduce", {"deduce_ops": input_ops})
 
 
 # verity(left_expr=alias, right_expr=other_alias or const_data, op=equal|gt|lt|ge|le|in|contains)
 class VerifyNode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
-        self.left_expr = args.get('left_expr', None)
-        self.right_expr = args.get('right_expr', None)
-        self.op = args.get('op', None)
-        self.OP = {'等于': 'equal', '大于': 'gt', '小于': 'lt', '大于等于': 'ge', '小于等于': 'le', '属于': 'in', '包含': 'contains'}
+        self.left_expr = args.get("left_expr", None)
+        self.right_expr = args.get("right_expr", None)
+        self.op = args.get("op", None)
+        self.OP = {
+            "等于": "equal",
+            "大于": "gt",
+            "小于": "lt",
+            "大于等于": "ge",
+            "小于等于": "le",
+            "属于": "in",
+            "包含": "contains",
+        }
 
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")
@@ -299,16 +313,16 @@ class VerifyNode(LogicNode):
     def to_std(self, args):
         for key, value in args.items():
             self.args[key] = value
-        self.left_expr = args.get('left_expr', self.left_expr)
-        self.right_expr = args.get('right_expr', self.right_expr)
-        self.op = args.get('op', self.op)
+        self.left_expr = args.get("left_expr", self.left_expr)
+        self.right_expr = args.get("right_expr", self.right_expr)
+        self.op = args.get("op", self.op)
         if self.op in self.OP.values():
             self.op = self.OP[self.op]
 
     @staticmethod
     def parse_node(input_str):
         if "verify" in input_str:
-            match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str)
+            match = re.match(r"(\w+)[\(\（](.*)[\)\）](->)?(.*)?", input_str)
             if not match:
                 raise RuntimeError(f"parse logic form error {input_str}")
             # print('match:',match.groups())
@@ -354,22 +368,25 @@ class GetNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         input_args = input_str.split(",")
-        return GetNode("get", {
-            "alias_name": Identifier(input_args[0]),
-            "alias_name_set": [Identifier(e) for e in input_args]
-        })
+        return GetNode(
+            "get",
+            {
+                "alias_name": Identifier(input_args[0]),
+                "alias_name_set": [Identifier(e) for e in input_args],
+            },
+        )
 
 
 # search_s()
 class SearchNode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
-        self.s = SPOEntity(None, None, args['type'], None, args['alias'], False)
-        self.s.value_list = args['conditions']
+        self.s = SPOEntity(None, None, args["type"], None, args["alias"], False)
+        self.s.value_list = args["conditions"]
 
     @staticmethod
     def parse_node(input_str):
-        pattern = re.compile(r'[,\s]*s=(\w+):([^,\s]+),(.*)')
+        pattern = re.compile(r"[,\s]*s=(\w+):([^,\s]+),(.*)")
         matches = pattern.match(input_str)
         args = dict()
         args["alias"] = matches.group(1)
@@ -378,21 +395,21 @@ class SearchNode(LogicNode):
             search_condition = dict()
             s_condition = matches.group(3)
 
-            condition_pattern = re.compile(r'(?:[,\s]*(\w+)\.(\w+)=([^,，]+))')
+            condition_pattern = re.compile(r"(?:[,\s]*(\w+)\.(\w+)=([^,，]+))")
             condition_list = condition_pattern.findall(s_condition)
             for condition in condition_list:
                 s_property = condition[1]
                 s_value = condition[2]
                 s_value = SearchNode.check_value_is_reference(s_value)
                 search_condition[s_property] = s_value
-            args['conditions'] = search_condition
+            args["conditions"] = search_condition
 
-        return SearchNode('search_s', args)
+        return SearchNode("search_s", args)
 
     @staticmethod
     def check_value_is_reference(value_str):
-        if '.' in value_str:
-            return value_str.split('.')
+        if "." in value_str:
+            return value_str.split(".")
         return value_str
 
 
@@ -431,7 +448,9 @@ class ParseLogicForm:
                             o_candis_set = self.schema.sp_o[sp_index]
                             for candis in o_candis_set:
                                 spo_zh = f"{s_type_zh}_{entity_type}_{candis}"
-                                type_info.entity_type = self.schema.get_spo_with_p(self.schema.spo_zh_en[spo_zh])
+                                type_info.entity_type = self.schema.get_spo_with_p(
+                                    self.schema.spo_zh_en[spo_zh]
+                                )
                                 break
 
                     if not type_info.entity_type and s_type_zh == "Entity":
@@ -440,10 +459,16 @@ class ParseLogicForm:
                             s_candis_set = self.schema.op_s[op_index]
                             for candis in s_candis_set:
                                 spo_zh = f"{candis}_{entity_type}_{o_type_zh}"
-                                type_info.entity_type = self.schema.get_spo_with_p(self.schema.spo_zh_en[spo_zh])
+                                type_info.entity_type = self.schema.get_spo_with_p(
+                                    self.schema.spo_zh_en[spo_zh]
+                                )
                                 break
 
-                    if not type_info.entity_type and o_type_zh != "Entity" and s_type_zh != "Entity":
+                    if (
+                        not type_info.entity_type
+                        and o_type_zh != "Entity"
+                        and s_type_zh != "Entity"
+                    ):
                         so_index = (s_type_zh, o_type_zh)
                         if so_index not in self.schema.so_p:
                             so_index = (o_type_zh, s_type_zh)
@@ -451,15 +476,21 @@ class ParseLogicForm:
                         for p_candis in candis_set:
                             if p_candis == entity_type:
                                 spo_zh = f"{s_type_zh}_{p_candis}_{o_type_zh}"
-                                type_info.entity_type = self.schema.get_spo_with_p(self.schema.spo_zh_en[spo_zh])
+                                type_info.entity_type = self.schema.get_spo_with_p(
+                                    self.schema.spo_zh_en[spo_zh]
+                                )
 
                     if not type_info.entity_type:
                         # maybe a property
-                        s_attr_zh_en = self.schema.attr_zh_en_by_label.get(s_type_en, [])
+                        s_attr_zh_en = self.schema.attr_zh_en_by_label.get(
+                            s_type_en, []
+                        )
                         if s_attr_zh_en and entity_type in s_attr_zh_en:
                             type_info.entity_type = s_attr_zh_en[entity_type]
                         if not type_info.entity_type:
-                            o_attr_zh_en = self.schema.attr_zh_en_by_label.get(o_type_en, [])
+                            o_attr_zh_en = self.schema.attr_zh_en_by_label.get(
+                                o_type_en, []
+                            )
                             if o_attr_zh_en and entity_type in o_attr_zh_en:
                                 type_info.entity_type = o_attr_zh_en[entity_type]
                 std_entity_type_set.append(type_info)
@@ -503,8 +534,10 @@ class ParseLogicForm:
         parsed_entity_set[alias_name] = edge
         return edge
 
-    def parse_logic_form(self, input_str: str, parsed_entity_set={}, sub_query=None, query=None):
-        match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str.strip())
+    def parse_logic_form(
+        self, input_str: str, parsed_entity_set={}, sub_query=None, query=None
+    ):
+        match = re.match(r"(\w+)[\(\（](.*)[\)\）](->)?(.*)?", input_str.strip())
         if not match:
             raise RuntimeError(f"parse logic form error {input_str}")
         if len(match.groups()) == 4:
@@ -525,12 +558,14 @@ class ParseLogicForm:
             node.p.s = s_node
             node.p.o = o_node
             p_node = self.std_parse_kg_node(node.p, parsed_entity_set)
-            node.to_std({
-                "s": s_node,
-                "p": p_node,
-                "o": o_node,
-                "sub_query": sub_query,
-            })
+            node.to_std(
+                {
+                    "s": s_node,
+                    "p": p_node,
+                    "o": o_node,
+                    "sub_query": sub_query,
+                }
+            )
         elif low_operator in ["filter"]:
             node: FilterNode = FilterNode.parse_node(args_str)
         elif low_operator in ["deduce"]:
@@ -547,19 +582,19 @@ class ParseLogicForm:
             node: SortNode = CompareNode.parse_node(args_str)
         elif low_operator in ["extractor"]:
             node: ExtractorNode = ExtractorNode.parse_node(args_str)
-        elif low_operator in ['search_s']:
+        elif low_operator in ["search_s"]:
             node: SearchNode = SearchNode.parse_node(args_str)
             self.std_parse_node(node.s, parsed_entity_set)
         else:
             raise NotImplementedError(f"not impl {input_str}")
 
-        node.to_std({
-            "sub_query": sub_query
-        })
+        node.to_std({"sub_query": sub_query})
 
         return node
 
-    def parse_logic_form_set(self, input_str_set: list, sub_querys: list, question: str):
+    def parse_logic_form_set(
+        self, input_str_set: list, sub_querys: list, question: str
+    ):
         parsed_cached_map = {}
         parsed_node = []
         for i, input_str in enumerate(input_str_set):
@@ -568,7 +603,9 @@ class ParseLogicForm:
             else:
                 sub_query = None
             try:
-                logic_node = self.parse_logic_form(input_str, parsed_cached_map, sub_query=sub_query, query=question)
+                logic_node = self.parse_logic_form(
+                    input_str, parsed_cached_map, sub_query=sub_query, query=question
+                )
                 parsed_node.append(logic_node)
             except Exception as e:
                 logger.warning(f"parse node {input_str} error", exc_info=True)
@@ -577,7 +614,9 @@ class ParseLogicForm:
     def std_node_type_name(self, type_name):
         if self.schema_retrieval is None:
             return type_name
-        search_entity_labels = self.schema_retrieval.retrieval_entity(SPOEntity(entity_name=type_name))
+        search_entity_labels = self.schema_retrieval.retrieval_entity(
+            SPOEntity(entity_name=type_name)
+        )
         if len(search_entity_labels) > 0:
             return search_entity_labels[0].name
         return type_name

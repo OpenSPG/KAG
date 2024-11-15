@@ -5,7 +5,6 @@ from kag.solver.prompt.default.logic_form_plan import LogicFormPlanPrompt
 logger = logging.getLogger(__name__)
 
 
-
 class LawLogicFormPlanPrompt(LogicFormPlanPrompt):
     default_case_zh = """"cases": [
         {

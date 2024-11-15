@@ -1,22 +1,22 @@
-
 from typing import List
 
 from .evaUtils import get_em_f1
 
 
-class Evaluate():
+class Evaluate:
 
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
-    def __init__(self, embedding_factory = "text-embedding-ada-002"):
+
+    def __init__(self, embedding_factory="text-embedding-ada-002"):
         self.embedding_factory = embedding_factory
 
     def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
         """
         evaluate the similarity between prediction and gold #TODO
         """
-        # data_samples = {  
+        # data_samples = {
         #     'question': [],
         #     'answer': predictionlist,
         #     'ground_truth': goldlist
@@ -28,7 +28,6 @@ class Evaluate():
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
         return 0.0
-
 
     def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
         """
@@ -45,21 +44,24 @@ class Evaluate():
         dict: Dictionary containing EM, F1 score, and answer similarity.
         """
         # Initialize total metrics
-        total_metrics = {'em': 0.0, 'f1': 0.0, 'answer_similarity': 0.0}
-        
+        total_metrics = {"em": 0.0, "f1": 0.0, "answer_similarity": 0.0}
+
         # Iterate over prediction and gold lists to calculate EM and F1 scores
         for prediction, gold in zip(predictionlist, goldlist):
-            em, f1 = get_em_f1(prediction, gold)  # Call external function to calculate EM and F1
-            total_metrics['em'] += em  # Accumulate EM score
-            total_metrics['f1'] += f1  # Accumulate F1 score
-        
+            em, f1 = get_em_f1(
+                prediction, gold
+            )  # Call external function to calculate EM and F1
+            total_metrics["em"] += em  # Accumulate EM score
+            total_metrics["f1"] += f1  # Accumulate F1 score
+
         # Calculate average EM and F1 scores
-        total_metrics['em'] /= len(predictionlist)
-        total_metrics['f1'] /= len(predictionlist)
-        
+        total_metrics["em"] /= len(predictionlist)
+        total_metrics["f1"] /= len(predictionlist)
+
         # Call method to calculate answer similarity
-        total_metrics['answer_similarity'] = self.evaForSimilarity(predictionlist, goldlist)
+        total_metrics["answer_similarity"] = self.evaForSimilarity(
+            predictionlist, goldlist
+        )
 
         # Return evaluation metrics dictionary
         return total_metrics
-

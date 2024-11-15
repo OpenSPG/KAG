@@ -79,11 +79,9 @@ def buildKB(corpusFilePath):
     logger.info(f"\n\nbuildKB successfully for {corpusFilePath}\n\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     filePath = "./data/musique_sub_corpus.json"
     # filePath = "./data/musique_train_corpus.json"
 
-    corpusFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)),filePath
-    )
+    corpusFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     buildKB(corpusFilePath)

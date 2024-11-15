@@ -66,7 +66,7 @@ output: """
         return ["question", "mention", "candis"]
 
     def parse_response_en(self, satisfied_info: str):
-        if satisfied_info[:3] == 'Yes':
+        if satisfied_info[:3] == "Yes":
             if_finished = True
         else:
             if_finished = False
@@ -82,7 +82,8 @@ output: """
     def parse_response(self, response: str, **kwargs):
         logger.debug(
             f"SpoRetrieval {response} mention:{self.template_variables_value.get('mention', '')} "
-            f"candis:{self.template_variables_value.get('candis', '')}")
-        llm_output = response.replace('Expected Output:', '')
-        llm_output = llm_output.replace('"', '')
+            f"candis:{self.template_variables_value.get('candis', '')}"
+        )
+        llm_output = response.replace("Expected Output:", "")
+        llm_output = llm_output.replace('"', "")
         return llm_output.strip()

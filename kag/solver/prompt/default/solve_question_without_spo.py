@@ -41,7 +41,7 @@ answer:
 
     @property
     def template_variables(self) -> List[str]:
-        return ["history", "question",  "docs"]
+        return ["history", "question", "docs"]
 
     def parse_response(self, response: str, **kwargs):
         return response

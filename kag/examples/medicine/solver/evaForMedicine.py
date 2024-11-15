@@ -21,7 +21,7 @@ class MedicineDemo:
         resp = SolverPipeline()
         answer, trace_log = resp.run(query)
 
-        return answer,trace_log
+        return answer, trace_log
 
     """
         parallel qa from knowledge base
@@ -32,7 +32,7 @@ class MedicineDemo:
 if __name__ == "__main__":
     demo = MedicineDemo()
     query = "甲状腺结节可以吃什么药？"
-    answer,trace_log = demo.qa(query)
+    answer, trace_log = demo.qa(query)
     print(f"Question: {query}")
     print(f"Answer: {answer}")
     print(f"TraceLog: {trace_log}")

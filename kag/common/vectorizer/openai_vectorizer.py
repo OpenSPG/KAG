@@ -9,7 +9,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from typing import Any, Union, Iterable, Dict
+from typing import Union, Iterable
 from openai import OpenAI
 from kag.common.vectorizer.vectorizer import Vectorizer
 
@@ -17,34 +17,25 @@ from kag.common.vectorizer.vectorizer import Vectorizer
 EmbeddingVector = Iterable[float]
 
 
+@Vectorizer.register("openai")
 class OpenAIVectorizer(Vectorizer):
     """
     Invoke OpenAI or OpenAI-compatible embedding services to turn texts into embedding vectors.
     """
 
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        self.model = config.get("model","text-embedding-3-small")
-        self.api_key = config.get("api_key")
-        self.base_url = config.get("base_url")
-        if not self.api_key:
-            raise ValueError("OpenAI API key is not set")
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+    def __init__(
+        self,
+        model: str = "text-embedding-3-small",
+        api_key: str = "",
+        base_url: str = "",
+        vector_dimensions: int = None,
+    ):
+        super().__init__(vector_dimensions)
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
 
-    @classmethod
-    def _from_config(cls, config: Dict[str, Any]) -> Vectorizer:
-        """
-        Create vectorizer from `config`.
-
-        :param config: vectorizer config
-        :type config: Dict[str, Any]
-        :return: vectorizer instance
-        :rtype: Vectorizer
-        """
-        vectorizer = cls(config)
-        return vectorizer
-
-    def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
+    def vectorize(
+        self, texts: Union[str, Iterable[str]]
+    ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
         Vectorize a text string into an embedding vector or multiple text strings into
         multiple embedding vectors.

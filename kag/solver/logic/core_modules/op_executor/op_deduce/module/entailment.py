@@ -6,8 +6,15 @@ from kag.solver.logic.core_modules.op_executor.op_executor import OpExecutor
 
 
 class EntailmentOp(OpExecutor):
-    def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, debug_info: dict):
-        super().__init__(nl_query, kg_graph, schema, debug_info)
+    def __init__(
+        self,
+        nl_query: str,
+        kg_graph: KgGraph,
+        schema: SchemaUtils,
+        debug_info: dict,
+        **kwargs,
+    ):
+        super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
         self.prompt = PromptOp.load(self.biz_scene, "deduce_entail")(
             language=self.language
         )
@@ -17,6 +24,10 @@ class EntailmentOp(OpExecutor):
         qa_pair = "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
         spo_info = self.kg_graph.to_evidence()
         information = str(spo_info) + "\n" + qa_pair
-        if_answered, answer = self.llm_module.invoke({'instruction': self.nl_query, 'memory': information},
-                                                     self.prompt, with_json_parse=False, with_except=True)
+        if_answered, answer = self.llm_module.invoke(
+            {"instruction": self.nl_query, "memory": information},
+            self.prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
         return [if_answered, answer]

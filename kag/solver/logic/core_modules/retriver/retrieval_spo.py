@@ -6,9 +6,13 @@ import time
 from typing import List
 
 from kag.common.base.prompt_op import PromptOp
-from kag.common.llm.client import LLMClient
-from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData, OneHopGraphData, \
-    RelationData
+from kag.common.llm import LLMClient
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    KgGraph,
+    EntityData,
+    OneHopGraphData,
+    RelationData,
+)
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
@@ -38,7 +42,7 @@ def change_en_2_zh(s, p, o, schema: SchemaUtils):
 
 def split_value(value):
     value = value.strip()
-    pattern = re.compile(r'[,、; ，]+')
+    pattern = re.compile(r"[,、; ，]+")
     return pattern.split(value)
 
 
@@ -71,20 +75,18 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
         if one_graph.s_alias_name == "o":
             o_entity = one_graph.s
             s_entity = o_value
-        if o_value.description is None or o_value.description == '':
+        if o_value.description is None or o_value.description == "":
             o_value.description = f"{s_entity.name} {std_p} {o_entity.name}"
         return RelationData.from_prop_value(s_entity, std_p, o_entity)
 
-    def _std_best_p_with_value_and_p_name(self, n: GetSPONode, one_graph: OneHopGraphData):
+    def _std_best_p_with_value_and_p_name(
+        self, n: GetSPONode, one_graph: OneHopGraphData
+    ):
         """
         :param one_graph:
         :return: list(RelationData)
         """
-        debug_info = {
-            "el": [],
-            "el_detail": [],
-            "std_out": []
-        }
+        debug_info = {"el": [], "el_detail": [], "std_out": []}
         logger.debug(f"std_best_p_with_value_and_p_name begin std " + str(n))
         un_std_p_list = n.p.get_entity_type_or_zh_list()
         final_result_list = []
@@ -100,7 +102,9 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
             final_result_list = final_result_list + result
 
         for un_std_p in un_std_p_list:
-            target_value = n.o.entity_name if one_graph.s_alias_name == "s" else n.s.entity_name
+            target_value = (
+                n.o.entity_name if one_graph.s_alias_name == "s" else n.s.entity_name
+            )
             target_node = n.o if one_graph.s_alias_name == "s" else n.s
             relation_name_set = one_graph.get_s_all_relation_name()
             attribute_name_set = one_graph.get_s_all_attribute_name()
@@ -112,11 +116,13 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
                 return None
 
             std_p = find_best_match_p_name(un_std_p, candi_name_set)
-            debug_info['std_out'].append({
-                "un_std_p": un_std_p,
-                "candi_name_set": candi_name_set,
-                "std_p": std_p if std_p is not None else ''
-            })
+            debug_info["std_out"].append(
+                {
+                    "un_std_p": un_std_p,
+                    "candi_name_set": candi_name_set,
+                    "std_p": std_p if std_p is not None else "",
+                }
+            )
             if std_p is None:
                 continue
 
@@ -130,15 +136,23 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
             if get_data_from_rel:
                 relation_data = one_graph.get_std_relation_value(std_p)
             else:
-                logger.info(f"relation with el: un std p is " + un_std_p + ", std p is " + std_p)
+                logger.info(
+                    f"relation with el: un std p is " + un_std_p + ", std p is " + std_p
+                )
                 value = one_graph.get_std_attribute_value(std_p)
                 if value is None or value == "":
                     continue
                 # new a RelationData
-                relation_data = [self._prase_attribute_relation(one_graph, std_p, value)]
+                relation_data = [
+                    self._prase_attribute_relation(one_graph, std_p, value)
+                ]
             if target_value is not None:
                 for r in relation_data:
-                    candi_target_value = r.end_entity.name if one_graph.s_alias_name == "s" else r.start_entity.name
+                    candi_target_value = (
+                        r.end_entity.name
+                        if one_graph.s_alias_name == "s"
+                        else r.start_entity.name
+                    )
                     if candi_target_value == target_value:
                         final_result_list.append(r)
                         continue
@@ -152,13 +166,19 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
         one_kg_graph.query_graph[n.p.alias_name] = {
             "s": n.s.alias_name,
             "p": n.p.alias_name,
-            "o": n.o.alias_name
+            "o": n.o.alias_name,
         }
         for tmp_one_hop_graph in one_hop_graph_list:
-            rel_set, recall_debug_info = self._std_best_p_with_value_and_p_name(n, tmp_one_hop_graph)
+            rel_set, recall_debug_info = self._std_best_p_with_value_and_p_name(
+                n, tmp_one_hop_graph
+            )
             if len(rel_set) > 0:
                 one_kg_graph_ = KgGraph()
-                recall_alias_name = n.s.alias_name if tmp_one_hop_graph.s_alias_name == "s" else n.o.alias_name
+                recall_alias_name = (
+                    n.s.alias_name
+                    if tmp_one_hop_graph.s_alias_name == "s"
+                    else n.o.alias_name
+                )
                 one_kg_graph_.entity_map[recall_alias_name] = [tmp_one_hop_graph.s]
                 one_kg_graph_.edge_map[n.p.alias_name] = rel_set
                 one_kg_graph.merge_kg_graph(one_kg_graph_)
@@ -169,7 +189,7 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
 
 
 class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
-    def __init__(self, text_similarity: TextSimilarity = None, llm: LLMClient=None):
+    def __init__(self, text_similarity: TextSimilarity = None, llm: LLMClient = None):
         super().__init__()
         model = eval(os.getenv("KAG_LLM"))
         self.llm: LLMClient = llm or LLMClient.from_config(model)
@@ -194,15 +214,16 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         resp_plan_prompt = PromptOp.load(self.biz_scene, "spo_retrieval")(
             language=self.language
         )
-        return self.llm.invoke({
-            'question': question,
-            'mention': mention,
-            'candis': candis
-        }, resp_plan_prompt, with_json_parse=False, with_except=True)
+        return self.llm.invoke(
+            {"question": question, "mention": mention, "candis": candis},
+            resp_plan_prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
 
-    def select_relation(self, p_mention, p_candis, query='', topk=1, params={}):
+    def select_relation(self, p_mention, p_candis, query="", topk=1, params={}):
         if not p_mention:
-            print('p_mention is none')
+            print("p_mention is none")
             return None
         if p_mention in self.cached_map.keys():
             cached_set = self.cached_map[p_mention]
@@ -210,16 +231,18 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         else:
             intersection = []
         if len(intersection) == 0:
-            res = ''
+            res = ""
             try:
                 res = self._choosed_by_llm(query, p_mention, p_candis)
                 res = res.replace("Output:", "output:")
                 if "output:" in res:
-                    res = re.search('output:(.*)', res).group(1).strip()
-                if res != '':
+                    res = re.search("output:(.*)", res).group(1).strip()
+                if res != "":
                     res = json.loads(res.replace("'", '"'))
                     for res_ in res:
-                        self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
+                        self.cached_map[p_mention] = self.cached_map.get(
+                            p_mention, []
+                        ) + [res_]
                         intersection.append(res_)
             except:
                 logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
@@ -232,13 +255,15 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         sen_condi_set = []
         spo_name_map = {}
         for p_name, spo_l in candi_set.items():
-            if p_name.startswith("_") or p_name == "id" or p_name == 'content':
+            if p_name.startswith("_") or p_name == "id" or p_name == "content":
                 continue
             for spo in spo_l:
                 spo_name_map[spo] = p_name
             sen_condi_set += spo_l
         result = self.select_relation(p, sen_condi_set, query=query)
-        logger.debug(f"retrieval_relation: p={p}, candi_set={sen_condi_set}, p_std result={result}")
+        logger.debug(
+            f"retrieval_relation: p={p}, candi_set={sen_condi_set}, p_std result={result}"
+        )
 
         if result is None or len(result) == 0:
             return spo_retrieved
@@ -269,8 +294,12 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
                     revert_value_p_map[v] = k
                     revert_graph_map[v] = one_hop_graph
         start_time = time.time()
-        tok5_res = self.text_similarity.text_sim_result(n.sub_query, all_spo_text, 5, low_score=0.3)
-        logger.debug(f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}")
+        tok5_res = self.text_similarity.text_sim_result(
+            n.sub_query, all_spo_text, 5, low_score=0.3
+        )
+        logger.debug(
+            f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}"
+        )
 
         if len(tok5_res) == 0:
             return one_kg_graph, matched_flag
@@ -285,23 +314,27 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
             else:
                 candi_name_set[k] = [res[0]]
         start_time = time.time()
-        spo_retrieved = self.find_best_match_p_name_by_model(n.sub_query, unstd_p_text,
-                                                             candi_name_set)
+        spo_retrieved = self.find_best_match_p_name_by_model(
+            n.sub_query, unstd_p_text, candi_name_set
+        )
         logger.debug(
-            f"_get_spo_value_in_one_hop_graph_set find_best_match_p_name_by_entity_list cost={time.time() - start_time}")
+            f"_get_spo_value_in_one_hop_graph_set find_best_match_p_name_by_entity_list cost={time.time() - start_time}"
+        )
         total_one_kg_graph = KgGraph()
         total_one_kg_graph.query_graph[n.p.alias_name] = {
             "s": n.s.alias_name,
             "p": n.p.alias_name,
-            "o": n.o.alias_name
+            "o": n.o.alias_name,
         }
         for std_spo_text, std_p in spo_retrieved:
-            if std_p is None or std_p == '':
+            if std_p is None or std_p == "":
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
             rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text)
             one_kg_graph_ = KgGraph()
-            recall_alias_name = n.s.alias_name if one_hop_graph.s_alias_name == "s" else n.o.alias_name
+            recall_alias_name = (
+                n.s.alias_name if one_hop_graph.s_alias_name == "s" else n.o.alias_name
+            )
             one_kg_graph_.entity_map[recall_alias_name] = [one_hop_graph.s]
             one_kg_graph_.edge_map[n.p.alias_name] = rel_set
             total_one_kg_graph.merge_kg_graph(one_kg_graph_)

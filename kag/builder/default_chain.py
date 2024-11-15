@@ -27,9 +27,11 @@ logger = logging.getLogger(__name__)
 def get_reader(file_path: str):
     file = os.path.basename(file_path)
     suffix = file.split(".")[-1]
-    assert suffix.lower() in READER_MAPPING, f"{suffix} is not supported. Supported suffixes are: {list(READER_MAPPING.keys())}"
+    assert (
+        suffix.lower() in READER_MAPPING
+    ), f"{suffix} is not supported. Supported suffixes are: {list(READER_MAPPING.keys())}"
     reader_path = READER_MAPPING.get(suffix.lower())
-    mod_path, class_name = reader_path.rsplit('.', 1)
+    mod_path, class_name = reader_path.rsplit(".", 1)
     module = importlib.import_module(mod_path)
     reader_class = getattr(module, class_name)
 
@@ -138,7 +140,14 @@ class DefaultUnstructuredBuilderChain(BuilderChainABC):
         chain = source >> splitter >> extractor >> vectorizer >> sink
         return chain
 
-    def invoke(self, file_path: str, split_length: int = 500, window_length: int = 100, max_workers=10, **kwargs):
+    def invoke(
+        self,
+        file_path: str,
+        split_length: int = 500,
+        window_length: int = 100,
+        max_workers=10,
+        **kwargs,
+    ):
         logger.info(f"begin processing file_path:{file_path}")
         """
         Invokes the processing chain with the given file path and optional parameters.
@@ -154,4 +163,10 @@ class DefaultUnstructuredBuilderChain(BuilderChainABC):
         Returns:
             The result of invoking the processing chain.
         """
-        return super().invoke(file_path=file_path, max_workers=max_workers, split_length=window_length, window_length=window_length, **kwargs)
+        return super().invoke(
+            file_path=file_path,
+            max_workers=max_workers,
+            split_length=window_length,
+            window_length=window_length,
+            **kwargs,
+        )
