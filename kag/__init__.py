@@ -206,6 +206,10 @@ __package_name__ = "openspg-kag"
 __version__ = "0.5.2-beta1"
 
 # Register Built-in Components
+from kag.common.conf import init_env
+
+init_env()
+
 import kag.interface
 import kag.builder.component
 import kag.builder.prompt
@@ -213,6 +217,3 @@ import kag.solver.prompt
 import kag.common.vectorize_model
 import kag.common.llm
 import kag.solver
-from kag.common.conf import init_env
-
-init_env()

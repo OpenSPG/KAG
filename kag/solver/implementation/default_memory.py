@@ -1,7 +1,11 @@
+import logging
 from tenacity import retry, stop_after_attempt
 
 from kag.interface import PromptABC, KagMemoryABC
 from kag.interface import LLMClient
+from kag.solver.utils import init_prompt_with_fallback
+
+logger = logging.getLogger()
 
 
 @KagMemoryABC.register("base", as_default=True)
@@ -14,14 +18,13 @@ class DefaultMemory(KagMemoryABC):
         **kwargs,
     ):
         super().__init__(llm_client, **kwargs)
+
         if verify_prompt is None:
-            verify_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_resp_verifier"}
-            )
+            verify_prompt = init_prompt_with_fallback("resp_verifier", self.biz_scene)
         self.verify_prompt = verify_prompt
         if extractor_prompt is None:
-            extractor_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_resp_extractor"}
+            extractor_prompt = init_prompt_with_fallback(
+                "resp_extractor", self.biz_scene
             )
         self.extractor_prompt = extractor_prompt
         self.state_memory = []

@@ -13,10 +13,11 @@
 import json
 from typing import Optional, List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OpenIETriplePrompt(PromptOp):
+@PromptABC.register("example_medical_triple")
+class OpenIETriplePrompt(PromptABC):
 
     template_zh = """
 {

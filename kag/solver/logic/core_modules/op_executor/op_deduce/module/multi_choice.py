@@ -3,6 +3,7 @@ from kag.solver.logic.core_modules.common.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.op_executor.op_executor import OpExecutor
+from kag.solver.utils import init_prompt_with_fallback
 
 
 class MultiChoiceOp(OpExecutor):
@@ -15,9 +16,7 @@ class MultiChoiceOp(OpExecutor):
         **kwargs,
     ):
         super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
-        self.prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_deduce_multi_choice"}
-        )
+        self.prompt = init_prompt_with_fallback("deduce_multi_choice", self.biz_scene)
 
     def executor(self, logic_node: LogicNode, req_id: str, param: dict) -> list:
         # get history qa pair from debug_info

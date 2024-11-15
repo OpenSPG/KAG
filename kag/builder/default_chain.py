@@ -20,7 +20,7 @@ from kag.builder.component import (
     LengthSplitter,
     BatchVectorizer,
 )
-from interface.builder.reader_abc import SourceReaderABC
+from kag.interface import SourceReaderABC
 from knext.common.base.chain import Chain
 from knext.builder.builder_chain_abc import BuilderChainABC
 
@@ -59,7 +59,10 @@ class DefaultStructuredBuilderChain(BuilderChainABC):
         file_path = kwargs.get("file_path")
         # source = get_reader(file_path)(output_type="Dict")
         suffix = os.path.basename(file_path).split(".")[-1]
-        source = SourceReaderABC.from_config({"type": suffix})
+        source_config = {"type": suffix}
+        if suffix in ["json", "csv"]:
+            source_config["output_type"] = "Dict"
+        source = SourceReaderABC.from_config(source_config)
 
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         sink = KGWriter()

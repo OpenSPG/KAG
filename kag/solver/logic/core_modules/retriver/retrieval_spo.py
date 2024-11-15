@@ -1,8 +1,8 @@
 import json
-import logging
 import os
 import re
 import time
+import logging
 from typing import List
 
 from kag.interface import PromptABC
@@ -17,6 +17,7 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
@@ -213,10 +214,8 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         return un_std_p
 
     def _choosed_by_llm(self, question, mention, candis):
+        resp_plan_prompt = init_prompt_with_fallback("spo_retrieval", self.biz_scene)
 
-        resp_plan_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_spo_retrieval"}
-        )
         return self.llm.invoke(
             {"question": question, "mention": mention, "candis": candis},
             resp_plan_prompt,

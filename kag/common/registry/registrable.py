@@ -747,10 +747,8 @@ class Registrable:
                     params.clear()
                     setattr(instant, "__from_config_kwargs__", remaining_kwargs)
         except Exception as e:
-            import traceback
 
-            logger.error(f"failed to initialize class {cls}, info: ")
-            traceback.print_exc()
+            logger.warn(f"Failed to initialize class {cls}, info: {e}")
             raise e
         if len(params) > 0:
             raise ConfigurationError(

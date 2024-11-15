@@ -14,11 +14,12 @@ import json
 from string import Template
 from typing import List, Optional
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
 
-class OpenIENERPrompt(PromptOp):
+@PromptABC.register("example_medical_ner")
+class OpenIENERPrompt(PromptABC):
 
     template_zh = """
     {

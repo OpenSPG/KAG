@@ -4,6 +4,8 @@ from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.op_executor.op_executor import OpExecutor
 
+from kag.solver.utils import init_prompt_with_fallback
+
 
 class JudgementOp(OpExecutor):
     def __init__(
@@ -15,7 +17,7 @@ class JudgementOp(OpExecutor):
         **kwargs,
     ):
         super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
-        self.prompt = PromptABC.from_config({"type": f"{self.biz_scene}_deduce_judge"})
+        self.prompt = init_prompt_with_fallback("deduce_judge", self.biz_scene)
 
     def executor(self, logic_node: LogicNode, req_id: str, param: dict) -> list:
         history_qa_pair = self.debug_info.get("sub_qa_pair", [])

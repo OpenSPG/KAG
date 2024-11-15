@@ -1,9 +1,9 @@
 import logging
+from kag.interface import KagBaseModule
 
-from kag.interface import PromptABC, KagBaseModule
+from kag.solver.utils import init_prompt_with_fallback
 
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class LFGenerator(KagBaseModule):
@@ -14,14 +14,15 @@ class LFGenerator(KagBaseModule):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.solve_question_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_solve_question"}
+
+        self.solve_question_prompt = init_prompt_with_fallback(
+            "solve_question", self.biz_scene
         )
-        self.solve_question_without_docs_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_solve_question_without_docs"}
+        self.solve_question_without_docs_prompt = init_prompt_with_fallback(
+            "solve_question_without_docs", self.biz_scene
         )
-        self.solve_question_without_spo_prompt = PromptABC.from_config(
-            {"type": f"{self.biz_scene}_solve_question_without_spo"}
+        self.solve_question_without_spo_prompt = init_prompt_with_fallback(
+            "solve_question_without_spo", self.biz_scene
         )
 
     def generate_sub_answer(

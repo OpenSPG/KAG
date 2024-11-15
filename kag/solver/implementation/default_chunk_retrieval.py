@@ -32,6 +32,7 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +76,11 @@ class KAGRetriever(ChunkRetriever):
         # )
         # self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
         if ner_prompt is None:
-            ner_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_question_ner"}
-            )
+            ner_prompt = init_prompt_with_fallback("question_ner", self.biz_scene)
+
         self.ner_prompt = ner_prompt
         if std_prompt is None:
-            std_prompt = PromptABC.from_config({"type": f"{self.biz_scene}_std"})
+            std_prompt = init_prompt_with_fallback("std", self.biz_scene)
         self.std_prompt = std_prompt
 
         self.pagerank_threshold = pagerank_threshold

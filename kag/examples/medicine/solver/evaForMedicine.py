@@ -1,7 +1,7 @@
 import logging
-import os
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
 
-from kag.common.env import init_kag_config
 from kag.solver.logic.solver_pipeline import SolverPipeline
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class MedicineDemo:
 
     def qa(self, query):
         # CA
-        resp = SolverPipeline()
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
         answer, trace_log = resp.run(query)
 
         return answer, trace_log
@@ -30,6 +30,8 @@ class MedicineDemo:
 
 
 if __name__ == "__main__":
+    import_modules_from_path("./prompt")
+
     demo = MedicineDemo()
     query = "甲状腺结节可以吃什么药？"
     answer, trace_log = demo.qa(query)

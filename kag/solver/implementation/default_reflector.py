@@ -2,6 +2,7 @@ from tenacity import retry, stop_after_attempt
 
 from kag.interface import PromptABC, KagMemoryABC, KagReflectorABC
 from kag.interface import LLMClient
+from kag.solver.utils import init_prompt_with_fallback
 
 
 @KagReflectorABC.register("base", as_default=True)
@@ -22,15 +23,11 @@ class DefaultReflector(KagReflectorABC):
         """
         super().__init__(llm_client=llm_client, **kwargs)
         if refine_prompt is None:
-            refine_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_resp_reflector"}
-            )
+            refine_prompt = init_prompt_with_fallback("resp_reflector", self.biz_scene)
         self.refine_prompt = refine_prompt
 
         if judge_prompt is None:
-            judge_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_resp_judge"}
-            )
+            judge_prompt = init_prompt_with_fallback("resp_judge", self.biz_scene)
         self.judge_prompt = judge_prompt
 
     def _get_serialize_memory(self, memory: KagMemoryABC):

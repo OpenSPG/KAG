@@ -1,0 +1,78 @@
+project:
+  biz_scene: medical
+  namespace: Medicine
+  host_addr: http://127.0.0.1:8887
+  language: zh
+  id: 4
+
+
+vectorize_model: &vectorize_model_config
+  type: mock
+  vector_dimensions: 768
+
+vectorizer:
+  type: batch
+  vectorize_model: *vectorize_model_config
+
+
+llm: &llm_conf  
+  api_key: key
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  type: maas
+
+log:
+  level: INFO
+
+
+spo_chain:
+  reader:
+    type: csv
+    output_type: Dict
+  mapping:
+    type: spo
+  vectorizer:
+    type: batch
+    vectorize_model: *vectorize_model_config
+  writer:
+    type: kg
+
+extract_chain:
+  reader:
+    type: csv
+    output_type: Chunk
+    id_col: idx
+    name_col: title
+    content_col: text
+  splitter:
+    split_length: 100000
+    type: length
+    window_length: 0    
+  extractor:
+    llm: *llm_conf
+    ner_prompt:
+      type: example_medical_ner
+    std_prompt:
+      type: example_medical_std
+    triple_prompt:
+      type: example_medical_triple
+    type: kag
+  vectorizer:
+    type: batch
+    vectorize_model: *vectorize_model_config
+  writer:
+    type: kg
+    
+lf_solver_pipeline:
+  generator:
+    generate_prompt:
+      type: example_resp_generator
+  reasoner:
+    lf_solver:
+      kg_retriever:
+        type: base
+      chunk_retriever:
+        type: kag
+        ner_prompt:
+          type: example_medical_question_ner
+    

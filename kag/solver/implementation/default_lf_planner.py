@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import List
 
 from kag.interface import LLMClient
@@ -9,6 +10,9 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicForm
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
+from kag.solver.utils import init_prompt_with_fallback
+
+logger = logging.getLogger()
 
 
 @LFPlannerABC.register("base", as_default=True)
@@ -31,8 +35,8 @@ class DefaultLFPlanner(LFPlannerABC):
         self.parser = ParseLogicForm(schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
         if logic_form_plan_prompt is None:
-            logic_form_plan_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_logic_form_plan"}
+            logic_form_plan_prompt = init_prompt_with_fallback(
+                "logic_form_plan", self.biz_scene
             )
         self.logic_form_plan_prompt = logic_form_plan_prompt
 

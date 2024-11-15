@@ -37,7 +37,7 @@ class CSVReader(SourceReaderABC):
         name_col: str = "name",
         content_col: str = "content",
     ):
-        if output_type == "Dict":
+        if output_type.lower().strip() == "dict":
             self.output_types = Dict[str, str]
         else:
             self.output_types = Chunk

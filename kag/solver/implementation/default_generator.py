@@ -1,5 +1,6 @@
+import logging
 from tenacity import stop_after_attempt, retry
-
+from kag.solver.utils import init_prompt_with_fallback
 from kag.interface import PromptABC, KAGGeneratorABC
 from kag.interface import LLMClient
 from kag.solver.implementation.default_memory import DefaultMemory
@@ -17,8 +18,8 @@ class DefaultGenerator(KAGGeneratorABC):
     ):
         super().__init__(llm_client, **kwargs)
         if generate_prompt is None:
-            generate_prompt = PromptABC.from_config(
-                {"type": f"{self.biz_scene}_resp_generator"}
+            generate_prompt = init_prompt_with_fallback(
+                "resp_generator", self.biz_scene
             )
         self.generate_prompt = generate_prompt
 

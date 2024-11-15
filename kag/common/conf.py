@@ -140,8 +140,8 @@ KAG_PROJECT_CONF = KAG_CONFIG.global_config
 
 
 def init_env():
-    project_id = os.getenv(KAGConstants.KAG_PROJECT_ID_KEY)
-    host_addr = os.getenv(KAGConstants.KAG_PROJECT_HOST_ADDR_KEY)
+    project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
+    host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
     if project_id and host_addr:
         prod = True
     else:
@@ -153,7 +153,8 @@ def init_env():
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
-
+    os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
+    os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     print(f"==================={msg}===================")
     import pprint
 
