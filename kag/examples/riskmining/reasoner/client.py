@@ -1,7 +1,6 @@
 import os
-
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.reasoner.client import ReasonerClient
-from kag.common.env import init_kag_config
 
 
 def read_dsl_files(directory):
@@ -23,12 +22,9 @@ def read_dsl_files(directory):
 
 if __name__ == "__main__":
     reasoner_path = os.path.dirname(os.path.abspath(__file__))
-    project_path = os.path.dirname(reasoner_path)
-    cfg_path = os.path.join(project_path, "kag_config.cfg")
-    init_kag_config(cfg_path)
-    host_addr = os.environ["KAG_PROJECT_HOST_ADDR"]
-    project_id = os.environ["KAG_PROJECT_ID"]
-    namespace = os.environ["KAG_PROJECT_NAMESPACE"]
+    host_addr = KAG_PROJECT_CONF.host_addr
+    project_id = KAG_PROJECT_CONF.project_id
+    namespace = KAG_PROJECT_CONF.namespace
     client = ReasonerClient(
         host_addr=host_addr, project_id=project_id, namespace=namespace
     )

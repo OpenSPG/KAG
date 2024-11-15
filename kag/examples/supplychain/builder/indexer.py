@@ -13,22 +13,20 @@ import os
 
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.default_chain import DefaultStructuredBuilderChain
-from kag.common.env import init_kag_config
 from kag.builder.component import SPGTypeMapping, KGWriter, RelationMapping
 from kag.builder.component.reader.csv_reader import CSVReader
 from kag.examples.supplychain.builder.operator.event_kg_writer_op import EventKGWriter
 from kag.examples.supplychain.builder.operator.fund_date_process_op import (
     FundDateProcessComponent,
 )
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from knext.search.client import SearchClient
 from knext.builder.builder_chain_abc import BuilderChainABC
 from knext.search.client import SearchClient
 
 
 def company_link_func(prop_value, node):
-    sc = SearchClient(
-        os.getenv("KAG_PROJECT_HOST_ADDR"), int(os.getenv("KAG_PROJECT_ID"))
-    )
+    sc = SearchClient(KAG_PROJECT_CONF.host_addr, KAG_PROJECT_CONF.project_id)
     company_id = []
     records = sc.search_text(
         prop_value, label_constraints=["SupplyChain.Company"], topk=1
@@ -56,7 +54,7 @@ class SupplyChainPersonChain(BuilderChainABC):
                 link_func=company_link_func,
             )
         )
-        vectorizer = BatchVectorizer()
+        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
         sink = KGWriter()
         return source >> mapping >> vectorizer >> sink
 
@@ -77,7 +75,7 @@ class SupplyChainCompanyFundTransCompanyChain(BuilderChainABC):
             .add_sub_property_mapping("transDate", "transDate")
             .add_sub_property_mapping("transAmt", "transAmt")
         )
-        vectorizer = BatchVectorizer()
+        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
         sink = KGWriter()
         return source >> date_process_op >> mapping >> vectorizer >> sink
 
@@ -99,7 +97,7 @@ class SupplyChainDefaulStructuredBuilderChain(DefaultStructuredBuilderChain):
         source = CSVReader(output_type="Dict")
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         sink = KGWriter()
-        vectorizer = BatchVectorizer()
+        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
         chain = source >> mapping >> vectorizer >> sink
         return chain
 
@@ -121,15 +119,13 @@ class SupplyChainEventBuilderChain(DefaultStructuredBuilderChain):
         source = CSVReader(output_type="Dict")
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         sink = EventKGWriter()
-        vectorizer = BatchVectorizer()
+        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
         chain = source >> mapping >> vectorizer >> sink
         return chain
 
 
 def import_data():
     file_path = os.path.dirname(__file__)
-    init_kag_config(os.path.join(file_path, "../kag_config.cfg"))
-
     SupplyChainDefaulStructuredBuilderChain(spg_type_name="TaxOfCompanyEvent").invoke(
         file_path=os.path.join(file_path, "data/TaxOfCompanyEvent.csv")
     )

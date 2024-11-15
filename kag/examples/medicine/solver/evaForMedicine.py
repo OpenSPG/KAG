@@ -13,9 +13,6 @@ class MedicineDemo:
     init for kag client
     """
 
-    def __init__(self):
-        pass
-
     def qa(self, query):
         # CA
         resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])

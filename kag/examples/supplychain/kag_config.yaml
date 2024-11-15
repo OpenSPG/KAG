@@ -1,0 +1,25 @@
+lf_solver_pipeline:
+  reasoner:
+    lf_planner:
+      logic_form_plan_prompt:
+        type: supplychain_lf_plan
+      type: base
+llm:
+  api_key: key
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  type: maas
+log:
+  level: INFO
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '6'
+  language: zh
+  namespace: SupplyChain
+vectorize_model: &id001
+  type: mock
+  vector_dimensions: 768
+vectorizer:
+  type: batch
+  vectorize_model: *id001
