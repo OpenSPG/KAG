@@ -5,8 +5,6 @@ import time
 import datetime
 import socket
 import traceback
-import torch
-import torch.distributed as dist
 from kag.common.conf import KAGConstants
 
 
@@ -78,6 +76,8 @@ def get_master_addr(default=None):
 
 
 def host2tensor(master_port):
+    import torch
+
     host_str = socket.gethostbyname(socket.gethostname())
     host = [int(x) for x in host_str.split(".")]
     host.append(int(master_port))
@@ -93,6 +93,9 @@ def tensor2host(host_tensor):
 
 
 def sync_hosts():
+    import torch
+    import torch.distributed as dist
+
     rank = get_rank()
     if rank is None:
         raise ValueError("can't get rank of container")

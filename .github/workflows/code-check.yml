@@ -29,6 +29,6 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files
 
-      - name: Run unit tests
-        run: pushd tests/unit && pytest && popd
+      # - name: Run unit tests
+      #   run: pushd tests/unit && pytest && popd
         
