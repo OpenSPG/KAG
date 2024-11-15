@@ -9,11 +9,12 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
-from kag.interface import ExternalGraphLoaderABC, PostProcessorABC, VectorizerABC
+import os
+from kag.interface import PostProcessorABC, VectorizerABC
 from kag.builder.model.sub_graph import Node, Edge, SubGraph
 from kag.common.conf import KAG_CONFIG
-from kag.common.utils import get_vector_field_name
+
+pwd = os.path.dirname(__file__)
 
 
 def get_config():
@@ -72,8 +73,8 @@ def test_postprocessor_add_eg_edges():
     config = get_config()
     config["external_graph"] = {
         "type": "base",
-        "node_file_path": "../data/nodes.json",
-        "edge_file_path": "../data/edges.json",
+        "node_file_path": os.path.join(pwd, "../data/nodes.json"),
+        "edge_file_path": os.path.join(pwd, "../data/edges.json"),
         "match_config": {
             "k": 1,
             "threshold": 0.9,

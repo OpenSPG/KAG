@@ -1,4 +1,4 @@
-name: Code Format Check
+name: CI
 
 on:
   push:
@@ -26,3 +26,7 @@ jobs:
 
       - name: Run pre-commit
         run: pre-commit run --all-files
+
+      - name: Run unit tests
+        run: pushd tests/unit && pytest && popd
+        

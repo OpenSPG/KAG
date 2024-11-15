@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pytest
 from kag.interface import LLMClient
 
 
@@ -27,9 +28,17 @@ def get_ollama_config():
     }
 
 
+@pytest.mark.skip(reason="Missing API key")
 def test_llm_client():
 
     for conf in [get_vllm_config(), get_openai_config(), get_ollama_config()]:
         client = LLMClient.from_config(conf)
         rsp = client("Who are you?")
         # assert rsp is not None
+
+
+def test_mock_llm_client():
+    conf = {"type": "mock"}
+    client = LLMClient.from_config(conf)
+    rsp = client.call_with_json_parse("who are you?")
+    assert rsp == "I am an intelligent assistant"

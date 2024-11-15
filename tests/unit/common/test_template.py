@@ -17,35 +17,41 @@ PWD = os.path.dirname(__file__)
 
 
 def get_render_contents():
-    with open(os.path.join(PWD, "resource/cfg.tmpl"), "r") as reader:
+    with open(os.path.join(PWD, "data/cfg.yaml.tmpl"), "r") as reader:
         template = reader.read()
-    with open(os.path.join(PWD, "resource/cfg"), "r") as reader:
+    with open(os.path.join(PWD, "data/cfg.yaml"), "r") as reader:
         rendered = reader.read()
     return template, rendered
 
 
 def set_render_contents(template_content, rendered_content):
-    with open(os.path.join(PWD, "resource/cfg.tmpl"), "w") as writer:
+    with open(os.path.join(PWD, "data/cfg.yaml.tmpl"), "w") as writer:
         writer.write(template_content)
-    with open(os.path.join(PWD, "resource/cfg"), "w") as writer:
+    with open(os.path.join(PWD, "data/cfg.yaml"), "w") as writer:
         writer.write(rendered_content)
 
 
 def _test_render_template(rendered_content):
-    work_dir = os.path.join(PWD, "resource")
-    render_template(
-        root=work_dir,
-        file="cfg.tmpl",
-        project_name="TEST",
-        description="TEST",
-        namespace="kag",
-        project_id="0324",
-        project_dir="/root",
-    )
-    rendered_file = os.path.join(work_dir, "cfg")
+    work_dir = os.path.join(PWD, "data")
+
+    data = {
+        "database": {
+            "host": "localhost",
+            "port": 3306,
+            "user": "root",
+            "password": "secret",
+            "name": "my_database",
+        },
+        "server": {"host": "0.0.0.0", "port": 8080},
+    }
+
+    render_template(root_dir=work_dir, file="cfg.yaml.tmpl", **data)
+    rendered_file = os.path.join(work_dir, "cfg.yaml")
     with open(rendered_file, "r") as reader:
         rendered = reader.read()
-    assert rendered_content == rendered, "template render error"
+    assert (
+        rendered_content.strip() == rendered.strip()
+    ), f"\n{rendered_content}\n=====VS=======\n{rendered}"
 
 
 def test_render_template():

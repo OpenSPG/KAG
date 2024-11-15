@@ -9,7 +9,7 @@ from kag.interface import SourceReaderABC
 from unittest.mock import patch, mock_open, MagicMock
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 
-dir_path = os.path.dirname(__file__)
+pwd = os.path.dirname(__file__)
 
 
 def test_text_reader():
@@ -18,7 +18,7 @@ def test_text_reader():
     chunks = reader.invoke(text)
     assert len(chunks) == 1 and chunks[0].content == text
 
-    file_path = "../data/test_txt.txt"
+    file_path = os.path.join(pwd, "../data/test_txt.txt")
     chunks = reader.invoke(file_path)
     with open(file_path) as f:
         content = f.read()
@@ -31,7 +31,8 @@ def test_text_reader():
 def test_docx_reader():
     reader = SourceReaderABC.from_config({"type": "docx"})
 
-    chunks = reader.invoke("../data/test_docx.docx")
+    file_path = os.path.join(pwd, "../data/test_docx.docx")
+    chunks = reader.invoke(file_path)
     # Assert the expected result
     assert len(chunks) == 30
     assert len(chunks[0].content) > 0
@@ -41,13 +42,13 @@ def test_json_reader():
     reader = SourceReaderABC.from_config(
         {"type": "json", "name_col": "title", "content_col": "text"}
     )
-    json_file_path = os.path.join(dir_path, "../data/test_json.json")
+    file_path = os.path.join(pwd, "../data/test_json.json")
 
-    with open(json_file_path, "r") as r:
+    with open(file_path, "r") as r:
         json_string = r.read()
     json_content = json.loads(json_string)
     # read from json file
-    chunks = reader.invoke(json_file_path)
+    chunks = reader.invoke(file_path)
     assert len(chunks) == len(json_content)
     for chunk, json_item in zip(chunks, json_content):
         assert chunk.content == json_item["text"]
@@ -65,7 +66,7 @@ def test_csv_reader():
     reader = SourceReaderABC.from_config(
         {"type": "csv", "id_col": "idx", "name_col": "title", "content_col": "text"}
     )
-    file_path = os.path.join(dir_path, "../data/test_csv.csv")
+    file_path = os.path.join(pwd, "../data/test_csv.csv")
     chunks = reader.invoke(file_path)
 
     data = pd.read_csv(file_path)
@@ -80,7 +81,7 @@ def test_csv_reader():
 
 def test_md_reader():
     reader = SourceReaderABC.from_config({"type": "md", "cut_depth": 1})
-    file_path = os.path.join(dir_path, "../data/test_markdown.md")
+    file_path = os.path.join(pwd, "../data/test_markdown.md")
     chunks = reader.invoke(file_path)
     assert len(chunks) > 0
     assert chunks[0].name == "test_markdown#0"
@@ -96,7 +97,7 @@ def test_pdf_reader():
         page, watermark, remove_header=True, remove_footnote=True
     )
     assert result == expected
-    file_path = os.path.join(dir_path, "../data/test_pdf.pdf")
+    file_path = os.path.join(pwd, "../data/test_pdf.pdf")
     chunks = reader.invoke(file_path)
     assert chunks[0].name == "test_pdf#0"
 

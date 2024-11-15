@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-
+import os
 import copy
-import unittest
 
 from kag.common.conf import KAG_CONFIG
 from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk
 
 llm_config = KAG_CONFIG.all_config["llm"]
+
+pwd = os.path.dirname(__file__)
 
 
 def test_length_splitter():
@@ -30,7 +31,7 @@ def test_outline_splitter():
             "llm": copy.deepcopy(llm_config),
         }
     )
-    with open("../data/test_txt.txt", "r") as reader:
+    with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:
         content = reader.read()
     chunk = Chunk(id=1, name="test", content=content)
 
@@ -45,7 +46,7 @@ def test_semantic_splitter():
             "llm": copy.deepcopy(llm_config),
         }
     )
-    with open("../data/test_txt.txt", "r") as reader:
+    with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:
         content = reader.read()
     chunk = Chunk(id=1, name="test", content=content)
 

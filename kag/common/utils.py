@@ -83,7 +83,6 @@ def render_template(
 
     if path_obj.suffix == ".tmpl":
         path_obj.rename(render_path)
-
     render_path.write_text(content, "utf8")
 
 

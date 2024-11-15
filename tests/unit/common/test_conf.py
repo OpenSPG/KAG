@@ -12,11 +12,11 @@ def test_local_config():
     init_env()
     assert KAG_PROJECT_CONF.language == "en"
     assert KAG_PROJECT_CONF.host_addr == "http://127.0.0.1:8887"
-    assert KAG_PROJECT_CONF.project_id == 666
+    assert KAG_PROJECT_CONF.project_id == 1
     assert KAG_PROJECT_CONF.biz_scene == "default"
 
     all_config = KAG_CONFIG.all_config
-    for key in ["global", "vectorize_model", "llm", "indexer", "retriever", "log"]:
+    for key in ["project", "vectorize_model", "llm", "writer", "log"]:
         assert key in all_config, f"Config {key} not found!"
 
 
