@@ -1,6 +1,7 @@
 # KAG: Knowledge Augmented Generation
 
 [中文版文档](./README_cn.md)
+[日本語版ドキュメント](./README_ja.md)
 
 ## 1. What is KAG
 

@@ -1,6 +1,7 @@
 # 大模型知识服务框架 KAG
 
 [English version](./README.md)
+[日本語版ドキュメント](./README_ja.md)
 
 ## 1. KAG 是什么
 
