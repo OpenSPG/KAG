@@ -50,25 +50,67 @@ class OutlineSplitter(SplitterABC):
         chunks = self.sep_by_outline(content, outlines)
         return chunks
 
+    import re
+
+    def filter_outlines(self, raw_outlines):
+        """
+        过滤掉无效的标题，包括仅由数字、罗马数字、中文数字以及与数字相关的标点组合构成的标题。
+        """
+        # 匹配阿拉伯数字、中文数字、罗马数字和无效标点组合
+        invalid_pattern = r"""
+            ^                      # 匹配开头
+            [0-9一二三四五六七八九十零IIVXLCDM\-.\(\)\[\]\s]*  # 阿拉伯数字、中文数字、罗马数字及常见修饰符
+            $                      # 匹配结尾
+        """
+        valid_outlines = []
+        for title, level in raw_outlines:
+            # 去掉两侧的空白符，避免干扰
+            title = title.strip()
+            # 过滤无效标题
+            if re.fullmatch(invalid_pattern, title, re.VERBOSE):
+                continue
+            # 保留有效标题
+            valid_outlines.append((title, level))
+        return valid_outlines
+
     def sep_by_outline(self, content, outlines):
+        """
+        按层级划分内容为 chunks，剔除无效的标题。
+        """
+        # 过滤无效的 outlines
+        outlines = self.filter_outlines(outlines)
+
         position_check = []
         for outline in outlines:
-            start = content.find(outline)
-            position_check.append((outline, start))
+            start = content.find(outline[0])
+            if start != -1:
+                position_check.append((outline, start))
+
+        if not position_check:
+            return []  # 如果没有找到任何标题，返回空
+
         chunks = []
-        for idx, pc in enumerate(position_check):
+        father_stack = []
+
+        for idx, (outline, start) in enumerate(position_check):
+            title, level = outline
+            end = (
+                position_check[idx + 1][1]
+                if idx + 1 < len(position_check)
+                else len(content)
+            )
+            while father_stack and father_stack[-1][1] >= level:
+                father_stack.pop()
+            full_path = "/".join([item[0] for item in father_stack] + [title])
+            chunk_content = content[start:end]
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{pc[0]}#{idx}"),
-                name=f"{pc[0]}#{idx}",
-                content=content[
-                    pc[1] : (
-                        position_check[idx + 1][1]
-                        if idx + 1 < len(position_check)
-                        else len(position_check)
-                    )
-                ],
+                id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
+                name=full_path,
+                content=chunk_content,
             )
             chunks.append(chunk)
+            father_stack.append((title, level))
+
         return chunks
 
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
