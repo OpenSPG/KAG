@@ -24,6 +24,7 @@ from kag.interface.builder.external_graph_abc import (
     ExternalGraphLoaderABC,
     MatchConfig,
 )
+from kag.interface.builder.builder_chain_abc import KAGBuilderChain
 from kag.interface.builder.postprocessor_abc import PostProcessorABC
 from kag.interface.solver.base import KagBaseModule, Question
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
@@ -48,6 +49,7 @@ __all__ = [
     "VectorizerABC",
     "ExternalGraphLoaderABC",
     "MatchConfig",
+    "KAGBuilderChain",
     "PostProcessorABC",
     "KagBaseModule",
     "Question",

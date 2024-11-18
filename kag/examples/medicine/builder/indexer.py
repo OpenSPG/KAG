@@ -12,10 +12,10 @@ from kag.builder.default_chain import (
     DefaultStructuredBuilderChain,
 )
 from kag.common.registry import Registrable, import_modules_from_path
-from knext.builder.builder_chain_abc import BuilderChainABC
+from kag.interface import KAGBuilderChain as BuilderChainABC
 
 
-class SPOBuilderChain(BuilderChainABC, Registrable):
+class SPOBuilderChain(BuilderChainABC):
     def __init__(
         self,
         reader: SourceReaderABC,
@@ -39,7 +39,7 @@ class SPOBuilderChain(BuilderChainABC, Registrable):
         return self.reader >> self.mapping >> self.vectorizer >> self.writer
 
 
-class DiseaseBuilderChain(Registrable, BuilderChainABC):
+class DiseaseBuilderChain(BuilderChainABC):
     def __init__(
         self,
         reader: SourceReaderABC,
@@ -55,14 +55,6 @@ class DiseaseBuilderChain(Registrable, BuilderChainABC):
         self.writer = writer
 
     def build(self, **kwargs):
-        # source = CSVReader(
-        #     output_type="Chunk", id_col="idx", name_col="title", content_col="text"
-        # )
-        # splitter = LengthSplitter(split_length=2000)
-        # extractor = KAGExtractor()
-        # vectorizer = BatchVectorizer()
-        # sink = KGWriter()
-
         return (
             self.reader
             >> self.splitter

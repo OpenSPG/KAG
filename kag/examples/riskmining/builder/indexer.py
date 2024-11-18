@@ -16,7 +16,7 @@ from kag.builder.default_chain import DefaultStructuredBuilderChain
 from kag.builder.component import KGWriter, RelationMapping, SPGTypeMapping
 from kag.builder.component.reader.csv_reader import CSVReader
 from kag.common.conf import KAG_CONFIG
-from knext.builder.builder_chain_abc import BuilderChainABC
+from kag.interface import KAGBuilderChain as BuilderChainABC
 
 
 class RiskMiningEntityChain(BuilderChainABC):

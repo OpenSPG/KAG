@@ -21,7 +21,7 @@ from kag.examples.supplychain.builder.operator.fund_date_process_op import (
 )
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from knext.search.client import SearchClient
-from knext.builder.builder_chain_abc import BuilderChainABC
+from kag.interface import KAGBuilderChain as BuilderChainABC
 from knext.search.client import SearchClient
 
 

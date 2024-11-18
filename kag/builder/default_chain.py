@@ -16,18 +16,25 @@ import os
 from kag.builder.component import (
     SPGTypeMapping,
     KGWriter,
-    KAGExtractor,
-    LengthSplitter,
-    BatchVectorizer,
 )
-from kag.interface import SourceReaderABC
-from knext.common.base.chain import Chain
-from knext.builder.builder_chain_abc import BuilderChainABC
+
+
+from kag.interface import (
+    ExtractorABC,
+    SplitterABC,
+    VectorizerABC,
+    SourceReaderABC,
+    PostProcessorABC,
+    SinkWriterABC,
+    KAGBuilderChain,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class DefaultStructuredBuilderChain(BuilderChainABC):
+@KAGBuilderChain.register("structured")
+class DefaultStructuredBuilderChain(KAGBuilderChain):
+
     """
     A class representing a default SPG builder chain, used to import structured data based on schema definitions
 
@@ -86,73 +93,30 @@ class DefaultStructuredBuilderChain(BuilderChainABC):
         return super().invoke(file_path=file_path, max_workers=max_workers, **kwargs)
 
 
-class DefaultUnstructuredBuilderChain(BuilderChainABC):
-    """
-    A class representing a default KAG builder chain, used to extract graph from documents and import unstructured data.
-
-    Steps:
-        0. Initializing.
-        1. SourceReader: Reading chunks from a given file.
-        2. LengthSplitter: Splitting chunk to smaller chunks. The chunk size can be adjusted through parameters.
-        3. KAGExtractor: Extracting entities and relations from chunks, and assembling a sub graph.
-            By default,the extraction process includes NER and SPO Extraction.
-        4. KGWriter: Writing sub graph into KG storage.
-
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def build(self, **kwargs) -> Chain:
-        """
-        Builds the processing chain for the KAG.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            chain: The constructed processing chain.
-        """
-        file_path = kwargs.get("file_path")
-        split_length = kwargs.get("split_length")
-        window_length = kwargs.get("window_length")
-        suffix = os.path.basename(file_path).split(".")[-1]
-        source = SourceReaderABC.from_config({"type": suffix})
-        splitter = LengthSplitter(split_length, window_length)
-        extractor = KAGExtractor()
-        vectorizer = BatchVectorizer()
-        sink = KGWriter()
-
-        chain = source >> splitter >> extractor >> vectorizer >> sink
-        return chain
-
-    def invoke(
+@KAGBuilderChain.register("unstructured")
+class DefaultUnstructuredBuilderChain(KAGBuilderChain):
+    def __init__(
         self,
-        file_path: str,
-        split_length: int = 500,
-        window_length: int = 100,
-        max_workers=10,
-        **kwargs,
+        reader: SourceReaderABC,
+        splitter: SplitterABC,
+        extractor: ExtractorABC,
+        vectorizer: VectorizerABC,
+        post_processor: PostProcessorABC,
+        writer: SinkWriterABC,
     ):
-        logger.info(f"begin processing file_path:{file_path}")
-        """
-        Invokes the processing chain with the given file path and optional parameters.
+        self.reader = reader
+        self.splitter = splitter
+        self.extractor = extractor
+        self.vectorizer = vectorizer
+        self.post_processor = post_processor
+        self.writer = writer
 
-        Args:
-            file_path (str): The path to the input file.
-            split_length (int, optional): The length at which the file should be split. Defaults to 500.
-            window_length (int, optional): The length of the processing window. Defaults to 100.
-            max_workers (int, optional): The maximum number of worker threads. Defaults to 10.
-
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The result of invoking the processing chain.
-        """
-        return super().invoke(
-            file_path=file_path,
-            max_workers=max_workers,
-            split_length=window_length,
-            window_length=window_length,
-            **kwargs,
+    def build(self, **kwargs):
+        return (
+            self.reader
+            >> self.splitter
+            >> self.extractor
+            >> self.vectorizer
+            >> self.post_processor
+            >> self.writer
         )
