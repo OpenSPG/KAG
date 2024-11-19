@@ -6,9 +6,14 @@
 
 Retrieval Augmentation Generation (RAG) technology promotes the integration of domain applications with large language models. However, RAG has problems such as a large gap between vector similarity and knowledge reasoning correlation, and insensitivity to knowledge logic (such as numerical values, time relationships, expert rules, etc.), which hinder the implementation of professional knowledge services.
 
-On October 24, 2024, OpenSPG released v0.5, officially releasing the professional domain knowledge service framework of knowledge augmented generation (KAG). KAG aims to make full use of the advantages of Knowledge Graph and vector retrieval, and bi-directionally enhance large language models and knowledge graphs through four aspects to solve RAG challenges: (1) LLM-friendly knowledge representation, (2) Knowledge Graph and original text The mutual index between fragments, (3) a hybrid reasoning engine guided by logical forms, (4) knowledge alignment with semantic reasoning.
+On October 24, 2024, OpenSPG released v0.5, officially releasing the professional domain knowledge service framework of knowledge augmented generation (KAG). The goal of KAG is to build a knowledge-enhanced LLM service framework in professional domains, supporting logical reasoning, factual Q&A, etc. KAG fully integrates the logical and factual characteristics of the KGs. Meanwhile, it uses OpenIE to lower the threshold for knowledgeization of domain documents and alleviates the sparsity problem of the KG through hybrid reasoning. As far as we know, KAG is the only RAG framework that supports logical reasoning and multi-hop factual Q&A. Its core features include:
 
-KAG is significantly better than NaiveRAG, HippoRAG and other methods in multi-hop question and answer tasks. The F1 score on hotpotQA is relatively increased by 19.6%, and the F1 score on 2wiki is relatively increased by 33.5%. We have successfully applied KAG to Ant Group's two professional knowledge question and answer tasks, including e-government question and answer and e-health question and answer, and the professionalism has been significantly improved compared to the RAG method.
+* Knowledge and Chunk Mutual Indexing structure to integrate more complete contextual text information
+* Knowledge alignment using conceptual semantic reasoning to alleviate the noise problem caused by OpenIE
+* Schema-constrained knowledge construction to support the representation and construction of domain expert knowledge
+* Logical form-guided hybrid reasoning and retrieval to support logical reasoning and multi-hop reasoning Q&A
+
+KAG is significantly better than NaiveRAG, HippoRAG and other methods in multi-hop Q&A tasks. The F1 score on hotpotQA is relatively increased by 19.6%, and the F1 score on 2wiki is relatively increased by 33.5%. We have successfully applied KAG to Ant Group's professional knowledge Q&A tasks, such as e-government Q&A and e-health Q&A, and the professionalism has been significantly improved compared to the traditional RAG method.
 
 ### 1.1 Technical Architecture
 
