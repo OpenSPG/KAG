@@ -20,10 +20,11 @@ from kag.builder.component import (
 
 
 from kag.interface import (
+    SourceReaderABC,
     ExtractorABC,
     SplitterABC,
     VectorizerABC,
-    SourceReaderABC,
+    RecordParserABC,
     PostProcessorABC,
     SinkWriterABC,
     KAGBuilderChain,
@@ -97,14 +98,14 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 class DefaultUnstructuredBuilderChain(KAGBuilderChain):
     def __init__(
         self,
-        reader: SourceReaderABC,
+        parser: RecordParserABC,
         splitter: SplitterABC,
         extractor: ExtractorABC,
         vectorizer: VectorizerABC,
         post_processor: PostProcessorABC,
         writer: SinkWriterABC,
     ):
-        self.reader = reader
+        self.parser = parser
         self.splitter = splitter
         self.extractor = extractor
         self.vectorizer = vectorizer
@@ -113,7 +114,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
 
     def build(self, **kwargs):
         return (
-            self.reader
+            self.parser
             >> self.splitter
             >> self.extractor
             >> self.vectorizer

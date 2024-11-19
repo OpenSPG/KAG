@@ -211,7 +211,10 @@ from kag.common.conf import init_env
 init_env()
 
 import kag.interface
+
 import kag.builder.component
+import kag.builder.default_chain
+import kag.builder.runner
 import kag.builder.prompt
 import kag.solver.prompt
 import kag.common.vectorize_model

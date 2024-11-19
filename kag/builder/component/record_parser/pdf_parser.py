@@ -12,13 +12,13 @@
 
 import os
 import re
-from typing import List, Sequence, Type, Union
+from typing import List, Sequence, Union
 
 import pdfminer.layout  # noqa
 
 
 from kag.builder.model.chunk import Chunk
-from kag.interface import SourceReaderABC
+from kag.interface import RecordParserABC
 
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import LLMClient
@@ -37,10 +37,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@SourceReaderABC.register("pdf")
-class PDFReader(SourceReaderABC):
+@RecordParserABC.register("pdf")
+class PDFFileParser(RecordParserABC):
     """
-    A PDF reader class that inherits from SourceReader.
+    A PDF reader class that inherits from RecordParserABC.
     """
 
     def __init__(self, llm: LLMClient = None, split_level: int = 3):
@@ -50,14 +50,6 @@ class PDFReader(SourceReaderABC):
         # self.outline_flag = True
         self.llm = llm
         self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
-
-    @property
-    def input_types(self) -> Type[Input]:
-        return str
-
-    @property
-    def output_types(self) -> Type[Output]:
-        return Chunk
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]], basename) -> List[Chunk]:
         if isinstance(chunk, Chunk):
@@ -142,7 +134,7 @@ class PDFReader(SourceReaderABC):
                 text += element.get_text()
         return text
 
-    def invoke(self, input: str, **kwargs) -> Sequence[Output]:
+    def invoke(self, input: Input, **kwargs) -> Sequence[Output]:
         """
         Processes a PDF file, splitting or extracting content based on configuration.
 

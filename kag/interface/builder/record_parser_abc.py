@@ -9,22 +9,17 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from typing import Dict, List
+from abc import ABC, abstractmethod
+from typing import List
 
-import pandas as pd
-from kag.interface import SourceReaderABC
+from kag.interface.builder.base import BuilderComponent
+from kag.builder.model.chunk import Chunk
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("csv")
-class CSVReader(SourceReaderABC):
+class RecordParserABC(BuilderComponent, ABC):
     """
-    A class for reading CSV files, inheriting from `SourceReader`.
-    Supports converting CSV data into either a list of dictionaries or a list of Chunk objects.
-
-    Args:
-        output_type (Output): Specifies the output type, which can be "Dict" or "Chunk".
-        **kwargs: Additional keyword arguments passed to the parent class constructor.
+    Interface for reading files into a list of unstructured chunks or structured dicts.
     """
 
     @property
@@ -33,8 +28,10 @@ class CSVReader(SourceReaderABC):
 
     @property
     def output_types(self) -> Output:
-        return Dict
+        return Chunk
 
-    def load_data(self, input: Input, **kwargs) -> List[Output]:
-        data = pd.read_csv(input)
-        return data.to_dict(orient="records")
+    @abstractmethod
+    def invoke(self, input: Input, **kwargs) -> List[Output]:
+        raise NotImplementedError(
+            f"`invoke` is not currently supported for {self.__class__.__name__}."
+        )

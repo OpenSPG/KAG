@@ -11,26 +11,18 @@
 # or implied.
 
 import os
-from typing import List, Type
+from typing import List
 
 from kag.builder.model.chunk import Chunk
-from kag.interface import SourceReaderABC
+from kag.interface import RecordParserABC
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("txt")
-class TXTReader(SourceReaderABC):
+@RecordParserABC.register("txt")
+class TXTParser(RecordParserABC):
     """
-    A PDF reader class that inherits from SourceReader.
+    A txt paraser class that inherits from RecordParserABC.
     """
-
-    @property
-    def input_types(self) -> Type[Input]:
-        return str
-
-    @property
-    def output_types(self) -> Type[Output]:
-        return Chunk
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """

@@ -15,7 +15,7 @@ import os
 import bs4.element
 import markdown
 from bs4 import BeautifulSoup, Tag
-from typing import List, Type
+from typing import List
 import logging
 import re
 import requests
@@ -23,7 +23,7 @@ import pandas as pd
 from io import StringIO
 from tenacity import stop_after_attempt, retry
 
-from kag.interface import SourceReaderABC
+from kag.interface import RecordParserABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
@@ -34,10 +34,10 @@ from knext.common.base.runnable import Output, Input
 logger = logging.getLogger(__name__)
 
 
-@SourceReaderABC.register("md")
-class MarkDownReader(SourceReaderABC):
+@RecordParserABC.register("md")
+class MarkDownParser(RecordParserABC):
     """
-    A class for reading MarkDown files, inheriting from `SourceReader`.
+    A class for reading MarkDown files, inheriting from `RecordParserABC`.
     Supports converting MarkDown data into a list of Chunk objects.
 
     Args:
@@ -53,14 +53,6 @@ class MarkDownReader(SourceReaderABC):
         self.analyze_table_prompt = AnalyzeTablePrompt(
             language=KAG_PROJECT_CONF.language
         )
-
-    @property
-    def input_types(self) -> Type[Input]:
-        return str
-
-    @property
-    def output_types(self) -> Type[Output]:
-        return Chunk
 
     def to_text(self, level_tags):
         """
@@ -423,4 +415,20 @@ class MarkDownReader(SourceReaderABC):
         basename, _ = os.path.splitext(os.path.basename(file_path))
 
         chunks = self.solve_content(input, basename, content)
+        return chunks
+
+
+@RecordParserABC.register("yuque")
+class YuequeParser(MarkDownParser):
+    def invoke(self, input: Input, **kwargs) -> List[Output]:
+        token, url = input.split("@", 1)
+        headers = {"X-Auth-Token": token}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx and 5xx)
+        data = response.json()["data"]
+        id = data.get("id", "")
+        title = data.get("title", "")
+        content = data.get("body", "")
+
+        chunks = self.solve_content(id, title, content)
         return chunks

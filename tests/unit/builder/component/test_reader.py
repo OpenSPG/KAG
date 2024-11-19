@@ -6,115 +6,94 @@ import os
 
 
 from kag.interface import SourceReaderABC
-from unittest.mock import patch, mock_open, MagicMock
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 
 pwd = os.path.dirname(__file__)
 
 
-def test_text_reader():
-    reader = SourceReaderABC.from_config({"type": "txt"})
-    text = "您好！"
-    chunks = reader.invoke(text)
-    assert len(chunks) == 1 and chunks[0].content == text
-
-    file_path = os.path.join(pwd, "../data/test_txt.txt")
-    chunks = reader.invoke(file_path)
-    with open(file_path) as f:
-        content = f.read()
-    chunks = reader.invoke(file_path)
-    assert len(chunks) == 1
-    assert chunks[0].content == content
-    assert chunks[0].id == Chunk.generate_hash_id(file_path)
-
-
-def test_docx_reader():
-    reader = SourceReaderABC.from_config({"type": "docx"})
-
-    file_path = os.path.join(pwd, "../data/test_docx.docx")
-    chunks = reader.invoke(file_path)
-    # Assert the expected result
-    assert len(chunks) == 30
-    assert len(chunks[0].content) > 0
-
-
 def test_json_reader():
-    reader = SourceReaderABC.from_config(
-        {"type": "json", "name_col": "title", "content_col": "text"}
-    )
+    reader = SourceReaderABC.from_config({"type": "json", "rank": 0, "world_size": 1})
     file_path = os.path.join(pwd, "../data/test_json.json")
 
     with open(file_path, "r") as r:
         json_string = r.read()
     json_content = json.loads(json_string)
-    # read from json file
-    chunks = reader.invoke(file_path)
-    assert len(chunks) == len(json_content)
-    for chunk, json_item in zip(chunks, json_content):
-        assert chunk.content == json_item["text"]
-        assert chunk.name == json_item["title"]
 
-    # read from json string directly
-    chunks = reader.invoke(json_string)
-    assert len(chunks) == len(json_content)
-    for chunk, json_item in zip(chunks, json_content):
-        assert chunk.content == json_item["text"]
-        assert chunk.name == json_item["title"]
+    data = reader.invoke(file_path)
+    assert len(data) == len(json_content)
+    for l, r in zip(data, json_content):
+        assert l == r
+
+    reader_1 = SourceReaderABC.from_config({"type": "json", "rank": 0, "world_size": 2})
+    reader_2 = SourceReaderABC.from_config({"type": "json", "rank": 1, "world_size": 2})
+
+    data_1 = reader_1.invoke(file_path)
+    data_2 = reader_2.invoke(file_path)
+    data = data_1 + data_2
+    assert len(data) == len(json_content)
+    for l, r in zip(data, json_content):
+        assert l == r
 
 
 def test_csv_reader():
-    reader = SourceReaderABC.from_config(
-        {"type": "csv", "id_col": "idx", "name_col": "title", "content_col": "text"}
-    )
+    reader = SourceReaderABC.from_config({"type": "csv", "rank": 0, "world_size": 1})
     file_path = os.path.join(pwd, "../data/test_csv.csv")
-    chunks = reader.invoke(file_path)
+    csv_content = []
+    for _, item in pd.read_csv(file_path).iterrows():
+        csv_content.append(item.to_dict())
+    data = reader.invoke(file_path)
 
-    data = pd.read_csv(file_path)
-    assert len(chunks) == len(data)
-    for idx in range(len(chunks)):
-        chunk = chunks[idx]
-        row = data.iloc[idx]
-        assert str(chunk.id) == str(row.idx)
-        assert chunk.name == row.title
-        assert chunk.content == row.text
+    assert len(data) == len(csv_content)
+    for l, r in zip(data, csv_content):
+        assert l == r
+
+    reader_1 = SourceReaderABC.from_config({"type": "csv", "rank": 0, "world_size": 2})
+    reader_2 = SourceReaderABC.from_config({"type": "csv", "rank": 1, "world_size": 2})
+
+    data_1 = reader_1.invoke(file_path)
+    data_2 = reader_2.invoke(file_path)
+    data = data_1 + data_2
+    assert len(data) == len(csv_content)
+    for l, r in zip(data, csv_content):
+        assert l == r
 
 
-def test_md_reader():
-    reader = SourceReaderABC.from_config({"type": "md", "cut_depth": 1})
-    file_path = os.path.join(pwd, "../data/test_markdown.md")
-    chunks = reader.invoke(file_path)
-    assert len(chunks) > 0
-    assert chunks[0].name == "test_markdown#0"
+def test_directory_reader():
+    reader = SourceReaderABC.from_config({"type": "dir", "file_suffix": "json"})
+    dir_path = os.path.join(pwd, "../data/")
+    all_data = reader.invoke(dir_path)
+    for item in all_data:
+        assert os.path.exists(item)
+        assert item.endswith("json")
 
-
-def test_pdf_reader():
-    reader = SourceReaderABC.from_config({"type": "pdf"})
-
-    page = "Header\nContent 1\nContent 2\nFooter"
-    watermark = "Header"
-    expected = ["Content 1", "Content 2"]
-    result = reader._process_single_page(
-        page, watermark, remove_header=True, remove_footnote=True
+    reader_1 = SourceReaderABC.from_config(
+        {"type": "dir", "file_suffix": "json", "rank": 0, "world_size": 2}
     )
-    assert result == expected
-    file_path = os.path.join(pwd, "../data/test_pdf.pdf")
-    chunks = reader.invoke(file_path)
-    assert chunks[0].name == "test_pdf#0"
+    reader_2 = SourceReaderABC.from_config(
+        {"type": "dir", "file_suffix": "json", "rank": 1, "world_size": 2}
+    )
+    data_1 = reader_1.invoke(dir_path)
+    data_2 = reader_2.invoke(dir_path)
+    assert len(all_data) == len(data_1) + len(data_2)
+
+    reader = SourceReaderABC.from_config({"type": "dir", "file_pattern": ".*txt$"})
+    all_data = reader.invoke(dir_path)
+
+    for item in all_data:
+        assert os.path.exists(item)
+        assert item.endswith("txt")
 
 
 def test_yuque_reader():
     reader = SourceReaderABC.from_config(
         {
             "type": "yuque",
-            "token": "1yPz1LbE20FmXvemCDVwjlSHpAp18qtEu7wcjCfv",
-            "cut_depth": 1,
+            "token": "f6QiFu1gIDEGJIsI6jziOWbE7E9MsFkipeV69NHq",
         }
     )
-    from kag.builder.component import MarkDownReader
-
-    assert isinstance(reader.markdown_reader, MarkDownReader)
-
-    chunks = reader.invoke(
-        "https://yuque-api.antfin-inc.com/api/v2/repos/ob46m2/it70c2/docs/bnp80qitsy5vqoa5"
+    urls = reader.invoke(
+        "https://yuque-api.antfin-inc.com/api/v2/repos/un8gkl/kg7h1z/docs/"
     )
-    assert chunks[0].content[:6] == "1、建设目标"
+    for url in urls:
+        token, rea_url = url.split("@", 1)
+        assert token == reader.token

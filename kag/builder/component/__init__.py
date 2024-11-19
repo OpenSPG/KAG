@@ -23,17 +23,22 @@ from kag.builder.component.mapping.spg_type_mapping import SPGTypeMapping
 from kag.builder.component.mapping.relation_mapping import RelationMapping
 from kag.builder.component.mapping.spo_mapping import SPOMapping
 from kag.builder.component.reader.csv_reader import CSVReader
-from kag.builder.component.reader.pdf_reader import PDFReader
 from kag.builder.component.reader.json_reader import JSONReader
-from kag.builder.component.reader.markdown_reader import MarkDownReader
-from kag.builder.component.reader.docx_reader import DocxReader
-from kag.builder.component.reader.txt_reader import TXTReader
-from kag.builder.component.reader.dataset_reader import (
-    HotpotqaCorpusReader,
-    TwowikiCorpusReader,
-    MusiqueCorpusReader,
-)
 from kag.builder.component.reader.yuque_reader import YuqueReader
+from kag.builder.component.reader.dataset_reader import (
+    MusiqueCorpusReader,
+    HotpotqaCorpusReader,
+)
+from kag.builder.component.reader.directory_reader import DirectoryReader
+
+
+from kag.builder.component.record_parser.pdf_parser import PDFParser
+from kag.builder.component.record_parser.markdown_parser import MarkDownParser
+from kag.builder.component.record_parser.docx_parser import DocxParser
+from kag.builder.component.record_parser.txt_parser import TXTParser
+from kag.builder.component.record_parser.dict_parser import DictParser
+
+
 from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.splitter.pattern_splitter import PatternSplitter
 from kag.builder.component.splitter.outline_splitter import OutlineSplitter
@@ -53,16 +58,17 @@ __all__ = [
     "SPGTypeMapping",
     "RelationMapping",
     "SPOMapping",
-    "TXTReader",
-    "PDFReader",
-    "MarkDownReader",
+    "TXTParser",
+    "PDFParser",
+    "MarkDownParser",
+    "DocxParser",
+    "DictParser",
     "JSONReader",
     "HotpotqaCorpusReader",
     "MusiqueCorpusReader",
-    "TwowikiCorpusReader",
+    "DirectoryReader",
     "YuqueReader",
     "CSVReader",
-    "DocxReader",
     "LengthSplitter",
     "PatternSplitter",
     "OutlineSplitter",

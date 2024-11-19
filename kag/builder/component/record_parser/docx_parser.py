@@ -11,12 +11,12 @@
 # or implied.
 
 import os
-from typing import List, Type, Union
+from typing import List, Union
 
 from docx import Document
 from kag.interface import LLMClient
 from kag.builder.model.chunk import Chunk
-from kag.interface import SourceReaderABC
+from kag.interface import RecordParserABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.common.conf import KAG_PROJECT_CONF
 
@@ -41,24 +41,16 @@ def split_txt(content):
     return res
 
 
-@SourceReaderABC.register("docx")
-class DocxReader(SourceReaderABC):
+@RecordParserABC.register("docx")
+class DocxParser(RecordParserABC):
     """
-    A class for reading Docx files, inheriting from SourceReader.
+    A class for reading Docx files, inheriting from RecordParserABC.
     This class is specifically designed to extract text content from Docx files and generate Chunk objects based on the extracted content.
     """
 
     def __init__(self, llm: LLMClient = None):
         self.llm = llm
         self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
-
-    @property
-    def input_types(self) -> Type[Input]:
-        return str
-
-    @property
-    def output_types(self) -> Type[Output]:
-        return Chunk
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]], basename) -> List[Chunk]:
         if isinstance(chunk, Chunk):
@@ -173,13 +165,3 @@ class DocxReader(SourceReaderABC):
             ]
 
         return chunks
-
-
-if __name__ == "__main__":
-    reader = DocxReader()
-    print(reader.output_types)
-    file_path = os.path.dirname(__file__)
-    res = reader.invoke(
-        os.path.join(file_path, "../../../../tests/builder/data/test_docx.docx")
-    )
-    print(res)
