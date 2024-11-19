@@ -56,6 +56,9 @@ class BaseTableSplitter(SplitterABC):
             cur.append(row)
             cur_len += len(row)
 
+        if len(cur) > 0:
+            splitted.append(cur)
+
         output = []
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
