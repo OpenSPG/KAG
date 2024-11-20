@@ -16,6 +16,10 @@ On October 24, 2024, OpenSPG released v0.5, officially releasing the professiona
 
 KAG is significantly better than NaiveRAG, HippoRAG and other methods in multi-hop Q&A tasks. The F1 score on hotpotQA is relatively increased by 19.6%, and the F1 score on 2wiki is relatively increased by 33.5%. We have successfully applied KAG to Ant Group's professional knowledge Q&A tasks, such as e-government Q&A and e-health Q&A, and the professionalism has been significantly improved compared to the traditional RAG method.
 
+⭐️ Star our repository to stay up-to-date with exciting new features and improvements! Get instant notifications for new releases! 🌟
+
+![Star KAG](./_static/images/star-kag.gif)
+
 ### 1.1 Technical Architecture
 
 ![Figure 1 KAG technical architecture](./_static/images/kag-arch.png)
