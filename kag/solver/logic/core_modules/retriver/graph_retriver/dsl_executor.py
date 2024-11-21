@@ -444,7 +444,7 @@ class DslRunnerOnGraphStore(DslRunner):
                     s_entity.type_zh = self._get_node_type_zh(s_type_name)
                     s_entity.prop = Prop.from_dict(prop_values, s_entity.type, None)
                     s_entity.biz_id = s_biz_id
-                    s_entity.name = prop_values["name"]
+                    s_entity.name = prop_values.get("name", "")
                     if "description" in prop_values.keys():
                         s_entity.description = prop_values["description"]
                     one_hop_graph = OneHopGraphData(None, "s")
@@ -477,9 +477,9 @@ class DslRunnerOnGraphStore(DslRunner):
                     o_entity.prop = Prop.from_dict(prop_values, o_entity.type, None)
                     o_entity.biz_id = o_biz_id
 
-                    o_entity.name = prop_values["name"]
+                    o_entity.name = prop_values.get("name", "")
                     if "description" in o_json.keys():
-                        o_entity.description = prop_values["description"]
+                        o_entity.description = o_json["description"]
                     one_hop_graph = OneHopGraphData(None, "o")
                     one_hop_graph.s = o_entity
                     tmp_graph_parse_result_map[o_biz_id_with_type_name] = one_hop_graph
