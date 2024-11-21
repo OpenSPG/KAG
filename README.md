@@ -121,6 +121,7 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 
 ### 4.2.2 Installation of KAG
 
+
 **macOS / Linux developers**
 
 ```text
@@ -148,6 +149,7 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 Please refer to the [Quick Start](https://openspg.yuque.com/ndx6g9/wc9oyq/owp4sxbdip2u7uvv) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new busineness scenarios.
 
 # 5. Technical Architecture
+
 
 ![Figure 1 KAG technical architecture](./_static/images/kag-arch.png)
 
