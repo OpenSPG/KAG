@@ -40,11 +40,11 @@ KAG proposes a logically formal guided hybrid solution and inference engine. The
 ## 3. Release Notes
 
 ### 3.1 Released Versions
-* 2024.11.21 : Support docs upload, model call concurrency setting, User experience optimization, etc.
+* 2024.11.21 : Support docs upload, model invoke concurrency setting, User experience optimization, etc.
 * 2024.10.25 : KAG release
 
 ### 3.2 Future Plan
-* 2024.12 : domain knowledge injection, domain schema customization, QFS tasks support.
+* 2024.12 : domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, etc.
 * 2025.01 : Logical reasoning optimization, conversational tasks support
 * 2025.02 : kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
 * 2025.03 : Kag front-end open source, distributed build support, mathematical reasoning optimization
