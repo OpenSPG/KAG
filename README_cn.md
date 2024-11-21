@@ -28,9 +28,9 @@ KAG 是基于 [OpenSPG](https://github.com/OpenSPG/openspg) 引擎和大型语�
 
 KAG 的目标是在专业领域构建知识增强的 LLM 服务框架，支持逻辑推理、事实问答等。KAG 充分融合了 KG 的逻辑性和事实性特点，其核心功能包括：
 
-* 知识与Chunk互索引结构，以整合更丰富的上下文文本信息
-* 利用概念语义推理进行知识对齐，缓解OpenIE引入的噪音问题
-* 支持Schema-Constraint知识构建，支持领域专家知识的表示与构建
+* 知识与 Chunk 互索引结构，以整合更丰富的上下文文本信息
+* 利用概念语义推理进行知识对齐，缓解 OpenIE 引入的噪音问题
+* 支持 Schema-Constraint 知识构建，支持领域专家知识的表示与构建
 * 逻辑符号引导的混合推理与检索，实现逻辑推理和多跳推理问答
 
 ⭐️点击右上角的 Star 关注 KAG，可以获取最新发布的实时通知！🌟
@@ -39,7 +39,8 @@ KAG 的目标是在专业领域构建知识增强的 LLM 服务框架，支持�
 
 # 2. KAG 核心功能
 
-## 2.1、LLM 友好的语义化知识管理
+## 2.1 LLM 友好的语义化知识管理
+
 私域知识库场景，非结构化数据、结构化信息、业务专家经验 往往三者共存，KAG 提出了一种对大型语言模型（LLM）友好的知识表示框架，在 DIKW（数据、信息、知识和智慧）的层次结构基础上，将 SPG 升级为对 LLM 友好的版本，命名为 LLMFriSPG。
 
 这使得它能够在同一知识类型（如实体类型、事件类型）上兼容无 schema 约束的信息提取和有 schema 约束的专业知识构建，并支持图结构与原始文本块之间的互索引表示。
@@ -48,7 +49,7 @@ KAG 的目标是在专业领域构建知识增强的 LLM 服务框架，支持�
 
 ![KAG 示意图](./_static/images/kag-diag.jpg)
 
-## 2.2、逻辑符号引导的混合推理引擎
+## 2.2 逻辑符号引导的混合推理引擎
 
 KAG 提出了一种逻辑符号引导的混合求解和推理引擎。该引擎包括三种类型的运算符：规划、推理和检索，将自然语言问题转化为结合语言和符号的问题求解过程。
 
@@ -58,14 +59,16 @@ KAG 提出了一种逻辑符号引导的混合求解和推理引擎。该引擎�
 
 # 3. 版本发布
 
-## 3.1、最近更新
-* 2024.10.25 : KAG 发布
-* 2024.11.21 : 支持word 文档上传、知识库删除、模型调用并发度设置、用户体验优化等
+## 3.1 最近更新
 
-## 3.2、后续计划
-* 领域知识注入、领域schema 自定义、摘要生成类任务支持、可视化图分析查询等
+* 2024.11.21 : 支持 Word 文档上传、知识库删除、模型调用并发度设置、用户体验优化等
+* 2024.10.25 : KAG 首次发布
+
+## 3.2 后续计划
+
+* 领域知识注入、领域 schema 自定义、摘要生成类任务支持、可视化图分析查询等
 * 逻辑推理 优化、对话式任务支持
-* kag-model 发布、事理图谱 和 医疗图谱的kag 解决方案发布
+* kag-model 发布、事理图谱 和 医疗图谱的 kag 解决方案发布
 * kag 前端开源、分布式构建支持、数学推理 优化
 
 # 4. 快速开始
@@ -142,9 +145,7 @@ docker compose -f docker-compose.yml up -d
 
 # 5. 技术架构
 
-![图1 KAG 技术架构](./_static/images/kag-arch.png)
-
-图1 KAG 技术架构
+![KAG 技术架构](./_static/images/kag-arch.png)
 
 KAG 框架包括 kg-builder、kg-solver、kag-model 三部分。本次发布只涉及前两部分，kag-model 将在后续逐步开源发布。
 
@@ -160,7 +161,7 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
 
 <img src="./_static/images/openspg-qr.png" alt="联系我们：OpenSPG 二维码" width="200">
 
-# 7. KAG 与RAG、GraphRAG 差异
+# 7. KAG 与 RAG、GraphRAG 差异
 
 **KAG introduction and applications**: <https://github.com/orgs/OpenSPG/discussions/52>
 
@@ -184,7 +185,6 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
   author={Yi, Peng and Liang, Lei and Da Zhang, Yong Chen and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and Zhou, Jun}
 }
 ```
-
 
 # 许可协议
 

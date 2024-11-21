@@ -1,4 +1,5 @@
 # KAG: Knowledge Augmented Generation
+
 <div align="center">
 <a href="https://spg.openkg.cn/en-US">
 <img src="./_static/images/OpenSPG-1.png" width="520" alt="openspg logo">
@@ -21,7 +22,6 @@
     </a>
 </p>
 
-
 # 1. What is KAG?
 
 KAG is a logical reasoning and Q&A framework based on the [OpenSPG](https://github.com/OpenSPG/openspg) engine and large language models, which is used to build logical reasoning and Q&A solutions for vertical domain knowledge bases.  KAG can effectively overcome the ambiguity of traditional RAG vector similarity calculation and the noise problem of GraphRAG introduced by OpenIE.  KAG supports logical reasoning and multi-hop fact Q&A, etc., and is significantly better than the current SOTA method.
@@ -37,7 +37,7 @@ The goal of KAG is to build a knowledge-enhanced LLM service framework in profes
 
 ![Star KAG](./_static/images/star-kag.gif)
 
-# 2 Core Features
+# 2. Core Features
 
 ## 2.1 Knowledge Representation
 
@@ -46,7 +46,6 @@ In the context of private knowledge bases, unstructured data, structured informa
 For unstructured data such as news, events, logs, and books, as well as structured data like transactions, statistics, and approvals, along with business experience and domain knowledge rules, KAG employs techniques such as layout analysis, knowledge extraction, property normalization, and semantic alignment to integrate raw business data and expert rules into a unified business knowledge graph.
 
 ![KAG Diagram](./_static/images/kag-diag.jpg)
-
 
 This makes it compatible with schema-free information extraction and schema-constrained expertise construction on the same knowledge type (e. G., entity type, event type), and supports the cross-index representation between the graph structure and the original text block. 
 
@@ -62,19 +61,19 @@ The engine includes three types of operators: planning, reasoning, and retrieval
 
 In this process, each step can use different operators, such as exact match retrieval, text retrieval, numerical calculation or semantic reasoning, so as to realize the integration of four different problem solving processes: Retrieval, Knowledge Graph reasoning, language reasoning and numerical calculation.
 
-
 # 3. Release Notes
 
 ## 3.1 Latest Updates
-* 2024.11.21 : Support docs upload, model invoke concurrency setting, User experience optimization, etc.
-* 2024.10.25 : KAG release
 
-## 3.2 Future Plan
+* 2024.11.21 : Support Word docs upload, model invoke concurrency setting, User experience optimization, etc.
+* 2024.10.25 : KAG initial release
+
+## 3.2 Future Plans
+
 * domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, etc.
 * Logical reasoning optimization, conversational tasks support
 * kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
-* Kag front-end open source, distributed build support, mathematical reasoning optimization
-
+* kag front-end open source, distributed build support, mathematical reasoning optimization
 
 # 4. Quick Start
 
@@ -150,8 +149,7 @@ Please refer to the [Quick Start](https://openspg.yuque.com/ndx6g9/wc9oyq/owp4sx
 
 # 5. Technical Architecture
 
-
-![Figure 1 KAG technical architecture](./_static/images/kag-arch.png)
+![KAG technical architecture](./_static/images/kag-arch.png)
 
 The KAG framework includes three parts: kg-builder, kg-solver, and kag-model. This release only involves the first two parts, kag-model will be gradually open source release in the future.
 
