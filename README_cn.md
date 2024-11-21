@@ -1,28 +1,46 @@
 # 大模型知识服务框架 KAG
 
-[English version](./README.md)
-[日本語版ドキュメント](./README_ja.md)
+<div align="center">
+<a href="https://spg.openkg.cn/en-US">
+<img src="./_static/images/OpenSPG-1.png" width="520" alt="openspg logo">
+</a>
+</div>
 
-## 1. KAG 是什么
+<p align="center">
+  <a href="./README.md">English</a> |
+  <a href="./README_cn.md">简体中文</a> |
+  <a href="./README_ja.md">日本語版ドキュメント</a>
+</p>
 
-检索增强生成（RAG）技术推动了领域应用与大模型结合。然而，RAG 存在着向量相似度与知识推理相关性差距大、对知识逻辑（如数值、时间关系、专家规则等）不敏感等问题，这些都阻碍了专业知识服务的落地。
+<p align="center">
+    <a href='https://arxiv.org/pdf/2409.13731'><img src='https://img.shields.io/badge/arXiv-2409.13731-b31b1b'></a>
+    <a href="https://github.com/OpenSPG/KAG/releases/latest">
+        <img src="https://img.shields.io/github/v/release/OpenSPG/KAG?color=blue&label=Latest%20Release" alt="Latest Release">
+    </a>
+    <a href="https://github.com/OpenSPG/KAG/blob/main/LICENSE">
+        <img height="21" src="https://img.shields.io/badge/License-Apache--2.0-ffffff?labelColor=d4eaf7&color=2e6cc4" alt="license">
+    </a>
+</p>
 
-2024 年 10 月 24 日，OpenSPG 发布 v0.5 版本，正式发布了知识增强生成（KAG）的专业领域知识服务框架。KAG 旨在充分利用知识图谱和向量检索的优势，构建专业领域知识增强的LLM服务框架，支持逻辑推理、事实问答等。KAG充分融合了知识图谱的逻辑性和事实性，同时利用OpenIE降低领域文档知识化的门槛，通过混合推理缓解传统知识图谱的稀疏性问题。据我们所知，KAG是唯一一个支持逻辑推理和多跳事实问答的RAG框架。其核心特点包括：
+# 1. KAG 是什么
 
-* 知识与Chunk互索引结构，以整合更丰富的上下文文本信息
-* 利用概念语义推理进行知识对齐，缓解OpenIE引入的噪音问题
-* 支持Schema-Constraint知识构建，支持领域专家知识的表示与构建
+KAG 是基于 [OpenSPG](https://github.com/OpenSPG/openspg) 引擎和大型语言模型的逻辑推理问答框架，用于构建垂直领域知识库的逻辑推理问答解决方案。KAG 可以有效克服传统 RAG 向量相似度计算的歧义性和 OpenIE 引入的 GraphRAG 的噪声问题。KAG 支持逻辑推理、多跳事实问答等，并且明显优于目前的 SOTA 方法。
+
+KAG 的目标是在专业领域构建知识增强的 LLM 服务框架，支持逻辑推理、事实问答等。KAG 充分融合了 KG 的逻辑性和事实性特点，其核心功能包括：
+
+* 知识与 Chunk 互索引结构，以整合更丰富的上下文文本信息
+* 利用概念语义推理进行知识对齐，缓解 OpenIE 引入的噪音问题
+* 支持 Schema-Constraint 知识构建，支持领域专家知识的表示与构建
 * 逻辑符号引导的混合推理与检索，实现逻辑推理和多跳推理问答
-
-KAG 在多跳问答任务中显著优于 NaiveRAG、HippoRAG 等方法，在 hotpotQA 上的 F1 分数相对提高了 19.6%，在 2wiki 上的 F1 分数相对提高了 33.5%。我们已成功将 KAG 应用于蚂蚁集团的电子政务问答和电子健康问答等专业知识服务场景，与 RAG 方法相比，专业性和准确率有了显著提高。
 
 ⭐️点击右上角的 Star 关注 KAG，可以获取最新发布的实时通知！🌟
 
 ![Star KAG](./_static/images/star-kag.gif)
 
-## 2.KAG 核心功能
+# 2. KAG 核心功能
 
-### 2.1、LLM 友好的语义化知识管理
+## 2.1 LLM 友好的语义化知识管理
+
 私域知识库场景，非结构化数据、结构化信息、业务专家经验 往往三者共存，KAG 提出了一种对大型语言模型（LLM）友好的知识表示框架，在 DIKW（数据、信息、知识和智慧）的层次结构基础上，将 SPG 升级为对 LLM 友好的版本，命名为 LLMFriSPG。
 
 这使得它能够在同一知识类型（如实体类型、事件类型）上兼容无 schema 约束的信息提取和有 schema 约束的专业知识构建，并支持图结构与原始文本块之间的互索引表示。
@@ -31,30 +49,33 @@ KAG 在多跳问答任务中显著优于 NaiveRAG、HippoRAG 等方法，在 hot
 
 ![KAG 示意图](./_static/images/kag-diag.jpg)
 
-### 2.2、逻辑符号引导的混合推理引擎
+## 2.2 逻辑符号引导的混合推理引擎
+
 KAG 提出了一种逻辑符号引导的混合求解和推理引擎。该引擎包括三种类型的运算符：规划、推理和检索，将自然语言问题转化为结合语言和符号的问题求解过程。
 
 在这个过程中，每一步都可以利用不同的运算符，如精确匹配检索、文本检索、数值计算或语义推理，从而实现四种不同问题求解过程的集成：图谱推理、逻辑计算、Chunk 检索和 LLM 推理。
 
 ![Logical Form Solver](./_static/images/kag-lf-solver.png)
 
-## 3. 版本发布
+# 3. 版本发布
 
-### 3.1、已发布版本
-* 2024.11.21 : 支持word 文档上传、知识库删除、模型调用并发度设置、用户体验优化等
-* 2024.10.25 : KAG 发布
+## 3.1 最近更新
 
-### 3.2、后续计划
-* 2024.12 : 领域知识注入、领域schema 自定义、摘要生成类任务支持、可视化图分析查询等
-* 2025.01 : 逻辑推理 优化、对话式任务支持
-* 2025.02 : kag-model 发布、事理图谱 和 医疗图谱的kag 解决方案发布
-* 2025.03 : kag 前端开源、分布式构建支持、数学推理 优化
+* 2024.11.21 : 支持 Word 文档上传、知识库删除、模型调用并发度设置、用户体验优化等
+* 2024.10.25 : KAG 首次发布
 
-## 4. 怎样使用
+## 3.2 后续计划
 
-### 4.1 基于产品（面向普通用户）
+* 领域知识注入、领域 schema 自定义、摘要生成类任务支持、可视化图分析查询等
+* 逻辑推理 优化、对话式任务支持
+* kag-model 发布、事理图谱 和 医疗图谱的 kag 解决方案发布
+* kag 前端开源、分布式构建支持、数学推理 优化
 
-#### 4.1.1 引擎&依赖 镜像安装
+# 4. 快速开始
+
+## 4.1 基于产品（面向普通用户）
+
+### 4.1.1 引擎&依赖 镜像安装
 
 * **推荐系统版本：**
 
@@ -81,19 +102,19 @@ curl -sSL https://raw.githubusercontent.com/OpenSPG/openspg/refs/heads/master/de
 docker compose -f docker-compose.yml up -d
 ```
 
-#### 4.1.2 使用
+### 4.1.2 使用
 
 浏览器打开 KAG 产品默认链接：<http://127.0.0.1:8887> 。
 
 具体使用参考[产品使用](https://openspg.yuque.com/ndx6g9/0.0.5/bv9zc3gyi98k0oyx)介绍。
 
-### 4.2 基于工具包（面向开发者）
+## 4.2 基于工具包（面向开发者）
 
-#### 4.2.1 引擎&依赖 镜像安装
+### 4.2.1 引擎&依赖 镜像安装
 
 参考 4.1 部分完成引擎&依赖的镜像安装。
 
-#### 4.2.2 KAG 安装
+### 4.2.2 KAG 安装
 
 **macOS / Linux 开发者**
 
@@ -117,16 +138,14 @@ docker compose -f docker-compose.yml up -d
 # KAG 安装: cd KAG && pip install -e .
 ```
 
-#### 4.2.3 使用
+### 4.2.3 使用
 
 开发者可以参考 [KAG 案例](https://openspg.yuque.com/ndx6g9/0.5/vbbdp80vg0xf5n3k)，基于 KAG 内置的各种组件，实现内置数据集的效果复现 + 新场景的落地。
 
 
-## 5. 技术架构
+# 5. 技术架构
 
-![图1 KAG 技术架构](./_static/images/kag-arch.png)
-
-图1 KAG 技术架构
+![KAG 技术架构](./_static/images/kag-arch.png)
 
 KAG 框架包括 kg-builder、kg-solver、kag-model 三部分。本次发布只涉及前两部分，kag-model 将在后续逐步开源发布。
 
@@ -134,7 +153,7 @@ kg-builder 实现了一种对大型语言模型（LLM）友好的知识表示，
 
 kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包括三种类型的运算符：规划、推理和检索，将自然语言问题转化为结合语言和符号的问题求解过程。在这个过程中，每一步都可以利用不同的运算符，如精确匹配检索、文本检索、数值计算或语义推理，从而实现四种不同问题求解过程的集成：检索、知识图谱推理、语言推理和数值计算。
 
-## 6. 联系我们
+# 6. 联系我们
 
 **GitHub**: <https://github.com/OpenSPG/KAG>
 
@@ -142,11 +161,11 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
 
 <img src="./_static/images/openspg-qr.png" alt="联系我们：OpenSPG 二维码" width="200">
 
-# KAG 与RAG、GraphRAG 差异
+# 7. KAG 与 RAG、GraphRAG 差异
 
 **KAG introduction and applications**: <https://github.com/orgs/OpenSPG/discussions/52>
 
-# 引用
+# 8. 引用
 
 如果您使用本软件，请以下面的方式引用：
 
@@ -166,7 +185,6 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
   author={Yi, Peng and Liang, Lei and Da Zhang, Yong Chen and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and Zhou, Jun}
 }
 ```
-
 
 # 许可协议
 
