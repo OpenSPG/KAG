@@ -274,6 +274,12 @@ class OutlineSplitter(SplitterABC):
         if buffer:
             merged_chunks.append(buffer)
 
+        for idx, chunk in enumerate(merged_chunks):
+            chunk.prev_content = merged_chunks[idx - 1].content if idx > 0 else None
+            chunk.next_content = (
+                merged_chunks[idx + 1].content if idx < len(merged_chunks) - 1 else None
+            )
+
         return merged_chunks
 
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
