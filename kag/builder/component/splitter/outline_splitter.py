@@ -47,7 +47,7 @@ class OutlineSplitter(SplitterABC):
             outline = self.llm.invoke({"input": c.content}, self.prompt)
             outlines.extend(outline)
         content = "\n".join([c.content for c in chunk])
-        chunks = self.sep_by_outline(content, outlines)
+        chunks = self.sep_by_outline_ignore_duplicates(content, outlines)
         return chunks
 
     import re
@@ -112,6 +112,169 @@ class OutlineSplitter(SplitterABC):
             father_stack.append((title, level))
 
         return chunks
+
+    def sep_by_outline_with_merge(
+        self, content, outlines, min_length=200, max_length=5000
+    ):
+        """
+        按层级划分内容为 chunks，并对过短的 chunk 尝试进行合并，控制合并后长度。
+
+        参数：
+        - content: str，完整内容。
+        - outlines: List[Tuple[str, int]]，每个标题及其层级的列表。
+        - min_length: int，chunk 的最小长度，低于此值时尝试合并。
+        - max_length: int，chunk 的最大长度，合并后不能超过此值。
+
+        返回：
+        - List[Chunk]，分割后的 chunk 列表。
+        """
+        # 过滤无效的 outlines
+        outlines = self.filter_outlines(outlines)
+
+        position_check = []
+        for outline in outlines:
+            start = content.find(outline[0])
+            if start != -1:
+                position_check.append((outline, start))
+
+        if not position_check:
+            return []  # 如果没有找到任何标题，返回空
+
+        chunks = []
+        father_stack = []
+
+        for idx, (outline, start) in enumerate(position_check):
+            title, level = outline
+            end = (
+                position_check[idx + 1][1]
+                if idx + 1 < len(position_check)
+                else len(content)
+            )
+            while father_stack and father_stack[-1][1] >= level:
+                father_stack.pop()
+            full_path = "/".join([item[0] for item in father_stack] + [title])
+            chunk_content = content[start:end]
+            chunk = Chunk(
+                id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
+                name=full_path,
+                content=chunk_content,
+            )
+            chunks.append(chunk)
+            father_stack.append((title, level))
+
+        # 合并过短的 chunks
+        merged_chunks = []
+        buffer = None
+
+        for chunk in chunks:
+            if buffer:
+                # 当前 chunk 合并到 buffer 中
+                if (
+                    chunk.name.startswith(buffer.name)  # 同一父级目录
+                    and len(buffer.content) + len(chunk.content) <= max_length
+                ):
+                    buffer.content += chunk.content
+                    buffer.name = buffer.name  # 名称不变，保持父级目录路径
+                    continue
+                else:
+                    merged_chunks.append(buffer)
+                    buffer = None
+
+            if len(chunk.content) < min_length:
+                # 缓存过短的 chunk
+                buffer = chunk
+            else:
+                # 长度足够，直接加入结果
+                merged_chunks.append(chunk)
+
+        # 如果最后一个 chunk 被缓存在 buffer，直接加入结果
+        if buffer:
+            merged_chunks.append(buffer)
+
+        return merged_chunks
+
+    def sep_by_outline_ignore_duplicates(
+        self, content, outlines, min_length=50, max_length=500
+    ):
+        """
+        按层级划分内容为 chunks，剔除无效的标题，并忽略重复的标题。
+
+        参数：
+        - content: str，完整内容。
+        - outlines: List[Tuple[str, int]]，每个标题及其层级的列表。
+        - min_length: int，chunk 的最小长度，低于此值时尝试合并。
+        - max_length: int，chunk 的最大长度，合并后不能超过此值。
+
+        返回：
+        - List[Chunk]，分割后的 chunk 列表。
+        """
+        # 过滤无效的 outlines
+        outlines = self.filter_outlines(outlines)
+
+        position_check = []
+        seen_titles = set()
+        for outline in outlines:
+            title, level = outline
+            start = content.find(title)
+            if start != -1 and title not in seen_titles:
+                # 如果标题未重复，则加入 position_check
+                position_check.append((outline, start))
+                seen_titles.add(title)
+
+        if not position_check:
+            return []  # 如果没有找到任何标题，返回空
+
+        chunks = []
+        father_stack = []
+
+        for idx, (outline, start) in enumerate(position_check):
+            title, level = outline
+            end = (
+                position_check[idx + 1][1]
+                if idx + 1 < len(position_check)
+                else len(content)
+            )
+            while father_stack and father_stack[-1][1] >= level:
+                father_stack.pop()
+            full_path = "/".join([item[0] for item in father_stack] + [title])
+            chunk_content = content[start:end]
+            chunk = Chunk(
+                id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
+                name=full_path,
+                content=chunk_content,
+            )
+            chunks.append(chunk)
+            father_stack.append((title, level))
+
+        # 合并过短的 chunks
+        merged_chunks = []
+        buffer = None
+
+        for chunk in chunks:
+            if buffer:
+                # 当前 chunk 合并到 buffer 中
+                if (
+                    chunk.name.startswith(buffer.name)  # 同一父级目录
+                    and len(buffer.content) + len(chunk.content) <= max_length
+                ):
+                    buffer.content += chunk.content
+                    continue
+                else:
+                    merged_chunks.append(buffer)
+                    buffer = None
+
+            if len(chunk.content) < min_length:
+                # 缓存过短的 chunk
+                buffer = chunk
+            else:
+                # 长度足够，直接加入结果
+                merged_chunks.append(chunk)
+
+        # 如果最后一个 chunk 被缓存在 buffer，直接加入结果
+        if buffer:
+            merged_chunks.append(buffer)
+
+        return merged_chunks
 
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
         chunks = self.outline_chunk(input)
