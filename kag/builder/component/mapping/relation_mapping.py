@@ -10,7 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from collections import defaultdict
 from typing import Dict, List
 
 from kag.builder.model.sub_graph import SubGraph
@@ -37,6 +36,9 @@ class RelationMapping(MappingABC):
         subject_name: str,
         predicate_name: str,
         object_name: str,
+        src_id_field: str = None,
+        dst_id_field: str = None,
+        property_mapping: dict = {},
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -51,10 +53,9 @@ class RelationMapping(MappingABC):
         ), f"{predicate_name} is not a valid SPG property/relation name"
         self.predicate_name = predicate_name
 
-        self.src_id_field = None
-        self.dst_id_field = None
-        self.property_mapping: Dict = defaultdict(list)
-        self.linking_strategies: Dict = dict()
+        self.src_id_field = src_id_field
+        self.dst_id_field = dst_id_field
+        self.property_mapping = property_mapping
 
     def add_src_id_mapping(self, source_name: str):
         """
@@ -93,7 +94,11 @@ class RelationMapping(MappingABC):
         Returns:
             self
         """
-        self.property_mapping[target_name].append(source_name)
+
+        if target_name in self.property_mapping:
+            self.property_mapping[target_name].append(source_name)
+        else:
+            self.property_mapping[target_name] = [source_name]
         return self
 
     @property

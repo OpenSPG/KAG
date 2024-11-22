@@ -14,7 +14,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '6'
+  id: '2'
   language: zh
   namespace: SupplyChain
 vectorize_model: &id001

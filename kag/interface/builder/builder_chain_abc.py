@@ -9,21 +9,36 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
 from typing import List
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from kag.common.registry import Registrable
 
 from knext.builder.builder_chain_abc import BuilderChainABC
 
 
 class KAGBuilderChain(BuilderChainABC, Registrable):
-    def invoke(self, file_path, **kwargs):
+    def invoke(self, file_path, max_workers=10, **kwargs):
         def execute_node(node, inputs: List[str]):
-            result = []
-            for item in inputs:
-                res = node.invoke(item)
-                result.extend(res)
-            return result
+            node_name = type(node).__name__.split(".")[-1]
+            with ThreadPoolExecutor(max_workers) as inner_executor:
+                inner_futures = [
+                    inner_executor.submit(node.invoke, inp) for inp in inputs
+                ]
+                result = []
+                from tqdm import tqdm
+
+                for inner_future in tqdm(
+                    as_completed(inner_futures),
+                    total=len(inner_futures),
+                    desc=f"[{node_name}]",
+                    position=1,
+                    leave=False,
+                ):
+                    # for inner_future in as_completed(inner_futures):
+                    ret = inner_future.result()
+                    result.extend(ret)
+                return result
 
         chain = self.build(file_path=file_path, **kwargs)
         dag = chain.dag
@@ -31,10 +46,10 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
 
         nodes = list(nx.topological_sort(dag))
         node_outputs = {}
-        processed_node_names = []
+        # processed_node_names = []
         for node in nodes:
-            node_name = type(node).__name__.split(".")[-1]
-            processed_node_names.append(node_name)
+            # node_name = type(node).__name__.split(".")[-1]
+            # processed_node_names.append(node_name)
             predecessors = list(dag.predecessors(node))
             if len(predecessors) == 0:
                 node_input = [file_path]

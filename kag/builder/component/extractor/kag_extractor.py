@@ -45,7 +45,6 @@ class KAGExtractor(ExtractorABC):
         external_graph: ExternalGraphLoaderABC = None,
     ):
         self.llm = llm
-        print(f"self.llm: {self.llm}")
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt

@@ -25,11 +25,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def generate_hash_id(value):
     if isinstance(value, dict):
         sorted_items = sorted(value.items())
-        value = str(sorted_items)
-    if isinstance(value, str):
-        value = value.encode("utf-8")
+        key = str(sorted_items)
+    else:
+        key = value
+    if isinstance(key, str):
+        key = key.encode("utf-8")
     hasher = hashlib.sha256()
-    hasher.update(value)
+    hasher.update(key)
+
     return hasher.hexdigest()
 
 
@@ -73,12 +76,14 @@ class BuilderChainRunner(Registrable):
         self,
         reader: SourceReaderABC,
         chain: KAGBuilderChain,
-        num_parallel: int = 4,
+        num_parallel: int = 2,
+        chain_level_num_paralle: int = 8,
         ckpt_dir: str = None,
     ):
         self.reader = reader
         self.chain = chain
         self.num_parallel = num_parallel
+        self.chain_level_num_paralle = chain_level_num_paralle
         if ckpt_dir is None:
             ckpt_dir = "./ckpt"
         self.ckpt_dir = ckpt_dir
@@ -86,12 +91,12 @@ class BuilderChainRunner(Registrable):
             os.makedirs(self.ckpt_dir, exist_ok=True)
 
         self.ckpt = CKPT(self.ckpt_dir)
-        print(self.ckpt._ckpt)
 
     def invoke(self, input):
         def process(chain, data, data_id):
             try:
-                result = chain.invoke(data)
+
+                result = chain.invoke(data, max_workers=self.chain_level_num_paralle)
                 return result, data_id
             except Exception:
                 traceback.print_exc()
@@ -99,6 +104,7 @@ class BuilderChainRunner(Registrable):
 
         self.ckpt.open()
         futures = []
+        print(f"Processing {input}")
         with ThreadPoolExecutor(self.num_parallel) as executor:
             for item in self.reader.invoke(input):
                 item_id = generate_hash_id(item)
@@ -107,7 +113,10 @@ class BuilderChainRunner(Registrable):
                 fut = executor.submit(process, self.chain, item, item_id)
                 futures.append(fut)
             for future in tqdm(
-                as_completed(futures), total=len(futures), desc="Processing"
+                as_completed(futures),
+                total=len(futures),
+                desc="Progress",
+                position=0,
             ):
                 result = future.result()
                 if result is not None:

@@ -25,44 +25,68 @@ log:
   level: INFO
 
 
-spo_chain:
+spg_runner:
   reader:
-    type: csv
-    output_type: Dict
-  mapping:
-    type: spo
-  vectorizer:
-    type: batch
-    vectorize_model: *vectorize_model_config
-  writer:
-    type: kg
+    type:
+      csv
+  chain:
+    type: structured
+    mapping:
+      type: spg
+    writer:
+      type: kg
+  ckpt_dir: ./spg-runner-ckpt
+  
+spo_runner:
+  reader:
+    type:
+      csv
+  chain:
+    type: structured
+    mapping:
+      type: spo
+      s_id_col: S
+      p_type_col: P
+      o_id_col: O
+      sub_property_col: properties
 
-extract_chain:
+    writer:
+      type: kg
+  ckpt_dir: ./spo-runner-ckpt
+
+extract_runner:
+  num_parallel: 10
   reader:
-    type: csv
-    output_type: Chunk
-    id_col: idx
-    name_col: title
-    content_col: text
-  splitter:
-    split_length: 100000
-    type: length
-    window_length: 0    
-  extractor:
-    llm: *llm_conf
-    ner_prompt:
-      type: example_medical_ner
-    std_prompt:
-      type: example_medical_std
-    triple_prompt:
-      type: example_medical_triple
-    type: kag
-  vectorizer:
-    type: batch
-    vectorize_model: *vectorize_model_config
-  writer:
-    type: kg
-    
+    type:
+      csv
+  chain:
+    type: unstructured
+    parser:
+      type: dict
+      id_col: idx
+      name_col: title
+      content_col: text
+    splitter:
+      split_length: 100000
+      type: length
+      window_length: 0    
+    extractor:
+      llm: *llm_conf
+      ner_prompt:
+        type: example_medical_ner
+      std_prompt:
+        type: example_medical_std
+      triple_prompt:
+        type: example_medical_triple
+      type: kag
+    vectorizer:
+      type: batch
+      vectorize_model: *vectorize_model_config
+    writer:
+      type: kg
+  ckpt_dir: ./extract-runner-ckpt   
+  
+ 
 lf_solver_pipeline:
   generator:
     generate_prompt:

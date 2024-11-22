@@ -9,8 +9,9 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
-from kag.common.registry import Registrable, import_modules_from_path
-from kag.builder.default_chain import DefaultUnstructuredBuilderChain
+from kag.common.registry import import_modules_from_path
+
+from kag.builder.runner import BuilderChainRunner
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,8 @@ logger = logging.getLogger(__name__)
 def buildKB(file_path):
     from kag.common.conf import KAG_CONFIG
 
-    chain_config = KAG_CONFIG.all_config["chain"]
-    chain = DefaultUnstructuredBuilderChain.from_config(chain_config)
-    chain.invoke(file_path=file_path, max_workers=10)
+    runner = BuilderChainRunner.from_config(KAG_CONFIG.all_config["runner"])
+    runner.invoke(file_path)
 
     logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
 

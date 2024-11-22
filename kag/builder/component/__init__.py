@@ -29,6 +29,7 @@ from kag.builder.component.reader.dataset_reader import (
     MusiqueCorpusReader,
     HotpotqaCorpusReader,
 )
+from kag.builder.component.reader.file_reader import FileReader
 from kag.builder.component.reader.directory_reader import DirectoryReader
 
 
@@ -66,6 +67,7 @@ __all__ = [
     "JSONReader",
     "HotpotqaCorpusReader",
     "MusiqueCorpusReader",
+    "FileReader",
     "DirectoryReader",
     "YuqueReader",
     "CSVReader",

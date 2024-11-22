@@ -17,6 +17,7 @@ from kag.builder.component import KGWriter, RelationMapping, SPGTypeMapping
 from kag.builder.component.reader.csv_reader import CSVReader
 from kag.common.conf import KAG_CONFIG
 from kag.interface import KAGBuilderChain as BuilderChainABC
+from kag.builder.runner import BuilderChainRunner
 
 
 class RiskMiningEntityChain(BuilderChainABC):
@@ -25,12 +26,11 @@ class RiskMiningEntityChain(BuilderChainABC):
         self.spg_type_name = spg_type_name
 
     def build(self, **kwargs):
-        source = CSVReader(output_type="Dict")
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
         sink = KGWriter()
 
-        chain = source >> mapping >> vectorizer >> sink
+        chain = mapping >> vectorizer >> sink
         return chain
 
 
@@ -40,7 +40,6 @@ class RiskMiningRelationChain(BuilderChainABC):
         self.spg_type_name = spg_type_name
 
     def build(self, **kwargs):
-        source = CSVReader(output_type="Dict")
         subject_name, relation, object_name = self.spg_type_name.split("_")
         mapping = (
             RelationMapping(subject_name, relation, object_name)
@@ -48,7 +47,7 @@ class RiskMiningRelationChain(BuilderChainABC):
             .add_dst_id_mapping("dst")
         )
         sink = KGWriter()
-        return source >> mapping >> sink
+        return mapping >> sink
 
 
 class RiskMiningPersonFundTransPersonChain(RiskMiningRelationChain):
@@ -56,7 +55,6 @@ class RiskMiningPersonFundTransPersonChain(RiskMiningRelationChain):
         super().__init__(spg_type_name)
 
     def build(self, **kwargs):
-        source = CSVReader(output_type="Dict")
         subject_name, relation, object_name = self.spg_type_name.split("_")
         mapping = (
             RelationMapping(subject_name, relation, object_name)
@@ -66,47 +64,82 @@ class RiskMiningPersonFundTransPersonChain(RiskMiningRelationChain):
             .add_sub_property_mapping("transAmt", "transAmt")
         )
         sink = KGWriter()
-        return source >> mapping >> sink
+        return mapping >> sink
 
 
 def import_data():
     file_path = os.path.dirname(__file__)
-    RiskMiningEntityChain(spg_type_name="Cert").invoke(
-        os.path.join(file_path, "data/Cert.csv")
-    )
-    RiskMiningEntityChain(spg_type_name="App").invoke(
-        os.path.join(file_path, "data/App.csv")
-    )
-    RiskMiningEntityChain(spg_type_name="Company").invoke(
-        os.path.join(file_path, "data/Company.csv")
-    )
-    RiskMiningRelationChain(spg_type_name="Company_hasCert_Cert").invoke(
-        os.path.join(file_path, "data/Company_hasCert_Cert.csv")
-    )
-    RiskMiningEntityChain(spg_type_name="Device").invoke(
-        os.path.join(file_path, "data/Device.csv")
-    )
-    RiskMiningPersonFundTransPersonChain(
-        spg_type_name="Person_fundTrans_Person"
-    ).invoke(os.path.join(file_path, "data/Person_fundTrans_Person.csv"))
-    RiskMiningRelationChain(spg_type_name="Person_hasCert_Cert").invoke(
-        os.path.join(file_path, "data/Person_hasCert_Cert.csv")
-    )
-    RiskMiningRelationChain(spg_type_name="Person_hasDevice_Device").invoke(
-        os.path.join(file_path, "data/Person_hasDevice_Device.csv")
-    )
-    RiskMiningRelationChain(spg_type_name="Person_holdShare_Company").invoke(
-        os.path.join(file_path, "data/Person_holdShare_Company.csv")
-    )
-    RiskMiningEntityChain(spg_type_name="Person").invoke(
-        os.path.join(file_path, "data/Person.csv")
-    )
-    RiskMiningEntityChain(spg_type_name="TaxOfRiskApp").invoke(
-        os.path.join(file_path, "data/TaxOfRiskApp.csv")
-    )
-    RiskMiningEntityChain(spg_type_name="TaxOfRiskUser").invoke(
-        os.path.join(file_path, "data/TaxOfRiskUser.csv")
-    )
+    for spg_type_name in [
+        "App",
+        "Cert",
+        "Company",
+        "Device",
+        "Person",
+        "TaxOfRiskApp",
+        "TaxOfRiskUser",
+    ]:
+        file_name = os.path.join(file_path, f"data/{spg_type_name}.csv")
+        chain = RiskMiningEntityChain(spg_type_name=spg_type_name)
+        runner = BuilderChainRunner(
+            reader=CSVReader(),
+            chain=chain,
+        )
+        runner.invoke(file_name)
+
+    for spg_type_name in [
+        "Company_hasCert_Cert",
+        "Person_fundTrans_Person",
+        "Person_hasCert_Cert",
+        "Person_hasDevice_Device",
+        "Person_holdShare_Company",
+    ]:
+        file_name = os.path.join(file_path, f"data/{spg_type_name}.csv")
+        if spg_type_name == "Person_fundTrans_Person":
+            chain = RiskMiningPersonFundTransPersonChain(spg_type_name=spg_type_name)
+        else:
+            chain = RiskMiningRelationChain(spg_type_name=spg_type_name)
+        runner = BuilderChainRunner(
+            reader=CSVReader(),
+            chain=chain,
+        )
+        runner.invoke(file_name)
+
+    # RiskMiningEntityChain(spg_type_name="Cert").invoke(
+    #     os.path.join(file_path, "data/Cert.csv")
+    # )
+    # RiskMiningEntityChain(spg_type_name="App").invoke(
+    #     os.path.join(file_path, "data/App.csv")
+    # )
+    # RiskMiningEntityChain(spg_type_name="Company").invoke(
+    #     os.path.join(file_path, "data/Company.csv")
+    # )
+    # RiskMiningRelationChain(spg_type_name="Company_hasCert_Cert").invoke(
+    #     os.path.join(file_path, "data/Company_hasCert_Cert.csv")
+    # )
+    # RiskMiningEntityChain(spg_type_name="Device").invoke(
+    #     os.path.join(file_path, "data/Device.csv")
+    # )
+    # RiskMiningPersonFundTransPersonChain(
+    #     spg_type_name="Person_fundTrans_Person"
+    # ).invoke(os.path.join(file_path, "data/Person_fundTrans_Person.csv"))
+    # RiskMiningRelationChain(spg_type_name="Person_hasCert_Cert").invoke(
+    #     os.path.join(file_path, "data/Person_hasCert_Cert.csv")
+    # )
+    # RiskMiningRelationChain(spg_type_name="Person_hasDevice_Device").invoke(
+    #     os.path.join(file_path, "data/Person_hasDevice_Device.csv")
+    # )
+    # RiskMiningRelationChain(spg_type_name="Person_holdShare_Company").invoke(
+    #     os.path.join(file_path, "data/Person_holdShare_Company.csv")
+    # )
+    # RiskMiningEntityChain(spg_type_name="Person").invoke(
+    #     os.path.join(file_path, "data/Person.csv")
+    # )
+    # RiskMiningEntityChain(spg_type_name="TaxOfRiskApp").invoke(
+    #     os.path.join(file_path, "data/TaxOfRiskApp.csv")
+    # )
+    # RiskMiningEntityChain(spg_type_name="TaxOfRiskUser").invoke(
+    #     os.path.join(file_path, "data/TaxOfRiskUser.csv")
+    # )
 
 
 if __name__ == "__main__":

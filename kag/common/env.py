@@ -30,7 +30,6 @@ def get_rank(default=None):
 
     tf_config = parse_tf_config()
     if tf_config is None:
-        print(f"no RANK info in env/tf_config, use default value:{default}")
         return default
 
     num_master = get_role_number(tf_config, "master")

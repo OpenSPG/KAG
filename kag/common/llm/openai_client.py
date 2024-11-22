@@ -17,7 +17,8 @@ import logging
 
 from kag.interface import LLMClient
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("openai").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 

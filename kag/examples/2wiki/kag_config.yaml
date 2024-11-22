@@ -3,7 +3,7 @@ project:
   host_addr: http://127.0.0.1:8887
   language: en
   namespace: TwoWiki
-  id: 2
+  id: 1
 
 
 vectorize_model: &vectorize_model_config
@@ -11,6 +11,8 @@ vectorize_model: &vectorize_model_config
   type: bge
   vector_dimensions: 768
 
+vectorizer: *vectorize_model_config
+  
 
 llm: &llm_conf  
   api_key: key
@@ -21,31 +23,37 @@ llm: &llm_conf
 log:
   level: INFO
 
-
-chain:
-  extractor:
-    llm: *llm_conf
-    ner_prompt:
-      type: 2wiki_ner
-    std_prompt:
-      type: 2wiki_std
-    triple_prompt:
-      type: 2wiki_triple
-    type: kag
+runner:
+  num_parallel: 10
+  chain_level_num_paralle: 1
   reader:
-    type: 2wiki
-  splitter:
-    split_length: 100000
-    type: length
-    window_length: 0
-  vectorizer:
-    type: batch
-    vectorize_model: *vectorize_model_config
-  post_processor:
-    type: base
-    similarity_threshold: 0.9
-  writer:
-    type: kg
+    type:
+      2wiki
+  chain:
+    type: unstructured
+    extractor:
+      llm: *llm_conf
+      ner_prompt:
+        type: 2wiki_ner
+      std_prompt:
+        type: 2wiki_std
+      triple_prompt:
+        type: 2wiki_triple
+      type: kag
+    parser:
+      type: dict
+    splitter:
+      split_length: 100000
+      type: length
+      window_length: 0
+    vectorizer:
+      type: batch
+      vectorize_model: *vectorize_model_config
+    post_processor:
+      type: base
+      similarity_threshold: 0.9
+    writer:
+      type: kg
     
 lf_solver_pipeline:
   generator:

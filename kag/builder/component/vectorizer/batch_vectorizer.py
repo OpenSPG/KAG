@@ -51,7 +51,7 @@ class EmbeddingVectorManager(object):
             if not property_value:
                 return None
             if not isinstance(property_value, str):
-                message = f"property {property_key!r} must be string to generate embedding vector"
+                message = f"property {property_key!r} must be string to generate embedding vector, got {property_value} with type {type(property_value)}"
                 raise RuntimeError(message)
             num = len(self._placeholders)
             placeholder = EmbeddingVectorPlaceholder(

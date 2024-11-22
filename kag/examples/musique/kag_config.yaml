@@ -2,7 +2,7 @@ project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
   language: en
-  namespace: MuSiQue
+  namespace: Musique
   id: 1
 
 
@@ -21,31 +21,37 @@ llm: &llm_conf
 log:
   level: INFO
 
-
-chain:
-  extractor:
-    llm: *llm_conf
-    ner_prompt:
-      type: musique_ner
-    std_prompt:
-      type: musique_std
-    triple_prompt:
-      type: musique_triple
-    type: kag
+runner:
+  num_parallel: 10
+  chain_level_num_paralle: 1  
   reader:
-    type: musique
-  splitter:
-    split_length: 100000
-    type: length
-    window_length: 0
-  vectorizer:
-    type: batch
-    vectorize_model: *vectorize_model_config
-  post_processor:
-    type: base
-    similarity_threshold: 0.9
-  writer:
-    type: kg
+    type:
+      musique
+  chain:
+    type: unstructured
+    extractor:
+      llm: *llm_conf
+      ner_prompt:
+        type: musique_ner
+      std_prompt:
+        type: musique_std
+      triple_prompt:
+        type: musique_triple
+      type: kag
+    parser:
+      type: dict
+    splitter:
+      split_length: 100000
+      type: length
+      window_length: 0
+    vectorizer:
+      type: batch
+      vectorize_model: *vectorize_model_config
+    post_processor:
+      type: base
+      similarity_threshold: 0.9
+    writer:
+      type: kg
     
 lf_solver_pipeline:
   generator:

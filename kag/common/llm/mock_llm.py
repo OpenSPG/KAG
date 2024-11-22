@@ -10,7 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-
+import time
 import json
 from kag.interface import LLMClient
 
@@ -21,6 +21,7 @@ class MockLLMClient(LLMClient):
         pass
 
     def match_input(self, prompt):
+        time.sleep(3)  # mimic llm call
         if "You're a very effective entity extraction system" in prompt:
             return [
                 {
