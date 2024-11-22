@@ -15,21 +15,19 @@ from typing import Dict, List, Callable
 import pandas
 
 from knext.schema.client import BASIC_TYPES
-from kag.builder.model.sub_graph import SubGraph, Node
+from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import SpgTypeEnum
-
 from knext.schema.model.schema_helper import (
-    SPGTypeName,
     PropertyName,
 )
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface.builder.mapping_abc import MappingABC
-
-FuseFunc = Callable[[SubGraph], List[SubGraph]]
-LinkFunc = Callable[[str, Node], List[Node]]
+from kag.common.registry import Functor
 
 
+@MappingABC.register("spg")
 class SPGTypeMapping(MappingABC):
     """
     A class for mapping SPG (Simple Property Graph) types and handling their properties and strategies.
@@ -39,11 +37,8 @@ class SPGTypeMapping(MappingABC):
         fuse_op (FuseOpABC, optional): The user-defined fuse operator. Defaults to None.
     """
 
-    def __init__(
-        self, spg_type_name: SPGTypeName, fuse_func: FuseFunc = None, **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.schema = SchemaClient(project_id=self.project_id).load()
+    def __init__(self, spg_type_name: str, fuse_func: Functor = None):
+        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         assert (
             spg_type_name in self.schema
         ), f"SPG type [{spg_type_name}] does not exist."
@@ -57,7 +52,7 @@ class SPGTypeMapping(MappingABC):
         self,
         source_name: str,
         target_name: PropertyName,
-        link_func: LinkFunc = None,
+        link_func: Callable = None,
     ):
         """
         Adds a property mapping from a source name to a target name within the SPG type.

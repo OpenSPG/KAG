@@ -9,16 +9,17 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import os
 from collections import defaultdict
 from typing import List
 
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from kag.common.vectorizer import Vectorizer
-from kag.interface.builder.vectorizer_abc import VectorizerABC
+from kag.common.conf import KAG_PROJECT_CONF
+
+from kag.common.utils import get_vector_field_name
+from kag.interface import VectorizerABC, VectorizeModelABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import IndexTypeEnum
+from knext.common.base.runnable import Input, Output
 
 
 class EmbeddingVectorPlaceholder(object):
@@ -42,22 +43,15 @@ class EmbeddingVectorManager(object):
     def __init__(self):
         self._placeholders = []
 
-    def _create_vector_field_name(self, property_key):
-        from kag.common.utils import to_snake_case
-
-        name = f"{property_key}_vector"
-        name = to_snake_case(name)
-        return "_" + name
-
     def get_placeholder(self, properties, vector_field):
         for property_key, property_value in properties.items():
-            field_name = self._create_vector_field_name(property_key)
+            field_name = get_vector_field_name(property_key)
             if field_name != vector_field:
                 continue
             if not property_value:
                 return None
             if not isinstance(property_value, str):
-                message = f"property {property_key!r} must be string to generate embedding vector"
+                message = f"property {property_key!r} must be string to generate embedding vector, got {property_value} with type {type(property_value)}"
                 raise RuntimeError(message)
             num = len(self._placeholders)
             placeholder = EmbeddingVectorPlaceholder(
@@ -76,21 +70,27 @@ class EmbeddingVectorManager(object):
             text_batch[property_value].append(placeholder)
         return text_batch
 
-    def _generate_vectors(self, vectorizer, text_batch):
+    def _generate_vectors(self, vectorizer, text_batch, batch_size=1024):
         texts = list(text_batch)
         if not texts:
             return []
-        vectors = vectorizer.vectorize(texts)
-        return vectors
+
+        n_batchs = len(texts) // batch_size + 1
+        embeddings = []
+        for idx in range(n_batchs):
+            start = idx * batch_size
+            end = min(start + batch_size, len(texts))
+            embeddings.extend(vectorizer.vectorize(texts[start:end]))
+        return embeddings
 
     def _fill_vectors(self, vectors, text_batch):
         for vector, (_text, placeholders) in zip(vectors, text_batch.items()):
             for placeholder in placeholders:
                 placeholder._embedding_vector = vector
 
-    def batch_generate(self, vectorizer):
+    def batch_generate(self, vectorizer, batch_size=1024):
         text_batch = self._get_text_batch()
-        vectors = self._generate_vectors(vectorizer, text_batch)
+        vectors = self._generate_vectors(vectorizer, text_batch, batch_size)
         self._fill_vectors(vectors, text_batch)
 
     def patch(self):
@@ -104,7 +104,7 @@ class EmbeddingVectorGenerator(object):
         self._extra_labels = extra_labels
         self._vector_index_meta = vector_index_meta or {}
 
-    def batch_generate(self, node_batch):
+    def batch_generate(self, node_batch, batch_size=1024):
         manager = EmbeddingVectorManager()
         vector_index_meta = self._vector_index_meta
         for node_item in node_batch:
@@ -121,20 +121,19 @@ class EmbeddingVectorGenerator(object):
                     placeholder = manager.get_placeholder(properties, vector_field)
                     if placeholder is not None:
                         properties[vector_field] = placeholder
-        manager.batch_generate(self._vectorizer)
+        manager.batch_generate(self._vectorizer, batch_size)
         manager.patch()
 
 
 @VectorizerABC.register("batch")
 class BatchVectorizer(VectorizerABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.project_id = os.getenv("KAG_PROJECT_ID")
+    def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 1024):
+        super().__init__()
+        self.project_id = KAG_PROJECT_CONF.project_id
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
-
-        self.vectorizer_config = os.environ["KAG_VECTORIZER"]
-        self.vectorizer = Vectorizer.from_config(eval(self.vectorizer_config))
+        self.vectorize_model = vectorize_model
+        self.batch_size = batch_size
 
     def _init_vec_meta(self):
         vec_meta = defaultdict(list)
@@ -146,17 +145,8 @@ class BatchVectorizer(VectorizerABC):
                     IndexTypeEnum.Vector,
                     IndexTypeEnum.TextAndVector,
                 ]:
-                    vec_meta[type_name].append(
-                        self._create_vector_field_name(prop_name)
-                    )
+                    vec_meta[type_name].append(get_vector_field_name(prop_name))
         return vec_meta
-
-    def _create_vector_field_name(self, property_key):
-        from kag.common.utils import to_snake_case
-
-        name = f"{property_key}_vector"
-        name = to_snake_case(name)
-        return "_" + name
 
     def _generate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
         node_list = []
@@ -168,8 +158,8 @@ class BatchVectorizer(VectorizerABC):
             properties.update(node.properties)
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
-        generator = EmbeddingVectorGenerator(self.vectorizer, self.vec_meta)
-        generator.batch_generate(node_batch)
+        generator = EmbeddingVectorGenerator(self.vectorize_model, self.vec_meta)
+        generator.batch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(
             node_list, node_batch
         ):

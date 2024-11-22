@@ -6,15 +6,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 from kag.common.benchmarks.evaluate import Evaluate
-from kag.common.env import init_kag_config
 from kag.examples.utils import delay_run
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from knext.reasoner.client import ReasonerClient
-from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_reasoner import DefaultReasoner
-from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
-from kag.solver.logic.core_modules.lf_solver import LFSolver
+
 from kag.solver.logic.solver_pipeline import SolverPipeline
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -24,32 +20,12 @@ class EvaQA:
     init for kag client
     """
 
-    def __init__(self, configFilePath):
-        self.configFilePath = configFilePath
-        init_kag_config(self.configFilePath)
-
     def qa(self, query):
-        resp = SolverPipeline()
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
         answer, trace_log = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
-
-    def qaWithoutLogicForm(self, query):
-        # CA
-        lf_solver = LFSolver(
-            chunk_retriever=LFChunkRetriever(), kg_retriever=KGRetrieverByLlm()
-        )
-        reasoner = DefaultReasoner(lf_planner=LFPlannerABC(), lf_solver=lf_solver)
-        resp = SolverPipeline(reasoner=reasoner)
-        answer, trace_log = resp.run(query)
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
-        return answer, trace_log
-
-    """
-        parallel qa from knowledge base
-        and getBenchmarks(em, f1, answer_similarity)
-    """
 
     def parallelQaAndEvaluate(
         self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
@@ -122,25 +98,8 @@ class EvaQA:
 
 
 if __name__ == "__main__":
-
+    import_modules_from_path("./prompt")
     delay_run(hours=0)
-    configFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), "../kag_config.cfg"
-    )
 
-    project_id = os.getenv("KAG_PROJECT_ID")
-    host_addr = os.getenv("KAG_PROJECT_HOST_ADDR")
-    sc = ReasonerClient(
-        host_addr,
-        project_id,
-    )
-    param = {"spg.reasoner.plan.pretty.print.logger.enable": "true"}
-
-    #     ret = sc.syn_execute("""MATCH
-    #     (u:`RiskMining.TaxOfRiskUser`/`赌博App开发者`)
-    # RETURN u.name
-    #     """, **param)
-    #     print(ret)
-
-    evaObj = EvaQA(configFilePath=configFilePath)
+    evaObj = EvaQA()
     print(evaObj.qa("裘**是否有风险？"))

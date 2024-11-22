@@ -11,12 +11,13 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OpenIETriplePrompt(PromptOp):
+@PromptABC.register("medical_triple")
+class OpenIETriplePrompt(PromptABC):
 
     template_zh = """
 {
@@ -52,9 +53,6 @@ class OpenIETriplePrompt(PromptOp):
     """
 
     template_en = template_zh
-
-    def __init__(self, language: Optional[str] = "en"):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

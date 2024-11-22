@@ -14,7 +14,7 @@
 import json
 import logging
 import requests
-from kag.common.llm.llm_client import LLMClient
+from kag.interface import LLMClient
 
 
 # logging.basicConfig(level=logging.DEBUG)

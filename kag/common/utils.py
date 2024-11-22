@@ -12,8 +12,7 @@
 import re
 import sys
 import json
-from typing import Type, Tuple
-import inspect
+from typing import Tuple
 import os
 from pathlib import Path
 import importlib
@@ -21,42 +20,6 @@ from shutil import copystat, copy2
 from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
-
-
-def _register(root, path, files, class_type):
-    relative_path = os.path.relpath(path, root)
-    module_prefix = relative_path.replace(".", "").replace("/", ".")
-    module_prefix = module_prefix + "." if module_prefix else ""
-    for file_name in files:
-        if file_name.endswith(".py"):
-            module_name = module_prefix + os.path.splitext(file_name)[0]
-            import importlib
-
-            module = importlib.import_module(module_name)
-            classes = inspect.getmembers(module, inspect.isclass)
-            for class_name, class_obj in classes:
-                if (
-                    issubclass(class_obj, class_type)
-                    and inspect.getmodule(class_obj) == module
-                ):
-
-                    class_type.register(
-                        name=class_name,
-                        local_path=os.path.join(path, file_name),
-                        module_path=module_name,
-                    )(class_obj)
-
-
-def register_from_package(path: str, class_type: Type) -> None:
-    """
-    Register all classes under the given package.
-    Only registered classes can be recognized by kag.
-    """
-    if not append_python_path(path):
-        return
-    for root, dirs, files in os.walk(path):
-        _register(path, root, files, class_type)
-    class_type._has_registered = True
 
 
 def append_python_path(path: str) -> bool:
@@ -83,7 +46,6 @@ def render_template(
 
     if path_obj.suffix == ".tmpl":
         path_obj.rename(render_path)
-
     render_path.write_text(content, "utf8")
 
 
@@ -202,4 +164,38 @@ def to_camel_case(phrase):
 def to_snake_case(name):
     words = re.findall("[A-Za-z][a-z0-9]*", name)
     result = "_".join(words).lower()
+    return result
+
+
+def get_vector_field_name(property_key: str):
+    name = f"{property_key}_vector"
+    name = to_snake_case(name)
+    return "_" + name
+
+
+def split_list_into_n_parts(lst, n):
+    length = len(lst)
+    part_size = length // n
+    seg = [x * part_size for x in range(n)]
+    seg.append(min(length, part_size * n))
+
+    remainder = length % n
+
+    result = []
+
+    # 分割列表
+    start = 0
+    for i in range(n):
+        # 计算当前份的元素数量
+        if i < remainder:
+            end = start + part_size + 1
+        else:
+            end = start + part_size
+
+        # 添加当前份到结果列表
+        result.append(lst[start:end])
+
+        # 更新起始位置
+        start = end
+
     return result

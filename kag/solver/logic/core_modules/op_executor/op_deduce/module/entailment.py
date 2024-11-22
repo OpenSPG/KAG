@@ -1,8 +1,9 @@
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from kag.solver.logic.core_modules.common.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.op_executor.op_executor import OpExecutor
+from kag.solver.utils import init_prompt_with_fallback
 
 
 class EntailmentOp(OpExecutor):
@@ -15,9 +16,7 @@ class EntailmentOp(OpExecutor):
         **kwargs,
     ):
         super().__init__(nl_query, kg_graph, schema, debug_info, **kwargs)
-        self.prompt = PromptOp.load(self.biz_scene, "deduce_entail")(
-            language=self.language
-        )
+        self.prompt = init_prompt_with_fallback("deduce_entail", self.biz_scene)
 
     def executor(self, logic_node: LogicNode, req_id: str, param: dict) -> list:
         history_qa_pair = self.debug_info.get("sub_qa_pair", [])

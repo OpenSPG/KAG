@@ -1,12 +1,13 @@
 import logging
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class RespRewriter(PromptOp):
+@PromptABC.register("default_resp_reflector")
+class RespReflector(PromptABC):
     template_zh = (
         "你是一个智能助手，擅长通过复杂的、多跳的推理帮助用户在多文档中获取信息。请理解当前已知信息与目标问题之间的信息差。"
         "你的任务是直接生成一个用于下一步检索的思考问题。"
@@ -18,9 +19,6 @@ class RespRewriter(PromptOp):
         "Your task is to generate one thought in the form of question for next retrieval step directly. "
         "DON'T generate the whole thoughts at once!\n[Known information]: $memory\n[Target question]: $instruction\n[You Thought]:"
     )
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

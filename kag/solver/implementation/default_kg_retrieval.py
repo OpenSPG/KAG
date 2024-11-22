@@ -3,10 +3,10 @@ import os
 import time
 from typing import List
 
-from knext.project.client import ProjectClient
 
-from kag.common.vectorizer import Vectorizer
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.common.conf import KAG_CONFIG
+from kag.interface import VectorizeModelABC as Vectorizer
+from kag.solver.retriever.kg_retriever import KGRetriever
 from knext.search.client import SearchClient
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
@@ -33,6 +33,7 @@ from kag.solver.logic.core_modules.retriver.retrieval_spo import (
     FuzzyMatchRetrievalSpo,
     ExactMatchRetrievalSpo,
 )
+from kag.interface import LLMClient
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 import logging
@@ -40,7 +41,8 @@ import logging
 logger = logging.getLogger()
 
 
-class KGRetrieverByLlm(KGRetrieverABC):
+@KGRetriever.register("base", as_default=True)
+class KGRetrieverByLlm(KGRetriever):
     """
     A subclass of KGRetrieval that implements relation and entity retrieval using large language models.
 
@@ -48,17 +50,23 @@ class KGRetrieverByLlm(KGRetrieverABC):
     leveraging large language models for its operations.
     """
 
-    def __init__(self, disable_exact_match=False, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        vectorize_model: Vectorizer = None,
+        disable_exact_match=False,
+        llm_client: LLMClient = None,
+        **kwargs,
+    ):
+        super().__init__(llm_client, **kwargs)
 
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(
-                host_addr=self.host_addr, project_id=self.project_id
-            ).get_config(self.project_id)
-            vectorizer_config.update(config.get("vectorizer", {}))
-        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
-        self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
+        config = KAG_CONFIG.all_config
+        if vectorize_model is None:
+            vectorize_model_config = config.get("vectorize_model", {})
+            self.vectorize_model = Vectorizer.from_config(vectorize_model_config)
+        else:
+            self.vectorize_model = vectorize_model
+
+        self.text_similarity = TextSimilarity(self.vectorize_model)
         self.schema = SchemaUtils(LogicFormConfiguration(kwargs))
         self.schema.get_schema()
 
@@ -155,7 +163,7 @@ class KGRetrieverByLlm(KGRetrieverABC):
         recall_topk = topk
         if "entity" not in query_type.lower():
             recall_topk = 10
-        query_vector = self.vectorizer.vectorize(mention_entity.entity_name)
+        query_vector = self.vectorize_model.vectorize(mention_entity.entity_name)
         typed_nodes = self.sc.search_vector(
             label="Entity",
             property_key="name",
@@ -164,7 +172,7 @@ class KGRetrieverByLlm(KGRetrieverABC):
         )
         # 根据query召回
         if query_type not in ["Others", "Entity"]:
-            content_vector = self.vectorizer.vectorize(content)
+            content_vector = self.vectorize_model.vectorize(content)
             content_recall_nodes = self.sc.search_vector(
                 label="Entity",
                 property_key="desc",

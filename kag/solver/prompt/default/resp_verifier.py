@@ -3,12 +3,13 @@ from string import Template
 from typing import List
 import logging
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class RespVerifier(PromptOp):
+@PromptABC.register("default_resp_verifier")
+class RespVerifier(PromptABC):
     template_zh = (
         "仅根据当前已知的信息，并且不允许进行推理，"
         "你能否完全并准确地回答这个问题'$sub_instruction'?\n已知信息：'$supporting_fact'。"
@@ -20,9 +21,6 @@ class RespVerifier(PromptOp):
         "Known information: '$supporting_fact'. If yes, please reply with 'Yes', followed by an accurate response to the question '$sub_instruction', "
         "without restating the question; if no, please reply with 'No' directly."
     )
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

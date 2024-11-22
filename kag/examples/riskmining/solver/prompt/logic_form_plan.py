@@ -5,10 +5,11 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class LogicFormPlanPrompt(PromptOp):
+@PromptABC.register("riskmining_lf_plan")
+class LogicFormPlanPrompt(PromptABC):
     instruct_zh = """"instruction": "",
     "function_description": "functionName为算子名;基本格式为 functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
     "function": [
@@ -96,9 +97,6 @@ class LogicFormPlanPrompt(PromptOp):
     "query": "$question"
 }}   
     """
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

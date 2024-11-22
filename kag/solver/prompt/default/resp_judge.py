@@ -1,14 +1,24 @@
-import re
-from string import Template
-from typing import List
-import logging
+# -*- coding: utf-8 -*-
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
 
-from kag.common.base.prompt_op import PromptOp
+import logging
+from typing import List
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class RespJudge(PromptOp):
+@PromptABC.register("default_resp_judge")
+class RespJudge(PromptABC):
     template_zh = (
         "根据当前已知信息进行判断，不允许进行推理，"
         "你能否完全并准确地回答这个问题'$instruction'?\n已知信息：'$memory'。"
@@ -21,9 +31,6 @@ class RespJudge(PromptOp):
         "\nIf you can, please reply with 'Yes' directly; "
         "if you cannot and need more information, please reply with 'No' directly."
     )
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

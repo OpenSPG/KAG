@@ -2,8 +2,8 @@ import os
 from typing import List
 
 import numpy as np
-
-from kag.common.vectorizer import Vectorizer
+from kag.common.conf import KAG_CONFIG
+from kag.interface import VectorizeModelABC as Vectorizer
 
 
 def cosine_similarity(vector1, vector2):
@@ -27,19 +27,18 @@ def split_list(input_list, max_length=30):
 
 
 class TextSimilarity:
-    def __init__(self, vec_config=None):
-        if vec_config is None:
-            vec_config = eval(os.getenv("KAG_VECTORIZER"))
-            if vec_config is None:
-                message = "vectorizer config is required"
-                raise RuntimeError(message)
-        self._vectorizer: Vectorizer = Vectorizer.from_config(vec_config)
+    def __init__(self, vectorizer: Vectorizer = None):
+        if vectorizer is None:
+            vectorizer_conf = KAG_CONFIG.all_config["vectorize_model"]
+            self.vectorize_model = Vectorizer.from_config(vectorizer_conf)
+        else:
+            self.vectorize_model = vectorizer
 
         self.cached_embs = {}
 
     def sentence_encode(self, sentences, is_cached=False):
         if isinstance(sentences, str):
-            return self._vectorizer.vectorize(sentences)
+            return self.vectorize_model.vectorize(sentences)
         if not isinstance(sentences, list):
             return []
         if len(sentences) == 0:
@@ -55,7 +54,7 @@ class TextSimilarity:
                 else:
                     need_call_emb_text.append(text)
             if len(need_call_emb_text) > 0:
-                emb_res = self._vectorizer.vectorize(need_call_emb_text)
+                emb_res = self.vectorize_model.vectorize(need_call_emb_text)
                 for text, text_emb in zip(need_call_emb_text, emb_res):
                     tmp_map[text] = text_emb
                     if is_cached:

@@ -1,12 +1,13 @@
 import logging
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class DeduceJudge(PromptOp):
+@PromptABC.register("default_deduce_judge")
+class DeduceJudge(PromptABC):
     template_zh = (
         "根据提供的信息，请首先判断是否能够直接判断问题“$instruction”。如果可以直接回答，请直接根据提供信息对问题给出判断是或者否，"
         "无需解释；"
@@ -23,9 +24,6 @@ class DeduceJudge(PromptOp):
         "without any speculation."
         "\n[Question]: '$instruction'"
     )
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

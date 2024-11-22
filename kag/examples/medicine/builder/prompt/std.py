@@ -13,10 +13,12 @@
 import json
 from typing import Optional, List
 
-from kag.common.base.prompt_op import PromptOp
+
+from kag.interface import PromptABC
 
 
-class OpenIEEntitystandardizationdPrompt(PromptOp):
+@PromptABC.register("example_medical_std")
+class OpenIEEntitystandardizationdPrompt(PromptABC):
 
     template_zh = """
 {

@@ -4,11 +4,10 @@ import concurrent.futures
 import logging
 from typing import List, Union
 
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.solver.retriever.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode, GetNode
 
 logger = logging.getLogger()
@@ -27,7 +26,7 @@ class EntityLinkerBase:
 
 
 class DefaultEntityLinker(EntityLinkerBase):
-    def __init__(self, config, kg_retriever: KGRetrieverABC):
+    def __init__(self, config, kg_retriever: KGRetriever):
         super().__init__(config)
         self.recognition_threshold = float(0.8)
         self.kg_retriever = kg_retriever

@@ -10,7 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import json
-from collections import defaultdict
 from typing import List, Type, Dict
 
 from kag.interface.builder.mapping_abc import MappingABC
@@ -19,16 +18,26 @@ from knext.common.base.runnable import Input, Output
 from knext.schema.client import OTHER_TYPE
 
 
+@MappingABC.register("spo")
 class SPOMapping(MappingABC):
-    def __init__(self):
+    def __init__(
+        self,
+        s_type_col: str = None,
+        s_id_col: str = None,
+        p_type_col: str = None,
+        o_type_col: str = None,
+        o_id_col: str = None,
+        sub_property_col: str = None,
+        sub_property_mapping: dict = {},
+    ):
         super().__init__()
-        self.s_type_col = None
-        self.s_id_col = None
-        self.p_type_col = None
-        self.o_type_col = None
-        self.o_id_col = None
-        self.sub_property_mapping = defaultdict(list)
-        self.sub_property_col = None
+        self.s_type_col = s_type_col
+        self.s_id_col = s_id_col
+        self.p_type_col = p_type_col
+        self.o_type_col = o_type_col
+        self.o_id_col = o_id_col
+        self.sub_property_col = sub_property_col
+        self.sub_property_mapping = sub_property_mapping
 
     @property
     def input_types(self) -> Type[Input]:
@@ -69,7 +78,10 @@ class SPOMapping(MappingABC):
         if not target_name:
             self.sub_property_col = source_name
         else:
-            self.sub_property_mapping[target_name].append(source_name)
+            if target_name in self.sub_property_mapping:
+                self.sub_property_mapping[target_name].append(source_name)
+            else:
+                self.sub_property_mapping[target_name] = [source_name]
         return self
 
     def assemble_sub_graph(self, record: Dict[str, str]):

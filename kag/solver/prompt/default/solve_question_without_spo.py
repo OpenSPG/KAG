@@ -1,10 +1,12 @@
 from string import Template
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+
+from kag.interface import PromptABC
 
 
-class SolveQuestionWithOutSPO(PromptOp):
+@PromptABC.register("default_solve_question_without_spo")
+class SolveQuestionWithOutSPO(PromptABC):
 
     template_zh = """请根据检索到的相关文档回答问题“$question”，并结合历史信息进行综合分析。
 要求：
@@ -35,9 +37,6 @@ $docs
 
 answer:
 """
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

@@ -5,14 +5,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
-
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_reasoner import DefaultReasoner
-from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
-from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.solver.logic.solver_pipeline import SolverPipeline
 
 logger = logging.getLogger(__name__)
@@ -27,19 +23,14 @@ class EvaForMusique:
         pass
 
     def qa(self, query):
-        resp = SolverPipeline()
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
         answer, trace_log = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
 
     def qaWithoutLogicForm(self, query):
-        # CA
-        lf_solver = LFSolver(
-            chunk_retriever=LFChunkRetriever(), kg_retriever=KGRetrieverByLlm()
-        )
-        reasoner = DefaultReasoner(lf_planner=LFPlannerABC(), lf_solver=lf_solver)
-        resp = SolverPipeline(reasoner=reasoner)
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["resp_solver_pipeline"])
         answer, trace_log = resp.run(query)
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
@@ -58,7 +49,7 @@ class EvaForMusique:
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction, traceLog = self.qa(question)
+                prediction, traceLog = self.qaWithoutLogicForm(question)
 
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
@@ -120,6 +111,7 @@ class EvaForMusique:
 
 
 if __name__ == "__main__":
+    import_modules_from_path("./prompt")
     delay_run(hours=0)
     evaObj = EvaForMusique()
 

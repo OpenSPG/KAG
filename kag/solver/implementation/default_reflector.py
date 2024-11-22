@@ -1,27 +1,34 @@
 from tenacity import retry, stop_after_attempt
 
-from kag.common.base.prompt_op import PromptOp
-from kag.interface.solver.kag_reflector_abc import KagMemoryABC
-from kag.interface.solver.kag_reflector_abc import KagReflectorABC
+from kag.interface import PromptABC, KagMemoryABC, KagReflectorABC
+from kag.interface import LLMClient
+from kag.solver.utils import init_prompt_with_fallback
 
 
+@KagReflectorABC.register("base", as_default=True)
 class DefaultReflector(KagReflectorABC):
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        refine_prompt: PromptABC = None,
+        judge_prompt: PromptABC = None,
+        llm_client: LLMClient = None,
+        **kwargs,
+    ):
         """
         A class for rewriting instructions based on provided memory information.
 
         Attributes:
         - llm_module (Any): The LLM module to be used by this instance.
-        - rewrite_prompt (PromptOp): The prompt operation for rewriting responses.
+        - rewrite_prompt (PromptABC): The prompt operation for rewriting responses.
         """
-        super().__init__(**kwargs)
-        self.refine_prompt = PromptOp.load(self.biz_scene, "resp_reflector")(
-            language=self.language
-        )
+        super().__init__(llm_client=llm_client, **kwargs)
+        if refine_prompt is None:
+            refine_prompt = init_prompt_with_fallback("resp_reflector", self.biz_scene)
+        self.refine_prompt = refine_prompt
 
-        self.judge_prompt = PromptOp.load(self.biz_scene, "resp_judge")(
-            language=self.language
-        )
+        if judge_prompt is None:
+            judge_prompt = init_prompt_with_fallback("resp_judge", self.biz_scene)
+        self.judge_prompt = judge_prompt
 
     def _get_serialize_memory(self, memory: KagMemoryABC):
         if memory is None:

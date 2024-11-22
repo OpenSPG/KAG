@@ -522,7 +522,7 @@ class Registrable:
             if name in registry:
                 if exist_ok:
                     message = (
-                        f"{name} has already been registered as {registry[name][0].__name__}, but "
+                        f"{name} of class {subclass} has already been registered as {registry[name][0].__name__}, but "
                         f"exist_ok=True, so overwriting with {cls.__name__}"
                     )
                     logger.info(message)
@@ -660,89 +660,96 @@ class Registrable:
             )
 
         registered_subclasses = Registrable._registry.get(cls)
+        try:
+            # instantiate object from base class
+            if registered_subclasses and not constructor_to_call:
 
-        # instantiate object from base class
-        if registered_subclasses and not constructor_to_call:
+                as_registrable = cast(Type[Registrable], cls)
+                default_choice = as_registrable.default_implementation
+                # call with BaseClass.from_prams, should use `type` to point out which subclasss to use
+                choice = params.pop("type", default_choice)
+                choices = as_registrable.list_available()
+                # if cls has subclass and choice not found in params, we'll instantiate cls itself
+                if choice is None:
+                    subclass, constructor_name = cls, None
+                # invalid choice encountered, raise
+                elif choice not in choices:
+                    message = (
+                        f"{choice} not in acceptable choices for type: {choices}. "
+                        "You should make sure the class is correctly registerd. "
+                    )
+                    raise ConfigurationError(message)
 
-            as_registrable = cast(Type[Registrable], cls)
-            default_choice = as_registrable.default_implementation
-            # call with BaseClass.from_prams, should use `type` to point out which subclasss to use
-            choice = params.pop("type", default_choice)
-            choices = as_registrable.list_available()
-            # if cls has subclass and choice not found in params, we'll instantiate cls itself
-            if choice is None:
-                subclass, constructor_name = cls, None
-            # invalid choice encountered, raise
-            elif choice not in choices:
-                message = (
-                    f"{choice} not in acceptable choices for type: {choices}. "
-                    "You should make sure the class is correctly registerd. "
+                else:
+                    subclass, constructor_name = as_registrable.resolve_class_name(
+                        choice
+                    )
+
+                # See the docstring for an explanation of what's going on here.
+                if not constructor_name:
+                    constructor_to_inspect = subclass.__init__
+                    constructor_to_call = subclass  # type: ignore
+                else:
+                    constructor_to_inspect = cast(
+                        Callable[..., RegistrableType],
+                        getattr(subclass, constructor_name),
+                    )
+                    constructor_to_call = constructor_to_inspect
+
+                retyped_subclass = cast(Type[RegistrableType], subclass)
+
+                instant = retyped_subclass.from_config(
+                    params=params,
+                    constructor_to_call=constructor_to_call,
+                    constructor_to_inspect=constructor_to_inspect,
                 )
-                raise ConfigurationError(message)
 
+                setattr(instant, "__register_type__", choice)
+                setattr(instant, "__original_parameters__", original_params)
+                # return ins
             else:
-                subclass, constructor_name = as_registrable.resolve_class_name(choice)
+                # pop unused type declaration
+                register_type = params.pop("type", None)
 
-            # See the docstring for an explanation of what's going on here.
-            if not constructor_name:
-                constructor_to_inspect = subclass.__init__
-                constructor_to_call = subclass  # type: ignore
-            else:
-                constructor_to_inspect = cast(
-                    Callable[..., RegistrableType], getattr(subclass, constructor_name)
+                if not constructor_to_inspect:
+                    constructor_to_inspect = cls.__init__
+                if not constructor_to_call:
+                    constructor_to_call = cls
+
+                if constructor_to_inspect == object.__init__:
+                    # This class does not have an explicit constructor, so don't give it any kwargs.
+                    # Without this logic, create_kwargs will look at object.__init__ and see that
+                    # it takes *args and **kwargs and look for those.
+                    accepts_kwargs, kwargs = False, {}
+                else:
+                    # This class has a constructor, so create kwargs for it.
+                    constructor_to_inspect = cast(
+                        Callable[..., RegistrableType], constructor_to_inspect
+                    )
+                    accepts_kwargs, kwargs = create_kwargs(
+                        constructor_to_inspect,
+                        cls,
+                        params,
+                    )
+
+                instant = constructor_to_call(**kwargs)  # type: ignore
+                setattr(instant, "__register_type__", register_type)
+                setattr(
+                    instant,
+                    "__constructor_called__",
+                    functools.partial(constructor_to_call, **kwargs),
                 )
-                constructor_to_call = constructor_to_inspect
+                setattr(instant, "__original_parameters__", original_params)
+                # if constructor takes kwargs, they can't be infered from constructor. Therefore we should record
+                # which attrs are created by kwargs to correctly restore the configs by `to_config`.
+                if accepts_kwargs:
+                    remaining_kwargs = set(params)
+                    params.clear()
+                    setattr(instant, "__from_config_kwargs__", remaining_kwargs)
+        except Exception as e:
 
-            retyped_subclass = cast(Type[RegistrableType], subclass)
-
-            instant = retyped_subclass.from_config(
-                params=params,
-                constructor_to_call=constructor_to_call,
-                constructor_to_inspect=constructor_to_inspect,
-            )
-
-            setattr(instant, "__register_type__", choice)
-            setattr(instant, "__original_parameters__", original_params)
-            # return ins
-        else:
-            # pop unused type declaration
-            register_type = params.pop("type", None)
-
-            if not constructor_to_inspect:
-                constructor_to_inspect = cls.__init__
-            if not constructor_to_call:
-                constructor_to_call = cls
-
-            if constructor_to_inspect == object.__init__:
-                # This class does not have an explicit constructor, so don't give it any kwargs.
-                # Without this logic, create_kwargs will look at object.__init__ and see that
-                # it takes *args and **kwargs and look for those.
-                accepts_kwargs, kwargs = False, {}
-            else:
-                # This class has a constructor, so create kwargs for it.
-                constructor_to_inspect = cast(
-                    Callable[..., RegistrableType], constructor_to_inspect
-                )
-                accepts_kwargs, kwargs = create_kwargs(
-                    constructor_to_inspect,
-                    cls,
-                    params,
-                )
-
-            instant = constructor_to_call(**kwargs)  # type: ignore
-            setattr(instant, "__register_type__", register_type)
-            setattr(
-                instant,
-                "__constructor_called__",
-                functools.partial(constructor_to_call, **kwargs),
-            )
-            setattr(instant, "__original_parameters__", original_params)
-            # if constructor takes kwargs, they can't be infered from constructor. Therefore we should record
-            # which attrs are created by kwargs to correctly restore the configs by `to_config`.
-            if accepts_kwargs:
-                remaining_kwargs = set(params)
-                params.clear()
-                setattr(instant, "__from_config_kwargs__", remaining_kwargs)
+            logger.warn(f"Failed to initialize class {cls}, info: {e}")
+            raise e
         if len(params) > 0:
             raise ConfigurationError(
                 f"These params are not used for constructing {cls}:\n{params}"

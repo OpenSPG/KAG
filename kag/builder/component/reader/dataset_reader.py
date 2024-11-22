@@ -12,13 +12,14 @@
 
 import json
 import os
-from typing import List, Type
+from typing import List, Type, Dict
 
-from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
+
+from kag.interface import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
 
+@SourceReaderABC.register("hotpotqa")
 class HotpotqaCorpusReader(SourceReaderABC):
     @property
     def input_types(self) -> Type[Input]:
@@ -28,26 +29,25 @@ class HotpotqaCorpusReader(SourceReaderABC):
     @property
     def output_types(self) -> Type[Output]:
         """The type of output this Runnable object produces specified as a type annotation."""
-        return Chunk
+        return Dict
 
-    def invoke(self, input: str, **kwargs) -> List[Output]:
+    def load_data(self, input: Input, **kwargs) -> List[Output]:
         if os.path.exists(str(input)):
             with open(input, "r") as f:
                 corpus = json.load(f)
         else:
             corpus = json.loads(input)
-        chunks = []
 
+        data = []
         for item_key, item_value in corpus.items():
-            chunk = Chunk(
-                id=item_key,
-                name=item_key,
-                content="\n".join(item_value),
+            data.append(
+                {"id": item_key, "name": item_key, "content": "\n".join(item_value)}
             )
-            chunks.append(chunk)
-        return chunks
+        return data
 
 
+@SourceReaderABC.register("musique")
+@SourceReaderABC.register("2wiki")
 class MusiqueCorpusReader(SourceReaderABC):
     @property
     def input_types(self) -> Type[Input]:
@@ -57,41 +57,26 @@ class MusiqueCorpusReader(SourceReaderABC):
     @property
     def output_types(self) -> Type[Output]:
         """The type of output this Runnable object produces specified as a type annotation."""
-        return Chunk
+        return Dict
 
     def get_basename(self, file_name: str):
-        base, ext = os.path.splitext(os.path.basename(file_name))
+        base, _ = os.path.splitext(os.path.basename(file_name))
         return base
 
-    def invoke(self, input: str, **kwargs) -> List[Output]:
-        id_column = kwargs.get("id_column", "title")
-        name_column = kwargs.get("name_column", "title")
-        content_column = kwargs.get("content_column", "text")
+    def load_data(self, input: Input, **kwargs) -> List[Output]:
 
-        if os.path.exists(str(input)):
-            with open(input, "r") as f:
-                corpusList = json.load(f)
-        else:
-            corpusList = input
-        chunks = []
+        with open(input, "r") as f:
+            corpus = json.load(f)
+        data = []
 
-        for item in corpusList:
-            chunk = Chunk(
-                id=item[id_column],
-                name=item[name_column],
-                content=item[content_column],
+        for idx, item in enumerate(corpus):
+            title = item["title"]
+            content = item["text"]
+            data.append(
+                {
+                    "id": f"{title}#{idx}",
+                    "name": title,
+                    "content": content,
+                }
             )
-            chunks.append(chunk)
-        return chunks
-
-
-class TwowikiCorpusReader(MusiqueCorpusReader):
-    @property
-    def input_types(self) -> Type[Input]:
-        """The type of input this Runnable object accepts specified as a type annotation."""
-        return str
-
-    @property
-    def output_types(self) -> Type[Output]:
-        """The type of output this Runnable object produces specified as a type annotation."""
-        return Chunk
+        return data

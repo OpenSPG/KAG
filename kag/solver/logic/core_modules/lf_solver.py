@@ -1,12 +1,12 @@
-import json
 import logging
-import os
 import time
 from typing import List
 
-from kag.common.vectorizer import Vectorizer
-from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.interface import LFSolverABC
+from kag.interface import VectorizeModelABC as Vectorizer
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.solver.retriever.chunk_retriever import ChunkRetriever
+from kag.solver.retriever.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
@@ -19,12 +19,12 @@ from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import (
     DslRunnerOnGraphStore,
 )
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
-from knext.project.client import ProjectClient
 
 logger = logging.getLogger()
 
 
-class LFSolver:
+@LFSolverABC.register("base", as_default=True)
+class LFSolver(LFSolverABC):
     """
     Solver class that integrates various components to solve queries using logic forms.
     This class can't be extended to implement custom solver strategies.
@@ -32,8 +32,9 @@ class LFSolver:
 
     def __init__(
         self,
-        kg_retriever: KGRetrieverABC = None,
-        chunk_retriever: ChunkRetrieverABC = None,
+        kg_retriever: KGRetriever = None,
+        chunk_retriever: ChunkRetriever = None,
+        vectorize_model: Vectorizer = None,
         report_tool=None,
         **kwargs,
     ):
@@ -55,13 +56,10 @@ class LFSolver:
             raise ValueError(
                 "At least one of `kg_retriever` or `chunk_retriever` must be provided."
             )
-
         self.kg_retriever = kg_retriever
         self.chunk_retriever = chunk_retriever
-        self.project_id = kwargs.get("KAG_PROJECT_ID") or os.getenv("KAG_PROJECT_ID")
-        self.host_addr = kwargs.get("KAG_PROJECT_HOST_ADDR") or os.getenv(
-            "KAG_PROJECT_HOST_ADDR"
-        )
+        self.project_id = KAG_PROJECT_CONF.project_id
+        self.host_addr = KAG_PROJECT_CONF.host_addr
         if report_tool and report_tool.project_id:
             self.project_id = report_tool.project_id
 
@@ -73,14 +71,11 @@ class LFSolver:
         self.report_tool = report_tool
         self.last_iter_docs = []
 
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(
-                host_addr=self.host_addr, project_id=self.project_id
-            ).get_config(self.project_id)
-            vectorizer_config.update(config.get("vectorizer", {}))
-        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
-        self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
+        self.config = KAG_CONFIG.all_config
+        if vectorize_model is None:
+            vectorize_model = Vectorizer.from_config(self.config["vectorize_model"])
+        self.vectorize_model = vectorize_model
+        self.text_similarity = TextSimilarity(self.vectorize_model)
 
     def _process_history(self, history):
         """

@@ -15,9 +15,10 @@ import json
 from openai import OpenAI
 import logging
 
-from kag.common.llm.llm_client import LLMClient
+from kag.interface import LLMClient
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("openai").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 

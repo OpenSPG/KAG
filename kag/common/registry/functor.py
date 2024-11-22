@@ -47,7 +47,7 @@ class Functor(Registrable):
 
     We can also serialize it backto configuration:
 
-    reconstructed_conf = func.to_params()
+    reconstructed_conf = func.to_config()
     reconstructed_func = Functor.from_config(reconstructed_conf)
     """
 
@@ -149,7 +149,7 @@ class Functor(Registrable):
 
         return cls(partial(function, **kwargs), choice)
 
-    def to_params(self) -> ConfigTree:
+    def to_config(self) -> ConfigTree:
         config = {}
 
         if hasattr(self, "__register_type__") and self.__register_type__:
@@ -158,9 +158,9 @@ class Functor(Registrable):
         for k, v in self._func.keywords.items():
             if k in self.NonParams:
                 continue
-            if hasattr(v, "to_params"):
-                conf = v.to_params()
+            if hasattr(v, "to_config"):
+                conf = v.to_config()
             else:
-                conf = self._to_params(v)
+                conf = self._to_config(v)
             config[k] = conf
         return ConfigFactory.from_dict(config)

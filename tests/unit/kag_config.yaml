@@ -1,0 +1,25 @@
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: 1
+  language: en
+  namespace: MuSiQue
+
+
+llm: &llm_conf
+  type: mock
+
+
+vectorize_model: &vec_model
+  type: mock
+  vector_dimensions: 768
+
+vectorizer: &vec
+  type: batch
+  vectorize_model: *vec_model
+
+writer:
+  type: kg
+
+log:
+  level: INFO

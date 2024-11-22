@@ -15,12 +15,13 @@ import re
 import os
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder.splitter_abc import SplitterABC
+from kag.interface import SplitterABC
 from knext.common.base.runnable import Input, Output
 
 
+@SplitterABC.register("pattern")
 class PatternSplitter(SplitterABC):
-    def __init__(self, pattern_dict: dict = None, chunk_cut_num=None):
+    def __init__(self, pattern_dict: dict = None, chunk_cut_num: int = None):
         """
         pattern_dict:
         {
@@ -32,7 +33,6 @@ class PatternSplitter(SplitterABC):
             }
         }
         """
-        super().__init__()
         if pattern_dict is None:
             pattern_dict = {
                 "pattern": r"(\d+)\.([^0-9]+?)？([^0-9第版].*?)(?=\d+\.|$)",

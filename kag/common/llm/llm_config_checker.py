@@ -31,7 +31,7 @@ class LLMConfigChecker(object):
         :rtype: str
         :raises RuntimeError: if the config is invalid
         """
-        from kag.common.llm import LLMClient
+        from kag.interface import LLMClient
 
         config = json.loads(config)
         llm_client = LLMClient.from_config(config)

@@ -12,19 +12,20 @@
 
 import json
 import logging
-from abc import ABC
 from typing import List, Dict
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import BaseSpgType, SpgTypeEnum
 from knext.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
+from kag.common.conf import KAG_PROJECT_CONF
 
 logger = logging.getLogger(__name__)
 
 
-class SPGPrompt(PromptOp, ABC):
+@PromptABC.register("spg")
+class SPGPrompt(PromptABC):
     spg_types: Dict[str, BaseSpgType]
     ignored_types: List[str] = ["Chunk"]
     ignored_properties: List[str] = [
@@ -42,11 +43,13 @@ class SPGPrompt(PromptOp, ABC):
     def __init__(
         self,
         spg_type_names: List[SPGTypeName],
-        language: str = "zh",
+        language: str = "",
         **kwargs,
     ):
         super().__init__(language=language, **kwargs)
-        self.all_schema_types = SchemaClient(project_id=self.project_id).load()
+        self.all_schema_types = SchemaClient(
+            project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:
             self.spg_types = self.all_schema_types
@@ -89,6 +92,9 @@ class SPGPrompt(PromptOp, ABC):
 
     def _render(self):
         raise NotImplementedError
+
+
+PromptABC.register("spg_kg")
 
 
 class SPG_KGPrompt(SPGPrompt):
@@ -147,9 +153,7 @@ class SPG_KGPrompt(SPGPrompt):
 
     template_en: str = template_zh
 
-    def __init__(
-        self, spg_type_names: List[SPGTypeName], language: str = "zh", **kwargs
-    ):
+    def __init__(self, spg_type_names: List[SPGTypeName], language: str = "", **kwargs):
         super().__init__(spg_type_names=spg_type_names, language=language, **kwargs)
         self._render()
 

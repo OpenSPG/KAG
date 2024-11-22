@@ -10,23 +10,24 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
-import os
 from typing import List, Type, Union
 
-from kag.interface.builder import SplitterABC
+from kag.interface import SplitterABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.builder.model.chunk import Chunk
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import LLMClient
 from knext.common.base.runnable import Input, Output
+
 
 logger = logging.getLogger(__name__)
 
 
+@SplitterABC.register("outline")
 class OutlineSplitter(SplitterABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.llm = self._init_llm()
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        self.prompt = OutlinePrompt(language)
+    def __init__(self, llm: LLMClient):
+        self.llm = llm
+        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -43,6 +44,8 @@ class OutlineSplitter(SplitterABC):
         for c in chunk:
             outline = self.llm.invoke({"input": c.content}, self.prompt)
             outlines.extend(outline)
+        if len(outlines) == 0:
+            return chunk
         content = "\n".join([c.content for c in chunk])
         chunks = self.sep_by_outline(content, outlines)
         return chunks

@@ -10,13 +10,13 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
-import os
 from enum import Enum
 from typing import Type, Dict, List
 
 from knext.graph_algo.client import GraphAlgoClient
 from kag.builder.model.sub_graph import SubGraph
-from kag.interface.builder.writer_abc import SinkWriterABC
+from kag.interface import SinkWriterABC
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,7 @@ class AlterOperationEnum(str, Enum):
     Delete = "DELETE"
 
 
+@SinkWriterABC.register("kg", as_default=True)
 class KGWriter(SinkWriterABC):
     """
     A class that extends `SinkWriter` to handle writing data into a Neo4j knowledge graph.
@@ -36,9 +37,12 @@ class KGWriter(SinkWriterABC):
     It also manages semantic indexing and multi-threaded operations.
     """
 
-    def __init__(self, project_id: str = None, **kwargs):
+    def __init__(self, project_id: int = None, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = project_id or os.getenv("KAG_PROJECT_ID")
+        if project_id is None:
+            self.project_id = KAG_PROJECT_CONF.project_id
+        else:
+            self.project_id = project_id
         self.client = GraphAlgoClient(project_id=project_id)
 
     @property
@@ -66,6 +70,7 @@ class KGWriter(SinkWriterABC):
         Returns:
             List[Output]: A list of output objects (currently always [None]).
         """
+
         self.client.write_graph(
             sub_graph=input.to_dict(),
             operation=alter_operation,
@@ -77,4 +82,5 @@ class KGWriter(SinkWriterABC):
         """The calling interface provided for SPGServer."""
         _input = self.input_types.from_dict(input)
         _output = self.invoke(_input, alter_operation)  # noqa
+
         return None

@@ -1,6 +1,6 @@
 import logging
 
-from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
+from kag.solver.retriever.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -25,7 +25,7 @@ class RetrievalExecutor(OpExecutor):
         nl_query: str,
         kg_graph: KgGraph,
         schema: SchemaUtils,
-        retrieval_spo: KGRetrieverABC,
+        retrieval_spo: KGRetriever,
         el: EntityLinkerBase,
         dsl_runner: DslRunner,
         debug_info: dict,

@@ -1,10 +1,12 @@
 import logging
 
+from kag.interface import PromptABC
 from kag.solver.prompt.default.logic_form_plan import LogicFormPlanPrompt
 
 logger = logging.getLogger(__name__)
 
 
+@PromptABC.register("lawbench_logic_form_plan")
 class LawLogicFormPlanPrompt(LogicFormPlanPrompt):
     default_case_zh = """"cases": [
         {
@@ -14,6 +16,3 @@ class LawLogicFormPlanPrompt(LogicFormPlanPrompt):
     ],"""
 
     template_en = LogicFormPlanPrompt.template_en
-
-    def __init__(self, language: str):
-        super().__init__(language)

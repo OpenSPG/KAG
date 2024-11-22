@@ -1,137 +1,145 @@
 # -*- coding: utf-8 -*-
-# Copyright 2023 OpenSPG Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License. You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License
-# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-# or implied.
-import logging
 import os
-import sys
-from configparser import ConfigParser as CP
-from pathlib import Path
-from typing import Union, Optional
-
-import kag.common as common
-
-
-class ConfigParser(CP):
-    def __init__(self, defaults=None):
-        CP.__init__(self, defaults=defaults)
-
-    def optionxform(self, optionstr):
-        return optionstr
+import json
+import time
+import datetime
+import socket
+import traceback
+from kag.common.conf import KAGConstants
 
 
-LOCAL_SCHEMA_URL = "http://localhost:8887"
-DEFAULT_KAG_CONFIG_FILE_NAME = "default_config.cfg"
-DEFAULT_KAG_CONFIG_PATH = os.path.join(common.__path__[0], DEFAULT_KAG_CONFIG_FILE_NAME)
-KAG_CFG_PREFIX = "KAG"
+def parse_tf_config():
+    tf_config_str = os.environ.get(KAGConstants.KS8_ENV_TF_CONFIG, None)
+    if tf_config_str is None:
+        return None
+    else:
+        return json.loads(tf_config_str)
 
 
-def init_env():
-    """Initialize environment to use command-line tool from inside a project
-    dir. This sets the Scrapy settings module and modifies the Python path to
-    be able to locate the project module.
-    """
-    project_cfg, root_path = get_config()
-
-    init_kag_config(Path(root_path) / "kag_config.cfg")
+def get_role_number(config, role_name):
+    role_info = config["cluster"].get(role_name, None)
+    if role_info is None:
+        return 0
+    else:
+        return len(role_info)
 
 
-def get_config():
-    """
-    Get kag config file as a ConfigParser.
-    """
-    local_cfg_path = _closest_cfg()
-    local_cfg = ConfigParser()
-    local_cfg.read(local_cfg_path)
+def get_rank(default=None):
+    if KAGConstants.K8S_ENV_RANK in os.environ:
+        return int(os.environ[KAGConstants.K8S_ENV_RANK])
 
-    projdir = ""
-    if local_cfg_path:
-        projdir = str(Path(local_cfg_path).parent)
-        if projdir not in sys.path:
-            sys.path.append(projdir)
+    tf_config = parse_tf_config()
+    if tf_config is None:
+        return default
 
-    return local_cfg, projdir
+    num_master = get_role_number(tf_config, "master")
+    task_type = tf_config["task"]["type"]
+    task_index = tf_config["task"]["index"]
+    if task_type == "master":
+        rank = task_index
+    elif task_type == "worker":
+        rank = num_master + task_index
+    else:
+        rank = default
 
-
-def _closest_cfg(
-    path: Union[str, os.PathLike] = ".",
-    prev_path: Optional[Union[str, os.PathLike]] = None,
-) -> str:
-    """
-    Return the path to the closest .kag.cfg file by traversing the current
-    directory and its parents
-    """
-    if prev_path is not None and str(path) == str(prev_path):
-        return ""
-    path = Path(path).resolve()
-    cfg_file = path / "kag_config.cfg"
-    if cfg_file.exists():
-        return str(cfg_file)
-    return _closest_cfg(path.parent, path)
+    return rank
 
 
-def get_cfg_files():
-    """
-    Get global and local kag config files and paths.
-    """
-    local_cfg_path = _closest_cfg()
-    local_cfg = ConfigParser()
-    local_cfg.read(local_cfg_path)
+def get_world_size(default=None):
+    if KAGConstants.K8S_ENV_WORLD_SIZE in os.environ:
+        return os.environ[KAGConstants.K8S_ENV_WORLD_SIZE]
 
-    if local_cfg_path:
-        projdir = str(Path(local_cfg_path).parent)
-        if projdir not in sys.path:
-            sys.path.append(projdir)
+    tf_config = parse_tf_config()
+    if tf_config is None:
+        return default
 
-    return local_cfg, local_cfg_path
+    num_master = get_role_number(tf_config, "master")
+    num_worker = get_role_number(tf_config, "worker")
+
+    return num_master + num_worker
 
 
-def init_kag_config(config_path: Union[str, Path] = None):
-    if not config_path or isinstance(config_path, Path) and not config_path.exists():
-        config_path = DEFAULT_KAG_CONFIG_PATH
-    kag_cfg = ConfigParser()
-    kag_cfg.read(config_path)
-    os.environ["KAG_PROJECT_ROOT_PATH"] = os.path.abspath(os.path.dirname(config_path))
+def get_master_port(default=None):
+    return os.environ.get(KAGConstants.K8S_ENV_MASTER_PORT, default)
 
-    try:
-        host_addr = kag_cfg["project"]["host_addr"]
-        project_id = int(kag_cfg["project"]["id"])
-        from knext.project.client import ProjectClient  # noqa
 
-        kag_cfg_server_side = ProjectClient(host_addr=host_addr).get_config(
-            int(project_id)
-        )
-    except Exception as e:
-        print(f"Failed to get configuration from server, info: {e}")
-        kag_cfg_server_side = {}
-    for section in kag_cfg.sections():
+def get_master_addr(default=None):
+    if KAGConstants.K8S_ENV_MASTER_ADDR in os.environ:
+        return os.environ[KAGConstants.K8S_ENV_MASTER_ADDR]
 
-        local_sec_cfg = kag_cfg[section]
-        server_sec_cfg = kag_cfg_server_side.get(section, {})
-        sec_cfg = {**local_sec_cfg, **server_sec_cfg}
+    tf_config = parse_tf_config()
+    if tf_config is None:
+        return default
 
-        for k, v in sec_cfg.items():
-            item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{k}".upper()
-            os.environ[item_cfg_key] = v
+    return tf_config["cluster"]["worker"][0]
 
-        # for key, value in kag_cfg.items(section):
-        #     item_cfg_key = f"{KAG_CFG_PREFIX}_{section}_{key}".upper()
-        #     os.environ[item_cfg_key] = value
-        #     sec_cfg[key] = value
-        sec_cfg_key = f"{KAG_CFG_PREFIX}_{section}".upper()
-        os.environ[sec_cfg_key] = str(sec_cfg)
 
-    log_level = os.environ.get(f"{KAG_CFG_PREFIX}_LOG_LEVEL", "INFO")
+def host2tensor(master_port):
+    import torch
 
-    logging.basicConfig(level=logging.getLevelName(log_level))
+    host_str = socket.gethostbyname(socket.gethostname())
+    host = [int(x) for x in host_str.split(".")]
+    host.append(int(master_port))
+    host_tensor = torch.tensor(host)
+    return host_tensor
 
-    logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
-    logging.getLogger("neo4j.io").setLevel(logging.INFO)
-    logging.getLogger("neo4j.pool").setLevel(logging.INFO)
+
+def tensor2host(host_tensor):
+    host_tensor = host_tensor.tolist()
+    host = ".".join([str(x) for x in host_tensor[0:4]])
+    port = host_tensor[4]
+    return f"{host}:{port}"
+
+
+def sync_hosts():
+    import torch
+    import torch.distributed as dist
+
+    rank = get_rank()
+    if rank is None:
+        raise ValueError("can't get rank of container")
+    rank = int(rank)
+
+    world_size = get_world_size()
+    if world_size is None:
+        raise ValueError("can't get world_size of container")
+    world_size = int(world_size)
+
+    master_port = get_master_port()
+    if master_port is None:
+        raise ValueError("can't get master_port of container")
+    master_port = int(master_port)
+
+    while True:
+        try:
+            dist.init_process_group(
+                backend="gloo",
+                rank=rank,
+                world_size=world_size,
+                timeout=datetime.timedelta(days=1),
+            )
+            break
+        except Exception as e:
+            error_traceback = traceback.format_exc()
+            print(f"failed to init process group, info: {e}\n\n\n{error_traceback}")
+            time.sleep(60)
+    print("Done init process group, get all hosts...")
+    host_tensors = [torch.tensor([0, 0, 0, 0, 0]) for x in range(world_size)]
+    dist.all_gather(host_tensors, host2tensor(master_port))
+    # we need to destory torch process group to release MASTER_PORT, otherwise the server
+    # can't serving on it .
+    print("Done get all hosts, destory process group...")
+    dist.destroy_process_group()
+    time.sleep(10)
+    return [tensor2host(x) for x in host_tensors]
+
+
+def extract_job_name_from_pod_name(pod_name):
+    if "-ptjob" in pod_name:
+        return pod_name.rsplit("-ptjob", maxsplit=1)[0]
+    elif "-tfjob" in pod_name:
+        return pod_name.rsplit("-tfjob", maxsplit=1)[0]
+    elif "-mpijob" in pod_name:
+        return pod_name.rsplit("-mpijob", maxsplit=1)[0]
+    else:
+        return None

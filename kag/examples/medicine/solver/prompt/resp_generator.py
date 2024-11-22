@@ -3,19 +3,20 @@ from string import Template
 from typing import List
 import logging
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
 
-class RespGenerator(PromptOp):
+@PromptABC.register("example_resp_generator")
+class RespGenerator(PromptABC):
     template_zh = "基于给定的引用信息完整回答问题。" "\n给定的引用信息：'$memory'\n问题：'$instruction'"
     template_en = (
         "Answer the question completely based on the given reference."
         "\nThe following are given reference:'$memory'\nQuestion: '$instruction'"
     )
 
-    def __init__(self, language: str):
+    def __init__(self, language: str = ""):
         super().__init__(language)
 
     @property

@@ -13,10 +13,11 @@
 import json
 from typing import Optional, List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OpenIETriplePrompt(PromptOp):
+@PromptABC.register("2wiki_triple")
+class OpenIETriplePrompt(PromptABC):
     template_en = """
 {
     "instruction": "You are an expert specializing in carrying out open information extraction (OpenIE). Please extract any possible relations (including subject, predicate, object) from the given text, and list them following the json format {\"triples\": [[\"subject\", \"predicate\",  \"object\"]]}\n. If there are none, do not list them.\n.\n\nPay attention to the following requirements:\n- Each triple should contain at least one, but preferably two, of the named entities in the entity_list.\n- Clearly resolve pronouns to their specific names to maintain clarity.",

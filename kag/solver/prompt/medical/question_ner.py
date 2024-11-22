@@ -12,13 +12,14 @@
 
 import json
 from string import Template
-from typing import List, Optional
-
-from kag.common.base.prompt_op import PromptOp
+from typing import List
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
 
-class QuestionNER(PromptOp):
+@PromptABC.register("medical_question_ner")
+class QuestionNER(PromptABC):
 
     template_zh = """
 {
@@ -55,9 +56,11 @@ D. INH+RF
 
     template_en = template_zh
 
-    def __init__(self, language: Optional[str] = "en", **kwargs):
+    def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
-        self.schema = SchemaClient(project_id=self.project_id).extract_types()
+        self.schema = SchemaClient(
+            project_id=KAG_PROJECT_CONF.project_id
+        ).extract_types()
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property

@@ -1,12 +1,13 @@
 import json
-import logging
 import os
 import re
 import time
+import logging
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
-from kag.common.llm import LLMClient
+from kag.interface import PromptABC
+from kag.interface import LLMClient
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
     EntityData,
@@ -16,6 +17,7 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
@@ -191,13 +193,14 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
 class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
     def __init__(self, text_similarity: TextSimilarity = None, llm: LLMClient = None):
         super().__init__()
-        model = eval(os.getenv("KAG_LLM"))
+        config = KAG_CONFIG.all_config
+        model = config.get("llm", {})
         self.llm: LLMClient = llm or LLMClient.from_config(model)
         self.text_similarity = text_similarity or TextSimilarity()
         self.cached_map = {}
 
-        self.biz_scene = os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
-        self.language = os.getenv("KAG_PROMPT_LANGUAGE", "en")
+        self.biz_scene = KAG_PROJECT_CONF.biz_scene
+        self.language = KAG_PROJECT_CONF.language
 
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_zh()
@@ -211,9 +214,8 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         return un_std_p
 
     def _choosed_by_llm(self, question, mention, candis):
-        resp_plan_prompt = PromptOp.load(self.biz_scene, "spo_retrieval")(
-            language=self.language
-        )
+        resp_plan_prompt = init_prompt_with_fallback("spo_retrieval", self.biz_scene)
+
         return self.llm.invoke(
             {"question": question, "mention": mention, "candis": candis},
             resp_plan_prompt,
