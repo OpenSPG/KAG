@@ -335,7 +335,7 @@ class OutlineSplitter(SplitterABC):
 
             # add origin kwargs
             kwargs = {}
-            for key, value in org_chunk.kwargs.items():
+            for key, value in org_chunk[0].kwargs.items():
                 kwargs[f"origin_{key}"] = value
 
             chunk = Chunk(
