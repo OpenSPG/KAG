@@ -14,6 +14,7 @@ import os
 import re
 from typing import List, Type, Union
 
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface.builder import SplitterABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.builder.model.chunk import Chunk
@@ -47,7 +48,9 @@ class OutlineSplitter(SplitterABC):
             outline = self.llm.invoke({"input": c.content}, self.prompt)
             outlines.extend(outline)
         content = "\n".join([c.content for c in chunk])
-        chunks = self.sep_by_outline_ignore_duplicates(content, outlines)
+        chunks = self.sep_by_outline_ignore_duplicates(
+            content, outlines, org_chunk=chunk
+        )
         return chunks
 
     import re
@@ -193,8 +196,92 @@ class OutlineSplitter(SplitterABC):
 
         return merged_chunks
 
+    def split_sentence(self, content):
+        """
+        Splits the given content into sentences based on delimiters.
+
+        Args:
+            content (str): The content to be split.
+
+        Returns:
+            list: A list of sentences.
+        """
+        sentence_delimiters = ".。？?！!"
+        output = []
+        start = 0
+        for idx, char in enumerate(content):
+            if char in sentence_delimiters:
+                end = idx
+                tmp = content[start : end + 1].strip()
+                if len(tmp) > 0:
+                    output.append(tmp)
+                start = idx + 1
+        res = content[start:]
+        if len(res) > 0:
+            output.append(res)
+        return output
+
+    def slide_window_chunk(
+        self,
+        org_chunk: Chunk,
+        chunk_size: int = 2000,
+        window_length: int = 300,
+        sep: str = "\n",
+    ) -> List[Chunk]:
+        """
+        Splits the content into chunks using a sliding window approach.
+
+        Args:
+            org_chunk (Chunk): The original chunk to be split.
+            chunk_size (int, optional): The maximum size of each chunk. Defaults to 2000.
+            window_length (int, optional): The length of the overlap between chunks. Defaults to 300.
+            sep (str, optional): The separator used to join sentences. Defaults to "\n".
+
+        Returns:
+            List[Chunk]: A list of Chunk objects.
+        """
+        if org_chunk.type == ChunkTypeEnum.Table:
+            table_chunks = self.split_table(
+                org_chunk=org_chunk, chunk_size=chunk_size, sep=sep
+            )
+            if table_chunks is not None:
+                return table_chunks
+        content = self.split_sentence(org_chunk.content)
+        splitted = []
+        cur = []
+        cur_len = 0
+        for sentence in content:
+            if cur_len + len(sentence) > chunk_size:
+                if cur:
+                    splitted.append(cur)
+                tmp = []
+                cur_len = 0
+                for item in cur[::-1]:
+                    if cur_len >= window_length:
+                        break
+                    tmp.append(item)
+                    cur_len += len(item)
+                cur = tmp[::-1]
+
+            cur.append(sentence)
+            cur_len += len(sentence)
+        if len(cur) > 0:
+            splitted.append(cur)
+
+        output = []
+        for idx, sentences in enumerate(splitted):
+            chunk = Chunk(
+                id=f"{org_chunk.id}#{chunk_size}#{window_length}#{idx}#LEN",
+                name=f"{org_chunk.name}",
+                content=sep.join(sentences),
+                type=org_chunk.type,
+                **org_chunk.kwargs,
+            )
+            output.append(chunk)
+        return output
+
     def sep_by_outline_ignore_duplicates(
-        self, content, outlines, min_length=50, max_length=500
+        self, content, outlines, min_length=50, max_length=500, org_chunk=None
     ):
         """
         按层级划分内容为 chunks，剔除无效的标题，并忽略重复的标题。
@@ -210,6 +297,13 @@ class OutlineSplitter(SplitterABC):
         """
         # 过滤无效的 outlines
         outlines = self.filter_outlines(outlines)
+
+        if not outlines:
+            cutted = []
+            if isinstance(org_chunk, list):
+                for item in org_chunk:
+                    cutted.extend(self.slide_window_chunk(item))
+            return cutted
 
         position_check = []
         seen_titles = set()
