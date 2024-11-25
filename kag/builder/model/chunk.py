@@ -59,7 +59,7 @@ class Chunk:
             "id": self.id,
             "name": self.name,
             "content": self.content,
-            "type": self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type,
+            "type": self.type.value,
             "properties": self.kwargs,
         }
 

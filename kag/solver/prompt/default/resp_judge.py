@@ -17,6 +17,13 @@ class RespJudge(PromptOp):
                   "\nKnown information: '$memory'. " \
                   "\nIf you can, please reply with 'Yes' directly; " \
                   "if you cannot and need more information, please reply with 'No' directly."
+    # template_en = (
+    #     "You are an expert at reasoning. Based on the given [Question] and [Clue], "
+    #     "please judge whether the information provided in the following [Clue] is sufficient to answer the question in [Question]?\n\n"
+    #     "Question: $instruction \n\n"
+    #     "Clue: $memory \n\n"
+    #     "Please directly answer with 'Yes' or 'No', do not answer with any extra explanations."
+    # )
 
     def __init__(self, language: str):
         super().__init__(language)

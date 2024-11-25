@@ -14,16 +14,16 @@ import os
 import re
 from typing import List, Type
 
-from kag.interface.builder import SplitterABC
+from kag.builder.component.base import Splitter
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
-from kag.builder.model.chunk import Chunk
-from knext.common.base.runnable import Input, Output
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.common.base.runnable import Input, Output
 from kag.common.llm.client.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 
 
-class SemanticSplitter(SplitterABC):
+class SemanticSplitter(Splitter):
     """
     A class for semantically splitting text into smaller chunks based on the content's structure and meaning.
     Inherits from the Splitter class.
@@ -35,14 +35,15 @@ class SemanticSplitter(SplitterABC):
         semantic_seg_op (SemanticSegPrompt): Instance of SemanticSegPrompt for semantic segmentation.
     """
 
-    def __init__(self, split_length: int = 1000, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, split_length: int = 1000):
+        super().__init__()
         # Chinese/ASCII characters
         self.kept_char_pattern = re.compile(
             r"[^\u4e00-\u9fa5\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\x00-\x7F]+"
         )
         self.split_length = int(split_length)
-        self.llm = self._init_llm()
+        llm_config = eval(os.getenv("KAG_LLM", "{}"))
+        self.llm_client = LLMClient.from_config(llm_config)
         language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
         self.semantic_seg_op = SemanticSegPrompt(language)
 
@@ -95,22 +96,22 @@ class SemanticSplitter(SplitterABC):
         Splits the given content into semantic chunks using an LLM.
 
         Args:
-            org_chunk (Chunk): The original chunk to be split.
+            content (str): The content to be split.
             chunk_size (int, optional): Maximum size of each chunk. Defaults to 1000.
+            prefix (str, optional): Prefix for the chunk name. Defaults to "SemanticChunk".
 
         Returns:
             List[Chunk]: A list of Chunk objects representing the split content.
         """
-        result = self.llm.invoke({"input": org_chunk.content}, self.semantic_seg_op)
+        result = self.llm_client.invoke({"input": org_chunk.content}, self.semantic_seg_op)
         splitted = self.parse_llm_output(org_chunk.content, result)
         logger.debug(f"splitted = {splitted}")
         chunks = []
         for idx, item in enumerate(splitted):
-            split_name = item["name"]
             if len(item["content"]) < chunk_size:
                 chunk = Chunk(
                     id=f"{org_chunk.id}#{chunk_size}#{idx}#SEM",
-                    name=f"{org_chunk.name}#{split_name}",
+                    name=f"{org_chunk.name}#{idx}",
                     content=item["content"],
                     abstract=item["name"],
                     **org_chunk.kwargs
@@ -118,17 +119,57 @@ class SemanticSplitter(SplitterABC):
                 chunks.append(chunk)
             else:
                 print("chunk over size")
-                innerChunk = Chunk(
-                    id=Chunk.generate_hash_id(item["content"]),
-                    name=f"{org_chunk.name}#{split_name}",
-                    content=item["content"],
-                )
                 chunks.extend(
                     self.semantic_chunk(
-                        innerChunk, chunk_size
+                        item["content"], chunk_size, f"{prefix}#SubLevel"
                     )
                 )
         return chunks
+
+    def chunk_split(self, chunk: Chunk) -> List[Chunk]:
+        """
+        Splits a given chunk into smaller chunks based on its content structure.
+
+        Args:
+            chunk (Chunk): The chunk to be split further.
+
+        Returns:
+            List[Chunk]: A list of Chunk objects representing the split content.
+        """
+        chapters = []
+        max_len = 0
+        paragraphs = []
+        content = chunk.content
+        basename = chunk.name
+        for line in content.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("$$"):
+                line = line[2:]
+                chapters.append(len(paragraphs))
+            paragraphs.append(line)
+            max_len = max(max_len, len(line))
+        chapters.append(len(paragraphs))
+        book = {}
+        if len(chapters) > 1:
+            for i in range(len(chapters) - 1):
+                start = chapters[i]
+                end = chapters[i + 1]
+                chapter_name = paragraphs[start]
+                book[chapter_name] = paragraphs[start + 1 : end]
+        else:
+            book[basename] = paragraphs
+
+        cutted = []
+        for k, v in book.items():
+            prefix = f"{basename}#{k}" if k != basename else basename
+            cutted.extend(
+                self.semantic_chunk(
+                    "".join(v), chunk_size=self.split_length, prefix=prefix
+                )
+            )
+        return cutted
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -141,5 +182,5 @@ class SemanticSplitter(SplitterABC):
         Returns:
             List[Output]: A list of outputs generated from the input.
         """
-        chunks = self.semantic_chunk(input, self.split_length)
+        chunks = self.chunk_split(input)
         return chunks

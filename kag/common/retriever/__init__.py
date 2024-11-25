@@ -10,9 +10,9 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from kag.common.retriever.kag_retriever import DefaultRetriever
+from kag.common.retriever.kag_retriever import SemanticRetriever
 from kag.common.retriever.retriever import Retriever
 __all__ = [
-    "DefaultRetriever",
     "Retriever"
+    "DefaultRetriever",
 ]

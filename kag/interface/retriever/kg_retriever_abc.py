@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from kag.solver.common.base import KagBaseModule
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
-from kag.solver.logic.core_modules.common.one_hop_graph import OneHopGraphData, KgGraph, EntityData
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.solver.logic.common.one_hop_graph import OneHopGraphData, KgGraph
+from kag.solver.logic.parser.logic_node_parser import GetSPONode
 
 
-class KGRetrieverABC(KagBaseModule, ABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
+class KGRetrieverABC(ABC):
     """
     A base class for knowledge graph retrieval strategies.
 
@@ -23,6 +18,7 @@ class KGRetrieverABC(KagBaseModule, ABC):
         retrieval_entity(entity_mention, topk=1, params={}):
             Retrieves related entities based on the given entity mention.
     """
+    ## @雪酒，这里的返回值需要明确定义
     @abstractmethod
     def retrieval_relation(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs) -> KgGraph:
         '''
@@ -35,8 +31,9 @@ class KGRetrieverABC(KagBaseModule, ABC):
             Returns KgGraph
         '''
 
+    ## @雪酒，这里的返回值需要明确定义；如果返回值可能是两种结果，建议通过两个方法来实现
     @abstractmethod
-    def retrieval_entity(self, mention_entity: SPOEntity, topk=1, **kwargs) -> List[EntityData]:
+    def retrieval_entity(self, entity_mention, topk=1, params={}):
         """
         Retrieve related entities based on the given entity mention.
 
@@ -45,8 +42,8 @@ class KGRetrieverABC(KagBaseModule, ABC):
         Parameters:
             entity_mention (str): The name of the entity to retrieve.
             topk (int, optional): The number of top results to return. Defaults to 1.
-            kwargs: additional optional parameters
+            params (dict, optional): Additional parameters for retrieval. Defaults to {}.
 
         Returns:
-            list of EntityData
+            Depending on the implementation, this could return a list of entities or some form of structured data containing the retrieved information.
         """

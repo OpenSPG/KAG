@@ -1,4 +1,0 @@
-client_type: maas
-base_url: https://api.deepseek.com/beta
-api_key: 
-model: deepseek-chat

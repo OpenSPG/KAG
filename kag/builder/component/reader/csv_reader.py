@@ -15,23 +15,23 @@ from typing import List, Type, Dict
 import pandas as pd
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder.reader_abc import SourceReaderABC
-from knext.common.base.runnable import Input, Output
+from kag.builder.component.base import SourceReader
+from kag.common.base.runnable import Input, Output
 
 
-class CSVReader(SourceReaderABC):
+class CSVReader(SourceReader):
     """
     A class for reading CSV files, inheriting from `SourceReader`.
     Supports converting CSV data into either a list of dictionaries or a list of Chunk objects.
 
     Args:
-        output_type (Output): Specifies the output type, which can be "Dict" or "Chunk".
+        output_types (Output): Specifies the output type, which can be "Dict" or "Chunk".
         **kwargs: Additional keyword arguments passed to the parent class constructor.
     """
 
-    def __init__(self, output_type="Chunk", **kwargs):
+    def __init__(self, output_types="Dict", **kwargs):
         super().__init__(**kwargs)
-        if output_type == "Dict":
+        if output_types == "Dict":
             self.output_types = Dict[str, str]
         else:
             self.output_types = Chunk
@@ -64,7 +64,6 @@ class CSVReader(SourceReaderABC):
                 - If `output_types` is `Chunk`, returns a list of Chunk objects.
                 - If `output_types` is `Dict`, returns a list of dictionaries.
         """
-
         try:
             data = pd.read_csv(input)
             data = data.astype(str)

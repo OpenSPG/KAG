@@ -1,4 +1,3 @@
-import logging
 from typing import List
 
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
@@ -6,10 +5,9 @@ from kag.interface.solver.lf_planner_abc import LFPlannerABC
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
 from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
 from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult
-from kag.solver.logic.core_modules.lf_solver import LFSolver
+from kag.solver.logic.common.base_model import LFPlanResult
+from kag.solver.logic.lf_solver import LFSolver
 
-logger = logging.getLogger()
 
 class DefaultReasoner(KagReasonerABC):
     """
@@ -29,18 +27,16 @@ class DefaultReasoner(KagReasonerABC):
     - trace_log: List to log trace information.
     """
 
-    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs):
+    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None):
         super().__init__(
             lf_planner=lf_planner,
-            lf_solver=lf_solver,
-            **kwargs
+            lf_solver=lf_solver
         )
 
-        self.lf_planner = lf_planner or DefaultLFPlanner(**kwargs)
+        self.lf_planner = lf_planner or DefaultLFPlanner()
         self.lf_solver = lf_solver or LFSolver(
-            kg_retriever=KGRetrieverByLlm(**kwargs),
-            chunk_retriever=LFChunkRetriever(**kwargs),
-            **kwargs
+            kg_retriever=KGRetrieverByLlm(),
+            chunk_retriever=LFChunkRetriever()
         )
 
         self.sub_query_total = 0
@@ -61,6 +57,8 @@ class DefaultReasoner(KagReasonerABC):
         """
         # logic form planing
         lf_nodes: List[LFPlanResult] = self.lf_planner.lf_planing(question)
+        if len(lf_nodes) == 0:
+            raise Exception("plan failed")
 
         # logic form execution
         solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_solver.solve(question, lf_nodes)
@@ -69,11 +67,7 @@ class DefaultReasoner(KagReasonerABC):
 
         # Retrieve and rank documents
         sub_querys = [lf.query for lf in lf_nodes]
-        if self.lf_solver.chunk_retriever:
-            docs = self.lf_solver.chunk_retriever.rerank_docs([question] + sub_querys, recall_docs)
-        else:
-            logger.info("DefaultReasoner not enable chunk retriever")
-            docs = []
+        docs = self.lf_solver.chunk_retriever.rerank_docs([question] + sub_querys, recall_docs)
         history_log = {
             'history': history_qa_log,
             'rerank_docs': docs

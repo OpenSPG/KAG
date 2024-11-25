@@ -14,26 +14,13 @@ import logging
 import importlib
 import os
 
-from kag.builder.component import SPGTypeMapping, KGWriter
+from kag.builder.component import KGWriter
 from kag.builder.component.extractor import KAGExtractor
+from kag.builder.component.aligner import SemanticAligner
 from kag.builder.component.splitter import LengthSplitter
-from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
-from knext.common.base.chain import Chain
-from knext.builder.builder_chain_abc import BuilderChainABC
+from kag.common.base.chain import Chain
 
 logger = logging.getLogger(__name__)
-
-
-def get_reader(file_path: str):
-    file = os.path.basename(file_path)
-    suffix = file.split(".")[-1]
-    assert suffix.lower() in READER_MAPPING, f"{suffix} is not supported. Supported suffixes are: {list(READER_MAPPING.keys())}"
-    reader_path = READER_MAPPING.get(suffix.lower())
-    mod_path, class_name = reader_path.rsplit('.', 1)
-    module = importlib.import_module(mod_path)
-    reader_class = getattr(module, class_name)
-
-    return reader_class
 
 
 READER_MAPPING = {
@@ -46,112 +33,39 @@ READER_MAPPING = {
 }
 
 
-class DefaultStructuredBuilderChain(BuilderChainABC):
-    """
-    A class representing a default SPG builder chain, used to import structured data based on schema definitions
+class KAGBuilderChain(Chain):
 
-    Steps:
-        0. Initializing by a give SpgType name, which indicates the target of import.
-        1. SourceReader: Reading structured dicts from a given file.
-        2. SPGTypeMapping: Mapping source fields to the properties of target type, and assemble a sub graph.
-        By default, the same name mapping is used, which means importing the source field into a property with the same name.
-        3. KGWriter: Writing sub graph into KG storage.
+    @property
+    def input_types(self):
+        return str
 
-    Attributes:
-        spg_type_name (str): The name of the SPG type.
-    """
+    @property
+    def output_types(self):
+        return None
 
-    def __init__(self, spg_type_name: str, **kwargs):
-        super().__init__(**kwargs)
-        self.spg_type_name = spg_type_name
+    def get_reader(self, suffix: str):
+        assert suffix.lower() in READER_MAPPING, f"{suffix} is not supported. Supported suffixes are: {list(READER_MAPPING.keys())}"
+        reader_path = READER_MAPPING.get(suffix.lower())
+        mod_path, class_name = reader_path.rsplit('.', 1)
+        module = importlib.import_module(mod_path)
+        reader_class = getattr(module, class_name)
+        return reader_class(output_types="Chunk")
 
-    def build(self, **kwargs):
-        """
-        Builds the processing chain for the SPG.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            chain: The constructed processing chain.
-        """
-        file_path = kwargs.get("file_path")
-        source = get_reader(file_path)(output_type="Dict")
-        mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-        sink = KGWriter()
-
-        chain = source >> mapping >> sink
-        return chain
-
-    def invoke(self, file_path, max_workers=10, **kwargs):
-        logger.info(f"begin processing file_path:{file_path}")
-        """
-        Invokes the processing chain with the given file path and optional parameters.
-
-        Args:
-            file_path (str): The path to the input file.
-            max_workers (int, optional): The maximum number of workers. Defaults to 10.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The result of invoking the processing chain.
-        """
-        return super().invoke(file_path=file_path, max_workers=max_workers, **kwargs)
-
-
-class DefaultUnstructuredBuilderChain(BuilderChainABC):
-    """
-    A class representing a default KAG builder chain, used to extract graph from documents and import unstructured data.
-
-    Steps:
-        0. Initializing.
-        1. SourceReader: Reading chunks from a given file.
-        2. LengthSplitter: Splitting chunk to smaller chunks. The chunk size can be adjusted through parameters.
-        3. KAGExtractor: Extracting entities and relations from chunks, and assembling a sub graph.
-            By default,the extraction process includes NER and SPO Extraction.
-        4. KGWriter: Writing sub graph into KG storage.
-
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def build(self, **kwargs) -> Chain:
-        """
-        Builds the processing chain for the KAG.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            chain: The constructed processing chain.
-        """
-        file_path = kwargs.get("file_path")
-        split_length = kwargs.get("split_length")
-        window_length = kwargs.get("window_length")
-        source = get_reader(file_path)()
-        splitter = LengthSplitter(split_length, window_length)
+    def get_dag(self, suffix: str):
+        source = self.get_reader(suffix)
+        splitter = LengthSplitter()
         extractor = KAGExtractor()
-        vectorizer = BatchVectorizer()
         sink = KGWriter()
+        if eval(os.getenv("KAG_INDEXER_WITH_SEMANTIC_HYPER_EXPAND", 'False')):
+            aligner = SemanticAligner()
+            chain = source >> splitter >> extractor >> aligner >> sink
+        else:
+            chain = source >> splitter >> extractor >> sink
+        print(f"Index Builder DAG: {chain.dag.nodes}")
+        return chain.dag
 
-        chain = source >> splitter >> extractor >> vectorizer >> sink
-        return chain
-
-    def invoke(self, file_path: str, split_length: int = 500, window_length: int = 100, max_workers=10, **kwargs):
-        logger.info(f"begin processing file_path:{file_path}")
-        """
-        Invokes the processing chain with the given file path and optional parameters.
-
-        Args:
-            file_path (str): The path to the input file.
-            split_length (int, optional): The length at which the file should be split. Defaults to 500.
-            window_length (int, optional): The length of the processing window. Defaults to 100.
-            max_workers (int, optional): The maximum number of worker threads. Defaults to 10.
-
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The result of invoking the processing chain.
-        """
-        return super().invoke(file_path=file_path, max_workers=max_workers, split_length=window_length, window_length=window_length, **kwargs)
+    def invoke(self, file_path, **kwargs):
+        suffix = file_path.split(".")[-1]
+        self.dag = self.get_dag(suffix)
+        max_workers = kwargs.get("max_workers", 10)
+        self.run(input=file_path, max_workers=max_workers)

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class RespExtractor(PromptOp):
-    template_zh = "已知信息：\n$supporting_fact\n" \
+    template_zh = "已知信息：\n$supporting_fact" \
                   "你的任务是作为一名专业作家。你将仅根据提供的支持段落中的信息，撰写一段高质量的文章，以支持关于问题的给定预测。" \
                   "现在，开始生成。在写完后，请输出[DONE]来表示已经完成任务。在生成段落时不要写前缀（例如：'Response：'）。"\
                   "\n问题：$instruction\n段落："

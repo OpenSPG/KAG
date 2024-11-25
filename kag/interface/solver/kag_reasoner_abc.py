@@ -3,7 +3,7 @@ from typing import Tuple
 
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
 from kag.solver.common.base import KagBaseModule
-from kag.solver.logic.core_modules.lf_solver import LFSolver
+from kag.solver.logic.lf_solver import LFSolver
 
 
 class KagReasonerABC(KagBaseModule):
@@ -24,8 +24,9 @@ class KagReasonerABC(KagBaseModule):
     - kg_direct: Number of direct knowledge graph queries.
     - trace_log: List to log trace information.
     """
-    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None):
+        super().__init__()
+        pass
 
     @abstractmethod
     def reason(self, question: str) -> Tuple[str, str, dict]:

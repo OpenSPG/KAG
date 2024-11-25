@@ -9,21 +9,27 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import logging
-import os
-import re
-import threading
-import time
-from abc import ABCMeta
 
+import re
+import os
+import time
+import threading
 import schedule
+
+from abc import ABCMeta
 from neo4j import GraphDatabase
 
-from kag.common.graphstore.graph_store import GraphStore
 from kag.common.utils import escape_single_quotes
-from knext.schema.model.base import IndexTypeEnum
+from kag.schema.marklang.schema_ml import SPGSchemaMarkLang
+from kag.common.graphstore.graph_store import GraphStore
+from kag.schema.model.base import IndexTypeEnum
+from kag.common.semantic_infer import SemanticEnhance
+
+import logging
+
 
 logger = logging.getLogger(__name__)
+
 
 class SingletonMeta(ABCMeta):
     """
@@ -111,7 +117,7 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
     @staticmethod
     def _create_unique_index_constraint(self, label, session):
         constraint_name = f"uniqueness_{label}_id"
-        create_constraint_query = f"CREATE CONSTRAINT {self._escape_neo4j(constraint_name)} IF NOT EXISTS FOR (n:{self._escape_neo4j(label)}) REQUIRE n.id IS UNIQUE"
+        create_constraint_query = f"CREATE CONSTRAINT {constraint_name} IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE"
 
         try:
             result = session.run(create_constraint_query)
@@ -119,12 +125,12 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
             logger.debug(f"Unique constraint created for constraint_name: {constraint_name}")
         except Exception as e:
             logger.debug(f"warn creating constraint for {constraint_name}: {e}")
-            self._create_index_constraint(self, label, session)
+            self._create_index_constraint(label, session)
 
     @staticmethod
-    def _create_index_constraint(self, label, session):
+    def _create_index_constraint(label, session):
         index_name = f"index_{label}_id"
-        create_constraint_query = f"CREATE INDEX {self._escape_neo4j(index_name)} IF NOT EXISTS FOR (n:{self._escape_neo4j(label)}) ON (n.id)"
+        create_constraint_query = f"CREATE INDEX {index_name} IF NOT EXISTS FOR (n:{label}) ON (n.id)"
         try:
             result = session.run(create_constraint_query)
             result.consume()
@@ -174,6 +180,9 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         self.create_text_index(labels, property_keys)
         self.create_vector_index("Entity", "name")
         self.create_vector_index("Entity", "desc")
+        if eval(os.getenv("KAG_INDEXER_WITH_SEMANTIC_HYPER_EXPAND")):
+            print("Creating Vector Index for SemanticAligner Nodes...")
+            self.create_vector_index(label=SemanticEnhance.concept_label, property_key="name")
         self.refresh_vector_index_meta(force=True)
 
     def _collect_text_index_info(self, schema_types):
@@ -199,20 +208,21 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
             if label not in self._labels:
                 self._create_unique_index_constraint(self, label, session)
             try:
-                return session.execute_write(self._upsert_node, self, label, id_key, properties, extra_labels)
+                return session.execute_write(self._upsert_node, label, id_key, properties, extra_labels)
             except Exception as e:
-                logger.error(f"upsert_node label:{label} properties:{properties} Exception: {e}")
+                _properties = {k: v for k, v in properties.items() if ('vector' not in k)}
+                logger.error(f"upsert_node label:{label} properties:{_properties} Exception: {e}")
                 return None
 
     @staticmethod
-    def _upsert_node(tx, self, label, id_key, properties, extra_labels):
+    def _upsert_node(tx, label, id_key, properties, extra_labels):
         if not label:
             logger.warning("label cannot be None or empty strings")
             return None
-        query = (f"MERGE (n:{self._escape_neo4j(label)} {{{self._escape_neo4j(id_key)}: $properties.{self._escape_neo4j(id_key)}}}) "
+        query = (f"MERGE (n:{label} {{{id_key}: $properties.{id_key}}}) "
                   "SET n += $properties ")
         if extra_labels:
-            query += f", n:{':'.join(self._escape_neo4j(extra_label) for extra_label in extra_labels)} "
+            query += f", n:{':'.join(extra_labels)} "
         query += "RETURN n"
         result = tx.run(query, properties=properties)
         return result.single()[0]
@@ -223,21 +233,21 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
             if label not in self._labels:
                 self._create_unique_index_constraint(self, label, session)
             try:
-                return session.execute_write(self._upsert_nodes, self, label, properties_list, id_key, extra_labels)
+                return session.execute_write(self._upsert_nodes, label, properties_list, id_key, extra_labels)
             except Exception as e:
                 logger.error(f"upsert_nodes label:{label} properties:{properties_list} Exception: {e}")
                 return None
 
     @staticmethod
-    def _upsert_nodes(tx, self, label, properties_list, id_key, extra_labels):
+    def _upsert_nodes(tx, label, properties_list, id_key, extra_labels):
         if not label:
             logger.warning("label cannot be None or empty strings")
             return None
         query = ("UNWIND $properties_list AS properties "
-                f"MERGE (n:{self._escape_neo4j(label)} {{{self._escape_neo4j(id_key)}: properties.{self._escape_neo4j(id_key)}}}) "
+                f"MERGE (n:{label} {{{id_key}: properties.{id_key}}}) "
                  "SET n += properties ")
         if extra_labels:
-            query += f", n:{':'.join(self._escape_neo4j(extra_label) for extra_label in extra_labels)} "
+            query += f", n:{':'.join(extra_labels)} "
         query += "RETURN n"
         result = tx.run(query, properties_list=properties_list)
         return [record['n'] for record in result]
@@ -372,11 +382,11 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
 
     def get_node(self, label, id_value, id_key="id"):
         with self._driver.session(database=self._database) as session:
-            return session.execute_read(self._get_node, self, label, id_key, id_value)
+            return session.execute_read(self._get_node, label, id_key, id_value)
 
     @staticmethod
-    def _get_node(tx, self, label, id_key, id_value):
-        query = f"MATCH (n:{self._escape_neo4j(label)} {{{self._escape_neo4j(id_key)}: $id_value}}) RETURN n"
+    def _get_node(tx, label, id_key, id_value):
+        query = f"MATCH (n:{label} {{{id_key}: $id_value}}) RETURN n"
         result = tx.run(query, id_value=id_value)
         single_result = result.single()
         # print(f"single_result: {single_result}")
@@ -388,22 +398,22 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
     def delete_node(self, label, id_value, id_key="id"):
         with self._driver.session(database=self._database) as session:
             try:
-                session.execute_write(self._delete_node, self, label, id_key, id_value)
+                session.execute_write(self._delete_node, label, id_key, id_value)
             except Exception as e:
                 logger.error(f"delete_node label:{label} Exception: {e}")
 
     @staticmethod
-    def _delete_node(tx, self, label, id_key, id_value):
-        query = f"MATCH (n:{self._escape_neo4j(label)} {{{self._escape_neo4j(id_key)}: $id_value}}) DETACH DELETE n"
+    def _delete_node(tx, label, id_key, id_value):
+        query = f"MATCH (n:{label} {{{id_key}: $id_value}}) DETACH DELETE n"
         tx.run(query, id_value=id_value)
 
     def delete_nodes(self, label, id_values, id_key="id"):
         with self._driver.session(database=self._database) as session:
-            session.execute_write(self._delete_nodes, self, label, id_key, id_values)
+            session.execute_write(self._delete_nodes, label, id_key, id_values)
 
     @staticmethod
-    def _delete_nodes(tx, self, label, id_key, id_values):
-        query = f"UNWIND $id_values AS id_value MATCH (n:{self._escape_neo4j(label)} {{{self._escape_neo4j(id_key)}: id_value}}) DETACH DELETE n"
+    def _delete_nodes(tx, label, id_key, id_values):
+        query = f"UNWIND $id_values AS id_value MATCH (n:{label} {{{id_key}: id_value}}) DETACH DELETE n"
         tx.run(query, id_values=id_values)
 
     def upsert_relationship(self, start_node_label, start_node_id_value,
@@ -412,7 +422,7 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         rel_type = self._escape_neo4j(rel_type)
         with self._driver.session(database=self._database) as session:
             try:
-                return session.execute_write(self._upsert_relationship, self, start_node_label, start_node_id_key,
+                return session.execute_write(self._upsert_relationship, start_node_label, start_node_id_key,
                                          start_node_id_value, end_node_label, end_node_id_key,
                                          end_node_id_value, rel_type, properties, upsert_nodes)
             except Exception as e:
@@ -420,7 +430,7 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
                 return None
 
     @staticmethod
-    def _upsert_relationship(tx, self, start_node_label, start_node_id_key, start_node_id_value,
+    def _upsert_relationship(tx, start_node_label, start_node_id_key, start_node_id_value,
                              end_node_label, end_node_id_key, end_node_id_value,
                              rel_type, properties, upsert_nodes):
         if not start_node_label or not end_node_label or not rel_type:
@@ -428,15 +438,15 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
             return None
         if upsert_nodes:
             query = (
-                f"MERGE (a:{self._escape_neo4j(start_node_label)} {{{self._escape_neo4j(start_node_id_key)}: $start_node_id_value}}) "
-                f"MERGE (b:{self._escape_neo4j(end_node_label)} {{{self._escape_neo4j(end_node_id_key)}: $end_node_id_value}}) "
-                f"MERGE (a)-[r:{self._escape_neo4j(rel_type)}]->(b) SET r += $properties RETURN r"
+                f"MERGE (a:{start_node_label} {{{start_node_id_key}: $start_node_id_value}}) "
+                f"MERGE (b:{end_node_label} {{{end_node_id_key}: $end_node_id_value}}) "
+                f"MERGE (a)-[r:{rel_type}]->(b) SET r += $properties RETURN r"
             )
         else:
             query = (
-                f"MATCH (a:{self._escape_neo4j(start_node_label)} {{{self._escape_neo4j(start_node_id_key)}: $start_node_id_value}}), "
-                f"(b:{self._escape_neo4j(end_node_label)} {{{self._escape_neo4j(end_node_id_key)}: $end_node_id_value}}) "
-                f"MERGE (a)-[r:{self._escape_neo4j(rel_type)}]->(b) SET r += $properties RETURN r"
+                f"MATCH (a:{start_node_label} {{{start_node_id_key}: $start_node_id_value}}), "
+                f"(b:{end_node_label} {{{end_node_id_key}: $end_node_id_value}}) "
+                f"MERGE (a)-[r:{rel_type}]->(b) SET r += $properties RETURN r"
             )
         result = tx.run(query, start_node_id_value=start_node_id_value,
                         end_node_id_value=end_node_id_value, properties=properties)
@@ -444,16 +454,17 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
 
     def upsert_relationships(self, start_node_label, end_node_label, rel_type, relations,
                              upsert_nodes=True, start_node_id_key="id", end_node_id_key="id"):
+        rel_type = self._escape_neo4j(rel_type)
         with self._driver.session(database=self._database) as session:
             try:
-                return session.execute_write(self._upsert_relationships, self, relations, start_node_label,
+                return session.execute_write(self._upsert_relationships, relations, start_node_label,
                                          start_node_id_key, end_node_label, end_node_id_key, rel_type, upsert_nodes)
             except Exception as e:
                 logger.error(f"upsert_relationships rel_type:{rel_type} relations:{relations} Exception: {e}")
                 return None
 
     @staticmethod
-    def _upsert_relationships(tx, self, relations, start_node_label, start_node_id_key,
+    def _upsert_relationships(tx, relations, start_node_label, start_node_id_key,
                               end_node_label, end_node_id_key, rel_type, upsert_nodes):
         if not start_node_label or not end_node_label or not rel_type:
             logger.warning("start_node_label, end_node_label, and rel_type cannot be None or empty strings")
@@ -461,16 +472,16 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         if upsert_nodes:
             query = (
                 "UNWIND $relations AS relationship "
-                f"MERGE (a:{self._escape_neo4j(start_node_label)} {{{self._escape_neo4j(start_node_id_key)}: relationship.start_node_id}}) "
-                f"MERGE (b:{self._escape_neo4j(end_node_label)} {{{self._escape_neo4j(end_node_id_key)}: relationship.end_node_id}}) "
-                f"MERGE (a)-[r:{self._escape_neo4j(rel_type)}]->(b) SET r += relationship.properties RETURN r"
+                f"MERGE (a:{start_node_label} {{{start_node_id_key}: relationship.start_node_id}}) "
+                f"MERGE (b:{end_node_label} {{{end_node_id_key}: relationship.end_node_id}}) "
+                f"MERGE (a)-[r:{rel_type}]->(b) SET r += relationship.properties RETURN r"
             )
         else:
             query = (
                 "UNWIND $relations AS relationship "
-                f"MATCH (a:{self._escape_neo4j(start_node_label)} {{{self._escape_neo4j(start_node_id_key)}: relationship.start_node_id}}) "
-                f"MATCH (b:{self._escape_neo4j(end_node_label)} {{{self._escape_neo4j(end_node_id_key)}: relationship.end_node_id}}) "
-                f"MERGE (a)-[r:{self._escape_neo4j(rel_type)}]->(b) SET r += relationship.properties RETURN r"
+                f"MATCH (a:{start_node_label} {{{start_node_id_key}: relationship.start_node_id}}) "
+                f"MATCH (b:{end_node_label} {{{end_node_id_key}: relationship.end_node_id}}) "
+                f"MERGE (a)-[r:{rel_type}]->(b) SET r += relationship.properties RETURN r"
             )
 
         result = tx.run(query, relations=relations,
@@ -482,9 +493,10 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
     def delete_relationship(self, start_node_label, start_node_id_value,
                             end_node_label, end_node_id_value, rel_type,
                             start_node_id_key="id", end_node_id_key="id"):
+        rel_type = self._escape_neo4j(rel_type)
         with self._driver.session(database=self._database) as session:
             try:
-                session.execute_write(self._delete_relationship, self, start_node_label, start_node_id_key,
+                session.execute_write(self._delete_relationship, start_node_label, start_node_id_key,
                                       start_node_id_value, end_node_label, end_node_id_key,
                                       end_node_id_value, rel_type)
             except Exception as e:
@@ -492,30 +504,31 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
 
 
     @staticmethod
-    def _delete_relationship(tx, self, start_node_label, start_node_id_key, start_node_id_value,
+    def _delete_relationship(tx, start_node_label, start_node_id_key, start_node_id_value,
                              end_node_label, end_node_id_key, end_node_id_value, rel_type):
         query = (
-            f"MATCH (a:{self._escape_neo4j(start_node_label)} {{{self._escape_neo4j(start_node_id_key)}: $start_node_id_value}})-[r:{self._escape_neo4j(rel_type)}]->"
-            f"(b:{self._escape_neo4j(end_node_label)} {{{self._escape_neo4j(end_node_id_key)}: $end_node_id_value}}) DELETE r"
+            f"MATCH (a:{start_node_label} {{{start_node_id_key}: $start_node_id_value}})-[r:{rel_type}]->"
+            f"(b:{end_node_label} {{{end_node_id_key}: $end_node_id_value}}) DELETE r"
         )
         tx.run(query, start_node_id_value=start_node_id_value, end_node_id_value=end_node_id_value)
 
     def delete_relationships(self, start_node_label, start_node_id_values,
                              end_node_label, end_node_id_values, rel_type,
                              start_node_id_key="id", end_node_id_key="id"):
+        rel_type = self._escape_neo4j(rel_type)
         with self._driver.session(database=self._database) as session:
-            session.execute_write(self._delete_relationships, self,
+            session.execute_write(self._delete_relationships,
                                   start_node_label, start_node_id_key, start_node_id_values,
                                   end_node_label, end_node_id_key, end_node_id_values, rel_type)
 
     @staticmethod
-    def _delete_relationships(tx, self, start_node_label, start_node_id_key, start_node_id_values,
+    def _delete_relationships(tx, start_node_label, start_node_id_key, start_node_id_values,
                               end_node_label, end_node_id_key, end_node_id_values, rel_type):
         query = (
             "UNWIND $start_node_id_values AS start_node_id_value "
             "UNWIND $end_node_id_values AS end_node_id_value "
-            f"MATCH (a:{self._escape_neo4j(start_node_label)} {{{self._escape_neo4j(start_node_id_key)}: start_node_id_value}})-[r:{self._escape_neo4j(rel_type)}]->"
-            f"(b:{self._escape_neo4j(end_node_label)} {{{self._escape_neo4j(end_node_id_key)}: end_node_id_value}}) DELETE r"
+            f"MATCH (a:{start_node_label} {{{start_node_id_key}: start_node_id_value}})-[r:{rel_type}]->"
+            f"(b:{end_node_label} {{{end_node_id_key}: end_node_id_value}}) DELETE r"
         )
         tx.run(query, start_node_id_values=start_node_id_values, end_node_id_values=end_node_id_values)
 
@@ -578,16 +591,16 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
 
     def create_index(self, label, property_key, index_name=None):
         with self._driver.session(database=self._database) as session:
-            session.execute_write(self._create_index, self, label, property_key, index_name)
+            session.execute_write(self._create_index, label, property_key, index_name)
 
     @staticmethod
-    def _create_index(tx, self, label, property_key, index_name):
+    def _create_index(tx, label, property_key, index_name):
         if not label or not property_key:
             return
         if index_name is None:
-            query = f"CREATE INDEX IF NOT EXISTS FOR (n:{self._escape_neo4j(label)}) ON (n.{self._escape_neo4j(property_key)})"
+            query = f"CREATE INDEX IF NOT EXISTS FOR (n:{label}) ON (n.{property_key})"
         else:
-            query = f"CREATE INDEX {self._escape_neo4j(index_name)} IF NOT EXISTS FOR (n:{self._escape_neo4j(label)}) ON (n.{self._escape_neo4j(property_key)})"
+            query = f"CREATE INDEX {index_name} IF NOT EXISTS FOR (n:{label}) ON (n.{property_key})"
         tx.run(query)
 
     def create_text_index(self, labels, property_keys, index_name=None):
@@ -595,46 +608,40 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
             return
         if index_name is None:
             index_name = "_default_text_index"
-        label_spec = "|".join(self._escape_neo4j(label) for label in labels)
-        property_spec = ", ".join(f"n.{self._escape_neo4j(key)}" for key in property_keys)
+        label_spec = "|".join(labels)
+        property_spec = ", ".join(f"n.{key}" for key in property_keys)
         query = (
-            f"CREATE FULLTEXT INDEX {self._escape_neo4j(index_name)} IF NOT EXISTS "
+             "CREATE FULLTEXT INDEX $index_name IF NOT EXISTS "
             f"FOR (n:{label_spec}) ON EACH [{property_spec}]"
         )
         def do_create_text_index(tx):
-            tx.run(query)
+            tx.run(query, index_name=index_name)
         with self._driver.session(database=self._database) as session:
             session.execute_write(do_create_text_index)
         return index_name
 
     def create_vector_index(self, label, property_key, index_name=None,
-                            vector_dimensions=768, metric_type="cosine",
-                            hnsw_m=None, hnsw_ef_construction=None):
+                            vector_dimensions=768, metric_type="cosine"):
         if index_name is None:
             index_name = self._create_vector_index_name(label, property_key)
         if not property_key.lower().endswith("vector"):
             property_key = self._create_vector_field_name(property_key)
         with self._driver.session(database=self._database) as session:
-            session.execute_write(self._create_vector_index, self, label, property_key, index_name,
-                                  vector_dimensions, metric_type, hnsw_m, hnsw_ef_construction)
+            session.execute_write(self._create_vector_index, label, property_key, index_name,
+                                  vector_dimensions, metric_type)
         self.refresh_vector_index_meta(force=True)
         return index_name
 
     @staticmethod
-    def _create_vector_index(tx, self, label, property_key, index_name, vector_dimensions, metric_type, hnsw_m, hnsw_ef_construction):
+    def _create_vector_index(tx, label, property_key, index_name, vector_dimensions, metric_type):
         query = (
-            f"CREATE VECTOR INDEX {self._escape_neo4j(index_name)} IF NOT EXISTS FOR (n:{self._escape_neo4j(label)}) ON (n.{self._escape_neo4j(property_key)}) "
+            f"CREATE VECTOR INDEX $index_name IF NOT EXISTS FOR (n:{label}) ON (n.{property_key}) "
              "OPTIONS { indexConfig: {"
              "  `vector.dimensions`: $vector_dimensions,"
              "  `vector.similarity_function`: $metric_type"
+             "}}"
         )
-        if hnsw_m is not None:
-            query += ",  `vector.hnsw.m`: $hnsw_m"
-        if hnsw_ef_construction is not None:
-            query += ",  `vector.hnsw.ef_construction`: $hnsw_ef_construction"
-        query += "}}"
-        tx.run(query, vector_dimensions=vector_dimensions, metric_type=metric_type,
-               hnsw_m=hnsw_m, hnsw_ef_construction=hnsw_ef_construction)
+        tx.run(query, index_name=index_name, vector_dimensions=vector_dimensions, metric_type=metric_type)
 
     def refresh_vector_index_meta(self, force=False):
         import time
@@ -660,11 +667,11 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
 
     def delete_index(self, index_name):
         with self._driver.session(database=self._database) as session:
-            session.execute_write(self._delete_index, self, index_name)
+            session.execute_write(self._delete_index, index_name)
 
     @staticmethod
-    def _delete_index(tx, self, index_name):
-        query = f"DROP INDEX {self._escape_neo4j(index_name)} IF EXISTS"
+    def _delete_index(tx, index_name):
+        query = f"DROP INDEX {index_name} IF EXISTS"
         tx.run(query)
 
     @property
@@ -684,9 +691,9 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         if label_constraints is None:
             pass
         elif isinstance(label_constraints, str):
-            label_constraints = self._escape_neo4j(label_constraints)
+            pass
         elif isinstance(label_constraints, (list, tuple)):
-            label_constraints = "|".join(self._escape_neo4j(label_constraint) for label_constraint in label_constraints)
+            label_constraints = "|".join(label_constraints)
         else:
             message = f"invalid label_constraints: {label_constraints!r}"
             raise RuntimeError(message)
@@ -710,11 +717,7 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         with self._driver.session(database=self._database) as session:
             return session.execute_read(do_text_search)
 
-    def vector_search(self, label, property_key, query_text_or_vector, topk=10, index_name=None, ef_search=None):
-        if ef_search is not None:
-            if ef_search < topk:
-                message = f"ef_search must be greater than or equal to topk; {ef_search!r} is invalid"
-                raise ValueError(message)
+    def vector_search(self, label, property_key, query_text_or_vector, topk=10, index_name=None):
         self.refresh_vector_index_meta()
         if index_name is None:
             vec_meta = self._vec_meta
@@ -735,21 +738,11 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
             query_vector = query_text_or_vector
 
         def do_vector_search(tx):
-            if ef_search is not None:
-                query = ("CALL db.index.vector.queryNodes($index_name, $ef_search, $query_vector) "
-                         "YIELD node, score "
-                         "RETURN node, score, labels(node) as __labels__"
-                        f"LIMIT {topk}")
-                res = tx.run(query, query_vector=query_vector, ef_search=ef_search, index_name=index_name)
-            else:
-                query = ("CALL db.index.vector.queryNodes($index_name, $topk, $query_vector) "
-                         "YIELD node, score "
-                         "RETURN node, score, labels(node) as __labels__")
-                res = tx.run(query, query_vector=query_vector, topk=topk, index_name=index_name)
+            query = ("CALL db.index.vector.queryNodes($index_name, $topk, $query_vector) "
+                     "YIELD node, score "
+                     "RETURN node, Labels(node) as label, score")
+            res = tx.run(query, query_vector=query_vector, topk=topk, index_name=index_name)
             data = res.data()
-            for record in data:
-                record["node"]["__labels__"] = record["__labels__"]
-                del record["__labels__"]
             return data
 
         with self._driver.session(database=self._database) as session:
@@ -809,17 +802,17 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
         with self._driver.session(database=self._database) as session:
             all_graph = self._allGraph
             self._exists_all_graph(session, all_graph)
-            data = session.execute_write(self._get_pagerank_scores, self, all_graph, start_nodes, target_type)
+            data = session.execute_write(self._get_pagerank_scores, all_graph, start_nodes, target_type)
         return data
 
     @staticmethod
-    def _get_pagerank_scores(tx, self, graph_name, start_nodes, return_type):
+    def _get_pagerank_scores(tx, graph_name, start_nodes, return_type):
         match_clauses = []
         match_identify = []
         for index, node in enumerate(start_nodes):
             node_type, node_name = node['type'], node['name']
             node_identify = f"node_{index}"
-            match_clauses.append(f"MATCH ({node_identify}:{self._escape_neo4j(node_type)} {{name: '{escape_single_quotes(node_name)}'}})")
+            match_clauses.append(f"MATCH ({node_identify}:{node_type} {{name: '{escape_single_quotes(node_name)}'}})")
             match_identify.append(node_identify)
 
         match_query = ' '.join(match_clauses)
@@ -860,11 +853,11 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
 
     def count(self, label):
         with self._driver.session(database=self._database) as session:
-            return session.execute_read(self._count, self, label)
+            return session.execute_read(self._count, label)
 
     @staticmethod
-    def _count(tx, self, label):
-        query = f"MATCH (n:{self._escape_neo4j(label)}) RETURN count(n)"
+    def _count(tx, label):
+        query = f"MATCH (n:{label}) RETURN count(n)"
         result = tx.run(query)
         single_result = result.single()
         if single_result is not None:
@@ -873,7 +866,7 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
     def create_database(self, database):
         with self._driver.session(database=self._database) as session:
             database = database.lower()
-            result = session.run(f"CREATE DATABASE {self._escape_neo4j(database)} IF NOT EXISTS")
+            result = session.run(f"CREATE DATABASE {database} IF NOT EXISTS")
             summary = result.consume()
             logger.info(f"create_database {database} succeed "
                   f"executed：{summary.result_available_after} consumed：{summary.result_consumed_after}")

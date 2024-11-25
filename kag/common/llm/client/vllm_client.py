@@ -42,23 +42,20 @@ from kag.common.llm.client.llm_client import LLMClient
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 class VLLMClient(LLMClient):
     def __init__(self, llm_config: VLLMConfig):
         self.model = llm_config.model
         self.base_url = llm_config.base_url
-        self.param = {}
+        self.param = llm_config.dict()
 
     def sync_request(self, prompt):
         # import pdb; pdb.set_trace()
-        self.param["messages"] = prompt
-        self.param["model"] = self.model
-
         response = requests.post(
             self.base_url,
-            data=json.dumps(self.param),
+            data=json.dumps({"messages": prompt, "model": self.model}),
             headers={"Content-Type": "application/json"},
         )
-
         data = response.json()
         content = data["choices"][0]["message"]["content"]
         content = content.replace("&rdquo;", "”").replace("&ldquo;", "“")
@@ -66,9 +63,7 @@ class VLLMClient(LLMClient):
         return content
 
     def __call__(self, prompt):
-        content = [
-          {"role": "user", "content": prompt}
-          ]
+        content = [{"role": "user", "content": prompt}]
         return self.sync_request(content)
 
     def call_with_json_parse(self, prompt):
@@ -77,7 +72,7 @@ class VLLMClient(LLMClient):
         _end = rsp.rfind("```")
         _start = rsp.find("```json")
         if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json"): _end].strip()
+            json_str = rsp[_start + len("```json") : _end].strip()
         else:
             json_str = rsp
         try:

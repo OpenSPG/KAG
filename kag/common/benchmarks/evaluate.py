@@ -1,10 +1,20 @@
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
 
 from typing import List
 
-from .evaUtils import get_em_f1
+from .eva_utils import get_em_f1
 
 
-class Evaluate():
+class Evaluate:
 
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
@@ -12,7 +22,7 @@ class Evaluate():
     def __init__(self, embedding_factory = "text-embedding-ada-002"):
         self.embedding_factory = embedding_factory
 
-    def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
+    def eva_with_similarity(self, predictionlist: List[str], goldlist: List[str]):
         """
         evaluate the similarity between prediction and gold #TODO
         """
@@ -29,8 +39,7 @@ class Evaluate():
         # return np.average(score.to_pandas()[['answer_similarity']])
         return 0.0
 
-
-    def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
+    def get_bench_mark(self, predictionlist: List[str], goldlist: List[str]):
         """
         Calculates and returns evaluation metrics between predictions and ground truths.
 
@@ -58,7 +67,7 @@ class Evaluate():
         total_metrics['f1'] /= len(predictionlist)
         
         # Call method to calculate answer similarity
-        total_metrics['answer_similarity'] = self.evaForSimilarity(predictionlist, goldlist)
+        total_metrics['answer_similarity'] = self.eva_with_similarity(predictionlist, goldlist)
 
         # Return evaluation metrics dictionary
         return total_metrics

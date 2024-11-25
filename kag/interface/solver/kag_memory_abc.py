@@ -4,13 +4,13 @@ from kag.solver.common.base import KagBaseModule
 
 
 class KagMemoryABC(KagBaseModule, ABC):
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
         Initializes the KagMemory module with an LLM module.
 
         :param llm_module: The LLM module to use.
         """
-        super().__init__(**kwargs)
+        super().__init__()
 
     @abstractmethod
     def save_memory(self, solved_answer, supporting_fact, instruction):

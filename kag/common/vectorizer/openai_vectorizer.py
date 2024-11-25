@@ -9,8 +9,11 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+import os
 from typing import Any, Union, Iterable, Dict
+
 from openai import OpenAI
+
 from kag.common.vectorizer.vectorizer import Vectorizer
 
 
@@ -19,17 +22,15 @@ EmbeddingVector = Iterable[float]
 
 class OpenAIVectorizer(Vectorizer):
     """
-    Invoke OpenAI or OpenAI-compatible embedding services to turn texts into embedding vectors.
+    Invoke OpenAI embedding services to turn texts into embedding vectors.
     """
 
     def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        self.model = config.get("model","text-embedding-3-small")
+        self.model = config.get("model", "text-embedding-3-small")
         self.api_key = config.get("api_key")
-        self.base_url = config.get("base_url")
         if not self.api_key:
             raise ValueError("OpenAI API key is not set")
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.client = OpenAI(api_key=self.api_key)
 
     @classmethod
     def _from_config(cls, config: Dict[str, Any]) -> Vectorizer:
@@ -55,10 +56,18 @@ class OpenAIVectorizer(Vectorizer):
         :rtype: EmbeddingVector or Iterable[EmbeddingVector]
         """
         results = self.client.embeddings.create(input=texts, model=self.model)
-        results = [item.embedding for item in results.data]
         if isinstance(texts, str):
             assert len(results) == 1
             return results[0]
         else:
             assert len(results) == len(texts)
             return results
+
+
+if __name__ == "__main__":
+    from kag.common.env import init_kag_config
+    init_kag_config('/Users/zhangxinhong.zxh/workspace/openspgapp/openspg/python/knext/knext/common/vectorizer/vectorizer.cfg')
+    config = eval(os.environ['KAG_VECTORIZER'])
+    print(config)
+    vectorizer = Vectorizer.from_config(config)
+    print(vectorizer.vectorize(["你好"]))

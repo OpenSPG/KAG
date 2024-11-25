@@ -11,37 +11,20 @@
 # or implied.
 
 import os
-import re
-from typing import List, Sequence, Type, Union
+from typing import List, Sequence, Type
 
 from langchain_community.document_loaders import PyPDFLoader
-import pdfminer.layout
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
-from knext.common.base.runnable import Input, Output
-from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.builder.component.base import SourceReader
+from kag.common.base.runnable import Input, Output
 
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTPage
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.layout import LAParams,LTTextBox
-from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import PDFPageAggregator
-from pdfminer.pdfpage import PDFTextExtractionNotAllowed
-import pdfminer
 
 
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-class PDFReader(SourceReaderABC):
+class PDFReader(SourceReader):
     """
     A PDF reader class that inherits from SourceReader.
 
@@ -52,13 +35,8 @@ class PDFReader(SourceReaderABC):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.split_level = kwargs.get("split_level", 3)
-        self.split_using_outline = kwargs.get("split_using_outline", True)
-        self.outline_flag = True
-        self.llm = self._init_llm()
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        self.prompt = OutlinePrompt(language)
-
+        self.if_split = kwargs.get("if_split", False)
+        self.use_pypdf = kwargs.get("use_pypdf", True)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -67,34 +45,6 @@ class PDFReader(SourceReaderABC):
     @property
     def output_types(self) -> Type[Output]:
         return Chunk
-    
-    def outline_chunk(self, chunk: Union[Chunk, List[Chunk]],basename) -> List[Chunk]:
-        if isinstance(chunk, Chunk):
-            chunk = [chunk]
-        outlines = []
-        for c in chunk:
-            outline = self.llm.invoke({"input": c.content}, self.prompt)
-            outlines.extend(outline)
-        content = "\n".join([c.content for c in chunk])
-        chunks = self.sep_by_outline(content, outlines,basename)
-        return chunks
-    
-    def sep_by_outline(self,content,outlines,basename):
-        position_check = []
-        for outline in outlines:
-            start = content.find(outline)
-            position_check.append((outline,start))
-        chunks = []
-        for idx,pc in enumerate(position_check):
-            chunk = Chunk(
-                id = Chunk.generate_hash_id(f"{basename}#{pc[0]}"),
-                name=f"{basename}#{pc[0]}",
-                content=content[pc[1]:position_check[idx+1][1] if idx+1 < len(position_check) else len(position_check)],
-            )
-            chunks.append(chunk)
-        return chunks
-
-        
 
     @staticmethod
     def _process_single_page(
@@ -170,85 +120,75 @@ class PDFReader(SourceReaderABC):
         if not os.path.isfile(input):
             raise FileNotFoundError(f"The file {input} does not exist.")
 
-
-        self.fd = open(input, "rb")
-        self.parser = PDFParser(self.fd)
-        self.document = PDFDocument(self.parser)
-        chunks = []
-        basename, _ = os.path.splitext(os.path.basename(input))
-
-        
-        # get outline
-        try:
-            outlines = self.document.get_outlines()
-        except Exception as e:
-            logger.warning(f"loading PDF file: {e}")
-            self.outline_flag = False
-        
-        
-        if not self.outline_flag:
-
-            with open(input, "rb") as file:
-                for idx, page_layout in enumerate(extract_pages(file)):
-                    content = ""
-                    for element in page_layout:
-                        if hasattr(element, "get_text"):
-                            content = content + element.get_text()
-                    chunk = Chunk(
-                        id=Chunk.generate_hash_id(f"{basename}#{idx}"),
-                        name=f"{basename}#{idx}",
-                        content=content,
-                    )
-                    chunks.append(chunk)
+        if self.use_pypdf:
             try:
-                outline_chunks =  self.outline_chunk(chunks, basename)
-            except Exception as e:
-                raise RuntimeError(f"Error loading PDF file: {e}")
-            if len(outline_chunks) > 0:
-                chunks = outline_chunks
-                
-        else:
-            split_words = []
-        
-            for item in outlines:
-                level, title, dest, a, se = item
-                split_words.append(title.strip().replace(" ",""))
-            # save the outline position in content
-            try:
-                text = extract_text(input)
+                loader = PyPDFLoader(input)
+                pages = loader.load_and_split()
 
             except Exception as e:
                 raise RuntimeError(f"Error loading PDF file: {e}")
 
+            clean_list = kwargs.get("clean_list", None)
             cleaned_pages = [
-                self._process_single_page(x, "", False, False) for x in text
+                self._process_single_page(x.page_content, "", False, False, clean_list)
+                for x in pages
             ]
             sentences = []
             for cleaned_page in cleaned_pages:
                 sentences += cleaned_page
+            basename, _ = os.path.splitext(os.path.basename(input))
 
             content = "".join(sentences)
-            positions = [(input,0)]
-            for split_word in split_words:
-                pattern = re.compile(split_word)
-                for i,match in enumerate(re.finditer(pattern, content)):
-                    if i == 1:
-                        start, end = match.span()
-                        positions.append((split_word,start))
-            
-            for idx,position in enumerate(positions):
+            if not content:
+                raise ValueError("The PDF file appears to be empty or unreadable.")
+
+            chunk = Chunk(
+                id=Chunk.generate_hash_id(input),
+                name=basename,
+                content=content,
+            )
+            return [chunk]
+        else:
+            if not self.if_split:
+                try:
+                    text = extract_text(input)
+
+                except Exception as e:
+                    raise RuntimeError(f"Error loading PDF file: {e}")
+
+                cleaned_pages = [
+                    self._process_single_page(x, "", False, False) for x in text
+                ]
+                sentences = []
+                for cleaned_page in cleaned_pages:
+                    sentences += cleaned_page
+                basename, _ = os.path.splitext(os.path.basename(input))
+
+                content = "".join(sentences)
+                if not content:
+                    raise ValueError("The PDF file appears to be empty or unreadable.")
+
                 chunk = Chunk(
-                    id = Chunk.generate_hash_id(f"{basename}#{position[0]}"),
-                    name=f"{basename}#{position[0]}",
-                    content=content[position[1]:positions[idx+1][1] if idx+1 < len(positions) else None],
+                    id=Chunk.generate_hash_id(input),
+                    name=basename,
+                    content=content,
                 )
-                chunks.append(chunk)
-
-        return chunks
-
-
-if __name__ == '__main__':
-    reader = PDFReader(split_using_outline=True)
-    pdf_path = os.path.join(os.path.dirname(__file__),"../../../../tests/builder/data/aiwen.pdf")
-    chunk = reader.invoke(pdf_path)
-    print(chunk)
+                return [chunk]
+            else:
+                chunks = []
+                with open(input, "rb") as file:
+                    for idx, page_layout in enumerate(extract_pages(file)):
+                        basename, _ = os.path.splitext(os.path.basename(input))
+                        content = ""
+                        for element in page_layout:
+                            if isinstance(element, LTPage):
+                                content = content + self._extract_text_from_page(
+                                    element
+                                )
+                        chunk = Chunk(
+                            id=Chunk.generate_hash_id(f"{input}#{idx}"),
+                            name=f"{basename}#{idx}",
+                            content=content,
+                        )
+                        chunks.append(chunk)
+                return chunks

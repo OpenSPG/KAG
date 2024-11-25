@@ -15,7 +15,7 @@ from string import Template
 from typing import List, Optional
 
 from kag.common.base.prompt_op import PromptOp
-from knext.schema.client import SchemaClient
+from kag.schema.client import SchemaClient
 
 
 class OpenIENERPrompt(PromptOp):
@@ -83,74 +83,72 @@ class OpenIENERPrompt(PromptOp):
 }    
         """
 
-    template_zh = """
+    template_en_no_onto = """
     {
-        "instruction": "你是命名实体识别的专家。请从输入中提取与模式定义匹配的实体。如果不存在该类型的实体，请返回一个空列表。请以JSON字符串格式回应。你可以参照example进行抽取。",
-        "schema": $schema,
-        "example": [
-            {
-                "input": "《Rezort》\n《Rezort》是一部 2015 年英国僵尸恐怖片，由史蒂夫·巴克执导，保罗·格斯滕伯格编剧。\n 该片由道格瑞·斯科特、杰西卡·德·古维和马丁·麦凯恩主演。\n 在人类赢得与僵尸的毁灭性战争后，剩下的少数不死生物被关在一个安全的岛屿上，在那里他们被猎杀作为消遣。\n 当岛上的安全出现问题时，客人们必须面对新一轮疫情爆发的可能性。",
-                "output": [
-                            {
-                                "entity": "The Rezort",
-                                "type": "Movie",
-                                "category": "Works",
-                                "description": "一部 2015 年英国僵尸恐怖片，由史蒂夫·巴克执导，保罗·格斯滕伯格编剧。"
-                            },
-                            {
-                                "entity": "2015",
-                                "type": "Year",
-                                "category": "Date",
-                                "description": "电影《The Rezort》上映的年份。"
-                            },
-                            {
-                                "entity": "英国",
-                                "type": "Nationality",
-                                "category": "GeographicLocation",
-                                "description": "大不列颠，包括英格兰、苏格兰和威尔士的岛屿。"
-                            },
-                            {
-                                "entity": "史蒂夫·巴克",
-                                "type": "Director",
-                                "category": "Person",
-                                "description": "史蒂夫·巴克 是一名英国电影导演和剧作家"
-                            },
-                            {
-                                "entity": "保罗·格斯滕伯格",
-                                "type": "Writer",
-                                "category": "Person",
-                                "description": "保罗·格斯滕伯格 (Paul Gerstenberger) 是一名作家和制片人，因《The Rezort》（2015 年）、《Primeval》（2007 年）和《House of Anubis》（2011 年）而闻名。"
-                            },
-                            {
-                                "entity": "道格雷·斯科特",
-                                "type": "Actor",
-                                "category": "Person",
-                                "description": "斯蒂芬·道格雷·斯科特 (Stephen Dougray Scott，1965 年 11 月 26 日出生) 是一位苏格兰演员。"
-                            },
-                            {
-                                "entity": "杰西卡·德·古维",
-                                "type": "Actor",
-                                "category": "Person",
-                                "description": "杰西卡·伊莉斯·德·古维 (Jessica Elise De Gouw，1988 年 2 月 15 日出生) 是一位澳大利亚女演员。"
-                            },
-                            {
-                                "entity": "马丁·麦肯",
-                                "type": "Actor",
-                                "category": "Person",
-                                "description": "马丁·麦肯是来自北爱尔兰的演员。2020 年，他在《爱尔兰时报》爱尔兰最伟大电影演员名单中排名第 48 位"
-                            }
-                        ]
-            }
-        ],
-        "input": "$input"
-    }    
+    "instruction": "You're a very effective entity extraction system. Please extract all the entities that are important for knowledge build and question, along with type and a brief description of the entity. The description of the entity is based on your OWN KNOWLEDGE AND UNDERSTANDING and does not need to be limited to the context. Note: Type refers to a specific, well-defined classification, such as Professor, Actor. Return an empty list if the entity type does not exist.",
+    "example": [
+        {
+            "input": "The Rezort\nThe Rezort is a 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger.\n It stars Dougray Scott, Jessica De Gouw and Martin McCann.\n After humanity wins a devastating war against zombies, the few remaining undead are kept on a secure island, where they are hunted for sport.\n When something goes wrong with the island's security, the guests must face the possibility of a new outbreak.",
+            "output": [
+                        {
+                            "entity": "The Rezort",
+                            "type": "Movie",
+                            "description": "A 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger."
+                        },
+                        {
+                            "entity": "2015",
+                            "type": "Year",
+                            "description": "The year the movie 'The Rezort' was released."
+                        },
+                        {
+                            "entity": "British",
+                            "type": "Nationality",
+                            "description": "Great Britain, the island that includes England, Scotland, and Wales."
+                        },
+                        {
+                            "entity": "Steve Barker",
+                            "type": "Director",
+                            "description": "Steve Barker is an English film director and screenwriter."
+                        },
+                        {
+                            "entity": "Paul Gerstenberger",
+                            "type": "Writer",
+                            "description": "Paul is a writer and producer, known for The Rezort (2015), Primeval (2007) and House of Anubis (2011)."
+                        },
+                        {
+                            "entity": "Dougray Scott",
+                            "type": "Actor",
+                            "description": "Stephen Dougray Scott (born 26 November 1965) is a Scottish actor."
+                        },
+                        {
+                            "entity": "Jessica De Gouw",
+                            "type": "Actor",
+                            "description": "Jessica Elise De Gouw (born 15 February 1988) is an Australian actress. "
+                        },
+                        {
+                            "entity": "Martin McCann",
+                            "type": "Actor",
+                            "description": "Martin McCann is an actor from Northern Ireland. In 2020, he was listed as number 48 on The Irish Times list of Ireland's greatest film actors"
+                        }
+                    ]
+        }
+    ],
+    "input": "$input"
+}    
         """
 
-    def __init__(
-            self, language: Optional[str] = "en", **kwargs
-    ):
-        super().__init__(language, **kwargs)
-        self.schema = SchemaClient(project_id=self.project_id).extract_types()
+    template_zh = template_en
+
+    template_zh_no_onto = template_en_no_onto
+
+    def __init__(self, language: Optional[str] = "en", with_onto=True):
+        super().__init__(language)
+        self.template = getattr(self, (
+            f"template_{self.language}"
+            if with_onto else
+            f"template_{self.language}_no_onto"
+        ))
+        self.schema = SchemaClient().extract_types()
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property
@@ -165,6 +163,8 @@ class OpenIENERPrompt(PromptOp):
             rsp = rsp["output"]
         if isinstance(rsp, dict) and "named_entities" in rsp:
             entities = rsp["named_entities"]
+        elif isinstance(rsp, dict) and "entities" in rsp:
+            entities = rsp["entities"]
         else:
             entities = rsp
 

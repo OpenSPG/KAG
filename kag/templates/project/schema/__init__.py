@@ -12,7 +12,7 @@
 """
 {{namespace}}.schema:
     The MarkLang file for the schema of this project.
-    You can execute `kag schema commit` to commit your schema to SPG server.
+    You can execute `knext schema commit` to commit your schema to SPG server.
 
 
 """

@@ -12,7 +12,7 @@
 
 import pprint
 from typing import Dict, Any, List, Tuple
-from knext.schema.model.schema_helper import (
+from kag.schema.model.schema_helper import (
     SPGTypeName,
     PropertyName,
     RelationName,

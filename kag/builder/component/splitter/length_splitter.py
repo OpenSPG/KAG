@@ -12,12 +12,12 @@
 
 from typing import Type, List, Union
 
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from knext.common.base.runnable import Input, Output
-from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
+from kag.builder.model.chunk import Chunk
+from kag.builder.component.base import Splitter
+from kag.common.base.runnable import Input, Output
 
 
-class LengthSplitter(BaseTableSplitter):
+class LengthSplitter(Splitter):
     """
     A class for splitting text based on length, inheriting from Splitter.
 
@@ -26,8 +26,8 @@ class LengthSplitter(BaseTableSplitter):
         window_length (int): The length of the overlap between chunks.
     """
 
-    def __init__(self, split_length: int = 500, window_length: int = 100, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, split_length: int = 500, window_length: int = 100):
+        super().__init__()
         self.split_length = int(split_length)
         self.window_length = int(window_length)
 
@@ -49,13 +49,13 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             list: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!"
+        sentence_delimiters = "。？?！!"
         output = []
         start = 0
         for idx, char in enumerate(content):
             if char in sentence_delimiters:
                 end = idx
-                tmp = content[start: end + 1].strip()
+                tmp = content[start : end + 1].strip()
                 if len(tmp) > 0:
                     output.append(tmp)
                 start = idx + 1
@@ -65,36 +65,32 @@ class LengthSplitter(BaseTableSplitter):
         return output
 
     def slide_window_chunk(
-            self,
-            org_chunk: Chunk,
-            chunk_size: int = 2000,
-            window_length: int = 300,
-            sep: str = "\n",
+        self,
+        org_chunk: Chunk,
+        chunk_size: int = 2000,
+        window_length: int = 300,
+        sep: str = "\n",
     ) -> List[Chunk]:
         """
         Splits the content into chunks using a sliding window approach.
 
         Args:
-            org_chunk (Chunk): The original chunk to be split.
+            content (Union[str, List[str]]): The content or list of sentences to be split.
             chunk_size (int, optional): The maximum size of each chunk. Defaults to 2000.
             window_length (int, optional): The length of the overlap between chunks. Defaults to 300.
             sep (str, optional): The separator used to join sentences. Defaults to "\n".
+            prefix (str, optional): The prefix for chunk names. Defaults to "SlideWindow".
 
         Returns:
             List[Chunk]: A list of Chunk objects.
         """
-        if org_chunk.type == ChunkTypeEnum.Table:
-            table_chunks = self.split_table(org_chunk=org_chunk, chunk_size=chunk_size, sep=sep)
-            if table_chunks is not None:
-                return table_chunks
         content = self.split_sentence(org_chunk.content)
         splitted = []
         cur = []
         cur_len = 0
         for sentence in content:
             if cur_len + len(sentence) > chunk_size:
-                if cur:
-                    splitted.append(cur)
+                splitted.append(cur)
                 tmp = []
                 cur_len = 0
                 for item in cur[::-1]:
@@ -113,9 +109,8 @@ class LengthSplitter(BaseTableSplitter):
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
                 id=f"{org_chunk.id}#{chunk_size}#{window_length}#{idx}#LEN",
-                name=f"{org_chunk.name}",
+                name=f"{org_chunk.name}#{idx}",
                 content=sep.join(sentences),
-                type=org_chunk.type,
                 **org_chunk.kwargs
             )
             output.append(chunk)
@@ -133,17 +128,9 @@ class LengthSplitter(BaseTableSplitter):
             List[Output]: A list of split chunks.
         """
         cutted = []
-        if isinstance(input,list):
-            for item in input:
-                cutted.extend(
-                    self.slide_window_chunk(
-                        item, self.split_length, self.window_length
-                    )
-                )
-        else:
-            cutted.extend(
-                self.slide_window_chunk(
-                    input, self.split_length, self.window_length
-                )
+        cutted.extend(
+            self.slide_window_chunk(
+                input, self.split_length, self.window_length
             )
+        )
         return cutted

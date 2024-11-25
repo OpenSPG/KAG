@@ -34,7 +34,6 @@ def rrf_score(length, r: int = 1):
     return np.array([1 / (r + i) for i in range(length)])
 
 
-
 class BGEReranker(Reranker):
     """
     BGEReranker class is a subclass of Reranker that reranks given queries and passages.

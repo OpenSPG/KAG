@@ -1,0 +1,160 @@
+namespace Default
+
+Chunk(文本块): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        content(内容): Text
+          index: TextAndVector
+
+ArtificialObject(人造物体): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Astronomy(天文学): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Building(建筑): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Creature(生物): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Concept(概念): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Date(日期): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+GeographicLocation(地理位置): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Keyword(关键词): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Medicine(药物): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+
+NaturalScience(自然科学): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Organization(组织机构): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Person(人物): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Transport(运输): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Works(作品): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Event(事件): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Others(其他): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+SemanticConcept(语义概念): EntityType
+     properties:
+        name(名称): Text
+          index: TextAndVector
+        desc(内容): Text
+            index: Text

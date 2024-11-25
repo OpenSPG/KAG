@@ -19,8 +19,8 @@ from string import Template
 from typing import List
 
 
-BUILDER_PROMPT_PATH = "kag.builder.prompt"
-SOLVER_PROMPT_PATH = "kag.solver.prompt"
+BUILDER_PROMPT_PATH = "knext.builder.prompt"
+SOLVER_PROMPT_PATH = "knext.solver.prompt"
 
 
 class PromptOp(ABC):
@@ -36,7 +36,7 @@ class PromptOp(ABC):
     """Chinese template string"""
     template_zh: str = ""
 
-    def __init__(self, language: str, **kwargs):
+    def __init__(self, language: str):
         """
         Initializes the PromptOp instance with the selected language.
 
@@ -47,12 +47,9 @@ class PromptOp(ABC):
             AssertionError: If the provided language is not supported.
         """
 
-        assert language in ["en", "zh"], f"language[{language}] is not supported."
-        self.template = self.template_en if language == "en" else self.template_zh
         self.language = language
+        self.template = getattr(self, f"template_{self.language}")
         self.template_variables_value = {}
-        if "project_id" in kwargs:
-            self.project_id = kwargs["project_id"]
 
     @property
     def template_variables(self) -> List[str]:

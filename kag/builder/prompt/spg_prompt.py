@@ -12,13 +12,14 @@
 
 import json
 import logging
+import re
 from abc import ABC
 from typing import List, Dict
 
 from kag.common.base.prompt_op import PromptOp
-from knext.schema.client import SchemaClient
-from knext.schema.model.base import BaseSpgType, SpgTypeEnum
-from knext.schema.model.schema_helper import SPGTypeName
+from kag.schema.client import SchemaClient
+from kag.schema.model.base import BaseSpgType
+from kag.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 class SPGPrompt(PromptOp, ABC):
     spg_types: Dict[str, BaseSpgType]
     ignored_types: List[str] = ["Chunk"]
-    ignored_properties: List[str] = ["id", "name", "description", "stdId", "eventTime", "desc", "semanticType"]
+    ignored_properties: List[str] = ["id", "name", "description", "stdId", "eventTime"]
     ignored_relations: List[str] = ["isA"]
     basic_types = {"Text": "文本", "Integer": "整型", "Float": "浮点型"}
 
@@ -35,197 +36,186 @@ class SPGPrompt(PromptOp, ABC):
         self,
         spg_type_names: List[SPGTypeName],
         language: str = "zh",
+        split_num: int = 4,
         **kwargs,
     ):
-        super().__init__(language=language, **kwargs)
-        self.all_schema_types = SchemaClient(project_id=self.project_id).load()
+        super().__init__(language=language)
+        schema_types = SchemaClient().load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:
-            self.spg_types = self.all_schema_types
+            self.spg_types = schema_types
         else:
-            self.spg_types = {k: v for k, v in self.all_schema_types.items() if k in spg_type_names}
+            self.spg_types = {k: v for k, v in schema_types.items() if k in spg_type_names}
         self.schema_list = []
+        self.split_num = split_num
 
         self._init_render_variables()
+        self.params = kwargs
 
     @property
     def template_variables(self) -> List[str]:
-        return ["schema", "input"]
+        return []
 
     def _init_render_variables(self):
-        self.type_en_to_zh = {"Text": "文本", "Integer": "整型", "Float": "浮点型"}
-        self.type_zh_to_en = {
-            "文本": "Text",
-            "整型": "Integer",
-            "浮点型": "Float",
+        self.property_info_zh = {}
+        self.property_info_en = {}
+        self.relation_info_zh = {}
+        self.relation_info_en = {}
+        self.spg_type_schema_info_en = {
+            "Text": ("文本", None),
+            "Integer": ("整型", None),
+            "Float": ("浮点型", None),
         }
-        self.prop_en_to_zh = {}
-        self.prop_zh_to_en = {}
-        for type_name, spg_type in self.all_schema_types.items():
-            self.type_en_to_zh[type_name] = spg_type.name_zh
-            self.type_en_to_zh[spg_type.name_zh] = type_name
-            self.prop_zh_to_en[type_name] = {}
-            self.prop_en_to_zh[type_name] = {}
-            for _prop in spg_type.properties.values():
-                if _prop.name in self.ignored_properties:
-                    continue
-                self.prop_en_to_zh[type_name][_prop.name] = _prop.name_zh
-                self.prop_zh_to_en[type_name][_prop.name_zh] = _prop.name
+        self.spg_type_schema_info_zh = {
+            "文本": ("Text", None),
+            "整型": ("Integer", None),
+            "浮点型": ("Float", None),
+        }
+        for type_name, spg_type in self.spg_types.items():
+            self.property_info_zh[spg_type.name_zh] = {}
+            self.relation_info_zh[spg_type.name_zh] = {}
+            self.property_info_en[type_name] = {}
+            self.relation_info_en[type_name] = {}
             for _rel in spg_type.relations.values():
                 if _rel.is_dynamic:
                     continue
-                self.prop_en_to_zh[type_name][_rel.name] = _rel.name_zh
-                self.prop_zh_to_en[type_name][_rel.name_zh] = _rel.name
+                self.relation_info_zh[spg_type.name_zh][_rel.name_zh] = (
+                    _rel.name,
+                    _rel.desc,
+                    _rel.object_type_name_en,
+                )
+                self.relation_info_en[type_name][_rel.name] = (
+                    _rel.name_zh,
+                    _rel.desc,
+                    _rel.object_type_name_zh,
+                )
+            for _prop in spg_type.properties.values():
+                self.property_info_zh[spg_type.name_zh][_prop.name_zh] = (
+                    _prop.name,
+                    _prop.desc,
+                    _prop.object_type_name_en,
+                )
+                self.property_info_en[type_name][_prop.name] = (
+                    _prop.name_zh,
+                    _prop.desc,
+                    _prop.object_type_name_zh,
+                )
+        for _name, _type in self.spg_types.items():
+            self.spg_type_schema_info_zh[_type.name_zh] = (_name, _type.desc)
+            self.spg_type_schema_info_en[_name] = (_type.name_zh, _type.desc)
 
     def _render(self):
         raise NotImplementedError
 
 
 class SPG_KGPrompt(SPGPrompt):
-    template_zh: str = """
-    {
-        "instruction": "你是一个图谱知识抽取的专家, 基于constraint 定义的schema，从input 中抽取出所有的实体及其属性，input中未明确提及的属性返回NAN，以标准json 格式输出，结果返回list",
-        "schema": $schema,
-        "example": [
-        {
-            "input": "甲状腺结节是指在甲状腺内的肿块，可随吞咽动作随甲状腺而上下移动，是临床常见的病症，可由多种病因引起。临床上有多种甲状腺疾病，如甲状腺退行性变、炎症、自身免疫以及新生物等都可以表现为结节。甲状腺结节可以单发，也可以多发，多发结节比单发结节的发病率高，但单发结节甲状腺癌的发生率较高。患者通常可以选择在普外科，甲状腺外科，内分泌科，头颈外科挂号就诊。有些患者可以触摸到自己颈部前方的结节。在大多情况下，甲状腺结节没有任何症状，甲状腺功能也是正常的。甲状腺结节进展为其它甲状腺疾病的概率只有1%。有些人会感觉到颈部疼痛、咽喉部异物感，或者存在压迫感。当甲状腺结节发生囊内自发性出血时，疼痛感会更加强烈。治疗方面，一般情况下可以用放射性碘治疗，复方碘口服液(Lugol液)等，或者服用抗甲状腺药物来抑制甲状腺激素的分泌。目前常用的抗甲状腺药物是硫脲类化合物，包括硫氧嘧啶类的丙基硫氧嘧啶(PTU)和甲基硫氧嘧啶(MTU)及咪唑类的甲硫咪唑和卡比马唑。",
-            "schema": {
-                "Disease": {
-                    "properties": {
-                        "complication": "并发症",
-                        "commonSymptom": "常见症状",
-                        "applicableMedicine": "适用药品",
-                        "department": "就诊科室",
-                        "diseaseSite": "发病部位",
-                    }
-                },"Medicine": {
-                    "properties": {
-                    }
-                }
-            }
-            "output": [
-                {
-                    "entity": "甲状腺结节",
-                    "category":"Disease"
-                    "properties": {
-                        "complication": "甲状腺癌",
-                        "commonSymptom": ["颈部疼痛", "咽喉部异物感", "压迫感"],
-                        "applicableMedicine": ["复方碘口服液(Lugol液)", "丙基硫氧嘧啶(PTU)", "甲基硫氧嘧啶(MTU)", "甲硫咪唑", "卡比马唑"],
-                        "department": ["普外科", "甲状腺外科", "内分泌科", "头颈外科"],
-                        "diseaseSite": "甲状腺",
-                    }
-                },{
-                    "entity":"复方碘口服液(Lugol液)",
-                    "category":"Medicine"
-                },{
-                    "entity":"丙基硫氧嘧啶(PTU)",
-                    "category":"Medicine"
-                },{
-                    "entity":"甲基硫氧嘧啶(MTU)",
-                    "category":"Medicine"
-                },{
-                    "entity":"甲硫咪唑",
-                    "category":"Medicine"
-                },{
-                    "entity":"卡比马唑",
-                    "category":"Medicine"
-                }
-            ],
-    "input": "$input"
-    }
-    """
-
-    template_en: str = """
-    {
-        "instruction": "You are an expert in knowledge graph extraction. Based on the schema defined by constraints, extract all entities and their attributes from the input. For attributes not explicitly mentioned in the input, return NAN. Output the results in standard JSON format as a list.",
-        "schema": $schema,
-        "example": [
-        {
-            "input": "Thyroid nodules refer to lumps within the thyroid gland that can move up and down with swallowing, and they are a common clinical condition that can be caused by various etiologies. Clinically, many thyroid diseases, such as thyroid degeneration, inflammation, autoimmune conditions, and neoplasms, can present as nodules. Thyroid nodules can occur singly or in multiple forms; multiple nodules have a higher incidence than single nodules, but single nodules have a higher likelihood of being thyroid cancer. Patients typically have the option to register for consultation in general surgery, thyroid surgery, endocrinology, or head and neck surgery. Some patients can feel the nodules in the front of their neck. In most cases, thyroid nodules are asymptomatic, and thyroid function is normal. The probability of thyroid nodules progressing to other thyroid diseases is only about 1%. Some individuals may experience neck pain, a foreign body sensation in the throat, or a feeling of pressure. When spontaneous intracystic bleeding occurs in a thyroid nodule, the pain can be more intense. Treatment options generally include radioactive iodine therapy, Lugol's solution (a compound iodine oral solution), or antithyroid medications to suppress thyroid hormone secretion. Currently, commonly used antithyroid drugs are thiourea compounds, including propylthiouracil (PTU) and methylthiouracil (MTU) from the thiouracil class, and methimazole and carbimazole from the imidazole class.",
-            "schema": {
-                "Disease": {
-                    "properties": {
-                        "complication": "Disease",
-                        "commonSymptom": "Symptom",
-                        "applicableMedicine": "Medicine",
-                        "department": "HospitalDepartment",
-                        "diseaseSite": "HumanBodyPart"
-                    }
-                },"Medicine": {
-                    "properties": {
-                    }
-                }
-            }
-            "output": [
-                {
-                    "entity": "Thyroid Nodule",
-                    "category": "Disease",
-                    "properties": {
-                        "complication": "Thyroid Cancer",
-                        "commonSymptom": ["Neck Pain", "Foreign Body Sensation in the Throat", "Feeling of Pressure"],
-                        "applicableMedicine": ["Lugol's Solution (Compound Iodine Oral Solution)", "Propylthiouracil (PTU)", "Methylthiouracil (MTU)", "Methimazole", "Carbimazole"],\n            "department": ["General Surgery", "Thyroid Surgery", "Endocrinology", "Head and Neck Surgery"],\n            "diseaseSite": "Thyroid"\n        }\n    },\n    {\n        "entity": "Lugol's Solution (Compound Iodine Oral Solution)",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Propylthiouracil (PTU)",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Methylthiouracil (MTU)",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Methimazole",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Carbimazole",
-                    "category": "Medicine"
-                }
-            ],
-    "input": "$input"
-    }
-    """
+    template_zh: str = """你是一个图谱知识抽取的专家, 基于constraint 定义的schema，从input 中抽取出所有的实体及其属性，input中未明确提及的属性返回NAN，以标准json 格式输出，结果返回list"""
+    template_en: str = """You are an expert in knowledge graph extraction. Based on the schema defined by the constraint, extract all entities and their attributes from the input. Return NAN for attributes not explicitly mentioned in the input. Output the results in standard JSON format, as a list."""
 
     def __init__(
         self,
         spg_type_names: List[SPGTypeName],
         language: str = "zh",
-        **kwargs
+        split_num: int = 4,
+        project_id: int = None,
     ):
         super().__init__(
             spg_type_names=spg_type_names,
             language=language,
-            **kwargs
+            split_num=split_num,
+            project_id=project_id,
         )
         self._render()
 
-    def build_prompt(self, variables: Dict[str, str]) -> str:
-        schema = {}
-        for tmpSchema in self.schema_list:
-            schema.update(tmpSchema)
-
-        return super().build_prompt({"schema": schema, "input": variables.get("input")})
+    def build_prompt(self, variables: Dict[str, str]) -> List[str]:
+        instructions = []
+        for schema in self.schema_list:
+            instructions.append(
+                json.dumps(
+                    {
+                        "instruction": self.template,
+                        "constraint": schema,
+                        "input": variables.get("input"),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+        return instructions
 
     def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
-        rsp = response
-        if isinstance(rsp, str):
-            rsp = json.loads(rsp)
-        if isinstance(rsp, dict) and "output" in rsp:
-            rsp = rsp["output"]
-        if isinstance(rsp, dict) and "named_entities" in rsp:
-            entities = rsp["named_entities"]
-        else:
-            entities = rsp
+        types = kwargs.get("types", [])
+        idx = kwargs.get("idx", 0)
+        type_en = types[idx]
+        if isinstance(response, str):
+            try:
+                response = json.loads(response)
+            except json.decoder.JSONDecodeError:
+                logger.error("SPG_KGPrompt response JSONDecodeError error.")
+                return []
+        if type(response) != list:
+            logger.error("SPG_KGPrompt response type error.")
+            return []
 
-        return entities
+        standard_response = []
+        spg_records = []
+        object_spg_records = []
+        for type_value in response:
+            if (
+                isinstance(type_value, dict)
+                and len(type_value) == 1
+                and type_en in type_value
+            ):
+                if "properties" in type_value[type_en]:
+                    properties = type_value[type_en]["properties"]
+                else:
+                    properties = type_value[type_en]
+            else:
+                properties = type_value
+            standard_properties = {}
+            for prop_name, prop_value in properties.items():
+                if not prop_value or prop_value == "NAN":
+                    continue
+                if isinstance(prop_value, list):
+                    prop_value = ",".join(prop_value)
+                prop_value = (
+                    prop_value.replace("《", "").replace("》", "").replace("'", "`")
+                )
+                standard_properties[prop_name] = prop_value
+            standard_response.append(standard_properties)
+        for type_value in standard_response:
+            for attr_en, attr_value in type_value.items():
+                if attr_en in self.property_info_en[type_en]:
+                    _, _, object_type = self.property_info_en[type_en].get(attr_en)
+                    if object_type not in self.basic_types:
+                        if isinstance(attr_value, list):
+                            attr_value = ",".join(attr_value)
+                        attr_value = re.split("[,，、;；]", attr_value)
+                        for _value in attr_value:
+                            object_spg_records.append(
+                                SPGRecord(object_type).upsert_properties(
+                                    {"name": _value}
+                                )
+                            )
+                        type_value[attr_en] = ",".join(attr_value)
+            _dict = {"spgTypeName": type_en, "properties": type_value}
+            spg_record = SPGRecord.from_dict(_dict)
+            spg_records.append(spg_record)
+        return spg_records + object_spg_records
 
     def _render(self):
         spo_list = []
         for type_name, spg_type in self.spg_types.items():
-            if spg_type.spg_type_enum not in [SpgTypeEnum.Entity, SpgTypeEnum.Concept, SpgTypeEnum.Event]:
-                continue
-            constraint = {}
+            constraint = {
+                "desc": (
+                    f"{spg_type.name_zh}"
+                    if not spg_type.desc
+                    else f"{spg_type.name_zh}，{spg_type.desc}"
+                ) if self.language == "zh" else (
+                    f"{type_name}"
+                    if not spg_type.desc
+                    else f"{type_name}, {spg_type.desc}"
+                )
+            }
             properties = {}
             properties.update(
                 {
@@ -253,3 +243,144 @@ class SPG_KGPrompt(SPGPrompt):
             spo_list.append({type_name: constraint})
 
         self.schema_list = spo_list
+
+
+class SPG_EEPrompt(SPGPrompt):
+    template_zh: str = "你是一个图谱知识抽取的专家, 基于constraint 定义的schema，从input 中抽取出所有的事件及其属性，input中未明确提及的属性返回NAN，以标准json 格式输出，结果返回list"
+    template_en: str = "You are an expert in knowledge graph extraction. Based on the schema defined by the constraint, extract all events and their attributes from the input. Return NAN for attributes not explicitly mentioned in the input. Output the results in standard JSON format, as a list."
+
+    def __init__(
+        self,
+        spg_type_names: List[SPGTypeName],
+        language: str = "zh",
+        split_num: int = 4,
+        project_id: int = None,
+    ):
+        super().__init__(
+            spg_type_names=spg_type_names,
+            language=language,
+            split_num=split_num,
+            project_id=project_id,
+        )
+        self._render()
+
+    def build_prompt(self, variables: Dict[str, str]) -> List[str]:
+        instructions = []
+        for schema in self.schema_list:
+            instructions.append(
+                json.dumps(
+                    {
+                        "instruction": self.template,
+                        "constraint": schema,
+                        "input": variables.get("input"),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+        return instructions
+
+    def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
+        types = kwargs.get("types", [])
+        idx = kwargs.get("idx", 0)
+        type_en = types[idx]
+
+        if isinstance(response, str):
+            try:
+                response = json.loads(response)
+            except json.decoder.JSONDecodeError:
+                logger.error("SPG_EEPrompt response JSONDecodeError error.")
+                return []
+        if type(response) != list:
+            logger.error("SPG_EEPrompt response type error.")
+            return []
+
+        standard_response = []
+        spg_records = []
+        object_spg_records = []
+        for type_value in response:
+            if (
+                isinstance(type_value, dict)
+                and len(type_value) == 1
+                and type_en in type_value
+            ):
+                if "properties" in type_value[type_en]:
+                    properties = type_value[type_en]["properties"]
+                else:
+                    properties = type_value[type_en]
+            else:
+                properties = type_value
+            standard_properties = {}
+            for prop_name, prop_value in properties.items():
+                if not prop_value or prop_value == "NAN":
+                    continue
+                if isinstance(prop_value, list):
+                    prop_value = ",".join(prop_value)
+                prop_value = (
+                    prop_value.replace("《", "").replace("》", "").replace("'", "`")
+                )
+                standard_properties[prop_name] = prop_value
+            standard_response.append(standard_properties)
+        for type_value in standard_response:
+            for attr_en, attr_value in type_value.items():
+                if attr_en in self.property_info_en[type_en]:
+                    _, _, object_type = self.property_info_en[type_en].get(attr_en)
+                    if object_type not in self.basic_types:
+                        if isinstance(attr_value, list):
+                            attr_value = ",".join(attr_value)
+                        attr_value = re.split("[,，、;；]", attr_value)
+                        for _value in attr_value:
+                            object_spg_records.append(
+                                SPGRecord(object_type).upsert_properties(
+                                    {"name": _value}
+                                )
+                            )
+                        type_value[attr_en] = ",".join(attr_value)
+            type_zh, _ = self.spg_type_schema_info_en[type_en]
+            sub_type = type_value.get("eventType", "")
+            event_summary = type_value.get("eventSummary", "")
+            type_value["name"] = f"{type_zh}-{sub_type}-{event_summary}" if self.language == "zh" else f"{type_en}-{sub_type}-{event_summary}"
+            _dict = {"spgTypeName": type_en, "properties": type_value}
+            spg_record = SPGRecord.from_dict(_dict)
+            spg_records.append(spg_record)
+        return spg_records + object_spg_records
+
+    def _render(self):
+        event_list = []
+        for type_name, spg_type in self.spg_types.items():
+            constraint = {
+                "desc": (
+                    f"{spg_type.name_zh}"
+                    if not spg_type.desc
+                    else f"{spg_type.name_zh}，{spg_type.desc}"
+                ) if self.language == "zh" else (
+                    f"{type_name}"
+                    if not spg_type.desc
+                    else f"{type_name}, {spg_type.desc}"
+                )
+            }
+            properties = {}
+            properties.update(
+                {
+                    v.name: (f"{v.name_zh}" if not v.desc else f"{v.name_zh}，{v.desc}")  if self.language == "zh" else (f"{v.name}" if not v.desc else f"{v.name}, {v.desc}")
+                    for k, v in spg_type.properties.items()
+                    if k not in self.ignored_properties
+                }
+            )
+            properties.update(
+                {
+                    f"{v.name}#{v.object_type_name_en}": (
+                        f"{v.name_zh}，类型是{v.object_type_name_zh}"
+                        if not v.desc
+                        else f"{v.name_zh}，{v.desc}，类型是{v.object_type_name_zh}"
+                    ) if self.language == "zh" else (
+                        f"{v.name}, the type is {v.object_type_name_en}"
+                        if not v.desc
+                        else f"{v.name}, {v.desc}, the type is {v.object_type_name}"
+                    )
+                    for k, v in spg_type.relations.items()
+                    if not v.is_dynamic
+                }
+            )
+            constraint.update({"properties": properties})
+            event_list.append({type_name: constraint})
+        self.schema_list = event_list

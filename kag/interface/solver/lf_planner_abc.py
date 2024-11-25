@@ -1,9 +1,8 @@
-import os
 from abc import ABC, abstractmethod
 from typing import List
 
 from kag.solver.common.base import KagBaseModule
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult
+from kag.solver.logic.common.base_model import LFPlanResult
 
 
 class LFPlannerABC(KagBaseModule, ABC):
@@ -11,8 +10,8 @@ class LFPlannerABC(KagBaseModule, ABC):
     Initializes the base planner.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
 
     @abstractmethod
     def lf_planing(self, question, llm_output=None) -> List[LFPlanResult]:

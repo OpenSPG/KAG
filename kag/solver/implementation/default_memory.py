@@ -5,8 +5,8 @@ from kag.interface.solver.kag_memory_abc import KagMemoryABC
 
 
 class DefaultMemory(KagMemoryABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
         self.verify_prompt = PromptOp.load(self.biz_scene, "resp_verifier")(
             language=self.language
         )
@@ -22,7 +22,7 @@ class DefaultMemory(KagMemoryABC):
     def _verifier(self, supporting_fact, sub_instruction):
         res = self.llm_module.invoke({'sub_instruction': sub_instruction,
                                       'supporting_fact': supporting_fact}, self.verify_prompt,
-                                     with_json_parse=False, with_except=True)
+                                     with_json_parse=False)
         if res is None:
             return
         if res not in self.state_memory:
@@ -30,10 +30,8 @@ class DefaultMemory(KagMemoryABC):
 
     @retry(stop=stop_after_attempt(3))
     def _extractor(self, supporting_fact, instruction):
-        if supporting_fact is None or supporting_fact == '':
-            return
         evidence = self.llm_module.invoke({'supporting_fact': supporting_fact, 'instruction': instruction},
-                                          self.extractor_prompt, with_json_parse=False, with_except=True)
+                                          self.extractor_prompt, with_json_parse=False)
         if evidence not in self.evidence_memory:
             self.evidence_memory.append(evidence)
 

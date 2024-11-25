@@ -13,7 +13,7 @@ import io
 import json
 from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Any, Union, Iterable, Optional, Dict
+from typing import Any, Union, Iterable, Dict
 
 EmbeddingVector = Iterable[float]
 
@@ -22,10 +22,6 @@ class Vectorizer(ABC):
     """
     Vectorizer turns texts into embedding vectors.
     """
-
-    def __init__(self, config: Dict[str, Any]):
-        self._config = config
-        self._vector_dimensions = None
 
     @classmethod
     def from_config(cls, config: Union[str, Path, Dict[str, Any]]) -> "Vectorizer":
@@ -99,57 +95,6 @@ class Vectorizer(ABC):
         """
         message = "abstract method _from_config is not implemented"
         raise NotImplementedError(message)
-
-    def _get_vector_dimensions(self, config: Dict[str, Any]) -> Optional[int]:
-        """
-        Get embedding vector dimensions from `config`.
-
-        * If vector dimensions is not specified in `config`, return None.
-
-        * If vector dimensions is specified in `config` but not a positive integer,
-          raise an exception.
-
-        :param config: vectorizer config
-        :type config: Dict[str, Any]
-        :return: embedding vector dimensions or None
-        :rtype: Optional[int]
-        """
-        value = config.get("vector_dimensions")
-        if value is None:
-            return None
-        if isinstance(value, str):
-            try:
-                value = int(value)
-            except ValueError as ex:
-                message = "vector_dimensions must be integer; "
-                message += "%r is invalid" % (value,)
-                raise RuntimeError(message) from ex
-        if not isinstance(value, int) or value <= 0:
-            message = "vector_dimensions must be positive-integer; "
-            message += "%r is invalid" % (value,)
-            raise RuntimeError(message)
-        return value
-
-    @property
-    def vector_dimensions(self):
-        """
-        Dimension of generated embedding vectors.
-        """
-        if self._vector_dimensions is not None:
-            return self._vector_dimensions
-        try:
-            example_input = "This is a test."
-            example_vector = self.vectorize(example_input)
-        except Exception as ex:
-            message = "the embedding service is not available"
-            raise RuntimeError(message) from ex
-        value = self._get_vector_dimensions(self._config)
-        if value is not None and value != len(example_vector):
-            message = "invalid 'vector_dimensions', specified %d; " % value
-            message += "but the actual generated embedding vector is of %d dimensions" % len(example_vector)
-            raise RuntimeError(message)
-        self._vector_dimensions = len(example_vector)
-        return self._vector_dimensions
 
     @abstractmethod
     def vectorize(self, texts: Union[str, Iterable[str]]) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
