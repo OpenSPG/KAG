@@ -1,6 +1,9 @@
 
 # Experiments of KAG
 
+This is a special version of KAG, corresponding with experiments in our paper.
+> Note that this code forks from a early version of KAG, NOT ALL TECHNIQUES OF KAG ARE INCLUDED.
+
 ## 1. Preparation
 
 ### 1.1 Install Neo4j DB
