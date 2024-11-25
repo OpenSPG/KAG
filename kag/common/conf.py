@@ -51,7 +51,6 @@ class KAGGlobalConf:
 
     def initialize(self, **kwargs):
         if not self._initialized:
-            print(f"kwargs = {kwargs}")
             self.project_id = kwargs.pop(KAGConstants.KAG_PROJECT_ID_KEY, "1")
             self.host_addr = kwargs.pop(
                 KAGConstants.KAG_PROJECT_HOST_ADDR_KEY, "http://127.0.0.1:8887"

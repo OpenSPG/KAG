@@ -273,7 +273,6 @@ def pop_and_construct_arg(
     default: Any,
     actual_params: ConfigTree,
 ) -> Any:
-
     annotation = remove_optional(annotation)
     popped_params = (
         actual_params.pop(argument_name, default)
@@ -299,7 +298,6 @@ def construct_arg(
     annotation: Type,
     default: Any,
 ) -> Any:
-
     origin = get_origin(annotation)
     args = get_args(annotation)
 
@@ -616,6 +614,53 @@ class Registrable:
             return [default] + [k for k in keys if k != default]
 
     @classmethod
+    def list_available_with_detail(cls) -> Dict:
+        """List default first if it exists"""
+        register_dict = Registrable._registry[cls]
+        availables = {}
+        for k, v in register_dict.items():
+            params = extract_parameters(v[0], v[1])
+            required_params = []
+            optional_params = []
+            sample_config = {"type": k}
+            for arg_name, arg_def in params.items():
+                if arg_name.strip() == "self":
+                    continue
+                annotation = arg_def.annotation
+                if annotation == inspect.Parameter.empty:
+                    annotation = None
+                default = arg_def.default
+                required = default == inspect.Parameter.empty
+                # if default == inspect.Parameter.empty:
+                #     default = None
+                if required:
+                    arg_info = (
+                        f"{arg_name}: {annotation.__name__ if annotation else 'Any'}"
+                    )
+                    required_params.append(arg_info)
+                else:
+                    arg_info = f"{arg_name}: {annotation.__name__ if annotation else 'Any'} = {default}"
+                    optional_params.append(arg_info)
+                if required:
+                    sample_config[arg_name] = f"Your {arg_name} config"
+                else:
+                    sample_config[arg_name] = default
+
+                # if default != None:
+                #     sample_config[arg_name] = default
+            availables[k] = {
+                "class": f"{v[0].__module__}.{v[0].__name__}",
+                "doc": inspect.getdoc(v[0]),
+                "params": {
+                    "required_params": required_params,
+                    "optional_params": optional_params,
+                },
+                # "default_config": default_conf,
+                "sample_useage": f"{cls.__name__}.from_config({sample_config})",
+            }
+        return availables
+
+    @classmethod
     def from_config(
         cls: Type[RegistrableType],
         params: Union[str, Dict, ConfigTree],
@@ -663,7 +708,6 @@ class Registrable:
         try:
             # instantiate object from base class
             if registered_subclasses and not constructor_to_call:
-
                 as_registrable = cast(Type[Registrable], cls)
                 default_choice = as_registrable.default_implementation
                 # call with BaseClass.from_prams, should use `type` to point out which subclasss to use
@@ -747,7 +791,6 @@ class Registrable:
                     params.clear()
                     setattr(instant, "__from_config_kwargs__", remaining_kwargs)
         except Exception as e:
-
             logger.warn(f"Failed to initialize class {cls}, info: {e}")
             raise e
         if len(params) > 0:

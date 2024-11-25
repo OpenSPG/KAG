@@ -5,13 +5,14 @@ from kag.solver.logic.core_modules.common.base_model import (
     SPOBase,
     SPOEntity,
     SPORelation,
-    Identifer,
+    Identifier,
     TypeInfo,
     LogicNode,
 )
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
 logger = logging.getLogger(__name__)
+
 
 # get_spg(s, p, o)
 class GetSPONode(LogicNode):
@@ -346,9 +347,7 @@ class ExtractorNode(LogicNode):
     def parse_node(input_str):
         params = set(input_str.split(","))
         alias_set = [Identifier(p) for p in params]
-        ex_node = ExtractorNode("extractor", {
-            "alias_set": alias_set
-        })
+        ex_node = ExtractorNode("extractor", {"alias_set": alias_set})
         ex_node.alias_set = alias_set
         return ex_node
 
