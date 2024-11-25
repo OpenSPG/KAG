@@ -12,14 +12,13 @@
 
 from typing import Type, List, Union
 import re
-import os
 
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.interface.builder.splitter_abc import SplitterABC
-from knext.common.base.runnable import Input, Output
+from kag.builder.component.base import Splitter
+from kag.common.base.runnable import Input, Output
 
 
-class PatternSplitter(SplitterABC):
+class PatternSplitter(Splitter):
     def __init__(self, pattern_dict: dict = None, chunk_cut_num=None):
         """
         pattern_dict:
@@ -103,8 +102,10 @@ class PatternSplitter(SplitterABC):
         for idx, sentences in enumerate(splitted):
             chunk_name = f"{prefix}#{idx}"
             chunk = Chunk(
-                id=Chunk.generate_hash_id(chunk_name),
-                name=chunk_name,
+                type=ChunkTypeEnum.Text,
+                chunk_header="",
+                chunk_name=chunk_name,
+                chunk_id=Chunk.generate_hash_id(chunk_name),
                 content=sep.join(sentences),
             )
             output.append(chunk)
@@ -125,9 +126,10 @@ class PatternSplitter(SplitterABC):
         chunks = []
         for match in matches:
             chunk = Chunk(
+                type=ChunkTypeEnum.Text,
                 chunk_header=match.group(self.group["header"]),
-                name=match.group(self.group["name"]),
-                id=Chunk.generate_hash_id(match.group(self.group["content"])),
+                chunk_name=match.group(self.group["name"]),
+                chunk_id=Chunk.generate_hash_id(match.group(self.group["content"])),
                 content=match.group(self.group["content"]),
             )
             chunk = [chunk]
@@ -171,9 +173,7 @@ def _test():
     from kag.builder.component.reader.pdf_reader import PDFReader
 
     reader = PDFReader()
-    file_path = os.path.dirname(__file__)
-    test_file_path = os.path.join(file_path, "../../../../tests/builder/data/aiwen.pdf")
-    pre_output = reader._handle(test_file_path)
+    pre_output = reader._handle("tests/component/data/aiwen.pdf")
 
     handle_input = pre_output[0]
     handle_result = ds._handle(handle_input)

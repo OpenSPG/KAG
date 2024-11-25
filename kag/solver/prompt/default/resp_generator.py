@@ -10,11 +10,18 @@ logger = logging.getLogger(__name__)
 
 class RespGenerator(PromptOp):
     template_zh = "基于给定的引用信息回答问题。" \
-                  "\n输出答案，并且给出理由。" \
+                  "\n只输出答案，不需要输出额外的信息。" \
                   "\n给定的引用信息：'$memory'\n问题：'$instruction'"
     template_en = "Answer the question based on the given reference." \
-                 "\nGive me the answer and why." \
+                 "\nOnly give me the answer and do not output any other words." \
                  "\nThe following are given reference:'$memory'\nQuestion: '$instruction'"
+    # template_en = (
+    #     "You are an expert at reasoning. "
+    #     "Please answer [Question] based on the [Information] provided below:\n\n"
+    #     "Information: \n$memory \n\n"
+    #     "Question: \n$instruction \n\n"
+    #     "Please give the answer directly, do not output any other words."
+    # )
 
     def __init__(self, language: str):
         super().__init__(language)

@@ -17,7 +17,7 @@ from abc import ABC
 from typing import List, Dict, Any
 from collections import defaultdict
 
-from knext.schema.model.schema_helper import SPGTypeName
+from kag.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
 from kag.builder.prompt.spg_prompt import SPGPrompt
 import uuid

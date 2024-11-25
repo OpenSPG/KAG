@@ -10,12 +10,13 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from kag.builder.component.mapping.spg_type_mapping import SPGTypeMapping
-from kag.builder.component.mapping.relation_mapping import RelationMapping
-from kag.builder.component.writer.kg_writer import KGWriter
+from kag.builder.component.reader import CSVReader
+from kag.builder.component.mapping import SPGTypeMapping, RelationMapping
+from kag.builder.component.writer import KGWriter
 
 
 __all__ = [
+    "CSVReader",
     "SPGTypeMapping",
     "RelationMapping",
     "KGWriter",

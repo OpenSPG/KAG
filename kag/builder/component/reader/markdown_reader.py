@@ -11,25 +11,16 @@
 # or implied.
 
 import os
-
-import bs4.element
 import markdown
 from bs4 import BeautifulSoup, Tag
 from typing import List, Type
-import logging
-import re
-import requests
-import pandas as pd
-from io import StringIO
-from tenacity import stop_after_attempt, retry
 
-from kag.interface.builder import SourceReaderABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from knext.common.base.runnable import Output, Input
-from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
+from kag.builder.component.base import SourceReader
+from kag.builder.model.chunk import Chunk
+from kag.common.base.runnable import Output, Input
 
 
-class MarkDownReader(SourceReaderABC):
+class MarkDownReader(SourceReader):
     """
     A class for reading MarkDown files, inheriting from `SourceReader`.
     Supports converting MarkDown data into a list of Chunk objects.
@@ -39,14 +30,10 @@ class MarkDownReader(SourceReaderABC):
     """
 
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
-    TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 1, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, cut_depth: int = 1):
+        super().__init__()
         self.cut_depth = int(cut_depth)
-        self.llm_module = kwargs.get("llm_module", None)
-        self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
-        self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
 
     @property
     def input_types(self) -> Type[Input]:
@@ -74,87 +61,15 @@ class MarkDownReader(SourceReaderABC):
                 header, tag = item
                 if not isinstance(tag, Tag):
                     continue
+                if tag.name == "table":
+                    continue
                 elif tag.name in self.ALL_LEVELS:
                     content.append(
                         f"{header}-{tag.text}" if len(header) > 0 else tag.text
                     )
                 else:
-                    content.append(self.tag_to_text(tag))
+                    content.append(tag.text)
         return "\n".join(content)
-
-    def tag_to_text(self, tag: bs4.element.Tag):
-        """
-        将html tag转换为text
-        如果是table，输出markdown，添加表格标记，方便后续构建Chunk
-        :param tag:
-        :return:
-        """
-        if tag.name == "table":
-            try:
-                html_table = str(tag)
-                table_df = pd.read_html(html_table)[0]
-                return f"{self.TABLE_CHUCK_FLAG}{table_df.to_markdown(index=False)}{self.TABLE_CHUCK_FLAG}"
-            except:
-                logging.warning("parse table tag to text error", exc_info=True)
-        return tag.text
-
-    @retry(stop=stop_after_attempt(5))
-    def analyze_table(self, table,analyze_mathod="human"):
-        if analyze_mathod == "llm":
-            if self.llm_module == None:
-                logging.INFO("llm_module is None, cannot use analyze_table")
-                return table
-            variables = {
-                "table": table
-            }
-            response = self.llm_module.invoke(
-                variables = variables,
-                prompt_op = self.analyze_table_prompt,
-                with_json_parse=False
-            )
-            if response is  None or response == "" or response == []:
-                raise Exception("llm_module return None")
-            return response
-        else:
-            from io import StringIO
-            import pandas as pd
-            try:
-                df = pd.read_html(StringIO(table))[0]
-            except Exception as e:
-                logging.warning(f"analyze_table error: {e}")
-                return table
-            content = ""
-            for index, row in df.iterrows():
-                content+=f"第{index+1}行的数据如下:"
-                for col_name, value in row.items():
-                    content+=f"{col_name}的值为{value}，"
-                content+='\n'
-            return content
-
-    
-    @retry(stop=stop_after_attempt(5))
-    def analyze_img(self, img_url):
-        response = requests.get(img_url)
-        response.raise_for_status()
-        image_data = response.content
-
-        pass
-
-    def replace_table(self, content: str):
-        pattern = r"<table[^>]*>([\s\S]*?)<\/table>"
-        for match in re.finditer(pattern, content):
-            table = match.group(0)
-            table = self.analyze_table(table)
-            content = content.replace(match.group(1), table)
-        return content
-
-    def replace_img(self, content: str):
-        pattern = r"<img[^>]*src=[\"\']([^\"\']*)[\"\']"
-        for match in re.finditer(pattern, content):
-            img_url = match.group(1)
-            img_msg = self.analyze_img(img_url)
-            content = content.replace(match.group(0), img_msg)
-        return content
 
     def extract_table(self, level_tags, header=""):
         """
@@ -188,11 +103,11 @@ class MarkDownReader(SourceReaderABC):
         return tables
 
     def parse_level_tags(
-            self,
-            level_tags: list,
-            level: str,
-            parent_header: str = "",
-            cur_header: str = "",
+        self,
+        level_tags: list,
+        level: str,
+        parent_header: str = "",
+        cur_header: str = "",
     ):
         """
         Recursively parses level tags to organize them into a structured format.
@@ -265,9 +180,10 @@ class MarkDownReader(SourceReaderABC):
             cur_prefix = []
             for sublevel_tags in level_tags:
                 if (
-                        isinstance(sublevel_tags, tuple)
+                    isinstance(sublevel_tags, tuple)
+                    and sublevel_tags[1].name != "table"
                 ):
-                    cur_prefix.append(self.to_text([sublevel_tags,]))
+                    cur_prefix.append(sublevel_tags[1].text)
                 else:
                     break
             cur_prefix = "\n".join(cur_prefix)
@@ -282,7 +198,8 @@ class MarkDownReader(SourceReaderABC):
             cur_prefix = []
             for sublevel_tags in level_tags:
                 if (
-                        isinstance(sublevel_tags, tuple)
+                    isinstance(sublevel_tags, tuple)
+                    and sublevel_tags[1].name != "table"
                 ):
                     cur_prefix.append(sublevel_tags[1].text)
                 else:
@@ -296,7 +213,7 @@ class MarkDownReader(SourceReaderABC):
                     output += self.cut(sublevel_tags, cur_level + 1, final_level)
             return output
 
-    def solve_content(self, id: str, title: str, content: str, **kwargs) -> List[Output]:
+    def solve_content(self, id: str, title: str, content: str) -> List[Output]:
         """
         Converts Markdown content into structured chunks.
 
@@ -308,11 +225,14 @@ class MarkDownReader(SourceReaderABC):
         Returns:
             List[Output]: A list of processed content chunks.
         """
-        html_content = markdown.markdown(
-            content, extensions=["markdown.extensions.tables"]
-        )
-        # html_content = self.replace_table(html_content)
-        soup = BeautifulSoup(html_content, "html.parser")
+        try:
+            html_content = markdown.markdown(
+                content, extensions=["markdown.extensions.tables"]
+            )
+            soup = BeautifulSoup(html_content, "html.parser")
+        except Exception as e:
+            raise RuntimeError(f"Error loading MarkDown file: {e}")
+
         if soup is None:
             raise ValueError("The MarkDown file appears to be empty or unreadable.")
 
@@ -324,10 +244,9 @@ class MarkDownReader(SourceReaderABC):
                 break
         if top_level is None:
             chunk = Chunk(
-                id=Chunk.generate_hash_id(str(id)),
+                id=Chunk.generate_hash_id(id),
                 name=title,
                 content=soup.text,
-                ref=kwargs.get("ref", ""),
             )
             return [chunk]
         tags = [tag for tag in soup.children if isinstance(tag, Tag)]
@@ -338,53 +257,14 @@ class MarkDownReader(SourceReaderABC):
         chunks = []
 
         for idx, content in enumerate(cutted):
-            chunk = None
-            if self.TABLE_CHUCK_FLAG in content:
-                chunk = self.get_table_chuck(content, title, id, idx)
-                chunk.ref = kwargs.get("ref", "")
-            else:
-                chunk = Chunk(
+            chunks.append(
+                Chunk(
                     id=Chunk.generate_hash_id(f"{id}#{idx}"),
                     name=f"{title}#{idx}",
                     content=content,
-                    ref=kwargs.get("ref", ""),
                 )
-            chunks.append(chunk)
-        return chunks
-
-    def get_table_chuck(self, table_chunk_str: str, title: str, id: str, idx: int) -> Chunk:
-        """
-        convert table chunk
-        :param table_chunk_str:
-        :return:
-        """
-        table_chunk_str = table_chunk_str.replace("\\N", "")
-        pattern = f"{self.TABLE_CHUCK_FLAG}(.*){self.TABLE_CHUCK_FLAG}"
-        matches = re.findall(pattern, table_chunk_str, re.DOTALL)
-        if not matches or len(matches) <= 0:
-            # 找不到表格信息，按照Text Chunk处理
-            return Chunk(
-                id=Chunk.generate_hash_id(f"{id}#{idx}"),
-                name=f"{title}#{idx}",
-                content=table_chunk_str,
             )
-        table_markdown_str = matches[0]
-        html_table_str = markdown.markdown(table_markdown_str, extensions=["markdown.extensions.tables"])
-        try:
-            df = pd.read_html(html_table_str)[0]
-        except Exception as e:
-            logging.warning(f"get_table_chuck error: {e}")
-            df = pd.DataFrame()
-
-        # 确认是表格Chunk，去除内容中的TABLE_CHUCK_FLAG
-        replaced_table_text = re.sub(pattern, f'\n{table_markdown_str}\n', table_chunk_str, flags=re.DOTALL)
-        return Chunk(
-            id=Chunk.generate_hash_id(f"{id}#{idx}"),
-            name=f"{title}#{idx}",
-            content=replaced_table_text,
-            type=ChunkTypeEnum.Table,
-            csv_data=df.to_csv(index=False),
-        )
+        return chunks
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """

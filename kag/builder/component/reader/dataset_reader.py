@@ -12,14 +12,14 @@
 
 import json
 import os
-from typing import List, Type
+from typing import List, Sequence, Type, Dict
 
-from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
-from knext.common.base.runnable import Input, Output
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.builder.component.base import SourceReader
+from kag.common.base.runnable import Input, Output
 
 
-class HotpotqaCorpusReader(SourceReaderABC):
+class HotpotqaCorpusReader(SourceReader):
     @property
     def input_types(self) -> Type[Input]:
         """The type of input this Runnable object accepts specified as a type annotation."""
@@ -40,15 +40,17 @@ class HotpotqaCorpusReader(SourceReaderABC):
 
         for item_key, item_value in corpus.items():
             chunk = Chunk(
-                id=item_key,
+                type=ChunkTypeEnum.Text,
+                chunk_header="",
                 name=item_key,
+                id=item_key,
                 content="\n".join(item_value),
             )
             chunks.append(chunk)
         return chunks
 
 
-class MusiqueCorpusReader(SourceReaderABC):
+class MusiqueCorpusReader(SourceReader):
     @property
     def input_types(self) -> Type[Input]:
         """The type of input this Runnable object accepts specified as a type annotation."""
@@ -77,12 +79,21 @@ class MusiqueCorpusReader(SourceReaderABC):
 
         for item in corpusList:
             chunk = Chunk(
-                id=item[id_column],
-                name=item[name_column],
+                type=ChunkTypeEnum.Text,
+                chunk_header="",
+                chunk_name=item[name_column],
+                chunk_id=item[id_column],
                 content=item[content_column],
             )
             chunks.append(chunk)
         return chunks
+
+    def _handle(self, input: str) -> Sequence[Dict]:
+        _output = self.invoke(input)
+        return [_o.to_dict() for _o in _output]
+
+    def batch(self, inputs: List[Input], **kwargs) -> List[Output]:
+        pass
 
 
 class TwowikiCorpusReader(MusiqueCorpusReader):

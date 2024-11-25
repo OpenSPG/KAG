@@ -11,5 +11,7 @@
 *.jc
 *.pyc
 /dist
+.DS_Store
+.idea
 .vscode/
 __pycache__/

@@ -10,8 +10,11 @@ class DefaultGenerator(KAGGeneratorABC):
      The Generator class is an abstract base class for generating responses using a language model module.
      It initializes prompts for judging and generating responses based on the business scene and language settings.
      """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
+        self.judge_prompt = PromptOp.load(self.biz_scene, "resp_judge")(
+            language=self.language
+        )
         self.generate_prompt = PromptOp.load(self.biz_scene, "resp_generator")(
             language=self.language
         )
@@ -22,4 +25,4 @@ class DefaultGenerator(KAGGeneratorABC):
         if solved_answer is not None:
             return solved_answer
         present_memory = memory.serialize_memory()
-        return self.llm_module.invoke({'memory': present_memory, 'instruction': instruction}, self.generate_prompt, with_json_parse=False, with_except=True)
+        return self.llm_module.invoke({'memory': present_memory, 'instruction': instruction}, self.generate_prompt, with_json_parse=False)

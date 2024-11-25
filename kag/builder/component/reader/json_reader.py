@@ -10,19 +10,16 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import json
 import os
+import json
 from typing import List, Type, Dict, Union
 
-from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder.reader_abc import SourceReaderABC
-from knext.common.base.runnable import Input, Output
-
-from kag.common.llm.client import LLMClient
+from kag.builder.component.base import SourceReader
+from kag.common.base.runnable import Input, Output
 
 
-class JSONReader(SourceReaderABC):
+class JSONReader(SourceReader):
     """
     A class for reading JSON files, inheriting from `SourceReader`.
     Supports converting JSON data into either a list of dictionaries or a list of Chunk objects.
@@ -32,15 +29,15 @@ class JSONReader(SourceReaderABC):
         **kwargs: Additional keyword arguments passed to the parent class constructor.
     """
 
-    def __init__(self, output_type="Chunk", **kwargs):
-        super().__init__(**kwargs)
-        if output_type == "Dict":
+    def __init__(self, output_types="Dict"):
+        super().__init__()
+        if output_types == "Dict":
             self.output_types = Dict[str, str]
         else:
             self.output_types = Chunk
-        self.id_col = kwargs.get("id_col", "id")
-        self.name_col = kwargs.get("name_col", "name")
-        self.content_col = kwargs.get("content_col", "content")
+        self.id_col = os.getenv("KAG_INDEXER_READER_ID_COL", "id")
+        self.name_col = os.getenv("KAG_INDEXER_READER_NAME_COL",  "name")
+        self.content_col = os.getenv("KAG_INDEXER_READER_CONTENT_COL",  "content")
 
     @property
     def input_types(self) -> Type[Input]:
@@ -113,13 +110,6 @@ class JSONReader(SourceReaderABC):
         Raises:
             ValueError: If the input data format is incorrect or parsing fails.
         """
-
-        id_col = kwargs.get("id_col", "id")
-        name_col = kwargs.get("name_col", "name")
-        content_col = kwargs.get("content_col", "content")
-        self.id_col = id_col
-        self.name_col = name_col
-        self.content_col = content_col
         try:
             if os.path.exists(input):
                 corpus = self._read_from_file(input)
@@ -151,14 +141,3 @@ class JSONReader(SourceReaderABC):
             return chunks
         else:
             return corpus
-
-if __name__ == "__main__":
-    reader = JSONReader()
-    json_string = '''[
-            {
-                "title": "test_json", 
-                "text": "Test content"
-            }
-        ]'''
-    chunks = reader.invoke(json_string,name_column="title",content_col = "text")
-    res = 1

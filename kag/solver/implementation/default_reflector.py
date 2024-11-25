@@ -6,7 +6,7 @@ from kag.interface.solver.kag_reflector_abc import KagReflectorABC
 
 
 class DefaultReflector(KagReflectorABC):
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
         A class for rewriting instructions based on provided memory information.
 
@@ -14,8 +14,8 @@ class DefaultReflector(KagReflectorABC):
         - llm_module (Any): The LLM module to be used by this instance.
         - rewrite_prompt (PromptOp): The prompt operation for rewriting responses.
         """
-        super().__init__(**kwargs)
-        self.refine_prompt = PromptOp.load(self.biz_scene, "resp_reflector")(
+        super().__init__()
+        self.refine_prompt = PromptOp.load(self.biz_scene, "resp_rewriter")(
             language=self.language
         )
 
@@ -45,7 +45,7 @@ class DefaultReflector(KagReflectorABC):
             return True
 
         return self.llm_module.invoke({'memory': serialize_memory, 'instruction': instruction}, self.judge_prompt,
-                                      with_json_parse=False, with_except=True)
+                                      with_json_parse=False)
 
     @retry(stop=stop_after_attempt(3))
     def _refine_query(self, memory: KagMemoryABC, instruction: str):
@@ -62,7 +62,7 @@ class DefaultReflector(KagReflectorABC):
 
         update_reason_path = self.llm_module.invoke({"memory": serialize_memory, "instruction": instruction},
                                                     self.refine_prompt,
-                                                    with_json_parse=False, with_except=True)
+                                                    with_json_parse=False)
         if len(update_reason_path) == 0:
             return None
         return update_reason_path[0]

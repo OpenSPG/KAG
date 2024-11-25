@@ -1,14 +1,11 @@
-import os
 import re
 from typing import List
 
 from kag.common.base.prompt_op import PromptOp
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult, LogicNode
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicForm
-from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
+from kag.solver.logic.common.base_model import LFPlanResult, LogicNode
+from kag.solver.logic.parser.logic_node_parser import ParseLogicForm
+from kag.solver.logic.retriver.schema_std import SchemaRetrieval
 
 
 class DefaultLFPlanner(LFPlannerABC):
@@ -16,12 +13,11 @@ class DefaultLFPlanner(LFPlannerABC):
     Planner class that extends the base planner functionality to generate sub-queries and logic forms.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        config = LogicFormConfiguration(kwargs)
-        schema = SchemaUtils(config)
-        schema.get_schema()
-        std_schema = SchemaRetrieval(**kwargs)
+    def __init__(self):
+        super().__init__()
+        # TODO load from schema define file
+        schema = None
+        std_schema = SchemaRetrieval()
         self.parser = ParseLogicForm(schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
         self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan")(
@@ -44,6 +40,7 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys, logic_forms = self.parse_logic_form_llm_output(llm_output)
         else:
             sub_querys, logic_forms = self.generate_logic_form(question)
+
         return self._parse_lf(question, sub_querys, logic_forms)
 
     def _split_sub_query(self, logic_nodes: List[LogicNode]) -> List[LFPlanResult]:
@@ -65,7 +62,10 @@ class DefaultLFPlanner(LFPlannerABC):
         return self._split_sub_query(parsed_logic_nodes)
 
     def generate_logic_form(self, question: str):
-        return self.llm_module.invoke({'question': question}, self.logic_form_plan_prompt, with_json_parse=False, with_except=True)
+        result = self.llm_module.invoke({'question': question}, self.logic_form_plan_prompt, with_json_parse=False)
+        if isinstance(result, tuple):
+            return result
+        return [], []
 
     def parse_logic_form_llm_output(self, llm_output):
         _output_string = llm_output.replace("：", ":")

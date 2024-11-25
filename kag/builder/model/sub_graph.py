@@ -9,12 +9,13 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import hashlib
 import pprint
-from typing import Dict, List, Any
+from typing import Dict, List, Type, Any
 
-from knext.schema.client import BASIC_TYPES
+from kag.schema.client import BASIC_TYPES
 from kag.builder.model.spg_record import SPGRecord
-from knext.schema.model.base import BaseSpgType
+from kag.schema.model.base import BaseSpgType, SpgTypeEnum
 
 
 class Node(object):
@@ -129,15 +130,11 @@ class SubGraph(object):
         self.nodes = nodes
         self.edges = edges
 
-    def add_node(self, id: str, name: str, label: str, properties=None):
-        if not properties:
-            properties = dict()
+    def add_node(self, id: str, name: str, label: str, properties={}):
         self.nodes.append(Node(_id=id, name=name, label=label, properties=properties))
         return self
 
-    def add_edge(self, s_id: str, s_label: str, p: str, o_id: str, o_label: str, properties=None):
-        if not properties:
-            properties = dict()
+    def add_edge(self, s_id: str, s_label: str, p: str, o_id: str, o_label: str, properties={}):
         s_node = Node(_id=s_id, name=s_id, label=s_label, properties={})
         o_node = Node(_id=o_id, name=o_id, label=o_label, properties={})
         self.edges.append(Edge(_id="", from_node=s_node, to_node=o_node, label=p, properties=properties))
@@ -152,9 +149,59 @@ class SubGraph(object):
     def __repr__(self):
         return pprint.pformat(self.to_dict())
 
-    def merge(self, sub_graph: 'SubGraph'):
+    def update(self, sub_graph: Type['SubGraph']):
         self.nodes.extend(sub_graph.nodes)
         self.edges.extend(sub_graph.edges)
+
+    @staticmethod
+    def filter_record(spg_record: SPGRecord, spg_type: BaseSpgType):
+
+        filtered_properties, filtered_relations = {}, {}
+        for prop_name, prop_value in spg_record.properties.items():
+            if prop_value != 'NAN':
+                filtered_properties[prop_name] = prop_value
+        for rel_name, rel_value in spg_record.relations.items():
+            if rel_value != 'NAN':
+                filtered_relations[rel_name] = rel_value
+        spg_record.properties = filtered_properties
+        spg_record.relations = filtered_relations
+
+        # if len(spg_record.properties) == 1 and spg_record.get_property("name"):
+        #     print("filtered_entity: ")
+        #     print(spg_record)
+        #     return None
+        if spg_type.spg_type_enum == SpgTypeEnum.Event and \
+                (spg_type.properties.get('subject') and not spg_record.properties.get('subject')) and \
+                (spg_type.properties.get('object') and not spg_record.properties.get('object')) and \
+                (spg_type.properties.get('eventTime') and not spg_record.properties.get('eventTime')):
+            print("filtered_event: ")
+            print(spg_record)
+            return None
+        else:
+            return spg_record
+
+    @staticmethod
+    def filter_node(nodes: List[Node], edges: List[Edge]):
+        ids = []
+        filtered_nodes = []
+        for edge in edges:
+            ids.extend([edge.from_id, edge.to_id])
+        for node in nodes:
+            if len(node.properties) == 1 and node.properties.get("name"):
+                if node.id not in ids:
+                    print("filtered_node: ")
+                    print(node)
+                    continue
+            filtered_nodes.append(node)
+        return filtered_nodes
+
+    @staticmethod
+    def generate_hash_id(value):
+        m = hashlib.md5()
+        m.update(value.encode('utf-8'))
+        md5_hex = m.hexdigest()
+        decimal_value = int(md5_hex, 16)
+        return int(str(decimal_value)[:10])
 
     @classmethod
     def from_spg_record(
@@ -170,7 +217,7 @@ class SubGraph(object):
             spg_type = spg_types.get(record.spg_type_name)
             for prop_name, prop_value in record.properties.items():
                 if prop_name in spg_type.properties:
-                    from knext.schema.model.property import Property
+                    from kag.schema.model.property import Property
                     prop: Property = spg_type.properties.get(prop_name)
                     o_label = prop.object_type_name.split('.')[-1]
                     if o_label not in BASIC_TYPES:

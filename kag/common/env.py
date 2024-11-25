@@ -20,7 +20,7 @@ import kag.common as common
 
 class ConfigParser(CP):
     def __init__(self,defaults=None):
-        CP.__init__(self,defaults=defaults)
+        CP.__init__(self,defaults=None)
     def optionxform(self, optionstr):
         return optionstr
 
@@ -38,12 +38,12 @@ def init_env():
     """
     project_cfg, root_path = get_config()
 
-    init_kag_config(Path(root_path) / "kag_config.cfg")
+    init_kag_config(str(Path(root_path) / "kag_config.cfg"))
 
 
 def get_config():
     """
-    Get kag config file as a ConfigParser.
+    Get knext config file as a ConfigParser.
     """
     local_cfg_path = _closest_cfg()
     local_cfg = ConfigParser()
@@ -63,7 +63,7 @@ def _closest_cfg(
     prev_path: Optional[Union[str, os.PathLike]] = None,
 ) -> str:
     """
-    Return the path to the closest .kag.cfg file by traversing the current
+    Return the path to the closest .knext.cfg file by traversing the current
     directory and its parents
     """
     if prev_path is not None and str(path) == str(prev_path):
@@ -77,7 +77,7 @@ def _closest_cfg(
 
 def get_cfg_files():
     """
-    Get global and local kag config files and paths.
+    Get global and local knext config files and paths.
     """
     local_cfg_path = _closest_cfg()
     local_cfg = ConfigParser()
@@ -92,8 +92,8 @@ def get_cfg_files():
 
 
 
-def init_kag_config(config_path: Union[str, Path] = None):
-    if not config_path or isinstance(config_path, Path) and not config_path.exists():
+def init_kag_config(config_path: str = None):
+    if not config_path:
         config_path = DEFAULT_KAG_CONFIG_PATH
     kag_cfg = ConfigParser()
     kag_cfg.read(config_path)

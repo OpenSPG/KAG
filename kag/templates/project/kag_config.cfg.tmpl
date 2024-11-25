@@ -1,0 +1,42 @@
+[project]
+name = {{name}}
+namespace = {{namespace}}
+root_dir = {{root}}
+schema_dir = schema
+schema_file = {{root}}.schema
+builder_dir = builder
+reasoner_dir = reasoner
+solver_dir = solver
+
+with_server = {{with_server}}
+host_addr = {{host_addr}}
+id = {{id}}
+
+[graph_store]
+uri = neo4j://localhost:7687
+user = {{useer}}
+password = {{password}}
+database = {{root}}
+
+[vectorizer]
+; """ Put your vectorizer config here """
+
+[llm]
+; """ Put your LLM config here """
+
+[prompt]
+biz_scene = {{tmpl}}
+language = zh
+
+[indexer]
+with_semantic = False
+similarity_threshold = 0.8
+
+[retriever]
+with_semantic = False
+pagerank_threshold = 0.9
+match_threshold = 0.8
+top_k = 10
+
+[log]
+level = INFO

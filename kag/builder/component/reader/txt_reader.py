@@ -14,11 +14,11 @@ import os
 from typing import List, Type
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
-from knext.common.base.runnable import Input, Output
+from kag.builder.component.base import SourceReader
+from kag.common.base.runnable import Input, Output
 
 
-class TXTReader(SourceReaderABC):
+class TXTReader(SourceReader):
     """
     A PDF reader class that inherits from SourceReader.
     """

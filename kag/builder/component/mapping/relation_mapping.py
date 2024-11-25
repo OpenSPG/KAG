@@ -12,19 +12,20 @@
 
 from collections import defaultdict
 from typing import Dict, List
+import os
 
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import SchemaClient
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import SchemaClient
 
-from knext.schema.model.schema_helper import (
+from kag.schema.model.schema_helper import (
     SPGTypeName,
     RelationName,
 )
-from kag.interface.builder.mapping_abc import MappingABC
+from kag.builder.component.base import Mapping
 
 
-class RelationMapping(MappingABC):
+class RelationMapping(Mapping):
     """
     A class that handles relation mappings by assembling subgraphs based on given subject, predicate, and object names.
     This class extends the Mapping class.
@@ -40,10 +41,9 @@ class RelationMapping(MappingABC):
         subject_name: SPGTypeName,
         predicate_name: RelationName,
         object_name: SPGTypeName,
-        **kwargs
     ):
-        super().__init__(**kwargs)
-        schema = SchemaClient(project_id=self.project_id).load()
+        super().__init__()
+        schema = SchemaClient().load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"
         assert object_name in schema, f"{object_name} is not a valid SPG type name"
         self.subject_type = schema.get(subject_name)
@@ -144,7 +144,7 @@ class RelationMapping(MappingABC):
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
-        Invokes the assembly process to create a subgraph from the input data.
+        Invokes the assemble process to create a subgraph from the input data.
 
         Args:
             input (Input): The input data to assemble into a subgraph.

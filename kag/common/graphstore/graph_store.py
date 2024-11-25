@@ -212,8 +212,7 @@ class GraphStore(ABC):
 
     @abstractmethod
     def create_vector_index(self, label, property_key, index_name=None,
-                            vector_dimensions=768, metric_type="cosine",
-                            hnsw_m=None, hnsw_ef_construction=None):
+                            vector_dimensions=768, metric_type="cosine"):
         """
         Create a vector index.
 
@@ -223,8 +222,6 @@ class GraphStore(ABC):
         - index_name: Name of the index (optional).
         - vector_dimensions: Dimensionality of the vectors, default is 768.
         - metric_type: Type of distance measure, default is "cosine".
-        - hnsw_m: m parameter of the HNSW algorithm, default to None (for m=16)
-        - hnsw_ef_construction: ef_construction parameter of the HNSW algorithm, default to None (for ef_construction=100)
         """
         pass
 
@@ -255,7 +252,7 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def vector_search(self, label, property_key, query_text_or_vector, topk=10, index_name=None, ef_search=None):
+    def vector_search(self, label, property_key, query_text_or_vector, topk=10, index_name=None):
         """
         Perform a vector search.
 
@@ -265,7 +262,6 @@ class GraphStore(ABC):
         - query_text_or_vector: Query text or vector.
         - topk: Number of top results to return, default is 10.
         - index_name: Name of the index (optional).
-        - ef_search: ef_search parameter of the HNSW algorithm, specify number of potential candicates
 
         Returns:
         - List of search results.

@@ -13,13 +13,13 @@ import json
 from collections import defaultdict
 from typing import List, Type, Dict
 
-from kag.interface.builder.mapping_abc import MappingABC
+from kag.builder.component.base import Mapping
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import OTHER_TYPE
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import OTHER_TYPE
 
 
-class SPOMapping(MappingABC):
+class SPOMapping(Mapping):
 
     def __init__(self):
         super().__init__()
@@ -67,15 +67,6 @@ class SPOMapping(MappingABC):
         return self
 
     def assemble_sub_graph(self, record: Dict[str, str]):
-        """
-        Assembles a subgraph from the provided record.
-
-        Args:
-            record (Dict[str, str]): The record containing the data to assemble into a subgraph.
-
-        Returns:
-            SubGraph: The assembled subgraph.
-        """
         sub_graph = SubGraph(nodes=[], edges=[])
         s_type = record.get(self.s_type_col) or OTHER_TYPE
         s_id = record.get(self.s_id_col) or ""
@@ -87,7 +78,6 @@ class SPOMapping(MappingABC):
         sub_properties = {}
         if self.sub_property_col:
             sub_properties = json.loads(record.get(self.sub_property_col, '{}'))
-            sub_properties = {k: str(v) for k, v in sub_properties.items()}
         else:
             for target_name, source_names in self.sub_property_mapping.items():
                 for source_name in source_names:
@@ -97,16 +87,6 @@ class SPOMapping(MappingABC):
         return sub_graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Invokes the mapping process on the given input and returns the resulting sub-graphs.
-
-        Args:
-            input (Input): The input data to be processed.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            List[Output]: A list of resulting sub-graphs.
-        """
         record: Dict[str, str] = input
         sub_graph = self.assemble_sub_graph(record)
         return [sub_graph]

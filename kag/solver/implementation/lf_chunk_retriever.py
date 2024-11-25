@@ -4,21 +4,24 @@ from typing import List
 
 import numpy as np
 
-from kag.common.retriever import DefaultRetriever
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity, cosine_similarity
-from kag.solver.logic.core_modules.retriver.retrieval_spo import logger
-from knext.project.client import ProjectClient
+from kag.common.retriever import SemanticRetriever
+from kag.solver.logic.common.one_hop_graph import EntityData
+from kag.solver.logic.common.text_sim_by_vector import TextSimilarity, cosine_similarity
+from kag.solver.logic.retriver.retrieval_spo import logger
+from kag.common.llm.client.llm_client import LLMClient
 
 
-class LFChunkRetriever(DefaultRetriever):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        if self.host_addr and self.project_id:
-            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
-            vectorizer_config.update(config.get("vectorizer", {}))
-        self.text_sim = TextSimilarity(vec_config=vectorizer_config)
+class LFChunkRetriever(SemanticRetriever):
+    def __init__(self, project_id=None):
+        super().__init__(project_id=project_id)
+        self.text_sim = TextSimilarity()
+
+        debug_info = eval(os.getenv('KAG_DEBUG', '{}'))
+        if debug_info and debug_info['debug_phrase'] == self.__class__.__name__:
+            llm_module = LLMClient.from_config(debug_info)
+            self.client = llm_module
+        if debug_info and debug_info['debug_phrase'] == 'SemanticEnhance':
+            self.semantic_enhancement = LLMClient.from_config(debug_info)
 
     def rerank(self, queries: List[str], passages: List[str]):
         if not isinstance(queries, list):
@@ -43,12 +46,14 @@ class LFChunkRetriever(DefaultRetriever):
         return new_passages[:10]
 
     def recall_docs(self, query: str, top_k=5, **kwargs):
+        el_res = kwargs.get('el_res', None)
         all_related_entities = kwargs.get('related_entities', None)
         query_ner_dict = kwargs.get('query_ner_dict', None)
         req_id = kwargs.get('req_id', '')
-        if all_related_entities is None:
+        if el_res is None:
+            # query-[sim]->chunk; query-entity-[ppr]-chunk
             return super().recall_docs(query, top_k, **kwargs)
-        return self.recall_docs_by_entities(query, all_related_entities, top_k, req_id, query_ner_dict)
+        return self.recall_docs_by_entities(query, el_res, all_related_entities, top_k, req_id, query_ner_dict)
 
     def get_std_ner_by_query(self, query: str):
         """
@@ -95,23 +100,36 @@ class LFChunkRetriever(DefaultRetriever):
             return_data[f"{phrases['name']}_{phrases['type']}"] = phrases
         return return_data
 
-    def recall_docs_by_entities(self, query: str, all_related_entities: List[EntityData], top_k=10,
+    def recall_docs_by_entities(self, query: str, el_res: list, all_related_entities: List[EntityData], top_k=10,
                                 req_id='', query_ner_dict: dict = None):
-        def convert_entity_data_to_ppr_cand(related_entities: List[EntityData]):
+
+        def convert_entity_data_to_ppr_cand(el_res: list, related_entities: List[EntityData]):
+            ppr_cands = {}
+            for el in el_res:
+                el_recalls = el['recall']
+                for entity in el_recalls:
+                    k = f"{entity['name']}_{entity['type']}"
+                    if k not in ppr_cands or entity['match_score'] > ppr_cands[k]['score']:
+                        ppr_cands[k] = {
+                            'name': entity['name'],
+                            'type': entity['type'],
+                            'score': entity['match_score']  # mock score
+                        }
             ret_ppr_candis = {}
             for e in related_entities:
+                if f"{e.name}_{e.type}" not in ppr_cands:
+                    continue
                 k = f"{e.name}_{e.type}"
-                ret_ppr_candis[k] = {
-                    'name': e.name,
-                    'type': e.type,
-                    'score': e.score
-                }
+                ret_ppr_candis[k] = ppr_cands[k]
             return ret_ppr_candis
 
         start_time = time.time()
+        
+        # query中的实体
         ner_cands = self.get_std_ner_by_query(query)
+        # el实体和一度子图中的所有实体
         try:
-            kg_cands = convert_entity_data_to_ppr_cand(all_related_entities)
+            kg_cands = convert_entity_data_to_ppr_cand(el_res, all_related_entities)
         except Exception as e:
             kg_cands = {}
             logger.warning(f"{req_id} {query} generate logic form failed {str(e)}", exc_info=True)
@@ -121,6 +139,7 @@ class LFChunkRetriever(DefaultRetriever):
                     kg_cands[k]['score'] = v['score']
             else:
                 kg_cands[k] = v
+        # 完整问题中的实体
         if query_ner_dict is not None:
             for k, v in query_ner_dict.items():
                 if k in kg_cands.keys():
@@ -134,6 +153,12 @@ class LFChunkRetriever(DefaultRetriever):
         for _, v in kg_cands.items():
             matched_entities.append(v)
             matched_entities_scores.append(v['score'])
+        # 语义扩展实体
+        if matched_entities and self.with_semantic_hyper:
+            expanded_concepts = self.expand_concepts([e['name'] for e in ner_cands.values()], query)
+            matched_entities += expanded_concepts
+            matched_entities_scores += [self.pagerank_threshold] * len(expanded_concepts)
+
         logger.info(f"{req_id} kgpath ner cost={time.time() - start_time}")
 
         start_time = time.time()
@@ -155,8 +180,6 @@ class LFChunkRetriever(DefaultRetriever):
             combined_scores = self.calculate_combined_scores(sim_doc_scores, pagerank_scores)
 
         # Return ranked docs and ranked scores
-        sorted_doc_ids = sorted(
-                combined_scores.items(), key=lambda item: item[1], reverse=True
-            )
+        sorted_doc_ids = sorted(combined_scores.items(), key=lambda item: item[1], reverse=True)
         logger.debug(f"kgpath chunk recall cost={time.time() - start_time}")
         return self.get_all_docs_by_id(query, sorted_doc_ids, top_k)

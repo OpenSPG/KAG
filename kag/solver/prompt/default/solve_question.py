@@ -27,6 +27,8 @@ Requirement:
 2. Do not repeat the content of the question.
 3. Generate answers based on the provided information. If multiple answers are possible, generate all of them.
 4. If there is no suitable answer, answer 'I don't know'.
+5. Output format is text, don't return format string
+
 
 history:
 $history

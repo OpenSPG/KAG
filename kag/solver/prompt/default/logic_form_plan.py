@@ -11,7 +11,7 @@ from kag.common.base.prompt_op import PromptOp
 
 
 class LogicFormPlanPrompt(PromptOp):
-    instruct_zh = """"instruction": "",
+    instruct_zh = """"instruction": "你是一个KGQA专家，请根据以下图谱schema和function、function_description，理解最后query的问题，查询意图拆解成多个查询步骤，一步一步地实现查询逻辑",
     "function_description": "functionName为算子名;基本格式为 functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
     "function": [
       {
@@ -61,7 +61,7 @@ class LogicFormPlanPrompt(PromptOp):
 }}   
     """
 
-    instruct_en = """    "instruction": "",
+    instruct_en = """    "instruction": "You are a KGQA expert. Given the following knowledge graph schema and the function and function description, understand the final query. Break down the query intent into multiple query steps and implement the query logic step by step.",
     "function_description": "functionName is operator name;the function format is functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
     "function": [
       {
@@ -115,10 +115,81 @@ class LogicFormPlanPrompt(PromptOp):
 {{
     {instruct_en}
     {default_case_en}
-    "output_format": "Only output words in answer, for examples: `Step`, `Action` content",
+    "output_format": "output a string, don't warp anything, multiply line, each line only start with Step/Action/Output, don't output other information",
     "query": "$question"
-}}   
+}}
     """
+
+#     template_en = """
+# You are a expert at Knowledge Graph based QA system. Please analyze the given problem and break it down into several Solve Steps so that one can answer the question by executing these Solve Steps in a knowledge base. And then express your Solve Steps with the query language we defined below:
+# The format of our query language is: QueryFunction(arg1_name=arg1_value, arg2_name=arg2_value, ...)->output_name, The valid QueryFunction are defined as follow:
+#
+# QueryFunction: get_spo,
+# function_arguments: get_spo(s=s_alias:entity_type[entity_name],p=p_alias:edge_type,o=o_alias:entity_type[entity_name]),
+# description: Find SPO(Subject, Predicate, Object) triple information. Each variable function is assigned with a unique alias (s_alias, p_alias and o_alias), it is used for re-reference in subsequent functions. The entity_type is the type of s, p or o, it is infered from the question and sub-question context. The first occurrence of a variable must give an entity_type. The entity_name is an optional parameter and should be provided when there is a specific entity to query.
+#
+# QueryFunction: count,
+# function_arguments: count(alias)->count_alias,
+# description: Count the number of vaiable value. The parameter should be a specified set of vaiable to count, and it can only be variable alias appeared in previous get_spo query. The 'count_alias' is the counting result, used for re-reference in subsequent functions.
+#
+# QueryFunction: sum,
+# function_arguments: sum(alias,num1,num2, ...)->sum_alias,
+# description: Calculate the sum of variables. The parameter should be a specified set to sum, which can be either variable alias from previoud function or numbers, its content must be of numeric type. The 'sum_alias' is the result of the calculation, used for re-reference in subsequent functions.
+#
+# QueryFunction: sort,
+# function_arguments: sort(set=alias,orderby=o_alias or count_alias or sum_alias, direction=min or max),
+# description: Sort a set of nodes. The 'set' parameter specifies the variables to be sorted. The 'orderby' specifies the values for sorting, which can be any variable alias mentioned in previoud functions. The 'direction' parameter specifies the sorting order, which can only be 'min' (ascending) or 'max' (descending).
+#
+# QueryFunction: compare,
+# function_arguments: compare(set=[alias1,alias2, ...], op=min|max),
+# description: Compare variable or numeric values. The 'set' parameter specifies the set of variables or numbers to be compared. The 'op' parameter specifies the comparison operation: 'min' to find the smallest and 'max' to find the largest.
+#
+# QueryFunction: get,
+# function_arguments: get(alias),
+# description: Return the information represented by a alias. It can be used as the final output result.
+#
+#
+# Here ars some examples:
+# query: Which sports team for which Cristiano Ronaldo played in 2011 was founded last?
+# answer:
+#     Step1: Which Sports Teams Cristiano Ronaldo Played for in 2011 ?
+#     Step2: In which year were these teams established ?
+#     Step3: Which team was founded last ?
+#     Action1: get_spo(s=s1:Player[Cristiano Ronaldo],p=p1:PlayedForIn2011Year,o=o1:SportsTeam)
+#     Action2: get_spo(s=o1,p=p2:FoundationYear,o=o2:Year)
+#     Action3: sort(set=o1,orderby=o2,direction=max,limit=1)
+#
+# query: Who was the first president of the association which published Journal of Psychotherapy Integration?
+# answer:
+#     Step1:Which association that publishes the Journal of Psychotherapy Integration ?
+#     Step2:Who was the first president of that specific association?
+#     Action1:Journal(s=s1:Player[Psychotherapy Integration],p=p1:Publish,o=o1:Association)
+#     Action2:get_spo(s=o1,p=p2:FirstPresident,o=o2:Person)
+#
+# query: When did the state where Pocahontas Mounds is located become part of the United States?
+# answer:
+#     Step1:Which State Where Pocahontas Mounds is Located ?
+#     Step2:When did this state become a part of the United States ？
+#     Action1:get_spo(s=s1:HistoricalSite[Pocahontas Mounds],p=p1:LocatedIn,o=o1:State)
+#     Action2:get_spo(s=o1,p=p2:YearOfBecamingPartofTheUnitedStates,o=o2:Date)
+#
+# query: Which of the two tornado outbreaks killed the most people?
+# answer:
+#     Step1: Which is the first tornado outbreaks ?
+#     Step2: Which is the second tornado outbreaks ?)
+#     Step3: How many people died in the first tornado outbreak ?
+#     Step4: How many people died in the second tornado outbreak ?
+#     Step5: To compare the death toll between two tornado outbreaks to determine which one had more fatalities.
+#     Action1: get_spo(s=s1:Event[Tornado Outbreak],p=p1:TheFirst,o=o1:Event)
+#     Action2: get_spo(s=s2:Event[Tornado Outbreak],p=p2:TheSecond,o=o2:Event
+#     Action3: get_spo(s=s1,p=p3:KilledPeopleNumber,o=o3:Number)
+#     Action4: get_spo(s=s2,p=p4:KilledPeopleNumber,o=o4:Number)
+#     Action5: compare(set=[o3,o4],op=max)
+#
+# Now, the question query is:
+# "$question"
+# please first give Solve Steps and then express it with query language we defined above, don't warp anything. Answer with multiply line, each line only start with Step:/Action:/Output:, don't output other information.
+#     """.strip()
 
     def __init__(self, language: str):
         super().__init__(language)
@@ -127,30 +198,29 @@ class LogicFormPlanPrompt(PromptOp):
     def template_variables(self) -> List[str]:
         return ["question"]
 
-
     def parse_response(self, response: str, **kwargs):
         try:
             logger.debug(f"logic form:{response}")
             _output_string = response.replace("：", ":")
             _output_string = response.strip()
-            sub_querys = []
+            sub_queries = []
             logic_forms = []
             current_sub_query = ''
             for line in _output_string.split('\n'):
-                if line.startswith('Step'):
-                    sub_querys_regex = re.search('Step\d+:(.*)', line)
-                    if sub_querys_regex is not None:
-                        sub_querys.append(sub_querys_regex.group(1))
-                        current_sub_query = sub_querys_regex.group(1)
-                elif line.startswith('Output'):
-                    sub_querys.append("output")
-                elif line.startswith('Action'):
-                    logic_forms_regex = re.search('Action\d+:(.*)', line)
-                    if logic_forms_regex:
-                        logic_forms.append(logic_forms_regex.group(1))
-                        if len(logic_forms) - len(sub_querys) == 1:
-                            sub_querys.append(current_sub_query)
-            return sub_querys, logic_forms
+                if line.startswith('Step') or line.startswith('step'):
+                    sub_query_regex = re.search(r'[Ss]tep\d?:(.*)', line)
+                    if sub_query_regex is not None:
+                        sub_queries.append(sub_query_regex.group(1))
+                        current_sub_query = sub_query_regex.group(1)
+                elif line.startswith('Output') or line.startswith('output'):
+                    sub_queries.append("output")
+                elif line.startswith('Action') or line.startswith('action'):
+                    logic_form_regex = re.search(r'[Aa]ction\d?:(.*)', line)
+                    if logic_form_regex:
+                        logic_forms.append(logic_form_regex.group(1))
+                        if len(logic_forms) - len(sub_queries) == 1:
+                            sub_queries.append(current_sub_query)
+            return sub_queries, logic_forms
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
             return [], []

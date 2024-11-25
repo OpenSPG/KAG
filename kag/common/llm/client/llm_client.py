@@ -11,7 +11,6 @@
 # or implied.
 
 import os
-import json
 from pathlib import Path
 from typing import Union, Dict, List, Any
 import logging
@@ -24,33 +23,29 @@ from kag.common.llm.config import *
 
 logger = logging.getLogger(__name__)
 
+config_cls_map = {
+    "maas": OpenAIConfig,
+    "openai": OpenAIConfig,
+    "vllm": VLLMConfig,
+}
+
+def get_config_cls(config:dict):
+    client_type = config.get("client_type", None)
+    return config_cls_map.get(client_type, None)
+    
+def get_llm_cls(config: LLMConfig):
+    from kag.common.llm.client import VLLMClient,OpenAIClient,MayaLLM,ZdfmngClient
+    return {
+        VLLMConfig: VLLMClient,
+        OpenAIConfig: OpenAIClient,
+        MayaConfig: MayaLLM,
+        ZdfmngConfig: ZdfmngClient,
+    }[config.__class__]
+
 
 class LLMClient:
     # Define the model type
     model: str
-
-    config_cls_map = {
-        "maas": OpenAIConfig,
-        "vllm": VLLMConfig,
-        "ollama": OllamaConfig,
-    }
-
-    def __init__(self, **kwargs):
-        self.model = kwargs.get("model", None)
-    
-    @classmethod
-    def get_config_cls(self,config:dict):
-        client_type = config.get("client_type", None)
-        return LLMClient.config_cls_map.get(client_type, None)
-        
-    @classmethod
-    def get_llm_cls(self,config: LLMConfig):
-        from kag.common.llm.client import VLLMClient,OpenAIClient,OllamaClient
-        return {
-            VLLMConfig: VLLMClient,
-            OpenAIConfig: OpenAIClient,
-            OllamaConfig: OllamaClient,
-        }[config.__class__]
 
     @classmethod
     def from_config(cls, config: Union[str, dict]):
@@ -78,15 +73,14 @@ class LLMClient:
             # If config is already a dictionary, use it directly
             nn_config = config
         
-        config_cls = LLMClient.get_config_cls(nn_config)
+        config_cls = get_config_cls(nn_config)
         if config_cls is None:
-            logger.error(f"Unsupported model type: {nn_config.get('client_type', None)}")
+            logger.error(f"Unsupported model type")
             raise ValueError(f"Unsupported model type")
         llm_config = config_cls(**nn_config)
-        llm_cls = LLMClient.get_llm_cls(llm_config)
+        llm_cls = get_llm_cls(llm_config)
         return llm_cls(llm_config)
-        
-            
+
     def __call__(self, prompt: Union[str, dict, list]) -> str:
         """
         Perform inference on the given prompt and return the result.
@@ -105,28 +99,15 @@ class LLMClient:
         :return: Parsed result
         :raises NotImplementedError: If the subclass has not implemented this method
         """
-        res = self(prompt)
-        _end = res.rfind("```")
-        _start = res.find("```json")
-        if _end != -1 and _start != -1:
-            json_str = res[_start + len("```json"): _end].strip()
-        else:
-            json_str = res
-        try:
-            json_result = json.loads(json_str)
-        except:
-            return res
-        return json_result
+        raise NotImplementedError
 
-    def invoke(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True,
-               with_except: bool = False):
+    def invoke(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True):
         """
         Call the model and process the result.
 
         :param variables: Variables used to build the prompt
         :param prompt_op: Prompt operation object for building and parsing prompts
         :param with_json_parse: Whether to attempt parsing the response as JSON
-        :param with_except: Whether to raise exception
         :return: Processed result list
         """
         result = []
@@ -142,9 +123,7 @@ class LLMClient:
             logger.debug(f"Result: {result}")
         except Exception as e:
             import traceback
-            logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
-            if with_except:
-                raise RuntimeError(f"call llm exception! llm output = {response} , llm input={prompt}, err={e}")
+            logger.warning(f"Error {e} during invocation: {traceback.format_exc()}")
         return result
 
     def batch(self, variables: Dict[str, Any], prompt_op: PromptOp, with_json_parse: bool = True) -> List:
@@ -176,3 +155,12 @@ class LLMClient:
                 continue
         return results
     
+if __name__ == "__main__":
+    from kag.common.env import init_kag_config
+    configFilePath = "/ossfs/workspace/workspace/openspgapp/openspg/python/knext/knext/common/default_config.cfg"
+    init_kag_config(configFilePath)
+    model = eval(os.getenv("KAG_LLM"))
+    print(model)
+    llm = LLMClient.from_config(model)
+    res = llm("who are you?")
+    print(res)

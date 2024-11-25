@@ -50,7 +50,7 @@ def _register(root, path, files, class_type):
 def register_from_package(path: str, class_type: Type) -> None:
     """
     Register all classes under the given package.
-    Only registered classes can be recognized by kag.
+    Only registered classes can be recognized by knext.
     """
     if not append_python_path(path):
         return
@@ -197,9 +197,3 @@ def to_camel_case(phrase):
         word.capitalize() if i != 0 else word
         for i, word in enumerate(s.split("_"))
     )
-
-
-def to_snake_case(name):
-    words = re.findall("[A-Za-z][a-z0-9]*", name)
-    result = "_".join(words).lower()
-    return result

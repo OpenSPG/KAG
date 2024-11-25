@@ -1,12 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from kag.solver.common.base import KagBaseModule
 
-
-class ChunkRetrieverABC(KagBaseModule, ABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class ChunkRetrieverABC(ABC):
     """
     An abstract base class for chunk retrieval strategies.
 
