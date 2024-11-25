@@ -108,13 +108,27 @@ class SPG_KGPrompt(SPGPrompt):
             "schema": {
                 "Disease": {
                     "properties": {
-                        "complication": "并发症",
-                        "commonSymptom": "常见症状",
-                        "applicableMedicine": "适用药品",
-                        "department": "就诊科室",
-                        "diseaseSite": "发病部位",
+                        "entity": Text,
+                        "desc": Text,
+                        "complication(并发症)": Disease,
+                        "commonSymptom(常见症状)": Symptom,
+                        "applicableMedicine(适用药品)": Medicine,
+                        "department(就诊科室)": HospitalDepartment,
+                        "diseaseSite": HumanBodyPart
                     }
                 },"Medicine": {
+                    "properties": {
+                    }
+                },"Disease": {
+                    "properties": {
+                    }
+                },"Symptom": {
+                    "properties": {
+                    }
+                },"HospitalDepartment": {
+                    "properties": {
+                    }
+                },"HumanBodyPart": {
                     "properties": {
                     }
                 }
@@ -128,8 +142,35 @@ class SPG_KGPrompt(SPGPrompt):
                         "commonSymptom": ["颈部疼痛", "咽喉部异物感", "压迫感"],
                         "applicableMedicine": ["复方碘口服液(Lugol液)", "丙基硫氧嘧啶(PTU)", "甲基硫氧嘧啶(MTU)", "甲硫咪唑", "卡比马唑"],
                         "department": ["普外科", "甲状腺外科", "内分泌科", "头颈外科"],
-                        "diseaseSite": "甲状腺",
+                        "diseaseSite": "甲状腺"
                     }
+                },{
+                    "entity":"甲状腺癌",
+                    "category":"Disease"
+                },{
+                    "entity":"甲状腺",
+                    "category":"HospitalDepartment"
+                },{
+                    "entity":"普外科",
+                    "category":"HospitalDepartment"
+                },{
+                    "entity":"甲状腺外科",
+                    "category":"HospitalDepartment"
+                },{
+                    "entity":"内分泌科",
+                    "category":"HospitalDepartment"
+                },{
+                    "entity":"头颈外科",
+                    "category":"HospitalDepartment"
+                },{
+                    "entity":"颈部疼痛",
+                    "category":"Symptom"
+                },{
+                    "entity":"咽喉部异物感",
+                    "category":"Symptom"
+                },{
+                    "entity":"压迫感",
+                    "category":"Symptom"
                 },{
                     "entity":"复方碘口服液(Lugol液)",
                     "category":"Medicine"
@@ -151,7 +192,113 @@ class SPG_KGPrompt(SPGPrompt):
     }
     """
 
-    template_en: str = template_zh
+    template_en: str = """
+    {
+        "instruction": "You are an expert in knowledge graph extraction. Based on the schema defined by constraints, extract all entities and their attributes from the input. For attributes not explicitly mentioned in the input, return NAN. Output the results in standard JSON format as a list.",
+        "schema": $schema,
+        "example": [
+        {
+            "input": "Thyroid nodules refer to lumps within the thyroid gland that can move up and down with swallowing, and they are a common clinical condition that can be caused by various etiologies. Clinically, many thyroid diseases, such as thyroid degeneration, inflammation, autoimmune conditions, and neoplasms, can present as nodules. Thyroid nodules can occur singly or in multiple forms; multiple nodules have a higher incidence than single nodules, but single nodules have a higher likelihood of being thyroid cancer. Patients typically have the option to register for consultation in general surgery, thyroid surgery, endocrinology, or head and neck surgery. Some patients can feel the nodules in the front of their neck. In most cases, thyroid nodules are asymptomatic, and thyroid function is normal. The probability of thyroid nodules progressing to other thyroid diseases is only about 1%. Some individuals may experience neck pain, a foreign body sensation in the throat, or a feeling of pressure. When spontaneous intracystic bleeding occurs in a thyroid nodule, the pain can be more intense. Treatment options generally include radioactive iodine therapy, Lugol's solution (a compound iodine oral solution), or antithyroid medications to suppress thyroid hormone secretion. Currently, commonly used antithyroid drugs are thiourea compounds, including propylthiouracil (PTU) and methylthiouracil (MTU) from the thiouracil class, and methimazole and carbimazole from the imidazole class.",
+            "schema": {
+                "Disease": {
+                    "properties": {
+                        "entity": Text,
+                        "desc": Text,
+                        "complication": Disease,
+                        "commonSymptom": Symptom,
+                        "applicableMedicine": Medicine,
+                        "department": HospitalDepartment,
+                        "diseaseSite": HumanBodyPart
+                    }
+                },"Medicine": {
+                    "properties": {
+                    }
+                },"Disease": {
+                    "properties": {
+                    }
+                },"Symptom": {
+                    "properties": {
+                    }
+                },"HospitalDepartment": {
+                    "properties": {
+                    }
+                },"HumanBodyPart": {
+                    "properties": {
+                    }
+                }
+            },
+            "output": [
+                {
+                    "entity": "Thyroid Nodule",
+                    "category": "Disease",
+                    "properties": {
+                        "complication": "Thyroid Cancer",
+                        "commonSymptom": ["Neck Pain", "Foreign Body Sensation in Throat", "Pressure Sensation"],
+                        "applicableMedicine": ["Compound Iodine Oral Solution (Lugol Solution)", "Propylthiouracil (PTU)", "Methimazole (MTU)", "Methimazole", "Carbimazole"],
+                        "department": ["General Surgery", "Thyroid Surgery", "Endocrinology", "Head and Neck Surgery"],
+                        "diseaseSite": "Thyroid"
+                    }
+                },
+                {
+                    "entity": "Thyroid Cancer",
+                    "category": "Disease"
+                },
+                {
+                    "entity": "Thyroid",
+                    "category": "HospitalDepartment"
+                },
+                {
+                    "entity": "General Surgery",
+                    "category": "HospitalDepartment"
+                },
+                {
+                    "entity": "Thyroid Surgery",
+                    "category": "HospitalDepartment"
+                },
+                {
+                    "entity": "Endocrinology",
+                    "category": "HospitalDepartment"
+                },
+                {
+                    "entity": "Head and Neck Surgery",
+                    "category": "HospitalDepartment"
+                },
+                {
+                    "entity": "Neck Pain",
+                    "category": "Symptom"
+                },
+                {
+                    "entity": "Foreign Body Sensation in Throat",
+                    "category": "Symptom"
+                },
+                {
+                    "entity": "Pressure Sensation",
+                    "category": "Symptom"
+                },
+                {
+                    "entity": "Compound Iodine Oral Solution (Lugol Solution)",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Propylthiouracil (PTU)",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Methimazole (MTU)",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Methimazole",
+                    "category": "Medicine"
+                },
+                {
+                    "entity": "Carbimazole",
+                    "category": "Medicine"
+                }
+            ]
+    "input": "$input"
+    }
+    """
 
     def __init__(self, spg_type_names: List[SPGTypeName], language: str = "", **kwargs):
         super().__init__(spg_type_names=spg_type_names, language=language, **kwargs)
