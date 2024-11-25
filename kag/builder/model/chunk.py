@@ -26,13 +26,15 @@ class Chunk:
         name: str,
         content: str,
         type: ChunkTypeEnum = ChunkTypeEnum.Text,
-        **kwargs
+        **kwargs,
     ):
         self.id = id
         self.name = name
         self.type = type
         self.content = content
         self.kwargs = kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @staticmethod
     def generate_hash_id(value):
@@ -46,9 +48,9 @@ class Chunk:
         tmp = {
             "id": self.id,
             "name": self.name,
-            "content": self.content
-            if len(self.content) <= 64
-            else self.content[:64] + " ...",
+            "content": (
+                self.content if len(self.content) <= 64 else self.content[:64] + " ..."
+            ),
         }
         return f"<Chunk>: {tmp}"
 
@@ -59,7 +61,9 @@ class Chunk:
             "id": self.id,
             "name": self.name,
             "content": self.content,
-            "type": self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type,
+            "type": (
+                self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type
+            ),
             "properties": self.kwargs,
         }
 

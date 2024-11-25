@@ -63,5 +63,6 @@ class TXTReader(SourceReaderABC):
             id=Chunk.generate_hash_id(input),
             name=basename,
             content=content,
+            source=input,
         )
         return [chunk]

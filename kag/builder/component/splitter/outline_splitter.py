@@ -298,7 +298,7 @@ class OutlineSplitter(SplitterABC):
         # 过滤无效的 outlines
         outlines = self.filter_outlines(outlines)
 
-        if not outlines:
+        if not outlines or len(outlines) == 0:
             cutted = []
             if isinstance(org_chunk, list):
                 for item in org_chunk:
@@ -332,10 +332,17 @@ class OutlineSplitter(SplitterABC):
                 father_stack.pop()
             full_path = "/".join([item[0] for item in father_stack] + [title])
             chunk_content = content[start:end]
+
+            # add origin kwargs
+            kwargs = {}
+            for key, value in org_chunk.kwargs.items():
+                kwargs[f"origin_{key}"] = value
+
             chunk = Chunk(
                 id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
                 name=full_path,
                 content=chunk_content,
+                kwargs=kwargs,
             )
             chunks.append(chunk)
             father_stack.append((title, level))
