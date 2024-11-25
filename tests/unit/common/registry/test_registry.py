@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
-
+import json
 from typing import List, Dict, Union
 from pyhocon import ConfigTree, ConfigFactory
 from kag.common.registry import Registrable, Lazy, Functor
 import numpy as np
+
+
+def test_list_available():
+    from kag.interface import LLMClient
+
+    ava = LLMClient.list_available_with_detail()
+    print(json.dumps(ava, indent=4))
 
 
 class MockModel(Registrable):
@@ -248,7 +255,6 @@ def test_to_config():
 
 
 def test_multi_constructor():
-
     # without type key, will use default_implementation
     params = ConfigFactory.from_dict({"count": 32})
     ins = BaseCount.from_config(params)
