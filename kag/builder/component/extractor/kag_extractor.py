@@ -46,6 +46,7 @@ class KAGExtractor(ExtractorABC):
         self.language = self.prompt_config.get("language") or os.getenv(
             "KAG_PROMPT_LANGUAGE", "en"
         )
+        self.namespace = os.environ["KAG_PROJECT_NAMESPACE"]
         self.schema = SchemaClient(project_id=self.project_id).load()
         self.ner_prompt = PromptOp.load(self.biz_scene, "ner")(
             language=self.language, project_id=self.project_id
@@ -124,6 +125,12 @@ class KAGExtractor(ExtractorABC):
             {"input": passage, "entity_list": entities}, self.triple_prompt
         )
 
+    def get_std_type_name(self, type_name):
+        spg_type = self.schema.get(type_name)
+        if spg_type:
+            return spg_type.name
+        return f"{self.namespace}.{type_name}"
+
     def assemble_sub_graph_with_spg_records(self, entities: List[Dict]):
         sub_graph = SubGraph([], [])
         for record in entities:
@@ -145,24 +152,30 @@ class KAGExtractor(ExtractorABC):
                         if isinstance(prop_value, str):
                             prop_value = [prop_value]
                         for o_name in prop_value:
-                            sub_graph.add_node(id=o_name, name=o_name, label=o_label)
+                            sub_graph.add_node(
+                                id=o_name,
+                                name=o_name,
+                                label=self.get_std_type_name(o_label),
+                            )
                             sub_graph.add_edge(
                                 s_id=s_name,
-                                s_label=s_label,
+                                s_label=self.get_std_type_name(s_label),
                                 p=prop_name,
                                 o_id=o_name,
-                                o_label=o_label,
+                                o_label=self.get_std_type_name(o_label),
                             )
                         tmp_properties.pop(prop_name)
             record["properties"] = tmp_properties
             sub_graph.add_node(
-                id=s_name, name=s_name, label=s_label, properties=properties
+                id=s_name,
+                name=s_name,
+                label=self.get_std_type_name(s_label),
+                properties=properties,
             )
         return sub_graph, entities
 
-    @staticmethod
     def assemble_sub_graph_with_triples(
-        sub_graph: SubGraph, entities: List[Dict], triples: List[list]
+        self, sub_graph: SubGraph, entities: List[Dict], triples: List[list]
     ):
         """
         Assembles edges in the subgraph based on a list of triples and entities.
@@ -185,21 +198,26 @@ class KAGExtractor(ExtractorABC):
             tri[0] = processing_phrases(tri[0])
             if s_category is None:
                 s_category = OTHER_TYPE
-                sub_graph.add_node(tri[0], tri[0], s_category)
+                sub_graph.add_node(tri[0], tri[0], self.get_std_type_name(s_category))
             o_category = get_category(entities, tri[2])
             tri[2] = processing_phrases(tri[2])
             if o_category is None:
                 o_category = OTHER_TYPE
-                sub_graph.add_node(tri[2], tri[2], o_category)
+                sub_graph.add_node(tri[2], tri[2], self.get_std_type_name(o_category))
 
             edge_type = to_camel_case(tri[1])
             if edge_type:
-                sub_graph.add_edge(tri[0], s_category, edge_type, tri[2], o_category)
+                sub_graph.add_edge(
+                    tri[0],
+                    self.get_std_type_name(s_category),
+                    edge_type,
+                    tri[2],
+                    self.get_std_type_name(o_category),
+                )
 
         return sub_graph
 
-    @staticmethod
-    def assemble_sub_graph_with_chunk(sub_graph: SubGraph, chunk: Chunk):
+    def assemble_sub_graph_with_chunk(self, sub_graph: SubGraph, chunk: Chunk):
         """
         Associates a Chunk object with the subgraph, adding it as a node and connecting it with existing nodes.
         Args:
@@ -207,11 +225,17 @@ class KAGExtractor(ExtractorABC):
             chunk (Chunk): The chunk object containing the text and metadata.
         """
         for node in sub_graph.nodes:
-            sub_graph.add_edge(node.id, node.label, "source", chunk.id, CHUNK_TYPE)
+            sub_graph.add_edge(
+                node.id,
+                self.get_std_type_name(node.label),
+                "source",
+                chunk.id,
+                self.get_std_type_name(CHUNK_TYPE),
+            )
         sub_graph.add_node(
             chunk.id,
             chunk.name,
-            CHUNK_TYPE,
+            self.get_std_type_name(CHUNK_TYPE),
             {
                 "id": chunk.id,
                 "name": chunk.name,
@@ -260,7 +284,7 @@ class KAGExtractor(ExtractorABC):
             sub_graph.add_node(
                 name,
                 name,
-                ent["category"],
+                self.get_std_type_name(ent["category"]),
                 {
                     "desc": ent.get("description", ""),
                     "semanticType": ent.get("type", ""),
@@ -274,7 +298,7 @@ class KAGExtractor(ExtractorABC):
                     sub_graph.add_node(
                         official_name,
                         official_name,
-                        ent["category"],
+                        self.get_std_type_name(ent["category"]),
                         {
                             "desc": ent.get("description", ""),
                             "semanticType": ent.get("type", ""),
@@ -283,10 +307,10 @@ class KAGExtractor(ExtractorABC):
                     )
                     sub_graph.add_edge(
                         name,
-                        ent["category"],
+                        self.get_std_type_name(ent["category"]),
                         "OfficialName",
                         official_name,
-                        ent["category"],
+                        self.get_std_type_name(ent["category"]),
                     )
 
     def append_official_name(
