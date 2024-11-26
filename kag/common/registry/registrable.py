@@ -599,6 +599,17 @@ class Registrable:
             )
 
     @classmethod
+    def list_all_registered(cls, with_leaf_classes: bool = False) -> List[str]:
+        registered = set()
+        for k, v in Registrable._registry.items():
+            registered.add(k)
+            if with_leaf_classes:
+                if isinstance(v, dict):
+                    for _, register_cls in v.items():
+                        registered.add(register_cls[0])
+        return sorted(list(registered), key=lambda x: (x.__module__, x.__name__))
+
+    @classmethod
     def list_available(cls) -> List[str]:
         """List default first if it exists"""
         keys = list(Registrable._registry[cls].keys())

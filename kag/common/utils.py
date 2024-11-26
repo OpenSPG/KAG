@@ -21,6 +21,17 @@ from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
 
+reset = "\033[0m"
+bold = "\033[1m"
+underline = "\033[4m"
+red = "\033[31m"
+green = "\033[32m"
+yellow = "\033[33m"
+blue = "\033[34m"
+magenta = "\033[35m"
+cyan = "\033[36m"
+white = "\033[37m"
+
 
 def append_python_path(path: str) -> bool:
     """
@@ -100,7 +111,6 @@ def load_json(content):
     try:
         return json.loads(content)
     except json.JSONDecodeError as e:
-
         substr = content[: e.colno - 1]
         return json.loads(substr)
 

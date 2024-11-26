@@ -27,7 +27,7 @@ class SinkWriterABC(BuilderComponent, ABC):
 
     @property
     def output_types(self):
-        return None
+        return SubGraph
 
     @abstractmethod
     def invoke(self, input: Input, **kwargs) -> Output:

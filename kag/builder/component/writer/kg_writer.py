@@ -76,7 +76,7 @@ class KGWriter(SinkWriterABC):
             operation=alter_operation,
             lead_to_builder=lead_to_builder,
         )
-        return [None]
+        return [input]
 
     def _handle(self, input: Dict, alter_operation: str, **kwargs):
         """The calling interface provided for SPGServer."""

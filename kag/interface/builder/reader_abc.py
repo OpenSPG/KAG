@@ -43,6 +43,15 @@ class SourceReaderABC(BuilderComponent, ABC):
 
     def _generate(self, data):
         start, end = self.sharding_info.get_sharding_range(len(data))
+        worker = (
+            f"{self.sharding_info.get_rank()}/{self.sharding_info.get_world_size()}"
+        )
+        msg = (
+            f"There are total {len(data)} data to process, worker "
+            f"{worker} will process range [{start}, {end})"
+        )
+
+        print(msg)
         for item in data[start:end]:
             yield item
 
