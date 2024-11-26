@@ -14,12 +14,12 @@ import os
 import re
 from typing import List, Type, Union
 
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.interface.builder import SplitterABC
-from kag.builder.prompt.outline_prompt import OutlinePrompt
-from kag.builder.model.chunk import Chunk
 from knext.common.base.runnable import Input, Output
-from kag.common.llm.client.llm_client import LLMClient
+
+from kag.builder.model.chunk import Chunk
+from kag.builder.model.chunk import ChunkTypeEnum
+from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.interface.builder import SplitterABC
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,6 @@ class OutlineSplitter(SplitterABC):
             content, outlines, org_chunk=chunk
         )
         return chunks
-
-    import re
 
     def filter_outlines(self, raw_outlines):
         """
@@ -391,7 +389,6 @@ class OutlineSplitter(SplitterABC):
 if __name__ == "__main__":
     from kag.builder.component.splitter.length_splitter import LengthSplitter
     from kag.builder.component.splitter.outline_splitter import OutlineSplitter
-    from kag.builder.component.reader.docx_reader import DocxReader
     from kag.builder.component.reader.txt_reader import TXTReader
     from kag.common.env import init_kag_config
 

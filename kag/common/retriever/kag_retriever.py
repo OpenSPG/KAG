@@ -10,11 +10,12 @@
 # or implied.
 
 import os
+
+from knext.graph.client import GraphClient
 from tenacity import retry, stop_after_attempt
 
 from kag.common.base.prompt_op import PromptOp
 from kag.common.vectorizer import Vectorizer
-from knext.graph_algo.client import GraphAlgoClient
 from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
 from typing import List, Dict
 
@@ -77,7 +78,7 @@ class DefaultRetriever(ChunkRetrieverABC):
             vectorizer_config
         )
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
-        self.graph_algo = GraphAlgoClient(self.host_addr, self.project_id)
+        self.graph_algo = GraphClient(self.host_addr, self.project_id)
 
 
 
