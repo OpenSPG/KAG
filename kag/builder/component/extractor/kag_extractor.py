@@ -34,6 +34,14 @@ class KAGExtractor(ExtractorABC):
     """
     A class for extracting knowledge graph subgraphs from text using a large language model (LLM).
     Inherits from the Extractor base class.
+
+    Attributes:
+        llm (LLMClient): The large language model client used for text processing.
+        schema (SchemaClient): The schema client used to load the schema for the project.
+        ner_prompt (PromptABC): The prompt used for named entity recognition.
+        std_prompt (PromptABC): The prompt used for named entity standardization.
+        triple_prompt (PromptABC): The prompt used for triple extraction.
+        external_graph (ExternalGraphLoaderABC): The external graph loader used for additional NER.
     """
 
     def __init__(
@@ -44,6 +52,16 @@ class KAGExtractor(ExtractorABC):
         triple_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
     ):
+        """
+        Initializes the KAGExtractor with the specified parameters.
+
+        Args:
+            llm (LLMClient): The large language model client.
+            ner_prompt (PromptABC, optional): The prompt for named entity recognition. Defaults to None.
+            std_prompt (PromptABC, optional): The prompt for named entity standardization. Defaults to None.
+            triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
+            external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
+        """
         self.llm = llm
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
@@ -142,6 +160,15 @@ class KAGExtractor(ExtractorABC):
         )
 
     def assemble_sub_graph_with_spg_records(self, entities: List[Dict]):
+        """
+        Assembles a subgraph using SPG records.
+
+        Args:
+            entities (List[Dict]): A list of entities to be used for subgraph assembly.
+
+        Returns:
+            The assembled subgraph and the updated list of entities.
+        """
         sub_graph = SubGraph([], [])
         for record in entities:
             s_name = record.get("entity", "")
@@ -187,6 +214,9 @@ class KAGExtractor(ExtractorABC):
             sub_graph (SubGraph): The subgraph to add edges to.
             entities (List[Dict]): A list of entities, for looking up category information.
             triples (List[list]): A list of triples, each representing a relationship to be added to the subgraph.
+        Returns:
+            The constructed subgraph.
+
         """
 
         def get_category(entities_data, entity_name):
@@ -221,6 +251,8 @@ class KAGExtractor(ExtractorABC):
         Args:
             sub_graph (SubGraph): The subgraph to add the chunk information to.
             chunk (Chunk): The chunk object containing the text and metadata.
+        Returns:
+            The constructed subgraph.
         """
         for node in sub_graph.nodes:
             sub_graph.add_edge(node.id, node.label, "source", chunk.id, CHUNK_TYPE)
@@ -253,7 +285,7 @@ class KAGExtractor(ExtractorABC):
             entities (List[Dict]): A list of entities identified in the chunk.
             triples (List[list]): A list of triples representing relationships between entities.
         Returns:
-            SubGraph: The constructed subgraph.
+            The constructed subgraph.
         """
         self.assemble_sub_graph_with_entities(sub_graph, entities)
         self.assemble_sub_graph_with_triples(sub_graph, entities, triples)

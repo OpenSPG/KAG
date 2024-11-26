@@ -16,26 +16,34 @@ from kag.interface import VectorizeModelABC, EmbeddingVector
 @VectorizeModelABC.register("mock")
 class MockVectorizeModel(VectorizeModelABC):
     """
-    Invoke OpenAI or OpenAI-compatible embedding services to turn texts into embedding vectors.
+    A mock implementation of the VectorizeModelABC class, used for testing purposes.
+
+    This class provides a method to generate random embedding vectors for given texts.
     """
 
     def __init__(
         self,
         vector_dimensions: int = None,
     ):
+        """
+        Initializes the MockVectorizeModel instance.
+
+        Args:
+            vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
+        """
         super().__init__(vector_dimensions)
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
-        Vectorize a text string into an embedding vector or multiple text strings into
-        multiple embedding vectors.
+        Generates random embedding vectors for the given texts.
 
-        :param texts: texts to vectorize
-        :type texts: str or Iterable[str]
-        :return: embedding vectors of the texts
-        :rtype: EmbeddingVector or Iterable[EmbeddingVector]
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
         if isinstance(texts, str):
             return np.random.rand(self._vector_dimensions).tolist()

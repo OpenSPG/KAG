@@ -20,7 +20,29 @@ from knext.common.base.runnable import Input, Output
 
 @SourceReaderABC.register("yuque")
 class YuqueReader(SourceReaderABC):
+    """
+    A class for reading data from Yuque, a Chinese documentation platform, inheriting from `SourceReaderABC`.
+
+    This class is responsible for reading the Yuque knowledge base and return the urls of the documents it contains.
+    It can be used in conjunction with the Yuque parser to convert Yuque documents into Chunks.
+
+    It inherits from `SourceReaderABC` and overrides the necessary methods to handle Yuque-specific operations.
+
+    Args:
+        token (str): The authentication token for accessing Yuque API.
+        rank (int, optional): The rank of the current worker. Defaults to 0.
+        world_size (int, optional): The total number of workers. Defaults to 1.
+    """
+
     def __init__(self, token: str, rank: int = 0, world_size: int = 1):
+        """
+        Initializes the YuqueReader with the specified token, rank, and world size.
+
+        Args:
+            token (str): The authentication token for accessing Yuque API.
+            rank (int, optional): The rank of the current worker. Defaults to 0.
+            world_size (int, optional): The total number of workers. Defaults to 1.
+        """
         super().__init__(rank, world_size)
         self.token = token
 
@@ -35,12 +57,38 @@ class YuqueReader(SourceReaderABC):
         return str
 
     def get_yuque_api_data(self, url):
+        """
+        Fetches data from the Yuque API using the specified URL and authentication token.
+
+        Args:
+            url (str): The URL to fetch data from.
+
+        Returns:
+            dict: The JSON data returned by the Yuque API.
+
+        Raises:
+            HTTPError: If the API returns a bad response (4xx or 5xx).
+        """
         headers = {"X-Auth-Token": self.token}
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an HTTPError for bad responses (4xx and 5xx)
         return response.json()["data"]  # Assuming the API returns JSON data
 
     def load_data(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Loads data from the Yuque API and returns it as a list of document url strings.
+
+        This method fetches data from the Yuque API using the provided URL and converts it into a list of strings.
+        If the input is a single document url, it returns a list containing the token and URL.
+        If the input is a knowledge base, it returns a list of strings where each string contains the token and the URL of each document it contains.
+
+        Args:
+            input (Input): The URL to fetch data from.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of strings, where each string contains the token and the URL of each document.
+        """
         url = input
         data = self.get_yuque_api_data(url)
         if isinstance(data, dict):

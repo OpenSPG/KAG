@@ -18,7 +18,9 @@ from knext.common.base.runnable import Input, Output
 
 class PostProcessorABC(BuilderComponent):
     """
-    Interface for vectorizer.
+    Abstract base class for post-processing subgraphs.
+
+    This class defines the interface for post-processing operations on subgraphs.
     """
 
     @property
@@ -30,6 +32,19 @@ class PostProcessorABC(BuilderComponent):
         return SubGraph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Abstract method to be implemented by subclasses. It processes the input subgraph and returns a list of modified subgraphs.
+
+        Args:
+            input (Input): The input subgraph to be processed.
+            **kwargs: Additional keyword arguments.
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+
+        Returns:
+            List[Output]: A list of modified subgraphs.
+        """
         raise NotImplementedError(
             f"`invoke` is not currently supported for {self.__class__.__name__}."
         )

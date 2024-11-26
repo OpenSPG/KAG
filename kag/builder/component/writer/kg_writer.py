@@ -30,14 +30,20 @@ class AlterOperationEnum(str, Enum):
 @SinkWriterABC.register("kg", as_default=True)
 class KGWriter(SinkWriterABC):
     """
-    A class that extends `SinkWriter` to handle writing data into a Neo4j knowledge graph.
+    A class for writing SubGraphs to a Knowledge Graph (KG) storage.
 
-    This class is responsible for configuring the graph store based on environment variables and
-    an optional project ID, initializing the Neo4j client, and setting up the schema.
-    It also manages semantic indexing and multi-threaded operations.
+    This class inherits from SinkWriterABC and provides the functionality to write SubGraphs
+    to a Knowledge Graph storage system. It supports operations like upsert and delete.
     """
 
     def __init__(self, project_id: int = None, **kwargs):
+        """
+        Initializes the KGWriter with the specified project ID.
+
+        Args:
+            project_id (int): The ID of the project associated with the KG. Defaults to None.
+            **kwargs: Additional keyword arguments passed to the superclass.
+        """
         super().__init__(**kwargs)
         if project_id is None:
             self.project_id = KAG_PROJECT_CONF.project_id
@@ -64,13 +70,12 @@ class KGWriter(SinkWriterABC):
 
         Args:
             input (Input): The input object representing the subgraph to operate on.
-            alter_operation (str): The type of operation to perform (Upsert or Delete).
-            lead_to_builder (str): enable lead to event infer builder
+            alter_operation (str): The type of operation to perform (Upsert or Delete). Defaults to Upsert.
+            lead_to_builder (bool): Enable lead to event infer builder. Defaults to False.
 
         Returns:
             List[Output]: A list of output objects (currently always [None]).
         """
-
         self.client.write_graph(
             sub_graph=input.to_dict(),
             operation=alter_operation,
@@ -79,7 +84,17 @@ class KGWriter(SinkWriterABC):
         return [input]
 
     def _handle(self, input: Dict, alter_operation: str, **kwargs):
-        """The calling interface provided for SPGServer."""
+        """
+        The calling interface provided for SPGServer.
+
+        Args:
+            input (Dict): The input dictionary representing the subgraph to operate on.
+            alter_operation (str): The type of operation to perform (Upsert or Delete).
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            None: This method currently returns None.
+        """
         _input = self.input_types.from_dict(input)
         _output = self.invoke(_input, alter_operation)  # noqa
 

@@ -20,7 +20,10 @@ from knext.common.base.runnable import Input, Output
 
 class ExtractorABC(BuilderComponent, ABC):
     """
-    Interface for extracting sub graph (which contains a list of nodes and a list of edges) from chunks.
+    Abstract base class for extracting sub graphs (which contain a list of nodes and a list of edges) from chunks.
+
+    This class defines the interface for all extractor components that are responsible for processing input data
+    and generating sub graphs as output. It inherits from `BuilderComponent` and `ABC` (Abstract Base Class).
     """
 
     @property
@@ -33,6 +36,22 @@ class ExtractorABC(BuilderComponent, ABC):
 
     @abstractmethod
     def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Abstract method to invoke the extractor to process input data.
+
+        This method must be implemented by any subclass. It is responsible for processing the input data
+        and generating a list of output results, typically containing subgraphs.
+
+        Args:
+            input (Input): Input data containing name and content.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of processed results, containing subgraph information.
+
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
+        """
         raise NotImplementedError(
             f"`invoke` is not currently supported for {self.__class__.__name__}."
         )

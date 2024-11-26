@@ -18,8 +18,36 @@ from knext.builder.builder_chain_abc import BuilderChainABC
 
 
 class KAGBuilderChain(BuilderChainABC, Registrable):
+    """
+    KAGBuilderChain is a class that extends the BuilderChainABC and Registrable base classes.
+    It is responsible for constructing and executing a workflow represented by a directed acyclic graph (DAG).
+    Each node within the DAG is an instance of BuilderComponent, and the input for each node is processed in parallel.
+    """
+
     def invoke(self, file_path, max_workers=10, **kwargs):
+        """
+        Invokes the builder chain to process the input file.
+
+        Args:
+            file_path: The path to the input file to be processed.
+            max_workers (int, optional): The maximum number of threads to use. Defaults to 10.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List: The final output from the builder chain.
+        """
+
         def execute_node(node, inputs: List[str]):
+            """
+            Executes a single node in the builder chain using parallel processing.
+
+            Args:
+                node: The node to be executed.
+                inputs (List[str]): The list of input data for the node.
+
+            Returns:
+                List: The output from the node.
+            """
             node_name = type(node).__name__.split(".")[-1]
             with ThreadPoolExecutor(max_workers) as inner_executor:
                 inner_futures = [

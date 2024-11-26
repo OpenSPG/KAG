@@ -40,11 +40,20 @@ logger = logging.getLogger(__name__)
 @RecordParserABC.register("pdf")
 class PDFFileParser(RecordParserABC):
     """
-    A PDF reader class that inherits from RecordParserABC.
+    A class for parsing PDF files into a list of text chunks, inheriting from `RecordParserABC`.
+
+    This class is responsible for parsing PDF files and converting them into a list of Chunk objects.
+    It inherits from `RecordParserABC` and overrides the necessary methods to handle PDF-specific operations.
     """
 
     def __init__(self, llm: LLMClient = None, split_level: int = 3):
+        """
+        Initializes the PDFFileParser with the specified large language model client and split level.
 
+        Args:
+            llm (LLMClient, optional): The large language model client used for generating outlines. Defaults to None.
+            split_level (int, optional): The level of detail to split the PDF content into chunks. Defaults to 3.
+        """
         self.split_level = split_level
         # self.split_using_outline = split_using_outline
         # self.outline_flag = True
@@ -52,6 +61,16 @@ class PDFFileParser(RecordParserABC):
         self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]], basename) -> List[Chunk]:
+        """
+        Generates outlines for the given chunk(s) and splits the content based on the outlines.
+
+        Args:
+            chunk (Union[Chunk, List[Chunk]]): The chunk(s) to generate outlines for.
+            basename (str): The base name to use for generating chunk IDs.
+
+        Returns:
+            List[Chunk]: A list of chunks split based on the generated outlines.
+        """
         if isinstance(chunk, Chunk):
             chunk = [chunk]
         outlines = []
@@ -63,6 +82,17 @@ class PDFFileParser(RecordParserABC):
         return chunks
 
     def sep_by_outline(self, content, outlines, basename):
+        """
+        Splits the content into chunks based on the provided outlines.
+
+        Args:
+            content (str): The content to split.
+            outlines (List[str]): The outlines to use for splitting the content.
+            basename (str): The base name to use for generating chunk IDs.
+
+        Returns:
+            List[Chunk]: A list of chunks split based on the provided outlines.
+        """
         position_check = []
         for outline in outlines:
             start = content.find(outline)
@@ -170,7 +200,6 @@ class PDFFileParser(RecordParserABC):
             outline_flag = False
 
         if not outline_flag:
-
             with open(input, "rb") as file:
                 for idx, page_layout in enumerate(extract_pages(file)):
                     content = ""

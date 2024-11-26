@@ -26,13 +26,29 @@ logger = logging.getLogger()
 @Registrable.register("vectorize_model")
 class VectorizeModelABC(Registrable):
     """
-    Vectorize model turns texts into embedding vectors.
+    An abstract base class that defines the interface for converting text into embedding vectors.
     """
 
     def __init__(self, vector_dimensions: int = None):
+        """
+        Initializes the VectorizeModelABC instance.
+
+        Args:
+            vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
+        """
         self._vector_dimensions = vector_dimensions
 
     def _download_model(self, path, url):
+        """
+        Downloads a model from a specified URL and extracts it to a given path.
+
+        Args:
+            path (str): The directory path to save the downloaded model.
+            url (str): The URL from which to download the model.
+
+        Raises:
+            RuntimeError: If the model configuration file is not found at the specified path.
+        """
         logger.info(f"download model from:\n{url} to:\n{path}")
         res = requests.get(url)
         with io.BytesIO(res.content) as fileobj:
@@ -45,7 +61,13 @@ class VectorizeModelABC(Registrable):
 
     def get_vector_dimensions(self):
         """
-        Dimension of generated embedding vectors.
+        Retrieves the dimension of the generated embedding vectors.
+
+        Returns:
+            int: The number of dimensions for the embedding vectors.
+
+        Raises:
+            RuntimeError: If the embedding service is not available.
         """
         if self._vector_dimensions is not None:
             return int(self._vector_dimensions)
@@ -64,13 +86,16 @@ class VectorizeModelABC(Registrable):
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
-        Vectorize a text string into an embedding vector or multiple text strings into
-        multiple embedding vectors.
+        Vectorizes text(s) into embedding vector(s).
 
-        :param texts: texts to vectorize
-        :type texts: str or Iterable[str]
-        :return: embedding vectors of the texts
-        :rtype: EmbeddingVector or Iterable[EmbeddingVector]
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
         """
         message = "abstract method vectorize is not implemented"
         raise NotImplementedError(message)

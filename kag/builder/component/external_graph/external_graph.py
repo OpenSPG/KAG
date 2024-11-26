@@ -27,13 +27,26 @@ logger = logging.getLogger()
 
 @ExternalGraphLoaderABC.register("base", constructor="from_json_file", as_default=True)
 class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
+    """
+    A default implementation of the ExternalGraphLoaderABC interface.
+
+    This class is responsible for loading external graph data based on the provided nodes, edges, and match configuration.
+    """
+
     def __init__(
         self,
         nodes: List[Node],
         edges: List[Edge],
         match_config: MatchConfig,
     ):
+        """
+        Initializes the DefaultExternalGraphLoader with the given nodes, edges, and match configuration.
 
+        Args:
+            nodes (List[Node]): A list of Node objects representing the nodes in the graph.
+            edges (List[Edge]): A list of Edge objects representing the edges in the graph.
+            match_config (MatchConfig): The configuration for matching query str to graph nodes.
+        """
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         for node in nodes:
             if node.label not in self.schema:
@@ -172,10 +185,20 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
     def from_json_file(
         cls,
         node_file_path: str,
-        edge_file_path,
+        edge_file_path: str,
         match_config: MatchConfig,
     ):
+        """
+        Creates an instance of DefaultExternalGraphLoader from JSON files containing node and edge data.
 
+        Args:
+            node_file_path (str): The path to the JSON file containing node data.
+            edge_file_path (str): The path to the JSON file containing edge data.
+            match_config (MatchConfig): The configuration for matching query str to graph nodes.
+
+        Returns:
+            DefaultExternalGraphLoader: An instance of DefaultExternalGraphLoader initialized with the data from the JSON files.
+        """
         nodes = []
         for item in json.load(open(node_file_path, "r")):
             nodes.append(Node.from_dict(item))

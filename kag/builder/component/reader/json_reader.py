@@ -21,7 +21,12 @@ from knext.common.base.runnable import Input, Output
 @SourceReaderABC.register("json")
 class JSONReader(SourceReaderABC):
     """
-    A class for reading JSON files, inheriting from `SourceReaderABC`.
+    A class for reading JSON files or parsing JSON-formatted strings into a list of dictionaries, inheriting from `SourceReaderABC`.
+
+    This class is responsible for reading JSON files or parsing JSON-formatted strings and converting them into a list of dictionaries.
+    It inherits from `SourceReaderABC` and overrides the necessary methods to handle JSON-specific operations.
+
+    Note: The JSON data must be a list of dictionaries.
     """
 
     @property
@@ -35,16 +40,16 @@ class JSONReader(SourceReaderABC):
     @staticmethod
     def _read_from_file(file_path: str) -> Union[dict, list]:
         """
-        Safely reads JSON from a file and returns its content.
+        Reads JSON data from a file and returns it as a list of dictionaries.
 
         Args:
             file_path (str): The path to the JSON file.
 
         Returns:
-            Union[dict, list]: The parsed JSON content.
+            List[Dict]: The JSON data loaded from the file.
 
         Raises:
-            ValueError: If there is an error reading the JSON file.
+            ValueError: If there is an error reading the JSON from the file or if the file is not found.
         """
         try:
             with open(file_path, "r") as file:
@@ -57,13 +62,13 @@ class JSONReader(SourceReaderABC):
     @staticmethod
     def _parse_json_string(json_string: str) -> Union[dict, list]:
         """
-        Parses a JSON string and returns its content.
+        Parses a JSON string and returns it as a list of dictionaries.
 
         Args:
             json_string (str): The JSON string to parse.
 
         Returns:
-            Union[dict, list]: The parsed JSON content.
+            List[Dict]: The parsed JSON data.
 
         Raises:
             ValueError: If there is an error parsing the JSON string.
@@ -74,6 +79,22 @@ class JSONReader(SourceReaderABC):
             raise ValueError(f"Error parsing JSON string: {e}")
 
     def load_data(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Loads data from a JSON file or JSON string and returns it as a list of dictionaries.
+
+        This method reads JSON data from a file or parses a JSON string and returns it as a list of dictionaries.
+        If the input is a file path, it reads the file; if the input is a JSON string, it parses the string.
+
+        Args:
+            input (Input): The JSON file path or JSON string to load.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of dictionaries, where each dictionary represents a JSON object.
+
+        Raises:
+            ValueError: If there is an error reading the JSON data or if the input is not a valid JSON array or object.
+        """
         try:
             if os.path.exists(input):
                 corpus = self._read_from_file(input)

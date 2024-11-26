@@ -18,7 +18,11 @@ from knext.common.base.runnable import Input, Output
 
 class SinkWriterABC(BuilderComponent, ABC):
     """
-    Interface for writing SubGraphs to storage.
+    Abstract base class for writing SubGraphs to graph storage.
+
+    This class defines the interface for writing SubGraphs to a graph storage system.
+    It inherits from BuilderComponent and ABC, ensuring that any subclass must implement
+    the `invoke` method.
     """
 
     @property
@@ -31,6 +35,19 @@ class SinkWriterABC(BuilderComponent, ABC):
 
     @abstractmethod
     def invoke(self, input: Input, **kwargs) -> Output:
+        """
+        Abstract method to be implemented by subclasses for writing SubGraphs to storage.
+
+        Args:
+            input (Input): The SubGraph to be written to storage.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            Output: The SubGraph after it has been written to storage.
+
+        Raises:
+            NotImplementedError: If the method is not implemented by the subclass.
+        """
         raise NotImplementedError(
             f"`invoke` is not currently supported for {self.__class__.__name__}."
         )

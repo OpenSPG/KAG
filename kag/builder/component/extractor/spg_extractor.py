@@ -30,8 +30,10 @@ logger = logging.getLogger(__name__)
 @ExtractorABC.register("spg")
 class SPGExtractor(KAGExtractor):
     """
-    A Builder Component that extracting structured data from long texts by invoking large language model.
+    A Builder Component that extracts structured data from long texts by invoking a large language model.
 
+    This class inherits from KAGExtractor and extends its functionality to include additional prompts
+    and enhanced named entity recognition using SPG (Semantic-enhanced Programmable Graph) types.
     """
 
     def __init__(
@@ -42,6 +44,16 @@ class SPGExtractor(KAGExtractor):
         triple_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
     ):
+        """
+        Initializes the SPGExtractor with the specified parameters.
+
+        Args:
+            llm (LLMClient): The large language model client.
+            ner_prompt (PromptABC, optional): The prompt for named entity recognition. Defaults to None.
+            std_prompt (PromptABC, optional): The prompt for named entity standardization. Defaults to None.
+            triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
+            external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
+        """
         super().__init__(llm, ner_prompt, std_prompt, triple_prompt, external_graph)
         self.create_extra_prompts()
 

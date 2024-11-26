@@ -24,6 +24,12 @@ from knext.schema.model.base import ConstraintTypeEnum, BaseSpgType
 
 @AlignerABC.register("spg")
 class SPGAligner(AlignerABC):
+    """
+    A class that extends the AlignerABC base class. It is responsible for aligning and merging SPG records into subgraphs.
+
+    This class provides methods to handle the alignment and merging of SPG records, as well as properties to define the input and output types.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.spg_types = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
@@ -37,6 +43,15 @@ class SPGAligner(AlignerABC):
         return SubGraph
 
     def merge(self, spg_records: List[SPGRecord]):
+        """
+        Merges a list of SPG records into a single set of records, combining properties as necessary.
+
+        Args:
+            spg_records (List[SPGRecord]): A list of SPG records to be merged.
+
+        Returns:
+            List[SPGRecord]: A list of merged SPG records.
+        """
         merged_spg_records = {}
         for record in spg_records:
             key = f"{record.spg_type_name}#{record.get_property('name', '')}"
@@ -77,6 +92,16 @@ class SPGAligner(AlignerABC):
     def from_spg_record(
         spg_types: Dict[str, BaseSpgType], spg_records: List[SPGRecord]
     ):
+        """
+        Converts a list of SPG records into a subgraph.
+
+        Args:
+            spg_types (Dict[str, BaseSpgType]): A dictionary mapping SPG type names to their corresponding types.
+            spg_records (List[SPGRecord]): A list of SPG records to be converted.
+
+        Returns:
+            SubGraph: A subgraph representing the converted SPG records.
+        """
         sub_graph = SubGraph([], [])
         for record in spg_records:
             s_id = record.id
@@ -109,10 +134,30 @@ class SPGAligner(AlignerABC):
         return sub_graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Processes a single input and returns a list of outputs.
+
+        Args:
+            input (Input): The input to be processed.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list containing the processed output.
+        """
         subgraph = SubGraph.from_spg_record(self.spg_types, [input])
         return [subgraph]
 
     def batch(self, inputs: List[Input], **kwargs) -> List[Output]:
+        """
+        Processes a batch of inputs and returns a list of outputs.
+
+        Args:
+            inputs (List[Input]): A list of inputs to be processed.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of outputs corresponding to the processed inputs.
+        """
         merged_records = self.merge(inputs)
         subgraph = SubGraph.from_spg_record(self.spg_types, merged_records)
         return [subgraph]

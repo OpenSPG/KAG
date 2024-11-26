@@ -16,12 +16,23 @@ from kag.interface import SplitterABC
 
 class BaseTableSplitter(SplitterABC):
     """
-    A base class for splitting table, inheriting from Splitter.
+    A base class for splitting table data into smaller chunks.
+
+    This class inherits from SplitterABC and provides the functionality to split table data
+    represented in markdown format into smaller chunks.
     """
 
     def split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
         """
-        split markdown format table into smaller markdown table
+        Splits a markdown format table into smaller markdown tables.
+
+        Args:
+            org_chunk (Chunk): The original chunk containing the table data.
+            chunk_size (int): The maximum size of each smaller chunk. Defaults to 2000.
+            sep (str): The separator used to join the table rows. Defaults to "\n".
+
+        Returns:
+            List[Chunk]: A list of smaller chunks resulting from the split operation.
         """
         try:
             return self._split_table(
@@ -31,6 +42,17 @@ class BaseTableSplitter(SplitterABC):
             return None
 
     def _split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
+        """
+        Internal method to split a markdown format table into smaller markdown tables.
+
+        Args:
+            org_chunk (Chunk): The original chunk containing the table data.
+            chunk_size (int): The maximum size of each smaller chunk. Defaults to 2000.
+            sep (str): The separator used to join the table rows. Defaults to "\n".
+
+        Returns:
+            List[Chunk]: A list of smaller chunks resulting from the split operation.
+        """
         output = []
         content = org_chunk.content
         table_start = content.find("|")

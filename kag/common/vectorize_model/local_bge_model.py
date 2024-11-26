@@ -23,7 +23,8 @@ LOCAL_MODEL_MAP = {}
 @VectorizeModelABC.register("bge")
 class LocalBGEVectorizeModel(VectorizeModelABC):
     """
-    Invoke local bge embedding models to turn texts into embedding vectors.
+    A class that extends the VectorizeModelABC base class.
+    It invokes local BGE embedding models to convert texts into embedding vectors.
     """
 
     def __init__(
@@ -33,6 +34,15 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
         query_instruction_for_retrieval: str = None,
         vector_dimensions: int = None,
     ):
+        """
+        Initializes the LocalBGEVectorizeModel instance.
+
+        Args:
+            path (str): The path to the local BGE model.
+            url (str, optional): The URL to download the model if not found locally. Defaults to None.
+            query_instruction_for_retrieval (str, optional): The query instruction for retrieval. Defaults to None.
+            vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
+        """
         super().__init__(vector_dimensions)
         self.model_path = os.path.expanduser(path)
         self.url = url
@@ -72,6 +82,15 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
         self.model = model
 
     def _load_model(self, path):
+        """
+        Loads the BGE model from the specified path.
+
+        Args:
+            path (str): The path to the BGE model.
+
+        Returns:
+            FlagModel: The loaded BGE model.
+        """
         # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
         import sklearn  # noqa
         from FlagEmbedding import FlagModel
@@ -90,14 +109,15 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
-        Vectorize a text string into an embedding vector or multiple text strings into
-        multiple embedding vectors.
+        Vectorizes text(s) into embedding vector(s).
 
-        :param texts: texts to vectorize
-        :type texts: str or Iterable[str]
-        :return: embedding vectors of the texts
-        :rtype: EmbeddingVector or Iterable[EmbeddingVector]
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
+
         result = self.model.encode(texts)
         return result.tolist()
 
@@ -105,7 +125,8 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
 @VectorizeModelABC.register("bge_m3")
 class LocalBGEM3VectorizeModel(VectorizeModelABC):
     """
-    Invoke local bge-m3 embedding models to turn texts into embedding vectors.
+    A class that extends the VectorizeModelABC base class.
+    It invokes local BGE-M3 embedding models to convert texts into embedding vectors.
     """
 
     # def __init__(self, config: Dict[str, Any]):
@@ -116,6 +137,14 @@ class LocalBGEM3VectorizeModel(VectorizeModelABC):
         url: str = None,
         vector_dimensions: int = None,
     ):
+        """
+        Initializes the LocalBGEM3VectorizeModel instance.
+
+        Args:
+            path (str): The path to the local BGE-M3 model.
+            url (str, optional): The URL to download the model if not found locally. Defaults to None.
+            vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
+        """
         super().__init__(vector_dimensions)
         self.url = url
         self.model_path = os.path.expanduser(path)
@@ -134,6 +163,15 @@ class LocalBGEM3VectorizeModel(VectorizeModelABC):
         self.model = model
 
     def _load_model(self, path):
+        """
+        Loads the BGE-M3 model from the specified path.
+
+        Args:
+            path (str): The path to the BGE-M3 model.
+
+        Returns:
+            BGEM3FlagModel: The loaded BGE-M3 model.
+        """
         # We need to import sklearn at first, otherwise sklearn will fail on macOS with m chip.
 
         import sklearn  # noqa
@@ -147,13 +185,13 @@ class LocalBGEM3VectorizeModel(VectorizeModelABC):
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
-        Vectorize a text string into an embedding vector or multiple text strings into
-        multiple embedding vectors.
+        Vectorizes text(s) into embedding vector(s).
 
-        :param texts: texts to vectorize
-        :type texts: str or Iterable[str]
-        :return: embedding vectors of the texts
-        :rtype: EmbeddingVector or Iterable[EmbeddingVector]
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
         result = self.model.encode(texts)["dense_vecs"]
         return result.tolist()

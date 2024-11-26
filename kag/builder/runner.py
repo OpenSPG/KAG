@@ -30,12 +30,30 @@ logger = logging.getLogger()
 
 
 def str_abstract(value: str):
+    """
+    Abstracts a string value by returning the base name if it is a file path, or the first 10 characters otherwise.
+
+    Args:
+        value (str): The string value to be abstracted.
+
+    Returns:
+        str: The abstracted string value.
+    """
     if os.path.exists(value):
         return os.path.basename(value)
     return value[:10]
 
 
 def dict_abstract(value: Dict):
+    """
+    Abstracts each value in a dictionary by converting it to a string and then abstracting the string.
+
+    Args:
+        value (Dict): The dictionary to be abstracted.
+
+    Returns:
+        Dict: The abstracted dictionary.
+    """
     output = {}
     for k, v in value.items():
         output[k] = str_abstract(str(v))
@@ -43,6 +61,18 @@ def dict_abstract(value: Dict):
 
 
 def generate_hash_id(value):
+    """
+    Generates a hash ID and an abstracted version of the input value.
+
+    If the input value is a dictionary, it sorts the dictionary items and abstracts the dictionary.
+    If the input value is not a dictionary, it abstracts the value directly.
+
+    Args:
+        value: The input value to be hashed and abstracted.
+
+    Returns:
+        Tuple[str, Any]: A tuple containing the hash ID and the abstracted value.
+    """
     if isinstance(value, dict):
         sorted_items = sorted(value.items())
         key = str(sorted_items)
@@ -59,9 +89,23 @@ def generate_hash_id(value):
 
 
 class CKPT:
+    """
+    CKPT class is responsible for managing checkpoint files, which is used for record/resume KAG tasks.
+
+    This class provides methods to load, save, and check the status of data processing checkpoints.
+    """
+
     ckpt_file_name = "kag-runner-{}-{}.ckpt"
 
     def __init__(self, path: str, rank: int = 0, world_size: int = 1):
+        """
+        Initializes the CKPT instance.
+
+        Args:
+            path (str): The path where the checkpoint file is stored.
+            rank (int, optional): The rank of the process. Defaults to 0.
+            world_size (int, optional): The total number of processes. Defaults to 1.
+        """
         self.path = path
         self.ckpt_file_path = os.path.join(
             self.path, CKPT.ckpt_file_name.format(rank, world_size)
@@ -71,18 +115,41 @@ class CKPT:
             self.load()
 
     def load(self):
+        """
+        Loads the checkpoint data from the file.
+        """
         with open(self.ckpt_file_path, "r") as reader:
             for line in reader:
                 data = json.loads(line)
                 self._ckpt.add(data["id"])
 
     def is_processed(self, data_id: str):
+        """
+        Checks if a data ID has already been processed.
+
+        Args:
+            data_id (str): The data ID to check.
+
+        Returns:
+            bool: True if the data ID has been processed, False otherwise.
+        """
         return data_id in self._ckpt
 
     def open(self):
+        """
+        Opens the checkpoint file for appending.
+        """
         self.writer = open(self.ckpt_file_path, "a")
 
     def add(self, data_id: str, data_abstract: str, info: Any):
+        """
+        Adds a new entry to the checkpoint file.
+
+        Args:
+            data_id (str): The data ID to add.
+            data_abstract (str): The abstract of the data.
+            info (Any): Additional information to store.
+        """
         if self.is_processed(data_id):
             return
         now = datetime.now()
@@ -100,25 +167,42 @@ class CKPT:
         self.writer.flush()
 
     def close(self):
+        """
+        Closes the checkpoint file.
+        """
         self.writer.flush()
         self.writer.close()
 
 
 class BuilderChainRunner(Registrable):
+    """
+    A class that manages the execution of a KAGBuilderChain with parallel processing and checkpointing.
+
+    This class provides methods to initialize the runner, process input data, and manage checkpoints for tracking processed data.
+    """
+
     def __init__(
         self,
         reader: SourceReaderABC,
         chain: KAGBuilderChain,
         num_parallel: int = 2,
         chain_level_num_paralle: int = 8,
-        ckpt_dir: str = None,
+        ckpt_dir: str = "./ckpt",
     ):
+        """
+        Initializes the BuilderChainRunner instance.
+
+        Args:
+            reader (SourceReaderABC): The source reader to generate input data.
+            chain (KAGBuilderChain): The builder chain to process the input data.
+            num_parallel (int, optional): The number of parallel threads to use, with each thread launching a builder chain instance. Defaults to 2.
+            chain_level_num_paralle (int, optional): The number of parallel workers within a builder chain. Defaults to 8.
+            ckpt_dir (str, optional): The directory to store checkpoint files. Defaults to "./ckpt".
+        """
         self.reader = reader
         self.chain = chain
         self.num_parallel = num_parallel
         self.chain_level_num_paralle = chain_level_num_paralle
-        if ckpt_dir is None:
-            ckpt_dir = "./ckpt"
         self.ckpt_dir = ckpt_dir
         if not os.path.exists(self.ckpt_dir):
             os.makedirs(self.ckpt_dir, exist_ok=True)
@@ -135,6 +219,13 @@ class BuilderChainRunner(Registrable):
         print(msg)
 
     def invoke(self, input):
+        """
+        Processes the input data using the builder chain in parallel and manages checkpoints.
+
+        Args:
+            input: The input data to be processed.
+        """
+
         def process(chain, data, data_id, data_abstract):
             try:
                 result = chain.invoke(data, max_workers=self.chain_level_num_paralle)

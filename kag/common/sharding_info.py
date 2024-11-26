@@ -4,10 +4,24 @@ from kag.common.registry import Registrable
 
 class ShardingInfo(Registrable):
     """
-    ShardingInfo is used to record sharding-related information. Each machine can contain multiple instances,
-    and each instance can contain multiple processes. The rank and world_size can then be calculated accordingly.
-    When shard_id and shard_count are explicitly given, they are directly used as rank and world_size,
-    mainly used to obtain tasks from cache server.
+    A class representing sharding information for distributed computing.
+
+    This class provides methods to manage and query sharding information across
+    multiple machines, instances, and processes. It inherits from the `Registrable`
+    class.
+
+    Attributes:
+        machine_id (int): The ID of the current machine. Default is 0.
+        machine_count (int): The total number of machines. Default is 1.
+        instance_id (int): The ID of the current instance. Default is 0.
+        instance_count (int): The total number of instances. Default is 1.
+        process_id (int): The ID of the current process. Default is 0.
+        process_count (int): The total number of processes. Default is 1.
+        shard_id (int, optional): The ID of the current shard. Default is None.
+        shard_count (int, optional): The total number of shards. Default is None.
+        shard_by_machine (bool): Whether to shard by machine. Default is True.
+        shard_by_instance (bool): Whether to shard by instance. Default is True.
+        shard_by_process (bool): Whether to shard by process. Default is True.
     """
 
     def __init__(
@@ -21,6 +35,19 @@ class ShardingInfo(Registrable):
         shard_id: int = None,
         shard_count: int = None,
     ):
+        """
+        Initializes a new instance of the ShardingInfo class.
+
+        Args:
+            machine_id (int): The ID of the current machine. Default is 0.
+            machine_count (int): The total number of machines. Default is 1.
+            instance_id (int): The ID of the current instance. Default is 0.
+            instance_count (int): The total number of instances. Default is 1.
+            process_id (int): The ID of the current process. Default is 0.
+            process_count (int): The total number of processes. Default is 1.
+            shard_id (int, optional): The ID of the current shard. Default is None.
+            shard_count (int, optional): The total number of shards. Default is None.
+        """
         self.instance_id = instance_id
         self.instance_count = instance_count
         self.machine_id = machine_id
@@ -37,11 +64,26 @@ class ShardingInfo(Registrable):
     def shard_by(
         self, machine: bool = True, instance: bool = True, process: bool = True
     ):
+        """
+        Configures the sharding strategy by specifying whether to shard by machine,
+        instance, or process.
+
+        Args:
+            machine (bool): Whether to shard by machine. Default is True.
+            instance (bool): Whether to shard by instance. Default is True.
+            process (bool): Whether to shard by process. Default is True.
+        """
         self.shard_by_machine = machine
         self.shard_by_instance = instance
         self.shard_by_process = process
 
     def get_rank(self):
+        """
+        Returns the rank of the current shard based on the configured sharding strategy.
+
+        Returns:
+            int: The rank of the current shard.
+        """
         if self.shard_id is not None:
             return self.shard_id
         if self.shard_by_machine:
@@ -60,6 +102,12 @@ class ShardingInfo(Registrable):
         return process_count * (machine_id * instance_count + instance_id) + process_id
 
     def get_world_size(self):
+        """
+        Returns the total number of shards in the world based on the configured sharding strategy.
+
+        Returns:
+            int: The total number of shards.
+        """
         if self.shard_count is not None:
             return self.shard_count
         world_size = 1
@@ -72,6 +120,15 @@ class ShardingInfo(Registrable):
         return world_size
 
     def get_sharding_range(self, total: int):
+        """
+        Returns the range of indices that the current shard is responsible for.
+
+        Args:
+            total (int): The total number of items to be sharded.
+
+        Returns:
+            Tuple[int, int]: A tuple containing the start and end indices of the range.
+        """
         rank = self.get_rank()
         world_size = self.get_world_size()
         if total % world_size == 0:
@@ -84,17 +141,41 @@ class ShardingInfo(Registrable):
 
     @property
     def is_master_process(self):
+        """
+        Checks if the current process is the master process.
+
+        Returns:
+            bool: True if the current process is the master process, False otherwise.
+        """
         return self.process_id == 0
 
     @property
     def is_master_instance(self):
+        """
+        Checks if the current instance is the master instance.
+
+        Returns:
+            bool: True if the current instance is the master instance, False otherwise.
+        """
         return self.instance_id == 0
 
     @property
     def is_master_machine(self):
+        """
+        Checks if the current machine is the master machine.
+
+        Returns:
+            bool: True if the current machine is the master machine, False otherwise.
+        """
         return self.machine_id == 0
 
     def __str__(self):
+        """
+        Returns a string representation of the ShardingInfo object.
+
+        Returns:
+            str: A string containing the rank, world size, and other sharding details.
+        """
         content = (
             f"ShardingInfo: rank={self.get_rank()}, world_size={self.get_world_size()}, "
             f"machine: {self.machine_id}/{self.machine_count}, "
@@ -106,6 +187,12 @@ class ShardingInfo(Registrable):
     __repr__ = __str__
 
     def copy(self):
+        """
+        Creates a copy of the current ShardingInfo object.
+
+        Returns:
+            ShardingInfo: A new instance of ShardingInfo with the same attributes.
+        """
         return ShardingInfo(
             self.machine_id,
             self.machine_count,
@@ -116,66 +203,6 @@ class ShardingInfo(Registrable):
             self.shard_id,
             self.shard_count,
         )
-
-
-def partition_based_sharding(num_partitions: int, sharding_info: ShardingInfo):
-
-    """
-    The layerwise inference mode requires a special sharding strategy for seed generation and inference
-    return export, i.e. partition based sharding.
-    In general cases, each partition divides its seeds according to the total number of
-    workers(=machines*instances*proceeese) directly. For example, when machine_count=2 and num_partitions=4,
-    the division in each partition is as follows:
-
-    [[machine 0 | machine 1], [machine 0 | machine 1], [machine 0 | machine 1], [machine 0 | machine 1]]
-
-    However, in the layerwise inference mode, we first assign the partitions to different machine groups,
-    and then divide the seeds in the respective machine groups to retain the locality.
-
-    if machine_count > num_partitions:
-        each machine group contains multiple machines and processes one partitin together.
-    else:
-        each machine group contains one machine that needs to process one or more partitions.
-    Therefore, we need to recompute the sharding_info according to the machine group, here are some examples:
-
-    machine_count=2, num_partitions=1
-        ==> [[machine 0, machine 1]]
-        ==> machine_id = 0/1, machine_count =  2
-
-    machine_count=2, num_partitions=2
-        ==> [[machine 0], [machine 1]]
-        ==> machine_id = 0, machine_count =  1
-
-    machine_count=2, num_partitions=4
-        ==> [[machine 0], [machine 0], [machine 1], [machine 1]]
-        ==> machine_id = 0, machine_count =  1
-    """
-
-    sharding_info = sharding_info.copy()
-    machine_id = sharding_info.machine_id
-    machine_count = sharding_info.machine_count
-
-    if machine_count <= num_partitions:
-        if num_partitions % machine_count != 0:
-            msg = f"num_machines {machine_count} can't be divisible by num_partitions {num_partitions}"
-            raise ValueError(msg)
-        num_partitions_per_machine = num_partitions // machine_count
-        responsible_partitions = [
-            machine_id * num_partitions_per_machine + x
-            for x in range(num_partitions_per_machine)
-        ]
-        sharding_info.machine_id = 0
-        sharding_info.machine_count = 1
-        return sharding_info, responsible_partitions
-    else:
-        if machine_count % num_partitions != 0:
-            msg = f"num_partitions {num_partitions} can't be divisible by num_machines {machine_count}"
-            raise ValueError(msg)
-        num_machine_per_partition = machine_count // num_partitions
-        responsible_partitions = [machine_id // num_machine_per_partition]
-        sharding_info.machine_id = sharding_info.machine_id % num_machine_per_partition
-        sharding_info.machine_count = num_machine_per_partition
-        return sharding_info, responsible_partitions
 
 
 ShardingInfo.register("base")(ShardingInfo)

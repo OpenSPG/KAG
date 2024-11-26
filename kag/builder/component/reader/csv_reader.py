@@ -19,12 +19,10 @@ from knext.common.base.runnable import Input, Output
 @SourceReaderABC.register("csv")
 class CSVReader(SourceReaderABC):
     """
-    A class for reading CSV files, inheriting from `SourceReader`.
-    Supports converting CSV data into either a list of dictionaries or a list of Chunk objects.
+    A class for reading CSV files and yielding item rows one by one, inheriting from `SourceReaderABC`.
 
-    Args:
-        output_type (Output): Specifies the output type, which can be "Dict" or "Chunk".
-        **kwargs: Additional keyword arguments passed to the parent class constructor.
+    This class is responsible for reading CSV files and converting each line into a dictionary.
+    It inherits from `SourceReaderABC` and overrides the necessary methods to handle CSV-specific operations.
     """
 
     @property
@@ -36,5 +34,18 @@ class CSVReader(SourceReaderABC):
         return Dict
 
     def load_data(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Loads data from a CSV file and returns it as a list of dictionaries.
+
+        This method reads the CSV file specified by the input and converts it into a list of dictionaries,
+        where each dictionary represents a row in the CSV file.
+
+        Args:
+            input (Input): The path to the CSV file to load.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of dictionaries, where each dictionary represents a row in the CSV file.
+        """
         data = pd.read_csv(input, dtype=str)
         return data.to_dict(orient="records")

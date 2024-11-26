@@ -17,10 +17,25 @@ from kag.interface import LLMClient
 
 @LLMClient.register("mock")
 class MockLLMClient(LLMClient):
+    """
+    MockLLMClient is a mock implementation of the LLMClient class, used for testing purposes.
+
+    This class provides a method to simulate the behavior of a language model client by matching input prompts.
+    """
+
     def __init__(self):
+        """
+        Initializes the MockLLMClient instance.
+        """
         pass
 
     def match_input(self, prompt):
+        """
+        Simulates the behavior of a language model call by matching the input prompt.
+
+        Args:
+            prompt: The input prompt to be matched.
+        """
         time.sleep(3)  # mimic llm call
         if "You're a very effective entity extraction system" in prompt:
             return [
@@ -63,7 +78,6 @@ class MockLLMClient(LLMClient):
         return "I am an intelligent assistant"
 
     def __call__(self, prompt):
-
         return json.dumps(self.match_input(prompt))
 
     def call_with_json_parse(self, prompt):

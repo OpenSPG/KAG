@@ -33,7 +33,7 @@ class PromptABC(Registrable, ABC):
 
     def __init__(self, language: str = "", **kwargs):
         """
-        Initializes the PromptOp instance with the selected language.
+        Initializes the prompt instance with the selected language.
 
         Args:
             language (str): The language for the prompt, should be either "en" or "zh".

@@ -17,7 +17,8 @@ from kag.interface import VectorizeModelABC, EmbeddingVector
 @VectorizeModelABC.register("openai")
 class OpenAIVectorizeModel(VectorizeModelABC):
     """
-    Invoke OpenAI or OpenAI-compatible embedding services to turn texts into embedding vectors.
+    A class that extends the VectorizeModelABC base class.
+    It invokes OpenAI or OpenAI-compatible embedding services to convert texts into embedding vectors.
     """
 
     def __init__(
@@ -27,6 +28,15 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         base_url: str = "",
         vector_dimensions: int = None,
     ):
+        """
+        Initializes the OpenAIVectorizeModel instance.
+
+        Args:
+            model (str, optional): The model to use for embedding. Defaults to "text-embedding-3-small".
+            api_key (str, optional): The API key for accessing the OpenAI service. Defaults to "".
+            base_url (str, optional): The base URL for the OpenAI service. Defaults to "".
+            vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
+        """
         super().__init__(vector_dimensions)
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -34,13 +44,13 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
-        Vectorize a text string into an embedding vector or multiple text strings into
-        multiple embedding vectors.
+        Vectorizes a text string into an embedding vector or multiple text strings into multiple embedding vectors.
 
-        :param texts: texts to vectorize
-        :type texts: str or Iterable[str]
-        :return: embedding vectors of the texts
-        :rtype: EmbeddingVector or Iterable[EmbeddingVector]
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
         results = self.client.embeddings.create(input=texts, model=self.model)
         results = [item.embedding for item in results.data]

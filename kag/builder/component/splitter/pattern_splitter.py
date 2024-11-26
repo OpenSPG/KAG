@@ -10,9 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from typing import Type, List, Union
+# flake8: noqa
 import re
-import os
+from typing import Type, List, Union
+
 
 from kag.builder.model.chunk import Chunk
 from kag.interface import SplitterABC
@@ -21,17 +22,23 @@ from knext.common.base.runnable import Input, Output
 
 @SplitterABC.register("pattern")
 class PatternSplitter(SplitterABC):
+    """
+    A class for splitting text content based on specified patterns and chunking strategies.
+    """
+
     def __init__(self, pattern_dict: dict = None, chunk_cut_num: int = None):
         """
-        pattern_dict:
-        {
-            "pattern": 匹配pattern,
-            "group": {
-                "header":1,
-                "name":2,
-                "content":3
-            }
-        }
+        Initializes the PatternSplitter with the given pattern dictionary and chunk cut number.
+
+        Args:
+            pattern_dict (dict, optional): A dictionary containing the pattern and group mappings.
+                Defaults to a predefined pattern if not provided.
+                Example:
+                {
+                    "pattern": r"(\d+).([^0-9]+?)？([^0-9第版].*?)(?=\d+\.|$)",
+                    "group": {"header": 2, "name": 2, "content": 0}
+                }
+            chunk_cut_num (int, optional): The number of characters to cut chunks into. Defaults to None.
         """
         if pattern_dict is None:
             pattern_dict = {
@@ -53,6 +60,15 @@ class PatternSplitter(SplitterABC):
         return List[Chunk]
 
     def split_sentence(self, content):
+        """
+        Splits the given content into sentences based on delimiters.
+
+        Args:
+            content (str): The content to be split into sentences.
+
+        Returns:
+            List[str]: A list of sentences extracted from the content.
+        """
         sentence_delimiters = "。？?！!；;\n"
         output = []
         start = 0
@@ -76,7 +92,19 @@ class PatternSplitter(SplitterABC):
         sep: str = "\n",
         prefix: str = "SlideWindow",
     ) -> List[Chunk]:
+        """
+        Splits the content into chunks using a sliding window approach.
 
+        Args:
+            content (Union[str, List[str]]): The content to be chunked.
+            chunk_size (int, optional): The maximum size of each chunk. Defaults to 2000.
+            window_length (int, optional): The length of the sliding window. Defaults to 300.
+            sep (str, optional): The separator to join sentences within a chunk. Defaults to "\n".
+            prefix (str, optional): The prefix to use for chunk names. Defaults to "SlideWindow".
+
+        Returns:
+            List[Chunk]: A list of Chunk objects representing the chunked content.
+        """
         if isinstance(content, str):
             content = self.split_sentence(content)
         splitted = []
@@ -114,6 +142,15 @@ class PatternSplitter(SplitterABC):
         self,
         chunk: Chunk,
     ) -> List[Chunk]:
+        """
+        Splits the given chunk into smaller chunks based on the pattern and chunk cut number.
+
+        Args:
+            chunk (Chunk): The chunk to be split.
+
+        Returns:
+            List[Chunk]: A list of smaller Chunk objects.
+        """
         text = chunk.content
 
         pattern = re.compile(self.pattern, re.DOTALL)
@@ -146,42 +183,15 @@ class PatternSplitter(SplitterABC):
         return chunks
 
     def invoke(self, input: Chunk, **kwargs) -> List[Output]:
+        """
+        Invokes the chunk splitting process on the given input.
 
+        Args:
+            input (Chunk): The input chunk to be processed.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list of output chunks.
+        """
         chunks = self.chunk_split(input)
         return chunks
-
-    def to_rest(self):
-        pass
-
-    @classmethod
-    def from_rest(cls, rest_model):
-        pass
-
-
-class LayeredPatternSpliter(PatternSplitter):
-    pass
-
-
-def _test():
-    pattern_dict = {
-        "pattern": r"(\d+)\.([^0-9]+?)？([^0-9第版].*?)(?=\d+\.|$)",
-        "group": {"header": 2, "name": 2, "content": 0},
-    }
-    ds = PatternSplitter(pattern_dict=pattern_dict)
-    from kag.builder.component.reader.pdf_reader import PDFReader
-
-    reader = PDFReader()
-    file_path = os.path.dirname(__file__)
-    test_file_path = os.path.join(file_path, "../../../../tests/builder/data/aiwen.pdf")
-    pre_output = reader._handle(test_file_path)
-
-    handle_input = pre_output[0]
-    handle_result = ds._handle(handle_input)
-    print("handle_result", handle_result)
-
-    return handle_result
-
-
-if __name__ == "__main__":
-    res = _test()
-    print(res)
