@@ -10,9 +10,9 @@ pwd = "./"
 def test_ckpt():
     ckpt = CKPT("./")
     ckpt.open()
-    ckpt.add("aaaa")
-    ckpt.add("bbbb")
-    ckpt.add("cccc")
+    ckpt.add("aaaa", "aaaa", {})
+    ckpt.add("bbbb", "bbbb", {"num_nodes": 3})
+    ckpt.add("cccc", "cccc", {"num_edges": 6})
     ckpt.close()
 
     ckpt = CKPT("./")
