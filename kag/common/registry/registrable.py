@@ -662,7 +662,7 @@ class Registrable:
                 #     sample_config[arg_name] = default
 
             if v[1] is None or v[1] == "__init__":
-                constructor_doc_string = inspect.getdoc(v[0], "__init__")
+                constructor_doc_string = inspect.getdoc(getattr(v[0], "__init__"))
             else:
                 constructor_doc_string = inspect.getdoc(getattr(v[0], v[1]))
             availables[k] = {
