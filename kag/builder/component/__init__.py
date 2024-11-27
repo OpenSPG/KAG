@@ -37,7 +37,7 @@ from kag.builder.component.record_parser.pdf_parser import PDFParser
 from kag.builder.component.record_parser.markdown_parser import MarkDownParser
 from kag.builder.component.record_parser.docx_parser import DocxParser
 from kag.builder.component.record_parser.txt_parser import TXTParser
-from kag.builder.component.record_parser.file_parser import FileParser
+from kag.builder.component.record_parser.mix_parser import MixParser
 
 from kag.builder.component.record_parser.dict_parser import DictParser
 
@@ -65,7 +65,7 @@ __all__ = [
     "PDFParser",
     "MarkDownParser",
     "DocxParser",
-    "FileParser",
+    "MixParser",
     "DictParser",
     "JSONReader",
     "HotpotqaCorpusReader",

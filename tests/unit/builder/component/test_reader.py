@@ -36,10 +36,10 @@ def test_json_reader():
 
 
 def test_csv_reader():
-    reader = SourceReaderABC.from_config({"type": "csv", "rank": 0, "world_size": 1})
     file_path = os.path.join(pwd, "../data/test_csv.csv")
+    reader = SourceReaderABC.from_config({"type": "csv", "rank": 0, "world_size": 1})
     csv_content = []
-    for _, item in pd.read_csv(file_path).iterrows():
+    for _, item in pd.read_csv(file_path, dtype=str).iterrows():
         csv_content.append(item.to_dict())
     data = reader.invoke(file_path)
 
@@ -56,6 +56,31 @@ def test_csv_reader():
     assert len(data) == len(csv_content)
     for l, r in zip(data, csv_content):
         assert l == r
+
+
+def test_csv_reader_with_cols():
+    file_path = os.path.join(pwd, "../data/test_csv.csv")
+    reader = SourceReaderABC.from_config(
+        {"type": "csv", "rank": 0, "world_size": 1, "cols": ["title", "text"]}
+    )
+    csv_content = []
+    for _, item in pd.read_csv(file_path, dtype=str).iterrows():
+        csv_content.append(item.to_dict())
+    data = reader.invoke(file_path)
+
+    assert len(data) == len(csv_content) * 2
+
+    reader_1 = SourceReaderABC.from_config(
+        {"type": "csv", "rank": 0, "world_size": 2, "cols": ["title", "text"]}
+    )
+    reader_2 = SourceReaderABC.from_config(
+        {"type": "csv", "rank": 1, "world_size": 2, "cols": ["title", "text"]}
+    )
+
+    data_1 = reader_1.invoke(file_path)
+    data_2 = reader_2.invoke(file_path)
+    data = data_1 + data_2
+    assert len(data) == len(csv_content) * 2
 
 
 def test_directory_reader():

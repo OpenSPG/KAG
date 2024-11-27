@@ -12,6 +12,7 @@
 import re
 import sys
 import json
+import hashlib
 from typing import Tuple
 import os
 from pathlib import Path
@@ -209,3 +210,29 @@ def split_list_into_n_parts(lst, n):
         start = end
 
     return result
+
+
+def generate_hash_id(value):
+    """
+    Generates a hash ID and an abstracted version of the input value.
+
+    If the input value is a dictionary, it sorts the dictionary items and abstracts the dictionary.
+    If the input value is not a dictionary, it abstracts the value directly.
+
+    Args:
+        value: The input value to be hashed and abstracted.
+
+    Returns:
+        Tuple[str, Any]: A tuple containing the hash ID and the abstracted value.
+    """
+    if isinstance(value, dict):
+        sorted_items = sorted(value.items())
+        key = str(sorted_items)
+    else:
+        key = value
+    if isinstance(key, str):
+        key = key.encode("utf-8")
+    hasher = hashlib.sha256()
+    hasher.update(key)
+
+    return hasher.hexdigest()

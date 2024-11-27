@@ -11,7 +11,6 @@
 # or implied.
 
 
-import hashlib
 import os
 import json
 import traceback
@@ -21,7 +20,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 from kag.common.registry import Registrable
-from kag.common.utils import reset, bold, red
+from kag.common.utils import reset, bold, red, generate_hash_id
 from kag.interface import KAGBuilderChain, SourceReaderABC
 from kag.builder.model.sub_graph import SubGraph
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -60,32 +59,13 @@ def dict_abstract(value: Dict):
     return output
 
 
-def generate_hash_id(value):
-    """
-    Generates a hash ID and an abstracted version of the input value.
-
-    If the input value is a dictionary, it sorts the dictionary items and abstracts the dictionary.
-    If the input value is not a dictionary, it abstracts the value directly.
-
-    Args:
-        value: The input value to be hashed and abstracted.
-
-    Returns:
-        Tuple[str, Any]: A tuple containing the hash ID and the abstracted value.
-    """
+def generate_hash_id_and_abstract(value):
+    hash_id = generate_hash_id(value)
     if isinstance(value, dict):
-        sorted_items = sorted(value.items())
-        key = str(sorted_items)
         abstract = dict_abstract(value)
     else:
-        key = value
         abstract = str_abstract(value)
-    if isinstance(key, str):
-        key = key.encode("utf-8")
-    hasher = hashlib.sha256()
-    hasher.update(key)
-
-    return hasher.hexdigest(), abstract
+    return hash_id, abstract
 
 
 class CKPT:
@@ -106,6 +86,8 @@ class CKPT:
             rank (int, optional): The rank of the process. Defaults to 0.
             world_size (int, optional): The total number of processes. Defaults to 1.
         """
+        self.rank = rank
+        self.world_size = world_size
         self.path = path
         self.ckpt_file_path = os.path.join(
             self.path, CKPT.ckpt_file_name.format(rank, world_size)
@@ -118,10 +100,14 @@ class CKPT:
         """
         Loads the checkpoint data from the file.
         """
-        with open(self.ckpt_file_path, "r") as reader:
-            for line in reader:
-                data = json.loads(line)
-                self._ckpt.add(data["id"])
+        for rank in range(self.world_size):
+            ckpt_file_path = os.path.join(
+                self.path, CKPT.ckpt_file_name.format(rank, self.world_size)
+            )
+            with open(ckpt_file_path, "r") as reader:
+                for line in reader:
+                    data = json.loads(line)
+                    self._ckpt.add(data["id"])
 
     def is_processed(self, data_id: str):
         """
@@ -239,7 +225,7 @@ class BuilderChainRunner(Registrable):
         print(f"Processing {input}")
         with ThreadPoolExecutor(self.num_parallel) as executor:
             for item in self.reader.generate(input):
-                item_id, item_abstract = generate_hash_id(item)
+                item_id, item_abstract = generate_hash_id_and_abstract(item)
                 if self.ckpt.is_processed(item_id):
                     continue
                 fut = executor.submit(process, self.chain, item, item_id, item_abstract)
