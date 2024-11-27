@@ -76,12 +76,56 @@ class OutlineSplitter(SplitterABC):
             valid_outlines.append((title, level))
         return valid_outlines
 
+    def unify_outline_levels(outlines):
+        """
+        统一相同类型标题的级别，如 "第一节" 和 "第二节" 应有相同的层级。
+
+        Args:
+            outlines (list): 提取的标题列表，格式为 [(标题文本, 级别), ...]。
+
+        Returns:
+            list: 调整后的标题列表，格式同输入。
+        """
+        if not outlines:
+            return []
+
+        # 辅助函数：判断标题是否属于同类型
+        def is_same_type(title1, title2):
+            """
+            判断两个标题是否属于同一类型。
+            """
+            # 检查是否包含 "章" 或 "节"，并判断编号相似
+            keywords = ["章", "节", "部分", "篇"]
+            for keyword in keywords:
+                if keyword in title1 and keyword in title2:
+                    return True
+            return False
+
+        # 建立类型到级别的映射
+        type_to_level = {}
+        for title, level in outlines:
+            for keyword in ["章", "节", "部分", "篇"]:
+                if keyword in title:
+                    type_to_level.setdefault(keyword, level)
+
+        # 调整级别
+        unified_outlines = []
+        for title, level in outlines:
+            for keyword in ["章", "节", "部分", "篇"]:
+                if keyword in title and keyword in type_to_level:
+                    level = type_to_level[keyword]
+                    break
+            unified_outlines.append((title, level))
+
+        return unified_outlines
+
     def sep_by_outline(self, content, outlines):
         """
         按层级划分内容为 chunks，剔除无效的标题。
         """
         # 过滤无效的 outlines
         outlines = self.filter_outlines(outlines)
+        outlines = self.unify_outline_levels(outlines)
 
         position_check = []
         for outline in outlines:
@@ -401,12 +445,13 @@ if __name__ == "__main__":
             "../../../../tests/builder/component/test_config.cfg",
         )
     )
-    docx_reader = TXTReader()
+    docx_reader = DocxReader()
     length_splitter = LengthSplitter(split_length=8000)
     outline_splitter = OutlineSplitter()
-    docx_path = os.path.join(
+    txt_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/儿科学_short.txt"
     )
+    docx_path = "/Users/zhangxinhong.zxh/Downloads/waikexue_short.doc"
     # chain = docx_reader >> length_splitter >> outline_splitter
     chunk = docx_reader.invoke(docx_path)
     chunks = length_splitter.invoke(chunk)

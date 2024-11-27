@@ -158,37 +158,29 @@ class DocxReader(SourceReaderABC):
 
         basename, _ = os.path.splitext(os.path.basename(input))
 
-        for text in full_text:
-            title, text = self._get_title_from_text(text)
-            chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{basename}#{title}"),
-                name=f"{basename}#{title}",
-                content=text,
-            )
-            chunks.append(chunk)
-
-        if len(chunks) < 2:
-            chunks = self.outline_chunk(chunks, basename)
-
-        if len(chunks) < 2:
-            semantic_res = split_txt(content)
-            chunks = [
-                Chunk(
-                    id=Chunk.generate_hash_id(input + "#" + r[:10]),
-                    name=basename + "#" + r[:10],
-                    content=r,
-                )
-                for r in semantic_res
-            ]
+        chunk = Chunk(
+            id=Chunk.generate_hash_id(input),
+            name=basename,
+            content=content,
+            source=input,
+        )
+        chunks.append(chunk)
 
         return chunks
 
 
 if __name__ == "__main__":
+
+    from kag.common.env import init_kag_config
+
+    init_kag_config(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../../../../tests/builder/component/test_config.cfg",
+        )
+    )
     reader = DocxReader()
     print(reader.output_types)
     file_path = os.path.dirname(__file__)
-    res = reader.invoke(
-        os.path.join(file_path, "../../../../tests/builder/data/test_docx.docx")
-    )
+    res = reader.invoke("/Users/zhangxinhong.zxh/Downloads/waikexue.doc")
     print(res)
