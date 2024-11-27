@@ -19,7 +19,19 @@ from knext.common.base.runnable import Input, Output
 
 @AlignerABC.register("kag")
 class KAGAligner(AlignerABC):
+    """
+    A class that extends the AlignerABC base class. It is responsible for aligning and merging subgraphs.
+
+    This class provides methods to handle the alignment and merging of subgraphs, as well as properties to define the input and output types.
+    """
+
     def __init__(self, **kwargs):
+        """
+        Initializes the KAGAligner instance.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments passed to the parent class constructor.
+        """
         super().__init__(**kwargs)
 
     @property
@@ -31,6 +43,16 @@ class KAGAligner(AlignerABC):
         return SubGraph
 
     def invoke(self, input: List[SubGraph], **kwargs) -> SubGraph:
+        """
+        Merges a list of subgraphs into a single subgraph.
+
+        Args:
+            input (List[SubGraph]): A list of subgraphs to be merged.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            SubGraph: The merged subgraph containing all nodes and edges from the input subgraphs.
+        """
         merged_sub_graph = SubGraph(nodes=[], edges=[])
         for sub_graph in input:
             for node in sub_graph.nodes:
@@ -42,9 +64,15 @@ class KAGAligner(AlignerABC):
         return merged_sub_graph
 
     def _handle(self, input: Sequence[Dict]) -> Dict:
+        """
+        Handles the input by converting it to the appropriate type, invoking the aligner, and converting the output back to a dictionary.
+
+        Args:
+            input (Sequence[Dict]): A sequence of dictionaries representing subgraphs.
+
+        Returns:
+            Dict: A dictionary representing the merged subgraph.
+        """
         _input = [self.input_types.from_dict(i) for i in input]
         _output = self.invoke(_input)
         return _output.to_dict()
-
-    def batch(self, inputs: List[Input], **kwargs) -> List[Output]:
-        pass

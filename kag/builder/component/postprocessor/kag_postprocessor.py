@@ -25,28 +25,62 @@ logger = logging.getLogger()
 
 @PostProcessorABC.register("base", as_default=True)
 class KAGPostProcessor(PostProcessorABC):
+    """
+    A class that extends the PostProcessorABC base class.
+    It provides methods to handle various post-processing tasks on subgraphs
+    including filtering, entity linking based on similarity, and linking based on an external graph.
+    """
+
     def __init__(
         self,
         similarity_threshold: float = 0.9,
         external_graph: ExternalGraphLoaderABC = None,
     ):
+        """
+        Initializes the KAGPostProcessor instance.
+
+        Args:
+            similarity_threshold (float, optional): The similarity threshold for entity linking. Defaults to 0.9.
+            external_graph (ExternalGraphLoaderABC, optional): An instance of ExternalGraphLoaderABC for external graph-based linking. Defaults to None.
+        """
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.similarity_threshold = similarity_threshold
         self.external_graph = external_graph
         self._init_search()
 
     def format_label(self, label: str):
+        """
+        Formats the label by adding the project namespace if it is not already present.
+
+        Args:
+            label (str): The label to be formatted.
+
+        Returns:
+            str: The formatted label.
+        """
         namespace = KAG_PROJECT_CONF.namespace
         if label.startswith(namespace):
             return label
         return f"{namespace}.{label}"
 
     def _init_search(self):
+        """
+        Initializes the search client for entity linking.
+        """
         self._search_client = SearchClient(
             KAG_PROJECT_CONF.host_addr, KAG_PROJECT_CONF.project_id
         )
 
     def filter_invalid_data(self, graph: SubGraph):
+        """
+        Filters out invalid nodes and edges from the subgraph.
+
+        Args:
+            graph (SubGraph): The subgraph to be filtered.
+
+        Returns:
+            SubGraph: The filtered subgraph.
+        """
         valid_nodes = []
         valid_edges = []
         for node in graph.nodes:
@@ -66,6 +100,14 @@ class KAGPostProcessor(PostProcessorABC):
     def _entity_link(
         self, graph: SubGraph, property_key: str = "name", labels: List[str] = None
     ):
+        """
+        Performs entity linking based on the given property key and labels.
+
+        Args:
+            graph (SubGraph): The subgraph to perform entity linking on.
+            property_key (str, optional): The property key to use for linking. Defaults to "name".
+            labels (List[str], optional): The labels to consider for linking. Defaults to None.
+        """
         vector_field_name = get_vector_field_name(property_key)
         for node in graph.nodes:
             if labels is None:
@@ -95,15 +137,38 @@ class KAGPostProcessor(PostProcessorABC):
                         )
 
     def similarity_based_link(self, graph: SubGraph, property_key: str = "name"):
+        """
+        Performs entity linking based on similarity.
+
+        Args:
+            graph (SubGraph): The subgraph to perform entity linking on.
+            property_key (str, optional): The property key to use for linking. Defaults to "name".
+        """
         self._entity_link(graph, property_key, None)
 
     def external_graph_based_link(self, graph: SubGraph, property_key: str = "name"):
+        """
+        Performs entity linking based on the user provided external graph.
+
+        Args:
+            graph (SubGraph): The subgraph to perform entity linking on.
+            property_key (str, optional): The property key to use for linking. Defaults to "name".
+        """
         if not self.external_graph:
             return
         labels = self.external_graph.get_allowed_labels()
         self._entity_link(graph, property_key, labels)
 
     def invoke(self, input):
+        """
+        Invokes the post-processing pipeline on the input subgraph.
+
+        Args:
+            input: The input subgraph to be processed.
+
+        Returns:
+            List[SubGraph]: A list containing the processed subgraph.
+        """
         origin_num_nodes = len(input.nodes)
         origin_num_edges = len(input.edges)
         new_graph = self.filter_invalid_data(input)

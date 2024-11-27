@@ -18,6 +18,13 @@ from knext.common.base.runnable import Input, Output
 
 @SourceReaderABC.register("file")
 class FileReader(SourceReaderABC):
+    """
+    A class for reading single file and returning the path, inheriting from `SourceReaderABC`.
+
+    This class is responsible for reading SINGLE file and returning the path as a list of strings.
+    It inherits from `SourceReaderABC` and overrides the necessary methods to handle file-specific operations.
+    """
+
     @property
     def input_types(self) -> Input:
         return str
@@ -27,4 +34,16 @@ class FileReader(SourceReaderABC):
         return str
 
     def load_data(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Loads data by returning the input file path as a list of strings.
+
+        This method takes the input file path and returns it as a list containing the file path.
+
+        Args:
+            input (Input): The file path to load.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list containing the input file path.
+        """
         return [input]

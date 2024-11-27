@@ -30,7 +30,7 @@ from kag.common.registry import Functor
 @MappingABC.register("spg")
 class SPGTypeMapping(MappingABC):
     """
-    A class for mapping SPG (Simple Property Graph) types and handling their properties and strategies.
+    A class for mapping SPG(Semantic-enhanced Programmable Graph) types and handling their properties and strategies.
 
     Attributes:
         spg_type_name (SPGTypeName): The name of the SPG type.

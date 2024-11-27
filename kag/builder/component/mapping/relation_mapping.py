@@ -22,13 +22,8 @@ from kag.interface import MappingABC
 @MappingABC.register("relation")
 class RelationMapping(MappingABC):
     """
-    A class that handles relation mappings by assembling subgraphs based on given subject, predicate, and object names.
-    This class extends the Mapping class.
-
-    Args:
-        subject_name (SPGTypeName): The name of the subject type.
-        predicate_name (RelationName): The name of the predicate.
-        object_name (SPGTypeName): The name of the object type.
+    A class that extends the MappingABC class.
+    It handles relation mappings by assembling subgraphs based on given subject, predicate, and object names.
     """
 
     def __init__(
@@ -41,6 +36,18 @@ class RelationMapping(MappingABC):
         property_mapping: dict = {},
         **kwargs,
     ):
+        """
+        Initializes the RelationMapping instance.
+
+        Args:
+            subject_name (str): The name of the subject type.
+            predicate_name (str): The name of the predicate type.
+            object_name (str): The name of the object type.
+            src_id_field (str, optional): The field name for the source ID. Defaults to None.
+            dst_id_field (str, optional): The field name for the destination ID. Defaults to None.
+            property_mapping (dict, optional): A dictionary mapping properties. Defaults to {}.
+            **kwargs: Additional keyword arguments passed to the parent class constructor.
+        """
         super().__init__(**kwargs)
         schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"

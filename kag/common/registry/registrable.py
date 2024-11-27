@@ -200,7 +200,8 @@ def extract_parameters(
     """
     if constructor is None:
         constructor = cls.__init__
-
+    if isinstance(constructor, str):
+        constructor = getattr(cls, constructor)
     signature = inspect.signature(constructor)
     parameters = dict(signature.parameters)
 
@@ -659,9 +660,15 @@ class Registrable:
 
                 # if default != None:
                 #     sample_config[arg_name] = default
+
+            if v[1] is None or v[1] == "__init__":
+                constructor_doc_string = inspect.getdoc(getattr(v[0], "__init__"))
+            else:
+                constructor_doc_string = inspect.getdoc(getattr(v[0], v[1]))
             availables[k] = {
                 "class": f"{v[0].__module__}.{v[0].__name__}",
                 "doc": inspect.getdoc(v[0]),
+                "constructor": constructor_doc_string,
                 "params": {
                     "required_params": required_params,
                     "optional_params": optional_params,

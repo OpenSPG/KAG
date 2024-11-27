@@ -14,22 +14,26 @@ import json
 
 class VectorizeModelConfigChecker:
     """
-    Check whether the vectorizer config is valid.
+    A class that checks whether the vectorizer configuration is valid.
+
+    This class provides a method to validate the vectorizer configuration and return the embedding vector dimensions if valid.
     """
 
     def check(self, vectorizer_config: str) -> int:
         """
-        Check the vectorizer config.
+        Checks the vectorizer configuration.
 
-        * If the config is valid, return the actual embedding vector dimensions.
+        If the configuration is valid, it returns the actual embedding vector dimensions.
+        If the configuration is invalid, it raises a RuntimeError exception.
 
-        * If the config is invalid, raise a RuntimeError exception.
+        Args:
+            vectorizer_config (str): The vectorizer configuration to be checked.
 
-        :param vectorizer_config: vectorizer config
-        :type vectorizer_config: str
-        :return: embedding vector dimensions
-        :rtype: int
-        :raises RuntimeError: if the config is invalid
+        Returns:
+            int: The embedding vector dimensions.
+
+        Raises:
+            RuntimeError: If the configuration is invalid.
         """
         try:
             config = json.loads(vectorizer_config)

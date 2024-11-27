@@ -149,12 +149,15 @@ def init_env():
     KAG_CONFIG.initialize(prod)
 
     if prod:
-        msg = "Done init config from server"
+        msg = "Done init config from server: "
     else:
-        msg = "Done init config from local file"
+        msg = "Done init config from local file: "
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
-    print(f"==================={msg}===================")
-    import pprint
+    if len(KAG_CONFIG.all_config) > 0:
+        print(msg)
+        import pprint
 
-    pprint.pprint(KAG_CONFIG.all_config, indent=2)
+        pprint.pprint(KAG_CONFIG.all_config, indent=2)
+    else:
+        print("No config found.")

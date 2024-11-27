@@ -27,12 +27,8 @@ logger = logging.getLogger(__name__)
 class SemanticSplitter(SplitterABC):
     """
     A class for semantically splitting text into smaller chunks based on the content's structure and meaning.
-    Inherits from the Splitter class.
+    Inherits from the SplitterABC class.
 
-    Attributes:
-        llm (LLMClient): Instance of LLMClient initialized with `model` config.
-        kept_char_pattern (re.Pattern): Regex pattern to match Chinese/ASCII characters.
-        split_length (int): The maximum length of each chunk after splitting.
     """
 
     def __init__(
@@ -42,6 +38,16 @@ class SemanticSplitter(SplitterABC):
         split_length: int = 1000,
         **kwargs,
     ):
+        """
+        Initializes the SemanticSplitter with the given LLMClient, kept character pattern, and split length.
+
+        Args:
+            llm (LLMClient): Instance of LLMClient initialized with `model` config.
+            kept_char_pattern (str, optional): Regex pattern to match Chinese/ASCII characters.
+                Defaults to a predefined pattern if not provided.
+            split_length (int, optional): The maximum length of each chunk after splitting. Defaults to 1000.
+            **kwargs: Additional keyword arguments to be passed to the superclass.
+        """
         super().__init__(**kwargs)
         # Chinese/ASCII characters
         if kept_char_pattern is None:
@@ -142,7 +148,7 @@ class SemanticSplitter(SplitterABC):
 
         Args:
             input (Input): The input to be processed.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
 
         Returns:
             List[Output]: A list of outputs generated from the input.

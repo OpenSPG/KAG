@@ -23,14 +23,25 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient(Registrable):
+    """
+    A class that provides methods for performing inference using large language model.
+
+    This class includes methods to call the model with a prompt, parse the response, and handle batch processing of prompts.
+    """
+
     @retry(stop=stop_after_attempt(3))
     def __call__(self, prompt: Union[str, dict, list]) -> str:
         """
         Perform inference on the given prompt and return the result.
 
-        :param prompt: Input prompt for inference
-        :return: Inference result
-        :raises NotImplementedError: If the subclass has not implemented this method
+        Args:
+            prompt (Union[str, dict, list]): Input prompt for inference.
+
+        Returns:
+            str: Inference result.
+
+        Raises:
+            NotImplementedError: If the subclass has not implemented this method.
         """
         raise NotImplementedError
 
@@ -39,9 +50,14 @@ class LLMClient(Registrable):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.
 
-        :param prompt: Input prompt for inference
-        :return: Parsed result
-        :raises NotImplementedError: If the subclass has not implemented this method
+        Args:
+            prompt (Union[str, dict, list]): Input prompt for inference.
+
+        Returns:
+            Any: Parsed result.
+
+        Raises:
+            NotImplementedError: If the subclass has not implemented this method.
         """
         res = self(prompt)
         _end = res.rfind("```")
@@ -66,11 +82,14 @@ class LLMClient(Registrable):
         """
         Call the model and process the result.
 
-        :param variables: Variables used to build the prompt
-        :param prompt_op: Prompt operation object for building and parsing prompts
-        :param with_json_parse: Whether to attempt parsing the response as JSON
-        :param with_except: Whether to raise exception
-        :return: Processed result list
+        Args:
+            variables (Dict[str, Any]): Variables used to build the prompt.
+            prompt_op (PromptABC): Prompt operation object for building and parsing prompts.
+            with_json_parse (bool, optional): Whether to attempt parsing the response as JSON. Defaults to True.
+            with_except (bool, optional): Whether to raise an exception if an error occurs. Defaults to False.
+
+        Returns:
+            List: Processed result list.
         """
         result = []
         prompt = prompt_op.build_prompt(variables)
@@ -106,10 +125,13 @@ class LLMClient(Registrable):
         """
         Batch process prompts.
 
-        :param variables: Variables used to build the prompts
-        :param prompt_op: Prompt operation object for building and parsing prompts
-        :param with_json_parse: Whether to attempt parsing the response as JSON
-        :return: List of all processed results
+        Args:
+            variables (Dict[str, Any]): Variables used to build the prompts.
+            prompt_op (PromptABC): Prompt operation object for building and parsing prompts.
+            with_json_parse (bool, optional): Whether to attempt parsing the response as JSON. Defaults to True.
+
+        Returns:
+            List: List of all processed results.
         """
         results = []
         prompts = prompt_op.build_prompt(variables)

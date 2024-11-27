@@ -20,6 +20,11 @@ from knext.schema.client import OTHER_TYPE
 
 @MappingABC.register("spo")
 class SPOMapping(MappingABC):
+    """
+    A class that extends the MappingABC base class.
+    It is responsible for mapping structured dictionaries to a list of SubGraphs.
+    """
+
     def __init__(
         self,
         s_type_col: str = None,
@@ -30,6 +35,18 @@ class SPOMapping(MappingABC):
         sub_property_col: str = None,
         sub_property_mapping: dict = {},
     ):
+        """
+        Initializes the SPOMapping instance.
+
+        Args:
+            s_type_col (str, optional): The column name for the subject type. Defaults to None.
+            s_id_col (str, optional): The column name for the subject ID. Defaults to None.
+            p_type_col (str, optional): The column name for the predicate type. Defaults to None.
+            o_type_col (str, optional): The column name for the object type. Defaults to None.
+            o_id_col (str, optional): The column name for the object ID. Defaults to None.
+            sub_property_col (str, optional): The column name for sub-properties. Defaults to None.
+            sub_property_mapping (dict, optional): A dictionary mapping sub-properties. Defaults to {}.
+        """
         super().__init__()
         self.s_type_col = s_type_col
         self.s_id_col = s_id_col
@@ -55,6 +72,19 @@ class SPOMapping(MappingABC):
         s_type_col: str = None,
         o_type_col: str = None,
     ):
+        """
+        Adds field mappings for the subject, predicate, and object types and IDs.
+
+        Args:
+            s_id_col (str): The column name for the subject ID.
+            p_type_col (str): The column name for the predicate type.
+            o_id_col (str): The column name for the object ID.
+            s_type_col (str, optional): The column name for the subject type. Defaults to None.
+            o_type_col (str, optional): The column name for the object type. Defaults to None.
+
+        Returns:
+            self
+        """
         self.s_type_col = s_type_col
         self.s_id_col = s_id_col
         self.p_type_col = p_type_col
@@ -130,7 +160,7 @@ class SPOMapping(MappingABC):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List[Output]: A list of resulting sub-graphs.
+            List[Output]: A list of resulting subgraphs.
         """
         record: Dict[str, str] = input
         sub_graph = self.assemble_sub_graph(record)

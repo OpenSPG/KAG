@@ -37,17 +37,23 @@ logger = logging.getLogger(__name__)
 @RecordParserABC.register("md")
 class MarkDownParser(RecordParserABC):
     """
-    A class for reading MarkDown files, inheriting from `RecordParserABC`.
-    Supports converting MarkDown data into a list of Chunk objects.
+    A class for parsing Markdown content into Chunk objects.
 
-    Args:
-        cut_depth (int): The depth of cutting, determining the level of detail in parsing. Default is 1.
+    This class inherits from RecordParserABC and provides the functionality to process Markdown content,
+    extract its text and tables, and convert it into a list of Chunk objects.
     """
 
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
     def __init__(self, llm: LLMClient = None, cut_depth: int = 1):
+        """
+        Initializes the MarkDownParser with an optional LLMClient instance and cut depth.
+
+        Args:
+            llm (LLMClient): An optional LLMClient instance used for analyzing tables. Defaults to None.
+            cut_depth (int): The depth at which to cut the content for parsing. Defaults to 1.
+        """
         self.llm = llm
         self.cut_depth = cut_depth
         self.analyze_table_prompt = AnalyzeTablePrompt(
@@ -56,13 +62,13 @@ class MarkDownParser(RecordParserABC):
 
     def to_text(self, level_tags):
         """
-        Converts parsed hierarchical tags into text content.
+        Converts the given level tags into a text format.
 
         Args:
-            level_tags (list): Parsed tags organized by Markdown heading levels and other tags.
+            level_tags: A list of level tags to be converted into text.
 
         Returns:
-            str: Text content derived from the parsed tags.
+            str: The text representation of the level tags.
         """
         content = []
         for item in level_tags:
@@ -82,10 +88,13 @@ class MarkDownParser(RecordParserABC):
 
     def tag_to_text(self, tag: bs4.element.Tag):
         """
-        将html tag转换为text
-        如果是table，输出markdown，添加表格标记，方便后续构建Chunk
-        :param tag:
-        :return:
+        Converts a BeautifulSoup Tag object into text.
+
+        Args:
+            tag (bs4.element.Tag): The BeautifulSoup Tag object to be converted.
+
+        Returns:
+            str: The text representation of the Tag object.
         """
         if tag.name == "table":
             try:
@@ -98,6 +107,19 @@ class MarkDownParser(RecordParserABC):
 
     @retry(stop=stop_after_attempt(5))
     def analyze_table(self, table, analyze_mathod="human"):
+        """
+        Analyzes the given table content using the specified method.
+
+        Args:
+            table: The table content to be analyzed.
+            analyze_mathod (str): The method to use for analyzing the table. Defaults to "human".
+
+        Returns:
+            str: The analyzed table content.
+
+        Raises:
+            Exception: If the LLM module returns None.
+        """
         if analyze_mathod == "llm":
             if self.llm is None:
                 logger.INFO("llm_module is None, cannot use analyze_table")
@@ -129,12 +151,33 @@ class MarkDownParser(RecordParserABC):
 
     @retry(stop=stop_after_attempt(5))
     def analyze_img(self, img_url):
+        """
+        Analyzes the given image URL.
+
+        Args:
+            img_url (str): The URL of the image to be analyzed.
+
+        Returns:
+            str: The analyzed image content.
+
+        Raises:
+            HTTPError: If the request to the image URL fails.
+        """
         response = requests.get(img_url)
         response.raise_for_status()
 
         pass
 
     def replace_table(self, content: str):
+        """
+        Replaces table tags in the content with their analyzed text representation.
+
+        Args:
+            content (str): The content containing table tags to be replaced.
+
+        Returns:
+            str: The content with table tags replaced by their analyzed text.
+        """
         pattern = r"<table[^>]*>([\s\S]*?)<\/table>"
         for match in re.finditer(pattern, content):
             table = match.group(0)
@@ -143,6 +186,15 @@ class MarkDownParser(RecordParserABC):
         return content
 
     def replace_img(self, content: str):
+        """
+        Replaces image tags in the content with their analyzed text representation.
+
+        Args:
+            content (str): The content containing image tags to be replaced.
+
+        Returns:
+            str: The content with image tags replaced by their analyzed text.
+        """
         pattern = r"<img[^>]*src=[\"\']([^\"\']*)[\"\']"
         for match in re.finditer(pattern, content):
             img_url = match.group(1)
@@ -219,7 +271,6 @@ class MarkDownParser(RecordParserABC):
             if tag.name not in self.ALL_LEVELS:
                 cur.append((parent_header, level_tags.pop(0)))
             else:
-
                 if tag.name > level:
                     cur += self.parse_level_tags(
                         level_tags,
@@ -354,9 +405,19 @@ class MarkDownParser(RecordParserABC):
         self, table_chunk_str: str, title: str, id: str, idx: int
     ) -> Chunk:
         """
-        convert table chunk
-        :param table_chunk_str:
-        :return:
+        Converts a table chunk string into a Chunk object.
+
+        This method processes a table chunk string, extracts the table content, and converts it into a Chunk object.
+        If the table chunk string does not contain a valid table, it is treated as a text chunk.
+
+        Args:
+            table_chunk_str (str): The table chunk string to be processed.
+            title (str): The title of the chunk.
+            id (str): The ID of the chunk.
+            idx (int): The index of the chunk.
+
+        Returns:
+            Chunk: A Chunk object representing the table chunk.
         """
         table_chunk_str = table_chunk_str.replace("\\N", "")
         pattern = f"{self.TABLE_CHUCK_FLAG}(.*){self.TABLE_CHUCK_FLAG}"
@@ -420,7 +481,27 @@ class MarkDownParser(RecordParserABC):
 
 @RecordParserABC.register("yuque")
 class YuequeParser(MarkDownParser):
+    """
+    A class for parsing Yueque documents into Chunk objects.
+
+    This class inherits from MarkDownParser and provides the functionality to process Yueque documents,
+    extract their content, and convert it into a list of Chunk objects.
+    """
+
     def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Processes the input Yueque document and converts it into a list of Chunk objects.
+
+        Args:
+            input (Input): The input string containing the Yueque token and URL.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list of Chunk objects representing the parsed content.
+
+        Raises:
+            HTTPError: If the request to the Yueque URL fails.
+        """
         token, url = input.split("@", 1)
         headers = {"X-Auth-Token": token}
         response = requests.get(url, headers=headers)

@@ -21,12 +21,15 @@ from knext.common.base.runnable import Input, Output
 @RecordParserABC.register("txt")
 class TXTParser(RecordParserABC):
     """
-    A txt paraser class that inherits from RecordParserABC.
+    A class for parsing text files or text content into Chunk objects.
+
+    This class inherits from RecordParserABC and provides the functionality to read text content,
+    whether it is from a file or directly provided as a string, and convert it into a list of Chunk objects.
     """
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
-        The main method for processing text reading. This method reads the content of the input (which can be a file path or text content) and converts it into a Chunk object.
+        The main method for processing text reading. This method reads the content of the input (which can be a file path or text content) and converts it into chunks.
 
         Args:
             input (Input): The input string, which can be the path to a text file or direct text content.

@@ -127,7 +127,28 @@ class EmbeddingVectorGenerator(object):
 
 @VectorizerABC.register("batch")
 class BatchVectorizer(VectorizerABC):
+    """
+    A class for generating embedding vectors for node attributes in a SubGraph in batches.
+
+    This class inherits from VectorizerABC and provides the functionality to generate embedding vectors
+    for node attributes in a SubGraph in batches. It uses a specified vectorization model and processes
+    the nodes of a specified batch size.
+
+    Attributes:
+        project_id (int): The ID of the project associated with the SubGraph.
+        vec_meta (defaultdict): Metadata for vector fields in the SubGraph.
+        vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
+        batch_size (int): The size of the batches in which to process the nodes.
+    """
+
     def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 1024):
+        """
+        Initializes the BatchVectorizer with the specified vectorization model and batch size.
+
+        Args:
+            vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
+            batch_size (int): The size of the batches in which to process the nodes. Defaults to 1024.
+        """
         super().__init__()
         self.project_id = KAG_PROJECT_CONF.project_id
         # self._init_graph_store()
@@ -136,6 +157,12 @@ class BatchVectorizer(VectorizerABC):
         self.batch_size = batch_size
 
     def _init_vec_meta(self):
+        """
+        Initializes the vector metadata for the SubGraph.
+
+        Returns:
+            defaultdict: Metadata for vector fields in the SubGraph.
+        """
         vec_meta = defaultdict(list)
         schema_client = SchemaClient(project_id=self.project_id)
         spg_types = schema_client.load()
@@ -149,6 +176,15 @@ class BatchVectorizer(VectorizerABC):
         return vec_meta
 
     def _generate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
+        """
+        Generates embedding vectors for the nodes in the input SubGraph.
+
+        Args:
+            input_subgraph (SubGraph): The SubGraph for which to generate embedding vectors.
+
+        Returns:
+            SubGraph: The modified SubGraph with generated embedding vectors.
+        """
         node_list = []
         node_batch = []
         for node in input_subgraph.nodes:
@@ -170,5 +206,15 @@ class BatchVectorizer(VectorizerABC):
         return input_subgraph
 
     def invoke(self, input_subgraph: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the generation of embedding vectors for the input SubGraph.
+
+        Args:
+            input_subgraph (Input): The SubGraph for which to generate embedding vectors.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list containing the modified SubGraph with generated embedding vectors.
+        """
         modified_input = self._generate_embedding_vectors(input_subgraph)
         return [modified_input]

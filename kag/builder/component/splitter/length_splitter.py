@@ -20,14 +20,25 @@ from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 @SplitterABC.register("length")
 class LengthSplitter(BaseTableSplitter):
     """
-    A class for splitting text based on length, inheriting from Splitter.
+    A class for splitting text based on length.
+
+    This class inherits from BaseTableSplitter and provides the functionality to split text
+    into smaller chunks based on a specified length and window size. It also handles table data
+    by splitting it into smaller markdown tables.
 
     Attributes:
-        split_length (int): The maximum length of each split chunk.
+        split_length (int): The maximum length of each chunk.
         window_length (int): The length of the overlap between chunks.
     """
 
     def __init__(self, split_length: int = 500, window_length: int = 100):
+        """
+        Initializes the LengthSplitter with the specified split length and window length.
+
+        Args:
+            split_length (int): The maximum length of each chunk. Defaults to 500.
+            window_length (int): The length of the overlap between chunks. Defaults to 100.
+        """
         self.split_length = split_length
         self.window_length = window_length
 
@@ -44,10 +55,10 @@ class LengthSplitter(BaseTableSplitter):
         Splits the given content into sentences based on delimiters.
 
         Args:
-            content (str): The content to be split.
+            content (str): The content to be split into sentences.
 
         Returns:
-            list: A list of sentences.
+            List[str]: A list of sentences.
         """
         sentence_delimiters = ".。？?！!"
         output = []
@@ -125,14 +136,14 @@ class LengthSplitter(BaseTableSplitter):
 
     def invoke(self, input: Chunk, **kwargs) -> List[Output]:
         """
-        Invokes the splitter on the given input chunk.
+        Invokes the splitting of the input chunk based on the specified length and window size.
 
         Args:
-            input (Chunk): The input chunk to be split.
-            **kwargs: Additional keyword arguments.
+            input (Chunk): The chunk(s) to be split.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
 
         Returns:
-            List[Output]: A list of split chunks.
+            List[Output]: A list of Chunk objects resulting from the split operation.
         """
         cutted = []
         if isinstance(input, list):

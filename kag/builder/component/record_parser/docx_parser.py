@@ -44,15 +44,33 @@ def split_txt(content):
 @RecordParserABC.register("docx")
 class DocxParser(RecordParserABC):
     """
-    A class for reading Docx files, inheriting from RecordParserABC.
-    This class is specifically designed to extract text content from Docx files and generate Chunk objects based on the extracted content.
+    A class for parsing Docx files into Chunk objects.
+
+    This class inherits from RecordParserABC and provides the functionality to process Docx files,
+    extract their text content, and convert it into a list of Chunk objects.
     """
 
     def __init__(self, llm: LLMClient = None):
+        """
+        Initializes the DocxParser with an optional LLMClient instance.
+
+        Args:
+            llm (LLMClient): An optional LLMClient instance used for generating outlines. Defaults to None.
+        """
         self.llm = llm
         self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]], basename) -> List[Chunk]:
+        """
+        Generates outlines for the given chunk(s) and separates the content based on these outlines.
+
+        Args:
+            chunk (Union[Chunk, List[Chunk]]): A single Chunk object or a list of Chunk objects.
+            basename: The base name used for generating chunk IDs and names.
+
+        Returns:
+            List[Chunk]: A list of Chunk objects separated by the generated outlines.
+        """
         if isinstance(chunk, Chunk):
             chunk = [chunk]
         outlines = []
@@ -64,6 +82,17 @@ class DocxParser(RecordParserABC):
         return chunks
 
     def sep_by_outline(self, content, outlines, basename):
+        """
+        Separates the content based on the provided outlines.
+
+        Args:
+            content (str): The content to be separated.
+            outlines (List[str]): A list of outlines used to separate the content.
+            basename: The base name used for generating chunk IDs and names.
+
+        Returns:
+            List[Chunk]: A list of Chunk objects separated by the provided outlines.
+        """
         position_check = []
         for outline in outlines:
             start = content.find(outline)
@@ -106,6 +135,15 @@ class DocxParser(RecordParserABC):
         return full_text
 
     def _get_title_from_text(self, text: str) -> str:
+        """
+        Extracts the title from the provided text.
+
+        Args:
+            text (str): The text from which to extract the title.
+
+        Returns:
+            str: The extracted title and the remaining text.
+        """
         text = text.strip()
         title = text.split("\n")[0]
         text = "\n".join(text.split("\n"))
@@ -113,7 +151,7 @@ class DocxParser(RecordParserABC):
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
-        Processes the input Docx file, extracts its text content, and generates a Chunk object.
+        Processes the input Docx file, extracts its text content, and generates Chunk objects.
 
         Args:
             input (Input): The file path of the Docx file to be processed.

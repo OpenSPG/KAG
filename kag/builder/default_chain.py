@@ -29,19 +29,9 @@ logger = logging.getLogger(__name__)
 
 @KAGBuilderChain.register("structured")
 class DefaultStructuredBuilderChain(KAGBuilderChain):
-
     """
-    A class representing a default SPG builder chain, used to import structured data based on schema definitions
-
-    Steps:
-        0. Initializing by a give SpgType name, which indicates the target of import.
-        1. SourceReader: Reading structured dicts from a given file.
-        2. SPGTypeMapping: Mapping source fields to the properties of target type, and assemble a sub graph.
-        By default, the same name mapping is used, which means importing the source field into a property with the same name.
-        3. KGWriter: Writing sub graph into KG storage.
-
-    Attributes:
-        spg_type_name (str): The name of the SPG type.
+    A class representing a default SPG builder chain, used to import structured data based on schema definitions.
+    It consists of a mapping component, a writer component, and an optional vectorizer component.
     """
 
     def __init__(
@@ -50,45 +40,28 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
         writer: SinkWriterABC,
         vectorizer: VectorizerABC = None,
     ):
+        """
+        Initializes the DefaultStructuredBuilderChain instance.
+
+        Args:
+            mapping (MappingABC): The mapping component to be used.
+            writer (SinkWriterABC): The writer component to be used.
+            vectorizer (VectorizerABC, optional): The vectorizer component to be used. Defaults to None.
+        """
         self.mapping = mapping
         self.writer = writer
         self.vectorizer = vectorizer
-        # self.spg_type_name = spg_type_name
-        # self.parser = RecordParserABC.from_config(
-        #     {
-        #         "type": "dict",
-        #         "id_col": id_col,
-        #         "name_col": name_col,
-        #         "content_col": content_col,
-        #     }
-        # )
-        # self.mapping = MappingABC.from_config(
-        #     {"type": "spg", "spg_type_name": self.spg_type_name}
-        # )
-        # self.writer = SinkWriterABC.from_config({"type": "kg"})
 
     def build(self, **kwargs):
         """
-        Builds the processing chain for the SPG.
+        Construct the builder chain by connecting the mapping, vectorizer (if available), and writer components.
 
         Args:
             **kwargs: Additional keyword arguments.
 
         Returns:
-            chain: The constructed processing chain.
+            KAGBuilderChain: The constructed builder chain.
         """
-        # file_path = kwargs.get("file_path")
-        # # source = get_reader(file_path)(output_type="Dict")
-        # suffix = os.path.basename(file_path).split(".")[-1]
-        # source_config = {"type": suffix}
-        # if suffix in ["json", "csv"]:
-        #     source_config["output_type"] = "Dict"
-        # source = SourceReaderABC.from_config(source_config)
-
-        # mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-        # sink = KGWriter()
-
-        # chain = source >> mapping >> sink
         if self.vectorizer:
             chain = self.mapping >> self.vectorizer >> self.writer
         else:
@@ -96,85 +69,14 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 
         return chain
 
-    # def invoke(self, file_path, max_workers=10, **kwargs):
-    #     logger.info(f"begin processing file_path:{file_path}")
-    #     """
-    #     Invokes the processing chain with the given file path and optional parameters.
-
-    #     Args:
-    #         file_path (str): The path to the input file.
-    #         max_workers (int, optional): The maximum number of workers. Defaults to 10.
-    #         **kwargs: Additional keyword arguments.
-
-    #     Returns:
-    #         The result of invoking the processing chain.
-    #     """
-    #     return super().invoke(file_path=file_path, max_workers=max_workers, **kwargs)
-
-
-# @KAGBuilderChain.register("structured")
-# class DefaultStructuredBuilderChain(KAGBuilderChain):
-
-#     """
-#     A class representing a default SPG builder chain, used to import structured data based on schema definitions
-
-#     Steps:
-#         0. Initializing by a give SpgType name, which indicates the target of import.
-#         1. SourceReader: Reading structured dicts from a given file.
-#         2. SPGTypeMapping: Mapping source fields to the properties of target type, and assemble a sub graph.
-#         By default, the same name mapping is used, which means importing the source field into a property with the same name.
-#         3. KGWriter: Writing sub graph into KG storage.
-
-#     Attributes:
-#         spg_type_name (str): The name of the SPG type.
-#     """
-
-#     def __init__(self, spg_type_name: str, **kwargs):
-#         super().__init__(**kwargs)
-#         self.spg_type_name = spg_type_name
-
-#     def build(self, **kwargs):
-#         """
-#         Builds the processing chain for the SPG.
-
-#         Args:
-#             **kwargs: Additional keyword arguments.
-
-#         Returns:
-#             chain: The constructed processing chain.
-#         """
-#         file_path = kwargs.get("file_path")
-#         # source = get_reader(file_path)(output_type="Dict")
-#         suffix = os.path.basename(file_path).split(".")[-1]
-#         source_config = {"type": suffix}
-#         if suffix in ["json", "csv"]:
-#             source_config["output_type"] = "Dict"
-#         source = SourceReaderABC.from_config(source_config)
-
-#         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-#         sink = KGWriter()
-
-#         chain = source >> mapping >> sink
-#         return chain
-
-#     def invoke(self, file_path, max_workers=10, **kwargs):
-#         logger.info(f"begin processing file_path:{file_path}")
-#         """
-#         Invokes the processing chain with the given file path and optional parameters.
-
-#         Args:
-#             file_path (str): The path to the input file.
-#             max_workers (int, optional): The maximum number of workers. Defaults to 10.
-#             **kwargs: Additional keyword arguments.
-
-#         Returns:
-#             The result of invoking the processing chain.
-#         """
-#         return super().invoke(file_path=file_path, max_workers=max_workers, **kwargs)
-
 
 @KAGBuilderChain.register("unstructured")
 class DefaultUnstructuredBuilderChain(KAGBuilderChain):
+    """
+    A class representing a default unstructured builder chain, used to build a knowledge graph from unstructured text data such as txt and pdf files.
+    It consists of a parser, splitter, extractor, vectorizer, optional post-processor, and writer components.
+    """
+
     def __init__(
         self,
         parser: RecordParserABC,
@@ -184,6 +86,17 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         writer: SinkWriterABC,
         post_processor: PostProcessorABC = None,
     ):
+        """
+        Initializes the DefaultUnstructuredBuilderChain instance.
+
+        Args:
+            parser (RecordParserABC): The parser component to be used.
+            splitter (SplitterABC): The splitter component to be used.
+            extractor (ExtractorABC): The extractor component to be used.
+            vectorizer (VectorizerABC): The vectorizer component to be used.
+            writer (SinkWriterABC): The writer component to be used.
+            post_processor (PostProcessorABC, optional): The post-processor component to be used. Defaults to None.
+        """
         self.parser = parser
         self.splitter = splitter
         self.extractor = extractor
@@ -192,6 +105,15 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         self.writer = writer
 
     def build(self, **kwargs):
+        """
+        Builds the builder chain by connecting the parser, splitter, extractor, vectorizer, post-processor (if available), and writer components.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            KAGBuilderChain: The constructed builder chain.
+        """
         if self.post_processor:
             return (
                 self.parser

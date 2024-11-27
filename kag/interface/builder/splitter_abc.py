@@ -19,7 +19,11 @@ from knext.common.base.runnable import Input, Output
 
 class SplitterABC(BuilderComponent, ABC):
     """
-    Interface for splitting chunk into a list of smaller chunks.
+    Abstract base class for splitting a chunk into a list of smaller chunks.
+
+    This class defines the interface for splitting a chunk into smaller chunks.
+    It inherits from BuilderComponent and ABC, ensuring that any subclass must implement
+    the `invoke` method.
     """
 
     @property
@@ -32,6 +36,19 @@ class SplitterABC(BuilderComponent, ABC):
 
     @abstractmethod
     def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Abstract method to be implemented by subclasses for splitting a chunk.
+
+        Args:
+            input (Input): The chunk to be split.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list of smaller chunks resulting from the split operation.
+
+        Raises:
+            NotImplementedError: If the method is not implemented by the subclass.
+        """
         raise NotImplementedError(
             f"`invoke` is not currently supported for {self.__class__.__name__}."
         )

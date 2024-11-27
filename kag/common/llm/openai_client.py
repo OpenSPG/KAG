@@ -30,20 +30,6 @@ class OpenAIClient(LLMClient):
 
     Initializes the client with an API key, base URL, streaming option, temperature parameter, and default model.
 
-    Parameters:
-        api_key (str): The OpenAI API key.
-        base_url (str): The base URL of the API.
-        stream (bool, optional): Whether to process responses in a streaming manner. Default is False.
-        temperature (int, optional): Sampling temperature to control the randomness of the model's output. Default is 0.7.
-        model (str, optional): The default model to use.
-
-    Attributes:
-        api_key (str): The OpenAI API key.
-        base_url (str): The base URL of the API.
-        model (str): The default model to use.
-        stream (bool): Whether to process responses in a streaming manner.
-        temperature (float): Sampling temperature.
-        client (OpenAI): An instance of the OpenAI API client.
     """
 
     def __init__(
@@ -54,7 +40,17 @@ class OpenAIClient(LLMClient):
         stream: bool = False,
         temperature: float = 0.7,
     ):
-        # Initialize the OpenAIClient object
+        """
+        Initializes the OpenAIClient instance.
+
+        Args:
+            api_key (str): The API key for accessing the OpenAI API.
+            base_url (str): The base URL for the OpenAI API.
+            model (str): The default model to use for requests.
+            stream (bool, optional): Whether to stream the response. Defaults to False.
+            temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
+        """
+
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
