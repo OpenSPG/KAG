@@ -36,7 +36,7 @@ class PromptABC(Registrable, ABC):
         Initializes the prompt instance with the selected language.
 
         Args:
-            language (str): The language for the prompt, should be either "en" or "zh".
+            language (str): The language for the prompt, Defaults to empty string, which will fallback to project.language config.
 
         Raises:
             AssertionError: If the provided language is not supported.

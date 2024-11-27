@@ -56,8 +56,12 @@ class ListRegisterInfo(Command):
         if not issubclass(cls_obj, Registrable):
             raise ValueError(f"class {args.cls} is not a valid kag configurable class")
         availables = cls_obj.list_available_with_detail()
-        seg = "=" * 20
+        seg = " " * 20
 
+        print(f"{bold}{red}{seg}Documentation of {args.cls}{seg}{reset}")
+        import inspect
+
+        print(inspect.getdoc(cls_obj))
         print(f"{bold}{red}{seg}Registered subclasses of {args.cls}{seg}{reset}")
         for register_name, cls_info in availables.items():
             print(f"{bold}{blue}[{cls_info['class']}]{reset}")
