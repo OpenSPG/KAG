@@ -376,15 +376,15 @@ class OutlineSplitter(SplitterABC):
             chunk_content = content[start:end]
 
             # add origin kwargs
-            kwargs = {}
-            for key, value in org_chunk[0].kwargs.items():
-                kwargs[f"origin_{key}"] = value
+            # kwargs = {}
+            # for key, value in org_chunk[0].kwargs.items():
+            #     kwargs[f"origin_{key}"] = value
 
             chunk = Chunk(
                 id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
                 name=full_path,
                 content=chunk_content,
-                kwargs=kwargs,
+                kwargs=org_chunk[0].kwargs,
             )
             chunks.append(chunk)
             father_stack.append((title, level))
