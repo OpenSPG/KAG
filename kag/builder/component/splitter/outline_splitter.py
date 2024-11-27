@@ -74,7 +74,7 @@ class OutlineSplitter(SplitterABC):
             valid_outlines.append((title, level))
         return valid_outlines
 
-    def unify_outline_levels(outlines):
+    def unify_outline_levels(self, outlines):
         """
         统一相同类型标题的级别，如 "第一节" 和 "第二节" 应有相同的层级。
 
@@ -123,7 +123,6 @@ class OutlineSplitter(SplitterABC):
         """
         # 过滤无效的 outlines
         outlines = self.filter_outlines(outlines)
-        outlines = self.unify_outline_levels(outlines)
 
         position_check = []
         for outline in outlines:
@@ -339,6 +338,7 @@ class OutlineSplitter(SplitterABC):
         """
         # 过滤无效的 outlines
         outlines = self.filter_outlines(outlines)
+        # outlines = self.unify_outline_levels(outlines)
 
         if not outlines or len(outlines) == 0:
             cutted = []
@@ -433,6 +433,7 @@ class OutlineSplitter(SplitterABC):
 if __name__ == "__main__":
     from kag.builder.component.splitter.length_splitter import LengthSplitter
     from kag.builder.component.splitter.outline_splitter import OutlineSplitter
+    from kag.builder.component.reader.docx_reader import DocxReader
     from kag.builder.component.reader.txt_reader import TXTReader
     from kag.common.env import init_kag_config
 
@@ -443,6 +444,7 @@ if __name__ == "__main__":
         )
     )
     docx_reader = DocxReader()
+    txt_reader = TXTReader()
     length_splitter = LengthSplitter(split_length=8000)
     outline_splitter = OutlineSplitter()
     txt_path = os.path.join(
@@ -451,6 +453,7 @@ if __name__ == "__main__":
     docx_path = "/Users/zhangxinhong.zxh/Downloads/waikexue_short.doc"
     # chain = docx_reader >> length_splitter >> outline_splitter
     chunk = docx_reader.invoke(docx_path)
+    chunk = txt_reader.invoke(txt_path)
     chunks = length_splitter.invoke(chunk)
     chunks = outline_splitter.invoke(chunks)
     print(chunks)
