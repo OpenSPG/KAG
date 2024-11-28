@@ -13,3 +13,4 @@
 /dist
 .vscode/
 __pycache__/
+examples/

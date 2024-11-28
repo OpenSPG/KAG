@@ -13,9 +13,11 @@ from typing import Any, Union, Iterable, Dict
 from openai import OpenAI
 from kag.common.vectorizer.vectorizer import Vectorizer
 import requests
+import json
+import base64
+import struct
 
 EmbeddingVector = Iterable[float]
-
 
 class SiliconFlowVectorizer(Vectorizer):
     """
@@ -29,7 +31,6 @@ class SiliconFlowVectorizer(Vectorizer):
         self.base_url = config.get("base_url")
         if not self.api_key:
             raise ValueError("SiliconFlow API key is not set")
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
 
     @classmethod
     def _from_config(cls, config: Dict[str, Any]) -> Vectorizer:
@@ -70,25 +71,30 @@ class SiliconFlowVectorizer(Vectorizer):
         :return: embedding vectors of the texts
         :rtype: EmbeddingVector or Iterable[EmbeddingVector]
         """
-        if text is None:
-            raise ValueError('This api only support text')
         
-        url = "https://api.siliconflow.cn/v1/embeddings"
+        if type(texts) is str:
+            texts = [texts]
+        
+        embeddings = []
+        for text in texts:
+            url = "https://api.siliconflow.cn/v1/embeddings"
 
-        payload = {
-            "model": self.model,
-            "input": text,
-            "encoding_format": "base64"
-        }
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "authorization": self.api_key
-        }
+            payload = {
+                "model": self.model,
+                "input": text,
+                "encoding_format": "base64"
+            }
+            headers = {"content-type": "application/json", "authorization": 'Bearer ' + self.api_key}
 
-        response = requests.post(url, json=payload, headers=headers)
-        import pdb
-        pdb.set_trace()
-        json_obj = json.loads(response.text)
-        emb_encoded = json_obj['data'][0]['embedding']
-        return base64_to_float_array(base64_string=emb_encoded)
+            response = requests.post(url, json=payload, headers=headers)
+            json_obj = json.loads(response.text)
+            emb_encoded = json_obj['data'][0]['embedding']
+            emb_arr = self.base64_to_float_array(base64_string=emb_encoded)
+            
+            embeddings.append(emb_arr)
+        
+        return embeddings
+
+if __name__ == '__main__':
+    inst = SiliconFlowVectorizer(config={"api_key": "sk-ducerqngypudxuevovkmvsbatstjyikvbjdpylfsvkfqcgox", "base_url": "https://api.siliconflow.cn/v1"})
+    print(inst.vectorize(texts='hello'))
