@@ -16,6 +16,7 @@ import requests
 import json
 import base64
 import struct
+import logging
 
 EmbeddingVector = Iterable[float]
 
@@ -45,17 +46,23 @@ class SiliconFlowVectorizer(Vectorizer):
         vectorizer = cls(config)
         return vectorizer
     
-    def base64_to_float_array(self, base64_string):
-        # 解码base64字符串
+    def base64_to_float_array(self, base64_string) -> EmbeddingVector:
+        """
+        Converts a base64 encoded string into a list of floating-point numbers.
+
+        This method takes a base64 encoded string as input, decodes it into raw bytes,
+        and then interprets these bytes as a sequence of 4-byte floating-point numbers
+        in little-endian format. The resulting list of floats is returned.
+
+        :param base64_string: The base64 encoded string to be decoded.
+        :type base64_string: str
+        :return: A list of floating-point numbers represented by the decoded bytes.
+        :rtype: EmbeddingVector
+        """
         decoded_bytes = base64.b64decode(base64_string)
-        
-        # 将字节转换为浮点数，这里假设每个浮点数是4字节（即float类型）
-        # '<' 表示小端格式，'f' 表示单精度浮点数
         float_array = []
         for i in range(0, len(decoded_bytes), 4):
-            # 提取4个字节
             bytes_chunk = decoded_bytes[i:i+4]
-            # 解码为浮点数
             float_num = struct.unpack('<f', bytes_chunk)[0]
             float_array.append(float_num)
         
@@ -75,22 +82,29 @@ class SiliconFlowVectorizer(Vectorizer):
         if type(texts) is str:
             texts = [texts]
         
-        embeddings = []
+        truncated_texts = []
         for text in texts:
-            url = "https://api.siliconflow.cn/v1/embeddings"
+            truncated_texts.append(text[0:512])
+        
+        url = "https://api.siliconflow.cn/v1/embeddings"
 
-            payload = {
-                "model": self.model,
-                "input": text,
-                "encoding_format": "base64"
-            }
-            headers = {"content-type": "application/json", "authorization": 'Bearer ' + self.api_key}
+        payload = {
+            "model": self.model,
+            "input": truncated_texts,
+            "encoding_format": "base64"
+        }
+        headers = {"content-type": "application/json", "authorization": 'Bearer ' + self.api_key}
 
+        try:
             response = requests.post(url, json=payload, headers=headers)
             json_obj = json.loads(response.text)
-            emb_encoded = json_obj['data'][0]['embedding']
-            emb_arr = self.base64_to_float_array(base64_string=emb_encoded)
             
-            embeddings.append(emb_arr)
-        
+            embeddings = []
+            for item in json_obj['data']:
+                emb_encoded = item['embedding']
+                emb_arr = self.base64_to_float_array(base64_string=emb_encoded)
+                embeddings.append(emb_arr)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(e)
         return embeddings
