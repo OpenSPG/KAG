@@ -94,7 +94,3 @@ class SiliconFlowVectorizer(Vectorizer):
             embeddings.append(emb_arr)
         
         return embeddings
-
-if __name__ == '__main__':
-    inst = SiliconFlowVectorizer(config={"api_key": "sk-ducerqngypudxuevovkmvsbatstjyikvbjdpylfsvkfqcgox", "base_url": "https://api.siliconflow.cn/v1"})
-    print(inst.vectorize(texts='hello'))
