@@ -50,6 +50,21 @@ class LengthSplitter(BaseTableSplitter):
     def output_types(self) -> Type[Output]:
         return Chunk
 
+    def chunk_breakdown(self, chunk):
+        chunks = self.logic_break(chunk)
+        if chunks:
+            res_chunks = []
+            for c in chunks:
+                res_chunks.extend(self.chunk_breakdown(c))
+        else:
+            res_chunks = self.slide_window_chunk(
+                chunk, self.split_length, self.window_length
+            )
+        return res_chunks
+
+    def logic_break(self, chunk):
+        return None
+
     def split_sentence(self, content):
         """
         Splits the given content into sentences based on delimiters.
