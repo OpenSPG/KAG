@@ -93,8 +93,7 @@ class CKPT:
             self.path, CKPT.ckpt_file_name.format(rank, world_size)
         )
         self._ckpt = set()
-        if os.path.exists(self.ckpt_file_path):
-            self.load()
+        self.load()
 
     def load(self):
         """
@@ -104,10 +103,15 @@ class CKPT:
             ckpt_file_path = os.path.join(
                 self.path, CKPT.ckpt_file_name.format(rank, self.world_size)
             )
-            with open(ckpt_file_path, "r") as reader:
-                for line in reader:
-                    data = json.loads(line)
-                    self._ckpt.add(data["id"])
+            if os.path.exists(ckpt_file_path):
+                with open(ckpt_file_path, "r") as reader:
+                    for line in reader:
+                        data = json.loads(line)
+                        self._ckpt.add(data["id"])
+        if len(self._ckpt) > 0:
+            print(
+                f"{bold}{red}Existing checkpoint found in {self.path}{reset}, with {len(self._ckpt)} processed records."
+            )
 
     def is_processed(self, data_id: str):
         """
