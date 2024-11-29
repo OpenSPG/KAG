@@ -145,6 +145,21 @@ class FilterNode(LogicNode):
         return FilterNode("filter", args)
 
 
+class MathNode(LogicNode):
+    def __init__(self, operator, args):
+        super().__init__(operator, args)
+        self.alias_name = args.get("alias_name", None)
+        self.expr = args.get("expr", None)
+
+    def to_dsl(self):
+        raise NotImplementedError("Subclasses should implement this method.")
+
+    @staticmethod
+    def parse_node(input_str, output_name):
+        args = {'alias_name': output_name, 'expr': input_str}
+        return MathNode("math", args)
+
+
 # count(alias)->count_alias
 class CountNode(LogicNode):
     def __init__(self, operator, args):
@@ -537,6 +552,8 @@ class ParseLogicForm:
             node: DeduceNode = DeduceNode.parse_node(args_str)
         elif low_operator in ["verify"]:
             node: VerifyNode = VerifyNode.parse_node(args_str)
+        elif low_operator in ["math"]:
+            node: MathNode = MathNode.parse_node(args_str, output_name)
         elif low_operator in ["count"]:
             node: CountNode = CountNode.parse_node(args_str, output_name)
         elif low_operator in ["sum"]:
