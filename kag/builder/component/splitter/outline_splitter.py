@@ -45,7 +45,11 @@ class OutlineSplitter(SplitterABC):
             chunk = [chunk]
         outlines = []
         for c in chunk:
-            outline = self.llm.invoke({"input": c.content}, self.prompt)
+            outline = self.llm.invoke(
+                {"input": c.content, "current_outline": outlines}, self.prompt
+            )
+            # 过滤无效的 outlines
+            outline = self.filter_outlines(outline)
             outlines.extend(outline)
         content = "\n".join([c.content for c in chunk])
         chunks = self.sep_by_outline_ignore_duplicates(
@@ -336,9 +340,6 @@ class OutlineSplitter(SplitterABC):
         返回：
         - List[Chunk]，分割后的 chunk 列表。
         """
-        # 过滤无效的 outlines
-        outlines = self.filter_outlines(outlines)
-        # outlines = self.unify_outline_levels(outlines)
 
         if not outlines or len(outlines) == 0:
             cutted = []
@@ -353,8 +354,12 @@ class OutlineSplitter(SplitterABC):
             title, level = outline
             start = content.find(title)
             if start != -1 and title not in seen_titles:
-                # 如果标题未重复，则加入 position_check
-                position_check.append((outline, start))
+                # 检查position_check是否为空或者当前start是否大于上一个元素的start
+                if not position_check or start > position_check[-1][1]:
+                    position_check.append((outline, start))
+                else:
+                    # 如果当前start不大于上一个元素的start，则跳过这个元素
+                    continue
                 seen_titles.add(title)
 
         if not position_check:
@@ -376,15 +381,15 @@ class OutlineSplitter(SplitterABC):
             chunk_content = content[start:end]
 
             # add origin kwargs
-            kwargs = {}
+            origin_properties = {}
             for key, value in org_chunk[0].kwargs.items():
-                kwargs[f"origin_{key}"] = value
+                origin_properties[key] = value
 
             chunk = Chunk(
                 id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
                 name=full_path,
                 content=chunk_content,
-                kwargs=kwargs,
+                **origin_properties,
             )
             chunks.append(chunk)
             father_stack.append((title, level))
@@ -445,13 +450,13 @@ if __name__ == "__main__":
     )
     docx_reader = DocxReader()
     txt_reader = TXTReader()
-    length_splitter = LengthSplitter(split_length=8000)
+    length_splitter = LengthSplitter(split_length=5000)
     outline_splitter = OutlineSplitter()
     txt_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/儿科学_short.txt"
     )
     docx_path = "/Users/zhangxinhong.zxh/Downloads/waikexue_short.doc"
-    # chain = docx_reader >> length_splitter >> outline_splitter
+    chain = docx_reader >> length_splitter >> outline_splitter
     chunk = docx_reader.invoke(docx_path)
     chunk = txt_reader.invoke(txt_path)
     chunks = length_splitter.invoke(chunk)
