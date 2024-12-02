@@ -12,304 +12,71 @@
 
 import json
 import logging
+import copy
 from typing import List, Dict
 
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
-from knext.schema.model.base import BaseSpgType, SpgTypeEnum
+from knext.schema.model.base import SpgTypeEnum, ConstraintTypeEnum
 from knext.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
 from kag.common.conf import KAG_PROJECT_CONF
 
+
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("spg")
 class SPGPrompt(PromptABC):
-    spg_types: Dict[str, BaseSpgType]
     ignored_types: List[str] = ["Chunk"]
     ignored_properties: List[str] = [
         "id",
-        "name",
-        "description",
         "stdId",
-        "eventTime",
         "desc",
-        "semanticType",
+        "description",
+        "eventTime",
     ]
+    default_properties: Dict[str, str] = {
+        "name": "Text",
+    }
+
     ignored_relations: List[str] = ["isA"]
-    basic_types = {"Text": "文本", "Integer": "整型", "Float": "浮点型"}
 
     def __init__(
         self,
-        spg_type_names: List[SPGTypeName],
+        spg_type_names: List[SPGTypeName] = [],
         language: str = "",
         **kwargs,
     ):
         super().__init__(language=language, **kwargs)
-        self.all_schema_types = SchemaClient(
-            project_id=KAG_PROJECT_CONF.project_id
-        ).load()
+        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:
-            self.spg_types = self.all_schema_types
+            self.spg_types = self.schema
         else:
             self.spg_types = {
-                k: v for k, v in self.all_schema_types.items() if k in spg_type_names
+                k: v for k, v in self.schema.items() if k in spg_type_names
             }
-        self.schema_list = []
-
-        self._init_render_variables()
+        self.create_prompt_schema()
+        # self._init_render_variables()
 
     @property
     def template_variables(self) -> List[str]:
         return ["schema", "input"]
 
-    def _init_render_variables(self):
-        self.type_en_to_zh = {"Text": "文本", "Integer": "整型", "Float": "浮点型"}
-        self.type_zh_to_en = {
-            "文本": "Text",
-            "整型": "Integer",
-            "浮点型": "Float",
-        }
-        self.prop_en_to_zh = {}
-        self.prop_zh_to_en = {}
-        for type_name, spg_type in self.all_schema_types.items():
-            self.type_en_to_zh[type_name] = spg_type.name_zh
-            self.type_en_to_zh[spg_type.name_zh] = type_name
-            self.prop_zh_to_en[type_name] = {}
-            self.prop_en_to_zh[type_name] = {}
-            for _prop in spg_type.properties.values():
-                if _prop.name in self.ignored_properties:
-                    continue
-                self.prop_en_to_zh[type_name][_prop.name] = _prop.name_zh
-                self.prop_zh_to_en[type_name][_prop.name_zh] = _prop.name
-            for _rel in spg_type.relations.values():
-                if _rel.is_dynamic:
-                    continue
-                self.prop_en_to_zh[type_name][_rel.name] = _rel.name_zh
-                self.prop_zh_to_en[type_name][_rel.name_zh] = _rel.name
-
-    def _render(self):
-        raise NotImplementedError
-
-
-PromptABC.register("spg_kg")
-
-
-class SPG_KGPrompt(SPGPrompt):
-    template_zh: str = """
-    {
-        "instruction": "你是一个图谱知识抽取的专家, 基于constraint 定义的schema，从input 中抽取出所有的实体及其属性，input中未明确提及的属性返回NAN，以标准json 格式输出，结果返回list",
-        "schema": $schema,
-        "example": [
-        {
-            "input": "甲状腺结节是指在甲状腺内的肿块，可随吞咽动作随甲状腺而上下移动，是临床常见的病症，可由多种病因引起。临床上有多种甲状腺疾病，如甲状腺退行性变、炎症、自身免疫以及新生物等都可以表现为结节。甲状腺结节可以单发，也可以多发，多发结节比单发结节的发病率高，但单发结节甲状腺癌的发生率较高。患者通常可以选择在普外科，甲状腺外科，内分泌科，头颈外科挂号就诊。有些患者可以触摸到自己颈部前方的结节。在大多情况下，甲状腺结节没有任何症状，甲状腺功能也是正常的。甲状腺结节进展为其它甲状腺疾病的概率只有1%。有些人会感觉到颈部疼痛、咽喉部异物感，或者存在压迫感。当甲状腺结节发生囊内自发性出血时，疼痛感会更加强烈。治疗方面，一般情况下可以用放射性碘治疗，复方碘口服液(Lugol液)等，或者服用抗甲状腺药物来抑制甲状腺激素的分泌。目前常用的抗甲状腺药物是硫脲类化合物，包括硫氧嘧啶类的丙基硫氧嘧啶(PTU)和甲基硫氧嘧啶(MTU)及咪唑类的甲硫咪唑和卡比马唑。",
-            "schema": {
-                "Disease": {
-                    "properties": {
-                        "entity": Text,
-                        "desc": Text,
-                        "complication(并发症)": Disease,
-                        "commonSymptom(常见症状)": Symptom,
-                        "applicableMedicine(适用药品)": Medicine,
-                        "department(就诊科室)": HospitalDepartment,
-                        "diseaseSite": HumanBodyPart
-                    }
-                },"Medicine": {
-                    "properties": {
-                    }
-                },"Disease": {
-                    "properties": {
-                    }
-                },"Symptom": {
-                    "properties": {
-                    }
-                },"HospitalDepartment": {
-                    "properties": {
-                    }
-                },"HumanBodyPart": {
-                    "properties": {
-                    }
-                }
-            }
-            "output": [
-                {
-                    "entity": "甲状腺结节",
-                    "category":"Disease"
-                    "properties": {
-                        "complication": "甲状腺癌",
-                        "commonSymptom": ["颈部疼痛", "咽喉部异物感", "压迫感"],
-                        "applicableMedicine": ["复方碘口服液(Lugol液)", "丙基硫氧嘧啶(PTU)", "甲基硫氧嘧啶(MTU)", "甲硫咪唑", "卡比马唑"],
-                        "department": ["普外科", "甲状腺外科", "内分泌科", "头颈外科"],
-                        "diseaseSite": "甲状腺"
-                    }
-                },{
-                    "entity":"甲状腺癌",
-                    "category":"Disease"
-                },{
-                    "entity":"甲状腺",
-                    "category":"HospitalDepartment"
-                },{
-                    "entity":"普外科",
-                    "category":"HospitalDepartment"
-                },{
-                    "entity":"甲状腺外科",
-                    "category":"HospitalDepartment"
-                },{
-                    "entity":"内分泌科",
-                    "category":"HospitalDepartment"
-                },{
-                    "entity":"头颈外科",
-                    "category":"HospitalDepartment"
-                },{
-                    "entity":"颈部疼痛",
-                    "category":"Symptom"
-                },{
-                    "entity":"咽喉部异物感",
-                    "category":"Symptom"
-                },{
-                    "entity":"压迫感",
-                    "category":"Symptom"
-                },{
-                    "entity":"复方碘口服液(Lugol液)",
-                    "category":"Medicine"
-                },{
-                    "entity":"丙基硫氧嘧啶(PTU)",
-                    "category":"Medicine"
-                },{
-                    "entity":"甲基硫氧嘧啶(MTU)",
-                    "category":"Medicine"
-                },{
-                    "entity":"甲硫咪唑",
-                    "category":"Medicine"
-                },{
-                    "entity":"卡比马唑",
-                    "category":"Medicine"
-                }
-            ],
-    "input": "$input"
-    }
-    """
-
-    template_en: str = """
-    {
-        "instruction": "You are an expert in knowledge graph extraction. Based on the schema defined by constraints, extract all entities and their attributes from the input. For attributes not explicitly mentioned in the input, return NAN. Output the results in standard JSON format as a list.",
-        "schema": $schema,
-        "example": [
-        {
-            "input": "Thyroid nodules refer to lumps within the thyroid gland that can move up and down with swallowing, and they are a common clinical condition that can be caused by various etiologies. Clinically, many thyroid diseases, such as thyroid degeneration, inflammation, autoimmune conditions, and neoplasms, can present as nodules. Thyroid nodules can occur singly or in multiple forms; multiple nodules have a higher incidence than single nodules, but single nodules have a higher likelihood of being thyroid cancer. Patients typically have the option to register for consultation in general surgery, thyroid surgery, endocrinology, or head and neck surgery. Some patients can feel the nodules in the front of their neck. In most cases, thyroid nodules are asymptomatic, and thyroid function is normal. The probability of thyroid nodules progressing to other thyroid diseases is only about 1%. Some individuals may experience neck pain, a foreign body sensation in the throat, or a feeling of pressure. When spontaneous intracystic bleeding occurs in a thyroid nodule, the pain can be more intense. Treatment options generally include radioactive iodine therapy, Lugol's solution (a compound iodine oral solution), or antithyroid medications to suppress thyroid hormone secretion. Currently, commonly used antithyroid drugs are thiourea compounds, including propylthiouracil (PTU) and methylthiouracil (MTU) from the thiouracil class, and methimazole and carbimazole from the imidazole class.",
-            "schema": {
-                "Disease": {
-                    "properties": {
-                        "entity": Text,
-                        "desc": Text,
-                        "complication": Disease,
-                        "commonSymptom": Symptom,
-                        "applicableMedicine": Medicine,
-                        "department": HospitalDepartment,
-                        "diseaseSite": HumanBodyPart
-                    }
-                },"Medicine": {
-                    "properties": {
-                    }
-                },"Disease": {
-                    "properties": {
-                    }
-                },"Symptom": {
-                    "properties": {
-                    }
-                },"HospitalDepartment": {
-                    "properties": {
-                    }
-                },"HumanBodyPart": {
-                    "properties": {
-                    }
-                }
-            },
-            "output": [
-                {
-                    "entity": "Thyroid Nodule",
-                    "category": "Disease",
-                    "properties": {
-                        "complication": "Thyroid Cancer",
-                        "commonSymptom": ["Neck Pain", "Foreign Body Sensation in Throat", "Pressure Sensation"],
-                        "applicableMedicine": ["Compound Iodine Oral Solution (Lugol Solution)", "Propylthiouracil (PTU)", "Methimazole (MTU)", "Methimazole", "Carbimazole"],
-                        "department": ["General Surgery", "Thyroid Surgery", "Endocrinology", "Head and Neck Surgery"],
-                        "diseaseSite": "Thyroid"
-                    }
-                },
-                {
-                    "entity": "Thyroid Cancer",
-                    "category": "Disease"
-                },
-                {
-                    "entity": "Thyroid",
-                    "category": "HospitalDepartment"
-                },
-                {
-                    "entity": "General Surgery",
-                    "category": "HospitalDepartment"
-                },
-                {
-                    "entity": "Thyroid Surgery",
-                    "category": "HospitalDepartment"
-                },
-                {
-                    "entity": "Endocrinology",
-                    "category": "HospitalDepartment"
-                },
-                {
-                    "entity": "Head and Neck Surgery",
-                    "category": "HospitalDepartment"
-                },
-                {
-                    "entity": "Neck Pain",
-                    "category": "Symptom"
-                },
-                {
-                    "entity": "Foreign Body Sensation in Throat",
-                    "category": "Symptom"
-                },
-                {
-                    "entity": "Pressure Sensation",
-                    "category": "Symptom"
-                },
-                {
-                    "entity": "Compound Iodine Oral Solution (Lugol Solution)",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Propylthiouracil (PTU)",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Methimazole (MTU)",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Methimazole",
-                    "category": "Medicine"
-                },
-                {
-                    "entity": "Carbimazole",
-                    "category": "Medicine"
-                }
-            ]
-    "input": "$input"
-    }
-    """
-
-    def __init__(self, spg_type_names: List[SPGTypeName], language: str = "", **kwargs):
-        super().__init__(spg_type_names=spg_type_names, language=language, **kwargs)
-        self._render()
+    def get_accept_types(self):
+        return [
+            SpgTypeEnum.Entity,
+            SpgTypeEnum.Concept,
+            SpgTypeEnum.Event,
+        ]
 
     def build_prompt(self, variables: Dict[str, str]) -> str:
-        schema = {}
-        for tmpSchema in self.schema_list:
-            schema.update(tmpSchema)
-
-        return super().build_prompt({"schema": schema, "input": variables.get("input")})
+        return super().build_prompt(
+            {
+                "schema": copy.deepcopy(self.prompt_schema),
+                "input": variables.get("input"),
+            }
+        )
 
     def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
         rsp = response
@@ -317,51 +84,291 @@ class SPG_KGPrompt(SPGPrompt):
             rsp = json.loads(rsp)
         if isinstance(rsp, dict) and "output" in rsp:
             rsp = rsp["output"]
-        if isinstance(rsp, dict) and "named_entities" in rsp:
-            entities = rsp["named_entities"]
-        else:
-            entities = rsp
-
-        return entities
-
-    def _render(self):
-        spo_list = []
-        for type_name, spg_type in self.spg_types.items():
-            if spg_type.spg_type_enum not in [
-                SpgTypeEnum.Entity,
-                SpgTypeEnum.Concept,
-                SpgTypeEnum.Event,
-            ]:
+        outputs = []
+        for item in rsp:
+            if "category" not in item or item["category"] not in self.schema:
                 continue
-            constraint = {}
-            properties = {}
-            properties.update(
-                {
-                    v.name: (f"{v.name_zh}" if not v.desc else f"{v.name_zh}，{v.desc}")
-                    if self.language == "zh"
-                    else (f"{v.name}" if not v.desc else f"{v.name}, {v.desc}")
-                    for k, v in spg_type.properties.items()
-                    if k not in self.ignored_properties
-                }
-            )
-            properties.update(
-                {
-                    f"{v.name}#{v.object_type_name_en}": (
-                        f"{v.name_zh}，类型是{v.object_type_name_zh}"
-                        if not v.desc
-                        else f"{v.name_zh}，{v.desc}，类型是{v.object_type_name_zh}"
-                    )
-                    if self.language == "zh"
-                    else (
-                        f"{v.name}, the type is {v.object_type_name_en}"
-                        if not v.desc
-                        else f"{v.name}，{v.desc}, the type is {v.object_type_name_en}"
-                    )
-                    for k, v in spg_type.relations.items()
-                    if not v.is_dynamic and k not in self.ignored_relations
-                }
-            )
-            constraint.update({"properties": properties})
-            spo_list.append({type_name: constraint})
+            properties = item.get("properties", {})
+            if "name" not in properties:
+                continue
+            output = {}
+            output["category"] = item["category"]
+            output["name"] = properties.pop("name")
+            output["properties"] = properties
+            outputs.append(output)
+        return outputs
 
-        self.schema_list = spo_list
+    def create_prompt_schema(self):
+        prompt_schema = []
+        accept_types = self.get_accept_types()
+        for type_name, spg_type in self.spg_types.items():
+            if type_name in self.ignored_types:
+                continue
+            if spg_type.spg_type_enum not in accept_types:
+                continue
+            properties = copy.deepcopy(self.default_properties)
+            for k, v in spg_type.properties.items():
+                if k in self.ignored_properties or k in self.default_properties:
+                    continue
+                multi_value = ConstraintTypeEnum.MultiValue.value in v.constraint
+                obj_type_name = v.object_type_name.split(".")[-1]
+                if multi_value:
+                    obj_type_name = f"List[{obj_type_name}]"
+                properties[v.name] = (
+                    obj_type_name if not v.desc else f"{obj_type_name}({v.desc})"
+                )
+
+            for k, v in spg_type.relations.items():
+                if k in self.ignored_relations or k in self.default_properties:
+                    continue
+                if v.name in properties:
+                    continue
+                obj_type_name = v.object_type_name.split(".")[-1]
+                properties[v.name] = (
+                    obj_type_name if not v.desc else f"{obj_type_name}({v.desc})"
+                )
+
+            prompt_schema.append({type_name: {"properties": properties}})
+
+        self.prompt_schema = prompt_schema
+
+
+@PromptABC.register("spg_entity")
+class SPGEntityPrompt(SPGPrompt):
+    template_zh: dict = {
+        "instruction": "作为一个图谱知识抽取的专家, 你需要基于定义了实体类型及对应属性的schema，从input字段的文本中抽取出所有的实体及其属性，schema中标记为List的属性返回list，未能提取的属性返回null。以标准json list格式输出，list中每个元素形如{category: properties}，你可以参考example字段中给出的示例格式。注意实体属性的SemanticType指的是一个相比实体类型更具体且明确定义的类型，例如Person类型的SemanticType可以是Professor或Actor。",
+        "example": [
+            {
+                "input": "周杰伦（Jay Chou），1979年1月18日出生于台湾省新北市，祖籍福建省永春县，华语流行乐男歌手、音乐人、演员、导演、编剧，毕业于淡江中学。2000年，发行个人首张音乐专辑《Jay》 [26]。2006年，与周润发、巩俐、刘烨共同参演电影《满城尽带黄金甲》。2023年凭借《最伟大的作品》获得第一届浪潮音乐大赏年度制作、最佳作曲、最佳音乐录影带三项大奖。",
+                "output": [
+                    {
+                        "category": "Person",
+                        "properties": {
+                            "name": "周杰伦",
+                            "semanticType": "Musician",
+                            "description": "华语流行乐男歌手、音乐人、演员、导演、编剧",
+                        },
+                    },
+                    {
+                        "category": "GeographicLocation",
+                        "properties": {
+                            "name": "台湾省新北市",
+                            "semanticType": "City",
+                            "description": "周杰伦的出生地",
+                        },
+                    },
+                    {
+                        "category": "GeographicLocation",
+                        "properties": {
+                            "name": "福建省永春县",
+                            "semanticType": "County",
+                            "description": "周杰伦的祖籍",
+                        },
+                    },
+                    {
+                        "category": "Organization",
+                        "properties": {
+                            "name": "淡江中学",
+                            "semanticType": "School",
+                            "description": "周杰伦的毕业学校",
+                        },
+                    },
+                    {
+                        "category": "Works",
+                        "properties": {
+                            "name": "Jay",
+                            "semanticType": "Album",
+                            "description": "周杰伦的个人首张音乐专辑",
+                        },
+                    },
+                    {
+                        "category": "Works",
+                        "properties": {
+                            "name": "满城尽带黄金甲",
+                            "semanticType": "Movie",
+                            "description": "周杰伦与周润发、巩俐、刘烨共同参演的电影",
+                        },
+                    },
+                    {
+                        "category": "Works",
+                        "properties": {
+                            "name": "最伟大的作品",
+                            "semanticType": "MusicVideo",
+                            "description": "周杰伦凭借此作品获得多项音乐大奖",
+                        },
+                    },
+                ],
+            }
+        ],
+    }
+
+    template_en: dict = {
+        "instruction": "As an expert in graph knowledge extraction, you need to extract all entities and their properties from the text in the input field based on a schema that defines entity types and their corresponding attributes. Attributes marked as List in the schema should return a list, and attributes not extracted should return null. Output the results in a standard JSON list format, where each element in the list is in the form of {category: properties}. You can refer to the example format provided in the example field. Note that the SemanticType of an entity attribute refers to a more specific and clearly defined type compared to the entity type itself, such as Professor or Actor for the Person type.",
+        "example": [
+            {
+                "input": "Jay Chou, born on January 18, 1979, in New Taipei City, Taiwan Province, with ancestral roots in Yongchun County, Fujian Province, is a renowned male singer, musician, actor, director, and screenwriter in the realm of Chinese pop music. He graduated from Tamkang University. In 2000, he released his debut solo album, <Jay> [26]. In 2006, he co-starred with Jet Li, Gong Li, and Liu Ye in the film <The Curse of the Golden Flower>. In 2023, he was honored with three major awards at the inaugural Wave Music Awards for Best Production, Best Composition, and Best Music Video for his album The Greatest Work.",
+                "output": [
+                    {
+                        "category": "Person",
+                        "properties": {
+                            "name": "Jay Chou",
+                            "semanticType": "Musician",
+                            "description": "renowned male singer, musician, actor, director, and screenwriter in the realm of Chinese pop music",
+                        },
+                    },
+                    {
+                        "category": "GeographicLocation",
+                        "properties": {
+                            "name": "New Taipei City, Taiwan Province",
+                            "semanticType": "City",
+                            "description": "Jay Chou's birthplace",
+                        },
+                    },
+                    {
+                        "category": "GeographicLocation",
+                        "properties": {
+                            "name": "Yongchun County, Fujian Province",
+                            "semanticType": "County",
+                            "description": "Jay Chou's ancestral roots",
+                        },
+                    },
+                    {
+                        "category": "Organization",
+                        "properties": {
+                            "name": "Tamkang University",
+                            "semanticType": "University",
+                            "description": "Jay Chou's alma mater",
+                        },
+                    },
+                    {
+                        "category": "Works",
+                        "properties": {
+                            "name": "Jay",
+                            "semanticType": "Album",
+                            "description": "Jay Chou's debut solo album",
+                        },
+                    },
+                    {
+                        "category": "Works",
+                        "properties": {
+                            "name": "The Curse of the Golden Flower",
+                            "semanticType": "Movie",
+                            "description": "Film in which Jay Chou co-starred with Jet Li, Gong Li, and Liu Ye",
+                        },
+                    },
+                    {
+                        "category": "Works",
+                        "properties": {
+                            "name": "The Greatest Work",
+                            "semanticType": "Album",
+                            "description": "Jay Chou's album for which he won multiple awards",
+                        },
+                    },
+                ],
+            }
+        ],
+    }
+
+    def get_accept_types(self):
+        return [
+            SpgTypeEnum.Entity,
+            SpgTypeEnum.Concept,
+        ]
+
+
+@PromptABC.register("spg_event")
+class SPGEventPrompt(SPGPrompt):
+    template_zh: dict = {
+        "instruction": "作为一个知识图谱图谱事件抽取的专家, 你需要基于定义的事件类型及对应属性的schema，从input字段的文本中抽取出所有的事件及其属性，schema中标记为List的属性返回list，未能提取的属性返回null。以标准json list格式输出，list中每个元素形如{category: properties}，你可以参考example字段中给出的示例格式。",
+        "example": {
+            "input": "1986年，周星驰被调入无线电视台戏剧组；同年，他在单元情景剧《哥哥的女友》中饰演可爱活泼又略带羞涩的潘家伟，这也是他第一次在情景剧中担任男主角；之后，他还在温兆伦、郭晋安等人主演的电视剧中跑龙套。",
+            "output": [
+                {
+                    "category": "Event",
+                    "properties": {
+                        "name": "周星驰被调入无线电视台戏剧组",
+                        "abstract": "1986年，周星驰被调入无线电视台戏剧组。",
+                        "subject": "周星驰",
+                        "time": "1986年",
+                        "location": "无线电视台",
+                        "participants": [],
+                        "semanticType": "调动",
+                    },
+                },
+                {
+                    "category": "Event",
+                    "properties": {
+                        "name": "周星驰在《哥哥的女友》中饰演潘家伟",
+                        "abstract": "1986年，周星驰在单元情景剧《哥哥的女友》中饰演可爱活泼又略带羞涩的潘家伟，这也是他第一次在情景剧中担任男主角。",
+                        "subject": "周星驰",
+                        "time": "1986年",
+                        "location": None,
+                        "participants": [],
+                        "semanticType": "演出",
+                    },
+                },
+                {
+                    "category": "Event",
+                    "properties": {
+                        "name": "周星驰跑龙套",
+                        "abstract": "1986年，周星驰在温兆伦、郭晋安等人主演的电视剧中跑龙套。",
+                        "subject": "周星驰",
+                        "time": "1986年",
+                        "location": None,
+                        "participants": ["温兆伦", "郭晋安"],
+                        "semanticType": "演出",
+                    },
+                },
+            ],
+        },
+    }
+
+    template_en: dict = {
+        "instruction": "As an expert in knowledge graph event extraction, you need to extract all events and their attributes from the text in the input field based on the defined event types and corresponding attribute schema. For attributes marked as List in the schema, return them as a list, and for attributes that cannot be extracted, return null. Output in the standard JSON list format, with each element in the list having the form {category: properties}. You can refer to the example format provided in the example field.",
+        "example": {
+            "input": "In 1986, Stephen Chow was transferred to the drama department of Television Broadcasts Limited (TVB). In the same year, he played the role of Pan Jiawei, a lovable, lively, and slightly shy character, in the episodic situational comedy <My Brother's Girlfriend.> This was his first time taking on a lead role in a sitcom. Later, he also had minor roles in TV series starring actors such as Anthony Wong and Aaron Kwok.",
+            "output": [
+                {
+                    "category": "Event",
+                    "properties": {
+                        "name": "Stephen Chow was transferred to the drama department of TVB",
+                        "abstract": "In 1986, Stephen Chow was transferred to the drama department of Television Broadcasts Limited (TVB).",
+                        "subject": "Stephen Chow",
+                        "time": "1986",
+                        "location": "Television Broadcasts Limited (TVB)",
+                        "participants": [],
+                        "semanticType": "调动",
+                    },
+                },
+                {
+                    "category": "Event",
+                    "properties": {
+                        "name": "Stephen Chow played Pan Jiawei in My Brother's Girlfriend",
+                        "abstract": "In 1986, Stephen Chow played the role of Pan Jiawei, a lovable, lively, and slightly shy character, in the episodic situational comedy <My Brother's Girlfriend.> This was his first time taking on a lead role in a sitcom.",
+                        "subject": "Stephen Chow",
+                        "time": "1986",
+                        "location": None,
+                        "participants": [],
+                        "semanticType": "演出",
+                    },
+                },
+                {
+                    "category": "Event",
+                    "properties": {
+                        "name": "Stephen Chow had minor roles in TV series",
+                        "abstract": "Later, Stephen Chow also had minor roles in TV series starring actors such as Anthony Wong and Aaron Kwok.",
+                        "subject": "Stephen Chow",
+                        "time": None,
+                        "location": None,
+                        "participants": ["Anthony Wong", "Aaron Kwok"],
+                        "semanticType": "演出",
+                    },
+                },
+            ],
+        },
+    }
+
+    def get_accept_types(self):
+        return [
+            SpgTypeEnum.Event,
+        ]

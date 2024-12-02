@@ -15,6 +15,7 @@ from kag.builder.component.external_graph.external_graph import (
 )
 from kag.builder.component.extractor.kag_extractor import KAGExtractor
 from kag.builder.component.extractor.spg_extractor import SPGExtractor
+from kag.builder.component.extractor.schema_based_extractor import SchemaBasedExtractor
 from kag.builder.component.aligner.kag_aligner import KAGAligner
 from kag.builder.component.aligner.spg_aligner import SPGAligner
 from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcessor
@@ -54,6 +55,7 @@ __all__ = [
     "DefaultExternalGraphLoader",
     "KAGExtractor",
     "SPGExtractor",
+    "SchemaBasedExtractor",
     "KAGAligner",
     "SPGAligner",
     "KAGPostProcessor",
