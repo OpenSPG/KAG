@@ -31,7 +31,7 @@ class LengthSplitter(BaseTableSplitter):
         window_length (int): The length of the overlap between chunks.
     """
 
-    def __init__(self, split_length: int = 500, window_length: int = 100):
+    def __init__(self, split_length: int = 500, window_length: int = 100, **kwargs):
         """
         Initializes the LengthSplitter with the specified split length and window length.
 
@@ -39,6 +39,7 @@ class LengthSplitter(BaseTableSplitter):
             split_length (int): The maximum length of each chunk. Defaults to 500.
             window_length (int): The length of the overlap between chunks. Defaults to 100.
         """
+        super().__init__(**kwargs)
         self.split_length = split_length
         self.window_length = window_length
 
@@ -75,7 +76,7 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[str]: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!"
+        sentence_delimiters = ".。？?！!" if self.language == "en" else "。？！"
         output = []
         start = 0
         for idx, char in enumerate(content):

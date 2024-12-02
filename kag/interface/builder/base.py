@@ -14,6 +14,7 @@ from typing import List, Dict
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
+from kag.common.conf import KAG_PROJECT_CONF
 
 
 @Registrable.register("builder")
@@ -21,6 +22,10 @@ class BuilderComponent(Component, Registrable):
     """
     Abstract base class for all builder component.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.language = kwargs.get("language", KAG_PROJECT_CONF.language)
 
     @property
     def type(self):

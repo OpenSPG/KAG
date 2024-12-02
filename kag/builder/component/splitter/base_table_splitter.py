@@ -22,6 +22,9 @@ class BaseTableSplitter(SplitterABC):
     represented in markdown format into smaller chunks.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
         """
         Splits a markdown format table into smaller markdown tables.
