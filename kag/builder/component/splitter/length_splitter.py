@@ -141,10 +141,12 @@ class LengthSplitter(BaseTableSplitter):
         output = []
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
-                id=f"{org_chunk.id}#{chunk_size}#{window_length}#{idx}#LEN",
+                id=Chunk.generate_hash_id(f"{org_chunk.id}#{idx}"),
                 name=f"{org_chunk.name}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
+                chunk_size = chunk_size,
+                window_length = window_length,
                 **org_chunk.kwargs,
             )
             output.append(chunk)
