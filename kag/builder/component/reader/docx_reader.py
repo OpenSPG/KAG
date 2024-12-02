@@ -14,14 +14,12 @@ import os
 from typing import List, Type, Union
 
 from docx import Document
-
-from kag.builder.component.reader import MarkDownReader
-from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
-from kag.common.llm.client import LLMClient
+from kag.builder.model.chunk import Chunk
 from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.interface.builder import SourceReaderABC
+
 
 # from kag.builder.component.reader.convert import convert_docx_to_md
 
@@ -162,7 +160,7 @@ class DocxReader(SourceReaderABC):
             id=Chunk.generate_hash_id(input),
             name=basename,
             content=content,
-            source=input,
+            **{"documentId": basename, "documentName": basename},
         )
         chunks.append(chunk)
 
