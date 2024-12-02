@@ -237,8 +237,8 @@ class PDFReader(SourceReaderABC):
 
             for idx, position in enumerate(positions):
                 chunk = Chunk(
-                    id=Chunk.generate_hash_id(f"{basename}#{position[0]}"),
-                    name=f"{basename}#{position[0]}",
+                    id=Chunk.generate_hash_id(f"{basename}#{idx}"),
+                    name=f"{basename}#{idx}",
                     content=content[
                         position[1] : (
                             positions[idx + 1][1] if idx + 1 < len(positions) else None
@@ -255,5 +255,6 @@ if __name__ == "__main__":
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
     )
+    pdf_path = "/Users/zhangxinhong.zxh/Downloads/labor-law-chap05.pdf"
     chunk = reader.invoke(pdf_path)
     print(chunk)
