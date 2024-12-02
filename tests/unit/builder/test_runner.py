@@ -3,8 +3,7 @@ import os
 from kag.common.conf import KAG_CONFIG
 from kag.builder.runner import CKPT, BuilderChainRunner
 
-# pwd = os.path.dirname(__file__)
-pwd = "./"
+pwd = os.path.dirname(__file__)
 
 
 def test_ckpt():

@@ -11,8 +11,7 @@
 # or implied.
 
 import logging
-
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from kag.interface import (
     RecordParserABC,
     MappingABC,
@@ -105,28 +104,58 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         self.writer = writer
 
     def build(self, **kwargs):
+        pass
+
+    def invoke(self, input_data, max_workers=10, **kwargs):
         """
-        Builds the builder chain by connecting the parser, splitter, extractor, vectorizer, post-processor (if available), and writer components.
+        Invokes the builder chain to process the input file.
 
         Args:
+            file_path: The path to the input file to be processed.
+            max_workers (int, optional): The maximum number of threads to use. Defaults to 10.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            KAGBuilderChain: The constructed builder chain.
+            List: The final output from the builder chain.
         """
-        if self.post_processor:
-            return (
-                self.parser
-                >> self.splitter
-                >> self.extractor
-                >> self.vectorizer
-                >> self.post_processor
-                >> self.writer
-            )
-        return (
-            self.parser
-            >> self.splitter
-            >> self.extractor
-            >> self.vectorizer
-            >> self.writer
-        )
+
+        def execute_node(node, node_input):
+            if not isinstance(node_input, list):
+                node_input = [node_input]
+            node_output = []
+            for item in node_input:
+                node_output.extend(node.invoke(item))
+            return node_output
+
+        def run_extract(chunk):
+            flow_data = [chunk]
+            for node in [
+                self.extractor,
+                self.vectorizer,
+                self.post_processor,
+                self.writer,
+            ]:
+                if node is None:
+                    continue
+                flow_data = execute_node(node, flow_data)
+            return flow_data
+
+        parser_output = self.parser.invoke(input_data)
+        splitter_output = self.splitter.invoke(parser_output)
+
+        result = []
+        with ThreadPoolExecutor(max_workers) as executor:
+            futures = [executor.submit(run_extract, chunk) for chunk in splitter_output]
+
+            from tqdm import tqdm
+
+            for inner_future in tqdm(
+                as_completed(futures),
+                total=len(futures),
+                desc="Chunk Extraction",
+                position=1,
+                leave=False,
+            ):
+                ret = inner_future.result()
+                result.extend(ret)
+        return result
