@@ -18,11 +18,13 @@ from kag.builder.component.extractor import KAGExtractor
 from kag.builder.component.splitter import LengthSplitter
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.model.chunk import Chunk
+from kag.examples.utils import generate_hash_id
 from knext.builder.builder_chain_abc import BuilderChainABC
 from kag.interface.builder import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
+
 
 
 class MusiqueCorpusReader(SourceReaderABC):
@@ -41,7 +43,6 @@ class MusiqueCorpusReader(SourceReaderABC):
         return base
 
     def invoke(self, input: str, **kwargs) -> List[Output]:
-        id_column = kwargs.get("id_column", "title")
         name_column = kwargs.get("name_column", "title")
         content_column = kwargs.get("content_column", "text")
 
@@ -54,7 +55,7 @@ class MusiqueCorpusReader(SourceReaderABC):
 
         for item in corpusList:
             chunk = Chunk(
-                id=item[id_column],
+                id=generate_hash_id(item[content_column]),
                 name=item[name_column],
                 content=item[content_column],
             )
@@ -84,6 +85,6 @@ if __name__ == '__main__':
     # filePath = "./data/musique_train_corpus.json"
 
     corpusFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)),filePath
+        os.path.abspath(os.path.dirname(__file__)), filePath
     )
     buildKB(corpusFilePath)
