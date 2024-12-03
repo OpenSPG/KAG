@@ -158,6 +158,7 @@ class SPGPrompt(PromptABC):
                 continue
             if spg_type.spg_type_enum not in accept_types:
                 continue
+            type_desc = spg_type.desc
             properties = copy.deepcopy(self.default_properties)
             for k, v in spg_type.properties.items():
                 if k in self.ignored_properties or k in self.default_properties:
@@ -166,9 +167,11 @@ class SPGPrompt(PromptABC):
                 obj_type_name = v.object_type_name.split(".")[-1]
                 if multi_value:
                     obj_type_name = f"List[{obj_type_name}]"
-                properties[v.name] = (
-                    obj_type_name if not v.desc else f"{obj_type_name}({v.desc})"
-                )
+                if v.desc:
+                    v_name = f"{v.name}({v.desc})"
+                else:
+                    v_name = v.name
+                properties[v_name] = obj_type_name
 
             for k, v in spg_type.relations.items():
                 if k in self.ignored_relations or k in self.default_properties:
@@ -176,11 +179,18 @@ class SPGPrompt(PromptABC):
                 if v.name in properties:
                     continue
                 obj_type_name = v.object_type_name.split(".")[-1]
-                properties[v.name] = (
-                    obj_type_name if not v.desc else f"{obj_type_name}({v.desc})"
-                )
+                if v.desc:
+                    v_name = f"{v.name}({v.desc})"
+                else:
+                    v_name = v.name
+                properties[v_name] = obj_type_name
 
-            prompt_schema.append({type_name: {"properties": properties}})
+            if type_desc:
+                prompt_schema.append(
+                    {f"{type_name}({type_desc})": {"properties": properties}}
+                )
+            else:
+                prompt_schema.append({type_name: {"properties": properties}})
 
         self.prompt_schema = prompt_schema
 
@@ -191,7 +201,7 @@ class SPGEntityPrompt(SPGPrompt):
         "instruction": "作为一个图谱知识抽取的专家, 你需要基于定义了实体类型及对应属性的schema，从input字段的文本中抽取出所有的实体及其属性，schema中标记为List的属性返回list，未能提取的属性返回null。以标准json list格式输出，list中每个元素形如{category: properties}，你可以参考example字段中给出的示例格式。注意实体属性的SemanticType指的是一个相比实体类型更具体且明确定义的类型，例如Person类型的SemanticType可以是Professor或Actor。",
         "example": [
             {
-                "input": "周杰伦（Jay Chou），1979年1月18日出生于台湾省新北市，祖籍福建省永春县，华语流行乐男歌手、音乐人、演员、导演、编剧，毕业于淡江中学。2000年，发行个人首张音乐专辑《Jay》 [26]。2006年，与周润发、巩俐、刘烨共同参演电影《满城尽带黄金甲》。2023年凭借《最伟大的作品》获得第一届浪潮音乐大赏年度制作、最佳作曲、最佳音乐录影带三项大奖。",
+                "input": "周杰伦（Jay Chou），1979年1月18日出生于台湾省新北市，祖籍福建省永春县，华语流行乐男歌手、音乐人、演员、导演、编剧，毕业于淡江中学。2000年，发行个人首张音乐专辑《Jay》 [26]。2023年凭借《最伟大的作品》获得第一届浪潮音乐大赏年度制作、最佳作曲、最佳音乐录影带三项大奖。",
                 "output": [
                     {
                         "category": "Person",
@@ -236,14 +246,6 @@ class SPGEntityPrompt(SPGPrompt):
                     {
                         "category": "Works",
                         "properties": {
-                            "name": "满城尽带黄金甲",
-                            "semanticType": "Movie",
-                            "description": "周杰伦与周润发、巩俐、刘烨共同参演的电影",
-                        },
-                    },
-                    {
-                        "category": "Works",
-                        "properties": {
                             "name": "最伟大的作品",
                             "semanticType": "MusicVideo",
                             "description": "周杰伦凭借此作品获得多项音乐大奖",
@@ -258,7 +260,7 @@ class SPGEntityPrompt(SPGPrompt):
         "instruction": "As an expert in graph knowledge extraction, you need to extract all entities and their properties from the text in the input field based on a schema that defines entity types and their corresponding attributes. Attributes marked as List in the schema should return a list, and attributes not extracted should return null. Output the results in a standard JSON list format, where each element in the list is in the form of {category: properties}. You can refer to the example format provided in the example field. Note that the SemanticType of an entity attribute refers to a more specific and clearly defined type compared to the entity type itself, such as Professor or Actor for the Person type.",
         "example": [
             {
-                "input": "Jay Chou, born on January 18, 1979, in New Taipei City, Taiwan Province, with ancestral roots in Yongchun County, Fujian Province, is a renowned male singer, musician, actor, director, and screenwriter in the realm of Chinese pop music. He graduated from Tamkang University. In 2000, he released his debut solo album, <Jay> [26]. In 2006, he co-starred with Jet Li, Gong Li, and Liu Ye in the film <The Curse of the Golden Flower>. In 2023, he was honored with three major awards at the inaugural Wave Music Awards for Best Production, Best Composition, and Best Music Video for his album The Greatest Work.",
+                "input": "Jay Chou, born on January 18, 1979, in New Taipei City, Taiwan Province, with ancestral roots in Yongchun County, Fujian Province, is a renowned male singer, musician, actor, director, and screenwriter in the realm of Chinese pop music. He graduated from Tamkang University. In 2000, he released his debut solo album, <Jay> [26]. In 2023, he was honored with three major awards at the inaugural Wave Music Awards for Best Production, Best Composition, and Best Music Video for his album The Greatest Work.",
                 "output": [
                     {
                         "category": "Person",
@@ -298,14 +300,6 @@ class SPGEntityPrompt(SPGPrompt):
                             "name": "Jay",
                             "semanticType": "Album",
                             "description": "Jay Chou's debut solo album",
-                        },
-                    },
-                    {
-                        "category": "Works",
-                        "properties": {
-                            "name": "The Curse of the Golden Flower",
-                            "semanticType": "Movie",
-                            "description": "Film in which Jay Chou co-starred with Jet Li, Gong Li, and Liu Ye",
                         },
                     },
                     {

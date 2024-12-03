@@ -375,7 +375,7 @@ class SchemaBasedExtractor(ExtractorABC):
                 id=name, name=name, label=label, properties=node_properties
             )
         new_graph.edges = graph.edges
-
+        new_graph = self.insert_namespace(new_graph)
         return new_graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:

@@ -59,7 +59,7 @@ class KAGPostProcessor(PostProcessorABC):
             str: The formatted label.
         """
         namespace = KAG_PROJECT_CONF.namespace
-        if label.startswith(namespace):
+        if label.split(".")[0] == namespace:
             return label
         return f"{namespace}.{label}"
 
