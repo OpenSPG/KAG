@@ -316,10 +316,6 @@ class SchemaBasedExtractor(ExtractorABC):
         graph.nodes.extend(entity_nodes)
         graph.edges.extend(entity_edges)
         event_nodes, event_edges = self.parse_nodes_and_edges(events)
-        print("*" * 80)
-        print(events)
-        print(event_nodes)
-        print(event_edges)
         graph.nodes.extend(event_nodes)
         graph.edges.extend(event_edges)
 
@@ -395,13 +391,11 @@ class SchemaBasedExtractor(ExtractorABC):
         """
         title = input.name
         passage = title + "\n" + input.content
+
         out = []
         try:
             entities = self.named_entity_recognition(passage)
             events = self.event_extraction(passage)
-            print(f"entities = {entities}")
-            print(f"events = {events}")
-
             named_entities = []
             for entity in entities:
                 named_entities.append(
