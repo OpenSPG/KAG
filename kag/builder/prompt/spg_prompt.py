@@ -27,6 +27,16 @@ logger = logging.getLogger(__name__)
 
 
 class SPGPrompt(PromptABC):
+    """
+    Base class for generating SPG schema-based entity/event extraction prompts.
+
+    Attributes:
+        ignored_types (List[str]): List of SPG types to be ignored.
+        ignored_properties (List[str]): List of properties to be ignored.
+        default_properties (Dict[str, str]): Default properties for SPG types.
+        ignored_relations (List[str]): List of relations to be ignored.
+    """
+
     ignored_types: List[str] = ["Chunk"]
     ignored_properties: List[str] = [
         "id",
@@ -47,6 +57,14 @@ class SPGPrompt(PromptABC):
         language: str = "",
         **kwargs,
     ):
+        """
+        Initializes the SPGPrompt instance.
+
+        Args:
+            spg_type_names (List[SPGTypeName], optional): List of SPG type names. Defaults to [].
+            language (str, optional): Language for the prompt. Defaults to "".
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(language=language, **kwargs)
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.spg_type_names = spg_type_names
@@ -61,9 +79,21 @@ class SPGPrompt(PromptABC):
 
     @property
     def template_variables(self) -> List[str]:
+        """
+        Returns the list of template variables used in the prompt.
+
+        Returns:
+            List[str]: List of template variables.
+        """
         return ["schema", "input"]
 
     def get_accept_types(self):
+        """
+        Returns the list of accepted SPG types.
+
+        Returns:
+            List[SpgTypeEnum]: List of accepted SPG types.
+        """
         return [
             SpgTypeEnum.Entity,
             SpgTypeEnum.Concept,
@@ -71,6 +101,15 @@ class SPGPrompt(PromptABC):
         ]
 
     def build_prompt(self, variables: Dict[str, str]) -> str:
+        """
+        Builds the prompt using the provided variables.
+
+        Args:
+            variables (Dict[str, str]): Dictionary of variables to be used in the prompt.
+
+        Returns:
+            str: The built prompt.
+        """
         return super().build_prompt(
             {
                 "schema": copy.deepcopy(self.prompt_schema),
@@ -79,6 +118,16 @@ class SPGPrompt(PromptABC):
         )
 
     def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
+        """
+        Parses the response string into a list of SPG records.
+
+        Args:
+            response (str): The response string to be parsed.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[SPGRecord]: List of parsed SPG records.
+        """
         rsp = response
         if isinstance(rsp, str):
             rsp = json.loads(rsp)
@@ -99,6 +148,9 @@ class SPGPrompt(PromptABC):
         return outputs
 
     def create_prompt_schema(self):
+        """
+        Creates the schema for extraction prompt based on the project schema.
+        """
         prompt_schema = []
         accept_types = self.get_accept_types()
         for type_name, spg_type in self.spg_types.items():

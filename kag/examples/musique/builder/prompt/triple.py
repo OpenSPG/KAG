@@ -146,9 +146,6 @@ class OpenIETriplePrompt(PromptABC):
 }    
     """
 
-    def __init__(self, language: Optional[str] = "en"):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["entity_list", "input"]

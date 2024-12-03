@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 @ExtractorABC.register("schema")
 class SchemaBasedExtractor(ExtractorABC):
+    """
+    Perform knowledge extraction for enforcing schema constraints, including entities, triples, and events.
+    The types of entities and events, along with their respective attributes, are automatically inherited from the project's schema.
+    """
+
     def __init__(
         self,
         llm: LLMClient,
@@ -41,6 +46,17 @@ class SchemaBasedExtractor(ExtractorABC):
         event_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
     ):
+        """
+        Initializes the SchemaBasedExtractor instance.
+
+        Args:
+            llm (LLMClient): The language model client used for extraction.
+            ner_prompt (PromptABC, optional): The prompt for named entity recognition. Defaults to None.
+            std_prompt (PromptABC, optional): The prompt for named entity standardization. Defaults to None.
+            triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
+            event_prompt (PromptABC, optional): The prompt for event extraction. Defaults to None.
+            external_graph (ExternalGraphLoaderABC, optional): The external graph loader for additional data. Defaults to None.
+        """
         self.llm = llm
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
@@ -107,21 +123,59 @@ class SchemaBasedExtractor(ExtractorABC):
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
+        """
+        Performs named entity standardization on a given text passage and entities.
+
+        Args:
+            passage (str): The text passage.
+            entities (List[Dict]): The list of entities to standardize.
+
+        Returns:
+            The result of the named entity standardization operation.
+        """
         return self.llm.invoke(
             {"input": passage, "named_entities": entities}, self.std_prompt
         )
 
     @retry(stop=stop_after_attempt(3))
     def triples_extraction(self, passage: str, entities: List[Dict]):
+        """
+        Performs triple extraction on a given text passage and entities.
+
+        Args:
+            passage (str): The text passage.
+            entities (List[Dict]): The list of entities.
+
+        Returns:
+            The result of the triple extraction operation.
+        """
         return self.llm.invoke(
             {"input": passage, "entity_list": entities}, self.triple_prompt
         )
 
     @retry(stop=stop_after_attempt(3))
     def event_extraction(self, passage: str):
+        """
+        Performs event extraction on a given text passage.
+
+        Args:
+            passage (str): The text passage.
+
+        Returns:
+            The result of the event extraction operation.
+        """
         return self.llm.invoke({"input": passage}, self.event_prompt)
 
     def parse_nodes_and_edges(self, entities: List[Dict]):
+        """
+        Parses nodes and edges from a list of entities.
+
+        Args:
+            entities (List[Dict]): The list of entities.
+
+        Returns:
+            Tuple[List[Node], List[Edge]]: The parsed nodes and edges.
+        """
         graph = SubGraph([], [])
         for record in entities:
             s_name = record.get("name", "")
@@ -177,7 +231,7 @@ class SchemaBasedExtractor(ExtractorABC):
         sub_graph: SubGraph, entities: List[Dict], triples: List[list]
     ):
         """
-        Assembles edges in the subgraph based on a list of triples and entities.
+        Add edges to the subgraph based on a list of triples and entities.
         Args:
             sub_graph (SubGraph): The subgraph to add edges to.
             entities (List[Dict]): A list of entities, for looking up category information.
@@ -245,6 +299,18 @@ class SchemaBasedExtractor(ExtractorABC):
         events: List[Dict],
         triples: List[list],
     ):
+        """
+        Assembles a subgraph from the given chunk, entities, events, and triples.
+
+        Args:
+            chunk (Chunk): The chunk object.
+            entities (List[Dict]): The list of entities.
+            events (List[Dict]): The list of events.
+            triples (List[list]): The list of triples.
+
+        Returns:
+            The constructed subgraph.
+        """
         graph = SubGraph([], [])
         entity_nodes, entity_edges = self.parse_nodes_and_edges(entities)
         graph.nodes.extend(entity_nodes)
@@ -288,6 +354,15 @@ class SchemaBasedExtractor(ExtractorABC):
                 tmp_entity["official_name"] = official_name
 
     def postprocess_graph(self, graph):
+        """
+        Postprocesses the graph by merging nodes with the same name and label.
+
+        Args:
+            graph (SubGraph): The graph to postprocess.
+
+        Returns:
+            The postprocessed graph.
+        """
         all_node_properties = {}
         for node in graph.nodes:
             name = node.name
@@ -309,16 +384,15 @@ class SchemaBasedExtractor(ExtractorABC):
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
-        Invokes the semantic extractor to process input data.
+        Invokes the extractor on the given input.
 
         Args:
-            input (Input): Input data containing name and content.
+            input (Input): The input data.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List[Output]: A list of processed results, containing subgraph information.
+            List[Output]: The list of output results.
         """
-
         title = input.name
         passage = title + "\n" + input.content
         out = []
