@@ -31,6 +31,8 @@ class OutlineSplitter(SplitterABC):
         self.llm = self._init_llm()
         language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
         self.prompt = OutlinePrompt(language)
+        self.max_length = kwargs.get("max_length", 500)
+        self.min_length = kwargs.get("min_length", 50)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -39,6 +41,54 @@ class OutlineSplitter(SplitterABC):
     @property
     def output_types(self) -> Type[Output]:
         return Chunk
+
+    def build_catalog_tree(self, outlines_with_content):
+        catalog_tree = []
+        stack = []  # 用于跟踪当前的节点层级，格式为 [(title, level, node), ...]
+
+        for title, content, level in outlines_with_content:
+            # 找到正确的父节点
+            while stack and stack[-1][1] >= level:  # 父节点的级别应该更高（数字更小）
+                stack.pop()
+
+            # 创建新节点
+            # title应该拼上所有父节点的title
+            if stack:
+                title = "/".join([item[0] for item in stack] + [title])
+            node = {"title": title, "content": content, "children": []}
+
+            # 如果栈为空，或者当前节点的级别高于栈顶节点的级别，说明当前节点是根节点或新的分支节点
+            if not stack or stack[-1][1] >= level:
+                if stack:
+                    stack[-1][2]["children"].append(
+                        node
+                    )  # 将新节点添加到最近的父节点的 children 列表中
+                else:
+                    catalog_tree.append(node)  # 如果栈为空，说明这是一个根节点
+            else:
+                # 将新节点添加到找到的父节点的 children 列表中
+                stack[-1][2]["children"].append(node)
+
+            # 将新节点和其级别、标题添加到 stack 中，以便后续添加子节点
+            stack.append((title, level, node))
+
+        return catalog_tree
+
+    def simplify_catalog_tree(self, node, parent=None, parent_content_length=0):
+        # 首先递归处理所有子节点
+        for child in list(node["children"]):  # 使用 list 来复制列表，以便在迭代时修改它
+            self.simplify_catalog_tree(child, node, len(node["content"]))
+
+        # 然后检查当前节点是否可以与父节点合并
+        content_length = len(node["content"])
+        if content_length + parent_content_length <= self.max_length and parent:
+            # 如果当前节点的内容长度加上父节点的内容长度不超过阈值，则合并
+            parent["content"] += " " + node["content"]
+            # 将当前节点的子节点添加到父节点的子节点列表中
+            parent["children"].extend(node["children"])
+            # 从父节点的子节点列表中移除当前节点
+            parent["children"].remove(node)
+            return  # 停止进一步处理
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]]) -> List[Chunk]:
         if isinstance(chunk, Chunk):
@@ -52,7 +102,10 @@ class OutlineSplitter(SplitterABC):
             outline = self.filter_outlines(outline)
             outlines.extend(outline)
         content = "\n".join([c.content for c in chunk])
-        chunks = self.sep_by_outline_ignore_duplicates(
+        # chunks = self.sep_by_outline_ignore_duplicates(
+        #     content, outlines, org_chunk=chunk
+        # )
+        chunks = self.sep_by_outline_with_outline_tree(
             content, outlines, org_chunk=chunk
         )
         return chunks
@@ -363,7 +416,7 @@ class OutlineSplitter(SplitterABC):
                 seen_titles.add(title)
 
         if not position_check:
-            return []  # 如果没有找到任何标题，返回空
+            return []
 
         chunks = []
         father_stack = []
@@ -421,6 +474,132 @@ class OutlineSplitter(SplitterABC):
         # 如果最后一个 chunk 被缓存在 buffer，直接加入结果
         if buffer:
             merged_chunks.append(buffer)
+
+        for idx, chunk in enumerate(merged_chunks):
+            chunk.prev_content = merged_chunks[idx - 1].content if idx > 0 else None
+            chunk.next_content = (
+                merged_chunks[idx + 1].content if idx < len(merged_chunks) - 1 else None
+            )
+
+        return merged_chunks
+
+    def sep_by_outline_with_outline_tree(self, content, outlines, org_chunk=None):
+        """
+        按层级划分内容为 chunks，剔除无效的标题，并忽略重复的标题。
+
+        参数：
+        - content: str，完整内容。
+        - outlines: List[Tuple[str, int]]，每个标题及其层级的列表。
+        - min_length: int，chunk 的最小长度，低于此值时尝试合并。
+        - max_length: int，chunk 的最大长度，合并后不能超过此值。
+
+        返回：
+        - List[Chunk]，分割后的 chunk 列表。
+        """
+
+        if not outlines or len(outlines) == 0:
+            cutted = []
+            if isinstance(org_chunk, list):
+                for item in org_chunk:
+                    cutted.extend(self.slide_window_chunk(item))
+            return cutted
+
+        position_check = []
+        seen_titles = set()
+        for outline in outlines:
+            title, level = outline
+            start = content.find(title)
+            if start != -1 and title not in seen_titles:
+                # 检查position_check是否为空或者当前start是否大于上一个元素的start
+                if not position_check or start > position_check[-1][1]:
+                    position_check.append((outline, start))
+                else:
+                    # 如果当前start不大于上一个元素的start，则跳过这个元素
+                    continue
+                seen_titles.add(title)
+
+        for idx, (outline, start) in enumerate(position_check):
+            title, level = outline
+            end = (
+                position_check[idx + 1][1]
+                if idx + 1 < len(position_check)
+                else len(content)
+            )
+            position_check[idx] = (outline, start, end)
+
+        outlines_with_content = []
+        for outline, start, end in position_check:
+            title, level = outline
+            t_content = content[start:end]
+            outlines_with_content.append((title, t_content, level))
+
+        # 构建目录树
+        catalog_tree = self.build_catalog_tree(outlines_with_content)
+
+        # 简化目录树
+        # if catalog_tree:
+        #     for node in catalog_tree:
+        #         self.simplify_catalog_tree(node)
+
+        # add origin kwargs
+        origin_properties = {}
+        for key, value in org_chunk[0].kwargs.items():
+            origin_properties[key] = value
+
+        def generate_chunks(node, chunks=None, parent_id=None):
+            if chunks is None:
+                chunks = []
+            # 为当前节点生成chunk
+            chunk_id = Chunk.generate_hash_id(node["content"])
+            chunk = Chunk(
+                id=chunk_id,
+                name=node["title"],
+                content=node["content"],
+                **origin_properties,
+            )
+            chunks.append(chunk)
+
+            # 递归为子节点生成chunk
+            for child in node.get("children", []):
+                generate_chunks(child, chunks, chunk_id)
+
+            return chunks
+
+        chunks = []
+        for node in catalog_tree:
+            chunks.extend(generate_chunks(node))
+        # 合并过短的 chunks
+        merged_chunks = []
+        buffer = None
+
+        for chunk in chunks:
+            if buffer:
+                # 当前 chunk 合并到 buffer 中
+                if (
+                    chunk.name.startswith(buffer.name)  # 同一父级目录
+                    and len(buffer.content) + len(chunk.content) <= self.max_length
+                ):
+                    buffer.content += chunk.content
+                    continue
+                else:
+                    merged_chunks.append(buffer)
+                    buffer = None
+
+            if len(chunk.content) < self.min_length:
+                # 缓存过短的 chunk
+                buffer = chunk
+            else:
+                # 长度足够，直接加入结果
+                merged_chunks.append(chunk)
+
+        # 如果最后一个 chunk 被缓存在 buffer，直接加入结果
+        if buffer:
+            merged_chunks.append(buffer)
+
+        for i in range(len(merged_chunks) - 1, -1, -1):
+            chunk = merged_chunks[i]
+            if len(chunk.content) < (self.min_length * 0.5):
+                del merged_chunks[i]
 
         for idx, chunk in enumerate(merged_chunks):
             chunk.prev_content = merged_chunks[idx - 1].content if idx > 0 else None
