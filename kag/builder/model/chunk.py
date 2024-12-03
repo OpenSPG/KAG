@@ -12,6 +12,7 @@
 import hashlib
 from enum import Enum
 from typing import Dict, Any
+import json
 
 
 class ChunkTypeEnum(str, Enum):
@@ -76,3 +77,10 @@ class Chunk:
             type=input_.get("type"),
             **input_.get("properties", {}),
         )
+
+
+def dump_chunks(chunks, **kwargs):
+    if kwargs.get("output_path"):
+        with open(kwargs.get("output_path"), "w") as f:
+            for chunk in chunks:
+                f.write(json.dumps(chunk.to_dict(), ensure_ascii=False) + "\n")
