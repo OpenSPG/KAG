@@ -66,7 +66,7 @@ class MusiqueCorpusReader(SourceReaderABC):
 class MusiqueBuilderChain(BuilderChainABC):
     def build(self, **kwargs):
         source = MusiqueCorpusReader()
-        splitter = LengthSplitter(window_length=2000)
+        splitter = LengthSplitter(split_length=2000)
         extractor = KAGExtractor()
         vectorizer = BatchVectorizer()
         sink = KGWriter()
