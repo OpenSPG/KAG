@@ -15,7 +15,6 @@ from typing import List
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 
@@ -34,29 +33,6 @@ class ExtractorABC(BuilderComponent, ABC):
     @property
     def output_types(self):
         return SubGraph
-
-    def format_label(self, label: str):
-        """
-        Formats the label by adding the project namespace if it is not already present.
-
-        Args:
-            label (str): The label to be formatted.
-
-        Returns:
-            str: The formatted label.
-        """
-        namespace = KAG_PROJECT_CONF.namespace
-        if label.split(".")[0] == namespace:
-            return label
-        return f"{namespace}.{label}"
-
-    def insert_namespace(self, graph):
-        for node in graph.nodes:
-            node.label = self.format_label(node.label)
-        for edge in graph.edges:
-            edge.from_type = self.format_label(edge.from_type)
-            edge.to_type = self.format_label(edge.to_type)
-        return graph
 
     @abstractmethod
     def invoke(self, input: Input, **kwargs) -> List[Output]:

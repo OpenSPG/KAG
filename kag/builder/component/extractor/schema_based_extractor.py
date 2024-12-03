@@ -244,7 +244,7 @@ class SchemaBasedExtractor(ExtractorABC):
         def get_category(entities_data, entity_name):
             for entity in entities_data:
                 if entity["name"] == entity_name:
-                    return entity["name"]
+                    return entity["category"]
             return None
 
         for tri in triples:
@@ -375,7 +375,6 @@ class SchemaBasedExtractor(ExtractorABC):
                 id=name, name=name, label=label, properties=node_properties
             )
         new_graph.edges = graph.edges
-        new_graph = self.insert_namespace(new_graph)
         return new_graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:

@@ -59,6 +59,29 @@ class KGWriter(SinkWriterABC):
     def output_types(self) -> Type[Output]:
         return None
 
+    def format_label(self, label: str):
+        """
+        Formats the label by adding the project namespace if it is not already present.
+
+        Args:
+            label (str): The label to be formatted.
+
+        Returns:
+            str: The formatted label.
+        """
+        namespace = KAG_PROJECT_CONF.namespace
+        if label.split(".")[0] == namespace:
+            return label
+        return f"{namespace}.{label}"
+
+    def insert_namespace(self, graph):
+        for node in graph.nodes:
+            node.label = self.format_label(node.label)
+        for edge in graph.edges:
+            edge.from_type = self.format_label(edge.from_type)
+            edge.to_type = self.format_label(edge.to_type)
+        return graph
+
     def invoke(
         self,
         input: Input,
@@ -76,6 +99,8 @@ class KGWriter(SinkWriterABC):
         Returns:
             List[Output]: A list of output objects (currently always [None]).
         """
+
+        input = self.insert_namespace(input)
         self.client.write_graph(
             sub_graph=input.to_dict(),
             operation=alter_operation,

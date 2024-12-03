@@ -385,7 +385,7 @@ class KAGExtractor(ExtractorABC):
             std_entities = self.named_entity_standardization(passage, filtered_entities)
             self.append_official_name(entities, std_entities)
             self.assemble_sub_graph(sub_graph, input, entities, triples)
-            out.append(self.insert_namespace(sub_graph))
+            out.append(sub_graph)
         except Exception as e:
             import traceback
 
