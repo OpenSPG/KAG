@@ -684,7 +684,7 @@ class OutlineSplitter(SplitterABC):
 
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
         chunks = self.splitter_chunk(input, **kwargs)
-        chunks = self.outline_chunk(chunks)
+        chunks = self.outline_chunk_batch(chunks)
         return chunks
 
 
@@ -715,22 +715,19 @@ if __name__ == "__main__":
         for file in os.listdir(test_dir)
         if file.endswith(".docx")
     ]
-    files = [
-        files[0],
-    ]
 
     def process_file(file):
         chain = docx_reader >> outline_splitter
         chunks = chain.invoke(file, max_workers=10)
         dump_chunks(chunks, output_path=file.replace(".docx", ".json"))
 
-    # with ThreadPoolExecutor(max_workers=10) as executor:
-    #     futures = [executor.submit(process_file, file) for file in files]
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(process_file, file) for file in files]
 
-    # for future in as_completed(futures):
-    #     print(future.result())
+    for future in as_completed(futures):
+        print(future.result())
 
-    process_file(docx_path)
+    # process_file(docx_path)
 
     # chunk = docx_reader.invoke(docx_path)
     # chunk = txt_reader.invoke(txt_path)
