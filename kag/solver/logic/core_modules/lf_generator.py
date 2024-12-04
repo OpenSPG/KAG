@@ -26,7 +26,7 @@ class LFGenerator(KagBaseModule):
             language=self.language
         )
 
-    def generate_sub_answer(self, question: str, knowledge_graph: [], docs: [], history=[]):
+    def generate_sub_answer(self, question: str, init_question: str, knowledge_graph: [], docs: [], history=[]):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
 
@@ -39,7 +39,7 @@ class LFGenerator(KagBaseModule):
         Returns:
         str: The generated sub-answer.
         """
-        history_qa = [f"query{i}: {item['sub_query']}\nanswer{i}: {item['sub_answer']}" for i, item in
+        history_qa = [f"overall_questionn:{init_question}\nquery{i}: {item['sub_query']}\nanswer{i}: {item['sub_answer']}" for i, item in
                       enumerate(history)]
         if knowledge_graph:
             if len(docs) > 0:

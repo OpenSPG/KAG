@@ -34,6 +34,8 @@ class DeduceExecutor(OpExecutor):
         }
         result = []
         for op in node.deduce_ops:
+            if op not in op_mapping:
+                continue
             if_answered, answer = op_mapping[op].executor(node, req_id, param)
             if if_answered:
                 result.append(answer)

@@ -410,3 +410,79 @@ class DefaultRetriever(ChunkRetrieverABC):
         if self.reranker is None:
             return passages
         return self.reranker.rerank(queries, passages)
+
+    def retrieval_table_metric_by_page_rank(
+        self, entities: list, topk=10, **kwargs
+    ) -> list[str]:
+        rst = []
+        if len(entities) <= 0:
+            return rst
+        label = self.schema_util.get_label_within_prefix("TableMetric")
+        for entity in entities:
+            entity["name"] = entity["id"]
+        scores = self.graph_algo.calculate_pagerank_scores(
+            self.schema_util.get_label_within_prefix("TableMetric"), entities
+        )
+        if len(scores) > topk:
+            sorted_scores = sorted(
+                scores.items(), key=lambda item: item[1], reverse=True
+            )
+            scores = sorted_scores[:topk]
+        else:
+            scores = scores.items()
+        for entity_id, _ in scores:
+            node = self.reason.query_node(
+                label=label,
+                id_value=entity_id,
+            )
+            node_dict = dict(node.items())
+            node_dict["label"] = label
+            rst.append(node_dict)
+        return rst
+
+    def get_table_metrics_by_query(self, query: str):
+        """
+        query table metrics from entities
+        """
+        entities = self.named_entity_recognition(query)
+        if len(entities) <= 0:
+            return {}
+        (entities, scores) = self._match_table_mertric_constraint(entities)
+        table_metrics_list = self.retrieval_table_metric_by_page_rank(entities=entities)
+        rst_list = [{k: d[k] for k in {"id", "name"} if k in d} for d in table_metrics_list]
+        return rst_list
+    
+    def get_table_content_by_query(self, query:str):
+        """
+        query table
+        """
+        return []
+
+    def _match_table_mertric_constraint(self, queries: list[str], top_k: int = 1):
+        matched_entities = []
+        matched_entities_scores = []
+        for query_ner in queries:
+            entity = query_ner["entity"]
+            query = processing_phrases(entity)
+            query_type = "MetricConstraint"
+            query_type = self.schema_util.get_label_within_prefix(query_type)
+            try:
+                typed_nodes = self.sc.search_vector(
+                    label=query_type,
+                    property_key="name",
+                    query_vector=self.vectorizer.vectorize(query),
+                    topk=top_k,
+                )
+                if typed_nodes[0]["score"] > 0.9:
+                    matched_entities.append(
+                        {
+                            "name": typed_nodes[0]["node"]["name"],
+                            "type": query_type,
+                            "id": typed_nodes[0]["node"]["id"],
+                        }
+                    )
+                    matched_entities_scores.append(typed_nodes[0]["score"])
+            except Exception:
+                logger.exception("query_vertor_error,%s", query)
+                continue
+        return matched_entities, matched_entities_scores

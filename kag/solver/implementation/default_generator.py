@@ -20,6 +20,11 @@ class DefaultGenerator(KAGGeneratorABC):
     def generate(self, instruction, memory: DefaultMemory):
         solved_answer = memory.get_solved_answer()
         if solved_answer is not None:
+            try:
+                if "." in str(solved_answer):
+                    solved_answer = str(round(float(solved_answer), 5))
+            except Exception:
+                pass
             return solved_answer
         present_memory = memory.serialize_memory()
         return self.llm_module.invoke({'memory': present_memory, 'instruction': instruction}, self.generate_prompt, with_json_parse=False, with_except=True)

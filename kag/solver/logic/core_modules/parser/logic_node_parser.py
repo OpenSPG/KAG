@@ -226,9 +226,9 @@ class SortNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         equality_list = re.findall(r'([\w.]+=[^=]+)(,|，|$)', input_str)
-        if len(equality_list) < 4:
+        if len(equality_list) < 3:
             raise RuntimeError(f"parse {input_str} error not found set,orderby,direction,limit")
-        params = [e[0] for e in equality_list[:4]]
+        params = [e[0] for e in equality_list[:3]]
         params_dict = {}
         for param in params:
             key, value = param.split('=')
@@ -528,7 +528,7 @@ class ParseLogicForm:
             operator, args_str = match.groups()
             output_name = None
         low_operator = operator.lower()
-        if low_operator == "get":
+        if low_operator in ["get", "output"]:
             node: GetNode = GetNode.parse_node(args_str)
             if node.alias_name in parsed_entity_set.keys():
                 s = parsed_entity_set[node.alias_name]
