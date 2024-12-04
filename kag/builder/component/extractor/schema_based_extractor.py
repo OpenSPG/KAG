@@ -111,6 +111,8 @@ class SchemaBasedExtractor(ExtractorABC):
             category = item.get("category", None)
             if name is None or category is None:
                 continue
+            if not isinstance(name, str):
+                continue
             if name not in dedup:
                 dedup.add(name)
                 output.append(item)
@@ -159,6 +161,8 @@ class SchemaBasedExtractor(ExtractorABC):
         for record in entities:
             s_name = record.get("name", "")
             s_label = record.get("category", "")
+            if not s_name or not s_label:
+                continue
             properties = record.get("properties", {})
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
@@ -174,6 +178,8 @@ class SchemaBasedExtractor(ExtractorABC):
                         if isinstance(prop_value, str):
                             prop_value = [prop_value]
                         for o_name in prop_value:
+                            if not isinstance(o_name, str):
+                                continue
                             graph.add_node(id=o_name, name=o_name, label=o_label)
                             graph.add_edge(
                                 s_id=s_name,
@@ -295,23 +301,26 @@ class SchemaBasedExtractor(ExtractorABC):
         Returns:
             The postprocessed graph.
         """
-        all_node_properties = {}
-        for node in graph.nodes:
-            name = node.name
-            label = node.label
-            key = (name, label)
-            if key not in all_node_properties:
-                all_node_properties[key] = node.properties
-            else:
-                all_node_properties[key].update(node.properties)
-        new_graph = SubGraph([], [])
-        for key, node_properties in all_node_properties.items():
-            name, label = key
-            new_graph.add_node(
-                id=name, name=name, label=label, properties=node_properties
-            )
-        new_graph.edges = graph.edges
-        return new_graph
+        try:
+            all_node_properties = {}
+            for node in graph.nodes:
+                name = node.name
+                label = node.label
+                key = (name, label)
+                if key not in all_node_properties:
+                    all_node_properties[key] = node.properties
+                else:
+                    all_node_properties[key].update(node.properties)
+            new_graph = SubGraph([], [])
+            for key, node_properties in all_node_properties.items():
+                name, label = key
+                new_graph.add_node(
+                    id=name, name=name, label=label, properties=node_properties
+                )
+            new_graph.edges = graph.edges
+            return new_graph
+        except:
+            return graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
