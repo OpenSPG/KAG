@@ -16,10 +16,12 @@ from typing import List, Type, Union
 
 from knext.common.base.runnable import Input, Output
 
-from kag.builder.model.chunk import Chunk
+from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface.builder import SplitterABC
+from concurrent.futures import ThreadPoolExecutor, as_completed, Future
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +33,8 @@ class OutlineSplitter(SplitterABC):
         self.llm = self._init_llm()
         language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
         self.prompt = OutlinePrompt(language)
-        self.max_length = kwargs.get("max_length", 500)
-        self.min_length = kwargs.get("min_length", 50)
+        self.max_length = kwargs.get("max_length", 2000)
+        self.min_length = kwargs.get("min_length", 100)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -51,10 +53,11 @@ class OutlineSplitter(SplitterABC):
             while stack and stack[-1][1] >= level:  # 父节点的级别应该更高（数字更小）
                 stack.pop()
 
-            # 创建新节点
-            # title应该拼上所有父节点的title
-            if stack:
-                title = "/".join([item[0] for item in stack] + [title])
+            # # 创建新节点
+            # # title应该拼上所有父节点的title
+            # if stack:
+            #     # only add title if stack level
+            #     title = "/".join([item[0] for item in stack] + [title])
             node = {"title": title, "content": content, "children": []}
 
             # 如果栈为空，或者当前节点的级别高于栈顶节点的级别，说明当前节点是根节点或新的分支节点
@@ -101,6 +104,56 @@ class OutlineSplitter(SplitterABC):
             # 过滤无效的 outlines
             outline = self.filter_outlines(outline)
             outlines.extend(outline)
+        content = "\n".join([c.content for c in chunk])
+        # chunks = self.sep_by_outline_ignore_duplicates(
+        #     content, outlines, org_chunk=chunk
+        # )
+        chunks = self.sep_by_outline_with_outline_tree(
+            content, outlines, org_chunk=chunk
+        )
+        return chunks
+
+    def process_batch(self, batch: List[Chunk]) -> List[Chunk]:
+        outlines = []
+        for c in batch:
+            outline = self.llm.invoke(
+                {"input": c.content, "current_outline": outlines}, self.prompt
+            )
+            # 过滤无效的 outlines
+            outline = self.filter_outlines(outline)
+            outlines.extend(outline)
+        return outlines
+
+    def outline_chunk_batch(self, chunk: List[Chunk]) -> List[Chunk]:
+
+        assert isinstance(chunk, list)
+        self.batch_size = len(chunk) // 10 if len(chunk) > 10 else 1
+
+        outlines = []
+        # 将 chunk 分成多个批次
+        batches = [
+            chunk[i : i + self.batch_size]
+            for i in range(0, len(chunk), self.batch_size)
+        ]
+
+        mapping = {}
+        futures = []
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            # 提交每个批次到线程池
+            for idx, batch in enumerate(batches):
+                future = executor.submit(self.process_batch, batch)
+                mapping[future] = idx
+                futures.append(future)
+
+            results = [0] * len(batches)
+            # 等待所有批次完成并收集结果
+            for future in as_completed(futures):
+                results[mapping[future]] = future.result()
+                logger.info(f"outline batch{mapping[future]} done")
+
+        for result in results:
+            outlines.extend(result)
+
         content = "\n".join([c.content for c in chunk])
         # chunks = self.sep_by_outline_ignore_duplicates(
         #     content, outlines, org_chunk=chunk
@@ -369,8 +422,8 @@ class OutlineSplitter(SplitterABC):
         output = []
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
-                id=f"{org_chunk.id}#{chunk_size}#{window_length}#{idx}#LEN",
-                name=f"{org_chunk.name}",
+                id=Chunk.generate_hash_id(f"{org_chunk.id}#{idx}"),
+                name=f"{org_chunk.name}#{idx}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
                 **org_chunk.kwargs,
@@ -546,22 +599,33 @@ class OutlineSplitter(SplitterABC):
         for key, value in org_chunk[0].kwargs.items():
             origin_properties[key] = value
 
-        def generate_chunks(node, chunks=None, parent_id=None):
+        def generate_chunks(node, chunks=None, parent_title=""):
             if chunks is None:
                 chunks = []
+
+            # 构建当前节点的完整title
+            full_title = (
+                "/".join([parent_title, node["title"]])
+                if parent_title
+                else node["title"]
+            )
+
             # 为当前节点生成chunk
-            chunk_id = Chunk.generate_hash_id(node["content"])
+            chunk_id = Chunk.generate_hash_id(full_title)  # 使用完整title生成ID
             chunk = Chunk(
                 id=chunk_id,
-                name=node["title"],
+                name=full_title,  # 使用完整title
                 content=node["content"],
+                # 假设origin_properties是全局的或者在函数外部定义的，包含其他需要的属性
                 **origin_properties,
             )
             chunks.append(chunk)
 
             # 递归为子节点生成chunk
             for child in node.get("children", []):
-                generate_chunks(child, chunks, chunk_id)
+                generate_chunks(
+                    child, chunks, full_title
+                )  # 将当前完整title传递给子节点
 
             return chunks
 
@@ -609,8 +673,18 @@ class OutlineSplitter(SplitterABC):
 
         return merged_chunks
 
+    def splitter_chunk(self, input: Input, **kwargs) -> List[Chunk]:
+        cutted = []
+        if isinstance(input, list):
+            for item in input:
+                cutted.extend(self.slide_window_chunk(item, chunk_size=5000))
+        else:
+            cutted.extend(self.slide_window_chunk(input, chunk_size=5000))
+        return cutted
+
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
-        chunks = self.outline_chunk(input)
+        chunks = self.splitter_chunk(input, **kwargs)
+        chunks = self.outline_chunk(chunks)
         return chunks
 
 
@@ -634,10 +708,32 @@ if __name__ == "__main__":
     txt_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/儿科学_short.txt"
     )
-    docx_path = "/Users/zhangxinhong.zxh/Downloads/waikexue_short.doc"
-    chain = docx_reader >> length_splitter >> outline_splitter
-    chunk = docx_reader.invoke(docx_path)
-    chunk = txt_reader.invoke(txt_path)
-    chunks = length_splitter.invoke(chunk)
-    chunks = outline_splitter.invoke(chunks)
-    print(chunks)
+    docx_path = "/Users/zhangxinhong.zxh/Downloads/waikexue_short.docx"
+    test_dir = "/Users/zhangxinhong.zxh/Downloads/1127_medkag_book"
+    files = [
+        os.path.join(test_dir, file)
+        for file in os.listdir(test_dir)
+        if file.endswith(".docx")
+    ]
+    files = [
+        files[0],
+    ]
+
+    def process_file(file):
+        chain = docx_reader >> outline_splitter
+        chunks = chain.invoke(file, max_workers=10)
+        dump_chunks(chunks, output_path=file.replace(".docx", ".json"))
+
+    # with ThreadPoolExecutor(max_workers=10) as executor:
+    #     futures = [executor.submit(process_file, file) for file in files]
+
+    # for future in as_completed(futures):
+    #     print(future.result())
+
+    process_file(docx_path)
+
+    # chunk = docx_reader.invoke(docx_path)
+    # chunk = txt_reader.invoke(txt_path)
+    # chunks = length_splitter.invoke(chunk)
+    # chunks = outline_splitter.invoke(chunks)
+    # print(chunks)
