@@ -46,7 +46,7 @@ class LFChunkRetriever(DefaultRetriever):
         all_related_entities = kwargs.get('related_entities', None)
         query_ner_dict = kwargs.get('query_ner_dict', None)
         req_id = kwargs.get('req_id', '')
-        if all_related_entities is None:
+        if not all_related_entities:
             return super().recall_docs(query, top_k, **kwargs)
         return self.recall_docs_by_entities(query, all_related_entities, top_k, req_id, query_ner_dict)
 
