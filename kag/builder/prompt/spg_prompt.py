@@ -117,6 +117,41 @@ class SPGPrompt(PromptABC):
             }
         )
 
+    def process_property_names(self, properties):
+        """
+        Process property names by removing descriptions enclosed in parentheses.
+
+        This method iterates through the given dictionary of properties, removes any
+        descriptions enclosed in parentheses from the property names, and returns a new
+        dictionary with the processed names. If a property value is itself a dictionary,
+        this method will recursively process it.
+
+        Args:
+            properties (dict): A dictionary where keys are property names (possibly containing
+                               descriptions in parentheses) and values are either property values
+                               or nested dictionaries.
+
+        Returns:
+            dict: A new dictionary with the same structure as the input, but with all property
+                  names having their descriptions in parentheses removed.
+        Example:
+            >>> input_properties = {
+            ...     "authors(authors of work, such as director, actor, lyricist, composer and singer)": "John Doe"
+            ... }
+            >>> process_property_names(input_properties)
+            {'authors': 'John Doe'}
+        """
+        output = {}
+        for k, v in properties.items():
+            k = k.split("(")[0]
+            if isinstance(v, dict):
+                output[k] = self.process_property_names(v)
+            else:
+                output[k] = v
+        print(f"old properties = {properties}")
+        print(f"new properties = {output}")
+        return output
+
     def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
         """
         Parses the response string into a list of SPG records.
@@ -143,7 +178,7 @@ class SPGPrompt(PromptABC):
             output = {}
             output["category"] = item["category"]
             output["name"] = properties.pop("name")
-            output["properties"] = properties
+            output["properties"] = self.process_property_names(properties)
             outputs.append(output)
         return outputs
 

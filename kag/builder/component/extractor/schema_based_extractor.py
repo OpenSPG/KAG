@@ -182,6 +182,7 @@ class SchemaBasedExtractor(ExtractorABC):
         """
         graph = SubGraph([], [])
         entities = copy.deepcopy(entities)
+        root_nodes = []
         for record in entities:
             if record is None:
                 continue
@@ -198,6 +199,7 @@ class SchemaBasedExtractor(ExtractorABC):
             if not s_name or not s_label:
                 continue
 
+            root_nodes.append((s_name, s_label))
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
             for prop_name, prop_value in properties.items():
@@ -211,11 +213,22 @@ class SchemaBasedExtractor(ExtractorABC):
                         # pop and convert property to node and edge
                         if not isinstance(prop_value, list):
                             prop_value = [prop_value]
-                        new_nodes, new_edges = self.parse_nodes_and_edges(
-                            prop_value, o_label
-                        )
+                        (
+                            new_root_nodes,
+                            new_nodes,
+                            new_edges,
+                        ) = self.parse_nodes_and_edges(prop_value, o_label)
                         graph.nodes.extend(new_nodes)
                         graph.edges.extend(new_edges)
+                        # connect current node to property generated nodes
+                        for node in new_root_nodes:
+                            graph.add_edge(
+                                s_id=s_name,
+                                s_label=s_label,
+                                p=prop_name,
+                                o_id=node[0],
+                                o_label=node[1],
+                            )
                         tmp_properties.pop(prop_name)
             record["properties"] = tmp_properties
             # NOTE: For property converted to nodes/edges, we keep a copy of the original property values.
@@ -239,7 +252,7 @@ class SchemaBasedExtractor(ExtractorABC):
                         o_label=s_label,
                     )
 
-        return graph.nodes, graph.edges
+        return root_nodes, graph.nodes, graph.edges
 
     @staticmethod
     def add_triples_to_graph(
@@ -326,10 +339,10 @@ class SchemaBasedExtractor(ExtractorABC):
             The constructed subgraph.
         """
         graph = SubGraph([], [])
-        entity_nodes, entity_edges = self.parse_nodes_and_edges(entities)
+        _, entity_nodes, entity_edges = self.parse_nodes_and_edges(entities)
         graph.nodes.extend(entity_nodes)
         graph.edges.extend(entity_edges)
-        event_nodes, event_edges = self.parse_nodes_and_edges(events)
+        _, event_nodes, event_edges = self.parse_nodes_and_edges(events)
         graph.nodes.extend(event_nodes)
         graph.edges.extend(event_edges)
 
