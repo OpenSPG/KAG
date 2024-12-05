@@ -13,6 +13,7 @@
 from typing import Type, List
 from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.interface.builder.base import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 
@@ -76,7 +77,7 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[str]: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!" if self.language == "en" else "。？！"
+        sentence_delimiters = ".。？?！!" if KAG_PROJECT_CONF.language == "en" else "。？！"
         output = []
         start = 0
         for idx, char in enumerate(content):
@@ -145,8 +146,8 @@ class LengthSplitter(BaseTableSplitter):
                 name=f"{org_chunk.name}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
-                chunk_size = chunk_size,
-                window_length = window_length,
+                chunk_size=chunk_size,
+                window_length=window_length,
                 **org_chunk.kwargs,
             )
             output.append(chunk)
