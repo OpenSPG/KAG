@@ -5,6 +5,8 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.op_executor.op_executor import OpExecutor
 from kag.solver.logic.core_modules.parser.logic_node_parser import MathNode
 
+from kag.solver.logic.core_modules.op_executor.op_math.sympy_math.custom_function import evaluate_expression
+
 
 class SymPyMathOp(OpExecutor):
     def __init__(self, nl_query: str, kg_graph: KgGraph, schema: SchemaUtils, debug_info: dict, **kwargs):
@@ -13,17 +15,18 @@ class SymPyMathOp(OpExecutor):
     def _convert_kg_graph_2_variable_data_dict(self):
         data_set = {}
         for p, spo in self.kg_graph.query_graph.items():
-            def convert_finite_set(alias):
+            def convert_finite_set(alias_var):
+                alias = str(alias_var)
                 if alias not in data_set.keys():
-                    alias_set = self.kg_graph.get_entity_by_alias(alias)
+                    alias_set = self.kg_graph.get_entity_by_alias(alias_var)
                     alias_set_data = []
                     if alias_set:
                         for alias_data in alias_set:
                             if isinstance(alias_data, EntityData):
-                                if alias_data.type == "attribute":
-                                    alias_set_data.append(alias_data.biz_id)
+                                alias_set_data.append(alias_data.biz_id)
+                            else:
+                                alias_set_data.append(str(alias_data))
 
-                    alias_set_data = [] if alias_set is None else alias_set
                     data_set[alias] = FiniteSet(*alias_set_data)
 
             convert_finite_set(p)

@@ -3,6 +3,8 @@ from kag.solver.logic.core_modules.op_executor.op_math.sympy_math.unary.unary_se
     AverageSet, MaxSet, MinSet, AbsSet
 
 # Dictionary of custom functions for sympy
+from sympy import Basic
+
 custom_functions = {
     'count': CountSet(),
     'sum': SumSet(),
@@ -34,10 +36,10 @@ def evaluate_expression(expression, data_dict):
     for func_name, func in custom_functions.items():
         if func_name in str(result):
             result = result.replace(sp.Function(func_name), lambda *args: func.process(*args))
-
-    # Check if all functions in the result are implemented
-    for func in result.atoms(sp.Function):
-        if func.func.__name__ not in custom_functions:
-            raise NotImplementedError(f"Function '{func.func.__name__}' is not implemented.")
+    if isinstance(result, Basic):
+        # Check if all functions in the result are implemented
+        for func in result.atoms(sp.Function):
+            if func.func.__name__ not in custom_functions:
+                raise NotImplementedError(f"Function '{func.func.__name__}' is not implemented.")
 
     return result
