@@ -170,7 +170,7 @@ class SchemaBasedExtractor(ExtractorABC):
             return []
         return self.llm.invoke({"input": passage}, self.event_prompt)
 
-    def parse_nodes_and_edges(self, entities: List[Dict]):
+    def parse_nodes_and_edges(self, entities: List[Dict], category: str = None):
         """
         Parses nodes and edges from a list of entities.
 
@@ -181,12 +181,19 @@ class SchemaBasedExtractor(ExtractorABC):
             Tuple[List[Node], List[Edge]]: The parsed nodes and edges.
         """
         graph = SubGraph([], [])
+        entities = copy.deepcopy(entities)
         for record in entities:
             s_name = record.get("name", "")
-            s_label = record.get("category", "")
+            s_label = record.get("category", category)
+            properties = record.get("properties", {})
+            # At times, the name and/or label is placed in the properties.
+            if not s_name:
+                s_name = properties.pop("name", "")
+            if not s_label:
+                s_label = properties.pop("category", "")
             if not s_name or not s_label:
                 continue
-            properties = record.get("properties", {})
+
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
             for prop_name, prop_value in properties.items():
@@ -194,25 +201,21 @@ class SchemaBasedExtractor(ExtractorABC):
                     tmp_properties.pop(prop_name)
                     continue
                 if prop_name in spg_type.properties:
-                    prop = spg_type.properties.get(prop_name)
-                    o_label = prop.object_type_name_en
+                    prop_schema = spg_type.properties.get(prop_name)
+                    o_label = prop_schema.object_type_name_en
                     if o_label not in BASIC_TYPES:
-                        # pop and convert property to relation
-                        if isinstance(prop_value, str):
+                        # pop and convert property to node and edge
+                        if not isinstance(prop_value, list):
                             prop_value = [prop_value]
-                        for o_name in prop_value:
-                            if not isinstance(o_name, str):
-                                continue
-                            graph.add_node(id=o_name, name=o_name, label=o_label)
-                            graph.add_edge(
-                                s_id=s_name,
-                                s_label=s_label,
-                                p=prop_name,
-                                o_id=o_name,
-                                o_label=o_label,
-                            )
+                        new_nodes, new_edges = self.parse_nodes_and_edges(
+                            prop_value, o_label
+                        )
+                        graph.nodes.extend(new_nodes)
+                        graph.edges.extend(new_edges)
                         tmp_properties.pop(prop_name)
             record["properties"] = tmp_properties
+            # NOTE: For property converted to nodes/edges, we keep a copy of the original property values.
+            #       Perhaps it is not necessary?
             graph.add_node(id=s_name, name=s_name, label=s_label, properties=properties)
 
             if "official_name" in record:
@@ -420,4 +423,6 @@ class SchemaBasedExtractor(ExtractorABC):
 
             traceback.print_exc()
             logger.info(e)
+        logger.debug(f"input passage:\n{passage}")
+        logger.debug(f"output graphs:\n{out}")
         return out

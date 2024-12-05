@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import json
 import logging
 from enum import Enum
 from typing import Type, Dict, List
@@ -74,12 +75,26 @@ class KGWriter(SinkWriterABC):
             return label
         return f"{namespace}.{label}"
 
-    def insert_namespace(self, graph):
+    def standarlize_graph(self, graph):
         for node in graph.nodes:
             node.label = self.format_label(node.label)
         for edge in graph.edges:
             edge.from_type = self.format_label(edge.from_type)
             edge.to_type = self.format_label(edge.to_type)
+
+        for node in graph.nodes:
+            for k, v in node.properties.items():
+                if k.startswith("_"):
+                    continue
+                if not isinstance(v, str):
+                    node.properties[k] = json.dumps(v, ensure_ascii=False)
+        for edge in graph.edges:
+            for k, v in edge.properties.items():
+                if k.startswith("_"):
+                    continue
+                if not isinstance(v, str):
+                    edge.properties[k] = json.dumps(v, ensure_ascii=False)
+
         return graph
 
     def invoke(
@@ -100,7 +115,8 @@ class KGWriter(SinkWriterABC):
             List[Output]: A list of output objects (currently always [None]).
         """
 
-        input = self.insert_namespace(input)
+        input = self.standarlize_graph(input)
+        logger.debug(f"final graph to write: {input}")
         self.client.write_graph(
             sub_graph=input.to_dict(),
             operation=alter_operation,
