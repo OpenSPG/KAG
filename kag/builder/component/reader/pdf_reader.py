@@ -237,7 +237,7 @@ class PDFReader(SourceReaderABC):
                 for split_word in split_words:
                     pattern = re.compile(split_word)
                     for i, match in enumerate(re.finditer(pattern, content)):
-                        if i == 1:
+                        if i == 0:
                             start, end = match.span()
                             positions.append((split_word, start))
 

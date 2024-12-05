@@ -21,6 +21,8 @@ from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface.builder import SplitterABC
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
+import collections
+import matplotlib.pyplot as plt
 
 
 logger = logging.getLogger(__name__)
@@ -33,8 +35,10 @@ class OutlineSplitter(SplitterABC):
         self.llm = self._init_llm()
         language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
         self.prompt = OutlinePrompt(language)
-        self.max_length = kwargs.get("max_length", 2000)
         self.min_length = kwargs.get("min_length", 100)
+        self.workers = kwargs.get("workers", 32)
+        self.chunk_size = kwargs.get("chunk_size", 500)
+        self.llm_max_tokens = kwargs.get("llm_max_tokens", 10240)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -84,7 +88,7 @@ class OutlineSplitter(SplitterABC):
 
         # 然后检查当前节点是否可以与父节点合并
         content_length = len(node["content"])
-        if content_length + parent_content_length <= self.max_length and parent:
+        if content_length + parent_content_length <= self.chunk_size and parent:
             # 如果当前节点的内容长度加上父节点的内容长度不超过阈值，则合并
             parent["content"] += " " + node["content"]
             # 将当前节点的子节点添加到父节点的子节点列表中
@@ -127,10 +131,10 @@ class OutlineSplitter(SplitterABC):
     def outline_chunk_batch(self, chunk: List[Chunk]) -> List[Chunk]:
 
         assert isinstance(chunk, list)
-        self.batch_size = len(chunk) // 10 if len(chunk) > 10 else 1
+        self.batch_size = len(chunk) // self.workers if len(chunk) > self.workers else 1
 
         outlines = []
-        # 将 chunk 分成多个批次
+        # 将 chunk 分成多个批次,这里注意，为了保证outline抽取的连续行，每个batch需要连续的chunk
         batches = [
             chunk[i : i + self.batch_size]
             for i in range(0, len(chunk), self.batch_size)
@@ -138,7 +142,7 @@ class OutlineSplitter(SplitterABC):
 
         mapping = {}
         futures = []
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=self.workers) as executor:
             # 提交每个批次到线程池
             for idx, batch in enumerate(batches):
                 future = executor.submit(self.process_batch, batch)
@@ -641,7 +645,7 @@ class OutlineSplitter(SplitterABC):
                 # 当前 chunk 合并到 buffer 中
                 if (
                     chunk.name.startswith(buffer.name)  # 同一父级目录
-                    and len(buffer.content) + len(chunk.content) <= self.max_length
+                    and len(buffer.content) + len(chunk.content) <= self.chunk_size
                 ):
                     buffer.content += chunk.content
                     continue
@@ -673,18 +677,50 @@ class OutlineSplitter(SplitterABC):
 
         return merged_chunks
 
+    def log(self, chunks, log_path="./chunk_log.txt"):
+        length_counts = collections.defaultdict(int)
+
+        for chunk in chunks:
+            length = len(chunk.content)
+            length_segment = length // 10
+            length_counts[length_segment] += 1
+
+        with open(log_path, "a") as f:
+            for length_segment, count in length_counts.items():
+                f.write(
+                    f"Length segment {length_segment*10}-{(length_segment+1)*10} chunks: {count}\n"
+                )
+
+        # 绘制长度分布图
+        self.plot_length_distribution(length_counts)
+
+    def plot_length_distribution(self, length_counts):
+        segments = list(length_counts.keys())
+        counts = list(length_counts.values())
+
+        plt.figure(figsize=(10, 6))
+        plt.bar(segments, counts, color="blue")
+        plt.xlabel("Length Segment")
+        plt.ylabel("Number of Chunks")
+        plt.title("Chunk Length Distribution")
+        plt.xticks(segments)
+        plt.savefig("chunk_length_distribution.png")
+
     def splitter_chunk(self, input: Input, **kwargs) -> List[Chunk]:
         cutted = []
+        chunk_size = kwargs.get("chunk_size")
         if isinstance(input, list):
             for item in input:
-                cutted.extend(self.slide_window_chunk(item, chunk_size=5000))
+                cutted.extend(self.slide_window_chunk(item, chunk_size=chunk_size))
         else:
-            cutted.extend(self.slide_window_chunk(input, chunk_size=5000))
+            cutted.extend(self.slide_window_chunk(input, chunk_size=chunk_size))
         return cutted
 
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
-        chunks = self.splitter_chunk(input, **kwargs)
+        chunks = self.splitter_chunk(input, chunk_size=self.llm_max_tokens // 2)
         chunks = self.outline_chunk_batch(chunks)
+        chunks = self.splitter_chunk(chunks, chunk_size=self.chunk_size)
+        # self.log(chunks)
         return chunks
 
 
@@ -715,19 +751,27 @@ if __name__ == "__main__":
         for file in os.listdir(test_dir)
         if file.endswith(".docx")
     ]
+    files = [
+        files[0],
+    ]
 
     def process_file(file):
         chain = docx_reader >> outline_splitter
         chunks = chain.invoke(file, max_workers=10)
         dump_chunks(chunks, output_path=file.replace(".docx", ".json"))
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(process_file, file) for file in files]
+    def process_file_without_chain(file):
+        chunk = docx_reader.invoke(file)
+        chunks = outline_splitter.invoke(chunk)
+        dump_chunks(chunks, output_path=file.replace(".docx", ".json"))
 
-    for future in as_completed(futures):
-        print(future.result())
+    # with ThreadPoolExecutor(max_workers=10) as executor:
+    #     futures = [executor.submit(process_file, file) for file in files]
 
-    # process_file(docx_path)
+    # for future in as_completed(futures):
+    #     print(future.result())
+
+    process_file_without_chain(files[0])
 
     # chunk = docx_reader.invoke(docx_path)
     # chunk = txt_reader.invoke(txt_path)
