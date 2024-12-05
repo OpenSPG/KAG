@@ -1,6 +1,13 @@
 import time
+import hashlib
 import numpy as np
 
+def generate_hash_id(value):
+    m = hashlib.md5()
+    m.update(value.encode("utf-8"))
+    md5_hex = m.hexdigest()
+    decimal_value = int(md5_hex, 16)
+    return str(decimal_value)
 
 def delay_run(hours: int):
     start_time = time.time()

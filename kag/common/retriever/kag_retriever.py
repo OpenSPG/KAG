@@ -213,6 +213,8 @@ class DefaultRetriever(ChunkRetrieverABC):
             query = processing_phrases(query)
             if query_type not in self.schema_util.node_en_zh.keys():
                 query_type = self.schema_util.get_label_within_prefix(OTHER_TYPE)
+            else:
+                query_type = self.schema_util.get_label_within_prefix(query_type)
             typed_nodes = self.sc.search_vector(
                 label=query_type,
                 property_key="name",
