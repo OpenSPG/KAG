@@ -183,6 +183,10 @@ class SchemaBasedExtractor(ExtractorABC):
         graph = SubGraph([], [])
         entities = copy.deepcopy(entities)
         for record in entities:
+            if record is None:
+                continue
+            if isinstance(record, str):
+                record = {"name": record}
             s_name = record.get("name", "")
             s_label = record.get("category", category)
             properties = record.get("properties", {})
