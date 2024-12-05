@@ -528,7 +528,7 @@ class ParseLogicForm:
             operator, args_str = match.groups()
             output_name = None
         low_operator = operator.lower()
-        if low_operator == "get":
+        if low_operator in ["get", "output"]:
             node: GetNode = GetNode.parse_node(args_str)
             if node.alias_name in parsed_entity_set.keys():
                 s = parsed_entity_set[node.alias_name]

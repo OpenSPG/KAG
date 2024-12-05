@@ -5,8 +5,8 @@ from kag.solver.logic.core_modules.op_executor.op_math.sympy_math.custom_functio
 
 if __name__ == "__main__":
 
-    expression = "Abs(-100) + count(A) + 100"
-    t = [1, 2, 3, 4, 5]
+    expression = "count(A) + 100"
+    t = ['x', 'y', 'z', 'd3498+sd2313', 5]
     data_dict = {
         'A': FiniteSet(*t)
     }

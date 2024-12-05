@@ -279,7 +279,7 @@ class LogicExecutor:
                 if isinstance(deduce_res, list):
                     kg_qa_result += deduce_res
             elif self.math_executor.is_this_op(n):
-                self.math_executor.executor(n, self.req_id, self.params)
+                kg_qa_result = self.math_executor.executor(n, self.req_id, self.params)
             elif self.sort_executor.is_this_op(n):
                 self.sort_executor.executor(n, self.req_id, self.params)
             elif self.output_executor.is_this_op(n):

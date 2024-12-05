@@ -27,7 +27,9 @@ class SymPyMathOp(OpExecutor):
                             else:
                                 alias_set_data.append(str(alias_data))
 
-                    data_set[alias] = FiniteSet(*alias_set_data)
+                        data_set[alias] = alias_set_data
+                    else:
+                        data_set[alias] = alias_set_data
 
             convert_finite_set(p)
             convert_finite_set(spo["s"])

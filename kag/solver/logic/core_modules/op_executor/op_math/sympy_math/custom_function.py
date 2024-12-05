@@ -14,8 +14,29 @@ custom_functions = {
     'abs': AbsSet()
 }
 
+custom_functions_call = {
+    'count': CountSet().process,
+    'sum': SumSet().process,
+    'average': AverageSet().process,
+    'max': MaxSet().process,
+    'min': MinSet().process,
+    'abs': AbsSet().process
+}
 
-def evaluate_expression(expression, data_dict):
+def evaluate_expression_eval(expression, data_dict):
+    """
+    Evaluates a mathematical expression using SymPy and custom functions.
+
+    :param expression: A string representing the mathematical expression to be evaluated.
+    :param data_dict: A dictionary containing variable names and their corresponding values.
+    :return: The result of the evaluated expression.
+    """
+    data_dict.update(custom_functions_call)
+    result = eval(expression, data_dict)
+
+    return result
+
+def evaluate_expression_sympy(expression, data_dict):
     """
     Evaluates a mathematical expression using SymPy and custom functions.
 
@@ -43,3 +64,6 @@ def evaluate_expression(expression, data_dict):
                 raise NotImplementedError(f"Function '{func.func.__name__}' is not implemented.")
 
     return result
+
+def evaluate_expression(expression, data_dict):
+    return evaluate_expression_eval(expression, data_dict)
