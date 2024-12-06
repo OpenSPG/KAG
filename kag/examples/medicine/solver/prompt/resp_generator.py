@@ -16,9 +16,6 @@ class RespGenerator(PromptABC):
         "\nThe following are given reference:'$memory'\nQuestion: '$instruction'"
     )
 
-    def __init__(self, language: str = ""):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["memory", "instruction"]

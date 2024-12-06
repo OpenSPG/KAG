@@ -21,7 +21,6 @@ from knext.schema.client import SchemaClient
 
 @PromptABC.register("2wiki_ner")
 class OpenIENERPrompt(PromptABC):
-
     template_en = """
     {
     "instruction": "You're a very effective entity extraction system. Please extract all the entities that are important for knowledge build and question, along with type, category and a brief description of the entity. The description of the entity is based on your OWN KNOWLEDGE AND UNDERSTANDING and does not need to be limited to the context. the entity's category belongs taxonomically to one of the items defined by schema, please also output the category. Note: Type refers to a specific, well-defined classification, such as Professor, Actor, while category is a broader group or class that may contain more than one type, such as Person, Works. Return an empty list if the entity type does not exist. Please respond in the format of a JSON string.You can refer to the example for extraction.",
@@ -87,8 +86,8 @@ class OpenIENERPrompt(PromptABC):
 
     template_zh = template_en
 
-    def __init__(self, language: str = ""):
-        super().__init__(language)
+    def __init__(self, language: str = "", **kwargs):
+        super().__init__(language, **kwargs)
         self.schema = SchemaClient(
             project_id=KAG_PROJECT_CONF.project_id
         ).extract_types()

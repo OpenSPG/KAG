@@ -23,26 +23,18 @@ from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
-from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
+from knext.schema.client import CHUNK_TYPE, BASIC_TYPES, OTHER_TYPE
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
 
 logger = logging.getLogger(__name__)
 
 
-@ExtractorABC.register("kag")
-class KAGExtractor(ExtractorABC):
+@ExtractorABC.register("schema")
+class SchemaBasedExtractor(ExtractorABC):
     """
-    A class for extracting knowledge graph subgraphs from text using a large language model (LLM).
-    Inherits from the Extractor base class.
-
-    Attributes:
-        llm (LLMClient): The large language model client used for text processing.
-        schema (SchemaClient): The schema client used to load the schema for the project.
-        ner_prompt (PromptABC): The prompt used for named entity recognition.
-        std_prompt (PromptABC): The prompt used for named entity standardization.
-        triple_prompt (PromptABC): The prompt used for triple extraction.
-        external_graph (ExternalGraphLoaderABC): The external graph loader used for additional NER.
+    Perform knowledge extraction for enforcing schema constraints, including entities, events and their edges.
+    The types of entities and events, along with their respective attributes, are automatically inherited from the project's schema.
     """
 
     def __init__(
@@ -51,32 +43,32 @@ class KAGExtractor(ExtractorABC):
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         triple_prompt: PromptABC = None,
+        event_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
     ):
         """
-        Initializes the KAGExtractor with the specified parameters.
+        Initializes the SchemaBasedExtractor instance.
 
         Args:
-            llm (LLMClient): The large language model client.
+            llm (LLMClient): The language model client used for extraction.
             ner_prompt (PromptABC, optional): The prompt for named entity recognition. Defaults to None.
             std_prompt (PromptABC, optional): The prompt for named entity standardization. Defaults to None.
             triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
-            external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
+            event_prompt (PromptABC, optional): The prompt for event extraction. Defaults to None.
+            external_graph (ExternalGraphLoaderABC, optional): The external graph loader for additional data. Defaults to None.
         """
         self.llm = llm
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt
         self.triple_prompt = triple_prompt
+        self.event_prompt = event_prompt
 
         biz_scene = KAG_PROJECT_CONF.biz_scene
         if self.ner_prompt is None:
             self.ner_prompt = init_prompt_with_fallback("ner", biz_scene)
         if self.std_prompt is None:
             self.std_prompt = init_prompt_with_fallback("std", biz_scene)
-        if self.triple_prompt is None:
-            self.triple_prompt = init_prompt_with_fallback("triple", biz_scene)
-
         self.external_graph = external_graph
 
     @property
@@ -105,22 +97,23 @@ class KAGExtractor(ExtractorABC):
         dedup = set()
         for item in extra_ner_result:
             name = item.name
-            label = item.label
-            description = item.properties.get("desc", "")
-            semantic_type = item.properties.get("semanticType", label)
             if name not in dedup:
                 dedup.add(name)
                 output.append(
                     {
                         "name": name,
-                        "type": semantic_type,
-                        "category": label,
-                        "description": description,
+                        "category": item.label,
+                        "properties": item.properties,
                     }
                 )
         for item in ner_result:
             name = item.get("name", None)
-            if name and name not in dedup:
+            category = item.get("category", None)
+            if name is None or category is None:
+                continue
+            if not isinstance(name, str):
+                continue
+            if name not in dedup:
                 dedup.add(name)
                 output.append(item)
         return output
@@ -128,14 +121,14 @@ class KAGExtractor(ExtractorABC):
     @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
         """
-        Standardizes named entities.
+        Performs named entity standardization on a given text passage and entities.
 
         Args:
-            passage (str): The input text passage.
-            entities (List[Dict]): A list of recognized named entities.
+            passage (str): The text passage.
+            entities (List[Dict]): The list of entities to standardize.
 
         Returns:
-            Standardized entity information.
+            The result of the named entity standardization operation.
         """
         return self.llm.invoke(
             {"input": passage, "named_entities": entities}, self.std_prompt
@@ -144,68 +137,129 @@ class KAGExtractor(ExtractorABC):
     @retry(stop=stop_after_attempt(3))
     def triples_extraction(self, passage: str, entities: List[Dict]):
         """
-        Extracts triples (subject-predicate-object structures) from a given text passage based on identified entities.
+        Performs triple extraction on a given text passage and entities.
+
         Args:
-            passage (str): The text to extract triples from.
-            entities (List[Dict]): A list of entities identified in the text.
+            passage (str): The text passage.
+            entities (List[Dict]): The list of entities.
+
         Returns:
-            The result of the triples extraction operation.
+            The result of the triple extraction operation.
         """
+        if self.triple_prompt is None:
+            logger.debug("Triple extraction prompt not configured, skip.")
+
+            return []
         return self.llm.invoke(
             {"input": passage, "entity_list": entities}, self.triple_prompt
         )
 
-    def assemble_sub_graph_with_spg_records(self, entities: List[Dict]):
+    @retry(stop=stop_after_attempt(3))
+    def event_extraction(self, passage: str):
         """
-        Assembles a subgraph using SPG records.
+        Performs event extraction on a given text passage.
 
         Args:
-            entities (List[Dict]): A list of entities to be used for subgraph assembly.
+            passage (str): The text passage.
 
         Returns:
-            The assembled subgraph and the updated list of entities.
+            The result of the event extraction operation.
         """
-        sub_graph = SubGraph([], [])
+        if self.event_prompt is None:
+            logger.debug("Event extraction prompt not configured, skip.")
+            return []
+        return self.llm.invoke({"input": passage}, self.event_prompt)
+
+    def parse_nodes_and_edges(self, entities: List[Dict], category: str = None):
+        """
+        Parses nodes and edges from a list of entities.
+
+        Args:
+            entities (List[Dict]): The list of entities.
+
+        Returns:
+            Tuple[List[Node], List[Edge]]: The parsed nodes and edges.
+        """
+        graph = SubGraph([], [])
+        entities = copy.deepcopy(entities)
+        root_nodes = []
         for record in entities:
+            if record is None:
+                continue
+            if isinstance(record, str):
+                record = {"name": record}
             s_name = record.get("name", "")
-            s_label = record.get("category", "")
+            s_label = record.get("category", category)
             properties = record.get("properties", {})
+            # At times, the name and/or label is placed in the properties.
+            if not s_name:
+                s_name = properties.pop("name", "")
+            if not s_label:
+                s_label = properties.pop("category", "")
+            if not s_name or not s_label:
+                continue
+
+            root_nodes.append((s_name, s_label))
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
             for prop_name, prop_value in properties.items():
-                if prop_value == "NAN":
+                if prop_value is None:
                     tmp_properties.pop(prop_name)
                     continue
                 if prop_name in spg_type.properties:
-                    from knext.schema.model.property import Property
-
-                    prop: Property = spg_type.properties.get(prop_name)
-                    o_label = prop.object_type_name_en
+                    prop_schema = spg_type.properties.get(prop_name)
+                    o_label = prop_schema.object_type_name_en
                     if o_label not in BASIC_TYPES:
-                        if isinstance(prop_value, str):
+                        # pop and convert property to node and edge
+                        if not isinstance(prop_value, list):
                             prop_value = [prop_value]
-                        for o_name in prop_value:
-                            sub_graph.add_node(id=o_name, name=o_name, label=o_label)
-                            sub_graph.add_edge(
+                        (
+                            new_root_nodes,
+                            new_nodes,
+                            new_edges,
+                        ) = self.parse_nodes_and_edges(prop_value, o_label)
+                        graph.nodes.extend(new_nodes)
+                        graph.edges.extend(new_edges)
+                        # connect current node to property generated nodes
+                        for node in new_root_nodes:
+                            graph.add_edge(
                                 s_id=s_name,
                                 s_label=s_label,
                                 p=prop_name,
-                                o_id=o_name,
-                                o_label=o_label,
+                                o_id=node[0],
+                                o_label=node[1],
                             )
                         tmp_properties.pop(prop_name)
             record["properties"] = tmp_properties
-            sub_graph.add_node(
-                id=s_name, name=s_name, label=s_label, properties=properties
-            )
-        return sub_graph, entities
+            # NOTE: For property converted to nodes/edges, we keep a copy of the original property values.
+            #       Perhaps it is not necessary?
+            graph.add_node(id=s_name, name=s_name, label=s_label, properties=properties)
+
+            if "official_name" in record:
+                official_name = processing_phrases(record["official_name"])
+                if official_name != s_name:
+                    graph.add_node(
+                        id=official_name,
+                        name=official_name,
+                        label=s_label,
+                        properties=properties,
+                    )
+                    graph.add_edge(
+                        s_id=s_name,
+                        s_label=s_label,
+                        p="OfficialName",
+                        o_id=official_name,
+                        o_label=s_label,
+                    )
+
+        return root_nodes, graph.nodes, graph.edges
 
     @staticmethod
-    def assemble_sub_graph_with_triples(
+    def add_triples_to_graph(
         sub_graph: SubGraph, entities: List[Dict], triples: List[list]
     ):
         """
-        Assembles edges in the subgraph based on a list of triples and entities.
+        Add edges to the subgraph based on a list of triples and entities.
         Args:
             sub_graph (SubGraph): The subgraph to add edges to.
             entities (List[Dict]): A list of entities, for looking up category information.
@@ -241,7 +295,7 @@ class KAGExtractor(ExtractorABC):
         return sub_graph
 
     @staticmethod
-    def assemble_sub_graph_with_chunk(sub_graph: SubGraph, chunk: Chunk):
+    def add_chunk_to_graph(sub_graph: SubGraph, chunk: Chunk):
         """
         Associates a Chunk object with the subgraph, adding it as a node and connecting it with existing nodes.
         Args:
@@ -266,72 +320,35 @@ class KAGExtractor(ExtractorABC):
         sub_graph.id = chunk.id
         return sub_graph
 
-    def assemble_sub_graph(
+    def assemble_subgraph(
         self,
-        sub_graph: SubGraph,
         chunk: Chunk,
         entities: List[Dict],
         triples: List[list],
+        events: List[Dict],
     ):
         """
-        Integrates entity and triple information into a subgraph, and associates it with a chunk of text.
+        Assembles a subgraph from the given chunk, entities, events, and triples.
+
         Args:
-            sub_graph (SubGraph): The subgraph to be assembled.
-            chunk (Chunk): The chunk of text the subgraph is about.
-            entities (List[Dict]): A list of entities identified in the chunk.
-            triples (List[list]): A list of triples representing relationships between entities.
+            chunk (Chunk): The chunk object.
+            entities (List[Dict]): The list of entities.
+            events (List[Dict]): The list of events.
+
         Returns:
             The constructed subgraph.
         """
-        self.assemble_sub_graph_with_entities(sub_graph, entities)
-        self.assemble_sub_graph_with_triples(sub_graph, entities, triples)
-        self.assemble_sub_graph_with_chunk(sub_graph, chunk)
-        return sub_graph
+        graph = SubGraph([], [])
+        _, entity_nodes, entity_edges = self.parse_nodes_and_edges(entities)
+        graph.nodes.extend(entity_nodes)
+        graph.edges.extend(entity_edges)
+        _, event_nodes, event_edges = self.parse_nodes_and_edges(events)
+        graph.nodes.extend(event_nodes)
+        graph.edges.extend(event_edges)
 
-    def assemble_sub_graph_with_entities(
-        self, sub_graph: SubGraph, entities: List[Dict]
-    ):
-        """
-        Assembles a subgraph using named entities.
-
-        Args:
-            sub_graph (SubGraph): The subgraph object to be assembled.
-            entities (List[Dict]): A list containing entity information.
-        """
-
-        for ent in entities:
-            name = processing_phrases(ent["name"])
-            sub_graph.add_node(
-                name,
-                name,
-                ent["category"],
-                {
-                    "desc": ent.get("description", ""),
-                    "semanticType": ent.get("type", ""),
-                    **ent.get("properties", {}),
-                },
-            )
-
-            if "official_name" in ent:
-                official_name = processing_phrases(ent["official_name"])
-                if official_name != name:
-                    sub_graph.add_node(
-                        official_name,
-                        official_name,
-                        ent["category"],
-                        {
-                            "desc": ent.get("description", ""),
-                            "semanticType": ent.get("type", ""),
-                            **ent.get("properties", {}),
-                        },
-                    )
-                    sub_graph.add_edge(
-                        name,
-                        ent["category"],
-                        "OfficialName",
-                        official_name,
-                        ent["category"],
-                    )
+        self.add_chunk_to_graph(graph, chunk)
+        self.add_triples_to_graph(graph, entities, triples)
+        return graph
 
     def append_official_name(
         self, source_entities: List[Dict], entities_with_official_name: List[Dict]
@@ -359,36 +376,70 @@ class KAGExtractor(ExtractorABC):
                 official_name = tmp_dict[key]
                 tmp_entity["official_name"] = official_name
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def postprocess_graph(self, graph):
         """
-        Invokes the semantic extractor to process input data.
+        Postprocesses the graph by merging nodes with the same name and label.
 
         Args:
-            input (Input): Input data containing name and content.
+            graph (SubGraph): The graph to postprocess.
+
+        Returns:
+            The postprocessed graph.
+        """
+        try:
+            all_node_properties = {}
+            for node in graph.nodes:
+                name = node.name
+                label = node.label
+                key = (name, label)
+                if key not in all_node_properties:
+                    all_node_properties[key] = node.properties
+                else:
+                    all_node_properties[key].update(node.properties)
+            new_graph = SubGraph([], [])
+            for key, node_properties in all_node_properties.items():
+                name, label = key
+                new_graph.add_node(
+                    id=name, name=name, label=label, properties=node_properties
+                )
+            new_graph.edges = graph.edges
+            return new_graph
+        except:
+            return graph
+
+    def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the extractor on the given input.
+
+        Args:
+            input (Input): The input data.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List[Output]: A list of processed results, containing subgraph information.
+            List[Output]: The list of output results.
         """
-
         title = input.name
         passage = title + "\n" + input.content
+
         out = []
         try:
             entities = self.named_entity_recognition(passage)
-            sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
-            filtered_entities = [
-                {k: v for k, v in ent.items() if k in ["name", "category"]}
-                for ent in entities
-            ]
-            triples = self.triples_extraction(passage, filtered_entities)
-            std_entities = self.named_entity_standardization(passage, filtered_entities)
+            events = self.event_extraction(passage)
+            named_entities = []
+            for entity in entities:
+                named_entities.append(
+                    {"name": entity["name"], "category": entity["category"]}
+                )
+            triples = self.triples_extraction(passage, named_entities)
+            std_entities = self.named_entity_standardization(passage, named_entities)
             self.append_official_name(entities, std_entities)
-            self.assemble_sub_graph(sub_graph, input, entities, triples)
-            out.append(sub_graph)
+            subgraph = self.assemble_subgraph(input, entities, triples, events)
+            out.append(self.postprocess_graph(subgraph))
         except Exception as e:
             import traceback
 
             traceback.print_exc()
             logger.info(e)
+        logger.debug(f"input passage:\n{passage}")
+        logger.debug(f"output graphs:\n{out}")
         return out
