@@ -148,8 +148,6 @@ class SPGPrompt(PromptABC):
                 output[k] = self.process_property_names(v)
             else:
                 output[k] = v
-        print(f"old properties = {properties}")
-        print(f"new properties = {output}")
         return output
 
     def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
