@@ -155,9 +155,11 @@ class MathNode(LogicNode):
         raise NotImplementedError("Subclasses should implement this method.")
 
     @staticmethod
-    def parse_node(input_str, output_name):
+    def parse_node(input_str, output_name, sub_query):
         args = {'alias_name': output_name, 'expr': input_str}
-        return MathNode("math", args)
+        node = MathNode("math", args)
+        node.sub_query = sub_query + f"（计算公式: {output_name}={input_str}）"
+        return node
 
 
 # count(alias)->count_alias
@@ -553,7 +555,7 @@ class ParseLogicForm:
         elif low_operator in ["verify"]:
             node: VerifyNode = VerifyNode.parse_node(args_str)
         elif low_operator in ["math"]:
-            node: MathNode = MathNode.parse_node(args_str, output_name)
+            node: MathNode = MathNode.parse_node(args_str, output_name, sub_query)
         elif low_operator in ["count"]:
             node: CountNode = CountNode.parse_node(args_str, output_name)
         elif low_operator in ["sum"]:

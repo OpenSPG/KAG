@@ -21,10 +21,21 @@ from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
+from kag_ant.examples.FinState.solver.finstate_solver import FinStateSolver
 
 class SolverMain:
 
     def invoke(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
+        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
+        solver = FinStateSolver(report_tool=report_tool)
+        question = Question(query)
+        question.id = 0
+        answer, trace_log = solver.run(query)
+        print(trace_log)
+        report_tool.report_node(question, answer, ReporterIntermediateProcessTool.STATE.FINISH)
+        return answer
+
+    def invoke_back(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
         # resp
         report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
 
@@ -47,6 +58,6 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    res = SolverMain().invoke(3, 283, "周杰伦在哪一年基于什么作品获得的全球畅销专辑榜”冠军的华语歌手", True, host_addr="http://127.0.0.1:8887")
+    res = SolverMain().invoke(1, 283, "按照2024年前三季度营业收入增长率，预测四季度营业收入是多少？", True, host_addr="http://127.0.0.1:8887")
     print("*" * 80)
     print("The Answer is: ", res)

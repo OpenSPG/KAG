@@ -200,7 +200,7 @@ class LogicExecutor:
                         table_metrics_list = self.chunk_retriever.get_table_content_by_query(sub_query)
                     table_metrics_list = [mertic["name"] for mertic in table_metrics_list]
                     if len(table_metrics_list) > 0:
-                        docs = docs + table_metrics_list
+                        docs = table_metrics_list + docs
                         self._update_sub_question_recall_docs(table_metrics_list, question)
 
                 retrival_time = time.time() - start_time

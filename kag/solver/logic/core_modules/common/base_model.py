@@ -309,7 +309,8 @@ class LogicNode:
     def to_std(self, args):
         for key, value in args.items():
             self.args[key] = value
-        self.sub_query = args.get('sub_query', '')
+        if self.sub_query is None or len(self.sub_query.strip()) <= 0:
+            self.sub_query = args.get('sub_query', '')
 
 
 class LFPlanResult:

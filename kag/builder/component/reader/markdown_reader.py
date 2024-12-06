@@ -371,7 +371,7 @@ class MarkDownReader(SourceReaderABC):
         table_markdown_str = matches[0]
         html_table_str = markdown.markdown(table_markdown_str, extensions=["markdown.extensions.tables"])
         try:
-            df = pd.read_html(html_table_str)[0]
+            df = pd.read_html(StringIO(html_table_str))[0]
         except Exception as e:
             logging.warning(f"get_table_chuck error: {e}")
             df = pd.DataFrame()
