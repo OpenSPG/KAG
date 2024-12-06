@@ -37,6 +37,8 @@ class LLMPyMathOp(OpExecutor):
             logic_node=logic_node, history=history, init_query=init_query
         )
         expression = llm.invoke({"input": input_str}, self.expression_builder)
+        if "i don't know" in expression.lower():
+            return "I don't know"
         try:
             rst = eval(str(expression))
         except SympifyError:
