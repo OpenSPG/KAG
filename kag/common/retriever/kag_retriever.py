@@ -482,7 +482,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         """
         return []
 
-    def _match_table_mertric_constraint(self, queries: list[str], top_k: int = 1):
+    def _match_table_mertric_constraint(self, queries: List[str], top_k: int = 1):
         matched_entities = []
         matched_entities_scores = []
         for query_ner in queries:

@@ -13,6 +13,7 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.op_executor.op_deduce.deduce_executor import DeduceExecutor
+from kag.common.base.prompt_op import PromptOp
 from kag.solver.logic.core_modules.op_executor.op_math.math_executor import MathExecutor
 from kag.solver.logic.core_modules.op_executor.op_output.output_executor import OutputExecutor
 from kag.solver.logic.core_modules.op_executor.op_retrieval.retrieval_executor import RetrievalExecutor
@@ -190,9 +191,6 @@ class LogicExecutor:
                 docs_with_score = self.chunk_retriever.recall_docs(sub_query_with_history_qa, top_k=10, **params)
                 docs = ["#".join(item.split("#")[:-1]) for item in docs_with_score]
 
-                self._update_sub_question_recall_docs(docs, question)
-                self._update_sub_question_status(question, None, ReporterIntermediateProcessTool.STATE.RUNNING)
-
                 # Retrieve table mertic
                 if self.chunk_retriever and hasattr(self.chunk_retriever, 'get_table_metrics_by_query'):
                     table_metrics_list = self.chunk_retriever.get_table_metrics_by_query(sub_query)
@@ -201,7 +199,9 @@ class LogicExecutor:
                     table_metrics_list = [mertic["name"] for mertic in table_metrics_list]
                     if len(table_metrics_list) > 0:
                         docs = table_metrics_list + docs
-                        self._update_sub_question_recall_docs(table_metrics_list, question)
+
+                self._update_sub_question_recall_docs(docs, question)
+                self._update_sub_question_status(question, None, ReporterIntermediateProcessTool.STATE.RUNNING)
 
                 retrival_time = time.time() - start_time
                 sub_answer = self._generate_sub_answer(history, spo_retrieved, docs, sub_query, init_query)
