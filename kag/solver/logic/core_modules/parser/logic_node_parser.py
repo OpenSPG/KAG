@@ -79,6 +79,8 @@ class GetSPONode(LogicNode):
                     node = get_spo_node_op.p
                 elif key == "o":
                     node = get_spo_node_op.o
+                if node is None:
+                    continue
                 node.value_list.append([str(property), value])
 
 

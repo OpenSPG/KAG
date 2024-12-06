@@ -386,16 +386,20 @@ class DefaultRetriever(ChunkRetrieverABC):
                 doc_id = doc_id[0]
             else:
                 doc_score = doc_ids[doc_id]
+            try:
+                node = self.reason.query_node(
+                    label=self.schema_util.get_label_within_prefix(CHUNK_TYPE),
+                    id_value=doc_id,
+                )
+                node_dict = dict(node.items())
+                matched_docs.append(
+                    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                )
+                hits_docs.add(node_dict["name"])
+            except Exception as e:
+                logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
+                continue
             counter += 1
-            node = self.reason.query_node(
-                label=self.schema_util.get_label_within_prefix(CHUNK_TYPE),
-                id_value=doc_id,
-            )
-            node_dict = dict(node.items())
-            matched_docs.append(
-                f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
-            )
-            hits_docs.add(node_dict["name"])
         try:
             text_matched = self.sc.search_text(
                 query, [self.schema_util.get_label_within_prefix(CHUNK_TYPE)], topk=1
