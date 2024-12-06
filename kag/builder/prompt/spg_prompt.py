@@ -21,7 +21,7 @@ from knext.schema.model.base import SpgTypeEnum, ConstraintTypeEnum
 from knext.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
 from kag.common.conf import KAG_PROJECT_CONF
-
+from knext.schema.client import OTHER_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,24 @@ class SPGPrompt(PromptABC):
             }
         )
 
-    def process_property_names(self, properties):
+    def process_property_name(self, name: str):
+        """
+        Process property name by removing descriptions enclosed in parentheses.
+        Args:
+            name (dict):  property names (possibly containing descriptions in parentheses)
+
+        Returns:
+            str: A new string having the descriptions in parentheses removed.
+
+        Example:
+            >>> name = 'authors(authors of work, such as director, actor, lyricist, composer and singer)'
+            >>> process_property_name(input_properties)
+            'authors'
+        """
+
+        return name.split("(")[0]
+
+    def process_property_names(self, properties: Dict):
         """
         Process property names by removing descriptions enclosed in parentheses.
 
@@ -143,7 +160,7 @@ class SPGPrompt(PromptABC):
         """
         output = {}
         for k, v in properties.items():
-            k = k.split("(")[0]
+            k = self.process_property_name(k)
             if isinstance(v, dict):
                 output[k] = self.process_property_names(v)
             else:
@@ -451,3 +468,133 @@ class SPGEventPrompt(SPGPrompt):
         return [
             SpgTypeEnum.Event,
         ]
+
+
+@PromptABC.register("spg_relation")
+class SPGRelationPrompt(SPGPrompt):
+    template_zh: dict = {
+        "instruction": "您是一位专门从事开放信息提取（OpenIE）的专家。schema定义了你需要关注的实体类型以及可选的用括号包围的类型解释，entity_list是一组实体列表。请从input字段的文本中提取任何可能的[主语实体，主语实体类类型，谓语，宾语实体，宾语实体类型]五元组，并按照JSON列表格式列出它们。请严格遵循以下要求：\n1. 主语实体和宾语实体应至少有一个包含在entity_list实体列表，但不要求都包含\n2. 主语和宾语实体类型必须是schema定义的类型，否则无效，\n3. 明确地将代词解析为对应名称，以保持清晰度。",
+        "example": {
+            "input": "1986年，周星驰被调入无线电视台戏剧组；同年，他在单元情景剧《哥哥的女友》中饰演可爱活泼又略带羞涩的潘家伟，这也是他第一次在情景剧中担任男主角；之后，他还在温兆伦、郭晋安等人主演的电视剧中跑龙套。",
+            "entity_list": [
+                {"name": "周星驰", "category": "Person"},
+                {"name": "无线电视台", "category": "Organization"},
+                {"name": "哥哥的女友", "category": "Works"},
+                {"name": "潘家伟", "category": "Person"},
+                {"name": "温兆伦", "category": "Person"},
+                {"name": "郭晋安", "category": "Person"},
+            ],
+            "output": [
+                ["周星驰", "Person", "被调入", "无线电视台", "Organization"],
+                ["周星驰", "Person", "出演", "哥哥的女朋友", "Works"],
+                ["周星驰", "Person", "饰演", "潘家伟", "Person"],
+                ["周星驰", "Person", "共演", "温兆伦", "Person"],
+                ["周星驰", "Person", "共演", "郭晋安", "Person"],
+                [
+                    "周星驰",
+                    "Person",
+                    "跑龙套",
+                    "温兆伦、郭晋安等人主演的电视剧",
+                    "Works",
+                ],
+            ],
+        },
+    }
+
+    template_en: dict = {
+        "instruction": "You are an expert in Open Information Extraction (OpenIE). The schema defines the entity types you need to focus on, along with optional type explanations enclosed in parentheses. The entity_list is a set of entity lists. Please extract any possible [subject entity, subject entity class type, predicate, object entity, object entity type] quintuples from the text in the input field and list them in JSON list format. Please adhere strictly to the following requirements:1. At least one of the subject entity and object entity must appear in the entity_list.\n2. The subject and object entity types must be defined in the schema; otherwise, they are considered invalid.\n3.Resolve pronouns to their corresponding names explicitly to maintain clarity.",
+        "example": {
+            "input": "In 1986, Stephen Chow was transferred to the drama division of TVB; that same year, he played the cute, lively, and slightly shy Pan Jiawei in the situational drama 'My Brother's Girlfriend,' which was also his first time as the male lead in a situational drama; later, he also appeared as an extra in TV dramas starring Deric Wan, Roger Kwok, and others.",
+            "entity_list": [
+                {"name": "Stephen Chow", "category": "Person"},
+                {"name": "TVB", "category": "Organization"},
+                {"name": "My Brother's Girlfriend", "category": "Works"},
+                {"name": "Pan Jiawei", "category": "Person"},
+                {"name": "Deric Wan", "category": "Person"},
+                {"name": "Roger Kwok", "category": "Person"},
+            ],
+            "output": [
+                ["Stephen Chow", "Person", "was transferred to", "TVB", "Organization"],
+                [
+                    "Stephen Chow",
+                    "Person",
+                    "starred in",
+                    "My Brother's Girlfriend",
+                    "Works",
+                ],
+                ["Stephen Chow", "Person", "played", "Pan Jiawei", "Person"],
+                ["Stephen Chow", "Person", "co-starred with", "Deric Wan", "Person"],
+                ["Stephen Chow", "Person", "co-starred with", "Roger Kwok", "Person"],
+                [
+                    "Stephen Chow",
+                    "Person",
+                    "appeared as an extra in",
+                    "TV dramas starring Deric Wan, Roger Kwok, and others",
+                    "Works",
+                ],
+            ],
+        },
+    }
+
+    def get_accept_types(self):
+        """
+        Returns the list of accepted SPG types.
+
+        Returns:
+            List[SpgTypeEnum]: List of accepted SPG types.
+        """
+        return [
+            SpgTypeEnum.Entity,
+            SpgTypeEnum.Concept,
+        ]
+
+    def build_prompt(self, variables: Dict[str, str]) -> str:
+        """
+        Builds the prompt using the provided variables.
+
+        Args:
+            variables (Dict[str, str]): Dictionary of variables to be used in the prompt.
+
+        Returns:
+            str: The built prompt.
+        """
+        schema = []
+        for item in self.prompt_schema:
+            schema.extend(item.keys())
+        return super().build_prompt(
+            {
+                "schema": schema,
+                "input": variables.get("input"),
+            }
+        )
+
+    def parse_response(self, response: str, **kwargs) -> List[SPGRecord]:
+        """
+        Parses the response string into a list of SPG records.
+
+        Args:
+            response (str): The response string to be parsed.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[SPGRecord]: List of parsed SPG records.
+        """
+        rsp = response
+        if isinstance(rsp, str):
+            rsp = json.loads(rsp)
+        if isinstance(rsp, dict) and "output" in rsp:
+            rsp = rsp["output"]
+        outputs = []
+        for item in rsp:
+            if len(item) != 5:
+                continue
+            s_name, s_label, predicate, o_name, o_label = item
+            s_label = self.process_property_name(s_label)
+            o_label = self.process_property_name(o_label)
+            # force convert to OTHER_TYPE or just drop it?
+            if s_label not in self.schema:
+                s_label = OTHER_TYPE
+            if o_label not in self.schema:
+                o_label = OTHER_TYPE
+            outputs.append([s_name, s_label, predicate, o_name, o_label])
+        return outputs

@@ -40,3 +40,5 @@ pdfminer.six==20231228
 openspg-knext
 ollama
 tenacity
+pyhocon
+scikit-learn
