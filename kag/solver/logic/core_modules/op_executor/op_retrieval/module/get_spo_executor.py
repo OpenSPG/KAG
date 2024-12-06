@@ -209,15 +209,16 @@ class GetSPOExecutor(OpExecutor):
                 if o_data_set_up is not None:
                     for o_data in o_data_set_up:
                         o_data_set.append(o_data)
-        cur_spo_graph = None
-        if s_data_set:
-            cur_spo_graph = self._execute_get_spo_by_set(n, s_data_set, [], req_id)
-        if o_data_set:
-            cur_spo_graph_o = self._execute_get_spo_by_set(n, [], o_data_set, req_id)
-            if cur_spo_graph is None:
-                cur_spo_graph = cur_spo_graph_o
-            else:
-                cur_spo_graph.merge_kg_graph(cur_spo_graph_o)
+        cur_spo_graph = self._execute_get_spo_by_set(n, s_data_set, o_data_set, req_id)
+        if not cur_spo_graph:
+            if s_data_set:
+                cur_spo_graph = self._execute_get_spo_by_set(n, s_data_set, [], req_id)
+            if o_data_set:
+                cur_spo_graph_o = self._execute_get_spo_by_set(n, [], o_data_set, req_id)
+                if cur_spo_graph is None:
+                    cur_spo_graph = cur_spo_graph_o
+                else:
+                    cur_spo_graph.merge_kg_graph(cur_spo_graph_o)
         kg_graph = cur_spo_graph
         return kg_graph
 
