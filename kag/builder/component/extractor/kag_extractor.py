@@ -132,7 +132,7 @@ class KAGExtractor(ExtractorABC):
             properties = record.get("properties", {})
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
-            if spg_type is None:
+            if not spg_type:
                 continue
             for prop_name, prop_value in properties.items():
                 if prop_value == "NAN":
