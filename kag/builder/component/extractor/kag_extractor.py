@@ -132,10 +132,13 @@ class KAGExtractor(ExtractorABC):
             properties = record.get("properties", {})
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
+            if not spg_type:
+                continue
             for prop_name, prop_value in properties.items():
                 if prop_value == "NAN":
                     tmp_properties.pop(prop_name)
                     continue
+
                 if prop_name in spg_type.properties:
                     from knext.schema.model.property import Property
 
