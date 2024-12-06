@@ -307,10 +307,10 @@ class SchemaBasedExtractor(ExtractorABC):
         for node in sub_graph.nodes:
             sub_graph.add_edge(node.id, node.label, "source", chunk.id, CHUNK_TYPE)
         sub_graph.add_node(
-            chunk.id,
-            chunk.name,
-            CHUNK_TYPE,
-            {
+            id=chunk.id,
+            name=chunk.name,
+            label=CHUNK_TYPE,
+            properties={
                 "id": chunk.id,
                 "name": chunk.name,
                 "content": f"{chunk.name}\n{chunk.content}",
@@ -345,7 +345,6 @@ class SchemaBasedExtractor(ExtractorABC):
         _, event_nodes, event_edges = self.parse_nodes_and_edges(events)
         graph.nodes.extend(event_nodes)
         graph.edges.extend(event_edges)
-
         self.add_chunk_to_graph(graph, chunk)
         self.add_triples_to_graph(graph, entities, triples)
         return graph
@@ -389,18 +388,19 @@ class SchemaBasedExtractor(ExtractorABC):
         try:
             all_node_properties = {}
             for node in graph.nodes:
+                id_ = node.id
                 name = node.name
                 label = node.label
-                key = (name, label)
+                key = (id_, name, label)
                 if key not in all_node_properties:
                     all_node_properties[key] = node.properties
                 else:
                     all_node_properties[key].update(node.properties)
             new_graph = SubGraph([], [])
             for key, node_properties in all_node_properties.items():
-                name, label = key
+                id_, name, label = key
                 new_graph.add_node(
-                    id=name, name=name, label=label, properties=node_properties
+                    id=id_, name=name, label=label, properties=node_properties
                 )
             new_graph.edges = graph.edges
             return new_graph
