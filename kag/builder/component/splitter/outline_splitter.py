@@ -12,13 +12,14 @@
 import logging
 import os
 import re
-from typing import List, Type, Union
+from typing import List, Type, Union, Tuple
 
 from knext.common.base.runnable import Input, Output
 
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.builder.prompt.outline_align_prompt import OutlineAlignPrompt
 from kag.interface.builder import SplitterABC
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 import collections
@@ -117,19 +118,100 @@ class OutlineSplitter(SplitterABC):
         )
         return chunks
 
-    def process_batch(self, batch: List[Chunk]) -> List[Chunk]:
+    def process_batch(self, batch: List[Chunk]) -> List[Tuple[str, int]]:
+        """
+        处理单个批次的文档块
+
+        Args:
+            batch: List[Chunk] 待处理的文档块
+
+        Returns:
+            List[Tuple[str, int]] 提取的outline列表
+        """
         outlines = []
+        current_outlines = []
+
         for c in batch:
+            # 传入当前已提取的outlines作为上下文
             outline = self.llm.invoke(
-                {"input": c.content, "current_outline": outlines}, self.prompt
+                {"input": c.content, "current_outline": current_outlines}, self.prompt
             )
-            # 过滤无效的 outlines
-            outline = self.filter_outlines(outline)
-            outlines.extend(outline)
+
+            # 过滤无效的outlines
+            valid_outlines = self.filter_outlines(outline)
+            outlines.extend(valid_outlines)
+            current_outlines.extend(valid_outlines)
+
         return outlines
 
-    def outline_chunk_batch(self, chunk: List[Chunk]) -> List[Chunk]:
+    def align_outlines(self, outlines):
+        """
+        使用LLM对齐提取的outline层级
 
+        Args:
+            outlines: List[Tuple[str, int]] 原始outline列表
+
+        Returns:
+            List[Tuple[str, int]] 对齐后的outline列表
+        """
+        if not outlines:
+            return []
+
+        # 初始化align prompt
+        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
+        align_prompt = OutlineAlignPrompt(language)
+
+        # 使用LLM对齐outline
+        try:
+            aligned_outlines = self.llm.invoke({"outlines": outlines}, align_prompt)
+            logger.info("Successfully aligned outlines using LLM")
+            return aligned_outlines
+        except Exception as e:
+            logger.error(f"Error aligning outlines with LLM: {str(e)}")
+            # 如果LLM对齐失败,回退到规则based对齐
+            return self._rule_based_align(outlines)
+
+    def _rule_based_align(self, outlines):
+        """
+        基于规则的outline对齐(作为备选方案)
+        """
+        # 保留原有的基于规则的对齐逻辑作为备选
+        title_patterns = {
+            "chapter": r"第[一二三四五六七八九十\d]+章",
+            "section": r"第[一二三四五六七八九十\d]+节",
+            "part": r"第[一二三四五六七八九十\d]+部分",
+            "article": r"第[一二三四五六七八九十\d]+条",
+        }
+
+        pattern_levels = {"chapter": 1, "section": 2, "part": 1, "article": 3}
+
+        aligned_outlines = []
+        for title, level in outlines:
+            matched_pattern = None
+            for pattern_type, pattern in title_patterns.items():
+                if re.search(pattern, title):
+                    matched_pattern = pattern_type
+                    break
+
+            if matched_pattern:
+                aligned_level = pattern_levels[matched_pattern]
+            else:
+                aligned_level = level
+
+            aligned_outlines.append((title, aligned_level))
+
+        return aligned_outlines
+
+    def outline_chunk_batch(self, chunk: List[Chunk]) -> List[Chunk]:
+        """
+        批量处理文档块并提取大纲
+
+        Args:
+            chunk: List[Chunk] 输入的文档块列表
+
+        Returns:
+            List[Chunk] 处理后的文档块列表
+        """
         assert isinstance(chunk, list)
         self.batch_size = len(chunk) // self.workers if len(chunk) > self.workers else 1
 
@@ -159,12 +241,13 @@ class OutlineSplitter(SplitterABC):
             outlines.extend(result)
 
         content = "\n".join([c.content for c in chunk])
-        # chunks = self.sep_by_outline_ignore_duplicates(
-        #     content, outlines, org_chunk=chunk
-        # )
+
+        aligned_outlines = self.align_outlines(outlines)
+        # 使用对齐后的outlines进行分块
         chunks = self.sep_by_outline_with_outline_tree(
-            content, outlines, org_chunk=chunk
+            content, aligned_outlines, org_chunk=chunk
         )
+
         return chunks
 
     def filter_outlines(self, raw_outlines):
@@ -545,7 +628,7 @@ class OutlineSplitter(SplitterABC):
         按层级划分内容为 chunks，剔除无效的标题，并忽略重复的标题。
 
         参数：
-        - content: str，完整内容。
+        - content: str，完整���容。
         - outlines: List[Tuple[str, int]]，每个标题及其层级的列表。
         - min_length: int，chunk 的最小长度，低于此值时尝试合并。
         - max_length: int，chunk 的最大长度，合并后不能超过此值。
@@ -771,7 +854,7 @@ if __name__ == "__main__":
     # for future in as_completed(futures):
     #     print(future.result())
 
-    process_file_without_chain(files[0])
+    process_file_without_chain(docx_path)
 
     # chunk = docx_reader.invoke(docx_path)
     # chunk = txt_reader.invoke(txt_path)
