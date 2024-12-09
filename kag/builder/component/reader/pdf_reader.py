@@ -34,6 +34,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 import pdfminer
+import PyPDF2
 
 
 import logging
@@ -66,6 +67,102 @@ class PDFReader(SourceReaderABC):
     @property
     def output_types(self) -> Type[Output]:
         return Chunk
+
+    def _get_full_outlines(self):
+        outlines = self.pdf_reader.outline
+        level_outlines = []
+
+        def _extract_outline_page_numbers(outlines, level=0):
+            for outline in outlines:
+                if isinstance(outline, list):
+                    _extract_outline_page_numbers(outline, level + 1)
+                else:
+                    title = outline.title
+                    page_number = self.pdf_reader.get_destination_page_number(outline)
+                    level_outlines.append((title, level, page_number, 0))
+
+        _extract_outline_page_numbers(outlines)
+        for idx, outline in enumerate(level_outlines):
+            level_outlines[idx] = (
+                outline[0],
+                outline[1],
+                outline[2],
+                level_outlines[idx + 1][2] if idx + 1 < len(level_outlines) else -1,
+            )
+        return level_outlines
+
+    def extract_content_from_outline(
+        self, page_contents, level_outlines
+    ) -> List[Chunk]:
+        total_content = "".join(page_contents)
+
+        def get_content_start(outline, page_contents):
+            page_start = outline[2]
+            page_end = outline[3]
+            # Calculate total length of previous pages
+            previous_pages_length = sum(
+                len(content) for content in page_contents[:page_start]
+            )
+
+            find_content = "".join(page_contents[page_start:page_end])
+            pattern = re.compile(outline[0])
+            match = pattern.search(find_content)
+            start = 0
+            if match:
+                start, end = match.span()
+                # Add the length of previous pages to the start position
+                start = previous_pages_length + start
+
+            return start if start > previous_pages_length else -1
+
+        final_content = []
+        for idx, outline in enumerate(level_outlines):
+            start = get_content_start(outline, page_contents)
+            next_start = (
+                get_content_start(level_outlines[idx + 1], page_contents)
+                if idx + 1 < len(level_outlines)
+                else -1
+            )
+            if start >= 0 and next_start >= 0:
+                content = total_content[start:next_start]
+                final_content.append(
+                    (outline[0], outline[1], start, next_start, content)
+                )
+            elif start >= 0 and next_start < 0 and idx + 1 == len(level_outlines):
+                content = total_content[start:]
+                final_content.append((outline[0], outline[1], start, -1, content))
+        return final_content
+
+    def convert_finel_content_to_chunks(self, final_content):
+        def create_chunk(title, content, basename):
+            return Chunk(
+                id=Chunk.generate_hash_id(f"{basename}#{title}"),
+                name=f"{basename}#{title}",
+                content=content,
+                sub_chunks=[],
+            )
+
+        level_map = {}
+        chunks = []
+
+        for title, level, start, end, content in final_content:
+            chunk = create_chunk(
+                title, content, os.path.splitext(os.path.basename(self.fd.name))[0]
+            )
+            chunks.append(chunk)
+
+            if level == 0:
+                level_map[0] = chunk
+            else:
+                parent_level = level - 1
+                while parent_level >= 0:
+                    if parent_level in level_map:
+                        level_map[parent_level].sub_chunks.append(chunk)
+                        break
+                    parent_level -= 1
+                level_map[level] = chunk
+
+        return chunks
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]], basename) -> List[Chunk]:
         if isinstance(chunk, Chunk):
@@ -174,6 +271,8 @@ class PDFReader(SourceReaderABC):
             raise FileNotFoundError(f"The file {input} does not exist.")
 
         self.fd = open(input, "rb")
+        self.pdf_reader = PyPDF2.PdfReader(self.fd)
+        self.level_outlines = self._get_full_outlines()
         self.parser = PDFParser(self.fd)
         self.document = PDFDocument(self.parser)
         chunks = []
@@ -207,9 +306,26 @@ class PDFReader(SourceReaderABC):
             if len(outline_chunks) > 0:
                 chunks = outline_chunks
 
-        else:
+        elif True:
             split_words = []
 
+            page_contents = []
+
+            with open(input, "rb") as file:
+                for idx, page_layout in enumerate(extract_pages(file)):
+                    content = ""
+                    for element in page_layout:
+                        if hasattr(element, "get_text"):
+                            content = content + element.get_text()
+                    content = content.replace("\n", "")
+                    page_contents.append(content)
+
+            final_content = self.extract_content_from_outline(
+                page_contents, self.level_outlines
+            )
+            chunks = self.convert_finel_content_to_chunks(final_content)
+
+        else:
             for item in outlines:
                 level, title, dest, a, se = item
                 split_words.append(title.strip().replace(" ", ""))
@@ -231,10 +347,12 @@ class PDFReader(SourceReaderABC):
             positions = [(input, 0)]
             for split_word in split_words:
                 pattern = re.compile(split_word)
+                start = 0
                 for i, match in enumerate(re.finditer(pattern, content)):
-                    if i == 0:
+                    if i <= 1:
                         start, end = match.span()
-                        positions.append((split_word, start))
+                if start > 0:
+                    positions.append((split_word, start))
 
             for idx, position in enumerate(positions):
                 chunk = Chunk(
@@ -252,9 +370,15 @@ class PDFReader(SourceReaderABC):
 
 
 if __name__ == "__main__":
+    from kag.common.env import init_kag_config
+
+    init_kag_config(
+        "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/2wiki/kag_config.cfg"
+    )
     reader = PDFReader(split_using_outline=True)
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
     )
+    pdf_path = "/Users/zhangxinhong.zxh/Downloads/labor-law-v5.pdf"
     chunk = reader.invoke(pdf_path)
     print(chunk)
