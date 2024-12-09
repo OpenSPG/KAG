@@ -120,61 +120,60 @@ class PDFReader(SourceReaderABC):
                 return text
 
             outline = (normalize_text(outline[0]), outline[1], outline[2], outline[3])
-            # 先尝试使用原始标题（只去除首尾空格）
-            title_with_spaces = outline[0].strip()
-            cleaned_title_with_spaces = re.escape(title_with_spaces)
-            pattern_with_spaces = re.compile(cleaned_title_with_spaces, re.IGNORECASE)
-            match = pattern_with_spaces.search(find_content)
 
-            # 如果找到了匹配结果，直接返回
-            if match:
-                return previous_pages_length + match.start()
+            def fuzzy_search(pattern, text, threshold=0.90):
+                from difflib import SequenceMatcher
+
+                pattern_len = len(pattern)
+                for i in range(len(text) - pattern_len + 1):
+                    substring = text[i : i + pattern_len]
+                    similarity = SequenceMatcher(None, pattern, substring).ratio()
+                    if similarity >= threshold:
+                        return i
+                return -1
+
+            # 先尝试使用原始标题进行模糊匹配
+            title_with_spaces = outline[0].strip()
+            fuzzy_match_pos = fuzzy_search(title_with_spaces, find_content)
+            if fuzzy_match_pos != -1:
+                return previous_pages_length + fuzzy_match_pos
 
             # 如果没找到，尝试使用去除所有空格的标题
             title_no_spaces = title_with_spaces.replace(" ", "")
-            cleaned_title_no_spaces = re.escape(title_no_spaces)
-            pattern_no_spaces = re.compile(cleaned_title_no_spaces, re.IGNORECASE)
             find_content_no_spaces = find_content.replace(" ", "")
-            match = pattern_no_spaces.search(find_content_no_spaces)
+            fuzzy_match_pos = fuzzy_search(title_no_spaces, find_content_no_spaces)
 
-            if match:
-                # 需要计算原始文本中的实际位置
+            if fuzzy_match_pos != -1:
+                # 计算原始文本中的实际位置
                 original_pos = 0
                 no_spaces_pos = 0
-                target_no_spaces_pos = match.start()
-
-                while no_spaces_pos < target_no_spaces_pos:
+                while no_spaces_pos < fuzzy_match_pos:
                     if find_content[original_pos] != " ":
                         no_spaces_pos += 1
                     original_pos += 1
-
                 return previous_pages_length + original_pos
 
-            # 如果在当前页找不到，尝试在扩展范围内查找
+            # 在扩展范围内进行模糊匹配
             extended_content = "".join(
                 page_contents[
                     max(0, page_start - 1) : page_end if page_end != -1 else None
                 ]
             )
 
-            # 先尝试带空格的版本
-            match = pattern_with_spaces.search(extended_content)
-            if match:
+            fuzzy_match_pos = fuzzy_search(title_with_spaces, extended_content)
+            if fuzzy_match_pos != -1:
                 extended_previous_length = sum(
                     len(content) for content in page_contents[: max(0, page_start - 1)]
                 )
-                return extended_previous_length + match.start()
+                return extended_previous_length + fuzzy_match_pos
 
-            # 最后尝试不带空格的版本
+            # 最后尝试不带空格的扩展内容
             extended_content_no_spaces = extended_content.replace(" ", "")
-            match = pattern_no_spaces.search(extended_content_no_spaces)
-            if match:
-                # 计算原始扩展文本中的实际位置
+            fuzzy_match_pos = fuzzy_search(title_no_spaces, extended_content_no_spaces)
+            if fuzzy_match_pos != -1:
                 original_pos = 0
                 no_spaces_pos = 0
-                target_no_spaces_pos = match.start()
-
-                while no_spaces_pos < target_no_spaces_pos:
+                while no_spaces_pos < fuzzy_match_pos:
                     if extended_content[original_pos] != " ":
                         no_spaces_pos += 1
                     original_pos += 1
@@ -341,120 +340,132 @@ class PDFReader(SourceReaderABC):
         if not os.path.isfile(input):
             raise FileNotFoundError(f"The file {input} does not exist.")
 
-        self.fd = open(input, "rb")
-        self.pdf_reader = PyPDF2.PdfReader(self.fd)
-        self.level_outlines = self._get_full_outlines()
-        self.parser = PDFParser(self.fd)
-        self.document = PDFDocument(self.parser)
-        chunks = []
-        basename, _ = os.path.splitext(os.path.basename(input))
-
-        # get outline
+        self.fd = None
         try:
-            outlines = self.document.get_outlines()
-        except Exception as e:
-            logger.warning(f"loading PDF file: {e}")
-            self.outline_flag = False
+            self.fd = open(input, "rb")
+            self.pdf_reader = PyPDF2.PdfReader(self.fd)
+            self.level_outlines = self._get_full_outlines()
+            self.parser = PDFParser(self.fd)
+            self.document = PDFDocument(self.parser)
+            chunks = []
+            basename, _ = os.path.splitext(os.path.basename(input))
 
-        if not self.outline_flag:
+            # get outline
+            try:
+                outlines = self.document.get_outlines()
+            except Exception as e:
+                logger.warning(f"loading PDF file: {e}")
+                self.outline_flag = False
 
-            with open(input, "rb") as file:
-                for idx, page_layout in enumerate(extract_pages(file)):
-                    content = ""
-                    for element in page_layout:
-                        if hasattr(element, "get_text"):
-                            content = content + element.get_text()
+            if not self.outline_flag:
+
+                with open(input, "rb") as file:
+                    for idx, page_layout in enumerate(extract_pages(file)):
+                        content = ""
+                        for element in page_layout:
+                            if hasattr(element, "get_text"):
+                                content = content + element.get_text()
+                        chunk = Chunk(
+                            id=Chunk.generate_hash_id(f"{basename}#{idx}"),
+                            name=f"{basename}#{idx}",
+                            content=content,
+                        )
+                        chunks.append(chunk)
+                try:
+                    outline_chunks = self.outline_chunk(chunks, basename)
+                except Exception as e:
+                    raise RuntimeError(f"Error loading PDF file: {e}")
+                if len(outline_chunks) > 0:
+                    chunks = outline_chunks
+
+            elif True:
+                split_words = []
+
+                page_contents = []
+
+                with open(input, "rb") as file:
+                    for idx, page_layout in enumerate(extract_pages(file)):
+                        content = ""
+                        for element in page_layout:
+                            if hasattr(element, "get_text"):
+                                content = content + element.get_text()
+                        content = content.replace("\n", "")
+                        page_contents.append(content)
+
+                # 使用正则表达式移除所有空白字符（包括空格、制表符、换行符等）
+                page_contents = [
+                    re.sub(r"\s+", "", content) for content in page_contents
+                ]
+                page_contents = [
+                    re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", content)
+                    for content in page_contents
+                ]
+                page_contents = ["".join(content.split()) for content in page_contents]
+
+                final_content = self.extract_content_from_outline(
+                    page_contents, self.level_outlines
+                )
+                chunks = self.convert_finel_content_to_chunks(final_content)
+
+            else:
+                for item in outlines:
+                    level, title, dest, a, se = item
+                    split_words.append(title.strip().replace(" ", ""))
+                # save the outline position in content
+                try:
+                    text = extract_text(input)
+
+                except Exception as e:
+                    raise RuntimeError(f"Error loading PDF file: {e}")
+
+                cleaned_pages = [
+                    self._process_single_page(x, "", False, False) for x in text
+                ]
+                sentences = []
+                for cleaned_page in cleaned_pages:
+                    sentences += cleaned_page
+
+                content = "".join(sentences)
+                positions = [(input, 0)]
+                for split_word in split_words:
+                    pattern = re.compile(split_word)
+                    start = 0
+                    for i, match in enumerate(re.finditer(pattern, content)):
+                        if i <= 1:
+                            start, end = match.span()
+                    if start > 0:
+                        positions.append((split_word, start))
+
+                for idx, position in enumerate(positions):
                     chunk = Chunk(
-                        id=Chunk.generate_hash_id(f"{basename}#{idx}"),
-                        name=f"{basename}#{idx}",
-                        content=content,
+                        id=Chunk.generate_hash_id(f"{basename}#{position[0]}"),
+                        name=f"{basename}#{position[0]}",
+                        content=content[
+                            position[1] : (
+                                positions[idx + 1][1]
+                                if idx + 1 < len(positions)
+                                else None
+                            )
+                        ],
                     )
                     chunks.append(chunk)
-            try:
-                outline_chunks = self.outline_chunk(chunks, basename)
-            except Exception as e:
-                raise RuntimeError(f"Error loading PDF file: {e}")
-            if len(outline_chunks) > 0:
-                chunks = outline_chunks
 
-        elif True:
-            split_words = []
+            # # 保存中间结果到文件
+            # import pickle
 
-            page_contents = []
+            # with open("debug_data.pkl", "wb") as f:
+            #     pickle.dump(
+            #         {"page_contents": page_contents, "level_outlines": self.level_outlines},
+            #         f,
+            #     )
 
-            with open(input, "rb") as file:
-                for idx, page_layout in enumerate(extract_pages(file)):
-                    content = ""
-                    for element in page_layout:
-                        if hasattr(element, "get_text"):
-                            content = content + element.get_text()
-                    content = content.replace("\n", "")
-                    page_contents.append(content)
+            return chunks
 
-            # 使用正则表达式移除所有空白字符（包括空格、制表符、换行符等）
-            page_contents = [re.sub(r"\s+", "", content) for content in page_contents]
-            page_contents = [
-                re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", content)
-                for content in page_contents
-            ]
-            page_contents = ["".join(content.split()) for content in page_contents]
-
-            final_content = self.extract_content_from_outline(
-                page_contents, self.level_outlines
-            )
-            chunks = self.convert_finel_content_to_chunks(final_content)
-
-        else:
-            for item in outlines:
-                level, title, dest, a, se = item
-                split_words.append(title.strip().replace(" ", ""))
-            # save the outline position in content
-            try:
-                text = extract_text(input)
-
-            except Exception as e:
-                raise RuntimeError(f"Error loading PDF file: {e}")
-
-            cleaned_pages = [
-                self._process_single_page(x, "", False, False) for x in text
-            ]
-            sentences = []
-            for cleaned_page in cleaned_pages:
-                sentences += cleaned_page
-
-            content = "".join(sentences)
-            positions = [(input, 0)]
-            for split_word in split_words:
-                pattern = re.compile(split_word)
-                start = 0
-                for i, match in enumerate(re.finditer(pattern, content)):
-                    if i <= 1:
-                        start, end = match.span()
-                if start > 0:
-                    positions.append((split_word, start))
-
-            for idx, position in enumerate(positions):
-                chunk = Chunk(
-                    id=Chunk.generate_hash_id(f"{basename}#{position[0]}"),
-                    name=f"{basename}#{position[0]}",
-                    content=content[
-                        position[1] : (
-                            positions[idx + 1][1] if idx + 1 < len(positions) else None
-                        )
-                    ],
-                )
-                chunks.append(chunk)
-
-        # # 保存中间结果到文件
-        # import pickle
-
-        # with open("debug_data.pkl", "wb") as f:
-        #     pickle.dump(
-        #         {"page_contents": page_contents, "level_outlines": self.level_outlines},
-        #         f,
-        #     )
-
-        return chunks
+        except Exception as e:
+            raise RuntimeError(f"Error loading PDF file: {e}")
+        finally:
+            if self.fd:
+                self.fd.close()
 
 
 if __name__ == "__main__":
