@@ -392,6 +392,10 @@ class DefaultRetriever(ChunkRetrieverABC):
                     id_value=doc_id,
                 )
                 node_dict = dict(node.items())
+                if 'name' not in node_dict:
+                    if 'content' not in node_dict:
+                        continue
+                    node_dict["name"] = ""
                 matched_docs.append(
                     f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
                 )
