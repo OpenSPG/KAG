@@ -105,9 +105,21 @@ class PDFReader(SourceReaderABC):
             )
 
             find_content = "".join(
-                page_contents[page_start : page_end if page_end != -1 else None]
+                page_contents[page_start : page_end + 1 if page_end != -1 else None]
             )
 
+            # 标准化标题中的特殊字符
+            def normalize_text(text):
+                # 将破折号"—"转换为中文数字"一"
+                text = text.replace("—", "一")
+                # 可以添加其他中英文标点的统一转换
+                text = re.sub(r"［", "[", text)
+                text = re.sub(r"］", "]", text)
+                text = re.sub(r"（", "(", text)
+                text = re.sub(r"）", ")", text)
+                return text
+
+            outline = (normalize_text(outline[0]), outline[1], outline[2], outline[3])
             # 先尝试使用原始标题（只去除首尾空格）
             title_with_spaces = outline[0].strip()
             cleaned_title_with_spaces = re.escape(title_with_spaces)
@@ -379,6 +391,14 @@ class PDFReader(SourceReaderABC):
                     content = content.replace("\n", "")
                     page_contents.append(content)
 
+            # 使用正则表达式移除所有空白字符（包括空格、制表符、换行符等）
+            page_contents = [re.sub(r"\s+", "", content) for content in page_contents]
+            page_contents = [
+                re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", content)
+                for content in page_contents
+            ]
+            page_contents = ["".join(content.split()) for content in page_contents]
+
             final_content = self.extract_content_from_outline(
                 page_contents, self.level_outlines
             )
@@ -425,14 +445,14 @@ class PDFReader(SourceReaderABC):
                 )
                 chunks.append(chunk)
 
-        # 保存中间结果到文件
-        import pickle
+        # # 保存中间结果到文件
+        # import pickle
 
-        with open("debug_data.pkl", "wb") as f:
-            pickle.dump(
-                {"page_contents": page_contents, "level_outlines": self.level_outlines},
-                f,
-            )
+        # with open("debug_data.pkl", "wb") as f:
+        #     pickle.dump(
+        #         {"page_contents": page_contents, "level_outlines": self.level_outlines},
+        #         f,
+        #     )
 
         return chunks
 
