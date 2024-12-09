@@ -9,7 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import os
 from typing import Type, List, Union
 
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
@@ -49,7 +49,9 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             list: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!" if self.language == "en" else "。？！"
+        sentence_delimiters = (
+            ".。？?！!" if os.getenv("KAG_PROMPT_LANGUAGE", "zh") == "en" else "。？！"
+        )
         output = []
         start = 0
         for idx, char in enumerate(content):
