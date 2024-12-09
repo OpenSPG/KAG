@@ -99,21 +99,80 @@ class PDFReader(SourceReaderABC):
         def get_content_start(outline, page_contents):
             page_start = outline[2]
             page_end = outline[3]
-            # Calculate total length of previous pages
+
             previous_pages_length = sum(
                 len(content) for content in page_contents[:page_start]
             )
 
-            find_content = "".join(page_contents[page_start:page_end])
-            pattern = re.compile(outline[0])
-            match = pattern.search(find_content)
-            start = 0
-            if match:
-                start, end = match.span()
-                # Add the length of previous pages to the start position
-                start = previous_pages_length + start
+            find_content = "".join(
+                page_contents[page_start : page_end if page_end != -1 else None]
+            )
 
-            return start if start > previous_pages_length else -1
+            # 先尝试使用原始标题（只去除首尾空格）
+            title_with_spaces = outline[0].strip()
+            cleaned_title_with_spaces = re.escape(title_with_spaces)
+            pattern_with_spaces = re.compile(cleaned_title_with_spaces, re.IGNORECASE)
+            match = pattern_with_spaces.search(find_content)
+
+            # 如果找到了匹配结果，直接返回
+            if match:
+                return previous_pages_length + match.start()
+
+            # 如果没找到，尝试使用去除所有空格的标题
+            title_no_spaces = title_with_spaces.replace(" ", "")
+            cleaned_title_no_spaces = re.escape(title_no_spaces)
+            pattern_no_spaces = re.compile(cleaned_title_no_spaces, re.IGNORECASE)
+            find_content_no_spaces = find_content.replace(" ", "")
+            match = pattern_no_spaces.search(find_content_no_spaces)
+
+            if match:
+                # 需要计算原始文本中的实际位置
+                original_pos = 0
+                no_spaces_pos = 0
+                target_no_spaces_pos = match.start()
+
+                while no_spaces_pos < target_no_spaces_pos:
+                    if find_content[original_pos] != " ":
+                        no_spaces_pos += 1
+                    original_pos += 1
+
+                return previous_pages_length + original_pos
+
+            # 如果在当前页找不到，尝试在扩展范围内查找
+            extended_content = "".join(
+                page_contents[
+                    max(0, page_start - 1) : page_end if page_end != -1 else None
+                ]
+            )
+
+            # 先尝试带空格的版本
+            match = pattern_with_spaces.search(extended_content)
+            if match:
+                extended_previous_length = sum(
+                    len(content) for content in page_contents[: max(0, page_start - 1)]
+                )
+                return extended_previous_length + match.start()
+
+            # 最后尝试不带空格的版本
+            extended_content_no_spaces = extended_content.replace(" ", "")
+            match = pattern_no_spaces.search(extended_content_no_spaces)
+            if match:
+                # 计算原始扩展文本中的实际位置
+                original_pos = 0
+                no_spaces_pos = 0
+                target_no_spaces_pos = match.start()
+
+                while no_spaces_pos < target_no_spaces_pos:
+                    if extended_content[original_pos] != " ":
+                        no_spaces_pos += 1
+                    original_pos += 1
+
+                extended_previous_length = sum(
+                    len(content) for content in page_contents[: max(0, page_start - 1)]
+                )
+                return extended_previous_length + original_pos
+
+            return -1
 
         final_content = []
         for idx, outline in enumerate(level_outlines):
@@ -365,6 +424,15 @@ class PDFReader(SourceReaderABC):
                     ],
                 )
                 chunks.append(chunk)
+
+        # 保存中间结果到文件
+        import pickle
+
+        with open("debug_data.pkl", "wb") as f:
+            pickle.dump(
+                {"page_contents": page_contents, "level_outlines": self.level_outlines},
+                f,
+            )
 
         return chunks
 
