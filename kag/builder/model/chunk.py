@@ -23,13 +23,13 @@ class ChunkTypeEnum(str, Enum):
 class Chunk:
     def __init__(
         self,
-        id: str,
         name: str,
         content: str,
+        id: str = None,
         type: ChunkTypeEnum = ChunkTypeEnum.Text,
         **kwargs,
     ):
-        self.id = id
+        self.id = id or self.generate_hash_id(name + content)
         self.name = name
         self.type = type
         self.content = content
