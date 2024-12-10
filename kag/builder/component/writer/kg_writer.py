@@ -13,7 +13,7 @@ import logging
 from enum import Enum
 from typing import Type, Dict, List
 
-from knext.graph_algo.client import GraphAlgoClient
+from knext.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
 from kag.common.conf import KAG_PROJECT_CONF
@@ -49,7 +49,7 @@ class KGWriter(SinkWriterABC):
             self.project_id = KAG_PROJECT_CONF.project_id
         else:
             self.project_id = project_id
-        self.client = GraphAlgoClient(project_id=project_id)
+        self.client = GraphClient(project_id=project_id)
 
     @property
     def input_types(self) -> Type[Input]:
