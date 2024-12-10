@@ -40,6 +40,7 @@ class OutlineSplitter(SplitterABC):
         self.workers = kwargs.get("workers", 32)
         self.chunk_size = kwargs.get("chunk_size", 500)
         self.llm_max_tokens = kwargs.get("llm_max_tokens", 10240)
+        self.align_parallel = kwargs.get("align_parallel", False)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -138,7 +139,11 @@ class OutlineSplitter(SplitterABC):
             )
 
             # 过滤无效的outlines
-            valid_outlines = self.filter_outlines(outline)
+            # paralle模式可以用量大的outline: 暂时没有好的方法:TODO
+            if self.align_parallel:
+                valid_outlines = self.filter_outlines_parallel(outline)
+            else:
+                valid_outlines = self.filter_outlines(outline)
             outlines.extend(valid_outlines)
             current_outlines.extend(valid_outlines)
 
@@ -146,7 +151,7 @@ class OutlineSplitter(SplitterABC):
 
     def align_outlines(self, outlines):
         """
-        使用LLM对齐提取的outline层级
+        使用LLM对齐提取的outline层级，使用前一个对齐完成的batch的后30%作为交叉部分
 
         Args:
             outlines: List[Tuple[str, int]] 原始outline列表
@@ -160,15 +165,170 @@ class OutlineSplitter(SplitterABC):
         # 初始化align prompt
         language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
         align_prompt = OutlineAlignPrompt(language)
+        max_length = 4000
 
-        # 使用LLM对齐outline
         try:
-            aligned_outlines = self.llm.invoke({"outlines": outlines}, align_prompt)
-            logger.info("Successfully aligned outlines using LLM")
+            # 处理第一个batch
+            current_batch = []
+            current_str_len = 0
+            aligned_outlines = []
+
+            for outline in outlines:
+                # 计算添加当前outline后的总字符串长度
+                test_batch = current_batch + [outline]
+                batch_str = str(test_batch)  # 将整个batch转换为字符串计算长度
+
+                if len(batch_str) <= max_length:
+                    current_batch.append(outline)
+                    current_str_len = len(batch_str)
+                else:
+                    break
+
+            # 对齐第一个batch
+            if current_batch:
+                aligned_batch = self.llm.invoke(
+                    {"outlines": current_batch}, align_prompt
+                )
+                aligned_outlines.extend(aligned_batch)
+                last_aligned = aligned_batch
+
+                # 处理剩余的outlines
+                remaining_outlines = outlines[len(current_batch) :]
+
+                while remaining_outlines:
+                    # 获取前一个batch最后30%的内容作为交叉部分
+                    overlap_count = max(1, len(last_aligned) * 30 // 100)
+                    overlap_part = last_aligned[-overlap_count:]
+
+                    # 构建新batch
+                    current_batch = []
+                    current_str_len = len(str(overlap_part))
+
+                    # 添加新的outlines直到达到长度限制
+                    for outline in remaining_outlines:
+                        test_batch = overlap_part + current_batch + [outline]
+                        batch_str = str(test_batch)
+
+                        if len(batch_str) <= max_length:
+                            current_batch.append(outline)
+                            current_str_len = len(batch_str)
+                        else:
+                            break
+
+                    if not current_batch:
+                        # 如果无法添加任何新outline，说明单个outline太长，需要特殊处理
+                        logger.warning(
+                            "Single outline too long, processing individually"
+                        )
+                        current_batch = [remaining_outlines[0]]
+
+                    # 对齐当前batch（包含交叉部分）
+                    full_batch = overlap_part + current_batch
+                    aligned_batch = self.llm.invoke(
+                        {"outlines": full_batch}, align_prompt
+                    )
+
+                    # 只保留非交叉部分的结果
+                    aligned_outlines.extend(aligned_batch[overlap_count:])
+                    last_aligned = aligned_batch
+
+                    # 更新remaining_outlines
+                    remaining_outlines = remaining_outlines[len(current_batch) :]
+
             return aligned_outlines
+
         except Exception as e:
             logger.error(f"Error aligning outlines with LLM: {str(e)}")
-            # 如果LLM对齐失败,回退到规则based对齐
+            return self._rule_based_align(outlines)
+
+    def align_outlines_parallel(self, outlines):
+        """
+        并行处理outline对齐，每个batch与相邻batch有30%的交叉部分
+
+        Args:
+            outlines: List[Tuple[str, int]] 原始outline列表
+
+        Returns:
+            List[Tuple[str, int]] 对齐后的outline列表
+        """
+        if not outlines:
+            return []
+
+        # 初始化align prompt
+        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
+        align_prompt = OutlineAlignPrompt(language)
+        max_length = 8000
+
+        try:
+            # 将outlines分成多个batch，每个batch最大长度不超过max_length
+            batches = []
+            current_batch = []
+            current_str_len = 0
+
+            for outline in outlines:
+                test_batch = current_batch + [outline]
+                batch_str = str(test_batch)
+
+                if len(batch_str) <= max_length:
+                    current_batch.append(outline)
+                    current_str_len = len(batch_str)
+                else:
+                    if current_batch:
+                        batches.append(current_batch)
+                    current_batch = [outline]
+                    current_str_len = len(str(outline))
+
+            if current_batch:
+                batches.append(current_batch)
+
+            # 并行处理每个batch
+            futures = []
+            with ThreadPoolExecutor(max_workers=self.workers) as executor:
+                for i, batch in enumerate(batches):
+                    # 获取与前一个batch的交叉部分
+                    prev_overlap = []
+                    if i > 0:
+                        prev_batch = batches[i - 1]
+                        overlap_count = max(1, len(prev_batch) * 30 // 100)
+                        prev_overlap = prev_batch[-overlap_count:]
+
+                    # 获取与后一个batch的交叉部分
+                    next_overlap = []
+                    if i < len(batches) - 1:
+                        next_batch = batches[i + 1]
+                        overlap_count = max(1, len(next_batch) * 30 // 100)
+                        next_overlap = next_batch[:overlap_count]
+
+                    # 构建完整的batch（包含交叉部分）
+                    full_batch = prev_overlap + batch + next_overlap
+
+                    # 提交任务到线程池
+                    future = executor.submit(
+                        self.llm.invoke, {"outlines": full_batch}, align_prompt
+                    )
+                    futures.append((i, future, len(prev_overlap), len(next_overlap)))
+
+            # 收集结果并按原始顺序合并
+            results = [None] * len(batches)
+            for i, future, prev_len, next_len in futures:
+                try:
+                    aligned_batch = future.result()
+                    # 只保留非交叉部分
+                    results[i] = aligned_batch[prev_len : len(aligned_batch) - next_len]
+                except Exception as e:
+                    logger.error(f"Error processing batch {i}: {str(e)}")
+                    # 如果处理失败，使用规则based对齐处理该batch
+                    results[i] = self._rule_based_align(batches[i])
+
+            # 合并所有结果
+            aligned_outlines = []
+            for batch_result in results:
+                aligned_outlines.extend(batch_result)
+
+            return aligned_outlines
+
+        except Exception as e:
+            logger.error(f"Error aligning outlines with LLM: {str(e)}")
             return self._rule_based_align(outlines)
 
     def _rule_based_align(self, outlines):
@@ -242,7 +402,10 @@ class OutlineSplitter(SplitterABC):
 
         content = "\n".join([c.content for c in chunk])
 
-        aligned_outlines = self.align_outlines(outlines)
+        if self.align_parallel:
+            aligned_outlines = self.align_outlines_parallel(outlines)
+        else:
+            aligned_outlines = self.align_outlines(outlines)
         # 使用对齐后的outlines进行分块
         chunks = self.sep_by_outline_with_outline_tree(
             content, aligned_outlines, org_chunk=chunk
@@ -250,25 +413,122 @@ class OutlineSplitter(SplitterABC):
 
         return chunks
 
-    def filter_outlines(self, raw_outlines):
+    def filter_outlines_parallel(self, raw_outlines):
         """
-        过滤掉无效的标题，包括仅由数字、罗马数字、中文数字以及与数字相关的标点组合构成的标题。
+        过滤掉无效的标题，保留包含数字特征的标题。
+        数字特征包括:
+        1. 阿拉伯数字 (0-9)
+        2. 中文数字 (一二三...百千万亿)
+        3. 罗马数字 (I,II,III,IV...)
+        4. 序号标记 (①,②,③...)
+        5. 带数字的常见标记 (第x章、x.x、x)等
         """
-        # 匹配阿拉伯数字、中文数字、罗马数字和无效标点组合
+        # 匹配纯数字和标点的无效标题
         invalid_pattern = r"""
-            ^                      # 匹配开头
-            [0-9一二三四五六七八九十零IIVXLCDM\-.\(\)\[\]\s]*  # 阿拉伯数字、中文数字、罗马数字及常见修饰符
-            $                      # 匹配结尾
-        """
+                ^                      # 匹配开头
+                [0-9一二三四五六七八九十零IIVXLCDM\-.\(\)\[\]\s]*  # 数字和标点
+                $                      # 匹配结尾
+            """
+
+        # 匹配数字特征的模式
+        number_pattern = r"""
+                \d+                                          | # 阿拉伯数字
+                [一二三四五六七八九十百千万亿]+              | # 中文数字
+                [ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+                          | # 中文罗马数字
+                [IVXLCDMivxlcdm]+                           | # 英文罗马数字
+                [①②③④⑤⑥⑦⑧⑨⑩]+                            | # 圈数字
+                [⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽]+                            | # 括号数字
+                第[一二三四五六七八九十百千万\d]+[章节篇部]    | # 第x章/节/篇/部
+                [第]?[0-9一二三四五六七八九十百千万]+[条]     | # (第)x条
+                \d+\.\d+                                     | # 数字层级(如1.1)
+                [(]\d+[)]                                     # 括号数字
+            """
+
         valid_outlines = []
         for title, level in raw_outlines:
-            # 去掉两侧的空白符，避免干扰
             title = title.strip()
-            # 过滤无效标题
+            # 过滤纯数字标题
             if re.fullmatch(invalid_pattern, title, re.VERBOSE):
                 continue
-            # 保留有效标题
+            # 检查是否包含数字特征
+            if not re.search(number_pattern, title, re.VERBOSE):
+                continue
             valid_outlines.append((title, level))
+
+        return valid_outlines
+
+    def filter_outlines(self, raw_outlines):
+        """
+        过滤标题，只保留具有明确章节层级的标题。
+
+        章节层级分为四级:
+        1级(最高层): 篇、卷、部、编
+        2级: 章
+        3级: 节
+        4级: 小节、款、项、目
+
+        支持多种常见写法:
+        - 带"第"字: 第一章、第1章
+        - 不带"第"字: 一、1、(一)、(1)
+        - 数字类型: 阿拉伯数字、中文数字、罗马数字
+        """
+        # 数字模式
+        numbers = r"""
+            (?:
+                (?:[一二三四五六七八九十百千万]+)                  | # 中文数字
+                (?:\d+)                                           | # 阿拉伯数字
+                (?:[IVXLCDMivxlcdm]+)                            | # 罗马数字
+                (?:①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳)                  | # 圈数字
+                (?:\(\d+\))                                      | # (1)
+                (?:\((?:[一二三四五六七八九十]+)\))                # (一)
+            )
+        """
+
+        # 章节标识词
+        level1_words = r"(?:篇|卷|部|编)"
+        level2_words = r"(?:章)"
+        level3_words = r"(?:节)"
+        level4_words = r"(?:小节|款|项|目)"
+
+        # 完整的章节匹配模式
+        section_pattern = rf"""
+            ^                                           # 匹配开头
+            (?:
+                (?:第\s*{numbers}\s*(?:{level1_words})) | # 第x篇/卷/部/编
+                (?:第\s*{numbers}\s*(?:{level2_words})) | # 第x章
+                (?:第\s*{numbers}\s*(?:{level3_words})) | # 第x节
+                (?:第\s*{numbers}\s*(?:{level4_words})) | # 第x小节/款/项/目
+                (?:{numbers}\s*[、.\s]\s*(?:{level1_words})) | # x、篇/卷/部/编
+                (?:{numbers}\s*[、.\s]\s*(?:{level2_words})) | # x、章
+                (?:{numbers}\s*[、.\s]\s*(?:{level3_words})) | # x、节
+                (?:{numbers}\s*[、.\s]\s*(?:{level4_words}))   # x、小节/款/项/目
+            )
+            [\s\S]*                                     # 标题剩余部分
+            $                                           # 匹配结尾
+        """
+
+        def determine_level(title: str) -> int:
+            """根据标题内容确定层级"""
+            if any(word in title for word in level1_words.strip("(?:)").split("|")):
+                return 1
+            elif any(word in title for word in level2_words.strip("(?:)").split("|")):
+                return 2
+            elif any(word in title for word in level3_words.strip("(?:)").split("|")):
+                return 3
+            elif any(word in title for word in level4_words.strip("(?:)").split("|")):
+                return 4
+            return 0  # 未匹配到任何层级
+
+        valid_outlines = []
+        for title, level in raw_outlines:
+            title = title.strip()
+            # 检查是否是有效的章节标题
+            if re.match(section_pattern, title, re.VERBOSE):
+                # 根据标题内容确定实际层级
+                actual_level = determine_level(title)
+                if actual_level > 0:  # 只添加成功确定层级的标题
+                    valid_outlines.append((title, actual_level))
+
         return valid_outlines
 
     def unify_outline_levels(self, outlines):
@@ -628,7 +888,7 @@ class OutlineSplitter(SplitterABC):
         按层级划分内容为 chunks，剔除无效的标题，并忽略重复的标题。
 
         参数：
-        - content: str，完整���容。
+        - content: str，完整内容。
         - outlines: List[Tuple[str, int]]，每个标题及其层级的列表。
         - min_length: int，chunk 的最小长度，低于此值时尝试合并。
         - max_length: int，chunk 的最大长度，合并后不能超过此值。
@@ -814,12 +1074,13 @@ if __name__ == "__main__":
     from kag.builder.component.reader.txt_reader import TXTReader
     from kag.common.env import init_kag_config
 
-    init_kag_config(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../../../tests/builder/component/test_config.cfg",
-        )
+    config_path = os.path.join(
+        os.path.dirname(__file__),
+        "../../../../tests/builder/component/test_config.cfg",
     )
+    # config_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/2wiki/kag_config.cfg"
+    init_kag_config(config_path)
+
     docx_reader = DocxReader()
     txt_reader = TXTReader()
     length_splitter = LengthSplitter(split_length=5000)
@@ -854,7 +1115,7 @@ if __name__ == "__main__":
     # for future in as_completed(futures):
     #     print(future.result())
 
-    process_file_without_chain(docx_path)
+    process_file_without_chain(files[0])
 
     # chunk = docx_reader.invoke(docx_path)
     # chunk = txt_reader.invoke(txt_path)
