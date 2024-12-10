@@ -9,7 +9,8 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import json
+import copy
 from abc import ABC
 from string import Template
 from typing import List
@@ -22,7 +23,7 @@ class PromptABC(Registrable, ABC):
     """
     Provides a template for generating and parsing prompts related to specific business scenes.
 
-    Subclasses must implement the template strings for specific languages (English or Chinese)
+    Subclasses must implement the template for specific languages (Chinese or English)
     and override the `template_variables` and `parse_response` methods.
     """
 
@@ -51,6 +52,13 @@ class PromptABC(Registrable, ABC):
         self.template = getattr(self, f"template_{self.language}")
 
         self.template_variables_value = {}
+        self.example_input = kwargs.get("example_input", None)
+        self.example_output = kwargs.get("example_output", None)
+        if isinstance(self.example_output, str):
+            try:
+                self.example_output = json.loads(self.example_output)
+            except:
+                pass
 
     @property
     def project_id(self):
@@ -75,31 +83,88 @@ class PromptABC(Registrable, ABC):
         )
 
     def process_template_string_to_avoid_dollar_problem(self, template_string):
+        """
+        Processes the template string to avoid issues with dollar signs.
+
+        Args:
+            template_string (str): The template string to process.
+
+        Returns:
+        - str: The processed template string.
+        """
         new_template_str = template_string.replace("$", "$$")
         for var in self.template_variables:
             new_template_str = new_template_str.replace(f"$${var}", f"${var}")
         return new_template_str
 
-    def build_prompt(self, variables) -> str:
+    def _build_dict_prompt(self, variables) -> str:
         """
-        Build a prompt based on the template and provided variables.
+        Builds a dictionary-based prompt with provided variables.
 
-        This method replaces placeholders in the template with actual variable values.
-        If a variable is not provided, it defaults to an empty string.
-
-        Parameters:
-        - variables: A dictionary containing variable names and their corresponding values.
+        Args:
+            variables (dict): A dictionary of variables to include in the prompt.
 
         Returns:
-        - A string or list of strings, depending on the template content.
+        - str: The generated prompt as a JSON string.
         """
+        tmpl = copy.deepcopy(self.template)
+        tmpl.update(variables)
+        if self.example_input and self.example_output:
+            tmpl["example"] = {
+                "input": self.example_input,
+                "output": json.loads(self.example_output)
+                if isinstance(self.example_output, str)
+                else self.example_output,
+            }
+        return json.dumps(tmpl, ensure_ascii=False)
 
-        self.template_variables_value = variables
+    def _build_str_prompt(self, variables) -> str:
+        """
+        Builds a string-based prompt with provided variables.
+
+        Args:
+            variables (dict): A dictionary of variables to include in the prompt.
+
+        Returns:
+        - str: The generated prompt as a string.
+        """
         template_string = self.process_template_string_to_avoid_dollar_problem(
             self.template
         )
         template = Template(template_string)
-        return template.substitute(**variables)
+        prompt = template.substitute(**variables)
+        if self.example_input and self.example_output:
+            prompt = json.loads(prompt)
+            prompt["example"] = {
+                "input": self.example_input,
+                "output": self.example_output,
+            }
+            prompt = json.dumps(prompt, ensure_ascii=False)
+        return prompt
+
+    def build_prompt(self, variables) -> str:
+        """
+        Builds a prompt based on the template and provided variables.
+
+        This method replaces placeholders in the template with actual variable values.
+        If a variable is not provided, it defaults to an empty string.
+
+        Args:
+            variables (dict): A dictionary containing variable names and their corresponding values.
+
+        Returns:
+        - str: The generated prompt, which may be a string or a JSON string depending on the template content.
+
+        Raises:
+        - ValueError: If the template format is unsupported.
+        """
+        if isinstance(self.template, str):
+            return self._build_str_prompt(variables)
+        elif isinstance(self.template, dict):
+            return self._build_dict_prompt(variables)
+        raise ValueError(
+            f"Unsupported template format, expect [str|dict], but got {type(self.template)}"
+        )
 
     def parse_response(self, response: str, **kwargs):
         """

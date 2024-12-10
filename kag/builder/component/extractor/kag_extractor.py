@@ -22,6 +22,7 @@ from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
+from kag.builder.prompt.utils import init_prompt_with_fallback
 from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
@@ -70,17 +71,12 @@ class KAGExtractor(ExtractorABC):
 
         biz_scene = KAG_PROJECT_CONF.biz_scene
         if self.ner_prompt is None:
-            self.ner_prompt = PromptABC.from_config(
-                {"type": f"{biz_scene}_ner", "language": KAG_PROJECT_CONF.language}
-            )
+            self.ner_prompt = init_prompt_with_fallback("ner", biz_scene)
         if self.std_prompt is None:
-            self.std_prompt = PromptABC.from_config(
-                {"type": f"{biz_scene}_std", "language": KAG_PROJECT_CONF.language}
-            )
+            self.std_prompt = init_prompt_with_fallback("std", biz_scene)
         if self.triple_prompt is None:
-            self.triple_prompt = PromptABC.from_config(
-                {"type": f"{biz_scene}_triple", "language": KAG_PROJECT_CONF.language}
-            )
+            self.triple_prompt = init_prompt_with_fallback("triple", biz_scene)
+
         self.external_graph = external_graph
 
     @property
@@ -116,14 +112,14 @@ class KAGExtractor(ExtractorABC):
                 dedup.add(name)
                 output.append(
                     {
-                        "entity": name,
+                        "name": name,
                         "type": semantic_type,
                         "category": label,
                         "description": description,
                     }
                 )
         for item in ner_result:
-            name = item.get("entity", None)
+            name = item.get("name", None)
             if name and name not in dedup:
                 dedup.add(name)
                 output.append(item)
@@ -171,7 +167,7 @@ class KAGExtractor(ExtractorABC):
         """
         sub_graph = SubGraph([], [])
         for record in entities:
-            s_name = record.get("entity", "")
+            s_name = record.get("name", "")
             s_label = record.get("category", "")
             properties = record.get("properties", {})
             tmp_properties = copy.deepcopy(properties)
@@ -221,7 +217,7 @@ class KAGExtractor(ExtractorABC):
 
         def get_category(entities_data, entity_name):
             for entity in entities_data:
-                if entity["entity"] == entity_name:
+                if entity["name"] == entity_name:
                     return entity["category"]
             return None
 
@@ -304,7 +300,7 @@ class KAGExtractor(ExtractorABC):
         """
 
         for ent in entities:
-            name = processing_phrases(ent["entity"])
+            name = processing_phrases(ent["name"])
             sub_graph.add_node(
                 name,
                 name,
@@ -349,14 +345,14 @@ class KAGExtractor(ExtractorABC):
         """
         tmp_dict = {}
         for tmp_entity in entities_with_official_name:
-            name = tmp_entity["entity"]
+            name = tmp_entity["name"]
             category = tmp_entity["category"]
             official_name = tmp_entity["official_name"]
             key = f"{category}{name}"
             tmp_dict[key] = official_name
 
         for tmp_entity in source_entities:
-            name = tmp_entity["entity"]
+            name = tmp_entity["name"]
             category = tmp_entity["category"]
             key = f"{category}{name}"
             if key in tmp_dict:
@@ -382,7 +378,7 @@ class KAGExtractor(ExtractorABC):
             entities = self.named_entity_recognition(passage)
             sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
             filtered_entities = [
-                {k: v for k, v in ent.items() if k in ["entity", "category"]}
+                {k: v for k, v in ent.items() if k in ["name", "category"]}
                 for ent in entities
             ]
             triples = self.triples_extraction(passage, filtered_entities)

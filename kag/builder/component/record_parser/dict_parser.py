@@ -60,7 +60,14 @@ class DictParser(RecordParserABC):
         Returns:
             List[Output]: A list containing a single Chunk object created from the input dictionary.
         """
-        chunk_id = input.pop(self.id_col)
-        chunk_name = input.pop(self.name_col)
-        chunk_content = input.pop(self.content_col)
+        chunk_id = input.get(self.id_col)
+        chunk_name = input.get(self.name_col)
+        chunk_content = input.get(self.content_col)
+        if self.id_col in input:
+            input.pop(self.id_col)
+        if self.name_col in input:
+            input.pop(self.name_col)
+        if self.content_col in input:
+            input.pop(self.content_col)
+
         return [Chunk(id=chunk_id, name=chunk_name, content=chunk_content, **input)]

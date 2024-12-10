@@ -19,7 +19,6 @@ from kag.interface import PromptABC
 
 @PromptABC.register("example_medical_std")
 class OpenIEEntitystandardizationdPrompt(PromptABC):
-
     template_zh = """
 {
     "instruction": "input字段包含用户提供的上下文。命名实体字段包含从上下文中提取的命名实体，这些可能是含义不明的缩写、别名或俚语。为了消除歧义，请尝试根据上下文和您自己的知识提供这些实体的官方名称。请注意，具有相同含义的实体只能有一个官方名称。请按照提供的示例中的输出字段格式，以单个JSONArray字符串形式回复，无需任何解释。",
@@ -53,15 +52,11 @@ class OpenIEEntitystandardizationdPrompt(PromptABC):
 
     template_en = template_zh
 
-    def __init__(self, language: Optional[str] = "en"):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["input", "named_entities"]
 
     def parse_response(self, response: str, **kwargs):
-
         rsp = response
         if isinstance(rsp, str):
             rsp = json.loads(rsp)

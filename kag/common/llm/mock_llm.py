@@ -36,7 +36,7 @@ class MockLLMClient(LLMClient):
         Args:
             prompt: The input prompt to be matched.
         """
-        time.sleep(3)  # mimic llm call
+        time.sleep(0.3)  # mimic llm call
         if "You're a very effective entity extraction system" in prompt:
             return [
                 {

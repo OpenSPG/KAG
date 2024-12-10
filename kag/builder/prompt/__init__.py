@@ -26,7 +26,7 @@ from kag.builder.prompt.medical.triple import (
 )
 
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
-from kag.builder.prompt.spg_prompt import SPGPrompt, SPG_KGPrompt
+from kag.builder.prompt.spg_prompt import SPGPrompt, SPGEntityPrompt, SPGEventPrompt
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 
@@ -42,5 +42,6 @@ __all__ = [
     "OutlinePrompt",
     "SemanticSegPrompt",
     "SPGPrompt",
-    "SPG_KGPrompt",
+    "SPGEntityPrompt",
+    "SPGEventPrompt",
 ]

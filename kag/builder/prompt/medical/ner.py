@@ -20,7 +20,6 @@ from knext.schema.client import SchemaClient
 
 @PromptABC.register("medical_ner")
 class OpenIENERPrompt(PromptABC):
-
     template_zh = """
     {
         "instruction": "你是命名实体识别的专家。请从输入中提取与模式定义匹配的实体。如果不存在该类型的实体，请返回一个空列表。请以JSON字符串格式回应。你可以参照example进行抽取。",
@@ -29,14 +28,14 @@ class OpenIENERPrompt(PromptABC):
             {
                 "input": "烦躁不安、语妄、失眠酌用镇静药，禁用抑制呼吸的镇静药。\n3.并发症的处理经抗菌药物治疗后，高热常在24小时内消退，或数日内逐渐下降。\n若体温降而复升或3天后仍不降者，应考虑SP的肺外感染。\n治疗：接胸腔压力调节管＋吸引机负压吸引水瓶装置闭式负压吸引宜连续，如经12小时后肺仍未复张，应查找原因。",
                 "output": [
-                        {"entity": "烦躁不安", "category": "Symptom"},
-                        {"entity": "语妄", "category": "Symptom"},
-                        {"entity": "失眠", "category": "Symptom"},
-                        {"entity": "镇静药", "category": "Medicine"},
-                        {"entity": "肺外感染", "category": "Disease"},
-                        {"entity": "胸腔压力调节管", "category": "MedicalEquipment"},
-                        {"entity": "吸引机负压吸引水瓶装置", "category": "MedicalEquipment"},
-                        {"entity": "闭式负压吸引", "category": "SurgicalOperation"}
+                        {"name": "烦躁不安", "category": "Symptom"},
+                        {"name": "语妄", "category": "Symptom"},
+                        {"name": "失眠", "category": "Symptom"},
+                        {"name": "镇静药", "category": "Medicine"},
+                        {"name": "肺外感染", "category": "Disease"},
+                        {"name": "胸腔压力调节管", "category": "MedicalEquipment"},
+                        {"name": "吸引机负压吸引水瓶装置", "category": "MedicalEquipment"},
+                        {"name": "闭式负压吸引", "category": "SurgicalOperation"}
                     ]
             }
         ],

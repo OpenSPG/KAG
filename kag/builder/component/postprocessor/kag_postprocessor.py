@@ -59,7 +59,7 @@ class KAGPostProcessor(PostProcessorABC):
             str: The formatted label.
         """
         namespace = KAG_PROJECT_CONF.namespace
-        if label.startswith(namespace):
+        if label.split(".")[0] == namespace:
             return label
         return f"{namespace}.{label}"
 
@@ -127,7 +127,10 @@ class KAGPostProcessor(PostProcessorABC):
                     all_similar_nodes.extend(similar_nodes)
                 for item in all_similar_nodes:
                     score = item["score"]
-                    if score >= self.similarity_threshold:
+                    if (
+                        score >= self.similarity_threshold
+                        and node.id != item["node"]["id"]
+                    ):
                         graph.add_edge(
                             node.id,
                             node.label,

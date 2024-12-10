@@ -16,6 +16,7 @@ import bs4.element
 import markdown
 from bs4 import BeautifulSoup, Tag
 from typing import List
+
 import logging
 import re
 import requests
@@ -99,7 +100,7 @@ class MarkDownParser(RecordParserABC):
         if tag.name == "table":
             try:
                 html_table = str(tag)
-                table_df = pd.read_html(html_table)[0]
+                table_df = pd.read_html(StringIO(html_table))[0]
                 return f"{self.TABLE_CHUCK_FLAG}{table_df.to_markdown(index=False)}{self.TABLE_CHUCK_FLAG}"
             except Exception as e:
                 logger.warning(f"parse table tag to text error: {e}", exc_info=True)
@@ -434,7 +435,7 @@ class MarkDownParser(RecordParserABC):
             table_markdown_str, extensions=["markdown.extensions.tables"]
         )
         try:
-            df = pd.read_html(html_table_str)[0]
+            df = pd.read_html(StringIO(html_table_str))[0]
         except Exception as e:
             logger.warning(f"get_table_chuck error: {e}")
             df = pd.DataFrame()

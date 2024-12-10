@@ -148,7 +148,7 @@ class DslRunnerOnGraphStore(DslRunner):
 
         o_biz_id_set = []
         if o_biz_id is not None:
-            o_biz_id_set = [f"'{self.replace_qota(str(o_id))}'" for o_id in o_biz_id]
+            o_biz_id_set = [f'"{self.replace_qota(str(o_id))}"' for o_id in o_biz_id]
 
         s_where_cluase = None
         return_cluase = ["p"]
@@ -235,7 +235,7 @@ class DslRunnerOnGraphStore(DslRunner):
         s_gql = f"(s{self._generate_gql_type(s_biz_id_set, s_type)})"
         o_gql = f"(o{self._generate_gql_type(o_biz_id_set, o_type)})"
         rdf_expand_gql = f"""match {s_gql}-[p:rdf_expand()]-{o_gql}
-        {'where ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
+        {'where ' + " and ".join(where_cluase) if len(where_cluase) > 0 else ''}
         return {','.join(return_cluase)}"""
         if p_type == "rdf_expand()":
             return [rdf_expand_gql]
