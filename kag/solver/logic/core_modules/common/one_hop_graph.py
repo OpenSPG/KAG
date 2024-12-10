@@ -287,7 +287,12 @@ class RelationData:
         from_entity_desc_str = "" if from_entity_desc is None else f"({from_entity_desc})"
         to_entity_desc = self._get_entity_description(self.end_entity)
         to_entity_desc_str = "" if to_entity_desc is None else f"({to_entity_desc})"
-        return f"({self.from_entity.name}{from_entity_desc_str} {self.type} {self.end_entity.name}{to_entity_desc_str})"
+        spo = f"({self.from_entity.name}{from_entity_desc_str} {self.type} {self.end_entity.name}{to_entity_desc_str})"
+        prop_map = self.prop.get_properties_map_list_value() if self.prop else {}
+        if prop_map:
+            prop_str = ",".join([f"{k}={';'.join(v)}" for k, v in prop_map.items()])
+            return f"{spo} with prop: {prop_str}"
+        return spo
 
     @staticmethod
     def from_dict(json_dict: dict, schema: SchemaUtils):
