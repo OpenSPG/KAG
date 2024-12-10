@@ -14,7 +14,7 @@ from kag.interface import PromptABC, VectorizeModelABC
 from tenacity import retry, stop_after_attempt
 
 from kag.interface import VectorizeModelABC as Vectorizer
-from knext.graph_algo.client import GraphAlgoClient
+from knext.graph.client import GraphClient
 
 from typing import List, Dict
 
@@ -100,7 +100,7 @@ class KAGRetriever(ChunkRetriever):
     def _init_search(self):
         self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
-        self.graph_algo = GraphAlgoClient(self.host_addr, self.project_id)
+        self.graph_algo = GraphClient(self.host_addr, self.project_id)
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, query: str):
