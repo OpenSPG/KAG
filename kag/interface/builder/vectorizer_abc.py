@@ -9,11 +9,9 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from typing import List
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
 
 
 class VectorizerABC(BuilderComponent):
@@ -33,20 +31,6 @@ class VectorizerABC(BuilderComponent):
     def output_types(self):
         return SubGraph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Abstract method to be implemented by subclasses for generating embedding vectors.
-
-        Args:
-            input (Input): The SubGraph for which to generate embedding vectors.
-            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
-
-        Returns:
-            List[Output]: A list of output objects (SubGraphs) with generated embedding vectors inserted.
-
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def ckpt_subdir(self):
+        return "vectorizer"

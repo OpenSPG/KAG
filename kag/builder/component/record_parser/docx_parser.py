@@ -19,7 +19,7 @@ from kag.builder.model.chunk import Chunk
 from kag.interface import RecordParserABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.common.conf import KAG_PROJECT_CONF
-
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
@@ -57,6 +57,7 @@ class DocxParser(RecordParserABC):
         Args:
             llm (LLMClient): An optional LLMClient instance used for generating outlines. Defaults to None.
         """
+        super().__init__()
         self.llm = llm
         self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
@@ -100,7 +101,7 @@ class DocxParser(RecordParserABC):
         chunks = []
         for idx, pc in enumerate(position_check):
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{basename}#{pc[0]}"),
+                id=generate_hash_id(f"{basename}#{pc[0]}"),
                 name=f"{basename}#{pc[0]}",
                 content=content[
                     pc[1] : position_check[idx + 1][1]
@@ -182,7 +183,7 @@ class DocxParser(RecordParserABC):
         for text in full_text:
             title, text = self._get_title_from_text(text)
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{basename}#{title}"),
+                id=generate_hash_id(f"{basename}#{title}"),
                 name=f"{basename}#{title}",
                 content=text,
             )
@@ -195,7 +196,7 @@ class DocxParser(RecordParserABC):
             semantic_res = split_txt(content)
             chunks = [
                 Chunk(
-                    id=Chunk.generate_hash_id(input + "#" + r[:10]),
+                    id=generate_hash_id(input + "#" + r[:10]),
                     name=basename + "#" + r[:10],
                     content=r,
                 )

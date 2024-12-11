@@ -9,12 +9,16 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+
+import os
 from typing import List, Dict
 
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF, KAGConstants
+from kag.common.checkpointer import CheckPointer
+from kag.common.sharding_info import ShardingInfo
 
 
 @Registrable.register("builder")
@@ -26,6 +30,25 @@ class BuilderComponent(Component, Registrable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.language = kwargs.get("language", KAG_PROJECT_CONF.language)
+        rank = kwargs.get("rank")
+        world_size = kwargs.get("world_size")
+        if rank is None or world_size is None:
+            from kag.common.env import get_rank, get_world_size
+
+            rank = get_rank(0)
+            world_size = get_world_size(1)
+        self.sharding_info = ShardingInfo(shard_id=rank, shard_count=world_size)
+        if self.ckpt_subdir:
+            self.ckpt_dir = os.path.join(KAGConstants.CKPT_DIR, self.ckpt_subdir)
+
+            self.checkpointer: CheckPointer = CheckPointer.from_config(
+                {
+                    "type": "bin",
+                    "ckpt_dir": self.ckpt_dir,
+                    "rank": rank,
+                    "world_size": world_size,
+                }
+            )
 
     @property
     def type(self):
@@ -47,3 +70,37 @@ class BuilderComponent(Component, Registrable):
         _input = self.input_types.from_dict(input) if isinstance(input, dict) else input
         _output = self.invoke(_input)
         return [_o.to_dict() for _o in _output if _o]
+
+    @property
+    def ckpt_subdir(self):
+        return None
+
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Abstract method to be implemented by subclasses for splitting a chunk.
+
+        Args:
+            input (Input): The chunk to be split.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list of smaller chunks resulting from the split operation.
+
+        Raises:
+            NotImplementedError: If the method is not implemented by the subclass.
+        """
+        raise NotImplementedError(
+            f"`invoke` is not currently supported for {self.__class__.__name__}."
+        )
+
+    def invoke(self, input: Input, **kwargs) -> List[Output]:
+        input_key = kwargs.get("key")
+
+        if input_key and self.checkpointer.exists(input_key):
+            print(f"[{self.ckpt_subdir}]found existing key {input_key}")
+            out = self.checkpointer.read_from_ckpt(input_key)
+            return out
+        output = self._invoke(input, **kwargs)
+        if input_key:
+            self.checkpointer.write_to_ckpt(input_key, output)
+        return output

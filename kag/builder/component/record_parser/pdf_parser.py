@@ -23,6 +23,7 @@ from kag.interface import RecordParserABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
@@ -54,6 +55,7 @@ class PDFFileParser(RecordParserABC):
             llm (LLMClient, optional): The large language model client used for generating outlines. Defaults to None.
             split_level (int, optional): The level of detail to split the PDF content into chunks. Defaults to 3.
         """
+        super().__init__()
         self.split_level = split_level
         # self.split_using_outline = split_using_outline
         # self.outline_flag = True
@@ -100,7 +102,7 @@ class PDFFileParser(RecordParserABC):
         chunks = []
         for idx, pc in enumerate(position_check):
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{basename}#{pc[0]}"),
+                id=generate_hash_id(f"{basename}#{pc[0]}"),
                 name=f"{basename}#{pc[0]}",
                 content=content[
                     pc[1] : position_check[idx + 1][1]
@@ -207,7 +209,7 @@ class PDFFileParser(RecordParserABC):
                         if hasattr(element, "get_text"):
                             content = content + element.get_text()
                     chunk = Chunk(
-                        id=Chunk.generate_hash_id(f"{basename}#{idx}"),
+                        id=generate_hash_id(f"{basename}#{idx}"),
                         name=f"{basename}#{idx}",
                         content=content,
                     )
@@ -250,7 +252,7 @@ class PDFFileParser(RecordParserABC):
 
             for idx, position in enumerate(positions):
                 chunk = Chunk(
-                    id=Chunk.generate_hash_id(f"{basename}#{position[0]}"),
+                    id=generate_hash_id(f"{basename}#{position[0]}"),
                     name=f"{basename}#{position[0]}",
                     content=content[
                         position[1] : positions[idx + 1][1]

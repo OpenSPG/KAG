@@ -24,7 +24,7 @@ def test_kag_extractor():
 
 
 def test_spg_extractor():
-    conf = {"type": "spg", "llm": llm_config, "ner_prompt": {"type": "default_ner"}}
+    conf = {"type": "schema", "llm": llm_config, "ner_prompt": {"type": "default_ner"}}
 
     extractor = ExtractorABC.from_config(conf)
     with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:

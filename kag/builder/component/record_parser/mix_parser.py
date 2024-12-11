@@ -50,6 +50,7 @@ class MixParser(RecordParserABC):
             md_parser (MarkDownParser, optional): Parser for .md files. Defaults to None.
             dict_parser (DictParser, optional): Parser for dictionary inputs. Defaults to None.
         """
+        super().__init__()
         self.parse_map = {
             "txt": txt_parser,
             "pdf": pdf_parser,

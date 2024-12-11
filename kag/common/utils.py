@@ -243,7 +243,7 @@ def generate_hash_id(value):
 
 
 @retry(stop=stop_after_attempt(3))
-def download_from_http(url: str) -> str:
+def download_from_http(url: str, dest: str = None) -> str:
     """Downloads a file from an HTTP URL and saves it to a temporary directory.
 
     This function uses the requests library to download a file from the specified
@@ -262,11 +262,13 @@ def download_from_http(url: str) -> str:
     response = requests.get(url, stream=True)
     response.raise_for_status()  # Check if the request was successful
 
-    # Create a temporary file
-    temp_dir = tempfile.gettempdir()
-    temp_file_path = os.path.join(temp_dir, os.path.basename(url))
+    if dest is None:
+        # Create a temporary file
+        temp_dir = tempfile.gettempdir()
+        temp_file_path = os.path.join(temp_dir, os.path.basename(url))
+        dest = temp_file_path
 
-    with open(temp_file_path, "wb") as temp_file:
+    with open(dest, "wb") as temp_file:
         # Write the downloaded content to the temporary file
         for chunk in response.iter_content(chunk_size=1024**2):
             temp_file.write(chunk)

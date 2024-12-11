@@ -27,7 +27,7 @@ def test_batch_vectorizer():
     ]
     subgraph = SubGraph([], [])
     for name in names:
-        subgraph.add_node(id=name, name=name, label="Keyword")
+        subgraph.add_node(id=name, name=name, label="Chunk")
 
     new_graph = batch_vectorizer.invoke(subgraph)[0]
     assert len(subgraph.nodes) == len(new_graph.nodes)

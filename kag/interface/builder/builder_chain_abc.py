@@ -95,3 +95,6 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
                 final_output.extend(node_outputs[node])
 
         return final_output
+
+    def close_checkpointers(self):
+        pass

@@ -12,16 +12,17 @@
 
 
 import os
-import json
 import traceback
 import logging
-from typing import Any, Dict
-from datetime import datetime
+from typing import Dict
 from tqdm import tqdm
 
+from kag.common.conf import KAGConstants
 from kag.common.registry import Registrable
 from kag.common.utils import reset, bold, red, generate_hash_id
+from kag.common.checkpointer import CheckPointer
 from kag.interface import KAGBuilderChain, SourceReaderABC
+
 from kag.builder.model.sub_graph import SubGraph
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -68,100 +69,100 @@ def generate_hash_id_and_abstract(value):
     return hash_id, abstract
 
 
-class CKPT:
-    """
-    CKPT class is responsible for managing checkpoint files, which is used for record/resume KAG tasks.
+# class CKPT:
+#     """
+#     CKPT class is responsible for managing checkpoint files, which is used for record/resume KAG tasks.
 
-    This class provides methods to load, save, and check the status of data processing checkpoints.
-    """
+#     This class provides methods to load, save, and check the status of data processing checkpoints.
+#     """
 
-    ckpt_file_name = "kag-runner-{}-{}.ckpt"
+#     ckpt_file_name = "kag-runner-{}-{}.ckpt"
 
-    def __init__(self, path: str, rank: int = 0, world_size: int = 1):
-        """
-        Initializes the CKPT instance.
+#     def __init__(self, path: str, rank: int = 0, world_size: int = 1):
+#         """
+#         Initializes the CKPT instance.
 
-        Args:
-            path (str): The path where the checkpoint file is stored.
-            rank (int, optional): The rank of the process. Defaults to 0.
-            world_size (int, optional): The total number of processes. Defaults to 1.
-        """
-        self.rank = rank
-        self.world_size = world_size
-        self.path = path
-        self.ckpt_file_path = os.path.join(
-            self.path, CKPT.ckpt_file_name.format(rank, world_size)
-        )
-        self._ckpt = set()
-        self.load()
+#         Args:
+#             path (str): The path where the checkpoint file is stored.
+#             rank (int, optional): The rank of the process. Defaults to 0.
+#             world_size (int, optional): The total number of processes. Defaults to 1.
+#         """
+#         self.rank = rank
+#         self.world_size = world_size
+#         self.path = path
+#         self.ckpt_file_path = os.path.join(
+#             self.path, CKPT.ckpt_file_name.format(rank, world_size)
+#         )
+#         self._ckpt = set()
+#         self.load()
 
-    def load(self):
-        """
-        Loads the checkpoint data from the file.
-        """
-        for rank in range(self.world_size):
-            ckpt_file_path = os.path.join(
-                self.path, CKPT.ckpt_file_name.format(rank, self.world_size)
-            )
-            if os.path.exists(ckpt_file_path):
-                with open(ckpt_file_path, "r") as reader:
-                    for line in reader:
-                        data = json.loads(line)
-                        self._ckpt.add(data["id"])
-        if len(self._ckpt) > 0:
-            print(
-                f"{bold}{red}Existing checkpoint found in {self.path}{reset}, with {len(self._ckpt)} processed records."
-            )
+#     def load(self):
+#         """
+#         Loads the checkpoint data from the file.
+#         """
+#         for rank in range(self.world_size):
+#             ckpt_file_path = os.path.join(
+#                 self.path, CKPT.ckpt_file_name.format(rank, self.world_size)
+#             )
+#             if os.path.exists(ckpt_file_path):
+#                 with open(ckpt_file_path, "r") as reader:
+#                     for line in reader:
+#                         data = json.loads(line)
+#                         self._ckpt.add(data["id"])
+#         if len(self._ckpt) > 0:
+#             print(
+#                 f"{bold}{red}Existing checkpoint found in {self.path}{reset}, with {len(self._ckpt)} processed records."
+#             )
 
-    def is_processed(self, data_id: str):
-        """
-        Checks if a data ID has already been processed.
+#     def is_processed(self, data_id: str):
+#         """
+#         Checks if a data ID has already been processed.
 
-        Args:
-            data_id (str): The data ID to check.
+#         Args:
+#             data_id (str): The data ID to check.
 
-        Returns:
-            bool: True if the data ID has been processed, False otherwise.
-        """
-        return data_id in self._ckpt
+#         Returns:
+#             bool: True if the data ID has been processed, False otherwise.
+#         """
+#         return data_id in self._ckpt
 
-    def open(self):
-        """
-        Opens the checkpoint file for appending.
-        """
-        self.writer = open(self.ckpt_file_path, "a")
+#     def open(self):
+#         """
+#         Opens the checkpoint file for appending.
+#         """
+#         self.writer = open(self.ckpt_file_path, "a")
 
-    def add(self, data_id: str, data_abstract: str, info: Any):
-        """
-        Adds a new entry to the checkpoint file.
+#     def add(self, data_id: str, data_abstract: str, info: Any):
+#         """
+#         Adds a new entry to the checkpoint file.
 
-        Args:
-            data_id (str): The data ID to add.
-            data_abstract (str): The abstract of the data.
-            info (Any): Additional information to store.
-        """
-        if self.is_processed(data_id):
-            return
-        now = datetime.now()
-        self.writer.write(
-            json.dumps(
-                {
-                    "id": data_id,
-                    "abstract": data_abstract,
-                    "info": info,
-                    "timestamp": str(now),
-                }
-            )
-        )
-        self.writer.write("\n")
-        self.writer.flush()
+#         Args:
+#             data_id (str): The data ID to add.
+#             data_abstract (str): The abstract of the data.
+#             info (Any): Additional information to store.
+#         """
+#         if self.is_processed(data_id):
+#             return
+#         now = datetime.now()
+#         self.writer.write(
+#             json.dumps(
+#                 {
+#                     "id": data_id,
+#                     "abstract": data_abstract,
+#                     "info": info,
+#                     "timestamp": str(now),
+#                 }
+#             )
+#         )
+#         self.writer.write("\n")
+#         self.writer.flush()
 
-    def close(self):
-        """
-        Closes the checkpoint file.
-        """
-        self.writer.flush()
-        self.writer.close()
+#     def close(self):
+#         """
+#         Closes the checkpoint file.
+#         """
+#         self.writer.flush()
+#         self.writer.close()
 
 
 class BuilderChainRunner(Registrable):
@@ -177,7 +178,7 @@ class BuilderChainRunner(Registrable):
         chain: KAGBuilderChain,
         num_parallel: int = 2,
         chain_level_num_paralle: int = 8,
-        ckpt_dir: str = "./ckpt",
+        ckpt_dir: str = KAGConstants.CKPT_DIR,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -194,16 +195,17 @@ class BuilderChainRunner(Registrable):
         self.num_parallel = num_parallel
         self.chain_level_num_paralle = chain_level_num_paralle
         self.ckpt_dir = ckpt_dir
-        if not os.path.exists(self.ckpt_dir):
-            os.makedirs(self.ckpt_dir, exist_ok=True)
 
-        self.ckpt = CKPT(
-            self.ckpt_dir,
-            self.reader.sharding_info.get_rank(),
-            self.reader.sharding_info.get_world_size(),
+        self.checkpointer = CheckPointer.from_config(
+            {
+                "type": "txt",
+                "ckpt_dir": self.ckpt_dir,
+                "rank": self.reader.sharding_info.get_rank(),
+                "world_size": self.reader.sharding_info.get_world_size(),
+            }
         )
         msg = (
-            f"{bold}{red}The checkpoint file is located at {self.ckpt.ckpt_file_path}. "
+            f"{bold}{red}The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"
         )
         print(msg)
@@ -224,42 +226,49 @@ class BuilderChainRunner(Registrable):
                 traceback.print_exc()
                 return None
 
-        self.ckpt.open()
         futures = []
         print(f"Processing {input}")
-        with ThreadPoolExecutor(self.num_parallel) as executor:
-            for item in self.reader.generate(input):
-                item_id, item_abstract = generate_hash_id_and_abstract(item)
-                if self.ckpt.is_processed(item_id):
-                    continue
-                fut = executor.submit(process, self.chain, item, item_id, item_abstract)
-                futures.append(fut)
+        try:
+            with ThreadPoolExecutor(self.num_parallel) as executor:
+                for item in self.reader.generate(input):
+                    item_id, item_abstract = generate_hash_id_and_abstract(item)
+                    if self.checkpointer.exists(item_id):
+                        continue
+                    fut = executor.submit(
+                        process, self.chain, item, item_id, item_abstract
+                    )
+                    futures.append(fut)
 
-            for future in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc="Progress",
-                position=0,
-            ):
-                result = future.result()
-                if result is not None:
-                    item, item_id, item_abstract, chain_output = result
-                    info = {}
-                    num_nodes = 0
-                    num_edges = 0
-                    num_subgraphs = 0
-                    for item in chain_output:
-                        if isinstance(item, SubGraph):
-                            num_nodes += len(item.nodes)
-                            num_edges += len(item.edges)
-                            num_subgraphs += 1
-                    info = {
-                        "num_nodes": num_nodes,
-                        "num_edges": num_edges,
-                        "num_subgraphs": num_subgraphs,
-                    }
-                    self.ckpt.add(item_id, item_abstract, info)
-        self.ckpt.close()
+                for future in tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc="Progress",
+                    position=0,
+                ):
+                    result = future.result()
+                    if result is not None:
+                        item, item_id, item_abstract, chain_output = result
+                        info = {}
+                        num_nodes = 0
+                        num_edges = 0
+                        num_subgraphs = 0
+                        for item in chain_output:
+                            if isinstance(item, SubGraph):
+                                num_nodes += len(item.nodes)
+                                num_edges += len(item.edges)
+                                num_subgraphs += 1
+                        info = {
+                            "num_nodes": num_nodes,
+                            "num_edges": num_edges,
+                            "num_subgraphs": num_subgraphs,
+                        }
+                        self.checkpointer.write_to_ckpt(
+                            item_id, {"abstract": item_abstract, "graph_stat": info}
+                        )
+        except:
+            traceback.print_exc()
+        self.checkpointer.close()
+        self.chain.close_checkpointers()
 
 
 BuilderChainRunner.register("base", as_default=True)(BuilderChainRunner)

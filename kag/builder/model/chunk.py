@@ -9,9 +9,9 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import hashlib
 from enum import Enum
 from typing import Dict, Any
+from kag.common.utils import generate_hash_id
 import json
 
 
@@ -37,13 +37,9 @@ class Chunk:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    @staticmethod
-    def generate_hash_id(value):
-        if isinstance(value, str):
-            value = value.encode("utf-8")
-        hasher = hashlib.sha256()
-        hasher.update(value)
-        return hasher.hexdigest()
+    @property
+    def hash_key(self):
+        return generate_hash_id(f"{self.id}{self.name}{self.content}")
 
     def __str__(self):
         tmp = {
@@ -77,6 +73,7 @@ class Chunk:
             type=input_.get("type"),
             **input_.get("properties", {}),
         )
+
 
 def dump_chunks(chunks, **kwargs):
     if kwargs.get("output_path"):

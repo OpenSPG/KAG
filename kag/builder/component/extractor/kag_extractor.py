@@ -63,6 +63,7 @@ class KAGExtractor(ExtractorABC):
             triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
             external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
         """
+        super().__init__()
         self.llm = llm
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
@@ -359,7 +360,7 @@ class KAGExtractor(ExtractorABC):
                 official_name = tmp_dict[key]
                 tmp_entity["official_name"] = official_name
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the semantic extractor to process input data.
 

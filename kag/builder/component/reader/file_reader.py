@@ -9,10 +9,11 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
 from typing import List
 
 from kag.interface import SourceReaderABC
-
+from kag.common.conf import KAGConstants
 from knext.common.base.runnable import Input, Output
 
 
@@ -49,6 +50,10 @@ class FileReader(SourceReaderABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file = download_from_http(input)
+            local_file_path = os.path.join(KAGConstants.CKPT_DIR, "file_reader")
+            if not os.path.exists(local_file_path):
+                os.makedirs(local_file_path)
+            local_file = os.path.join(local_file_path, os.path.basename(input))
+            local_file = download_from_http(input, local_file)
             return [local_file]
         return [input]

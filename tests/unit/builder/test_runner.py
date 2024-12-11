@@ -1,23 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 from kag.common.conf import KAG_CONFIG
-from kag.builder.runner import CKPT, BuilderChainRunner
+from kag.builder.runner import BuilderChainRunner
 
 pwd = os.path.dirname(__file__)
-
-
-def test_ckpt():
-    ckpt = CKPT("./")
-    ckpt.open()
-    ckpt.add("aaaa", "aaaa", {})
-    ckpt.add("bbbb", "bbbb", {"num_nodes": 3})
-    ckpt.add("cccc", "cccc", {"num_edges": 6})
-    ckpt.close()
-
-    ckpt = CKPT("./")
-    assert ckpt.is_processed("aaaa")
-    assert ckpt.is_processed("bbbb")
-    assert ckpt.is_processed("cccc")
 
 
 def test_chain_runner():

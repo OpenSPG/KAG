@@ -9,8 +9,8 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from abc import ABC, abstractmethod
-from typing import List
+
+from abc import ABC
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.chunk import Chunk
@@ -37,21 +37,6 @@ class SplitterABC(BuilderComponent, ABC):
     def output_types(self) -> Output:
         return Chunk
 
-    @abstractmethod
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Abstract method to be implemented by subclasses for splitting a chunk.
-
-        Args:
-            input (Input): The chunk to be split.
-            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
-
-        Returns:
-            List[Output]: A list of smaller chunks resulting from the split operation.
-
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def ckpt_subdir(self):
+        return "splitter"

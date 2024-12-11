@@ -14,6 +14,7 @@ from typing import Type, List
 from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface.builder.base import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 
@@ -32,7 +33,7 @@ class LengthSplitter(BaseTableSplitter):
         window_length (int): The length of the overlap between chunks.
     """
 
-    def __init__(self, split_length: int = 500, window_length: int = 100, **kwargs):
+    def __init__(self, split_length: int = 500, window_length: int = 100):
         """
         Initializes the LengthSplitter with the specified split length and window length.
 
@@ -40,7 +41,7 @@ class LengthSplitter(BaseTableSplitter):
             split_length (int): The maximum length of each chunk. Defaults to 500.
             window_length (int): The length of the overlap between chunks. Defaults to 100.
         """
-        super().__init__(**kwargs)
+        super().__init__()
         self.split_length = split_length
         self.window_length = window_length
 
@@ -142,7 +143,7 @@ class LengthSplitter(BaseTableSplitter):
         output = []
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{org_chunk.id}#{idx}"),
+                id=generate_hash_id(f"{org_chunk.id}#{idx}"),
                 name=f"{org_chunk.name}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
@@ -153,7 +154,7 @@ class LengthSplitter(BaseTableSplitter):
             output.append(chunk)
         return output
 
-    def invoke(self, input: Chunk, **kwargs) -> List[Output]:
+    def _invoke(self, input: Chunk, **kwargs) -> List[Output]:
         """
         Invokes the splitting of the input chunk based on the specified length and window size.
 

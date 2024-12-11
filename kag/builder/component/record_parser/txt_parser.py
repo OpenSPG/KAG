@@ -15,6 +15,7 @@ from typing import List
 
 from kag.builder.model.chunk import Chunk
 from kag.interface import RecordParserABC
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
@@ -56,7 +57,7 @@ class TXTParser(RecordParserABC):
 
         basename, _ = os.path.splitext(os.path.basename(input))
         chunk = Chunk(
-            id=Chunk.generate_hash_id(input),
+            id=generate_hash_id(input),
             name=basename,
             content=content,
         )

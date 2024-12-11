@@ -12,8 +12,8 @@
 import pprint
 from typing import Dict, List, Any
 
-from knext.schema.client import BASIC_TYPES
 from kag.builder.model.spg_record import SPGRecord
+from knext.schema.client import BASIC_TYPES
 from knext.schema.model.base import BaseSpgType
 
 

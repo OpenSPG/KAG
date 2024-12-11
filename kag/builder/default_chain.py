@@ -68,6 +68,15 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 
         return chain
 
+    def close_checkpointers(self):
+        for node in [
+            self.mapping,
+            self.vectorizer,
+            self.writer,
+        ]:
+            if node and hasattr(node, "checkpointer"):
+                node.checkpointer.close()
+
 
 @KAGBuilderChain.register("unstructured")
 class DefaultUnstructuredBuilderChain(KAGBuilderChain):
@@ -119,16 +128,17 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             List: The final output from the builder chain.
         """
 
-        def execute_node(node, node_input):
+        def execute_node(node, node_input, **kwargs):
             if not isinstance(node_input, list):
                 node_input = [node_input]
             node_output = []
             for item in node_input:
-                node_output.extend(node.invoke(item))
+                node_output.extend(node.invoke(item, **kwargs))
             return node_output
 
         def run_extract(chunk):
             flow_data = [chunk]
+            input_key = chunk.hash_key
             for node in [
                 self.extractor,
                 self.vectorizer,
@@ -137,11 +147,15 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             ]:
                 if node is None:
                     continue
-                flow_data = execute_node(node, flow_data)
+                flow_data = execute_node(node, flow_data, key=input_key)
             return flow_data
 
         parser_output = self.parser.invoke(input_data)
-        splitter_output = self.splitter.invoke(parser_output)
+        splitter_output = []
+        for chunk in parser_output:
+            splitter_output.extend(
+                self.splitter.invoke(parser_output, key=chunk.hash_key)
+            )
 
         result = []
         with ThreadPoolExecutor(max_workers) as executor:
@@ -159,3 +173,15 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 ret = inner_future.result()
                 result.extend(ret)
         return result
+
+    def close_checkpointers(self):
+        for node in [
+            self.parser,
+            self.splitter,
+            self.extractor,
+            self.vectorizer,
+            self.post_processor,
+            self.writer,
+        ]:
+            if node and hasattr(node, "checkpointer"):
+                node.checkpointer.close()

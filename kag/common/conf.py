@@ -44,6 +44,8 @@ class KAGConstants(object):
     K8S_ENV_RANK = "RANK"
     K8S_ENV_POD_NAME = "POD_NAME"
 
+    CKPT_DIR = "ckpt"
+
 
 class KAGGlobalConf:
     def __init__(self):
