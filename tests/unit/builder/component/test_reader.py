@@ -83,6 +83,23 @@ def test_csv_reader_with_cols():
     assert len(data) == len(csv_content) * 2
 
 
+def test_file_reader():
+    reader = SourceReaderABC.from_config({"type": "file"})
+    file_name = "test.txt"
+    out = reader.invoke(file_name)
+    assert out == [file_name]
+
+    file_name2 = (
+        "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    )
+    out = reader.invoke(file_name2)
+    assert (
+        isinstance(out, list)
+        and len(out) == 1
+        and os.path.basename(out[0]) == "dummy.pdf"
+    )
+
+
 def test_directory_reader():
     reader = SourceReaderABC.from_config({"type": "dir", "file_suffix": "json"})
     dir_path = os.path.join(pwd, "../data/")
