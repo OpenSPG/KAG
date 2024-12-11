@@ -13,14 +13,18 @@ import re
 import sys
 import json
 import hashlib
-from typing import Tuple
 import os
-from pathlib import Path
+import tempfile
+import requests
 import importlib
+from typing import Tuple
+from pathlib import Path
+
 from shutil import copystat, copy2
 from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
+from tenacity import retry, stop_after_attempt
 
 reset = "\033[0m"
 bold = "\033[1m"
@@ -236,3 +240,36 @@ def generate_hash_id(value):
     hasher.update(key)
 
     return hasher.hexdigest()
+
+
+@retry(stop=stop_after_attempt(3))
+def download_from_http(url: str) -> str:
+    """Downloads a file from an HTTP URL and saves it to a temporary directory.
+
+    This function uses the requests library to download a file from the specified
+    HTTP URL and saves it to the system's temporary directory. After the download
+    is complete, it returns the local path of the downloaded file.
+
+    Args:
+        url (str): The HTTP URL of the file to be downloaded.
+
+    Returns:
+        str: The local path of the downloaded file.
+
+    """
+
+    # Send an HTTP GET request to download the file
+    response = requests.get(url, stream=True)
+    response.raise_for_status()  # Check if the request was successful
+
+    # Create a temporary file
+    temp_dir = tempfile.gettempdir()
+    temp_file_path = os.path.join(temp_dir, os.path.basename(url))
+
+    with open(temp_file_path, "wb") as temp_file:
+        # Write the downloaded content to the temporary file
+        for chunk in response.iter_content(chunk_size=1024**2):
+            temp_file.write(chunk)
+
+    # Return the path of the temporary file
+    return temp_file.name

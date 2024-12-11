@@ -46,4 +46,9 @@ class FileReader(SourceReaderABC):
         Returns:
             List[Output]: A list containing the input file path.
         """
+        if input.startswith("http://") or input.startswith("https://"):
+            from kag.common.utils import download_from_http
+
+            local_file = download_from_http(input)
+            return [local_file]
         return [input]
