@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/0dddd648-ff49-49f5-a050-d17ad077737d)# KAG: Knowledge Augmented Generation
+# KAG: Knowledge Augmented Generation
 
 <div align="center">
 <a href="https://spg.openkg.cn/en-US">
