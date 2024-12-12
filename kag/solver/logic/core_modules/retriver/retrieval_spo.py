@@ -171,8 +171,8 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
 class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
     def __init__(self, text_similarity: TextSimilarity = None, llm: LLMClient=None):
         super().__init__()
-        model = eval(os.getenv("KAG_LLM"))
-        self.llm: LLMClient = llm or LLMClient.from_config(model)
+        model = os.getenv("KAG_LLM")
+        self.llm: LLMClient = llm or LLMClient.from_config(eval(model))
         self.text_similarity = text_similarity or TextSimilarity()
         self.cached_map = {}
 

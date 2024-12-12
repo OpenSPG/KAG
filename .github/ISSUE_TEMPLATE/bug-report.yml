@@ -1,0 +1,79 @@
+name: Bug report
+title: "[Bug] [Module Name] Bug title "
+description: Create a report to help us improve
+labels: [ "bug", "Waiting for reply" ]
+body:
+
+  - type: checkboxes
+    attributes:
+      label: Search before asking
+      description: >
+        Please make sure to search in the [issues](https://github.com/OpenSPG/KAG/issues?q=is%3Aissue)
+        first to see whether the same issue was reported already.
+      options:
+        - label: >
+            I had searched in the [issues](https://github.com/OpenSPG/KAG/issues?q=is%3Aissue) and found
+            no similar issues.
+          required: true
+
+  - type: dropdown
+    id: system-information
+    attributes:
+      label: Operating system information
+      description: Operating system you use
+      options:
+        - Linux
+        - Windows
+        - MacOS(x86)
+        - MacOS(M1, M2...)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What happened
+      description: Describe the bug
+      placeholder: >
+        A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      description: >
+        What should we do to reproduce the problem? If you are not able to provide a reproducible case,
+        please open a [Discussion](https://github.com/orgs/OpenSPG/discussions) instead.
+      placeholder: >
+        Steps to reproduce the behavior:
+
+        1. My testset is '...'
+        
+        2、My installment steps is
+
+        3. My KAG-builder steps '....'
+
+        4. My KAG-Solver steps '....'
+
+        5. See error
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Are you willing to submit PR?
+      description: >
+        It's completely optional, but if you're interested in contributing, we're here to help! 
+        If you have insights on the solution, that's even better. KAG thrives on community support, 
+        and we warmly welcome new contributors.
+        
+        If you are willing to submit a PR to KAG, 
+        feel free to [contact us](https://github.com/OpenSPG/KAG?tab=readme-ov-file#6-contact-us) to discuss cooperation in OpenSPG-KAG        
+
+      options:
+        - label: Yes I am willing to submit a PR!
+
+  - type: markdown
+    attributes:
+      value: "Thanks for completing our form!"

@@ -41,7 +41,7 @@ class DefaultReflector(KagReflectorABC):
         if serialize_memory == "":
             return False
 
-        if memory.get_solved_answer() != "":
+        if memory.get_solved_answer():
             return True
 
         return self.llm_module.invoke({'memory': serialize_memory, 'instruction': instruction}, self.judge_prompt,

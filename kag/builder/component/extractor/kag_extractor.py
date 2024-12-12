@@ -40,10 +40,16 @@ class KAGExtractor(ExtractorABC):
         super().__init__(**kwargs)
         self.llm = self._init_llm()
         self.prompt_config = self.config.get("prompt", {})
-        self.biz_scene = self.prompt_config.get("biz_scene") or os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
-        self.language = self.prompt_config.get("language") or os.getenv("KAG_PROMPT_LANGUAGE", "en")
+        self.biz_scene = self.prompt_config.get("biz_scene") or os.getenv(
+            "KAG_PROMPT_BIZ_SCENE", "default"
+        )
+        self.language = self.prompt_config.get("language") or os.getenv(
+            "KAG_PROMPT_LANGUAGE", "en"
+        )
         self.schema = SchemaClient(project_id=self.project_id).load()
-        self.ner_prompt = PromptOp.load(self.biz_scene, "ner")(language=self.language, project_id=self.project_id)
+        self.ner_prompt = PromptOp.load(self.biz_scene, "ner")(
+            language=self.language, project_id=self.project_id
+        )
         self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
         self.triple_prompt = PromptOp.load(self.biz_scene, "triple")(
             language=self.language
@@ -60,7 +66,9 @@ class KAGExtractor(ExtractorABC):
                     self.kg_types.append(type_name)
                     break
         if self.kg_types:
-            self.kg_prompt = SPG_KGPrompt(self.kg_types, language=self.language, project_id=self.project_id)
+            self.kg_prompt = SPG_KGPrompt(
+                self.kg_types, language=self.language, project_id=self.project_id
+            )
 
     @property
     def input_types(self) -> Type[Input]:
@@ -124,12 +132,16 @@ class KAGExtractor(ExtractorABC):
             properties = record.get("properties", {})
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
+            if not spg_type:
+                continue
             for prop_name, prop_value in properties.items():
                 if prop_value == "NAN":
                     tmp_properties.pop(prop_name)
                     continue
+
                 if prop_name in spg_type.properties:
                     from knext.schema.model.property import Property
+
                     prop: Property = spg_type.properties.get(prop_name)
                     o_label = prop.object_type_name_en
                     if o_label not in BASIC_TYPES:
@@ -137,10 +149,18 @@ class KAGExtractor(ExtractorABC):
                             prop_value = [prop_value]
                         for o_name in prop_value:
                             sub_graph.add_node(id=o_name, name=o_name, label=o_label)
-                            sub_graph.add_edge(s_id=s_name, s_label=s_label, p=prop_name, o_id=o_name, o_label=o_label)
+                            sub_graph.add_edge(
+                                s_id=s_name,
+                                s_label=s_label,
+                                p=prop_name,
+                                o_id=o_name,
+                                o_label=o_label,
+                            )
                         tmp_properties.pop(prop_name)
             record["properties"] = tmp_properties
-            sub_graph.add_node(id=s_name, name=s_name, label=s_label, properties=properties)
+            sub_graph.add_node(
+                id=s_name, name=s_name, label=s_label, properties=properties
+            )
         return sub_graph, entities
 
     @staticmethod
@@ -175,9 +195,9 @@ class KAGExtractor(ExtractorABC):
                 o_category = OTHER_TYPE
                 sub_graph.add_node(tri[2], tri[2], o_category)
 
-            sub_graph.add_edge(
-                tri[0], s_category, to_camel_case(tri[1]), tri[2], o_category
-            )
+            edge_type = to_camel_case(tri[1])
+            if edge_type:
+                sub_graph.add_edge(tri[0], s_category, edge_type, tri[2], o_category)
 
         return sub_graph
 
@@ -199,14 +219,18 @@ class KAGExtractor(ExtractorABC):
                 "id": chunk.id,
                 "name": chunk.name,
                 "content": f"{chunk.name}\n{chunk.content}",
-                **chunk.kwargs
+                **chunk.kwargs,
             },
         )
         sub_graph.id = chunk.id
         return sub_graph
 
     def assemble_sub_graph(
-        self, sub_graph: SubGraph, chunk: Chunk, entities: List[Dict], triples: List[list]
+        self,
+        sub_graph: SubGraph,
+        chunk: Chunk,
+        entities: List[Dict],
+        triples: List[list],
     ):
         """
         Integrates entity and triple information into a subgraph, and associates it with a chunk of text.
@@ -294,6 +318,9 @@ class KAGExtractor(ExtractorABC):
                 official_name = tmp_dict[key]
                 tmp_entity["official_name"] = official_name
 
+    def quoteStr(self, input: str) -> str:
+        return f"""{input}"""
+
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the semantic extractor to process input data.
@@ -306,12 +333,15 @@ class KAGExtractor(ExtractorABC):
             List[Output]: A list of processed results, containing subgraph information.
         """
         title = input.name
-        passage = title + "\n" + input.content
+        passage = self.quoteStr(title + "\n" + input.content)
 
         try:
             entities = self.named_entity_recognition(passage)
             sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
-            filtered_entities = [{k: v for k, v in ent.items() if k in ["entity", "category"]} for ent in entities]
+            filtered_entities = [
+                {k: v for k, v in ent.items() if k in ["entity", "category"]}
+                for ent in entities
+            ]
             triples = self.triples_extraction(passage, filtered_entities)
             std_entities = self.named_entity_standardization(passage, filtered_entities)
             self.append_official_name(entities, std_entities)
