@@ -24,17 +24,6 @@ class Evaluate():
             if len(scores):
                 for score in scores:
                     total_score += score[1]
-        # data_samples = {
-        #     'question': [],
-        #     'answer': predictionlist,
-        #     'ground_truth': goldlist
-        # }
-        # dataset = Dataset.from_dict(data_samples)
-        # run_config = RunConfig(timeout=240, thread_timeout=240, max_workers=16)
-        # embeddings = embedding_factory(self.embedding_factory, run_config)
-        #
-        # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
-        # return np.average(score.to_pandas()[['answer_similarity']])
         return total_score
 
 
