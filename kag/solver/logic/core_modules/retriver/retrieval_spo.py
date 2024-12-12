@@ -138,7 +138,7 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
                 relation_data = [self._prase_attribute_relation(one_graph, std_p, value)]
             if target_value is not None:
                 for r in relation_data:
-                    candi_target_value = r.end_entity.name if one_graph.s_alias_name == "s" else r.start_entity.name
+                    candi_target_value = r.end_entity.name if one_graph.s_alias_name == "s" else r.from_entity.name
                     if candi_target_value == target_value:
                         final_result_list.append(r)
                         continue

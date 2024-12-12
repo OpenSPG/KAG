@@ -2,6 +2,7 @@
 from typing import List
 
 from .evaUtils import get_em_f1
+from ...solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 
 
 class Evaluate():
@@ -11,12 +12,19 @@ class Evaluate():
     """
     def __init__(self, embedding_factory = "text-embedding-ada-002"):
         self.embedding_factory = embedding_factory
+        self.text_similarity = TextSimilarity()
 
     def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
         """
         evaluate the similarity between prediction and gold #TODO
         """
-        # data_samples = {  
+        total_score = 0.0
+        for i in range(len(predictionlist)):
+            scores = self.text_similarity.text_sim_result(predictionlist[i], [goldlist[i]], topk=1, low_score=0.2, is_cached=True)
+            if len(scores):
+                for score in scores:
+                    total_score += score[1]
+        # data_samples = {
         #     'question': [],
         #     'answer': predictionlist,
         #     'ground_truth': goldlist
@@ -27,7 +35,7 @@ class Evaluate():
         #
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
-        return 0.0
+        return total_score
 
 
     def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):

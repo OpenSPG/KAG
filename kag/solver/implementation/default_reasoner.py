@@ -67,7 +67,7 @@ class DefaultReasoner(KagReasonerABC):
 
 
         # logic form execution
-        solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_solver.solve(question, lf_nodes)
+        solved_answer, sub_qa_pair, recall_docs, history_qa_log, kg_graph = self.lf_solver.solve(question, lf_nodes)
         # Generate supporting facts for sub question-answer pair
         supporting_fact = '\n'.join(sub_qa_pair)
 
@@ -80,7 +80,8 @@ class DefaultReasoner(KagReasonerABC):
             docs = []
         history_log = {
             'history': history_qa_log,
-            'rerank_docs': docs
+            'rerank_docs': docs,
+            'kg_graph': kg_graph
         }
         if len(docs) > 0:
             # Append supporting facts for retrieved chunks

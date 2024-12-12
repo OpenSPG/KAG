@@ -8,6 +8,7 @@ from kag.common.vectorizer import Vectorizer
 from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
 from kag.interface.retriever.kg_retriever_abc import KGRetrieverABC
 from kag.solver.logic.core_modules.common.base_model import LFPlanResult
+from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.common.utils import generate_random_string
@@ -126,6 +127,7 @@ class LFSolver:
         Returns:
         tuple: A tuple containing the final answer, sub-query-answer pairs, relevant documents, and history.
         """
+        kg_graph = KgGraph()
         try:
             start_time = time.time()
             executor = LogicExecutor(
@@ -163,4 +165,4 @@ class LFSolver:
             docs = self._flat_passages_set([cur_step_recall_docs])
         if len(docs) != 0:
             self.last_iter_docs = docs
-        return ",".join(kg_qa_result), sub_qa_pair, docs, history
+        return ",".join(kg_qa_result), sub_qa_pair, docs, history, kg_graph
