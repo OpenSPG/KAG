@@ -23,6 +23,8 @@ from kag.interface import (
     KAGBuilderChain,
 )
 
+from kag.common.utils import generate_hash_id
+
 logger = logging.getLogger(__name__)
 
 
@@ -150,7 +152,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 flow_data = execute_node(node, flow_data, key=input_key)
             return flow_data
 
-        parser_output = self.parser.invoke(input_data)
+        parser_output = self.parser.invoke(input_data, key=generate_hash_id(input_data))
         splitter_output = []
         for chunk in parser_output:
             splitter_output.extend(

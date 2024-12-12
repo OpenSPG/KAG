@@ -16,7 +16,7 @@ from typing import List, Dict
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
-from kag.common.conf import KAG_PROJECT_CONF, KAGConstants
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.checkpointer import CheckPointer
 from kag.common.sharding_info import ShardingInfo
 
@@ -39,7 +39,7 @@ class BuilderComponent(Component, Registrable):
             world_size = get_world_size(1)
         self.sharding_info = ShardingInfo(shard_id=rank, shard_count=world_size)
         if self.ckpt_subdir:
-            self.ckpt_dir = os.path.join(KAGConstants.CKPT_DIR, self.ckpt_subdir)
+            self.ckpt_dir = os.path.join(KAG_PROJECT_CONF.ckpt_dir, self.ckpt_subdir)
 
             self.checkpointer: CheckPointer = CheckPointer.from_config(
                 {
@@ -97,7 +97,6 @@ class BuilderComponent(Component, Registrable):
         input_key = kwargs.get("key")
 
         if input_key and self.checkpointer.exists(input_key):
-            print(f"[{self.ckpt_subdir}]found existing key {input_key}")
             out = self.checkpointer.read_from_ckpt(input_key)
             return out
         output = self._invoke(input, **kwargs)

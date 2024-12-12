@@ -150,7 +150,7 @@ class DocxParser(RecordParserABC):
         text = "\n".join(text.split("\n"))
         return title, text
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Processes the input Docx file, extracts its text content, and generates Chunk objects.
 

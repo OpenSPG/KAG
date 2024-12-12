@@ -59,7 +59,7 @@ class MixParser(RecordParserABC):
             "dict": dict_parser,
         }
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the appropriate parser based on the input type.
 
@@ -95,4 +95,4 @@ class MixParser(RecordParserABC):
         parser = self.parser_map[parser_type]
         if parser is None:
             raise KeyError(f"{parser_type} parser not correctly configured.")
-        return self.parse_map[file_suffix].invoke(input)
+        return self.parse_map[file_suffix]._invoke(input)

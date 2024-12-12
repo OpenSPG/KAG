@@ -17,7 +17,7 @@ import logging
 from typing import Dict
 from tqdm import tqdm
 
-from kag.common.conf import KAGConstants
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.registry import Registrable
 from kag.common.utils import reset, bold, red, generate_hash_id
 from kag.common.checkpointer import CheckPointer
@@ -69,102 +69,6 @@ def generate_hash_id_and_abstract(value):
     return hash_id, abstract
 
 
-# class CKPT:
-#     """
-#     CKPT class is responsible for managing checkpoint files, which is used for record/resume KAG tasks.
-
-#     This class provides methods to load, save, and check the status of data processing checkpoints.
-#     """
-
-#     ckpt_file_name = "kag-runner-{}-{}.ckpt"
-
-#     def __init__(self, path: str, rank: int = 0, world_size: int = 1):
-#         """
-#         Initializes the CKPT instance.
-
-#         Args:
-#             path (str): The path where the checkpoint file is stored.
-#             rank (int, optional): The rank of the process. Defaults to 0.
-#             world_size (int, optional): The total number of processes. Defaults to 1.
-#         """
-#         self.rank = rank
-#         self.world_size = world_size
-#         self.path = path
-#         self.ckpt_file_path = os.path.join(
-#             self.path, CKPT.ckpt_file_name.format(rank, world_size)
-#         )
-#         self._ckpt = set()
-#         self.load()
-
-#     def load(self):
-#         """
-#         Loads the checkpoint data from the file.
-#         """
-#         for rank in range(self.world_size):
-#             ckpt_file_path = os.path.join(
-#                 self.path, CKPT.ckpt_file_name.format(rank, self.world_size)
-#             )
-#             if os.path.exists(ckpt_file_path):
-#                 with open(ckpt_file_path, "r") as reader:
-#                     for line in reader:
-#                         data = json.loads(line)
-#                         self._ckpt.add(data["id"])
-#         if len(self._ckpt) > 0:
-#             print(
-#                 f"{bold}{red}Existing checkpoint found in {self.path}{reset}, with {len(self._ckpt)} processed records."
-#             )
-
-#     def is_processed(self, data_id: str):
-#         """
-#         Checks if a data ID has already been processed.
-
-#         Args:
-#             data_id (str): The data ID to check.
-
-#         Returns:
-#             bool: True if the data ID has been processed, False otherwise.
-#         """
-#         return data_id in self._ckpt
-
-#     def open(self):
-#         """
-#         Opens the checkpoint file for appending.
-#         """
-#         self.writer = open(self.ckpt_file_path, "a")
-
-#     def add(self, data_id: str, data_abstract: str, info: Any):
-#         """
-#         Adds a new entry to the checkpoint file.
-
-#         Args:
-#             data_id (str): The data ID to add.
-#             data_abstract (str): The abstract of the data.
-#             info (Any): Additional information to store.
-#         """
-#         if self.is_processed(data_id):
-#             return
-#         now = datetime.now()
-#         self.writer.write(
-#             json.dumps(
-#                 {
-#                     "id": data_id,
-#                     "abstract": data_abstract,
-#                     "info": info,
-#                     "timestamp": str(now),
-#                 }
-#             )
-#         )
-#         self.writer.write("\n")
-#         self.writer.flush()
-
-#     def close(self):
-#         """
-#         Closes the checkpoint file.
-#         """
-#         self.writer.flush()
-#         self.writer.close()
-
-
 class BuilderChainRunner(Registrable):
     """
     A class that manages the execution of a KAGBuilderChain with parallel processing and checkpointing.
@@ -178,7 +82,6 @@ class BuilderChainRunner(Registrable):
         chain: KAGBuilderChain,
         num_parallel: int = 2,
         chain_level_num_paralle: int = 8,
-        ckpt_dir: str = KAGConstants.CKPT_DIR,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -194,7 +97,7 @@ class BuilderChainRunner(Registrable):
         self.chain = chain
         self.num_parallel = num_parallel
         self.chain_level_num_paralle = chain_level_num_paralle
-        self.ckpt_dir = ckpt_dir
+        self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
 
         self.checkpointer = CheckPointer.from_config(
             {

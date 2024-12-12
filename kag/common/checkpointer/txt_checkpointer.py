@@ -74,7 +74,7 @@ class TxtCheckPointer(CheckPointer):
             value (Any): The value to be stored in the checkpoint.
         """
         self._ckpt[key] = value
-        self._writer.write(json.dumps({"id": key, "value": value}))
+        self._writer.write(json.dumps({"id": key, "value": value}, ensure_ascii=False))
         self._writer.write("\n")
         self._writer.flush()
 

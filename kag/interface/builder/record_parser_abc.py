@@ -9,8 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from abc import ABC, abstractmethod
-from typing import List
+from abc import ABC
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.chunk import Chunk
@@ -33,24 +32,6 @@ class RecordParserABC(BuilderComponent, ABC):
     def output_types(self) -> Output:
         return Chunk
 
-    @abstractmethod
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Abstract method to invoke the parser to process input data.
-
-        This method must be implemented by any subclass. It is responsible for processing the input data
-        and generating a list of output results, typically containing text chunks.
-
-        Args:
-            input (Input): Input data containing records to be parsed.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            List[Output]: A list of processed results, containing text chunks.
-
-        Raises:
-            NotImplementedError: If the method is not implemented in the subclass.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def ckpt_subdir(self):
+        return "parser"

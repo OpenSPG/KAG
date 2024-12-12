@@ -166,7 +166,7 @@ class PDFFileParser(RecordParserABC):
                 text += element.get_text()
         return text
 
-    def invoke(self, input: Input, **kwargs) -> Sequence[Output]:
+    def _invoke(self, input: Input, **kwargs) -> Sequence[Output]:
         """
         Processes a PDF file, splitting or extracting content based on configuration.
 

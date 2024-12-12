@@ -32,6 +32,7 @@ class KAGConstants(object):
     KAG_PROJECT_ID_KEY = "id"
     KAG_PROJECT_HOST_ADDR_KEY = "host_addr"
     KAG_LANGUAGE_KEY = "language"
+    KAG_CKPT_DIR_KEY = "checkpoint_path"
     KAG_BIZ_SCENE_KEY = "biz_scene"
     ENV_KAG_PROJECT_ID = "KAG_PROJECT_ID"
     ENV_KAG_PROJECT_HOST_ADDR = "KAG_PROJECT_HOST_ADDR"
@@ -43,8 +44,6 @@ class KAGConstants(object):
     K8S_ENV_WORLD_SIZE = "WORLD_SIZE"
     K8S_ENV_RANK = "RANK"
     K8S_ENV_POD_NAME = "POD_NAME"
-
-    CKPT_DIR = "ckpt"
 
 
 class KAGGlobalConf:
@@ -60,6 +59,7 @@ class KAGGlobalConf:
             self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
             self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
             self.namespace = kwargs.pop(KAGConstants.KAG_NAMESPACE_KEY, None)
+            self.ckpt_dir = kwargs.pop(KAGConstants.KAG_CKPT_DIR_KEY, "ckpt")
             for k, v in kwargs.items():
                 setattr(self, k, v)
             self._initialized = True

@@ -28,7 +28,7 @@ class TXTParser(RecordParserABC):
     whether it is from a file or directly provided as a string, and convert it into a list of Chunk objects.
     """
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         The main method for processing text reading. This method reads the content of the input (which can be a file path or text content) and converts it into chunks.
 

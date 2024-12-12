@@ -50,7 +50,7 @@ class DictParser(RecordParserABC):
     def input_types(self) -> Input:
         return Dict
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Converts the input dictionary into a list of Chunk objects.
 

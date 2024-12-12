@@ -454,7 +454,7 @@ class MarkDownParser(RecordParserABC):
             csv_data=df.to_csv(index=False),
         )
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Processes a Markdown file and returns its content as structured chunks.
 
@@ -491,7 +491,7 @@ class YuequeParser(MarkDownParser):
     extract their content, and convert it into a list of Chunk objects.
     """
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Processes the input Yueque document and converts it into a list of Chunk objects.
 
