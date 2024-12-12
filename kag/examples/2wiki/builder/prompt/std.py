@@ -80,7 +80,7 @@ class OpenIEEntitystandardizationdPrompt(PromptOp):
 }
     """
 
-    template_zh = """"""
+    template_zh = template_en
 
     def __init__(self, language: Optional[str] = "en"):
         super().__init__(language)
