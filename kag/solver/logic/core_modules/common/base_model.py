@@ -316,3 +316,6 @@ class LFPlanResult:
     def __init__(self, query: str, lf_nodes: List[LogicNode]):
         self.query: str = query
         self.lf_nodes: List[LogicNode] = lf_nodes
+
+    def __repr__(self):
+        return "\n".join([str(n) for n in self.lf_nodes])

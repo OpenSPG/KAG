@@ -286,4 +286,4 @@ class LogicExecutor:
                 kg_qa_result += self.output_executor.executor(n, self.req_id, self.params)
             else:
                 logger.warning(f"unknown operator: {n.operator}")
-        return kg_qa_result, spo_set
+        return list(set(kg_qa_result)), list(set(spo_set))

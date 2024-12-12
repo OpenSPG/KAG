@@ -86,7 +86,7 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
             "std_out": []
         }
         logger.debug(f"std_best_p_with_value_and_p_name begin std " + str(n))
-        un_std_p_list = n.p.get_entity_type_or_zh_list()
+        un_std_p_list = n.p.get_entity_type_set()
         final_result_list = []
         if len(un_std_p_list) == 0:
             # return all
@@ -138,7 +138,7 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
                 relation_data = [self._prase_attribute_relation(one_graph, std_p, value)]
             if target_value is not None:
                 for r in relation_data:
-                    candi_target_value = r.end_entity.name if one_graph.s_alias_name == "s" else r.start_entity.name
+                    candi_target_value = r.end_entity.name if one_graph.s_alias_name == "s" else r.from_entity.name
                     if candi_target_value == target_value:
                         final_result_list.append(r)
                         continue
@@ -180,11 +180,11 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         self.language = os.getenv("KAG_PROMPT_LANGUAGE", "en")
 
     def get_unstd_p_text(self, n: GetSPONode):
-        un_std_p = n.p.get_entity_first_type_or_zh()
-        start_value_type = n.s.get_entity_first_type_or_zh()
+        un_std_p = n.p.get_entity_first_type_or_en()
+        start_value_type = n.s.get_entity_first_type_or_en()
         if start_value_type == "Others":
             start_value_type = "Entity"
-        target_value_type = n.o.get_entity_first_type_or_zh()
+        target_value_type = n.o.get_entity_first_type_or_en()
         if target_value_type == "Others":
             target_value_type = "Entity"
         un_std_p = f"{start_value_type}{'[' + n.s.entity_name + ']' if n.s.entity_name is not None else ''} {un_std_p} {target_value_type}{'[' + n.o.entity_name + ']' if n.o.entity_name is not None else ''}"
@@ -210,19 +210,22 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         else:
             intersection = []
         if len(intersection) == 0:
-            res = ''
             try:
                 res = self._choosed_by_llm(query, p_mention, p_candis)
-                res = res.replace("Output:", "output:")
-                if "output:" in res:
-                    res = re.search('output:(.*)', res).group(1).strip()
                 if res != '':
-                    res = json.loads(res.replace("'", '"'))
-                    for res_ in res:
-                        self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
-                        intersection.append(res_)
+                    try:
+                        res = res.replace("Output:", "output:")
+                        if "output:" in res:
+                            res = re.search('output:(.*)', res).group(1).strip()
+                        if res != '':
+                            res = json.loads(res.replace("'", '"'))
+                            for res_ in res:
+                                self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
+                                intersection.append(res_)
+                    except:
+                        logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
             except:
-                logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
+                logger.warning(f"retrieval_spo call llm failed ：query={query},  p_mention={p_mention} p_candis={p_candis}")
         return [[x, 1.0] for x in intersection]
 
     def find_best_match_p_name_by_model(self, query: str, p: str, candi_set: dict):
@@ -237,8 +240,9 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
             for spo in spo_l:
                 spo_name_map[spo] = p_name
             sen_condi_set += spo_l
+        start_time = time.time()
         result = self.select_relation(p, sen_condi_set, query=query)
-        logger.debug(f"retrieval_relation: p={p}, candi_set={sen_condi_set}, p_std result={result}")
+        logger.debug(f"retrieval_relation: cost={time.time() - start_time} p={p}, p_std result={result}, candi_set={sen_condi_set}")
 
         if result is None or len(result) == 0:
             return spo_retrieved
@@ -265,11 +269,15 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
                     revert_graph_map[v] = one_hop_graph
             for k, v_set in one_hop_graph.get_s_all_attribute_spo().items():
                 for v in v_set:
-                    all_spo_text.append(v)
-                    revert_value_p_map[v] = k
-                    revert_graph_map[v] = one_hop_graph
+                    attr_spo = f"{one_hop_graph.s.name} {k} {v}"
+                    all_spo_text.append(attr_spo)
+                    revert_value_p_map[attr_spo] = k
+                    revert_graph_map[attr_spo] = one_hop_graph
         start_time = time.time()
-        tok5_res = self.text_similarity.text_sim_result(n.sub_query, all_spo_text, 5, low_score=0.3)
+        if len(all_spo_text) > 10:
+            tok5_res = self.text_similarity.text_sim_result(n.sub_query, all_spo_text, 5, low_score=0.3)
+        else:
+            tok5_res = [(k, 1.0) for k in all_spo_text]
         logger.debug(f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}")
 
         if len(tok5_res) == 0:
