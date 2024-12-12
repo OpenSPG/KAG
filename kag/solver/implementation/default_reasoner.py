@@ -80,8 +80,7 @@ class DefaultReasoner(KagReasonerABC):
             docs = []
         history_log = {
             'history': history_qa_log,
-            'rerank_docs': docs,
-            'kg_graph': kg_graph
+            'rerank_docs': docs
         }
         if len(docs) > 0:
             # Append supporting facts for retrieved chunks

@@ -769,6 +769,9 @@ class KgGraph:
             "edge_map": edge_dict
         }
 
+    def __str__(self):
+        return self.to_json()
+
     def to_edge_str(self):
         return "\n".join(self.to_edge_evidence())
 

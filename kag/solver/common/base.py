@@ -123,16 +123,16 @@ class KagBaseModule(object):
 
     def _init_llm(self):
         llm_config = eval(os.getenv("KAG_LLM", "{}"))
-        try:
-            if self.project_id and self.host_addr:
-                project_id = int(self.project_id)
-                config = ProjectClient(
-                    host_addr=self.host_addr, project_id=project_id
-                ).get_config(self.project_id)
-                llm_config.update(config.get("llm", {}))
-        except Exception as e:
-            logger.warning(f"init llm from local config:{e}")
-            pass
+        # try:
+        #     if self.project_id and self.host_addr:
+        #         project_id = int(self.project_id)
+        #         config = ProjectClient(
+        #             host_addr=self.host_addr, project_id=project_id
+        #         ).get_config(self.project_id)
+        #         llm_config.update(config.get("llm", {}))
+        # except Exception as e:
+        #     logger.warning(f"init llm from local config:{e}")
+        #     pass
         self.llm_module = LLMClient.from_config(llm_config)
 
     def get_module_name(self):

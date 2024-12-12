@@ -210,19 +210,22 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         else:
             intersection = []
         if len(intersection) == 0:
-            res = self._choosed_by_llm(query, p_mention, p_candis)
-            if res != '':
-                try:
-                    res = res.replace("Output:", "output:")
-                    if "output:" in res:
-                        res = re.search('output:(.*)', res).group(1).strip()
-                    if res != '':
-                        res = json.loads(res.replace("'", '"'))
-                        for res_ in res:
-                            self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
-                            intersection.append(res_)
-                except:
-                    logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
+            try:
+                res = self._choosed_by_llm(query, p_mention, p_candis)
+                if res != '':
+                    try:
+                        res = res.replace("Output:", "output:")
+                        if "output:" in res:
+                            res = re.search('output:(.*)', res).group(1).strip()
+                        if res != '':
+                            res = json.loads(res.replace("'", '"'))
+                            for res_ in res:
+                                self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [res_]
+                                intersection.append(res_)
+                    except:
+                        logger.warning(f"retrieval_spo json failed：query={query},  res={res}")
+            except:
+                logger.warning(f"retrieval_spo call llm failed ：query={query},  p_mention={p_mention} p_candis={p_candis}")
         return [[x, 1.0] for x in intersection]
 
     def find_best_match_p_name_by_model(self, query: str, p: str, candi_set: dict):
@@ -239,7 +242,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
             sen_condi_set += spo_l
         start_time = time.time()
         result = self.select_relation(p, sen_condi_set, query=query)
-        logger.info(f"retrieval_relation: cost={time.time() - start_time} p={p}, p_std result={result}, candi_set={sen_condi_set}")
+        logger.debug(f"retrieval_relation: cost={time.time() - start_time} p={p}, p_std result={result}, candi_set={sen_condi_set}")
 
         if result is None or len(result) == 0:
             return spo_retrieved
