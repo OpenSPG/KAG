@@ -46,7 +46,7 @@ class SPOBase:
         self.alias_name: Identifer = None
         self.type_set: List[TypeInfo] = []
         self.is_attribute = False
-        self.value_list = []
+        self.value_list = {}
 
     def __repr__(self):
         return f"{self.alias_name}:{self.get_entity_first_type_or_en()}"
