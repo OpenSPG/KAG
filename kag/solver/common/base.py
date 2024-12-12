@@ -129,11 +129,12 @@ class KagBaseModule(object):
                 config = ProjectClient(
                     host_addr=self.host_addr, project_id=project_id
                 ).get_config(self.project_id)
-                llm_config.update(config.get("llm", {}))
+                proj_llm = dict(llm_config)
+                proj_llm.update(config.get("llm", llm_config))
+                self.llm_module = LLMClient.from_config(proj_llm)
         except Exception as e:
             logger.warning(f"init llm from local config:{e}")
-            pass
-        self.llm_module = LLMClient.from_config(llm_config)
+            self.llm_module = LLMClient.from_config(llm_config)
 
     def get_module_name(self):
         raise NotImplementedError
