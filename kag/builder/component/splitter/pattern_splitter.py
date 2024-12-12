@@ -17,6 +17,7 @@ from typing import Type, List, Union
 
 from kag.builder.model.chunk import Chunk
 from kag.interface import SplitterABC
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
@@ -40,6 +41,7 @@ class PatternSplitter(SplitterABC):
                 }
             chunk_cut_num (int, optional): The number of characters to cut chunks into. Defaults to None.
         """
+        super().__init__()
         if pattern_dict is None:
             pattern_dict = {
                 "pattern": r"(\d+)\.([^0-9]+?)？([^0-9第版].*?)(?=\d+\.|$)",
@@ -131,7 +133,7 @@ class PatternSplitter(SplitterABC):
         for idx, sentences in enumerate(splitted):
             chunk_name = f"{prefix}#{idx}"
             chunk = Chunk(
-                id=Chunk.generate_hash_id(chunk_name),
+                id=generate_hash_id(chunk_name),
                 name=chunk_name,
                 content=sep.join(sentences),
             )
@@ -164,7 +166,7 @@ class PatternSplitter(SplitterABC):
             chunk = Chunk(
                 chunk_header=match.group(self.group["header"]),
                 name=match.group(self.group["name"]),
-                id=Chunk.generate_hash_id(match.group(self.group["content"])),
+                id=generate_hash_id(match.group(self.group["content"])),
                 content=match.group(self.group["content"]),
             )
             chunk = [chunk]
@@ -182,7 +184,7 @@ class PatternSplitter(SplitterABC):
 
         return chunks
 
-    def invoke(self, input: Chunk, **kwargs) -> List[Output]:
+    def _invoke(self, input: Chunk, **kwargs) -> List[Output]:
         """
         Invokes the chunk splitting process on the given input.
 

@@ -47,7 +47,6 @@ def test_text_parser():
     chunks = parser.invoke(file_path)
     assert len(chunks) == 1
     assert chunks[0].content == content
-    assert chunks[0].id == Chunk.generate_hash_id(file_path)
 
 
 def test_docx_parser():

@@ -9,11 +9,9 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from typing import List
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
 
 
 class PostProcessorABC(BuilderComponent):
@@ -31,20 +29,6 @@ class PostProcessorABC(BuilderComponent):
     def output_types(self):
         return SubGraph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Abstract method to be implemented by subclasses. It processes the input subgraph and returns a list of modified subgraphs.
-
-        Args:
-            input (Input): The input subgraph to be processed.
-            **kwargs: Additional keyword arguments.
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
-
-        Returns:
-            List[Output]: A list of modified subgraphs.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def ckpt_subdir(self):
+        return "postprocessor"

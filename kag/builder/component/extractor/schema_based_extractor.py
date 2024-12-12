@@ -57,6 +57,7 @@ class SchemaBasedExtractor(ExtractorABC):
             event_prompt (PromptABC, optional): The prompt for event extraction. Defaults to None.
             external_graph (ExternalGraphLoaderABC, optional): The external graph loader for additional data. Defaults to None.
         """
+        super().__init__()
         self.llm = llm
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.ner_prompt = ner_prompt
@@ -395,7 +396,7 @@ class SchemaBasedExtractor(ExtractorABC):
         except:
             return graph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the extractor on the given input.
 

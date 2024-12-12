@@ -47,6 +47,7 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
             edges (List[Edge]): A list of Edge objects representing the edges in the graph.
             match_config (MatchConfig): The configuration for matching query str to graph nodes.
         """
+        super().__init__()
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         for node in nodes:
             if node.label not in self.schema:

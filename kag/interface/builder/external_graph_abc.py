@@ -64,6 +64,7 @@ class ExternalGraphLoaderABC(BuilderComponent):
         Args:
             match_config (MatchConfig): The configuration for matching operations.
         """
+        super().__init__()
         self.match_config = match_config
 
     def dump(self) -> List[SubGraph]:

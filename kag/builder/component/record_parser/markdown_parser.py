@@ -28,6 +28,7 @@ from kag.interface import RecordParserABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
 
@@ -55,6 +56,7 @@ class MarkDownParser(RecordParserABC):
             llm (LLMClient): An optional LLMClient instance used for analyzing tables. Defaults to None.
             cut_depth (int): The depth at which to cut the content for parsing. Defaults to 1.
         """
+        super().__init__()
         self.llm = llm
         self.cut_depth = cut_depth
         self.analyze_table_prompt = AnalyzeTablePrompt(
@@ -374,7 +376,7 @@ class MarkDownParser(RecordParserABC):
                 break
         if top_level is None:
             chunk = Chunk(
-                id=Chunk.generate_hash_id(str(id)),
+                id=generate_hash_id(str(id)),
                 name=title,
                 content=soup.text,
                 ref=kwargs.get("ref", ""),
@@ -394,7 +396,7 @@ class MarkDownParser(RecordParserABC):
                 chunk.ref = kwargs.get("ref", "")
             else:
                 chunk = Chunk(
-                    id=Chunk.generate_hash_id(f"{id}#{idx}"),
+                    id=generate_hash_id(f"{id}#{idx}"),
                     name=f"{title}#{idx}",
                     content=content,
                     ref=kwargs.get("ref", ""),
@@ -426,7 +428,7 @@ class MarkDownParser(RecordParserABC):
         if not matches or len(matches) <= 0:
             # 找不到表格信息，按照Text Chunk处理
             return Chunk(
-                id=Chunk.generate_hash_id(f"{id}#{idx}"),
+                id=generate_hash_id(f"{id}#{idx}"),
                 name=f"{title}#{idx}",
                 content=table_chunk_str,
             )
@@ -445,14 +447,14 @@ class MarkDownParser(RecordParserABC):
             pattern, f"\n{table_markdown_str}\n", table_chunk_str, flags=re.DOTALL
         )
         return Chunk(
-            id=Chunk.generate_hash_id(f"{id}#{idx}"),
+            id=generate_hash_id(f"{id}#{idx}"),
             name=f"{title}#{idx}",
             content=replaced_table_text,
             type=ChunkTypeEnum.Table,
             csv_data=df.to_csv(index=False),
         )
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Processes a Markdown file and returns its content as structured chunks.
 
@@ -489,7 +491,7 @@ class YuequeParser(MarkDownParser):
     extract their content, and convert it into a list of Chunk objects.
     """
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Processes the input Yueque document and converts it into a list of Chunk objects.
 

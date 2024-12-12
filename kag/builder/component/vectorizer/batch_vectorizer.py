@@ -205,7 +205,7 @@ class BatchVectorizer(VectorizerABC):
             node.properties.update(new_properties)
         return input_subgraph
 
-    def invoke(self, input_subgraph: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input_subgraph: Input, **kwargs) -> List[Output]:
         """
         Invokes the generation of embedding vectors for the input SubGraph.
 
@@ -217,4 +217,5 @@ class BatchVectorizer(VectorizerABC):
             List[Output]: A list containing the modified SubGraph with generated embedding vectors.
         """
         modified_input = self._generate_embedding_vectors(input_subgraph)
+        print(f"vectorizer called {kwargs}")
         return [modified_input]

@@ -102,6 +102,7 @@ class KGWriter(SinkWriterABC):
         input: Input,
         alter_operation: str = AlterOperationEnum.Upsert,
         lead_to_builder: bool = False,
+        **kwargs,
     ) -> List[Output]:
         """
         Invokes the specified operation (upsert or delete) on the graph store.
