@@ -33,9 +33,7 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    context="All people who regularly drink coffee are dependent on caffeine. People either regularly drink coffee or joke about being addicted to caffeine. No one who jokes about being addicted to caffeine is unaware that caffeine is a drug. Rina is either a student and unaware that caffeine is a drug, or neither a student nor unaware that caffeine is a drug. If Rina is not a person dependent on caffeine and a student, then Rina is either a person dependent on caffeine and a student, or neither a person dependent on caffeine nor a student."
-    question="Based on the above information, is the following statement true, false, or uncertain? Rina is either a person who jokes about being addicted to caffeine or is unaware that caffeine is a drug."
-    query = {'context': context, 'question': question}
-    res = SolverMain().invoke(1500002, 900001, json.dumps(query), True, host_addr="http://127.0.0.1:8887")
+    query = "All people who regularly drink coffee are dependent on caffeine. People either regularly drink coffee or joke about being addicted to caffeine. No one who jokes about being addicted to caffeine is unaware that caffeine is a drug. Rina is either a student and unaware that caffeine is a drug, or neither a student nor unaware that caffeine is a drug. If Rina is not a person dependent on caffeine and a student, then Rina is either a person dependent on caffeine and a student, or neither a person dependent on caffeine nor a student. Based on the above information, is the following statement true, false, or uncertain? Rina is either a person who jokes about being addicted to caffeine or is unaware that caffeine is a drug."
+    res = SolverMain().invoke(1500002, 900001, query, True, host_addr="http://127.0.0.1:8887")
     print("*" * 80)
     print("The Answer is: ", res)
