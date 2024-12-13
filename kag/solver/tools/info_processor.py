@@ -119,7 +119,7 @@ class ReporterIntermediateProcessTool:
         request = ReportMarkdownRequest(task_id=self.task_id, content=content)
         if self.report_log:
             self.client.reasoner_dialog_report_markdown_post(
-                reason_markdown_request=request
+                report_markdown_request=request
             )
         else:
             logger.info(request)
