@@ -217,5 +217,4 @@ class BatchVectorizer(VectorizerABC):
             List[Output]: A list containing the modified SubGraph with generated embedding vectors.
         """
         modified_input = self._generate_embedding_vectors(input_subgraph)
-        print(f"vectorizer called {kwargs}")
         return [modified_input]
