@@ -9,7 +9,6 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import json
 import os
 
 from knext.project.client import ProjectClient
@@ -23,13 +22,12 @@ class SolverMain:
     def invoke(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
         # resp
         report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
-        query_obj = json.loads(query)
         config = ProjectClient(host_addr=host_addr, project_id=project_id).get_config(project_id)
 
         llm_config = eval(os.getenv("KAG_LLM", "{}"))
         llm_config.update(config.get("llm", {}))
-        thinker = Thinker(env="dev", llm_config=llm_config)
-        response = thinker.run_folio(context=query_obj['context'], question=query_obj['question'])
+        thinker = Thinker(env="dev", report_tool=report_tool, llm_config=llm_config)
+        response = thinker.run_folio(question=query)
         report_tool.report_markdown(response['thinkerCot'])
         return response['thinkerCot']
 
