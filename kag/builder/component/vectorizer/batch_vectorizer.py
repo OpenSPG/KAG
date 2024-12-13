@@ -70,7 +70,7 @@ class EmbeddingVectorManager(object):
             text_batch[property_value].append(placeholder)
         return text_batch
 
-    def _generate_vectors(self, vectorizer, text_batch, batch_size=1024):
+    def _generate_vectors(self, vectorizer, text_batch, batch_size=32):
         texts = list(text_batch)
         if not texts:
             return []
@@ -88,7 +88,7 @@ class EmbeddingVectorManager(object):
             for placeholder in placeholders:
                 placeholder._embedding_vector = vector
 
-    def batch_generate(self, vectorizer, batch_size=1024):
+    def batch_generate(self, vectorizer, batch_size=32):
         text_batch = self._get_text_batch()
         vectors = self._generate_vectors(vectorizer, text_batch, batch_size)
         self._fill_vectors(vectors, text_batch)
@@ -104,7 +104,7 @@ class EmbeddingVectorGenerator(object):
         self._extra_labels = extra_labels
         self._vector_index_meta = vector_index_meta or {}
 
-    def batch_generate(self, node_batch, batch_size=1024):
+    def batch_generate(self, node_batch, batch_size=32):
         manager = EmbeddingVectorManager()
         vector_index_meta = self._vector_index_meta
         for node_item in node_batch:
@@ -141,13 +141,13 @@ class BatchVectorizer(VectorizerABC):
         batch_size (int): The size of the batches in which to process the nodes.
     """
 
-    def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 1024):
+    def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 32):
         """
         Initializes the BatchVectorizer with the specified vectorization model and batch size.
 
         Args:
             vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
-            batch_size (int): The size of the batches in which to process the nodes. Defaults to 1024.
+            batch_size (int): The size of the batches in which to process the nodes. Defaults to 32.
         """
         super().__init__()
         self.project_id = KAG_PROJECT_CONF.project_id
