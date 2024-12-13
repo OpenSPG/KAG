@@ -70,12 +70,15 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 
         return chain
 
-    def close_checkpointers(self):
-        for node in [
+    def get_component_with_ckpts(self):
+        return [
             self.mapping,
             self.vectorizer,
             self.writer,
-        ]:
+        ]
+
+    def close_checkpointers(self):
+        for node in self.get_component_with_ckpts():
             if node and hasattr(node, "checkpointer"):
                 node.checkpointer.close()
 
@@ -176,14 +179,17 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 result.extend(ret)
         return result
 
-    def close_checkpointers(self):
-        for node in [
+    def get_component_with_ckpts(self):
+        return [
             self.parser,
             self.splitter,
             self.extractor,
             self.vectorizer,
             self.post_processor,
             self.writer,
-        ]:
+        ]
+
+    def close_checkpointers(self):
+        for node in self.get_component_with_ckpts():
             if node and hasattr(node, "checkpointer"):
                 node.checkpointer.close()

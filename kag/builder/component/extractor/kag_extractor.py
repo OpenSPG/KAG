@@ -344,21 +344,24 @@ class KAGExtractor(ExtractorABC):
             source_entities (List[Dict]): A list of source entities.
             entities_with_official_name (List[Dict]): A list of entities with official names.
         """
-        tmp_dict = {}
-        for tmp_entity in entities_with_official_name:
-            name = tmp_entity["name"]
-            category = tmp_entity["category"]
-            official_name = tmp_entity["official_name"]
-            key = f"{category}{name}"
-            tmp_dict[key] = official_name
+        try:
+            tmp_dict = {}
+            for tmp_entity in entities_with_official_name:
+                name = tmp_entity["name"]
+                category = tmp_entity["category"]
+                official_name = tmp_entity["official_name"]
+                key = f"{category}{name}"
+                tmp_dict[key] = official_name
 
-        for tmp_entity in source_entities:
-            name = tmp_entity["name"]
-            category = tmp_entity["category"]
-            key = f"{category}{name}"
-            if key in tmp_dict:
-                official_name = tmp_dict[key]
-                tmp_entity["official_name"] = official_name
+            for tmp_entity in source_entities:
+                name = tmp_entity["name"]
+                category = tmp_entity["category"]
+                key = f"{category}{name}"
+                if key in tmp_dict:
+                    official_name = tmp_dict[key]
+                    tmp_entity["official_name"] = official_name
+        except Exception as e:
+            logger.warn(f"failed to process official name, info: {e}")
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """

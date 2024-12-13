@@ -1,77 +1,11 @@
-project:
-  biz_scene: medical
-  namespace: Medicine
-  host_addr: http://127.0.0.1:8887
-  language: zh
-  id: 4
-
-
-vectorize_model: &vectorize_model_config
-  type: mock
-  vector_dimensions: 768
-
-vectorizer:
-  type: batch
-  vectorize_model: *vectorize_model_config
-
-
-llm: &llm_conf  
-  api_key: key
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
-  type: maas
-
-log:
-  level: INFO
-
-
-spg_runner:
-  reader:
-    type:
-      csv
-  chain:
-    type: structured
-    mapping:
-      type: spg
-    writer:
-      type: kg
-  ckpt_dir: ./spg-runner-ckpt
-  
-spo_runner:
-  reader:
-    type:
-      csv
-  chain:
-    type: structured
-    mapping:
-      type: spo
-      s_id_col: S
-      p_type_col: P
-      o_id_col: O
-      sub_property_col: properties
-
-    writer:
-      type: kg
-  ckpt_dir: ./spo-runner-ckpt
-
 extract_runner:
-  num_parallel: 10
-  reader:
-    type:
-      csv
   chain:
-    type: unstructured
-    parser:
-      type: dict
-      id_col: idx
-      name_col: title
-      content_col: text
-    splitter:
-      split_length: 100000
-      type: length
-      window_length: 0    
     extractor:
-      llm: *llm_conf
+      llm: &id001
+        api_key: key
+        base_url: https://api.deepseek.com
+        model: deepseek-chat
+        type: maas
       ner_prompt:
         type: example_medical_ner
       std_prompt:
@@ -79,24 +13,75 @@ extract_runner:
       triple_prompt:
         type: example_medical_triple
       type: kag
+    parser:
+      content_col: text
+      id_col: idx
+      name_col: title
+      type: dict
+    splitter:
+      split_length: 100000
+      type: length
+      window_length: 0
+    type: unstructured
     vectorizer:
       type: batch
-      vectorize_model: *vectorize_model_config
+      vectorize_model: &id002
+        api_key: key
+        base_url: https://api.siliconflow.cn/v1/
+        model: BAAI/bge-large-en-v1.5
+        type: openai
+        vector_dimensions: 1024
     writer:
       type: kg
-  ckpt_dir: ./extract-runner-ckpt   
-  
- 
+  num_parallel: 10
+  reader:
+    type: csv
 lf_solver_pipeline:
   generator:
     generate_prompt:
       type: example_resp_generator
   reasoner:
     lf_solver:
-      kg_retriever:
-        type: base
       chunk_retriever:
-        type: kag
         ner_prompt:
           type: example_medical_question_ner
-    
+        type: kag
+      kg_retriever:
+        type: base
+llm: *id001
+log:
+  level: INFO
+project:
+  biz_scene: medical
+  host_addr: http://127.0.0.1:8887
+  id: '3'
+  language: zh
+  namespace: Medicine
+  checkpoint_path: ./extract-runner-ckpt
+  
+spg_runner:
+  chain:
+    mapping:
+      type: spg
+    type: structured
+    writer:
+      type: kg
+  reader:
+    type: csv
+spo_runner:
+  chain:
+    mapping:
+      o_id_col: O
+      p_type_col: P
+      s_id_col: S
+      sub_property_col: properties
+      type: spo
+    type: structured
+    writer:
+      type: kg
+  reader:
+    type: csv
+vectorize_model: *id002
+vectorizer:
+  type: batch
+  vectorize_model: *id002

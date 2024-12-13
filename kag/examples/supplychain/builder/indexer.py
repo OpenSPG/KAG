@@ -43,7 +43,7 @@ class SupplyChainPersonChain(BuilderChainABC):
         self.spg_type_name = spg_type_name
 
     def build(self, **kwargs):
-        mapping = (
+        self.mapping = (
             SPGTypeMapping(spg_type_name=self.spg_type_name)
             .add_property_mapping("name", "name")
             .add_property_mapping("id", "id")
@@ -54,9 +54,21 @@ class SupplyChainPersonChain(BuilderChainABC):
                 link_func=company_link_func,
             )
         )
-        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
-        sink = KGWriter()
-        return mapping >> vectorizer >> sink
+        self.vectorizer = BatchVectorizer.from_config(
+            KAG_CONFIG.all_config["vectorizer"]
+        )
+        self.sink = KGWriter()
+        return self.mapping >> self.vectorizer >> self.sink
+
+    def get_component_with_ckpts(self):
+        return [
+            self.vectorizer,
+        ]
+
+    def close_checkpointers(self):
+        for node in self.get_component_with_ckpts():
+            if node and hasattr(node, "checkpointer"):
+                node.checkpointer.close()
 
 
 class SupplyChainCompanyFundTransCompanyChain(BuilderChainABC):
@@ -66,17 +78,24 @@ class SupplyChainCompanyFundTransCompanyChain(BuilderChainABC):
 
     def build(self, **kwargs):
         subject_name, relation, object_name = self.spg_type_name.split("_")
-        date_process_op = FundDateProcessComponent()
-        mapping = (
+        self.date_process_op = FundDateProcessComponent()
+        self.mapping = (
             RelationMapping(subject_name, relation, object_name)
             .add_src_id_mapping("srcId")
             .add_dst_id_mapping("dstId")
             .add_sub_property_mapping("transDate", "transDate")
             .add_sub_property_mapping("transAmt", "transAmt")
         )
-        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
-        sink = KGWriter()
-        return date_process_op >> mapping >> vectorizer >> sink
+        self.vectorizer = BatchVectorizer.from_config(
+            KAG_CONFIG.all_config["vectorizer"]
+        )
+        self.sink = KGWriter()
+        return self.date_process_op >> self.mapping >> self.vectorizer >> self.sink
+
+    def get_component_with_ckpts(self):
+        return [
+            self.vectorizer,
+        ]
 
 
 class SupplyChainDefaulStructuredBuilderChain(BuilderChainABC):
@@ -94,11 +113,18 @@ class SupplyChainDefaulStructuredBuilderChain(BuilderChainABC):
         Returns:
             chain: The constructed processing chain.
         """
-        mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-        sink = KGWriter()
-        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
-        chain = mapping >> vectorizer >> sink
+        self.mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
+        self.sink = KGWriter()
+        self.vectorizer = BatchVectorizer.from_config(
+            KAG_CONFIG.all_config["vectorizer"]
+        )
+        chain = self.mapping >> self.vectorizer >> self.sink
         return chain
+
+    def get_component_with_ckpts(self):
+        return [
+            self.vectorizer,
+        ]
 
 
 class SupplyChainEventBuilderChain(DefaultStructuredBuilderChain):
@@ -115,12 +141,18 @@ class SupplyChainEventBuilderChain(DefaultStructuredBuilderChain):
         Returns:
             chain: The constructed processing chain.
         """
-
-        mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-        sink = EventKGWriter()
-        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
-        chain = mapping >> vectorizer >> sink
+        self.mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
+        self.sink = EventKGWriter()
+        self.vectorizer = BatchVectorizer.from_config(
+            KAG_CONFIG.all_config["vectorizer"]
+        )
+        chain = self.mapping >> self.vectorizer >> self.sink
         return chain
+
+    def get_component_with_ckpts(self):
+        return [
+            self.vectorizer,
+        ]
 
 
 def import_data():
