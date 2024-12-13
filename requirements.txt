@@ -42,3 +42,4 @@ ollama
 tenacity
 pyhocon
 scikit-learn
+zodb

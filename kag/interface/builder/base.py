@@ -43,7 +43,7 @@ class BuilderComponent(Component, Registrable):
 
             self.checkpointer: CheckPointer = CheckPointer.from_config(
                 {
-                    "type": "bin",
+                    "type": "zodb",
                     "ckpt_dir": self.ckpt_dir,
                     "rank": rank,
                     "world_size": world_size,
@@ -98,7 +98,8 @@ class BuilderComponent(Component, Registrable):
 
         if input_key and self.checkpointer.exists(input_key):
             out = self.checkpointer.read_from_ckpt(input_key)
-            return out
+            if out is not None:
+                return out
         output = self._invoke(input, **kwargs)
         if input_key:
             self.checkpointer.write_to_ckpt(input_key, output)

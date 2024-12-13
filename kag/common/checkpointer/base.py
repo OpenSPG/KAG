@@ -48,7 +48,9 @@ class CheckPointer(Registrable):
         )
         self._ckpt = self.open()
         if len(self._ckpt) > 0:
-            print(f"{bold}{red}Existing checkpoint found in {self._ckpt_dir}.{reset}")
+            print(
+                f"{bold}{red}Existing checkpoint found in {self._ckpt_dir}, with {len(self._ckpt)} records.{reset}"
+            )
 
     def open(self):
         """
