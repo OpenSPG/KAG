@@ -7,6 +7,7 @@ from knext.reasoner.rest.models.ca_pipeline import CaPipeline
 from knext.reasoner.rest.models.edge import Edge
 from knext.reasoner.rest.models.node import Node
 from knext.reasoner.rest.models.report_pipeline_request import ReportPipelineRequest
+from knext.reasoner.rest.models.reason_markdown_request import ReportMarkdownRequest
 from knext.reasoner.rest.reasoner_api import ReasonerApi
 
 logger = logging.getLogger(__name__)
@@ -110,6 +111,15 @@ class ReporterIntermediateProcessTool:
         if self.report_log:
             self.client.reasoner_dialog_report_node_post(
                 report_pipeline_request=request
+            )
+        else:
+            logger.info(request)
+
+    def report_markdown(self, content):
+        request = ReportMarkdownRequest(task_id=self.task_id, content=content)
+        if self.report_log:
+            self.client.reasoner_dialog_report_markdown_post(
+                reason_markdown_request=request
             )
         else:
             logger.info(request)
