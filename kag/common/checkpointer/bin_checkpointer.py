@@ -84,6 +84,12 @@ class BinCheckPointer(CheckPointer):
         self._ckpt.close()
 
     def size(self):
+        """
+        Returns the number of entries in the checkpoint.
+        Returns:
+            int: The number of entries in the checkpoint.
+        """
+
         return len(self._ckpt)
 
 
@@ -143,6 +149,12 @@ class ZODBCheckPointer(CheckPointer):
     def write_to_ckpt(self, key, value):
         """
         Writes a value to the checkpoint using the specified key.
+        By default, ZODB tracks modifications to the written object (value) and
+        continuously synchronizes these changes to the storage. For example, if
+        the value is a `SubGraph` object, subsequent modifications to its
+        attributes will be synchronized, which is not what we expect.
+        Therefore, we use `pickle` to serialize the value object before writing it,
+        ensuring that the object behaves as an immutable object.
 
         Args:
             key (str): The key to store the value in the checkpoint.
@@ -182,6 +194,16 @@ class ZODBCheckPointer(CheckPointer):
                 return key in conn.root.data
 
     def size(self):
+        """
+        Returns the number of entries in the checkpoint.
+
+        This method calculates the size of the checkpoint by counting the number
+        of keys stored in the checkpoint's data dictionary. It ensures thread-safe
+        access to the checkpoint by using a lock.
+
+        Returns:
+            int: The number of entries in the checkpoint.
+        """
         with self._lock:
             with self._ckpt.transaction() as conn:
                 return len(conn.root.data)

@@ -9,7 +9,6 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import jieba
 import json
 import numpy as np
 import logging
@@ -68,6 +67,8 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
             self.vocabulary[node.name] = node
             self.node_labels.add(node.label)
 
+        import jieba
+
         for word in self.vocabulary.keys():
             jieba.add_word(word)
 
@@ -109,6 +110,8 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
 
     def ner(self, content: str):
         output = []
+        import jieba
+
         for word in jieba.cut(content):
             if word in self.vocabulary:
                 output.append(self.vocabulary[word])
