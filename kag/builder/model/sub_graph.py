@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import pprint
+import copy
 from typing import Dict, List, Any
 
 from kag.builder.model.spg_record import SPGRecord
@@ -48,7 +49,7 @@ class Node(object):
             "id": self.id,
             "name": self.name,
             "label": self.label,
-            "properties": self.properties,
+            "properties": copy.deepcopy(self.properties),
         }
 
     @classmethod
@@ -119,7 +120,7 @@ class Edge(object):
             "fromType": self.from_type,
             "toType": self.to_type,
             "label": self.label,
-            "properties": self.properties,
+            "properties": copy.deepcopy(self.properties),
         }
 
     @classmethod

@@ -13,7 +13,7 @@ import shelve
 import logging
 import transaction
 import threading
-
+import pickle
 import BTrees.OOBTree
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
@@ -135,7 +135,10 @@ class ZODBCheckPointer(CheckPointer):
         with self._lock:
             with self._ckpt.transaction() as conn:
                 obj = conn.root.data.get(key, None)
-            return obj
+            if obj:
+                return pickle.loads(obj)
+            else:
+                return None
 
     def write_to_ckpt(self, key, value):
         """
@@ -148,7 +151,7 @@ class ZODBCheckPointer(CheckPointer):
         with self._lock:
             try:
                 with self._ckpt.transaction() as conn:
-                    conn.root.data[key] = value
+                    conn.root.data[key] = pickle.dumps(value)
             except Exception as e:
                 logger.warn(f"failed to write checkpoint {key} to db, info: {e}")
 
