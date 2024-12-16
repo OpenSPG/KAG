@@ -347,7 +347,12 @@ class KAGExtractor(ExtractorABC):
         try:
             tmp_dict = {}
             for tmp_entity in entities_with_official_name:
-                name = tmp_entity["name"]
+                if "name" in tmp_entity:
+                    name = tmp_entity["name"]
+                elif "entity" in tmp_entity:
+                    name = tmp_entity["entity"]
+                else:
+                    continue
                 category = tmp_entity["category"]
                 official_name = tmp_entity["official_name"]
                 key = f"{category}{name}"

@@ -31,11 +31,11 @@ runner:
     extractor:
       llm: *id001
       ner_prompt:
-        type: musique_ner
+        type: default_ner
       std_prompt:
-        type: musique_std
+        type: default_std
       triple_prompt:
-        type: musique_triple
+        type: default_triple
       type: kag
     parser:
       type: dict
