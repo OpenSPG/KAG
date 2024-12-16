@@ -186,7 +186,6 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             self.extractor,
             self.vectorizer,
             self.post_processor,
-            self.writer,
         ]
 
     def close_checkpointers(self):
