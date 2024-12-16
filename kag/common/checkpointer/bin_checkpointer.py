@@ -118,7 +118,8 @@ class ZODBCheckPointer(CheckPointer):
             storage = FileStorage(self._ckpt_file_path)
             db = DB(storage)
             with db.transaction() as conn:
-                conn.root.data = BTrees.OOBTree.BTree()
+                if not hasattr(conn.root, "data"):
+                    conn.root.data = BTrees.OOBTree.BTree()
             return db
 
     def read_from_ckpt(self, key):
