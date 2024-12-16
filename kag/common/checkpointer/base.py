@@ -47,9 +47,9 @@ class CheckPointer(Registrable):
             self._ckpt_dir, CheckPointer.ckpt_file_name.format(rank, world_size)
         )
         self._ckpt = self.open()
-        if len(self._ckpt) > 0:
+        if self.size() > 0:
             print(
-                f"{bold}{red}Existing checkpoint found in {self._ckpt_dir}, with {len(self._ckpt)} records.{reset}"
+                f"{bold}{red}Existing checkpoint found in {self._ckpt_dir}, with {self.size()} records.{reset}"
             )
 
     def open(self):
@@ -100,3 +100,13 @@ class CheckPointer(Registrable):
             bool: True if the key exists in the checkpoint, False otherwise.
         """
         raise NotImplementedError("close not implemented yet.")
+
+    def size(self):
+        """
+        Return the number of records in the checkpoint file.
+
+        Returns:
+            int: the number of records in the checkpoint file.
+        """
+
+        raise NotImplementedError("size not implemented yet.")

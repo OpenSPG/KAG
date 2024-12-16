@@ -80,6 +80,9 @@ class BinCheckPointer(CheckPointer):
         self._ckpt.sync()
         self._ckpt.close()
 
+    def size(self):
+        return len(self._ckpt)
+
 
 @CheckPointer.register("zodb")
 class ZODBCheckPointer(CheckPointer):
@@ -109,9 +112,8 @@ class ZODBCheckPointer(CheckPointer):
         """
 
         storage = FileStorage(self._ckpt_file_path)
-        self._db = DB(storage)
-        self._connection = self._db.open()
-        return self._connection.root()
+        db = DB(storage)
+        return db
 
     def read_from_ckpt(self, key):
         """
@@ -123,7 +125,9 @@ class ZODBCheckPointer(CheckPointer):
         Returns:
             Any: The value associated with the key in the checkpoint.
         """
-        return self._ckpt.get(key, None)
+        with self._ckpt.transaction() as conn:
+            obj = conn.root().get(key, None)
+        return obj
 
     def write_to_ckpt(self, key, value):
         """
@@ -133,11 +137,11 @@ class ZODBCheckPointer(CheckPointer):
             key (str): The key to store the value in the checkpoint.
             value (Any): The value to be stored in the checkpoint.
         """
-        self._ckpt[key] = value
+
         try:
-            transaction.commit()
+            with self._ckpt.transaction() as conn:
+                conn.root()[key] = value
         except Exception as e:
-            transaction.abort()
             logger.warn(f"failed to write checkpoint {key} to db, info: {e}")
 
     def close(self):
@@ -148,10 +152,8 @@ class ZODBCheckPointer(CheckPointer):
             transaction.commit()
         except:
             transaction.abort()
-        if self._connection is not None:
-            self._connection.close()
-        if self._db is not None:
-            self._db.close()
+        if self._ckpt is not None:
+            self._ckpt.close()
 
     def exists(self, key):
         """
@@ -163,4 +165,9 @@ class ZODBCheckPointer(CheckPointer):
         Returns:
             bool: True if the key exists in the checkpoint, False otherwise.
         """
-        return key in self._ckpt
+        with self._ckpt.transaction() as conn:
+            return key in conn.root()
+
+    def size(self):
+        with self._ckpt.transaction() as conn:
+            return len(conn.root())

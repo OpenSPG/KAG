@@ -84,3 +84,6 @@ class TxtCheckPointer(CheckPointer):
         """
         self._writer.flush()
         self._writer.close()
+
+    def size(self):
+        return len(self._ckpt)
