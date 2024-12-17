@@ -179,13 +179,13 @@ class SPORelation(SPOBase):
 
 class SPOEntity(SPOBase):
     def __init__(
-        self,
-        entity_id=None,
-        entity_type=None,
-        entity_type_zh=None,
-        entity_name=None,
-        alias_name=None,
-        is_attribute=False,
+            self,
+            entity_id=None,
+            entity_type=None,
+            entity_type_zh=None,
+            entity_name=None,
+            alias_name=None,
+            is_attribute=False,
     ):
         super().__init__()
         self.is_attribute = is_attribute
@@ -271,12 +271,12 @@ class SPOEntity(SPOBase):
 
 class Entity:
     def __init__(
-        self,
-        entity_id=None,
-        entity_type=None,
-        entity_type_zh=None,
-        entity_name=None,
-        alias_name=None,
+            self,
+            entity_id=None,
+            entity_type=None,
+            entity_type_zh=None,
+            entity_name=None,
+            alias_name=None,
     ):
         self.id = entity_id
         self.type = entity_type
@@ -288,7 +288,7 @@ class Entity:
         return f"{[self.entity_name, self.alias_name]}:{self.id}({self.type, self.entity_type_zh})"
 
     def save_args(
-        self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
+            self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
     ):
         self.id = id if id else self.id
         self.type = type if type else self.type
@@ -343,8 +343,26 @@ class LogicNode:
             self.args[key] = value
         self.sub_query = args.get("sub_query", "")
 
+class SubQueryResult:
+    def __init__(self):
+        self.sub_query: str = ''
+        self.sub_answer: str = ''
+        self.doc_retrieved: list = []
+        self.spo_retrieved: list = []
+        self.match_type: str = 'fuzzy'
+        self.logic_nodes: List[LogicNode] = []
+        self.execute_cost: float = 0.0
 
-class LFPlanResult:
+
+class LFPlan:
     def __init__(self, query: str, lf_nodes: List[LogicNode]):
         self.query: str = query
         self.lf_nodes: List[LogicNode] = lf_nodes
+        self.res: SubQueryResult = None
+
+class LFExecuteResult:
+    def __init__(self):
+        self.kg_exact_solved_answer = ''
+        self.recall_docs = []
+        self.sub_res: List[SubQueryResult] = []
+        self.retrieved_kg_graph = None

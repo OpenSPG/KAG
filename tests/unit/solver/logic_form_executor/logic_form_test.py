@@ -3,7 +3,7 @@ import unittest
 
 from kag.common.env import init_kag_config
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
+from kag.solver.plan.default_lf_planner import DefaultLFPlanner
 from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration

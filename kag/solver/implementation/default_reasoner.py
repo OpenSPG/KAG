@@ -1,9 +1,9 @@
 import logging
 from typing import List
 
-from kag.interface import KagReasonerABC, LFPlannerABC, LFSolverABC
+from kag.interface import KagReasonerABC, LFPlannerABC, LFExecutorABC
 
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult
+from kag.solver.logic.core_modules.common.base_model import LFPlan
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.interface import LLMClient
 
@@ -46,7 +46,7 @@ class DefaultReasoner(KagReasonerABC):
             "chunk_retriever": {"type": "kag_lf"},
         }
 
-        self.lf_solver = lf_solver or LFSolverABC.from_config(solver_config)
+        self.lf_executor = lf_solver or LFExecutorABC.from_config(solver_config)
 
         self.sub_query_total = 0
         self.kg_direct = 0
@@ -65,10 +65,10 @@ class DefaultReasoner(KagReasonerABC):
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
         # logic form planing
-        lf_nodes: List[LFPlanResult] = self.lf_planner.lf_planing(question)
+        lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question)
 
         # logic form execution
-        solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_solver.solve(
+        solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_executor.solve(
             question, lf_nodes
         )
         # Generate supporting facts for sub question-answer pair
@@ -76,8 +76,8 @@ class DefaultReasoner(KagReasonerABC):
 
         # Retrieve and rank documents
         sub_querys = [lf.query for lf in lf_nodes]
-        if self.lf_solver.chunk_retriever:
-            docs = self.lf_solver.chunk_retriever.rerank_docs(
+        if self.lf_executor.chunk_retriever:
+            docs = self.lf_executor.chunk_retriever.rerank_docs(
                 [question] + sub_querys, recall_docs
             )
         else:

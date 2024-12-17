@@ -2,7 +2,7 @@ import logging
 import time
 from typing import List
 
-from kag.solver.retriever.kg_retriever import KGRetriever
+from kag.solver.retriever.base.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import SPOEntity, LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,

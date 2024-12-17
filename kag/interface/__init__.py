@@ -32,9 +32,7 @@ from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.kag_reflector_abc import KagReflectorABC
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.interface.solver.lf_solver_abc import LFSolverABC
-
+from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
 
 __all__ = [
     "PromptABC",
@@ -60,5 +58,5 @@ __all__ = [
     "KagReasonerABC",
     "KagReflectorABC",
     "LFPlannerABC",
-    "LFSolverABC",
+    "LFExecutorABC",
 ]

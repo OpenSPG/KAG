@@ -2,12 +2,12 @@ import logging
 import time
 from typing import List
 
-from kag.interface import LFSolverABC
+from kag.interface import LFExecutorABC
 from kag.interface import VectorizeModelABC as Vectorizer
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
-from kag.solver.retriever.kg_retriever import KGRetriever
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult
+from kag.solver.retriever.base.kg_retriever import KGRetriever
+from kag.solver.logic.core_modules.common.base_model import LFPlan, LFExecuteResult
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.common.utils import generate_random_string
@@ -23,8 +23,8 @@ from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 logger = logging.getLogger()
 
 
-@LFSolverABC.register("base", as_default=True)
-class LFSolver(LFSolverABC):
+@LFExecutorABC.register("base", as_default=True)
+class LFSolver(LFExecutorABC):
     """
     Solver class that integrates various components to solve queries using logic forms.
     This class can't be extended to implement custom solver strategies.
@@ -129,7 +129,7 @@ class LFSolver(LFSolverABC):
             )
         ]
 
-    def solve(self, query, lf_nodes: List[LFPlanResult]):
+    def execute(self, query, lf_nodes: List[LFPlan]) -> LFExecuteResult:
         """
         Solves the query using logic forms and returns the results.
 

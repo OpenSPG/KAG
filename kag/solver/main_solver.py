@@ -13,7 +13,7 @@
 
 from kag.interface import Question
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
+from kag.solver.plan.default_lf_planner import DefaultLFPlanner
 from kag.solver.implementation.default_reasoner import DefaultReasoner
 from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
 from kag.solver.logic.core_modules.lf_solver import LFSolver

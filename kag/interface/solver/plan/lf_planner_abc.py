@@ -10,18 +10,22 @@
 # or implied.
 
 from abc import ABC
+from typing import List
 
+from kag.interface import KagMemoryABC
 from kag.interface.solver.base import KagBaseModule
+from kag.solver.logic.core_modules.common.base_model import LFPlan
 
 
 class LFPlannerABC(KagBaseModule, ABC):
-    def lf_planing(self, question, llm_output=None):
+    def lf_planing(self, question: str, memory: KagMemoryABC = None, llm_output=None) -> List[LFPlan]:
         """
         Method that should be implemented by all subclasses for planning logic.
         This is a default impl
 
          :
         question (str): The question or task to plan.
+        memory (KagMemoryABC): the execute memory. Defaults to None.
         llm_output (Any, optional): Output from the LLM module. Defaults to None.
 
         Returns:

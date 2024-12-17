@@ -2,10 +2,10 @@ import re
 import logging
 from typing import List
 
-from kag.interface import LLMClient
+from kag.interface import LLMClient, KagMemoryABC
 from kag.interface import PromptABC
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult, LogicNode
+from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
+from kag.solver.logic.core_modules.common.base_model import LFPlan, LogicNode
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicForm
@@ -41,7 +41,7 @@ class DefaultLFPlanner(LFPlannerABC):
         self.logic_form_plan_prompt = logic_form_plan_prompt
 
     # 需要把大模型生成结果记录下来
-    def lf_planing(self, question, llm_output=None) -> List[LFPlanResult]:
+    def lf_planing(self, question: str, memory: KagMemoryABC = None, llm_output=None) -> List[LFPlan]:
         """
         Generates sub-queries and logic forms based on the input question or provided LLM output.
 
@@ -58,7 +58,7 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys, logic_forms = self.generate_logic_form(question)
         return self._parse_lf(question, sub_querys, logic_forms)
 
-    def _split_sub_query(self, logic_nodes: List[LogicNode]) -> List[LFPlanResult]:
+    def _split_sub_query(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
         query_lf_map = {}
         for n in logic_nodes:
             if n.sub_query in query_lf_map.keys():
@@ -67,10 +67,10 @@ class DefaultLFPlanner(LFPlannerABC):
                 query_lf_map[n.sub_query] = [n]
         plan_result = []
         for k, v in query_lf_map.items():
-            plan_result.append(LFPlanResult(query=k, lf_nodes=v))
+            plan_result.append(LFPlan(query=k, lf_nodes=v))
         return plan_result
 
-    def _parse_lf(self, question, sub_querys, logic_forms) -> List[LFPlanResult]:
+    def _parse_lf(self, question, sub_querys, logic_forms) -> List[LFPlan]:
         if sub_querys is None:
             sub_querys = []
         parsed_logic_nodes = self.parser.parse_logic_form_set(

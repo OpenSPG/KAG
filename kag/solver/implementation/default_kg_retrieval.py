@@ -6,7 +6,7 @@ from typing import List
 
 from kag.common.conf import KAG_CONFIG
 from kag.interface import VectorizeModelABC as Vectorizer
-from kag.solver.retriever.kg_retriever import KGRetriever
+from kag.solver.retriever.base.kg_retriever import KGRetriever
 from knext.search.client import SearchClient
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (

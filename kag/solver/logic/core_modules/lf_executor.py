@@ -1,13 +1,12 @@
 import logging
-import os
 import time
 from typing import List
 
 from kag.common.conf import KAG_CONFIG
 from kag.interface import Question
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
-from kag.solver.retriever.kg_retriever import KGRetriever
-from kag.solver.logic.core_modules.common.base_model import LFPlanResult
+from kag.solver.retriever.base.kg_retriever import KGRetriever
+from kag.solver.logic.core_modules.common.base_model import LFPlan
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
@@ -159,7 +158,7 @@ class LogicExecutor:
         )
 
     def _convert_logic_nodes_2_question(
-        self, logic_nodes: List[LFPlanResult]
+        self, logic_nodes: List[LFPlan]
     ) -> List[Question]:
         ret_question = []
         for i in range(0, len(logic_nodes)):
@@ -184,7 +183,7 @@ class LogicExecutor:
             sub_query, spo_retrieved, docs, history
         )
 
-    def execute(self, lf_nodes: List[LFPlanResult], init_query):
+    def execute(self, lf_nodes: List[LFPlan], init_query):
         """
         Executes the logic nodes and processes the initial query to retrieve answers.
 
