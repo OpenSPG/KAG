@@ -80,6 +80,7 @@ class BaseTableSplitter(SplitterABC):
             cur.append(row)
             cur_len += len(row)
 
+        cur.append(content[table_end:])
         if len(cur) > 0:
             splitted.append(cur)
 
