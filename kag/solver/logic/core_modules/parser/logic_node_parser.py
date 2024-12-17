@@ -174,7 +174,7 @@ class SumNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         # count_alias=count(alias)
-        match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str)
+        match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str.strip())
         if not match:
             raise RuntimeError(f"parse logic form error {input_str}")
         # print('match:',match.groups())
