@@ -159,7 +159,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         splitter_output = []
         for chunk in parser_output:
             splitter_output.extend(
-                self.splitter.invoke(parser_output, key=chunk.hash_key)
+                self.splitter.invoke(chunk, key=chunk.hash_key)
             )
 
         result = []
