@@ -55,7 +55,7 @@ class GetSPOExecutor(OpExecutor):
         super().__init__(kg_graph, schema, debug_info, **kwargs)
 
         self.exact_kg_retriever: ExactKgRetriever = ExactKgRetriever.from_config({
-            "type": kwargs.get("exact_kg_retriever", "base")
+            "type": kwargs.get("exact_kg_retriever", "default_exact_kg_retriever")
         })
         self.fuzzy_kg_retriever: FuzzyKgRetriever = FuzzyKgRetriever.from_config({
             "type": kwargs.get("fuzzy_kg_retriever", "base")
