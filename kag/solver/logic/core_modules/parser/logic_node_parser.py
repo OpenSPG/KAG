@@ -536,11 +536,11 @@ class ParseLogicForm:
         elif low_operator in ["deduce"]:
             node: DeduceNode = DeduceNode.parse_node(args_str)
         elif low_operator in ["verify"]:
-            node: VerifyNode = VerifyNode.parse_node(args_str)
+            node: VerifyNode = VerifyNode.parse_node(input_str)
         elif low_operator in ["count"]:
             node: CountNode = CountNode.parse_node(args_str, output_name)
         elif low_operator in ["sum"]:
-            node: SumNode = SumNode.parse_node(args_str)
+            node: SumNode = SumNode.parse_node(input_str)
         elif low_operator in ["sort"]:
             node: SortNode = SortNode.parse_node(args_str)
         elif low_operator in ["compare"]:
