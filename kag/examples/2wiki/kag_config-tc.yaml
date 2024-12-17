@@ -5,12 +5,12 @@ project:
   language: en
   namespace: TwoWiki
 llm: &deepseek-chat
-  api_key: sk-b245c8c8729846b7a023452cf403e11e
+  api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   register_name: maas
 vectorize_model: &bge-m3
-  api_key: sk-vopoklnnfzcwxpuxcduelnhoyicoihalwiwatenayzhfzkgj
+  api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   register_name: openai
