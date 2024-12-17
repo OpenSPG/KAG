@@ -59,17 +59,17 @@ class TextSimilarity:
                 ret.append(tmp_map[text])
         return ret
 
-    def text_sim_result(self, mention, candidates: List[str], topk=1, low_score=0.63):
+    def text_sim_result(self, mention, candidates: List[str], topk=1, low_score=0.63, is_cached=False):
         '''
         output: [(candi_name, candi_score),...]
         '''
         if mention is None:
             return []
-        mention_emb = self.sentence_encode(mention)
+        mention_emb = self.sentence_encode(mention, is_cached)
         candidates = [cand for cand in candidates if cand is not None and cand.strip() != '']
         if len(candidates) == 0:
             return []
-        candidates_emb = self.sentence_encode(candidates)
+        candidates_emb = self.sentence_encode(candidates, is_cached)
         candidates_dis = {}
         for candidate, candidate_emb in zip(candidates, candidates_emb):
             cosine = cosine_similarity(np.array(mention_emb), np.array(candidate_emb))

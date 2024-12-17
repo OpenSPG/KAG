@@ -65,4 +65,4 @@ class DefaultReflector(KagReflectorABC):
                                                     with_json_parse=False, with_except=True)
         if len(update_reason_path) == 0:
             return None
-        return update_reason_path[0]
+        return "\n".join(update_reason_path)

@@ -55,12 +55,15 @@ class GetExecutor(OpExecutor):
         s_biz_id_set = []
         for s_data in s_data_set:
             if isinstance(s_data, EntityData):
-                if s_data.name == '':
-                    s_biz_id_set.append(s_data.biz_id)
-                else:
+                if s_data.name != '':
                     kg_qa_result.append(s_data.name)
             if isinstance(s_data, RelationData):
                 kg_qa_result.append(str(s_data))
+        if len(kg_qa_result) == 0:
+            for s_data in s_data_set:
+                if isinstance(s_data, EntityData):
+                    if s_data.name == '':
+                        s_biz_id_set.append(s_data.biz_id)
         if len(s_biz_id_set) > 0:
             one_hop_cached_map = self.dsl_runner.query_vertex_property_by_s_ids(s_biz_id_set,
                                                                                 n.s.get_entity_first_type(),
