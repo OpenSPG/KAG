@@ -71,27 +71,61 @@ class MarkDownParser(RecordParserABC):
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
     ) -> List[Output]:
-        # 将Markdown转换为HTML
-        html = markdown.markdown(content, extensions=["tables"])
+        # Convert Markdown to HTML with additional extensions for lists
+        html = markdown.markdown(content, extensions=["tables", "nl2br", "sane_lists"])
         soup = BeautifulSoup(html, "html.parser")
 
-        # 初始化根节点
+        def process_text_with_links(element):
+            """Process text containing links, preserving original markdown format"""
+            result = []
+            current_text = ""
+
+            for child in element.children:
+                if isinstance(child, Tag):
+                    if child.name == "a":
+                        # If there's previous text, add it first
+                        if current_text:
+                            result.append(current_text.strip())
+                            current_text = ""
+
+                        # Rebuild markdown format link
+                        link_text = child.get_text().strip()
+                        href = child.get("href", "")
+                        title = child.get("title", "")
+
+                        if title:
+                            result.append(f'[{link_text}]({href} "{title}")')
+                        else:
+                            result.append(f"[{link_text}]({href})")
+                    else:
+                        current_text += child.get_text()
+                else:
+                    current_text += str(child)
+
+            if current_text:
+                result.append(current_text.strip())
+
+            return " ".join(result)
+
+        # Initialize root node
         root = MarkdownNode("root", 0)
         stack = [root]
+        current_content = []
 
-        # 遍历所有元素
+        # Traverse all elements
         for element in soup.find_all(
-            ["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]
+            ["h1", "h2", "h3", "h4", "h5", "h6", "p", "table", "ul", "ol", "li"]
         ):
             if element.name.startswith("h"):
-                # 获取标题级别
-                level = int(element.name[1])
-                title_text = element.get_text().strip()
+                # Handle title logic
+                if current_content and stack[-1].title != "root":
+                    stack[-1].content = "\n".join(current_content)
+                current_content = []
 
-                # 创建新节点
+                level = int(element.name[1])
+                title_text = process_text_with_links(element)  # Process links in title
                 new_node = MarkdownNode(title_text, level)
 
-                # 找到合适的父节点
                 while stack and stack[-1].level >= level:
                     stack.pop()
 
@@ -99,17 +133,27 @@ class MarkDownParser(RecordParserABC):
                     stack[-1].children.append(new_node)
                 stack.append(new_node)
 
+            elif element.name in ["ul", "ol"]:
+                continue
+
+            elif element.name == "li":
+                text = process_text_with_links(element)  # Process links in list items
+                if text:
+                    if element.find_parent("ol"):
+                        index = len(element.find_previous_siblings("li")) + 1
+                        current_content.append(f"{index}. {text}")
+                    else:
+                        current_content.append(f"* {text}")
+
             elif element.name == "table":
-                # 处理表格
+                # Process table
                 table_data = []
                 headers = []
 
-                # 获取表头
                 if element.find("thead"):
                     for th in element.find("thead").find_all("th"):
                         headers.append(th.get_text().strip())
 
-                # 获取表格内容
                 if element.find("tbody"):
                     for row in element.find("tbody").find_all("tr"):
                         row_data = {}
@@ -118,18 +162,20 @@ class MarkDownParser(RecordParserABC):
                                 row_data[headers[i]] = td.get_text().strip()
                         table_data.append(row_data)
 
-                # 将表格添加到当前节点和所有父节点
-                for node in stack:
-                    node.tables.append({"headers": headers, "data": table_data})
+                # Add table to current node
+                if stack[-1].title != "root":
+                    stack[-1].tables.append({"headers": headers, "data": table_data})
 
             elif element.name == "p":
-                # 处理段落文本，添加到当前节点和所有父节点
-                text = element.get_text().strip() + "\n"
-                for node in stack:
-                    if node.title != "root":  # 不添加到根节点
-                        node.content += text
+                text = process_text_with_links(element)  # Process links in paragraphs
+                if text:
+                    if not text.startswith("* ") and not re.match(r"^\d+\. ", text):
+                        current_content.append(text)
 
-        # 将树状结构转换为输出格式
+        # Process content of the last node
+        if current_content and stack[-1].title != "root":
+            stack[-1].content = "\n".join(current_content)
+
         outputs = self._convert_to_outputs(root, id)
         return outputs
 
@@ -141,6 +187,57 @@ class MarkDownParser(RecordParserABC):
         parent_titles: List[str] = None,
         parent_contents: List[str] = None,
     ) -> List[Output]:
+        def convert_table_to_markdown(headers, data):
+            """Convert table data to markdown format"""
+            if not headers or not data:
+                return ""
+
+            # Build header row
+            header_row = " | ".join(headers)
+            # Build separator row
+            separator = " | ".join(["---"] * len(headers))
+            # Build data rows
+            data_rows = []
+            for row in data:
+                row_values = [str(row.get(header, "")) for header in headers]
+                data_rows.append(" | ".join(row_values))
+
+            # Combine all rows
+            table_md = f"\n| {header_row} |\n| {separator} |\n"
+            table_md += "\n".join(f"| {row} |" for row in data_rows)
+            return table_md + "\n"
+
+        def collect_tables(n: MarkdownNode):
+            """Collect tables from node and its children"""
+            tables = []
+            table_md = []
+            if n.tables:
+                for table in n.tables:
+                    tables.append(table)
+                    table_md.append(
+                        convert_table_to_markdown(table["headers"], table["data"])
+                    )
+            for child in n.children:
+                child_tables, child_table_md = collect_tables(child)
+                tables.extend(child_tables)
+                table_md.extend(child_table_md)
+            return tables, table_md
+
+        def collect_children_content(n: MarkdownNode):
+            """Collect content from node and its children"""
+            content = []
+            if n.content:
+                content.append(n.content)
+            # Add current node's table content
+            for table in n.tables:
+                content.append(
+                    convert_table_to_markdown(table["headers"], table["data"])
+                )
+            # Process child nodes recursively
+            for child in n.children:
+                content.extend(collect_children_content(child))
+            return content
+
         outputs = []
         if parent_titles is None:
             parent_titles = []
@@ -148,27 +245,24 @@ class MarkDownParser(RecordParserABC):
             parent_contents = []
 
         current_titles = parent_titles + ([node.title] if node.title != "root" else [])
-        current_contents = parent_contents + (
-            [node.content] if node.content and node.title != "root" else []
-        )
 
-        # 如果当前节点级别等于目标级别，收集所有内容
+        # If current node level equals target level, create output
         if node.level == self.cut_depth:
-            # 处理目标级别的节点
             full_title = " / ".join(current_titles)
 
-            # 收集所有内容（包括父级内容）
-            all_content = current_contents.copy()
+            # Merge content: parent content + current content
+            all_content = parent_contents + ([node.content] if node.content else [])
 
-            # 收集所有子节点的内容
-            def collect_children_content(n: MarkdownNode):
-                content = [n.content] if n.content else []
-                for child in n.children:
-                    content.extend(collect_children_content(child))
-                return content
+            # Add current node's table content
+            for table in node.tables:
+                all_content.append(
+                    convert_table_to_markdown(table["headers"], table["data"])
+                )
 
+            # Add all child node content (including tables)
             for child in node.children:
-                all_content.extend(collect_children_content(child))
+                child_content = collect_children_content(child)
+                all_content.extend(child_content)
 
             current_output = Chunk(
                 id=f"{id}_{len(outputs)}",
@@ -177,31 +271,43 @@ class MarkDownParser(RecordParserABC):
                 content="\n".join(filter(None, all_content)),
             )
 
-            # 收集表格数据
+            # Collect table data and convert to markdown format
             all_tables = []
+            table_contents = []
             if node.tables:
-                all_tables.extend(node.tables)
-
-            def collect_tables(n: MarkdownNode):
-                tables = []
-                if n.tables:
-                    tables.extend(n.tables)
-                for child in n.children:
-                    tables.extend(collect_tables(child))
-                return tables
+                for table in node.tables:
+                    all_tables.append(table)
+                    table_contents.append(
+                        convert_table_to_markdown(table["headers"], table["data"])
+                    )
 
             for child in node.children:
-                all_tables.extend(collect_tables(child))
+                child_tables, child_table_md = collect_tables(child)
+                all_tables.extend(child_tables)
+                table_contents.extend(child_table_md)
 
             if all_tables:
                 current_output.metadata = {"tables": all_tables}
+                current_output.table = "\n".join(
+                    table_contents
+                )  # Save all tables in markdown format
 
             outputs.append(current_output)
 
-        # 如果当前节点级别小于目标级别，继续向下遍历
+        # If current node level is less than target level, continue traversing
         elif node.level < self.cut_depth:
-            # 检查是否有任何子树包含目标级别的节点
+            # Check if any subtree contains target level nodes
             has_target_level = False
+            current_contents = parent_contents + (
+                [node.content] if node.content else []
+            )
+
+            # Add current node's tables to content
+            for table in node.tables:
+                current_contents.append(
+                    convert_table_to_markdown(table["headers"], table["data"])
+                )
+
             for child in node.children:
                 child_outputs = self._convert_to_outputs(
                     child, id, parent_id, current_titles, current_contents
@@ -210,22 +316,14 @@ class MarkDownParser(RecordParserABC):
                     has_target_level = True
                     outputs.extend(child_outputs)
 
-            # 如果没有找到目标级别的节点，且当前节点不是根节点，则输出当前节点
+            # If no target level nodes found and current node is not root, output current node
             if not has_target_level and node.title != "root":
                 full_title = " / ".join(current_titles)
-
-                # 收集所有内容（包括父级内容）
-                all_content = current_contents.copy()
-
-                # 收集所有子节点的内容
-                def collect_children_content(n: MarkdownNode):
-                    content = [n.content] if n.content else []
-                    for child in n.children:
-                        content.extend(collect_children_content(child))
-                    return content
+                all_content = current_contents
 
                 for child in node.children:
-                    all_content.extend(collect_children_content(child))
+                    child_content = collect_children_content(child)
+                    all_content.extend(child_content)
 
                 current_output = Chunk(
                     id=f"{id}_{len(outputs)}",
@@ -234,24 +332,26 @@ class MarkDownParser(RecordParserABC):
                     content="\n".join(filter(None, all_content)),
                 )
 
-                # 收集表格数据
+                # Collect table data and convert to markdown format
                 all_tables = []
+                table_contents = []
                 if node.tables:
-                    all_tables.extend(node.tables)
-
-                def collect_tables(n: MarkdownNode):
-                    tables = []
-                    if n.tables:
-                        tables.extend(n.tables)
-                    for child in n.children:
-                        tables.extend(collect_tables(child))
-                    return tables
+                    for table in node.tables:
+                        all_tables.append(table)
+                        table_contents.append(
+                            convert_table_to_markdown(table["headers"], table["data"])
+                        )
 
                 for child in node.children:
-                    all_tables.extend(collect_tables(child))
+                    child_tables, child_table_md = collect_tables(child)
+                    all_tables.extend(child_tables)
+                    table_contents.extend(child_table_md)
 
                 if all_tables:
                     current_output.metadata = {"tables": all_tables}
+                    current_output.table = "\n".join(
+                        table_contents
+                    )  # Save all tables in markdown format
 
                 outputs.append(current_output)
 
@@ -336,7 +436,7 @@ class YuequeParser(MarkDownParser):
 
 
 if __name__ == "__main__":
-    markdown_parser = MarkDownParser()
+    markdown_parser = MarkDownParser(cut_depth=3)
     res = markdown_parser._invoke("/Users/zhangxinhong.zxh/Downloads/Noah文档中心-sdk.md")
     from kag.builder.model.chunk import dump_chunks
 
