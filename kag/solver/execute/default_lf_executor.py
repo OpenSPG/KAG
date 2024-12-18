@@ -29,18 +29,18 @@ class DefaultLFExecutor(LFExecutorABC):
         # tmp graph data
         self.kg_graph = KgGraph()
         self.schema: SchemaUtils = kwargs.get("schema", None)
-        self.debug_info = {}
+        self.process_info = {}
 
         # Initialize executors for different operations.
         self.retrieval_executor = RetrievalExecutor(kg_graph=self.kg_graph, schema=self.schema,
-                                                    debug_info=self.debug_info, kwargs=kwargs)
-        self.deduce_executor = DeduceExecutor(kg_graph=self.kg_graph, schema=self.schema, debug_info=self.debug_info,
+                                                    process_info=self.process_info, kwargs=kwargs)
+        self.deduce_executor = DeduceExecutor(kg_graph=self.kg_graph, schema=self.schema, process_info=self.process_info,
                                               kwargs=kwargs)
-        self.sort_executor = SortExecutor(kg_graph=self.kg_graph, schema=self.schema, debug_info=self.debug_info,
+        self.sort_executor = SortExecutor(kg_graph=self.kg_graph, schema=self.schema, process_info=self.process_info,
                                           kwargs=kwargs)
-        self.math_executor = MathExecutor(kg_graph=self.kg_graph, schema=self.schema, debug_info=self.debug_info,
+        self.math_executor = MathExecutor(kg_graph=self.kg_graph, schema=self.schema, process_info=self.process_info,
                                           kwargs=kwargs)
-        self.output_executor = OutputExecutor(kg_graph=self.kg_graph, schema=self.schema, debug_info=self.debug_info,
+        self.output_executor = OutputExecutor(kg_graph=self.kg_graph, schema=self.schema, process_info=self.process_info,
                                               kwargs=kwargs)
 
         # Generate
@@ -59,6 +59,12 @@ class DefaultLFExecutor(LFExecutorABC):
         res = SubQueryResult()
         res.logic_nodes = sub_query.lf_nodes
         res.sub_query = sub_query
+        self.process_info[sub_query.query] = {
+            'spo_retrieved': [],
+            'doc_retrieved': [],
+            'match_type': 'chunk',
+            'kg_answer': '',
+        }
         """
         Query: 张三的老婆名字是李四吗？
         Query1: 张三的老婆的名字是什么
@@ -83,17 +89,14 @@ class DefaultLFExecutor(LFExecutorABC):
             else:
                 logger.warning(f"unknown operator: {n.operator}")
 
-        spo_retrieved = self.debug_info[sub_query]['spo_retrieved']
-        res.spo_retrieved = spo_retrieved
-        doc_retrieved = self.debug_info[sub_query]['doc_retrieved']
-        res.doc_retrieved = doc_retrieved
-        match_type = self.debug_info[sub_query]['match_type']
-        res.match_type = match_type
-        kg_answer = self.debug_info[sub_query]['kg_answer']
+        res.spo_retrieved = self.process_info[sub_query].get('spo_retrieved', [])
+        res.doc_retrieved = self.process_info[sub_query].get('doc_retrieved', [])
+        res.match_type = self.process_info[sub_query].get('match_type', 'chunk')
+        kg_answer = self.process_info[sub_query]['kg_answer']
         # generate sub answer
         if not self._judge_sub_answered(kg_answer):
             # generate sub answer
-            sub_answer = self.generator.generate_sub_answer(sub_query, spo_retrieved, doc_retrieved, self.history)
+            sub_answer = self.generator.generate_sub_answer(sub_query.query, res.spo_retrieved, res.doc_retrieved, self.history)
         else:
             sub_answer = kg_answer
         res.sub_answer = sub_answer

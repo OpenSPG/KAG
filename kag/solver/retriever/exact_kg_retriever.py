@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import List
 
-from kag.interface import KAGGeneratorABC
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     OneHopGraphData,
@@ -11,7 +10,6 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.base.kg_retriever import KGRetriever
 
-@ExactKgRetriever.register("default_exact_kg_retriever", as_default=True)
 class ExactKgRetriever(KGRetriever, ABC):
     def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[OneHopGraphData]:
         """

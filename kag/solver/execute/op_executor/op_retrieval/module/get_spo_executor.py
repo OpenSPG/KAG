@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import List
+from typing import List, Dict
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
 from kag.solver.logic.core_modules.common.base_model import LogicNode, SPOEntity, SPOBase
@@ -40,7 +40,7 @@ class GetSPOExecutor(OpExecutor):
             self,
             kg_graph: KgGraph,
             schema: SchemaUtils,
-            debug_info: dict,
+            process_info: dict,
             **kwargs,
     ):
         """
@@ -50,9 +50,9 @@ class GetSPOExecutor(OpExecutor):
             nl_query (str): Natural language query string.
             kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
             schema (SchemaUtils): Semantic structure definition to assist in the parsing process.
-            debug_info (dict): Debug information dictionary to record debugging information during parsing.
+            process_info (dict): Debug information dictionary to record debugging information during parsing.
         """
-        super().__init__(kg_graph, schema, debug_info, **kwargs)
+        super().__init__(kg_graph, schema, process_info, **kwargs)
 
         self.exact_kg_retriever: ExactKgRetriever = ExactKgRetriever.from_config({
             "type": kwargs.get("exact_kg_retriever", "default_exact_kg_retriever")
@@ -63,6 +63,8 @@ class GetSPOExecutor(OpExecutor):
         self.chunk_retriever: ChunkRetriever = ChunkRetriever.from_config({
             "type": kwargs.get("chunk_retriever", "base")
         })
+
+        self.force_chunk = kwargs.get("force_chunk", False)
 
     def get_mentioned_entity(self, n: GetSPONode):
         entities_candis = []
@@ -141,12 +143,17 @@ class GetSPOExecutor(OpExecutor):
         one_hop_graph_list = kg_retriever.recall_one_hop_graph(logic_node, s_data_set, o_data_set, kwargs=param)
         cur_kg_graph = kg_retriever.retrieval_relation(logic_node, one_hop_graph_list, kwargs=param)
         spo_res = cur_kg_graph.get_entity_by_alias(n.p.alias_name)
-        # TODO add some judge
-        return len(spo_res) > 0, cur_kg_graph
+        if len(spo_res) == 0:
+            return False, cur_kg_graph
 
-    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, param: dict) -> KgGraph:
+        self.process_info[logic_node.query]['spo_retrieved'] = spo_res
+        self.process_info[logic_node.query]['match_type'] = "exact spo" if isinstance(kg_retriever,
+                                                                                      ExactKgRetriever) else "fuzzy spo"
+        return True, cur_kg_graph
+
+    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, param: dict) -> Dict:
         if not isinstance(logic_node, GetSPONode):
-            return KgGraph()
+            return {}
         n = logic_node
 
         self.kg_graph.logic_form_base[n.s.alias_name] = n.s
@@ -154,18 +161,19 @@ class GetSPOExecutor(OpExecutor):
         self.kg_graph.logic_form_base[n.o.alias_name] = n.o
 
         is_success, exact_matched_graph = self._kg_match(n, req_id, self.exact_kg_retriever, param)
-        if is_success:
+        if is_success and not self.force_chunk:
             self.kg_graph.merge_kg_graph(exact_matched_graph)
-            return exact_matched_graph
+            return self.process_info[logic_node.query]
 
         is_success, fuzzy_matched_graph = self._kg_match(n, req_id, self.fuzzy_kg_retriever, param)
-        if is_success:
+        if is_success and not self.force_chunk:
             self.kg_graph.merge_kg_graph(fuzzy_matched_graph)
-            return fuzzy_matched_graph
+            return self.process_info[logic_node.query]
 
         docs_retrieved = self.chunk_retriever.recall_docs(logic_node.query,
                                                           fuzzy_matched_graph.get_entity_by_alias(n.p.alias_name),
                                                           nl_query=nl_query, kwargs=param)
+        self.process_info[logic_node.query]['docs_retrieved'] = docs_retrieved
+        self.process_info[logic_node.query]['match_type'] = "chunk"
 
-        # TODO and process info
-        raise NotImplementedError()
+        return self.process_info[logic_node.query]

@@ -12,10 +12,10 @@ class MathExecutor(OpExecutor):
         self,
         kg_graph: KgGraph,
         schema: SchemaUtils,
-        debug_info: dict,
+        process_info: dict,
         **kwargs
     ):
-        super().__init__(kg_graph, schema, debug_info, **kwargs)
+        super().__init__(kg_graph, schema, process_info, **kwargs)
 
     def is_this_op(self, logic_node: LogicNode) -> bool:
         return isinstance(logic_node, (CountNode, SumNode))

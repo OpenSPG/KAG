@@ -1,7 +1,7 @@
 import itertools
 import json
 import re
-from typing import List
+from typing import List, Optional
 
 
 class Identifier:
@@ -343,6 +343,7 @@ class LogicNode:
             self.args[key] = value
         self.sub_query = args.get("sub_query", "")
 
+
 class SubQueryResult:
     def __init__(self):
         self.sub_query: str = ''
@@ -350,7 +351,6 @@ class SubQueryResult:
         self.doc_retrieved: list = []
         self.spo_retrieved: list = []
         self.match_type: str = 'fuzzy'
-        self.logic_nodes: List[LogicNode] = []
         self.execute_cost: float = 0.0
 
 
@@ -358,7 +358,8 @@ class LFPlan:
     def __init__(self, query: str, lf_nodes: List[LogicNode]):
         self.query: str = query
         self.lf_nodes: List[LogicNode] = lf_nodes
-        self.res: SubQueryResult = None
+        self.res: Optional[SubQueryResult] = None
+
 
 class LFExecuteResult:
     def __init__(self):

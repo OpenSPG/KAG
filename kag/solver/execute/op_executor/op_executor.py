@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Union
+from typing import Union, Dict
 
 from kag.interface import KagBaseModule
 from kag.solver.logic.core_modules.common.base_model import LogicNode
@@ -14,13 +14,7 @@ class OpExecutor(KagBaseModule, ABC):
     Each subclass must implement the execution and judgment functions.
     """
 
-    def __init__(
-        self,
-        kg_graph: KgGraph,
-        schema: SchemaUtils,
-        debug_info: dict,
-        **kwargs
-    ):
+    def __init__(self, kg_graph: KgGraph, schema: SchemaUtils, process_info: dict, **kwargs):
         """
         Initializes the operator executor with necessary components.
 
@@ -28,15 +22,16 @@ class OpExecutor(KagBaseModule, ABC):
 
             kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
             schema (SchemaUtils): Semantic structure definition to assist in the parsing process.
-            debug_info (dict): Debug information dictionary to record debugging information during parsing.
+            process_info (dict): Processing information dictionary to record logic node result information during executing.
         """
+        super().__init__(**kwargs)
         self.kg_graph = kg_graph
         self.schema = schema
-        self.debug_info = debug_info
+        self.process_info = process_info
 
     def executor(
         self, nl_query: str, logic_node: LogicNode, req_id: str, param: dict
-    ) -> list:
+    ) -> Dict:
         """
         Executes the operation based on the given logic node.
 
@@ -49,7 +44,7 @@ class OpExecutor(KagBaseModule, ABC):
             param (dict): Parameters needed for the execution.
 
         Returns:
-            list: The result of the operation, which could be a list.
+            Dict: The result of the operation, which could be a dict.
         """
         pass
 

@@ -1,15 +1,11 @@
-from typing import Union
+from typing import Union, Dict
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
+from kag.solver.execute.op_executor.op_output.module.get_executor import GetExecutor
 from kag.solver.logic.core_modules.common.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.op_executor.op_output.module.get_executor import (
-    GetExecutor,
-)
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetNode
-from kag.solver.logic.core_modules.retriver.entity_linker import EntityLinkerBase
-from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import DslRunner
 
 
 class OutputExecutor(OpExecutor):
@@ -17,24 +13,17 @@ class OutputExecutor(OpExecutor):
         self,
         kg_graph: KgGraph,
         schema: SchemaUtils,
-        el: EntityLinkerBase,
-        dsl_runner: DslRunner,
-        cached_map: dict,
-        debug_info: dict,
+        process_info: dict,
         **kwargs
     ):
-        super().__init__(kg_graph, schema, debug_info, **kwargs)
+        super().__init__(kg_graph, schema, process_info, **kwargs)
         self.KAG_PROJECT_ID = kwargs.get("KAG_PROJECT_ID")
         self.op_register_map = {
             "get": GetExecutor(
-                nl_query,
                 kg_graph,
                 schema,
-                el,
-                dsl_runner,
-                cached_map,
-                self.debug_info,
-                KAG_PROJECT_ID=kwargs.get("KAG_PROJECT_ID"),
+                self.process_info,
+                **kwargs,
             )
         }
 
@@ -43,8 +32,8 @@ class OutputExecutor(OpExecutor):
 
     def executor(
         self, nl_query: str, logic_node: LogicNode, req_id: str, param: dict
-    ) -> Union[KgGraph, list]:
+    ) -> Dict:
         op = self.op_register_map.get(logic_node.operator, None)
         if op is None:
-            return []
-        return op.executor(logic_node, req_id, param)
+            return {}
+        return op.executor(nl_query, logic_node, req_id, param)
