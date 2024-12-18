@@ -72,8 +72,19 @@ class MarkDownParser(RecordParserABC):
         self, id: str, title: str, content: str, **kwargs
     ) -> List[Output]:
         # Convert Markdown to HTML with additional extensions for lists
-        html = markdown.markdown(content, extensions=["tables", "nl2br", "sane_lists"])
+        html = markdown.markdown(
+            content, extensions=["tables", "nl2br", "sane_lists", "fenced_code"]
+        )
         soup = BeautifulSoup(html, "html.parser")
+
+        def is_in_code_block(element):
+            """Check if an element is inside a code block"""
+            parent = element.parent
+            while parent:
+                if parent.name in ["pre", "code"]:
+                    return True
+                parent = parent.parent
+            return False
 
         def process_text_with_links(element):
             """Process text containing links, preserving original markdown format"""
@@ -114,9 +125,24 @@ class MarkDownParser(RecordParserABC):
 
         # Traverse all elements
         for element in soup.find_all(
-            ["h1", "h2", "h3", "h4", "h5", "h6", "p", "table", "ul", "ol", "li"]
+            [
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+                "p",
+                "table",
+                "ul",
+                "ol",
+                "li",
+                "pre",
+                "code",
+            ]
         ):
-            if element.name.startswith("h"):
+            if element.name.startswith("h") and not is_in_code_block(element):
+                # Only process headers that are not in code blocks
                 # Handle title logic
                 if current_content and stack[-1].title != "root":
                     stack[-1].content = "\n".join(current_content)
@@ -132,6 +158,12 @@ class MarkDownParser(RecordParserABC):
                 if stack:
                     stack[-1].children.append(new_node)
                 stack.append(new_node)
+
+            elif element.name in ["pre", "code"]:
+                # Preserve code blocks as is
+                text = element.get_text()
+                if text:
+                    current_content.append(text)
 
             elif element.name in ["ul", "ol"]:
                 continue
@@ -436,7 +468,7 @@ class YuequeParser(MarkDownParser):
 
 
 if __name__ == "__main__":
-    markdown_parser = MarkDownParser(cut_depth=3)
+    markdown_parser = MarkDownParser(cut_depth=4)
     res = markdown_parser._invoke("/Users/zhangxinhong.zxh/Downloads/Noah文档中心-sdk.md")
     from kag.builder.model.chunk import dump_chunks
 
