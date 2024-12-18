@@ -9,6 +9,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+import sys
 import os
 from tenacity import retry, stop_after_attempt
 
@@ -50,7 +51,9 @@ class DefaultRetriever(ChunkRetrieverABC):
 
         self._init_search()
 
-        self.ner_prompt = PromptOp.load(self.biz_scene, "question_ner")(language=self.language, project_id=self.project_id)
+        self.ner_prompt = PromptOp.load(self.biz_scene, "question_ner")(
+            language=self.language, project_id=self.project_id
+        )
         self.std_prompt = PromptOp.load(self.biz_scene, "std")(language=self.language)
 
         self.pagerank_threshold = 0.9
@@ -70,17 +73,14 @@ class DefaultRetriever(ChunkRetrieverABC):
         self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
         vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
         if self.host_addr and self.project_id:
-            config = ProjectClient(host_addr=self.host_addr, project_id=self.project_id).get_config(self.project_id)
+            config = ProjectClient(
+                host_addr=self.host_addr, project_id=self.project_id
+            ).get_config(self.project_id)
             vectorizer_config.update(config.get("vectorizer", {}))
 
-        self.vectorizer = Vectorizer.from_config(
-            vectorizer_config
-        )
+        self.vectorizer = Vectorizer.from_config(vectorizer_config)
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
         self.graph_algo = GraphAlgoClient(self.host_addr, self.project_id)
-
-
-
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, query: str):
@@ -119,7 +119,9 @@ class DefaultRetriever(ChunkRetrieverABC):
         )
 
     @staticmethod
-    def append_official_name(source_entities: List[Dict], entities_with_official_name: List[Dict]):
+    def append_official_name(
+        source_entities: List[Dict], entities_with_official_name: List[Dict]
+    ):
         """
         Appends official names to entities.
 
@@ -162,13 +164,11 @@ class DefaultRetriever(ChunkRetrieverABC):
                 label=self.schema_util.get_label_within_prefix(CHUNK_TYPE),
                 property_key="content",
                 query_vector=query_vector,
-                topk=doc_nums
+                topk=doc_nums,
             )
             scores = {item["node"]["id"]: item["score"] for item in top_k}
         except Exception as e:
-            logger.error(
-                f"run calculate_sim_scores failed, info: {e}", exc_info=True
-            )
+            logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
         return scores
 
     def calculate_pagerank_scores(self, start_nodes: List[Dict]):
@@ -190,12 +190,12 @@ class DefaultRetriever(ChunkRetrieverABC):
         if len(start_nodes) != 0:
             try:
                 scores = self.graph_algo.calculate_pagerank_scores(
-                    self.schema_util.get_label_within_prefix(CHUNK_TYPE),
-                    start_nodes
+                    self.schema_util.get_label_within_prefix(CHUNK_TYPE), start_nodes
                 )
             except Exception as e:
                 logger.error(
-                    f"run calculate_pagerank_scores failed, info: {e}, start_nodes: {start_nodes}", exc_info=True
+                    f"run calculate_pagerank_scores failed, info: {e}, start_nodes: {start_nodes}",
+                    exc_info=True,
                 )
         return scores
 
@@ -262,7 +262,9 @@ class DefaultRetriever(ChunkRetrieverABC):
             logger.info(f"No entities matched for {queries}")
         return matched_entities, matched_entities_scores
 
-    def calculate_combined_scores(self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]):
+    def calculate_combined_scores(
+        self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
+    ):
         """
         Calculate and return the combined scores that integrate both similarity scores and PageRank scores.
 
@@ -273,6 +275,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         Returns:
         Dict[str, float]: A dictionary containing the combined scores, where keys are identifiers and values are the combined scores.
         """
+
         def min_max_normalize(x):
             if len(x) == 0:
                 return []
@@ -285,17 +288,24 @@ class DefaultRetriever(ChunkRetrieverABC):
         for key in all_keys:
             sim_scores.setdefault(key, 0.0)
             pagerank_scores.setdefault(key, 0.0)
-        sim_scores = dict(zip(sim_scores.keys(), min_max_normalize(
-            np.array(list(sim_scores.values()))
-        )))
-        pagerank_scores = dict(zip(pagerank_scores.keys(), min_max_normalize(
-            np.array(list(pagerank_scores.values()))
-        )))
+        sim_scores = dict(
+            zip(
+                sim_scores.keys(),
+                min_max_normalize(np.array(list(sim_scores.values()))),
+            )
+        )
+        pagerank_scores = dict(
+            zip(
+                pagerank_scores.keys(),
+                min_max_normalize(np.array(list(pagerank_scores.values()))),
+            )
+        )
         combined_scores = dict()
         for key in pagerank_scores.keys():
-            combined_scores[key] = (sim_scores[key] * (1 - self.pagerank_weight) +
-                                    pagerank_scores[key] * self.pagerank_weight
-                                    )
+            combined_scores[key] = (
+                sim_scores[key] * (1 - self.pagerank_weight)
+                + pagerank_scores[key] * self.pagerank_weight
+            )
         return combined_scores
 
     def recall_docs(self, query: str, top_k: int = 5, **kwargs):
@@ -345,7 +355,9 @@ class DefaultRetriever(ChunkRetrieverABC):
         elif matched_entities and np.min(matched_scores) > self.pagerank_threshold:
             combined_scores = pagerank_scores
         else:
-            combined_scores = self.calculate_combined_scores(sim_scores, pagerank_scores)
+            combined_scores = self.calculate_combined_scores(
+                sim_scores, pagerank_scores
+            )
         sorted_scores = sorted(
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
@@ -376,13 +388,28 @@ class DefaultRetriever(ChunkRetrieverABC):
                 doc_id = doc_id[0]
             else:
                 doc_score = doc_ids[doc_id]
+            try:
+                node = self.reason.query_node(
+                    label=self.schema_util.get_label_within_prefix(CHUNK_TYPE),
+                    id_value=doc_id,
+                )
+                node_dict = dict(node.items())
+                if 'name' not in node_dict:
+                    if 'content' not in node_dict:
+                        continue
+                    node_dict["name"] = ""
+                matched_docs.append(
+                    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                )
+                hits_docs.add(node_dict["name"])
+            except Exception as e:
+                logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
+                continue
             counter += 1
-            node = self.reason.query_node(label=self.schema_util.get_label_within_prefix(CHUNK_TYPE), id_value=doc_id)
-            node_dict = dict(node.items())
-            matched_docs.append(f"#{node_dict['name']}#{node_dict['content']}#{doc_score}")
-            hits_docs.add(node_dict['name'])
         try:
-            text_matched = self.sc.search_text(query, [self.schema_util.get_label_within_prefix(CHUNK_TYPE)], topk=1)
+            text_matched = self.sc.search_text(
+                query, [self.schema_util.get_label_within_prefix(CHUNK_TYPE)], topk=1
+            )
             if text_matched:
                 for item in text_matched:
                     title = item["node"]["name"]
@@ -391,7 +418,9 @@ class DefaultRetriever(ChunkRetrieverABC):
                             matched_docs.pop()
                         else:
                             logger.warning(f"{query} matched docs is empty")
-                        matched_docs.append(f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}')
+                        matched_docs.append(
+                            f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
+                        )
                         break
         except Exception as e:
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
@@ -412,3 +441,82 @@ class DefaultRetriever(ChunkRetrieverABC):
         if self.reranker is None:
             return passages
         return self.reranker.rerank(queries, passages)
+
+    def retrieval_table_metric_by_page_rank(
+        self, entities: list, topk=10, **kwargs
+    ) -> List[str]:
+        rst = []
+        if len(entities) <= 0:
+            return rst
+        label = self.schema_util.get_label_within_prefix("TableMetric")
+        for entity in entities:
+            entity["name"] = entity["id"]
+        scores = self.graph_algo.calculate_pagerank_scores(
+            self.schema_util.get_label_within_prefix("TableMetric"), entities
+        )
+        scores = {k: s for k, s in scores.items() if float(s) > sys.float_info.min}
+        if len(scores) > topk:
+            sorted_scores = sorted(
+                scores.items(), key=lambda item: item[1], reverse=True
+            )
+            scores = sorted_scores[:topk]
+        else:
+            scores = scores.items()
+        for entity_id, _ in scores:
+            node = self.reason.query_node(
+                label=label,
+                id_value=entity_id,
+            )
+            node_dict = dict(node.items())
+            node_dict["label"] = label
+            rst.append(node_dict)
+        return rst
+
+    def get_table_metrics_by_query(self, query: str):
+        """
+        query table metrics from entities
+        """
+        entities = self.named_entity_recognition(query)
+        if len(entities) <= 0:
+            return {}
+        (entities, scores) = self._match_table_mertric_constraint(entities)
+        table_metrics_list = self.retrieval_table_metric_by_page_rank(entities=entities)
+        rst_list = [
+            {k: d[k] for k in {"id", "name"} if k in d} for d in table_metrics_list
+        ]
+        return rst_list
+
+    def get_table_content_by_query(self, query: str):
+        """
+        query table
+        """
+        return []
+
+    def _match_table_mertric_constraint(self, queries: List[str], top_k: int = 1):
+        matched_entities = []
+        matched_entities_scores = []
+        for query_ner in queries:
+            entity = query_ner["entity"]
+            query = processing_phrases(entity)
+            query_type = "MetricConstraint"
+            query_type = self.schema_util.get_label_within_prefix(query_type)
+            try:
+                typed_nodes = self.sc.search_vector(
+                    label=query_type,
+                    property_key="name",
+                    query_vector=self.vectorizer.vectorize(query),
+                    topk=top_k,
+                )
+                if typed_nodes[0]["score"] > 0.9:
+                    matched_entities.append(
+                        {
+                            "name": typed_nodes[0]["node"]["name"],
+                            "type": query_type,
+                            "id": typed_nodes[0]["node"]["id"],
+                        }
+                    )
+                    matched_entities_scores.append(typed_nodes[0]["score"])
+            except Exception:
+                logger.exception("query_vertor_error,%s", query)
+                continue
+        return matched_entities, matched_entities_scores

@@ -13,6 +13,7 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.op_executor.op_deduce.deduce_executor import DeduceExecutor
+from kag.common.base.prompt_op import PromptOp
 from kag.solver.logic.core_modules.op_executor.op_math.math_executor import MathExecutor
 from kag.solver.logic.core_modules.op_executor.op_output.output_executor import OutputExecutor
 from kag.solver.logic.core_modules.op_executor.op_retrieval.retrieval_executor import RetrievalExecutor
@@ -23,6 +24,7 @@ from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import D
 from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 from kag.solver.logic.core_modules.rule_runner.rule_runner import OpRunner
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
+from kag.solver.logic.core_modules.parser.logic_node_parser import MathNode, GetNode
 
 logger = logging.getLogger()
 
@@ -118,10 +120,10 @@ class LogicExecutor:
             ret_question.append(question)
         return ret_question
 
-    def _generate_sub_answer(self, history: list, spo_retrieved: list, docs: list, sub_query: str):
+    def _generate_sub_answer(self, history: list, spo_retrieved: list, docs: list, sub_query: str, init_query: str):
         if not self.with_sub_answer:
             return "I don't know"
-        return self.generator.generate_sub_answer(sub_query, spo_retrieved, docs, history)
+        return self.generator.generate_sub_answer(sub_query, init_query, spo_retrieved, docs, history)
 
     def execute(self, lf_nodes: List[LFPlanResult], init_query):
         """
@@ -151,7 +153,7 @@ class LogicExecutor:
 
             question = self._create_sub_question_report_node(query_num, sub_logic_nodes_str, sub_query)
             if self.kg_retriever:
-                kg_qa_result, spo_retrieved = self._execute_lf(sub_logic_nodes)
+                kg_qa_result, spo_retrieved = self._execute_lf(sub_logic_nodes, history, init_query)
             else:
                 logger.info(f"lf executor disabled kg retriever {init_query}")
                 kg_qa_result, spo_retrieved = [], []
@@ -161,10 +163,15 @@ class LogicExecutor:
             self._update_sub_question_status(question, None, ReporterIntermediateProcessTool.STATE.RUNNING)
 
 
-            answer_source = "spo"
-            docs_with_score = []
-            all_related_entities, sub_answer = self._generate_sub_answer_by_graph(
-                history, kg_qa_result, spo_retrieved, sub_query)
+            if isinstance(lf.lf_nodes[0], MathNode):
+                # math op maintain progress
+                # 重写后精度丢失，math的答案不进行重写
+                sub_answer = str(kg_qa_result[0])
+            else:
+                answer_source = "spo"
+                docs_with_score = []
+                all_related_entities, sub_answer = self._generate_sub_answer_by_graph(
+                    history, kg_qa_result, spo_retrieved, sub_query, init_query)
 
             # if sub answer is `I don't know`, we use chunk retriever
             if "i don't know" in sub_answer.lower() and self.chunk_retriever:
@@ -184,11 +191,23 @@ class LogicExecutor:
                 docs_with_score = self.chunk_retriever.recall_docs(sub_query_with_history_qa, top_k=10, **params)
                 docs = ["#".join(item.split("#")[:-1]) for item in docs_with_score]
 
+                # Retrieve table mertic
+                if self.chunk_retriever and hasattr(self.chunk_retriever, 'get_table_metrics_by_query'):
+                    table_metrics_list = self.chunk_retriever.get_table_metrics_by_query(sub_query)
+                    if len(table_metrics_list) <= 0:
+                        table_metrics_list = self.chunk_retriever.get_table_content_by_query(sub_query)
+                    table_metrics_list = [mertic["name"] for mertic in table_metrics_list]
+                    if len(table_metrics_list) > 0:
+                        docs = table_metrics_list + docs
+
                 self._update_sub_question_recall_docs(docs, question)
                 self._update_sub_question_status(question, None, ReporterIntermediateProcessTool.STATE.RUNNING)
 
                 retrival_time = time.time() - start_time
-                sub_answer = self._generate_sub_answer(history, spo_retrieved, docs, sub_query)
+                sub_answer = self._generate_sub_answer(history, spo_retrieved, docs, sub_query, init_query)
+                if isinstance(lf.lf_nodes[0], GetNode) and sub_answer:
+                    # 如果是GetNode，子问题的答案就是全局答案
+                    kg_qa_result = [sub_answer]
                 question.context.append("#### answer based by fuzzy retrieved:")
                 question.context.append(f"{sub_answer}")
                 logger.info(f"{self.req_id} call by docs cost: {retrival_time} docs num={len(docs)}")
@@ -220,7 +239,7 @@ class LogicExecutor:
             _d = d.replace('\n', '<br>')
             question.context.append(f"|{i}|{_d}|")
 
-    def _generate_sub_answer_by_graph(self, history, kg_qa_result, spo_retrieved, sub_query):
+    def _generate_sub_answer_by_graph(self, history, kg_qa_result, spo_retrieved, sub_query, init_query):
         sub_answer = "I don't know"
         all_related_entities = self.kg_graph.get_all_entity()
         all_related_entities = list(set(all_related_entities))
@@ -241,7 +260,7 @@ class LogicExecutor:
         else:
             if len(spo_retrieved) == 0:
                 spo_retrieved = kg_qa_result
-            sub_answer = self._generate_sub_answer(history, spo_retrieved, [], sub_query)
+            sub_answer = self._generate_sub_answer(history, spo_retrieved, [], sub_query, init_query)
         return all_related_entities, sub_answer
 
     def _update_sub_question_status(self, question, answer, status):
@@ -263,7 +282,7 @@ class LogicExecutor:
         if self.report_tool:
             self.report_tool.report_pipeline(Question(question=init_query), self._convert_logic_nodes_2_question(lf_nodes))
 
-    def _execute_lf(self, sub_logic_nodes):
+    def _execute_lf(self, sub_logic_nodes, history, init_query):
         kg_qa_result = []
         spo_set = []
         # Execute graph retrieval operations.
@@ -279,7 +298,7 @@ class LogicExecutor:
                 if isinstance(deduce_res, list):
                     kg_qa_result += deduce_res
             elif self.math_executor.is_this_op(n):
-                self.math_executor.executor(n, self.req_id, self.params)
+                kg_qa_result += self.math_executor.executor(n, history, init_query, self.req_id, self.params)
             elif self.sort_executor.is_this_op(n):
                 self.sort_executor.executor(n, self.req_id, self.params)
             elif self.output_executor.is_this_op(n):

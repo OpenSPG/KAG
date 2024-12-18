@@ -585,6 +585,7 @@ class KgGraph:
         self.edge_alias = []
         self.entity_map = {}
         self.edge_map = {}
+        self.symb_values = {}
 
     def merge_kg_graph(self, other, wo_intersect=True):
         self.nodes_alias = list(set(self.nodes_alias + other.nodes_alias))

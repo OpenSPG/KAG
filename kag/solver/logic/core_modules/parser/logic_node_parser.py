@@ -79,6 +79,8 @@ class GetSPONode(LogicNode):
                     node = get_spo_node_op.p
                 elif key == "o":
                     node = get_spo_node_op.o
+                if node is None:
+                    continue
                 node.value_list.append([str(property), value])
 
 
@@ -143,6 +145,23 @@ class FilterNode(LogicNode):
     def parse_node(input_str):
         args = binary_expr_parse(input_str)
         return FilterNode("filter", args)
+
+
+class MathNode(LogicNode):
+    def __init__(self, operator, args):
+        super().__init__(operator, args)
+        self.alias_name = args.get("alias_name", None)
+        self.expr = args.get("expr", None)
+
+    def to_dsl(self):
+        raise NotImplementedError("Subclasses should implement this method.")
+
+    @staticmethod
+    def parse_node(input_str, output_name, sub_query):
+        args = {'alias_name': output_name, 'expr': input_str}
+        node = MathNode("math", args)
+        node.sub_query = sub_query + f"（计算公式: {output_name}={input_str}）"
+        return node
 
 
 # count(alias)->count_alias
@@ -211,9 +230,9 @@ class SortNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         equality_list = re.findall(r'([\w.]+=[^=]+)(,|，|$)', input_str)
-        if len(equality_list) < 4:
+        if len(equality_list) < 3:
             raise RuntimeError(f"parse {input_str} error not found set,orderby,direction,limit")
-        params = [e[0] for e in equality_list[:4]]
+        params = [e[0] for e in equality_list[:3]]
         params_dict = {}
         for param in params:
             key, value = param.split('=')
@@ -513,7 +532,7 @@ class ParseLogicForm:
             operator, args_str = match.groups()
             output_name = None
         low_operator = operator.lower()
-        if low_operator == "get":
+        if low_operator in ["get", "output"]:
             node: GetNode = GetNode.parse_node(args_str)
             if node.alias_name in parsed_entity_set.keys():
                 s = parsed_entity_set[node.alias_name]
@@ -537,6 +556,8 @@ class ParseLogicForm:
             node: DeduceNode = DeduceNode.parse_node(args_str)
         elif low_operator in ["verify"]:
             node: VerifyNode = VerifyNode.parse_node(args_str)
+        elif low_operator in ["math"]:
+            node: MathNode = MathNode.parse_node(args_str, output_name, sub_query)
         elif low_operator in ["count"]:
             node: CountNode = CountNode.parse_node(args_str, output_name)
         elif low_operator in ["sum"]:

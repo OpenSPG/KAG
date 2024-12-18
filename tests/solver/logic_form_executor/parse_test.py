@@ -172,5 +172,10 @@ class ParseTest(unittest.TestCase):
         retrieval_node = parser.parse_logic_form("Retrieval(s=s1:医院[`,]`], p=p1:关联术语, o=o1:检查检验结果, s.value=>160, s.brand=权健)", {})
         assert retrieval_node.s.entity_name == ',]'
 
+    def test_math_parse(self):
+        math_node = parser.parse_logic_form("math(1000*10 + count(o1))->o2", {})
+        print(math_node)
+        assert math_node.alias_name == "o2"
+        assert math_node.expr == "1000*10 + count(o1)"
 if __name__ == '__main__':
     unittest.main()

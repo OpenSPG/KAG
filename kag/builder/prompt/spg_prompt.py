@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class SPGPrompt(PromptOp, ABC):
     spg_types: Dict[str, BaseSpgType]
-    ignored_types: List[str] = ["Chunk"]
+    ignored_types: List[str] = ["Chunk", "Table", "MetricConstraint", "TableMetric"]
     ignored_properties: List[str] = ["id", "name", "description", "stdId", "eventTime", "desc", "semanticType"]
     ignored_relations: List[str] = ["isA"]
     basic_types = {"Text": "文本", "Integer": "整型", "Float": "浮点型"}
