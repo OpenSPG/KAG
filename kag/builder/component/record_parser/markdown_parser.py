@@ -12,16 +12,14 @@
 
 import os
 
-import bs4.element
 import markdown
 from bs4 import BeautifulSoup, Tag
-from typing import List
+from typing import List, Dict
 
 import logging
 import re
 import requests
 import pandas as pd
-from tenacity import stop_after_attempt, retry
 
 from kag.interface import RecordParserABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
@@ -31,6 +29,15 @@ from kag.common.utils import generate_hash_id
 
 
 logger = logging.getLogger(__name__)
+
+
+class MarkdownNode:
+    def __init__(self, title: str, level: int, content: str = ""):
+        self.title = title
+        self.level = level
+        self.content = content
+        self.children: List[MarkdownNode] = []
+        self.tables: List[Dict] = []  # 存储表格数据
 
 
 @RecordParserABC.register("md")
@@ -46,7 +53,7 @@ class MarkDownParser(RecordParserABC):
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 5, **kwargs):
+    def __init__(self, cut_depth: int = 3, **kwargs):
         super().__init__(**kwargs)
         self.cut_depth = int(cut_depth)
         self.llm_module = kwargs.get("llm_module", None)
@@ -61,318 +68,194 @@ class MarkDownParser(RecordParserABC):
     def output_types(self):
         return Chunk
 
-    def to_text(self, level_tags):
-        """
-        Converts parsed hierarchical tags into text content.
-
-        Args:
-            level_tags (list): Parsed tags organized by Markdown heading levels and other tags.
-
-        Returns:
-            str: Text content derived from the parsed tags.
-        """
-        content = []
-        for item in level_tags:
-            if isinstance(item, list):
-                content.append(self.to_text(item))
-            else:
-                header, tag = item
-                if not isinstance(tag, Tag):
-                    continue
-                elif tag.name in self.ALL_LEVELS:
-                    content.append(
-                        f"{header}-{tag.text}" if len(header) > 0 else tag.text
-                    )
-                else:
-                    content.append(self.tag_to_text(tag))
-        return "\n".join(content)
-
-    def tag_to_text(self, tag: bs4.element.Tag):
-        """
-        将html tag转换为text
-        如果是table，输出markdown，添加表格标记，方便后续构建Chunk
-        :param tag:
-        :return:
-        """
-        if tag.name == "table":
-            try:
-                html_table = str(tag)
-                table_df = pd.read_html(html_table)[0]
-                return f"{self.TABLE_CHUCK_FLAG}{table_df.to_markdown(index=False)}{self.TABLE_CHUCK_FLAG}"
-            except:
-                logging.warning("parse table tag to text error", exc_info=True)
-        return tag.text
-
-    @retry(stop=stop_after_attempt(5))
-    def analyze_table(self, table, analyze_mathod="human"):
-        if analyze_mathod == "llm":
-            if self.llm_module is None:
-                logging.INFO("llm_module is None, cannot use analyze_table")
-                return table
-            variables = {"table": table}
-            response = self.llm_module.invoke(
-                variables=variables,
-                prompt_op=self.analyze_table_prompt,
-                with_json_parse=False,
-            )
-            if response is None or response == "" or response == []:
-                raise Exception("llm_module return None")
-            return response
-        else:
-            from io import StringIO
-            import pandas as pd
-
-            try:
-                df = pd.read_html(StringIO(table))[0]
-            except Exception as e:
-                logging.warning(f"analyze_table error: {e}")
-                return table
-            content = ""
-            for index, row in df.iterrows():
-                content += f"第{index+1}行的数据如下:"
-                for col_name, value in row.items():
-                    content += f"{col_name}的值为{value}，"
-                content += "\n"
-            return content
-
-    @retry(stop=stop_after_attempt(5))
-    def analyze_img(self, img_url):
-        response = requests.get(img_url)
-        response.raise_for_status()
-        image_data = response.content
-        return image_data
-
-    def replace_table(self, content: str):
-        pattern = r"<table[^>]*>([\s\S]*?)<\/table>"
-        for match in re.finditer(pattern, content):
-            table = match.group(0)
-            table = self.analyze_table(table)
-            content = content.replace(match.group(1), table)
-        return content
-
-    def replace_img(self, content: str):
-        pattern = r"<img[^>]*src=[\"\']([^\"\']*)[\"\']"
-        for match in re.finditer(pattern, content):
-            img_url = match.group(1)
-            img_msg = self.analyze_img(img_url)
-            content = content.replace(match.group(0), img_msg)
-        return content
-
-    def extract_table(self, level_tags, header=""):
-        """
-        Extracts tables from the parsed hierarchical tags along with their headers.
-
-        Args:
-            level_tags (list): Parsed tags organized by Markdown heading levels and other tags.
-            header (str): Current header text being processed.
-
-        Returns:
-            list: A list of tuples, each containing the table's header, context text, and the table tag.
-        """
-        tables = []
-        for idx, item in enumerate(level_tags):
-            if isinstance(item, list):
-                tables += self.extract_table(item, header)
-            else:
-                tag = item[1]
-                if not isinstance(tag, Tag):
-                    continue
-                if tag.name in self.ALL_LEVELS:
-                    header = f"{header}-{tag.text}" if len(header) > 0 else tag.text
-
-                if tag.name == "table":
-                    if idx - 1 >= 0:
-                        context = level_tags[idx - 1]
-                        if isinstance(context, tuple):
-                            tables.append((header, context[1].text, tag))
-                    else:
-                        tables.append((header, "", tag))
-        return tables
-
-    def parse_level_tags(
-        self,
-        level_tags: list,
-        level: str,
-        parent_header: str = "",
-        cur_header: str = "",
-    ):
-        """
-        Recursively parses level tags to organize them into a structured format.
-
-        Args:
-            level_tags (list): A list of tags to be parsed.
-            level (str): The current level being processed.
-            parent_header (str): The header of the parent tag.
-            cur_header (str): The header of the current tag.
-
-        Returns:
-            list: A structured representation of the parsed tags.
-        """
-        if len(level_tags) == 0:
-            return []
-        output = []
-        prefix_tags = []
-        while len(level_tags) > 0:
-            tag = level_tags[0]
-            if tag.name in self.ALL_LEVELS:
-                break
-            else:
-                prefix_tags.append((parent_header, level_tags.pop(0)))
-        if len(prefix_tags) > 0:
-            output.append(prefix_tags)
-
-        cur = []
-        while len(level_tags) > 0:
-            tag = level_tags[0]
-            if tag.name not in self.ALL_LEVELS:
-                cur.append((parent_header, level_tags.pop(0)))
-            else:
-
-                if tag.name > level:
-                    cur += self.parse_level_tags(
-                        level_tags,
-                        tag.name,
-                        (
-                            f"{parent_header}/{cur_header}"
-                            if len(parent_header) > 0
-                            else cur_header
-                        ),
-                        tag.name,
-                    )
-                elif tag.name == level:
-                    if len(cur) > 0:
-                        output.append(cur)
-                    cur = [(parent_header, level_tags.pop(0))]
-                    cur_header = tag.text
-                else:
-                    if len(cur) > 0:
-                        output.append(cur)
-                    return output
-        if len(cur) > 0:
-            output.append(cur)
-        return output
-
-    def cut(self, level_tags, cur_level, final_level):
-        """
-        Cuts the provided level tags into chunks based on the specified levels.
-
-        Args:
-            level_tags (list): A list of tags to be cut.
-            cur_level (int): The current level in the hierarchy.
-            final_level (int): The final level to which the tags should be cut.
-
-        Returns:
-            list: A list of cut chunks.
-        """
-        output = []
-        if cur_level == final_level:
-            cur_prefix = []
-            for sublevel_tags in level_tags:
-                if isinstance(sublevel_tags, tuple):
-                    cur_prefix.append(
-                        self.to_text(
-                            [
-                                sublevel_tags,
-                            ]
-                        )
-                    )
-                else:
-                    break
-            if cur_prefix:
-                output.append("\n".join(cur_prefix))
-
-            for sublevel_tags in level_tags:
-                if isinstance(sublevel_tags, list):
-                    output.append(self.to_text(sublevel_tags))
-            return output
-        else:
-            cur_prefix = []
-            for sublevel_tags in level_tags:
-                if isinstance(sublevel_tags, tuple):
-                    cur_prefix.append(sublevel_tags[1].text)
-                else:
-                    break
-            if cur_prefix:
-                output.append("\n".join(cur_prefix))
-
-            for sublevel_tags in level_tags:
-                if isinstance(sublevel_tags, list):
-                    output += self.cut(sublevel_tags, cur_level + 1, final_level)
-            return output
-
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
     ) -> List[Output]:
-        """
-        Converts Markdown content into structured chunks.
-        """
-        html_content = markdown.markdown(
-            content, extensions=["markdown.extensions.tables"]
+        # 将Markdown转换为HTML
+        html = markdown.markdown(content, extensions=["tables"])
+        soup = BeautifulSoup(html, "html.parser")
+
+        # 初始化根节点
+        root = MarkdownNode("root", 0)
+        stack = [root]
+
+        # 遍历所有元素
+        for element in soup.find_all(
+            ["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]
+        ):
+            if element.name.startswith("h"):
+                # 获取标题级别
+                level = int(element.name[1])
+                title_text = element.get_text().strip()
+
+                # 创建新节点
+                new_node = MarkdownNode(title_text, level)
+
+                # 找到合适的父节点
+                while stack and stack[-1].level >= level:
+                    stack.pop()
+
+                if stack:
+                    stack[-1].children.append(new_node)
+                stack.append(new_node)
+
+            elif element.name == "table":
+                # 处理表格
+                table_data = []
+                headers = []
+
+                # 获取表头
+                if element.find("thead"):
+                    for th in element.find("thead").find_all("th"):
+                        headers.append(th.get_text().strip())
+
+                # 获取表格内容
+                if element.find("tbody"):
+                    for row in element.find("tbody").find_all("tr"):
+                        row_data = {}
+                        for i, td in enumerate(row.find_all("td")):
+                            if i < len(headers):
+                                row_data[headers[i]] = td.get_text().strip()
+                        table_data.append(row_data)
+
+                # 将表格添加到当前节点和所有父节点
+                for node in stack:
+                    node.tables.append({"headers": headers, "data": table_data})
+
+            elif element.name == "p":
+                # 处理段落文本，添加到当前节点和所有父节点
+                text = element.get_text().strip() + "\n"
+                for node in stack:
+                    if node.title != "root":  # 不添加到根节点
+                        node.content += text
+
+        # 将树状结构转换为输出格式
+        outputs = self._convert_to_outputs(root, id)
+        return outputs
+
+    def _convert_to_outputs(
+        self,
+        node: MarkdownNode,
+        id: str,
+        parent_id: str = None,
+        parent_titles: List[str] = None,
+        parent_contents: List[str] = None,
+    ) -> List[Output]:
+        outputs = []
+        if parent_titles is None:
+            parent_titles = []
+        if parent_contents is None:
+            parent_contents = []
+
+        current_titles = parent_titles + ([node.title] if node.title != "root" else [])
+        current_contents = parent_contents + (
+            [node.content] if node.content and node.title != "root" else []
         )
-        soup = BeautifulSoup(html_content, "html.parser")
-        if soup is None:
-            raise ValueError("The MarkDown file appears to be empty or unreadable.")
 
-        top_level = None
-        for level in self.ALL_LEVELS:
-            tmp = soup.find_all(level)
-            if len(tmp) > 0:
-                top_level = level
-                break
+        # 如果当前节点级别等于目标级别，收集所有内容
+        if node.level == self.cut_depth:
+            # 处理目标级别的节点
+            full_title = " / ".join(current_titles)
 
-        if top_level is None:
-            chunk = Chunk(
-                id=generate_hash_id(str(id)),
-                name=title,
-                content=soup.text,
-                ref=kwargs.get("ref", ""),
+            # 收集所有内容（包括父级内容）
+            all_content = current_contents.copy()
+
+            # 收集所有子节点的内容
+            def collect_children_content(n: MarkdownNode):
+                content = [n.content] if n.content else []
+                for child in n.children:
+                    content.extend(collect_children_content(child))
+                return content
+
+            for child in node.children:
+                all_content.extend(collect_children_content(child))
+
+            current_output = Chunk(
+                id=f"{id}_{len(outputs)}",
+                parent_id=parent_id,
+                name=full_title,
+                content="\n".join(filter(None, all_content)),
             )
-            return [chunk]
 
-        tags = [tag for tag in soup.children if isinstance(tag, Tag)]
-        level_tags = self.parse_level_tags(tags, top_level)
-        cutted = self.cut(level_tags, 0, self.cut_depth)
+            # 收集表格数据
+            all_tables = []
+            if node.tables:
+                all_tables.extend(node.tables)
 
-        # 获取每个chunk对应的完整标题路径
-        chunk_titles = self._extract_chunk_titles(level_tags)
+            def collect_tables(n: MarkdownNode):
+                tables = []
+                if n.tables:
+                    tables.extend(n.tables)
+                for child in n.children:
+                    tables.extend(collect_tables(child))
+                return tables
 
-        # 只保留最后一级标题并确定层级
-        chunk_levels = []
-        final_titles = []
-        for title_path in chunk_titles:
-            final_title = title_path.split("/")[-1]
-            final_titles.append(final_title)
-            level = self._determine_title_level(final_title)
-            chunk_levels.append(level)
+            for child in node.children:
+                all_tables.extend(collect_tables(child))
 
-        # 创建初始chunks
-        initial_chunks = []
-        if len(cutted) != len(chunk_titles):
-            cutted = cutted[len(cutted) - len(chunk_titles) :]
-        for idx, (content, full_title) in enumerate(zip(cutted, chunk_titles)):
-            chunk = None
-            chunk_name = f"{full_title}" if full_title else f"{title}#{idx}"
+            if all_tables:
+                current_output.metadata = {"tables": all_tables}
 
-            if self.TABLE_CHUCK_FLAG in content:
-                chunk = self.get_table_chuck(content, chunk_name, id, idx)
-                chunk.ref = kwargs.get("ref", "")
-                chunk.level = chunk_levels[idx]
-            else:
-                chunk = Chunk(
-                    id=generate_hash_id(f"{id}#{idx}"),
-                    name=chunk_name,
-                    content=content,
-                    ref=kwargs.get("ref", ""),
-                    level=chunk_levels[idx],
+            outputs.append(current_output)
+
+        # 如果当前节点级别小于目标级别，继续向下遍历
+        elif node.level < self.cut_depth:
+            # 检查是否有任何子树包含目标级别的节点
+            has_target_level = False
+            for child in node.children:
+                child_outputs = self._convert_to_outputs(
+                    child, id, parent_id, current_titles, current_contents
                 )
-            initial_chunks.append(chunk)
+                if child_outputs:
+                    has_target_level = True
+                    outputs.extend(child_outputs)
 
-        # 构建chunk树
-        chunk_tree = self.build_chunk_tree(initial_chunks)
+            # 如果没有找到目标级别的节点，且当前节点不是根节点，则输出当前节点
+            if not has_target_level and node.title != "root":
+                full_title = " / ".join(current_titles)
 
-        # 基于树结构合并chunks
-        merged_chunks = self.merge_chunks_by_tree(chunk_tree, target_length=8000)
-        return merged_chunks
+                # 收集所有内容（包括父级内容）
+                all_content = current_contents.copy()
+
+                # 收集所有子节点的内容
+                def collect_children_content(n: MarkdownNode):
+                    content = [n.content] if n.content else []
+                    for child in n.children:
+                        content.extend(collect_children_content(child))
+                    return content
+
+                for child in node.children:
+                    all_content.extend(collect_children_content(child))
+
+                current_output = Chunk(
+                    id=f"{id}_{len(outputs)}",
+                    parent_id=parent_id,
+                    name=full_title,
+                    content="\n".join(filter(None, all_content)),
+                )
+
+                # 收集表格数据
+                all_tables = []
+                if node.tables:
+                    all_tables.extend(node.tables)
+
+                def collect_tables(n: MarkdownNode):
+                    tables = []
+                    if n.tables:
+                        tables.extend(n.tables)
+                    for child in n.children:
+                        tables.extend(collect_tables(child))
+                    return tables
+
+                for child in node.children:
+                    all_tables.extend(collect_tables(child))
+
+                if all_tables:
+                    current_output.metadata = {"tables": all_tables}
+
+                outputs.append(current_output)
+
+        return outputs
 
     def count_tree_nodes(self, tree: dict) -> int:
         """
@@ -555,7 +438,7 @@ class MarkDownParser(RecordParserABC):
         pattern = f"{self.TABLE_CHUCK_FLAG}(.*?){self.TABLE_CHUCK_FLAG}"
         matches = re.findall(pattern, table_chunk_str, re.DOTALL)
         if not matches or len(matches) <= 0:
-            # 找不到表格信息，按照Text Chunk处理
+            # 找���到表格信息，按照Text Chunk处理
             return Chunk(
                 id=generate_hash_id(f"{id}#{idx}"),
                 name=f"{title}#{idx}",
