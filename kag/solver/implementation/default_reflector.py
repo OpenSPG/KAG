@@ -1,7 +1,9 @@
 from tenacity import retry, stop_after_attempt
 
-from kag.interface import PromptABC, KagMemoryABC, KagReflectorABC
+from kag.interface import PromptABC
 from kag.interface import LLMClient
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
+from kag.interface.solver.kag_reflector_abc import KagReflectorABC
 from kag.solver.utils import init_prompt_with_fallback
 
 

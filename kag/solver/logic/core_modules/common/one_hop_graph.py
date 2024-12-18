@@ -231,15 +231,16 @@ class RelationData:
         self.end_entity: EntityData = None
         self.end_alias = "o"
         self.type: str = None
+        self.type_zh: str = None
 
     def get_spo_type(self):
-        return f"{self.from_type}_{self.type}_{self.end_type}"
+        return f"{self.from_type}_{self.type_zh}_{self.end_type}"
 
     def get_spo_show_id(self):
-        return self.from_entity.to_show_id(), self.type, self.end_entity.to_show_id()
+        return self.from_entity.to_show_id(), self.type_zh, self.end_entity.to_show_id()
 
     def to_show_id(self):
-        return f"{self.from_entity.to_show_id()} {self.type} {self.end_entity.to_show_id()}"
+        return f"{self.from_entity.to_show_id()} {self.type_zh} {self.end_entity.to_show_id()}"
 
     def get_properties_map_list_value(self):
         if self.prop is None:
@@ -256,6 +257,7 @@ class RelationData:
             "end_entity_name": self.end_entity.name,
             "end_type": self.end_type,
             "type": self.type,
+            "type_zh": self.type_zh
         }
 
     def _get_entity_description(self, entity: EntityData):
@@ -317,15 +319,19 @@ class RelationData:
         rel = RelationData()
 
         rel.from_id = json_dict["__from_id__"]
-        rel.from_type = get_label_without_prefix(schema, json_dict["__from_id_type__"])
+        rel.from_type = json_dict["__from_id_type__"]
         rel.end_id = json_dict["__to_id__"]
-        rel.end_type = get_label_without_prefix(schema, json_dict["__to_id_type__"])
+        rel.end_type = json_dict["__to_id_type__"]
         rel.type = json_dict["__label__"]
-        spo_label_name = f"{rel.from_type}_{rel.type}_{rel.end_type}"
+        rel.type_zh = rel.type
+
+        from_type = schema.get_label_without_prefix(rel.from_type)
+        end_type = schema.get_label_without_prefix(rel.end_type)
+        spo_label_name = f"{from_type}_{rel.type}_{end_type}"
         rel.prop = Prop.from_dict(json_dict, spo_label_name, schema)
         if schema is not None:
             if spo_label_name in schema.spo_en_zh.keys():
-                rel.type = schema.get_spo_with_p(schema.spo_en_zh[spo_label_name])
+                rel.type_zh = schema.get_spo_with_p(schema.spo_en_zh[spo_label_name])
         return rel
 
     def revert_spo(self):
@@ -339,6 +345,7 @@ class RelationData:
         rel.end_entity = self.from_entity
 
         rel.type = self.type
+        rel.type_zh = self.type_zh
         rel.prop = self.prop
         return rel
 

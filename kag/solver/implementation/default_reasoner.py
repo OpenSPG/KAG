@@ -1,8 +1,9 @@
 import logging
 from typing import List
 
-from kag.interface import KagReasonerABC, LFPlannerABC, LFExecutorABC
-
+from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
+from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
+from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
 from kag.solver.logic.core_modules.common.base_model import LFPlan
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.interface import LLMClient

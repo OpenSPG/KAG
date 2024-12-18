@@ -12,8 +12,8 @@
 from abc import ABC
 from typing import List
 
-from kag.interface import KagMemoryABC
 from kag.interface.solver.base import KagBaseModule
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.solver.logic.core_modules.common.base_model import LFPlan
 
 

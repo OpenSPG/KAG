@@ -5,7 +5,7 @@ from typing import List, Dict
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from knext.reasoner.rest.models.reason_task import ReasonTask
 
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.solver.logic.core_modules.common.base_model import SPOEntity, TypeInfo
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData, Prop, RelationData, \
     copy_one_hop_graph_data
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -57,12 +57,12 @@ class OpenSPGGraphApi(GraphApiABC):
         super().__init__(**kwargs)
         self.project_id = project_id
         self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "project_id": project_id,
-            "host_addr": host_addr
+            "KAG_PROJECT_ID": project_id,
+            "KAG_PROJECT_HOST_ADDR": host_addr
         }))
         self.host_addr = host_addr
 
-        self.rc = ReasonerClient(self.config.host_addr, int(self.project_id))
+        self.rc = ReasonerClient(host_addr, int(self.project_id))
 
         self.cache_one_hop_graph: [str, OneHopGraphData] = {}
 
@@ -107,65 +107,17 @@ class OpenSPGGraphApi(GraphApiABC):
         return s_entity
 
     def _convert_json_to_rel(self, p_json: dict, start_node: EntityData, end_node: EntityData) -> RelationData:
-        p_total_type_name = p_json["type"]
-        s_type = start_node.type
-        o_type = end_node.type
-        if len(s_type) > len(o_type):
-            p_type = (
-                p_json["type"].replace(s_type, "").replace(o_type, "").replace("_", "")
-            )
-        else:
-            p_type = (
-                p_json["type"].replace(o_type, "").replace(s_type, "").replace("_", "")
-            )
-        p_info = {}
-        from_id = None
-        to_id = None
-        for property_key in p_json["propertyValues"].keys():
-            if property_key == "original_src_id1__":
-                from_id = p_json["propertyValues"][property_key]
-            elif property_key == "original_dst_id2__":
-                to_id = p_json["propertyValues"][property_key]
-            else:
-                p_info[property_key] = p_json["propertyValues"][property_key]
-        if from_id is None or to_id is None:
-            return None
-        """
-        rel.from_id = json_dict["__from_id__"]
-        rel.from_type = json_dict["__from_id_type__"]
-        rel.end_id = json_dict["__to_id__"]
-        rel.end_type = json_dict["__to_id_type__"]
-        rel.type = json_dict["__label__"]
-        """
-        if s_type in p_total_type_name and s_type != o_type:
-            is_out_edge = p_total_type_name.startswith(s_type)
-        else:
-            is_out_edge = from_id == start_node.biz_id
+        p_info = p_json["propertyValues"]
+        rel = RelationData.from_dict(p_info, self.schema)
+        s_id = generate_biz_id_with_type(
+            start_node.biz_id, start_node.type
+        )
+        rel_s_id = generate_biz_id_with_type(
+            rel.from_id, rel.from_type
+        )
 
-        if is_out_edge:
-            p_info.update(
-                {
-                    "__label__": p_type,
-                    "__from_id__": start_node.biz_id,
-                    "__from_id_type__": s_type,
-                    "__to_id__": end_node.biz_id,
-                    "__to_id_type__": o_type,
-                }
-            )
-        else:
-            p_info.update(
-                {
-                    "__label__": p_type,
-                    "__from_id__": end_node.biz_id,
-                    "__from_id_type__": o_type,
-                    "__to_id__": start_node.biz_id,
-                    "__to_id_type__": s_type,
-                }
-            )
-
-        rel = RelationData.from_dict(p_json, self.schema)
-        rel.from_entity = start_node if is_out_edge else end_node
-        rel.end_entity = end_node if is_out_edge else start_node
+        rel.from_entity = start_node if rel_s_id == s_id else end_node
+        rel.end_entity = end_node if rel_s_id == s_id else start_node
         return rel
 
     def convert_raw_data_to_node(self, data: str, enable_cache, cached_map) -> EntityData:
@@ -187,20 +139,20 @@ class OpenSPGGraphApi(GraphApiABC):
         id_sets = ",".join(id_set)
         dsl_query = f"""
         MATCH (n:{entity_labels})
-        WHERE n.id in ['{id_sets}']
+        WHERE n.id in [{id_sets}]
         )
-        RETURN n
+        RETURN n,n.id
         """
         tables: TableData = self.execute_dsl(dsl_query)
-        return [self.convert_raw_data_to_node(row[0]) for row in tables.data]
+        return [self.convert_raw_data_to_node(row[0], False, {}) for row in tables.data]
 
     def get_entity_one_hop(self, entity: EntityData) -> OneHopGraphData:
         id = f'"{entity.biz_id}"'
         dsl_query = f"""
         MATCH (s:`{entity.type}`)-[p:rdf_expand()]-(o:Entity)
-        WHERE s.id in ['{id}']
+        WHERE s.id in [{id}]
         )
-        RETURN s,p,o
+        RETURN s,p,o,s.id,o.id
         """
         one_hop: OneHopGraphData = self._get_cached_one_hop_graph(entity.biz_id, entity.type, self.cache_one_hop_graph)
         if not one_hop:
@@ -253,12 +205,17 @@ class OpenSPGGraphApi(GraphApiABC):
 
 
 if __name__ == "__main__":
+    rc = ReasonerClient(host_addr="http://127.0.0.1:8887", project_id=4)
+    rc.get_reason_schema()
     graph_api = OpenSPGGraphApi(project_id="4", host_addr="http://127.0.0.1:8887")
     entity = SPOEntity()
-    entity.id_set.append("确认是否可认定为事实劳动关系")
-    entity.type_set.append("Pillar")
+    entity.id_set.append("entity_test_id")
+    entity.type_set.append(TypeInfo("Pillar"))
     datas: List[EntityData] = graph_api.get_entity(entity)
     assert len(datas) == 1
-    assert datas[0].biz_id == "确认是否可认定为事实劳动关系"
+    assert datas[0].biz_id == "entity_test_id"
+    one_hop = graph_api.get_entity_one_hop(datas[0])
+    assert one_hop is not None
+    # cached
     one_hop = graph_api.get_entity_one_hop(datas[0])
     assert one_hop is not None

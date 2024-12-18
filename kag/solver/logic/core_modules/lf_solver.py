@@ -2,9 +2,9 @@ import logging
 import time
 from typing import List
 
-from kag.interface import LFExecutorABC
 from kag.interface import VectorizeModelABC as Vectorizer
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.base.kg_retriever import KGRetriever
 from kag.solver.logic.core_modules.common.base_model import LFPlan, LFExecuteResult
