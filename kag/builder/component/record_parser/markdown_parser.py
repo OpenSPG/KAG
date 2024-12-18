@@ -27,6 +27,7 @@ from kag.interface import RecordParserABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
+from kag.common.utils import generate_hash_id
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class MarkDownParser(RecordParserABC):
     def __init__(self, cut_depth: int = 5, **kwargs):
         super().__init__(**kwargs)
         self.cut_depth = int(cut_depth)
-        self.llm_module = self._init_llm()
+        self.llm_module = kwargs.get("llm_module", None)
         self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
         self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
 
@@ -321,7 +322,7 @@ class MarkDownParser(RecordParserABC):
 
         if top_level is None:
             chunk = Chunk(
-                id=Chunk.generate_hash_id(str(id)),
+                id=generate_hash_id(str(id)),
                 name=title,
                 content=soup.text,
                 ref=kwargs.get("ref", ""),
@@ -358,7 +359,7 @@ class MarkDownParser(RecordParserABC):
                 chunk.level = chunk_levels[idx]
             else:
                 chunk = Chunk(
-                    id=Chunk.generate_hash_id(f"{id}#{idx}"),
+                    id=generate_hash_id(f"{id}#{idx}"),
                     name=chunk_name,
                     content=content,
                     ref=kwargs.get("ref", ""),
@@ -556,7 +557,7 @@ class MarkDownParser(RecordParserABC):
         if not matches or len(matches) <= 0:
             # 找不到表格信息，按照Text Chunk处理
             return Chunk(
-                id=Chunk.generate_hash_id(f"{id}#{idx}"),
+                id=generate_hash_id(f"{id}#{idx}"),
                 name=f"{title}#{idx}",
                 content=table_chunk_str,
             )
@@ -580,7 +581,7 @@ class MarkDownParser(RecordParserABC):
             logging.warning(f"get_table_chuck error: {e}")
             replaced_table_text = table_chunk_str
         return Chunk(
-            id=Chunk.generate_hash_id(f"{id}#{idx}"),
+            id=generate_hash_id(f"{id}#{idx}"),
             name=f"{title}#{idx}",
             content=replaced_table_text,
             type=ChunkTypeEnum.Table,
@@ -663,3 +664,12 @@ class YuequeParser(MarkDownParser):
 
         chunks = self.solve_content(id, title, content)
         return chunks
+
+
+if __name__ == "__main__":
+    markdown_parser = MarkDownParser()
+    res = markdown_parser._invoke("/Users/zhangxinhong.zxh/Downloads/Noah文档中心-sdk.md")
+    from kag.builder.model.chunk import dump_chunks
+
+    dump_chunks(res)
+    a = 1
