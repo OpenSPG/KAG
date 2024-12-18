@@ -516,3 +516,9 @@ class YuequeParser(MarkDownParser):
 
         chunks = self.solve_content(id, title, content)
         return chunks
+
+
+if __name__ == "__main__":
+    markdown_parser = MarkDownParser()
+    res = markdown_parser._invoke("/Users/zhangxinhong.zxh/Downloads/Noah文档中心-sdk.md")
+    a = 1
