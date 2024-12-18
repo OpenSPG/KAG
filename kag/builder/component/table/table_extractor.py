@@ -64,10 +64,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         self.language = self.prompt_config.get("language") or os.getenv(
             "KAG_PROMPT_LANGUAGE", "zh"
         )
-        self.table_context = PromptOp.load(self.biz_scene, "table_context")(
-            language=self.language, project_id=self.project_id
-        )
-        self.classify_prompt = PromptOp.load(self.biz_scene, "table_classify")(
+        self.table_keywords_prompt = PromptOp.load(self.biz_scene, "table_keywords")(
             language=self.language, project_id=self.project_id
         )
         self.kag_extractor = KAGExtractor(**kwargs)

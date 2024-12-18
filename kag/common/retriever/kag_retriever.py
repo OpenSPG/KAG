@@ -507,15 +507,16 @@ class DefaultRetriever(ChunkRetrieverABC):
                     query_vector=self.vectorizer.vectorize(query),
                     topk=top_k,
                 )
-                if typed_nodes[0]["score"] > 0.9:
-                    matched_entities.append(
-                        {
-                            "name": typed_nodes[0]["node"]["name"],
-                            "type": query_type,
-                            "id": typed_nodes[0]["node"]["id"],
-                        }
-                    )
-                    matched_entities_scores.append(typed_nodes[0]["score"])
+                for node in typed_nodes:
+                    if node["score"] > 0.9:
+                        matched_entities.append(
+                            {
+                                "name": node["node"]["name"],
+                                "type": query_type,
+                                "id": node["node"]["id"],
+                            }
+                        )
+                        matched_entities_scores.append(node["score"])
             except Exception:
                 logger.exception("query_vertor_error,%s", query)
                 continue

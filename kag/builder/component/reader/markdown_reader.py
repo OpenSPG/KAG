@@ -306,6 +306,23 @@ class MarkDownReader(SourceReaderABC):
                     output += self.cut(sublevel_tags, cur_level + 1, final_level)
             return output
 
+    def solve_tables(self, soup: BeautifulSoup, tilte: str) -> List[Output]:
+        """
+        convert table to chunks
+        """
+        rst = []
+        tables = soup.find_all("table")
+        for i, table in enumerate(tables):
+            table_str = self.table_tag_to_text(table)
+            table_chunks = self.get_table_chuck(
+                table_chunk_str=table_str,
+                title=tilte,
+                id=Chunk.generate_hash_id(table_str),
+                idx=i,
+            )
+            rst.extend(table_chunks)
+        return rst
+
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
     ) -> List[Output]:
@@ -341,7 +358,8 @@ class MarkDownReader(SourceReaderABC):
                 content=soup.text,
                 ref=kwargs.get("ref", ""),
             )
-            return [chunk]
+            chunk_list = self.solve_tables(soup=soup, tilte=title)
+            return [chunk] + chunk_list
         tags = [tag for tag in soup.children if isinstance(tag, Tag)]
 
         level_tags = self.parse_level_tags(tags, top_level)
@@ -387,13 +405,14 @@ class MarkDownReader(SourceReaderABC):
 
         # 段落中去除table后的文本信息
         text_with_out_table = re.sub(pattern, "\n## Table ##\n", table_chunk_str)
-        table_chunks.append(
-            Chunk(
-                id=Chunk.generate_hash_id(f"{id}#{idx}"),
-                name=f"{title}#{idx}",
-                content=text_with_out_table,
+        if text_with_out_table != "\n## Table ##\n":
+            table_chunks.append(
+                Chunk(
+                    id=Chunk.generate_hash_id(f"{id}#{idx}"),
+                    name=f"{title}#{idx}",
+                    content=text_with_out_table,
+                )
             )
-        )
 
         def replace_with_table_flag(_table_str, table_df: pd.DataFrame):
             def replace_with_table_name(_match):
