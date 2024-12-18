@@ -64,6 +64,7 @@ class SolverMain:
         resp = thinker.diagnostic_evidence(query)
         return resp
 
+
 if __name__ == "__main__":
     res = SolverMain().invoke(3, 283, "周杰伦在哪一年基于什么作品获得的全球畅销专辑榜”冠军的华语歌手", True, host_addr="http://127.0.0.1:8887")
     print("*" * 80)
