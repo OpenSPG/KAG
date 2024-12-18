@@ -1,33 +1,38 @@
 # -*- coding: utf-8 -*-
 import time
-from kag.common.checkpointer import CheckPointer
+from kag.common.checkpointer import CheckpointerManager
 
 
 def test_txt_checkpointer():
-    config = {"type": "txt", "ckpt_dir": "ckpt"}
-    checkpointer = CheckPointer.from_config(config)
+    config = {"type": "txt", "ckpt_dir": "ckpt/txt"}
+    checkpointer = CheckpointerManager.get_checkpointer(config)
     k = "aaa"
     v = {"name": "aaa", "time": time.time()}
     checkpointer.write_to_ckpt(k, v)
     assert checkpointer.exists(k)
     assert v == checkpointer.read_from_ckpt(k)
-    checkpointer.close()
-    checkpointer2 = CheckPointer.from_config(config)
-    assert checkpointer2.exists(k)
-    assert v == checkpointer2.read_from_ckpt(k)
-    checkpointer2.close()
+    checkpointer2 = CheckpointerManager.get_checkpointer(config)
+    assert checkpointer is checkpointer2
+
+    CheckpointerManager.close()
+    checkpointer3 = CheckpointerManager.get_checkpointer(config)
+    assert checkpointer3.exists(k)
+    assert v == checkpointer3.read_from_ckpt(k)
+    CheckpointerManager.close()
 
 
 def test_bin_checkpointer():
-    config = {"type": "bin", "ckpt_dir": "ckpt"}
-    checkpointer = CheckPointer.from_config(config)
+    config = {"type": "zodb", "ckpt_dir": "ckpt/bin"}
+    checkpointer = CheckpointerManager.get_checkpointer(config)
     k = "aaa"
     v = {"name": "aaa", "time": time.time()}
     checkpointer.write_to_ckpt(k, v)
     assert checkpointer.exists(k)
     assert v == checkpointer.read_from_ckpt(k)
-    checkpointer.close()
-    checkpointer2 = CheckPointer.from_config(config)
-    assert checkpointer2.exists(k)
-    assert v == checkpointer2.read_from_ckpt(k)
-    checkpointer2.close()
+    checkpointer2 = CheckpointerManager.get_checkpointer(config)
+    assert checkpointer is checkpointer2
+    CheckpointerManager.close()
+    checkpointer3 = CheckpointerManager.get_checkpointer(config)
+    assert checkpointer3.exists(k)
+    assert v == checkpointer3.read_from_ckpt(k)
+    CheckpointerManager.close()

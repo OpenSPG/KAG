@@ -30,8 +30,8 @@ from knext.schema.client import SchemaClient
 logger = logging.getLogger(__name__)
 
 
-@ExtractorABC.register("kag")
-class KAGExtractor(ExtractorABC):
+@ExtractorABC.register("schema_free")
+class SchemaFreeExtractor(ExtractorABC):
     """
     A class for extracting knowledge graph subgraphs from text using a large language model (LLM).
     Inherits from the Extractor base class.

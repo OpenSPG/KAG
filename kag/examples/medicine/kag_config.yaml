@@ -12,8 +12,8 @@ extract_runner:
         type: example_medical_std
       triple_prompt:
         type: example_medical_triple
-      type: kag
-    parser:
+      type: schema_free
+    reader:
       content_col: text
       id_col: idx
       name_col: title
@@ -28,13 +28,13 @@ extract_runner:
       vectorize_model: &id002
         api_key: key
         base_url: https://api.siliconflow.cn/v1/
-        model: BAAI/bge-large-en-v1.5
+        model: BAAI/bge-m3
         type: openai
         vector_dimensions: 1024
     writer:
       type: kg
-  num_parallel: 10
-  reader:
+  num_chains: 8
+  scanner:
     type: csv
 lf_solver_pipeline:
   generator:
@@ -66,7 +66,7 @@ spg_runner:
     type: structured
     writer:
       type: kg
-  reader:
+  scanner:
     type: csv
 spo_runner:
   chain:
@@ -79,7 +79,7 @@ spo_runner:
     type: structured
     writer:
       type: kg
-  reader:
+  scanner:
     type: csv
 vectorize_model: *id002
 vectorizer:

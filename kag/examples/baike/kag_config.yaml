@@ -1,7 +1,3 @@
-lf_solver_pipeline:
-  generator:
-    generate_prompt:
-      type: resp_simple
 llm: &id001
   api_key: key
   base_url: https://api.deepseek.com
@@ -12,9 +8,9 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '1'
-  language: en
-  namespace: MuSiQue
+  id: '2'
+  language: zh
+  namespace: BaiKe
 resp_solver_pipeline:
   generator:
     generate_prompt:
@@ -31,19 +27,21 @@ runner:
     extractor:
       llm: *id001
       ner_prompt:
-        type: default_ner
+        type: spg_entity
+      event_prompt:
+        type: spg_event
       std_prompt:
         type: default_std
-      triple_prompt:
-        type: default_triple
-      type: schema_free
+      relation_prompt:
+        type: spg_relation
+      type: schema_constraint
     reader:
-      type: dict
+      type: txt
     post_processor:
       similarity_threshold: 0.9
       type: base
     splitter:
-      split_length: 100000
+      split_length: 300
       type: length
       window_length: 0
     type: unstructured
@@ -60,7 +58,8 @@ runner:
   num_threads_per_chain: 2
   num_chains: 4      
   scanner:
-    type: musique
+    type: dir
 vectorize_model: *id002
 vectorizer: *id002
-
+qa:
+  force_chunk_retriever: true

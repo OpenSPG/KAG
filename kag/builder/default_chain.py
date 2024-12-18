@@ -13,7 +13,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from kag.interface import (
-    RecordParserABC,
+    ReaderABC,
     MappingABC,
     ExtractorABC,
     SplitterABC,
@@ -70,29 +70,29 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 
         return chain
 
-    def get_component_with_ckpts(self):
-        return [
-            self.mapping,
-            self.vectorizer,
-            self.writer,
-        ]
+    # def get_component_with_ckpts(self):
+    #     return [
+    #         self.mapping,
+    #         self.vectorizer,
+    #         self.writer,
+    #     ]
 
-    def close_checkpointers(self):
-        for node in self.get_component_with_ckpts():
-            if node and hasattr(node, "checkpointer"):
-                node.checkpointer.close()
+    # def close_checkpointers(self):
+    #     for node in self.get_component_with_ckpts():
+    #         if node and hasattr(node, "checkpointer"):
+    #             node.checkpointer.close()
 
 
 @KAGBuilderChain.register("unstructured")
 class DefaultUnstructuredBuilderChain(KAGBuilderChain):
     """
     A class representing a default unstructured builder chain, used to build a knowledge graph from unstructured text data such as txt and pdf files.
-    It consists of a parser, splitter, extractor, vectorizer, optional post-processor, and writer components.
+    It consists of a reader, splitter, extractor, vectorizer, optional post-processor, and writer components.
     """
 
     def __init__(
         self,
-        parser: RecordParserABC,
+        reader: ReaderABC,
         splitter: SplitterABC,
         extractor: ExtractorABC,
         vectorizer: VectorizerABC,
@@ -103,14 +103,14 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         Initializes the DefaultUnstructuredBuilderChain instance.
 
         Args:
-            parser (RecordParserABC): The parser component to be used.
+            reader (ReaderABC): The reader component to be used.
             splitter (SplitterABC): The splitter component to be used.
             extractor (ExtractorABC): The extractor component to be used.
             vectorizer (VectorizerABC): The vectorizer component to be used.
             writer (SinkWriterABC): The writer component to be used.
             post_processor (PostProcessorABC, optional): The post-processor component to be used. Defaults to None.
         """
-        self.parser = parser
+        self.reader = reader
         self.splitter = splitter
         self.extractor = extractor
         self.vectorizer = vectorizer
@@ -155,12 +155,10 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 flow_data = execute_node(node, flow_data, key=input_key)
             return flow_data
 
-        parser_output = self.parser.invoke(input_data, key=generate_hash_id(input_data))
+        reader_output = self.reader.invoke(input_data, key=generate_hash_id(input_data))
         splitter_output = []
-        for chunk in parser_output:
-            splitter_output.extend(
-                self.splitter.invoke(chunk, key=chunk.hash_key)
-            )
+        for chunk in reader_output:
+            splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
 
         result = []
         with ThreadPoolExecutor(max_workers) as executor:
@@ -179,16 +177,16 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 result.extend(ret)
         return result
 
-    def get_component_with_ckpts(self):
-        return [
-            self.parser,
-            self.splitter,
-            self.extractor,
-            self.vectorizer,
-            self.post_processor,
-        ]
+    # def get_component_with_ckpts(self):
+    #     return [
+    #         self.parser,
+    #         self.splitter,
+    #         self.extractor,
+    #         self.vectorizer,
+    #         self.post_processor,
+    #     ]
 
-    def close_checkpointers(self):
-        for node in self.get_component_with_ckpts():
-            if node and hasattr(node, "checkpointer"):
-                node.checkpointer.close()
+    # def close_checkpointers(self):
+    #     for node in self.get_component_with_ckpts():
+    #         if node and hasattr(node, "checkpointer"):
+    #             node.checkpointer.close()

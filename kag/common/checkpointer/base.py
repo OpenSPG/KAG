@@ -11,8 +11,9 @@
 # or implied.
 
 import os
+import threading
 from kag.common.registry import Registrable
-from kag.common.utils import reset, bold, red
+from kag.common.utils import reset, bold, red, generate_hash_id
 
 
 class CheckPointer(Registrable):
@@ -47,6 +48,7 @@ class CheckPointer(Registrable):
             self._ckpt_dir, CheckPointer.ckpt_file_name.format(rank, world_size)
         )
         self._ckpt = self.open()
+        self._closed = False
         if self.size() > 0:
             print(
                 f"{bold}{red}Existing checkpoint found in {self._ckpt_dir}, with {self.size()} records.{reset}"
@@ -83,11 +85,19 @@ class CheckPointer(Registrable):
         """
         raise NotImplementedError("write_to_ckpt not implemented yet.")
 
-    def close(self):
+    def _close(self):
         """
         Closes the checkpoint file.
         """
         raise NotImplementedError("close not implemented yet.")
+
+    def close(self):
+        """
+        Closes the checkpoint file.
+        """
+        if not self._closed:
+            self._close()
+            self._closed = True
 
     def exists(self, key):
         """
@@ -110,3 +120,49 @@ class CheckPointer(Registrable):
         """
 
         raise NotImplementedError("size not implemented yet.")
+
+
+class CheckpointerManager:
+    """
+    Manages the lifecycle of CheckPointer objects.
+
+    This class provides a thread-safe mechanism to retrieve and close CheckPointer
+    instances based on a configuration. It uses a global dictionary to cache
+    CheckPointer objects, ensuring that each configuration corresponds to a unique
+    instance.
+    """
+
+    _CKPT_OBJS = {}
+    _LOCK = threading.Lock()
+
+    @staticmethod
+    def get_checkpointer(config):
+        """
+        Retrieves or creates a CheckPointer instance based on the provided configuration.
+
+        Args:
+            config (dict): The configuration used to initialize the CheckPointer.
+
+        Returns:
+            CheckPointer: A CheckPointer instance corresponding to the configuration.
+        """
+        with CheckpointerManager._LOCK:
+            key = generate_hash_id(config)
+            if key not in CheckpointerManager._CKPT_OBJS:
+                ckpter = CheckPointer.from_config(config)
+                CheckpointerManager._CKPT_OBJS[key] = ckpter
+            return CheckpointerManager._CKPT_OBJS[key]
+
+    @staticmethod
+    def close():
+        """
+        Closes all cached CheckPointer instances.
+
+        This method iterates through all cached CheckPointer objects and calls their
+        `close` method to release resources. After calling this method, the cache
+        will be cleared.
+        """
+        with CheckpointerManager._LOCK:
+            for v in CheckpointerManager._CKPT_OBJS.values():
+                v.close()
+            CheckpointerManager._CKPT_OBJS.clear()

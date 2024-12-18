@@ -14,7 +14,7 @@ import os
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.default_chain import DefaultStructuredBuilderChain
 from kag.builder.component import SPGTypeMapping, KGWriter, RelationMapping
-from kag.builder.component.reader.csv_reader import CSVReader
+from kag.builder.component.scanner.csv_scanner import CSVScanner
 from kag.examples.supplychain.builder.operator.event_kg_writer_op import EventKGWriter
 from kag.examples.supplychain.builder.operator.fund_date_process_op import (
     FundDateProcessComponent,
@@ -173,8 +173,7 @@ def import_data():
         else:
             chain = SupplyChainDefaulStructuredBuilderChain(spg_type_name=spg_type_name)
         runner = BuilderChainRunner(
-            num_parallel=4,
-            reader=CSVReader(),
+            scanner=CSVScanner(),
             chain=chain,
         )
         runner.invoke(file_name)
@@ -183,14 +182,14 @@ def import_data():
         spg_type_name="Company_fundTrans_Company"
     )
     runner = BuilderChainRunner(
-        reader=CSVReader(),
+        scanner=CSVScanner(),
         chain=chain,
     )
     runner.invoke(os.path.join(file_path, "data/Company_fundTrans_Company.csv"))
 
     chain = SupplyChainEventBuilderChain(spg_type_name="ProductChainEvent")
     runner = BuilderChainRunner(
-        reader=CSVReader(),
+        scanner=CSVScanner(),
         chain=chain,
     )
     runner.invoke(os.path.join(file_path, "data/ProductChainEvent.csv"))
