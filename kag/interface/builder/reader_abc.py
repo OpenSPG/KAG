@@ -12,7 +12,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
-from kag.common.sharding_info import ShardingInfo
 from knext.common.base.runnable import Input, Output
 
 
@@ -25,25 +24,6 @@ class SourceReaderABC(BuilderComponent, ABC):
     It inherits from `BuilderComponent` and `ABC` (Abstract Base Class).
 
     """
-
-    def __init__(self, rank: int = None, world_size: int = None):
-        """
-        Initializes the reader with the specified rank and world size.
-
-        If rank or world size is not provided, it retrieves them from the environment variables.
-        Refer to the Kubeflow documentation for detailed information.
-
-
-        Args:
-            rank (int, optional): The rank of the current worker. Defaults to None.
-            world_size (int, optional): The total number of workers. Defaults to None.
-        """
-        if rank is None or world_size is None:
-            from kag.common.env import get_rank, get_world_size
-
-            rank = get_rank(0)
-            world_size = get_world_size(1)
-        self.sharding_info = ShardingInfo(shard_id=rank, shard_count=world_size)
 
     @property
     def input_types(self) -> Input:

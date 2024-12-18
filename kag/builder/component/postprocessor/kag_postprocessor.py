@@ -43,6 +43,7 @@ class KAGPostProcessor(PostProcessorABC):
             similarity_threshold (float, optional): The similarity threshold for entity linking. Defaults to 0.9.
             external_graph (ExternalGraphLoaderABC, optional): An instance of ExternalGraphLoaderABC for external graph-based linking. Defaults to None.
         """
+        super().__init__()
         self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
         self.similarity_threshold = similarity_threshold
         self.external_graph = external_graph
@@ -162,7 +163,7 @@ class KAGPostProcessor(PostProcessorABC):
         labels = self.external_graph.get_allowed_labels()
         self._entity_link(graph, property_key, labels)
 
-    def invoke(self, input):
+    def _invoke(self, input, **kwargs):
         """
         Invokes the post-processing pipeline on the input subgraph.
 

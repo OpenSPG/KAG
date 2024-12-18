@@ -16,6 +16,7 @@ from kag.interface import SplitterABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.builder.model.chunk import Chunk
 from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from kag.interface import LLMClient
 from knext.common.base.runnable import Input, Output
 
@@ -39,6 +40,7 @@ class OutlineSplitter(SplitterABC):
         Args:
             llm (LLMClient): The LLM client used for generating outlines.
         """
+        super().__init__()
         self.llm = llm
         self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
 
@@ -90,7 +92,7 @@ class OutlineSplitter(SplitterABC):
         chunks = []
         for idx, pc in enumerate(position_check):
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{pc[0]}#{idx}"),
+                id=generate_hash_id(f"{pc[0]}#{idx}"),
                 name=f"{pc[0]}#{idx}",
                 content=content[
                     pc[1] : position_check[idx + 1][1]
@@ -101,7 +103,7 @@ class OutlineSplitter(SplitterABC):
             chunks.append(chunk)
         return chunks
 
-    def invoke(self, input: Input, **kwargs) -> List[Chunk]:
+    def _invoke(self, input: Input, **kwargs) -> List[Chunk]:
         """
         Invokes the splitting of the input chunk(s) based on the generated outlines.
 

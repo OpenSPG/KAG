@@ -1,0 +1,70 @@
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '19'
+  language: en
+  namespace: TwoWiki
+llm: &deepseek-chat
+  api_key: key
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  register_name: maas
+vectorize_model: &bge-m3
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  register_name: openai
+  vector_dimensions: 1024
+log:
+  level: INFO
+
+lf_solver_pipeline:
+  generator:
+    generate_prompt:
+      register_name: resp_simple
+
+solver:
+  generator:
+    generate_prompt:
+      register_name: resp_simple
+  reasoner:
+    lf_planner:
+      register_name: null
+    lf_solver:
+      chunk_retriever:
+        register_name: kag_retriever
+      kg_retriever: null
+
+indexer:
+  chain:
+    register_name: default_unstructured_builder_chain
+    reader:
+      register_name: pdf_file_reader
+    splitter:
+      register_name: length_splitter
+      split_length: 2000
+      window_length: 500
+    extractor:
+      llm: *deepseek-chat
+      ner_prompt:
+        register_name: default_ner
+      std_prompt:
+        register_name: default_std
+      triple_prompt:
+        register_name: default_triple
+      register_name: schema_free_extractor
+    vectorizer:
+      register_name: batch_vectorizer
+      vectorize_model: *bge-m3
+    post_processor:
+      register_name: post_processor
+      similarity_threshold: 0.9
+    writer:
+      register_name: kg_writer
+  num_parallel_chain_of_file: 1
+  num_parallel_file: 1
+  scanner:
+    register_name: 2wiki_dataset_scanner
+
+
+

@@ -32,9 +32,7 @@ class CSVReader(SourceReaderABC):
         world_size (int): The total number of processes (used for distributed processing).
     """
 
-    def __init__(
-        self, cols: List[str] = None, rank: int = None, world_size: int = None
-    ):
+    def __init__(self, cols: List[str] = None, rank: int = 0, world_size: int = 1):
         """
         Initializes the CSVReader with optional columns, rank, and world size.
 
@@ -45,7 +43,7 @@ class CSVReader(SourceReaderABC):
             rank (int, optional): The rank of the current process. Defaults to None.
             world_size (int, optional): The total number of processes. Defaults to None.
         """
-        super().__init__(rank, world_size)
+        super().__init__(rank=rank, world_size=world_size)
         self.cols = cols
 
     @property

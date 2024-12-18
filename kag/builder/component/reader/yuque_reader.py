@@ -34,7 +34,7 @@ class YuqueReader(SourceReaderABC):
         world_size (int, optional): The total number of workers. Defaults to 1.
     """
 
-    def __init__(self, token: str, rank: int = 0, world_size: int = 1):
+    def __init__(self, token: str):
         """
         Initializes the YuqueReader with the specified token, rank, and world size.
 
@@ -43,7 +43,7 @@ class YuqueReader(SourceReaderABC):
             rank (int, optional): The rank of the current worker. Defaults to 0.
             world_size (int, optional): The total number of workers. Defaults to 1.
         """
-        super().__init__(rank, world_size)
+        super().__init__()
         self.token = token
 
     @property

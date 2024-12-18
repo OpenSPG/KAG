@@ -15,6 +15,7 @@ from typing import List
 
 from kag.builder.model.chunk import Chunk
 from kag.interface import RecordParserABC
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
@@ -27,7 +28,7 @@ class TXTParser(RecordParserABC):
     whether it is from a file or directly provided as a string, and convert it into a list of Chunk objects.
     """
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         The main method for processing text reading. This method reads the content of the input (which can be a file path or text content) and converts it into chunks.
 
@@ -56,7 +57,7 @@ class TXTParser(RecordParserABC):
 
         basename, _ = os.path.splitext(os.path.basename(input))
         chunk = Chunk(
-            id=Chunk.generate_hash_id(input),
+            id=generate_hash_id(input),
             name=basename,
             content=content,
         )

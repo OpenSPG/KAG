@@ -23,6 +23,8 @@ from kag.interface import (
     KAGBuilderChain,
 )
 
+from kag.common.utils import generate_hash_id
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,6 +69,18 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
             chain = self.mapping >> self.writer
 
         return chain
+
+    def get_component_with_ckpts(self):
+        return [
+            self.mapping,
+            self.vectorizer,
+            self.writer,
+        ]
+
+    def close_checkpointers(self):
+        for node in self.get_component_with_ckpts():
+            if node and hasattr(node, "checkpointer"):
+                node.checkpointer.close()
 
 
 @KAGBuilderChain.register("unstructured")
@@ -119,16 +133,17 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             List: The final output from the builder chain.
         """
 
-        def execute_node(node, node_input):
+        def execute_node(node, node_input, **kwargs):
             if not isinstance(node_input, list):
                 node_input = [node_input]
             node_output = []
             for item in node_input:
-                node_output.extend(node.invoke(item))
+                node_output.extend(node.invoke(item, **kwargs))
             return node_output
 
         def run_extract(chunk):
             flow_data = [chunk]
+            input_key = chunk.hash_key
             for node in [
                 self.extractor,
                 self.vectorizer,
@@ -137,11 +152,15 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             ]:
                 if node is None:
                     continue
-                flow_data = execute_node(node, flow_data)
+                flow_data = execute_node(node, flow_data, key=input_key)
             return flow_data
 
-        parser_output = self.parser.invoke(input_data)
-        splitter_output = self.splitter.invoke(parser_output)
+        parser_output = self.parser.invoke(input_data, key=generate_hash_id(input_data))
+        splitter_output = []
+        for chunk in parser_output:
+            splitter_output.extend(
+                self.splitter.invoke(chunk, key=chunk.hash_key)
+            )
 
         result = []
         with ThreadPoolExecutor(max_workers) as executor:
@@ -159,3 +178,17 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 ret = inner_future.result()
                 result.extend(ret)
         return result
+
+    def get_component_with_ckpts(self):
+        return [
+            self.parser,
+            self.splitter,
+            self.extractor,
+            self.vectorizer,
+            self.post_processor,
+        ]
+
+    def close_checkpointers(self):
+        for node in self.get_component_with_ckpts():
+            if node and hasattr(node, "checkpointer"):
+                node.checkpointer.close()

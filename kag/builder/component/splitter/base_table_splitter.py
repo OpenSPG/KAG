@@ -22,8 +22,8 @@ class BaseTableSplitter(SplitterABC):
     represented in markdown format into smaller chunks.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
 
     def split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
         """
@@ -79,6 +79,10 @@ class BaseTableSplitter(SplitterABC):
                 cur = [prefix, table_header, table_header_segmentation]
             cur.append(row)
             cur_len += len(row)
+
+        cur.append(content[table_end:])
+        if len(cur) > 0:
+            splitted.append(cur)
 
         output = []
         for idx, sentences in enumerate(splitted):

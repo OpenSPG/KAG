@@ -1,65 +1,20 @@
-project:
-  biz_scene: default
-  host_addr: http://127.0.0.1:8887
-  language: en
-  namespace: TwoWiki
-  id: 1
-
-
-vectorize_model: &vectorize_model_config
-  path: ~/.cache/vectorizer/BAAI/bge-base-en-v1.5
-  type: bge
-  vector_dimensions: 768
-
-vectorizer: *vectorize_model_config
-  
-
-llm: &llm_conf  
-  api_key: key
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
-  type: maas
-
-log:
-  level: INFO
-
-runner:
-  num_parallel: 10
-  chain_level_num_paralle: 1
-  reader:
-    type:
-      2wiki
-  chain:
-    type: unstructured
-    extractor:
-      llm: *llm_conf
-      ner_prompt:
-        type: 2wiki_ner
-      std_prompt:
-        type: 2wiki_std
-      triple_prompt:
-        type: 2wiki_triple
-      type: kag
-    parser:
-      type: dict
-    splitter:
-      split_length: 100000
-      type: length
-      window_length: 0
-    vectorizer:
-      type: batch
-      vectorize_model: *vectorize_model_config
-    post_processor:
-      type: base
-      similarity_threshold: 0.9
-    writer:
-      type: kg
-    
 lf_solver_pipeline:
   generator:
     generate_prompt:
       type: resp_simple
-      
+llm: &id001
+  api_key: key
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  type: maas
+log:
+  level: INFO
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: en
+  namespace: TwoWiki
 resp_solver_pipeline:
   generator:
     generate_prompt:
@@ -68,7 +23,43 @@ resp_solver_pipeline:
     lf_planner:
       type: empty
     lf_solver:
-      kg_retriever: null
       chunk_retriever:
         type: kag
-    
+      kg_retriever: null
+runner:
+  chain:
+    extractor:
+      llm: *id001
+      ner_prompt:
+        type: default_ner
+      std_prompt:
+        type: default_std
+      triple_prompt:
+        type: default_triple
+      type: kag
+    parser:
+      type: dict
+    post_processor:
+      similarity_threshold: 0.9
+      type: base
+    splitter:
+      split_length: 100000
+      type: length
+      window_length: 0
+    type: unstructured
+    vectorizer:
+      type: batch
+      vectorize_model: &id002
+        api_key: key
+        base_url: https://api.siliconflow.cn/v1/
+        model: BAAI/bge-large-en-v1.5
+        type: openai
+        vector_dimensions: 1024
+    writer:
+      type: kg
+  chain_level_num_paralle: 1
+  num_parallel: 8
+  reader:
+    type: 2wiki
+vectorize_model: *id002
+vectorizer: *id002
