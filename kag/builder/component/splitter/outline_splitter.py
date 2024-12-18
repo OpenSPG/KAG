@@ -18,28 +18,38 @@ from typing import List, Type, Union, Tuple
 
 import matplotlib.pyplot as plt
 from knext.common.base.runnable import Input, Output
-
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_align_prompt import OutlineAlignPrompt
 from kag.builder.prompt.outline_prompt import OutlinePrompt
-from kag.interface.builder.splitter_abc import SplitterABC
+from kag.interface import SplitterABC
+from kag.interface import LLMClient
 
 logger = logging.getLogger(__name__)
 
 
 @SplitterABC.register("outline")
 class OutlineSplitter(SplitterABC):
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        llm: LLMClient,
+        min_length: int = 100,
+        workers: int = 32,
+        chunk_size: int = 500,
+        llm_max_tokens: int = 102400,
+        align_parallel: bool = False,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-        self.llm = self._init_llm()
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        self.prompt = OutlinePrompt(language)
-        self.min_length = kwargs.get("min_length", 100)
-        self.workers = kwargs.get("workers", 32)
-        self.chunk_size = kwargs.get("chunk_size", 500)
-        self.llm_max_tokens = kwargs.get("llm_max_tokens", 10240)
-        self.align_parallel = kwargs.get("align_parallel", False)
+        self.llm = llm
+        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
+        self.min_length = min_length
+        self.workers = workers
+        self.chunk_size = chunk_size
+        self.llm_max_tokens = llm_max_tokens
+        self.align_parallel = align_parallel
 
     @property
     def input_types(self) -> Type[Input]:
@@ -601,7 +611,7 @@ class OutlineSplitter(SplitterABC):
             full_path = "/".join([item[0] for item in father_stack] + [title])
             chunk_content = content[start:end]
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
+                id=generate_hash_id(f"{full_path}#{idx}"),
                 name=full_path,
                 content=chunk_content,
             )
@@ -652,7 +662,7 @@ class OutlineSplitter(SplitterABC):
             full_path = "/".join([item[0] for item in father_stack] + [title])
             chunk_content = content[start:end]
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
+                id=generate_hash_id(f"{full_path}#{idx}"),
                 name=full_path,
                 content=chunk_content,
             )
@@ -765,7 +775,7 @@ class OutlineSplitter(SplitterABC):
         output = []
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{org_chunk.id}#{idx}"),
+                id=generate_hash_id(f"{org_chunk.id}#{idx}"),
                 name=f"{org_chunk.name}#{idx}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
@@ -835,7 +845,7 @@ class OutlineSplitter(SplitterABC):
                 origin_properties[key] = value
 
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{full_path}#{idx}"),
+                id=generate_hash_id(f"{full_path}#{idx}"),
                 name=full_path,
                 content=chunk_content,
                 **origin_properties,
@@ -960,7 +970,7 @@ class OutlineSplitter(SplitterABC):
             )
 
             # 为当前节点生成chunk
-            chunk_id = Chunk.generate_hash_id(full_title)  # 使用完整title生成ID
+            chunk_id = generate_hash_id(full_title)  # 使用完整title生成ID
             chunk = Chunk(
                 id=chunk_id,
                 name=full_title,  # 使用完整title
