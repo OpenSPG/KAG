@@ -109,6 +109,9 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         scale = table_info.get("sacle", None)
         unit = table_info.get("unit", None)
         table_global_keywords = input_table.kwargs["keywords"]
+        keywords_and_colloquial_expression = self._extract_keyword_from_table_header(
+            keyword_dict=keyword_dict, table_name=table_name
+        )
         return self.get_subgraph(
             input_table,
             table_df,
@@ -118,7 +121,26 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             table_global_keywords,
             scale,
             unit,
+            keywords_and_colloquial_expression,
         )
+
+    def _extract_keyword_from_table_header(self, keyword_dict: dict, table_name: str):
+        keyword_list = set()
+        for _, v in keyword_dict.items():
+            keyword_list.update(v)
+        context = table_name
+        keyword_list = list(keyword_list)
+        keyword_list.sort()
+        input_dict = {"key_list": keyword_list, "context": context}
+        keywords_and_colloquial_expression = self.llm.invoke(
+            {
+                "input": json.dumps(input_dict, ensure_ascii=False, sort_keys=True),
+            },
+            self.table_keywords_prompt,
+            with_json_parse=True,
+            with_except=True,
+        )
+        return keywords_and_colloquial_expression
 
     def _extract_simple_table(self, input_table: Chunk):
         rst = []
@@ -176,6 +198,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         table_global_keywords,
         scale,
         unit,
+        keywords_and_colloquial_expression,
     ):
         nodes = []
         edges = []
@@ -261,6 +284,45 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 properties={},
             )
             edges.append(edge)
+
+            # keyword and colloquial expression
+            if k in keywords_and_colloquial_expression:
+                colloquial: dict = keywords_and_colloquial_expression[k]
+                for k_split, colloquial_list in colloquial.items():
+                    k_split_node = Node(
+                        _id=f"{table_name}_{k_split}",
+                        name=k_split,
+                        label="MetricConstraint",
+                        properties={"type": "ks"},
+                    )
+                    nodes.append(k_split_node)
+                    edge_id = f"ks_{input_table.id}_{k_split}"
+                    edge = Edge(
+                        _id=edge_id,
+                        from_node=k_split_node,
+                        to_node=keyword_node,
+                        label="source",
+                        properties={},
+                    )
+                    edges.append(edge)
+                    for coll in colloquial_list:
+                        k_coll_node = Node(
+                            _id=f"{table_name}_{coll}",
+                            name=coll,
+                            label="MetricConstraint",
+                            properties={"type": "ks_coll"},
+                        )
+                        nodes.append(k_coll_node)
+                        edge_id = f"ks_coll_{input_table.id}_{coll}"
+                        edge = Edge(
+                            _id=edge_id,
+                            from_node=k_coll_node,
+                            to_node=keyword_node,
+                            label="source",
+                            properties={},
+                        )
+                        edges.append(edge)
+
         subgraph = SubGraph(nodes=nodes, edges=edges)
         return [subgraph]
 

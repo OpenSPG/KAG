@@ -27,14 +27,17 @@ class TableContextKeyWordsExtractPrompt(PromptOp):
   "description": "从给出的文本中，提取关键字，并给出口语化的表达方式。",
   "instruction": [
     "一次输入多行文本，每行文本独立处理",
-    "先提取关键字，再给出每个关键字多种口语化表达方式。"
+    "先提取关键字，再给出每个关键字多种口语化表达方式。",
+    "不可拆分的关键字不需要输出"
   ],
   "examples": [
     {
       "input": {
         "key_list": [
           "('集团公司', '公司高管', '住宿定额')",
-          "('集团公司', '平台专业职高级经理、资深专家', '差勤补助定额')"
+          "('集团公司', '平台专业职高级经理、资深专家', '差勤补助定额')",
+          "一类",
+          ""
         ],
         "context": "key_list属于表【差旅管理办法#1住宿定额、差勤补助定额标准表】中的表头和行头关键字"
       },
@@ -152,4 +155,11 @@ class TableContextKeyWordsExtractPrompt(PromptOp):
             rsp = json.loads(rsp)
         if isinstance(rsp, dict) and "output" in rsp:
             rsp = rsp["output"]
-        return rsp
+        rst = {}
+        for item in rsp:
+            key = item["key"]
+            keywords_and_colloquial_expression = item[
+                "keywords_and_colloquial_expression"
+            ]
+            rst[key] = keywords_and_colloquial_expression
+        return rst
