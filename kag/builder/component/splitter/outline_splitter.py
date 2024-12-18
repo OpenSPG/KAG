@@ -23,7 +23,7 @@ from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_align_prompt import OutlineAlignPrompt
 from kag.builder.prompt.outline_prompt import OutlinePrompt
-from kag.interface.builder import SplitterABC
+from kag.interface.builder.splitter_abc import SplitterABC
 
 logger = logging.getLogger(__name__)
 
@@ -1075,21 +1075,13 @@ class OutlineSplitter(SplitterABC):
 
 if __name__ == "__main__":
     from kag.builder.component.splitter.length_splitter import LengthSplitter
-    from kag.builder.component.reader.docx_reader import DocxReader
-    from kag.builder.component.reader.txt_reader import TXTReader
-    from kag.builder.component.reader.pdf_reader import PDFReader
-    from kag.common.env import init_kag_config
+    from kag.builder.component.record_parser.docx_parser import DocxParser
+    from kag.builder.component.record_parser.txt_parser import TXTParser
+    from kag.builder.component.record_parser.pdf_parser import PDFParser
 
-    config_path = os.path.join(
-        os.path.dirname(__file__),
-        "../../../../tests/builder/component/test_config.cfg",
-    )
-    # config_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/2wiki/kag_config.cfg"
-    init_kag_config(config_path)
-
-    pdf_reader = PDFReader()
-    docx_reader = DocxReader()
-    txt_reader = TXTReader()
+    pdf_reader = PDFParser()
+    docx_reader = DocxParser()
+    txt_reader = TXTParser()
     length_splitter = LengthSplitter(split_length=5000)
     outline_splitter = OutlineSplitter()
     txt_path = os.path.join(
@@ -1139,7 +1131,7 @@ if __name__ == "__main__":
     #     print(future.result())
 
     process_file_without_chain(docx_path)
-
+    a = 1
     # chunk = docx_reader.invoke(docx_path)
     # chunk = txt_reader.invoke(txt_path)
     # chunks = length_splitter.invoke(chunk)
