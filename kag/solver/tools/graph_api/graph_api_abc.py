@@ -21,3 +21,21 @@ class GraphApiABC(Registrable):
     @abstractmethod
     def execute_dsl(self, dsl: str) -> Dict[str, OneHopGraphData]:
         pass
+
+    @abstractmethod
+    def calculate_pagerank_scores(self, target_vertex_type, start_nodes: List[Dict]) -> Dict:
+        """
+        Calculate and retrieve PageRank scores for the given starting nodes.
+
+        Parameters:
+        target_vertex_type (str): Return target vectex type ppr score
+        start_nodes (list): A list containing document fragment IDs to be used as starting nodes for the PageRank algorithm.
+
+        Returns:
+        ppr_doc_scores (dict): A dictionary containing each document fragment ID and its corresponding PageRank score.
+
+        This method uses the PageRank algorithm in the graph store to compute scores for document fragments. If `start_nodes` is empty,
+        it returns an empty dictionary. Otherwise, it attempts to retrieve PageRank scores from the graph store and converts the result
+        into a dictionary format where keys are document fragment IDs and values are their respective PageRank scores. Any exceptions,
+        such as failures in running `run_pagerank_igraph_chunk`, are logged.
+        """

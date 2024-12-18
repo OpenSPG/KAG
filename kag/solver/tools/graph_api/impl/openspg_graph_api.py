@@ -3,6 +3,7 @@ from abc import ABC
 from typing import List, Dict
 
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from knext.graph.client import GraphClient
 from knext.reasoner.rest.models.reason_task import ReasonTask
 
 from kag.solver.logic.core_modules.common.base_model import SPOEntity, TypeInfo
@@ -63,6 +64,8 @@ class OpenSPGGraphApi(GraphApiABC):
         self.host_addr = host_addr
 
         self.rc = ReasonerClient(host_addr, int(self.project_id))
+        self.gr = GraphClient(host_addr, int(self.project_id))
+
 
         self.cache_one_hop_graph: [str, OneHopGraphData] = {}
 
@@ -202,6 +205,10 @@ class OpenSPGGraphApi(GraphApiABC):
             "header": detail.header,
             "data": detail.rows
         })
+
+    def calculate_pagerank_scores(self, target_vertex_type, start_nodes: List[Dict]) -> Dict:
+        target_vertex_type_with_prefix = self.schema.get_label_within_prefix(target_vertex_type)
+        return self.gr.calculate_pagerank_scores(target_vertex_type_with_prefix, start_nodes)
 
 
 if __name__ == "__main__":
