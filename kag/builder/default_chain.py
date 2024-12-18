@@ -42,7 +42,7 @@ READER_MAPPING = {
     "txt": "kag.builder.component.reader.txt_reader.TXTReader",
     "pdf": "kag.builder.component.reader.pdf_reader.PDFReader",
     "docx": "kag.builder.component.reader.docx_reader.DocxReader",
-    "md": "kag.builder.component.reader.markdown_reader.MarkdownReader",
+    "md": "kag.builder.component.reader.markdown_reader.MarkDownReader",
 }
 
 
@@ -127,10 +127,10 @@ class DefaultUnstructuredBuilderChain(BuilderChainABC):
             chain: The constructed processing chain.
         """
         file_path = kwargs.get("file_path")
-        split_length = kwargs.get("split_length")
-        window_length = kwargs.get("window_length")
+        split_length = kwargs.pop("split_length")
+        window_length = kwargs.pop("window_length")
         source = get_reader(file_path)()
-        splitter = LengthSplitter(split_length, window_length)
+        splitter = LengthSplitter(split_length, window_length, **kwargs)
         extractor = KAGExtractor()
         vectorizer = BatchVectorizer()
         sink = KGWriter()

@@ -11,12 +11,14 @@
 # or implied.
 
 
+import hashlib
 import json
 from typing import Union
 from openai import OpenAI
 import logging
 
 from kag.common.llm.client.llm_client import LLMClient
+from kag.common.llm.client.kv_store import KVStore
 from kag.common.llm.config import OpenAIConfig
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -55,6 +57,7 @@ class OpenAIClient(LLMClient):
         self.stream = llm_config.stream
         self.temperature = llm_config.temperature
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.kv_store = KVStore("/tmp/llm_cache")
 
 
     def __call__(self, prompt:str, image_url:str=None):
@@ -99,6 +102,10 @@ class OpenAIClient(LLMClient):
                 {"role": "system", "content": "you are a helpful assistant"},
                 {"role": "user", "content": prompt},
             ]
+            msg_key = self._get_message_key(prompt=json.dumps(message,sort_keys=True), image_url=image_url)
+            cache_data = self.kv_store.get_value(msg_key)
+            if cache_data is not None:
+                return cache_data
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=message,
@@ -106,7 +113,16 @@ class OpenAIClient(LLMClient):
                 temperature=self.temperature,
             )
             rsp = response.choices[0].message.content
+            self.kv_store.set_value(msg_key, rsp)
             return rsp
+
+    def _get_message_key(self, prompt, image_url):
+        str_id = prompt + str(image_url)
+        hash_object = hashlib.sha256(str_id.encode())
+        json_str2 = str_id + "_add_some_salt"
+        hash_object2 = hashlib.sha256(json_str2.encode())
+        message_key = hash_object.hexdigest() + hash_object2.hexdigest()
+        return message_key
 
     def call_with_json_parse(self, prompt):
         """
