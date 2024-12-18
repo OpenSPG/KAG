@@ -21,14 +21,10 @@ import logging
 import re
 import requests
 import pandas as pd
-from io import StringIO
 from tenacity import stop_after_attempt, retry
 
 from kag.interface import RecordParserABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.interface import LLMClient
-from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.utils import generate_hash_id
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
 
@@ -39,39 +35,40 @@ logger = logging.getLogger(__name__)
 @RecordParserABC.register("md")
 class MarkDownParser(RecordParserABC):
     """
-    A class for parsing Markdown content into Chunk objects.
+    A class for reading MarkDown files, inheriting from `SourceReader`.
+    Supports converting MarkDown data into a list of Chunk objects.
 
-    This class inherits from RecordParserABC and provides the functionality to process Markdown content,
-    extract its text and tables, and convert it into a list of Chunk objects.
+    Args:
+        cut_depth (int): The depth of cutting, determining the level of detail in parsing. Default is 1.
     """
 
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, llm: LLMClient = None, cut_depth: int = 1):
-        """
-        Initializes the MarkDownParser with an optional LLMClient instance and cut depth.
+    def __init__(self, cut_depth: int = 5, **kwargs):
+        super().__init__(**kwargs)
+        self.cut_depth = int(cut_depth)
+        self.llm_module = self._init_llm()
+        self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
+        self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
 
-        Args:
-            llm (LLMClient): An optional LLMClient instance used for analyzing tables. Defaults to None.
-            cut_depth (int): The depth at which to cut the content for parsing. Defaults to 1.
-        """
-        super().__init__()
-        self.llm = llm
-        self.cut_depth = cut_depth
-        self.analyze_table_prompt = AnalyzeTablePrompt(
-            language=KAG_PROJECT_CONF.language
-        )
+    @property
+    def input_types(self):
+        return str
+
+    @property
+    def output_types(self):
+        return Chunk
 
     def to_text(self, level_tags):
         """
-        Converts the given level tags into a text format.
+        Converts parsed hierarchical tags into text content.
 
         Args:
-            level_tags: A list of level tags to be converted into text.
+            level_tags (list): Parsed tags organized by Markdown heading levels and other tags.
 
         Returns:
-            str: The text representation of the level tags.
+            str: Text content derived from the parsed tags.
         """
         content = []
         for item in level_tags:
@@ -91,44 +88,28 @@ class MarkDownParser(RecordParserABC):
 
     def tag_to_text(self, tag: bs4.element.Tag):
         """
-        Converts a BeautifulSoup Tag object into text.
-
-        Args:
-            tag (bs4.element.Tag): The BeautifulSoup Tag object to be converted.
-
-        Returns:
-            str: The text representation of the Tag object.
+        将html tag转换为text
+        如果是table，输出markdown，添加表格标记，方便后续构建Chunk
+        :param tag:
+        :return:
         """
         if tag.name == "table":
             try:
                 html_table = str(tag)
-                table_df = pd.read_html(StringIO(html_table))[0]
+                table_df = pd.read_html(html_table)[0]
                 return f"{self.TABLE_CHUCK_FLAG}{table_df.to_markdown(index=False)}{self.TABLE_CHUCK_FLAG}"
-            except Exception as e:
-                logger.warning(f"parse table tag to text error: {e}", exc_info=True)
+            except:
+                logging.warning("parse table tag to text error", exc_info=True)
         return tag.text
 
     @retry(stop=stop_after_attempt(5))
     def analyze_table(self, table, analyze_mathod="human"):
-        """
-        Analyzes the given table content using the specified method.
-
-        Args:
-            table: The table content to be analyzed.
-            analyze_mathod (str): The method to use for analyzing the table. Defaults to "human".
-
-        Returns:
-            str: The analyzed table content.
-
-        Raises:
-            Exception: If the LLM module returns None.
-        """
         if analyze_mathod == "llm":
-            if self.llm is None:
-                logger.INFO("llm_module is None, cannot use analyze_table")
+            if self.llm_module is None:
+                logging.INFO("llm_module is None, cannot use analyze_table")
                 return table
             variables = {"table": table}
-            response = self.llm.invoke(
+            response = self.llm_module.invoke(
                 variables=variables,
                 prompt_op=self.analyze_table_prompt,
                 with_json_parse=False,
@@ -137,12 +118,13 @@ class MarkDownParser(RecordParserABC):
                 raise Exception("llm_module return None")
             return response
         else:
+            from io import StringIO
             import pandas as pd
 
             try:
                 df = pd.read_html(StringIO(table))[0]
             except Exception as e:
-                logger.warning(f"analyze_table error: {e}")
+                logging.warning(f"analyze_table error: {e}")
                 return table
             content = ""
             for index, row in df.iterrows():
@@ -154,33 +136,12 @@ class MarkDownParser(RecordParserABC):
 
     @retry(stop=stop_after_attempt(5))
     def analyze_img(self, img_url):
-        """
-        Analyzes the given image URL.
-
-        Args:
-            img_url (str): The URL of the image to be analyzed.
-
-        Returns:
-            str: The analyzed image content.
-
-        Raises:
-            HTTPError: If the request to the image URL fails.
-        """
         response = requests.get(img_url)
         response.raise_for_status()
-
-        pass
+        image_data = response.content
+        return image_data
 
     def replace_table(self, content: str):
-        """
-        Replaces table tags in the content with their analyzed text representation.
-
-        Args:
-            content (str): The content containing table tags to be replaced.
-
-        Returns:
-            str: The content with table tags replaced by their analyzed text.
-        """
         pattern = r"<table[^>]*>([\s\S]*?)<\/table>"
         for match in re.finditer(pattern, content):
             table = match.group(0)
@@ -189,15 +150,6 @@ class MarkDownParser(RecordParserABC):
         return content
 
     def replace_img(self, content: str):
-        """
-        Replaces image tags in the content with their analyzed text representation.
-
-        Args:
-            content (str): The content containing image tags to be replaced.
-
-        Returns:
-            str: The content with image tags replaced by their analyzed text.
-        """
         pattern = r"<img[^>]*src=[\"\']([^\"\']*)[\"\']"
         for match in re.finditer(pattern, content):
             img_url = match.group(1)
@@ -274,13 +226,16 @@ class MarkDownParser(RecordParserABC):
             if tag.name not in self.ALL_LEVELS:
                 cur.append((parent_header, level_tags.pop(0)))
             else:
+
                 if tag.name > level:
                     cur += self.parse_level_tags(
                         level_tags,
                         tag.name,
-                        f"{parent_header}-{cur_header}"
-                        if len(parent_header) > 0
-                        else cur_header,
+                        (
+                            f"{parent_header}/{cur_header}"
+                            if len(parent_header) > 0
+                            else cur_header
+                        ),
                         tag.name,
                     )
                 elif tag.name == level:
@@ -322,13 +277,12 @@ class MarkDownParser(RecordParserABC):
                     )
                 else:
                     break
-            cur_prefix = "\n".join(cur_prefix)
+            if cur_prefix:
+                output.append("\n".join(cur_prefix))
 
-            if len(cur_prefix) > 0:
-                output.append(cur_prefix)
             for sublevel_tags in level_tags:
                 if isinstance(sublevel_tags, list):
-                    output.append(cur_prefix + "\n" + self.to_text(sublevel_tags))
+                    output.append(self.to_text(sublevel_tags))
             return output
         else:
             cur_prefix = []
@@ -337,9 +291,8 @@ class MarkDownParser(RecordParserABC):
                     cur_prefix.append(sublevel_tags[1].text)
                 else:
                     break
-            cur_prefix = "\n".join(cur_prefix)
-            if len(cur_prefix) > 0:
-                output.append(cur_prefix)
+            if cur_prefix:
+                output.append("\n".join(cur_prefix))
 
             for sublevel_tags in level_tags:
                 if isinstance(sublevel_tags, list):
@@ -351,19 +304,10 @@ class MarkDownParser(RecordParserABC):
     ) -> List[Output]:
         """
         Converts Markdown content into structured chunks.
-
-        Args:
-            id (str): An identifier for the content.
-            title (str): The title of the content.
-            content (str): The Markdown formatted content to be processed.
-
-        Returns:
-            List[Output]: A list of processed content chunks.
         """
         html_content = markdown.markdown(
             content, extensions=["markdown.extensions.tables"]
         )
-        # html_content = self.replace_table(html_content)
         soup = BeautifulSoup(html_content, "html.parser")
         if soup is None:
             raise ValueError("The MarkDown file appears to be empty or unreadable.")
@@ -374,80 +318,269 @@ class MarkDownParser(RecordParserABC):
             if len(tmp) > 0:
                 top_level = level
                 break
+
         if top_level is None:
             chunk = Chunk(
-                id=generate_hash_id(str(id)),
+                id=Chunk.generate_hash_id(str(id)),
                 name=title,
                 content=soup.text,
                 ref=kwargs.get("ref", ""),
             )
             return [chunk]
-        tags = [tag for tag in soup.children if isinstance(tag, Tag)]
 
+        tags = [tag for tag in soup.children if isinstance(tag, Tag)]
         level_tags = self.parse_level_tags(tags, top_level)
         cutted = self.cut(level_tags, 0, self.cut_depth)
 
-        chunks = []
+        # 获取每个chunk对应的完整标题路径
+        chunk_titles = self._extract_chunk_titles(level_tags)
 
-        for idx, content in enumerate(cutted):
+        # 只保留最后一级标题并确定层级
+        chunk_levels = []
+        final_titles = []
+        for title_path in chunk_titles:
+            final_title = title_path.split("/")[-1]
+            final_titles.append(final_title)
+            level = self._determine_title_level(final_title)
+            chunk_levels.append(level)
+
+        # 创建初始chunks
+        initial_chunks = []
+        if len(cutted) != len(chunk_titles):
+            cutted = cutted[len(cutted) - len(chunk_titles) :]
+        for idx, (content, full_title) in enumerate(zip(cutted, chunk_titles)):
             chunk = None
+            chunk_name = f"{full_title}" if full_title else f"{title}#{idx}"
+
             if self.TABLE_CHUCK_FLAG in content:
-                chunk = self.get_table_chuck(content, title, id, idx)
+                chunk = self.get_table_chuck(content, chunk_name, id, idx)
                 chunk.ref = kwargs.get("ref", "")
+                chunk.level = chunk_levels[idx]
             else:
                 chunk = Chunk(
-                    id=generate_hash_id(f"{id}#{idx}"),
-                    name=f"{title}#{idx}",
+                    id=Chunk.generate_hash_id(f"{id}#{idx}"),
+                    name=chunk_name,
                     content=content,
                     ref=kwargs.get("ref", ""),
+                    level=chunk_levels[idx],
                 )
-            chunks.append(chunk)
-        return chunks
+            initial_chunks.append(chunk)
+
+        # 构建chunk树
+        chunk_tree = self.build_chunk_tree(initial_chunks)
+
+        # 基于树结构合并chunks
+        merged_chunks = self.merge_chunks_by_tree(chunk_tree, target_length=8000)
+        return merged_chunks
+
+    def count_tree_nodes(self, tree: dict) -> int:
+        """
+        计算树中的节点总数
+
+        Args:
+            tree: chunk树结构
+
+        Returns:
+            int: 节点总数
+        """
+        if not tree:
+            return 0
+
+        count = 1  # 当前节点
+        for child in tree["children"]:
+            count += self.count_tree_nodes(child)
+
+        return count
+
+    def build_chunk_tree(self, chunks: List[Chunk]) -> dict:
+        """
+        基于chunks的level构建树形结构
+
+        Args:
+            chunks: chunk列表
+
+        Returns:
+            dict: 树形结构，格式为:
+            {
+                'chunk': Chunk对象,
+                'children': [子节点字典]
+            }
+        """
+        root = {"chunk": None, "children": []}
+        current_path = [root]
+
+        for chunk in chunks:
+            node = {"chunk": chunk, "children": []}
+
+            # 找到当前chunk应该插入的位置
+            while (
+                len(current_path) > 1 and current_path[-1]["chunk"].level >= chunk.level
+            ):
+                current_path.pop()
+
+            current_path[-1]["children"].append(node)
+            current_path.append(node)
+
+        # 如果需要打印节点数，可以在返回前添加：
+        total_nodes = self.count_tree_nodes(root)
+        logging.info(f"Built chunk tree with {total_nodes} nodes")
+
+        return root
+
+    def merge_chunks_by_tree(self, tree: dict, target_length: int) -> List[Chunk]:
+        """
+        基于树结构自适应合并chunks
+
+        Args:
+            tree: chunk树结构
+            target_length: 目标chunk长度
+
+        Returns:
+            合并后的chunk列表
+        """
+        merged_chunks = []
+
+        def merge_node(node: dict) -> Chunk:
+            chunk = node["chunk"]
+            if not node["children"]:
+                return chunk
+
+            # 先递归处理所有子节点
+            child_chunks = []
+            for child in node["children"]:
+                # 表格类型的chunk不参与合并
+                if child["chunk"].type == ChunkTypeEnum.Table:
+                    merged_chunks.append(child["chunk"])
+                    continue
+                child_chunks.append(merge_node(child))
+
+            # 计算当前节点及其子节点的总内容长度
+            total_content = [chunk.content] if chunk else []
+            total_content.extend(c.content for c in child_chunks)
+            merged_content = "\n".join(filter(None, total_content))
+
+            # 如果总长度小于目标长，合并所有内容
+            if len(merged_content) <= target_length:
+                if chunk:
+                    chunk.content = merged_content
+                    return chunk
+                elif child_chunks:
+                    child_chunks[0].content = merged_content
+                    return child_chunks[0]
+
+            # 否则，将子节点作为独立chunk保留
+            merged_chunks.extend(child_chunks)
+            return chunk
+
+        root_result = merge_node(tree)
+        if root_result:
+            merged_chunks.append(root_result)
+
+        return merged_chunks
+
+    def _determine_title_level(self, title: str) -> int:
+        """
+        根据标题格式确定层级
+
+        Args:
+            title: 标题文本
+
+        Returns:
+            int: 标题层级(1-4)
+        """
+        title = title.strip()
+
+        # 第X章 -> 1级
+        if re.search(r"^第[一二三四五六七八九十\d]+章", title):
+            return 1
+
+        # 第X节 -> 2级
+        if re.search(r"^第[一二三四五六七八九十\d]+节", title):
+            return 2
+
+        # 一、二、三... -> 3级
+        if re.search(r"^[一二三四五六七八九十]+、", title):
+            return 3
+
+        # (一)、(二)、(三)... -> 4级
+        if re.search(r"^\([一二三四五六七八九十]+\)", title):
+            return 4
+
+        # 1. 2. 3. -> 4级
+        if re.search(r"^\d+\.", title):
+            return 5
+
+        # 其他情况默认为4级
+        return 6
+
+    def _extract_chunk_titles(self, level_tags):
+        """
+        提取每个chunk对应的完整标题路径
+
+        Args:
+            level_tags: 解析后的层级标签
+
+        Returns:
+            list: 每个chunk对应的完整标题路径列表
+        """
+        titles = []
+        current_path = []
+
+        def _traverse_tags(tags):
+            for item in tags:
+                if isinstance(item, list):
+                    # 只在递归时处理，移除对 item[0] 的直接处理
+                    _traverse_tags(item)
+                elif isinstance(item, tuple):
+                    header, tag = item
+                    if isinstance(tag, Tag) and tag.name in self.ALL_LEVELS:
+                        while len(current_path) >= int(tag.name[1]):
+                            current_path.pop()
+                        current_path.append(tag.text)
+                        titles.append("/".join(current_path))
+
+        _traverse_tags(level_tags)
+        return titles
 
     def get_table_chuck(
         self, table_chunk_str: str, title: str, id: str, idx: int
     ) -> Chunk:
         """
-        Converts a table chunk string into a Chunk object.
-
-        This method processes a table chunk string, extracts the table content, and converts it into a Chunk object.
-        If the table chunk string does not contain a valid table, it is treated as a text chunk.
-
-        Args:
-            table_chunk_str (str): The table chunk string to be processed.
-            title (str): The title of the chunk.
-            id (str): The ID of the chunk.
-            idx (int): The index of the chunk.
-
-        Returns:
-            Chunk: A Chunk object representing the table chunk.
+        转换表格块
+        :param table_chunk_str: 包含表格的文本块
+        :return: 处理后的 Chunk 对象
         """
         table_chunk_str = table_chunk_str.replace("\\N", "")
-        pattern = f"{self.TABLE_CHUCK_FLAG}(.*){self.TABLE_CHUCK_FLAG}"
+        pattern = f"{self.TABLE_CHUCK_FLAG}(.*?){self.TABLE_CHUCK_FLAG}"
         matches = re.findall(pattern, table_chunk_str, re.DOTALL)
         if not matches or len(matches) <= 0:
             # 找不到表格信息，按照Text Chunk处理
             return Chunk(
-                id=generate_hash_id(f"{id}#{idx}"),
+                id=Chunk.generate_hash_id(f"{id}#{idx}"),
                 name=f"{title}#{idx}",
                 content=table_chunk_str,
             )
         table_markdown_str = matches[0]
+        # 对markdown字符串中的反斜杠进行转义
         html_table_str = markdown.markdown(
             table_markdown_str, extensions=["markdown.extensions.tables"]
         )
         try:
-            df = pd.read_html(StringIO(html_table_str))[0]
+            df = pd.read_html(html_table_str)[0]
         except Exception as e:
-            logger.warning(f"get_table_chuck error: {e}")
+            logging.warning(f"get_table_chuck error: {e}")
             df = pd.DataFrame()
 
         # 确认是表格Chunk，去除内容中的TABLE_CHUCK_FLAG
-        replaced_table_text = re.sub(
-            pattern, f"\n{table_markdown_str}\n", table_chunk_str, flags=re.DOTALL
-        )
+        try:
+            replaced_table_text = re.sub(
+                pattern, f"\n{table_markdown_str}\n", table_chunk_str, flags=re.DOTALL
+            )
+        except Exception as e:
+            logging.warning(f"get_table_chuck error: {e}")
+            replaced_table_text = table_chunk_str
         return Chunk(
-            id=generate_hash_id(f"{id}#{idx}"),
+            id=Chunk.generate_hash_id(f"{id}#{idx}"),
             name=f"{title}#{idx}",
             content=replaced_table_text,
             type=ChunkTypeEnum.Table,
@@ -479,6 +612,20 @@ class MarkDownParser(RecordParserABC):
         basename, _ = os.path.splitext(os.path.basename(file_path))
 
         chunks = self.solve_content(input, basename, content)
+        length_500_list = []
+        length_1000_list = []
+        length_5000_list = []
+        length_smal_list = []
+        for chunk in chunks:
+            if chunk.content is not None:
+                if len(chunk.content) > 5000:
+                    length_5000_list.append(chunk)
+                elif len(chunk.content) > 1000:
+                    length_1000_list.append(chunk)
+                elif len(chunk.content) > 500:
+                    length_500_list.append(chunk)
+                elif len(chunk.content) <= 500:
+                    length_smal_list.append(chunk)
         return chunks
 
 
