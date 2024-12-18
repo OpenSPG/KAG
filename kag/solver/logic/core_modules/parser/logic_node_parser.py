@@ -174,7 +174,7 @@ class SumNode(LogicNode):
     @staticmethod
     def parse_node(input_str):
         # count_alias=count(alias)
-        match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str)
+        match = re.match(r'(\w+)[\(\（](.*)[\)\）](->)?(.*)?', input_str.strip())
         if not match:
             raise RuntimeError(f"parse logic form error {input_str}")
         # print('match:',match.groups())
@@ -536,11 +536,11 @@ class ParseLogicForm:
         elif low_operator in ["deduce"]:
             node: DeduceNode = DeduceNode.parse_node(args_str)
         elif low_operator in ["verify"]:
-            node: VerifyNode = VerifyNode.parse_node(args_str)
+            node: VerifyNode = VerifyNode.parse_node(input_str)
         elif low_operator in ["count"]:
             node: CountNode = CountNode.parse_node(args_str, output_name)
         elif low_operator in ["sum"]:
-            node: SumNode = SumNode.parse_node(args_str)
+            node: SumNode = SumNode.parse_node(input_str)
         elif low_operator in ["sort"]:
             node: SortNode = SortNode.parse_node(args_str)
         elif low_operator in ["compare"]:
