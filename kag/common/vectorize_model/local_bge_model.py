@@ -11,6 +11,7 @@
 
 import os
 import logging
+import threading
 from typing import Union, Iterable
 from kag.interface import VectorizeModelABC, EmbeddingVector
 
@@ -26,6 +27,8 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
     A class that extends the VectorizeModelABC base class.
     It invokes local BGE embedding models to convert texts into embedding vectors.
     """
+
+    _LOCK = threading.Lock()
 
     def __init__(
         self,
@@ -72,14 +75,14 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
             self.query_instruction_for_retrieval = (
                 default_query_instruction_for_retrieval
             )
-
-        if self.model_path in LOCAL_MODEL_MAP:
-            logger.info("Found existing model, reuse.")
-            model = LOCAL_MODEL_MAP[self.model_path]
-        else:
-            model = self._load_model(self.model_path)
-            LOCAL_MODEL_MAP[self.model_path] = model
-        self.model = model
+        with LocalBGEVectorizeModel._LOCK:
+            if self.model_path in LOCAL_MODEL_MAP:
+                logger.info("Found existing model, reuse.")
+                model = LOCAL_MODEL_MAP[self.model_path]
+            else:
+                model = self._load_model(self.model_path)
+                LOCAL_MODEL_MAP[self.model_path] = model
+            self.model = model
 
     def _load_model(self, path):
         """
@@ -129,8 +132,8 @@ class LocalBGEM3VectorizeModel(VectorizeModelABC):
     It invokes local BGE-M3 embedding models to convert texts into embedding vectors.
     """
 
-    # def __init__(self, config: Dict[str, Any]):
-    #     super().__init__(config)
+    _LOCK = threading.Lock()
+
     def __init__(
         self,
         path: str,
@@ -154,13 +157,14 @@ class LocalBGEM3VectorizeModel(VectorizeModelABC):
                 message = f"model not found at {path!r}, nor model url specified"
                 raise RuntimeError(message)
             self._download_model(path, url)
-        if self.model_path in LOCAL_MODEL_MAP:
-            logger.info("Found existing model, reuse.")
-            model = LOCAL_MODEL_MAP[self.model_path]
-        else:
-            model = self._load_model(self.model_path)
-            LOCAL_MODEL_MAP[self.model_path] = model
-        self.model = model
+        with LocalBGEM3VectorizeModel._LOCK:
+            if self.model_path in LOCAL_MODEL_MAP:
+                logger.info("Found existing model, reuse.")
+                model = LOCAL_MODEL_MAP[self.model_path]
+            else:
+                model = self._load_model(self.model_path)
+                LOCAL_MODEL_MAP[self.model_path] = model
+            self.model = model
 
     def _load_model(self, path):
         """

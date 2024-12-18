@@ -76,7 +76,7 @@ class BinCheckPointer(CheckPointer):
         self._ckpt[key] = value
         self._ckpt.sync()
 
-    def close(self):
+    def _close(self):
         """
         Closes the checkpoint file and ensures data is written to disk.
         """
@@ -167,7 +167,7 @@ class ZODBCheckPointer(CheckPointer):
             except Exception as e:
                 logger.warn(f"failed to write checkpoint {key} to db, info: {e}")
 
-    def close(self):
+    def _close(self):
         """
         Closes the ZODB database connection.
         """

@@ -24,7 +24,7 @@ import pandas as pd
 from io import StringIO
 from tenacity import stop_after_attempt, retry
 
-from kag.interface import RecordParserABC
+from kag.interface import ReaderABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
@@ -36,12 +36,12 @@ from knext.common.base.runnable import Output, Input
 logger = logging.getLogger(__name__)
 
 
-@RecordParserABC.register("md")
-class MarkDownParser(RecordParserABC):
+@ReaderABC.register("md")
+class MarkDownReader(ReaderABC):
     """
-    A class for parsing Markdown content into Chunk objects.
+    A class for reading Markdown content into Chunk objects.
 
-    This class inherits from RecordParserABC and provides the functionality to process Markdown content,
+    This class inherits from ReaderABC and provides the functionality to process Markdown content,
     extract its text and tables, and convert it into a list of Chunk objects.
     """
 
@@ -50,7 +50,7 @@ class MarkDownParser(RecordParserABC):
 
     def __init__(self, llm: LLMClient = None, cut_depth: int = 1):
         """
-        Initializes the MarkDownParser with an optional LLMClient instance and cut depth.
+        Initializes the MarkDownReader with an optional LLMClient instance and cut depth.
 
         Args:
             llm (LLMClient): An optional LLMClient instance used for analyzing tables. Defaults to None.
@@ -482,12 +482,12 @@ class MarkDownParser(RecordParserABC):
         return chunks
 
 
-@RecordParserABC.register("yuque")
-class YuequeParser(MarkDownParser):
+@ReaderABC.register("yuque")
+class YuequeReader(MarkDownReader):
     """
-    A class for parsing Yueque documents into Chunk objects.
+    A class for reading Yueque documents into Chunk objects.
 
-    This class inherits from MarkDownParser and provides the functionality to process Yueque documents,
+    This class inherits from MarkDownReader and provides the functionality to process Yueque documents,
     extract their content, and convert it into a list of Chunk objects.
     """
 

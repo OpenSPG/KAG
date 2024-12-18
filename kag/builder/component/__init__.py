@@ -13,8 +13,10 @@
 from kag.builder.component.external_graph.external_graph import (
     DefaultExternalGraphLoader,
 )
-from kag.builder.component.extractor.kag_extractor import KAGExtractor
-from kag.builder.component.extractor.schema_based_extractor import SchemaBasedExtractor
+from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtractor
+from kag.builder.component.extractor.schema_constraint_extractor import (
+    SchemaConstraintExtractor,
+)
 from kag.builder.component.aligner.kag_aligner import KAGAligner
 from kag.builder.component.aligner.spg_aligner import SPGAligner
 from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcessor
@@ -22,24 +24,24 @@ from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcess
 from kag.builder.component.mapping.spg_type_mapping import SPGTypeMapping
 from kag.builder.component.mapping.relation_mapping import RelationMapping
 from kag.builder.component.mapping.spo_mapping import SPOMapping
-from kag.builder.component.reader.csv_reader import CSVReader
-from kag.builder.component.reader.json_reader import JSONReader
-from kag.builder.component.reader.yuque_reader import YuqueReader
-from kag.builder.component.reader.dataset_reader import (
-    MusiqueCorpusReader,
-    HotpotqaCorpusReader,
+from kag.builder.component.scanner.csv_scanner import CSVScanner
+from kag.builder.component.scanner.json_scanner import JSONScanner
+from kag.builder.component.scanner.yuque_scanner import YuqueScanner
+from kag.builder.component.scanner.dataset_scanner import (
+    MusiqueCorpusScanner,
+    HotpotqaCorpusScanner,
 )
-from kag.builder.component.reader.file_reader import FileReader
-from kag.builder.component.reader.directory_reader import DirectoryReader
+from kag.builder.component.scanner.file_scanner import FileScanner
+from kag.builder.component.scanner.directory_scanner import DirectoryScanner
 
 
-from kag.builder.component.record_parser.pdf_parser import PDFParser
-from kag.builder.component.record_parser.markdown_parser import MarkDownParser
-from kag.builder.component.record_parser.docx_parser import DocxParser
-from kag.builder.component.record_parser.txt_parser import TXTParser
-from kag.builder.component.record_parser.mix_parser import MixParser
+from kag.builder.component.reader.pdf_reader import PDFReader
+from kag.builder.component.reader.markdown_reader import MarkDownReader
+from kag.builder.component.reader.docx_reader import DocxReader
+from kag.builder.component.reader.txt_reader import TXTReader
+from kag.builder.component.reader.mix_reader import MixReader
 
-from kag.builder.component.record_parser.dict_parser import DictParser
+from kag.builder.component.reader.dict_reader import DictReader
 
 
 from kag.builder.component.splitter.length_splitter import LengthSplitter
@@ -52,8 +54,8 @@ from kag.builder.component.writer.kg_writer import KGWriter
 
 __all__ = [
     "DefaultExternalGraphLoader",
-    "KAGExtractor",
-    "SchemaBasedExtractor",
+    "SchemaFreeExtractor",
+    "SchemaConstraintExtractor",
     "KAGAligner",
     "SPGAligner",
     "KAGPostProcessor",
@@ -61,19 +63,19 @@ __all__ = [
     "SPGTypeMapping",
     "RelationMapping",
     "SPOMapping",
-    "TXTParser",
-    "PDFParser",
-    "MarkDownParser",
-    "DocxParser",
-    "MixParser",
-    "DictParser",
-    "JSONReader",
-    "HotpotqaCorpusReader",
-    "MusiqueCorpusReader",
-    "FileReader",
-    "DirectoryReader",
-    "YuqueReader",
-    "CSVReader",
+    "TXTReader",
+    "PDFReader",
+    "MarkDownReader",
+    "DocxReader",
+    "MixReader",
+    "DictReader",
+    "JSONScanner",
+    "HotpotqaCorpusScanner",
+    "MusiqueCorpusScanner",
+    "FileScanner",
+    "DirectoryScanner",
+    "YuqueScanner",
+    "CSVScanner",
     "LengthSplitter",
     "PatternSplitter",
     "OutlineSplitter",

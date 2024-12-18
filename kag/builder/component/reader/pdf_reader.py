@@ -18,7 +18,7 @@ import pdfminer.layout  # noqa
 
 
 from kag.builder.model.chunk import Chunk
-from kag.interface import RecordParserABC
+from kag.interface import ReaderABC
 
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import LLMClient
@@ -38,18 +38,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@RecordParserABC.register("pdf")
-class PDFFileParser(RecordParserABC):
+@ReaderABC.register("pdf")
+class PDFReader(ReaderABC):
     """
-    A class for parsing PDF files into a list of text chunks, inheriting from `RecordParserABC`.
+    A class for reading PDF files into a list of text chunks, inheriting from `ReaderABC`.
 
     This class is responsible for parsing PDF files and converting them into a list of Chunk objects.
-    It inherits from `RecordParserABC` and overrides the necessary methods to handle PDF-specific operations.
+    It inherits from `ReaderABC` and overrides the necessary methods to handle PDF-specific operations.
     """
 
     def __init__(self, llm: LLMClient = None, split_level: int = 3):
         """
-        Initializes the PDFFileParser with the specified large language model client and split level.
+        Initializes the PDFReader with the specified large language model client and split level.
 
         Args:
             llm (LLMClient, optional): The large language model client used for generating outlines. Defaults to None.

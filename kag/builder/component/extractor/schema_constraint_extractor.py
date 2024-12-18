@@ -30,8 +30,8 @@ from knext.schema.client import SchemaClient
 logger = logging.getLogger(__name__)
 
 
-@ExtractorABC.register("schema")
-class SchemaBasedExtractor(ExtractorABC):
+@ExtractorABC.register("schema_constraint")
+class SchemaConstraintExtractor(ExtractorABC):
     """
     Perform knowledge extraction for enforcing schema constraints, including entities, events and their edges.
     The types of entities and events, along with their respective attributes, are automatically inherited from the project's schema.

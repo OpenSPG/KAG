@@ -57,6 +57,7 @@ class OpenAIClient(LLMClient):
         self.stream = stream
         self.temperature = temperature
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.check()
 
     def __call__(self, prompt: str, image_url: str = None):
         """

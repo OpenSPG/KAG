@@ -11,7 +11,11 @@ pwd = os.path.dirname(__file__)
 
 
 def test_kag_extractor():
-    conf = {"type": "kag", "llm": llm_config, "ner_prompt": {"type": "default_ner"}}
+    conf = {
+        "type": "schema_free",
+        "llm": llm_config,
+        "ner_prompt": {"type": "default_ner"},
+    }
 
     extractor = ExtractorABC.from_config(conf)
     with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:
@@ -24,7 +28,11 @@ def test_kag_extractor():
 
 
 def test_spg_extractor():
-    conf = {"type": "schema", "llm": llm_config, "ner_prompt": {"type": "default_ner"}}
+    conf = {
+        "type": "schema_constraint",
+        "llm": llm_config,
+        "ner_prompt": {"type": "default_ner"},
+    }
 
     extractor = ExtractorABC.from_config(conf)
     with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:

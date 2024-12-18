@@ -12,17 +12,17 @@
 from typing import Dict, List
 
 import pandas as pd
-from kag.interface import SourceReaderABC
+from kag.interface import ScannerABC
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("csv")
-class CSVReader(SourceReaderABC):
+@ScannerABC.register("csv")
+class CSVScanner(ScannerABC):
     """
     A class for reading CSV files and converting them into a list of dictionaries.
 
-    This class inherits from `SourceReaderABC` and provides functionality to read CSV files.
+    This class inherits from `ScannerABC` and provides functionality to read CSV files.
     It can either return the entire row as a dictionary or split the row into multiple dictionaries
     based on specified columns.
 
@@ -34,7 +34,7 @@ class CSVReader(SourceReaderABC):
 
     def __init__(self, cols: List[str] = None, rank: int = 0, world_size: int = 1):
         """
-        Initializes the CSVReader with optional columns, rank, and world size.
+        Initializes the CSVScanner with optional columns, rank, and world size.
 
         Args:
             cols (List[str], optional): A list of column names to be processed. Defaults to None.
