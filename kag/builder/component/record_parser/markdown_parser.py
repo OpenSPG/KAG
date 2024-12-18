@@ -669,7 +669,4 @@ class YuequeParser(MarkDownParser):
 if __name__ == "__main__":
     markdown_parser = MarkDownParser()
     res = markdown_parser._invoke("/Users/zhangxinhong.zxh/Downloads/Noah文档中心-sdk.md")
-    from kag.builder.model.chunk import dump_chunks
-
-    dump_chunks(res)
     a = 1
