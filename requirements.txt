@@ -43,3 +43,4 @@ tenacity
 pyhocon
 scikit-learn
 zodb
+matplotlib
