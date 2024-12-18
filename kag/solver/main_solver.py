@@ -20,6 +20,7 @@ from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
+from kag_ant.medicine_thinker.med_thinker import MedicineThinker
 
 
 class SolverMain:
@@ -55,6 +56,14 @@ class SolverMain:
         print(trace_log)
         report_tool.report_node(question, answer, ReporterIntermediateProcessTool.STATE.FINISH)
         return answer
+
+    def invoke_med_thinker(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
+        # resp
+        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
+        thinker = MedicineThinker(report_tool=report_tool)
+        resp = thinker.diagnostic_evidence(query)
+        return resp
+
 
 if __name__ == "__main__":
     res = SolverMain().invoke(3, 283, "周杰伦在哪一年基于什么作品获得的全球畅销专辑榜”冠军的华语歌手", True, host_addr="http://127.0.0.1:8887")
