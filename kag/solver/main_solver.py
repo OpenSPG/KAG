@@ -45,6 +45,16 @@ class SolverMain:
         report_tool.report_node(question, answer, ReporterIntermediateProcessTool.STATE.FINISH)
         return answer
 
+    def invoke_finstate(self, project_id: int, task_id: int, query: str, report_tool=True, host_addr="http://127.0.0.1:8887"):
+        from kag.examples.finstate.solver.solver import FinStateSolver
+        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
+        solver = FinStateSolver(report_tool=report_tool)
+        question = Question(query)
+        question.id = 0
+        answer, trace_log = solver.run(query)
+        print(trace_log)
+        report_tool.report_node(question, answer, ReporterIntermediateProcessTool.STATE.FINISH)
+        return answer
 
 if __name__ == "__main__":
     res = SolverMain().invoke(3, 283, "周杰伦在哪一年基于什么作品获得的全球畅销专辑榜”冠军的华语歌手", True, host_addr="http://127.0.0.1:8887")

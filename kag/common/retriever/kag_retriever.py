@@ -508,7 +508,7 @@ class DefaultRetriever(ChunkRetrieverABC):
                     topk=top_k,
                 )
                 for node in typed_nodes:
-                    if node["score"] > 0.9:
+                    if node["score"] > 0.8:
                         matched_entities.append(
                             {
                                 "name": node["node"]["name"],
