@@ -14,17 +14,17 @@ import json
 import os
 from typing import Union, Dict, List
 
-from kag.interface import SourceReaderABC
+from kag.interface import ScannerABC
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("json")
-class JSONReader(SourceReaderABC):
+@ScannerABC.register("json")
+class JSONScanner(ScannerABC):
     """
-    A class for reading JSON files or parsing JSON-formatted strings into a list of dictionaries, inheriting from `SourceReaderABC`.
+    A class for reading JSON files or parsing JSON-formatted strings into a list of dictionaries, inheriting from `ScannerABC`.
 
     This class is responsible for reading JSON files or parsing JSON-formatted strings and converting them into a list of dictionaries.
-    It inherits from `SourceReaderABC` and overrides the necessary methods to handle JSON-specific operations.
+    It inherits from `ScannerABC` and overrides the necessary methods to handle JSON-specific operations.
 
     Note: The JSON data must be a list of dictionaries.
     """

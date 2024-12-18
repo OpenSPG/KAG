@@ -124,6 +124,7 @@ class KAGPostProcessor(PostProcessorABC):
                         property_key=property_key,
                         query_vector=vector,
                         topk=1,
+                        params={},
                     )
                     all_similar_nodes.extend(similar_nodes)
                 for item in all_similar_nodes:

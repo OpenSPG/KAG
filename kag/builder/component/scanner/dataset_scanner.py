@@ -15,17 +15,17 @@ import os
 from typing import List, Type, Dict
 
 
-from kag.interface import SourceReaderABC
+from kag.interface import ScannerABC
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("hotpotqa")
-class HotpotqaCorpusReader(SourceReaderABC):
+@ScannerABC.register("hotpotqa")
+class HotpotqaCorpusScanner(ScannerABC):
     """
-    A class for reading HotpotQA dataset and converting it into a list of dictionaries, inheriting from `SourceReaderABC`.
+    A class for reading HotpotQA dataset and converting it into a list of dictionaries, inheriting from `ScannerABC`.
 
     This class is responsible for reading HotpotQA corpus and converting it into a list of dictionaries.
-    It inherits from `SourceReaderABC` and overrides the necessary methods to handle HotpotQA-specific operations.
+    It inherits from `ScannerABC` and overrides the necessary methods to handle HotpotQA-specific operations.
     """
 
     @property
@@ -64,14 +64,14 @@ class HotpotqaCorpusReader(SourceReaderABC):
         return data
 
 
-@SourceReaderABC.register("musique")
-@SourceReaderABC.register("2wiki")
-class MusiqueCorpusReader(SourceReaderABC):
+@ScannerABC.register("musique")
+@ScannerABC.register("2wiki")
+class MusiqueCorpusScanner(ScannerABC):
     """
-    A class for reading Musique/2Wiki dataset and converting it into a list of dictionaries, inheriting from `SourceReaderABC`.
+    A class for reading Musique/2Wiki dataset and converting it into a list of dictionaries, inheriting from `ScannerABC`.
 
     This class is responsible for reading Musique/2Wiki corpus and converting it into a list of dictionaries.
-    It inherits from `SourceReaderABC` and overrides the necessary methods to handle Musique/2Wiki-specific operations.
+    It inherits from `ScannerABC` and overrides the necessary methods to handle Musique/2Wiki-specific operations.
     """
 
     @property

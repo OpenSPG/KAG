@@ -13,8 +13,8 @@ from kag.interface.common.prompt import PromptABC
 from kag.interface.common.llm_client import LLMClient
 
 from kag.interface.common.vectorize_model import VectorizeModelABC, EmbeddingVector
-from kag.interface.builder.record_parser_abc import RecordParserABC
-from kag.interface.builder.reader_abc import SourceReaderABC
+from kag.interface.builder.scanner_abc import ScannerABC
+from kag.interface.builder.reader_abc import ReaderABC
 from kag.interface.builder.splitter_abc import SplitterABC
 from kag.interface.builder.extractor_abc import ExtractorABC
 from kag.interface.builder.mapping_abc import MappingABC
@@ -40,8 +40,8 @@ __all__ = [
     "LLMClient",
     "VectorizeModelABC",
     "EmbeddingVector",
-    "RecordParserABC",
-    "SourceReaderABC",
+    "ScannerABC",
+    "ReaderABC",
     "SplitterABC",
     "ExtractorABC",
     "MappingABC",

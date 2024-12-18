@@ -40,6 +40,7 @@ class VLLMClient(LLMClient):
         self.model = model
         self.base_url = base_url
         self.param = {}
+        self.check()
 
     def sync_request(self, prompt):
         """

@@ -14,14 +14,15 @@
 import os
 import traceback
 import logging
+import threading
 from typing import Dict
 from tqdm import tqdm
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.registry import Registrable
 from kag.common.utils import reset, bold, red, generate_hash_id
-from kag.common.checkpointer import CheckPointer
-from kag.interface import KAGBuilderChain, SourceReaderABC
+from kag.common.checkpointer import CheckpointerManager
+from kag.interface import KAGBuilderChain, ScannerABC
 
 from kag.builder.model.sub_graph import SubGraph
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -78,40 +79,36 @@ class BuilderChainRunner(Registrable):
 
     def __init__(
         self,
-        reader: SourceReaderABC,
+        scanner: ScannerABC,
         chain: KAGBuilderChain,
-        num_parallel: int = 2,
-        chain_level_num_paralle: int = 8,
+        num_chains: int = 2,
+        num_threads_per_chain: int = 8,
     ):
         """
         Initializes the BuilderChainRunner instance.
 
         Args:
-            reader (SourceReaderABC): The source reader to generate input data.
+            scanner (ScannerABC): The source scanner to generate input data.
             chain (KAGBuilderChain): The builder chain to process the input data.
-            num_parallel (int, optional): The number of parallel threads to use, with each thread launching a builder chain instance. Defaults to 2.
-            chain_level_num_paralle (int, optional): The number of parallel workers within a builder chain. Defaults to 8.
+            num_chains (int, optional): The number of parallel threads to use, with each thread launching a builder chain instance. Defaults to 2.
+            num_threads_per_chain (int, optional): The number of parallel workers within a builder chain. Defaults to 8.
             ckpt_dir (str, optional): The directory to store checkpoint files. Defaults to "./ckpt".
         """
-        self.reader = reader
+        self.scanner = scanner
         self.chain = chain
-        self.num_parallel = num_parallel
-        self.chain_level_num_paralle = chain_level_num_paralle
+        self.num_chains = num_chains
+        self.num_threads_per_chain = num_threads_per_chain
         self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
 
-        self.checkpointer = CheckPointer.from_config(
+        self.checkpointer = CheckpointerManager.get_checkpointer(
             {
                 "type": "txt",
                 "ckpt_dir": self.ckpt_dir,
-                "rank": self.reader.sharding_info.get_rank(),
-                "world_size": self.reader.sharding_info.get_world_size(),
+                "rank": self.scanner.sharding_info.get_rank(),
+                "world_size": self.scanner.sharding_info.get_world_size(),
             }
         )
-        msg = (
-            f"{bold}{red}The log file is located at {self.checkpointer._ckpt_file_path}. "
-            f"Please access this file to obtain detailed task statistics.{reset}"
-        )
-        print(msg)
+        self._local = threading.local()
 
     def invoke(self, input):
         """
@@ -121,9 +118,24 @@ class BuilderChainRunner(Registrable):
             input: The input data to be processed.
         """
 
-        def process(chain, data, data_id, data_abstract):
+        # def process(thread_local, chain_conf, data, data_id, data_abstract):
+        #     try:
+        #         if not hasattr(thread_local, "chain"):
+        #             if chain_conf:
+        #                 thread_local.chain = KAGBuilderChain.from_config(chain_conf)
+        #             else:
+        #                 thread_local.chain = self.chain
+        #         result = thread_local.chain.invoke(
+        #             data, max_workers=self.num_threads_per_chain
+        #         )
+        #         return data, data_id, data_abstract, result
+        #     except Exception:
+        #         traceback.print_exc()
+        #         return None
+
+        def process(data, data_id, data_abstract):
             try:
-                result = chain.invoke(data, max_workers=self.chain_level_num_paralle)
+                result = self.chain.invoke(data, max_workers=self.num_threads_per_chain)
                 return data, data_id, data_abstract, result
             except Exception:
                 traceback.print_exc()
@@ -132,13 +144,16 @@ class BuilderChainRunner(Registrable):
         futures = []
         print(f"Processing {input}")
         try:
-            with ThreadPoolExecutor(self.num_parallel) as executor:
-                for item in self.reader.generate(input):
+            with ThreadPoolExecutor(self.num_chains) as executor:
+                for item in self.scanner.generate(input):
                     item_id, item_abstract = generate_hash_id_and_abstract(item)
                     if self.checkpointer.exists(item_id):
                         continue
                     fut = executor.submit(
-                        process, self.chain, item, item_id, item_abstract
+                        process,
+                        item,
+                        item_id,
+                        item_abstract,
                     )
                     futures.append(fut)
 
@@ -170,8 +185,12 @@ class BuilderChainRunner(Registrable):
                         )
         except:
             traceback.print_exc()
-        self.checkpointer.close()
-        self.chain.close_checkpointers()
+        CheckpointerManager.close()
+        msg = (
+            f"{bold}{red}The log file is located at {self.checkpointer._ckpt_file_path}. "
+            f"Please access this file to obtain detailed task statistics.{reset}"
+        )
+        print(msg)
 
 
 BuilderChainRunner.register("base", as_default=True)(BuilderChainRunner)

@@ -16,7 +16,7 @@ from typing import List, Union
 from docx import Document
 from kag.interface import LLMClient
 from kag.builder.model.chunk import Chunk
-from kag.interface import RecordParserABC
+from kag.interface import ReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
@@ -41,18 +41,18 @@ def split_txt(content):
     return res
 
 
-@RecordParserABC.register("docx")
-class DocxParser(RecordParserABC):
+@ReaderABC.register("docx")
+class DocxReader(ReaderABC):
     """
-    A class for parsing Docx files into Chunk objects.
+    A class for reading Docx files into Chunk objects.
 
-    This class inherits from RecordParserABC and provides the functionality to process Docx files,
+    This class inherits from ReaderABC and provides the functionality to process Docx files,
     extract their text content, and convert it into a list of Chunk objects.
     """
 
     def __init__(self, llm: LLMClient = None):
         """
-        Initializes the DocxParser with an optional LLMClient instance.
+        Initializes the DocxReader with an optional LLMClient instance.
 
         Args:
             llm (LLMClient): An optional LLMClient instance used for generating outlines. Defaults to None.

@@ -14,19 +14,19 @@ import requests
 from typing import Type, List
 
 # from kag.builder.component.reader.markdown_reader import MarkDownReader
-from kag.interface import SourceReaderABC
+from kag.interface import ScannerABC
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("yuque")
-class YuqueReader(SourceReaderABC):
+@ScannerABC.register("yuque")
+class YuqueScanner(ScannerABC):
     """
-    A class for reading data from Yuque, a Chinese documentation platform, inheriting from `SourceReaderABC`.
+    A class for reading data from Yuque, a Chinese documentation platform, inheriting from `ScannerABC`.
 
     This class is responsible for reading the Yuque knowledge base and return the urls of the documents it contains.
     It can be used in conjunction with the Yuque parser to convert Yuque documents into Chunks.
 
-    It inherits from `SourceReaderABC` and overrides the necessary methods to handle Yuque-specific operations.
+    It inherits from `ScannerABC` and overrides the necessary methods to handle Yuque-specific operations.
 
     Args:
         token (str): The authentication token for accessing Yuque API.
@@ -36,7 +36,7 @@ class YuqueReader(SourceReaderABC):
 
     def __init__(self, token: str):
         """
-        Initializes the YuqueReader with the specified token, rank, and world size.
+        Initializes the YuqueScanner with the specified token, rank, and world size.
 
         Args:
             token (str): The authentication token for accessing Yuque API.

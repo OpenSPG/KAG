@@ -13,19 +13,19 @@ import os
 import re
 from typing import List
 
-from kag.interface import SourceReaderABC
+from kag.interface import ScannerABC
 
 from knext.common.base.runnable import Input, Output
 
 
-@SourceReaderABC.register("dir")
-class DirectoryReader(SourceReaderABC):
+@ScannerABC.register("dir")
+class DirectoryScanner(ScannerABC):
     """
-    A class for reading files from a directory based on a specified file pattern or suffix, inheriting from `SourceReaderABC`.
+    A class for reading files from a directory based on a specified file pattern or suffix, inheriting from `ScannerABC`.
     It can be used in conjunction with the parsers such as PDF/MarkDown parser to convert files into Chunks.
 
     This class is responsible for reading files from a directory and returning a list of file paths that match the specified file pattern/suffix.
-    It inherits from `SourceReaderABC` and overrides the necessary methods to handle directory-specific operations.
+    It inherits from `ScannerABC` and overrides the necessary methods to handle directory-specific operations.
 
     """
 
@@ -37,7 +37,7 @@ class DirectoryReader(SourceReaderABC):
         world_size: int = 1,
     ):
         """
-        Initializes the DirectoryReader with the specified file pattern, file suffix, rank, and world size.
+        Initializes the DirectoryScanner with the specified file pattern, file suffix, rank, and world size.
 
         Args:
             file_pattern (str, optional): The regex pattern to match file names. Defaults to None.

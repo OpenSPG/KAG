@@ -17,7 +17,7 @@ from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.checkpointer import CheckPointer
+from kag.common.checkpointer import CheckPointer, CheckpointerManager
 from kag.common.sharding_info import ShardingInfo
 
 
@@ -38,10 +38,11 @@ class BuilderComponent(Component, Registrable):
             rank = get_rank(0)
             world_size = get_world_size(1)
         self.sharding_info = ShardingInfo(shard_id=rank, shard_count=world_size)
+
         if self.ckpt_subdir:
             self.ckpt_dir = os.path.join(KAG_PROJECT_CONF.ckpt_dir, self.ckpt_subdir)
 
-            self.checkpointer: CheckPointer = CheckPointer.from_config(
+            self.checkpointer: CheckPointer = CheckpointerManager.get_checkpointer(
                 {
                     "type": "zodb",
                     "ckpt_dir": self.ckpt_dir,
@@ -49,6 +50,8 @@ class BuilderComponent(Component, Registrable):
                     "world_size": world_size,
                 }
             )
+        else:
+            self.checkpointer = None
 
     @property
     def type(self):
@@ -94,13 +97,17 @@ class BuilderComponent(Component, Registrable):
         )
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
-        input_key = kwargs.get("key")
-
-        if input_key and self.checkpointer.exists(input_key):
-            out = self.checkpointer.read_from_ckpt(input_key)
-            if out is not None:
-                return out
-        output = self._invoke(input, **kwargs)
-        if input_key:
-            self.checkpointer.write_to_ckpt(input_key, output)
-        return output
+        if self.checkpointer:
+            input_key = kwargs.get("key")
+            # found existing data in checkpointer
+            if input_key and self.checkpointer.exists(input_key):
+                out = self.checkpointer.read_from_ckpt(input_key)
+                if out is not None:
+                    return out
+            # not found
+            output = self._invoke(input, **kwargs)
+            if input_key:
+                self.checkpointer.write_to_ckpt(input_key, output)
+            return output
+        else:
+            return self._invoke(input, **kwargs)

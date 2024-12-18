@@ -42,6 +42,7 @@ class OllamaClient(LLMClient):
         self.base_url = base_url
         self.param = {}
         self.client = Client(host=self.base_url)
+        self.check()
 
     def sync_request(self, prompt, image=None):
         """

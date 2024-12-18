@@ -158,3 +158,10 @@ class LLMClient(Registrable):
                 logger.debug(traceback.format_exc())
                 continue
         return results
+
+    def check(self):
+        try:
+            self.__call__("Are you OK?")
+        except Exception as e:
+            logger.error("LLM health check failed!")
+            raise e
