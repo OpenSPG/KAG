@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class RespGenerator(PromptOp):
     template_zh = """
-基于给定的引用信息回答问题。根据子问题求解过程，直接给出总结性答案。输出格式要求是纯文本，不要包含markdown格式。
+基于给定的引用信息回答问题。根据子问题求解过程，总结出解题步骤，最后给出总结性答案。输出格式要求是纯文本，不要包含markdown格式。
 给定的引用信息：'$memory'\n问题：'$instruction'
 """
     template_en = template_zh
