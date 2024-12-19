@@ -20,10 +20,17 @@ class GetSPONode(LogicNode):
         super().__init__(operator, args)
         self.s: SPOBase = args.get("s", None)
         self.p: SPOBase = args.get("p", None)
-        self.o: SPOBase = args.get("o", None)
+        self.o: SPOEntity = args.get("o", None)
         self.sub_query = args.get("sub_query", None)
         self.query = args.get("query", None)
 
+    def get_ele_name(self, alias):
+        ele = self.args.get(alias, None)
+        if ele is None:
+            return ""
+        if isinstance(ele, SPOEntity):
+            return ele.entity_name
+        return ""
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")
 
@@ -424,22 +431,22 @@ class ParseLogicForm:
             exist_node.value_list.extend(entity.value_list)
             return parsed_entity_set[alias_name]
 
-        zh_types = entity.get_entity_type_zh_set()
+        zh_types = entity.get_un_std_entity_type_set()
         std_entity_type_set = []
         if isinstance(entity, SPOEntity):
             for entity_type in zh_types:
                 type_info = self.get_node_type_info(entity_type)
-                if type_info.entity_type is None and self.schema is not None:
+                if type_info.std_entity_type is None and self.schema is not None:
                     entity.is_attribute = True
                 std_entity_type_set.append(type_info)
         elif isinstance(entity, SPORelation):
-            s_type_zh = entity.s.get_entity_first_type_or_en()
-            o_type_zh = entity.o.get_entity_first_type_or_en()
-            s_type_en = entity.s.get_entity_first_type_or_zh()
-            o_type_en = entity.o.get_entity_first_type_or_zh()
+            s_type_zh = entity.s.get_un_std_entity_first_type_or_std()
+            o_type_zh = entity.o.get_un_std_entity_first_type_or_std()
+            s_type_en = entity.s.get_entity_first_type_or_un_std()
+            o_type_en = entity.o.get_entity_first_type_or_un_std()
             for entity_type in zh_types:
                 type_info = TypeInfo()
-                type_info.entity_type_zh = entity_type
+                type_info.un_std_entity_type = entity_type
                 if self.schema is not None:
                     if o_type_zh == "Entity":
                         sp_index = (s_type_zh, entity_type)
@@ -447,24 +454,24 @@ class ParseLogicForm:
                             o_candis_set = self.schema.sp_o[sp_index]
                             for candis in o_candis_set:
                                 spo_zh = f"{s_type_zh}_{entity_type}_{candis}"
-                                type_info.entity_type = self.schema.get_spo_with_p(
+                                type_info.std_entity_type = self.schema.get_spo_with_p(
                                     self.schema.spo_zh_en[spo_zh]
                                 )
                                 break
 
-                    if not type_info.entity_type and s_type_zh == "Entity":
+                    if not type_info.std_entity_type and s_type_zh == "Entity":
                         op_index = (o_type_zh, entity_type)
                         if op_index in self.schema.op_s:
                             s_candis_set = self.schema.op_s[op_index]
                             for candis in s_candis_set:
                                 spo_zh = f"{candis}_{entity_type}_{o_type_zh}"
-                                type_info.entity_type = self.schema.get_spo_with_p(
+                                type_info.std_entity_type = self.schema.get_spo_with_p(
                                     self.schema.spo_zh_en[spo_zh]
                                 )
                                 break
 
                     if (
-                        not type_info.entity_type
+                        not type_info.std_entity_type
                         and o_type_zh != "Entity"
                         and s_type_zh != "Entity"
                     ):
@@ -475,23 +482,23 @@ class ParseLogicForm:
                         for p_candis in candis_set:
                             if p_candis == entity_type:
                                 spo_zh = f"{s_type_zh}_{p_candis}_{o_type_zh}"
-                                type_info.entity_type = self.schema.get_spo_with_p(
+                                type_info.std_entity_type = self.schema.get_spo_with_p(
                                     self.schema.spo_zh_en[spo_zh]
                                 )
 
-                    if not type_info.entity_type:
+                    if not type_info.std_entity_type:
                         # maybe a property
                         s_attr_zh_en = self.schema.attr_zh_en_by_label.get(
                             s_type_en, []
                         )
                         if s_attr_zh_en and entity_type in s_attr_zh_en:
-                            type_info.entity_type = s_attr_zh_en[entity_type]
-                        if not type_info.entity_type:
+                            type_info.std_entity_type = s_attr_zh_en[entity_type]
+                        if not type_info.std_entity_type:
                             o_attr_zh_en = self.schema.attr_zh_en_by_label.get(
                                 o_type_en, []
                             )
                             if o_attr_zh_en and entity_type in o_attr_zh_en:
-                                type_info.entity_type = o_attr_zh_en[entity_type]
+                                type_info.std_entity_type = o_attr_zh_en[entity_type]
                 std_entity_type_set.append(type_info)
 
         entity.type_set = std_entity_type_set
@@ -506,11 +513,11 @@ class ParseLogicForm:
             exist_node.value_list.extend(entity.value_list)
             return parsed_entity_set[alias_name]
 
-        zh_types = entity.get_entity_type_zh_set()
+        zh_types = entity.get_un_std_entity_type_set()
         std_entity_type_set = []
         for entity_type in zh_types:
             type_info = self.get_node_type_info(entity_type)
-            if type_info.entity_type is None and self.schema is not None:
+            if type_info.std_entity_type is None and self.schema is not None:
                 entity.is_attribute = True
             std_entity_type_set.append(type_info)
         entity.type_set = std_entity_type_set
@@ -521,11 +528,11 @@ class ParseLogicForm:
         alias_name = edge.alias_name
         if alias_name in parsed_entity_set.keys():
             return parsed_entity_set[alias_name]
-        zh_types = edge.get_entity_type_zh_set()
+        zh_types = edge.get_un_std_entity_type_set()
         std_edge_type_set = []
         for entity_type in zh_types:
             type_info = self.get_edge_type_info(entity_type)
-            if type_info.entity_type is None and self.schema is not None:
+            if type_info.std_entity_type is None and self.schema is not None:
                 edge.is_attribute = True
             std_edge_type_set.append(type_info)
         edge.type_set = std_edge_type_set
@@ -648,15 +655,15 @@ class ParseLogicForm:
             en = self.std_node_type_name(type_name)
             zh = en
         type_info = TypeInfo()
-        type_info.entity_type = en
-        type_info.entity_type_zh = zh
-        if type_info.entity_type_zh is None:
-            type_info.entity_type_zh = type_name
+        type_info.std_entity_type = en
+        type_info.un_std_entity_type = zh
+        if type_info.un_std_entity_type is None:
+            type_info.un_std_entity_type = type_name
         return type_info
 
     def get_edge_type_info(self, type_name):
         # Edge is not standardized currently
         type_info = TypeInfo()
-        type_info.entity_type = self.get_edge_type_en_by_name(type_name)
-        type_info.entity_type_zh = type_name
+        type_info.std_entity_type = self.get_edge_type_en_by_name(type_name)
+        type_info.un_std_entity_type = type_name
         return type_info

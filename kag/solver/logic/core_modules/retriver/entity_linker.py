@@ -165,7 +165,7 @@ def spo_entity_linker(
                 entity_id_info.name = candis_entitiy.entity_name
                 entity_id_info.biz_id = candis_entitiy.entity_name
                 entity_id_info.type = schema.get_label_within_prefix(
-                    candis_entitiy.get_entity_first_type()
+                    candis_entitiy.get_entity_first_std_type()
                 )
                 entity_type_zh = (
                     schema.node_en_zh[entity_id_info.type]

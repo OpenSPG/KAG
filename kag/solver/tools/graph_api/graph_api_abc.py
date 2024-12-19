@@ -4,11 +4,16 @@ from typing import Dict, List
 from kag.common.registry import Registrable
 from kag.solver.logic.core_modules.common.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData
+from kag.solver.tools.graph_api.model.table_model import TableData
 
 
 class GraphApiABC(Registrable):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    @abstractmethod
+    def get_entity_prop_by_id(self, biz_id, label) -> Dict:
+        pass
 
     @abstractmethod
     def get_entity(self, entity: SPOEntity) -> List[EntityData]:
@@ -19,7 +24,11 @@ class GraphApiABC(Registrable):
         pass
 
     @abstractmethod
-    def execute_dsl(self, dsl: str) -> Dict[str, OneHopGraphData]:
+    def convert_spo_to_one_graph(self, table: TableData) -> Dict[str, OneHopGraphData]:
+        pass
+
+    @abstractmethod
+    def execute_dsl(self, dsl: str) -> TableData:
         pass
 
     @abstractmethod

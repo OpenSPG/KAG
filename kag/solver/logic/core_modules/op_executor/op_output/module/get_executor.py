@@ -79,7 +79,7 @@ class GetExecutor(OpExecutor):
                 kg_qa_result.append(str(s_data))
         if len(s_biz_id_set) > 0:
             one_hop_cached_map = self.dsl_runner.query_vertex_property_by_s_ids(
-                s_biz_id_set, n.s.get_entity_first_type(), self.cached_map
+                s_biz_id_set, n.s.get_entity_first_std_type(), self.cached_map
             )
 
             self.kg_graph.nodes_alias.append(n.alias_name)

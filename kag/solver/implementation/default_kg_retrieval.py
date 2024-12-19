@@ -119,7 +119,7 @@ class KGRetrieverByLlm(KGRetriever):
             choosed_one_hop_graph_list = self._get_matched_one_hop(
                 one_hop_graph_map, matched_entity_list
             )
-            param_spo = f"get_spo(s=s1:{mention_entity.get_entity_first_type_or_zh()}[{mention_entity.entity_name}],p=p1:{k},o=o1:Entity[{v}])"
+            param_spo = f"get_spo(s=s1:{mention_entity.get_entity_first_type_or_un_std()}[{mention_entity.entity_name}],p=p1:{k},o=o1:Entity[{v}])"
             tmp_spo = self.parser.parse_logic_form(
                 param_spo,
                 parsed_entity_set={},
@@ -158,7 +158,7 @@ class KGRetrieverByLlm(KGRetriever):
         if mention_entity is None:
             return retdata
         content = kwargs.get("content", mention_entity.entity_name)
-        query_type = mention_entity.get_entity_first_type_or_zh()
+        query_type = mention_entity.get_entity_first_type_or_un_std()
         recognition_threshold = kwargs.get("recognition_threshold", 0.8)
         recall_topk = topk
         if "entity" not in query_type.lower():

@@ -282,16 +282,16 @@ class DslRunnerOnGraphStore(DslRunner):
     def _get_p_type_name(self, n: GetSPONode):
         if n is None:
             return None
-        return n.p.get_entity_first_type()
+        return n.p.get_entity_first_std_type()
 
     def _get_entity_type_name(self, d: EntityData, n: GetSPONode = None, alias=None):
         if d is None and n is None:
             return None
         return (
             self.schema.get_label_within_prefix(
-                n.s.get_entity_first_type()
+                n.s.get_entity_first_std_type()
                 if alias == "s"
-                else n.o.get_entity_first_type()
+                else n.o.get_entity_first_std_type()
             )
             if d is None
             else d.type

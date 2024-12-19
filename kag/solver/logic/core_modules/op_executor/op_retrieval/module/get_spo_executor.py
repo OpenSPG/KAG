@@ -71,8 +71,8 @@ class GetSPOExecutor(OpExecutor):
         one_kg_graph = KgGraph()
         is_find_relation = False
         if (
-            n.p.get_entity_first_type_or_zh() is None
-            and n.o.get_entity_first_type_or_zh() is None
+            n.p.get_entity_first_type_or_un_std() is None
+            and n.o.get_entity_first_type_or_un_std() is None
         ):
             is_find_relation = True
             for one_hop_graph in one_hop_graph_list:
@@ -229,7 +229,7 @@ class GetSPOExecutor(OpExecutor):
         for biz_id in e.id_set:
             d = EntityData()
             d.biz_id = biz_id
-            d.type = e.get_entity_first_type()
-            d.type_zh = e.get_entity_first_type_or_en()
+            d.type = e.get_entity_first_std_type()
+            d.type_zh = e.get_un_std_entity_first_type_or_std()
             ret.append(d)
         return ret

@@ -3,9 +3,28 @@ from typing import List, Optional
 
 from kag.interface import KagBaseModule
 from kag.solver.logic.core_modules.common.one_hop_graph import RelationData
+from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 
 class ChunkRetriever(KagBaseModule, ABC):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
+            "KAG_PROJECT_ID": kwargs.get("project_id"),
+            "KAG_PROJECT_HOST_ADDR": kwargs.get("host_addr")
+        }))
+        self.graph_api = GraphApiABC.from_config({
+            "type": "openspg"}
+        )
+
+        self.search_api = SearchApiABC.from_config({
+            "type": "openspg"
+        })
+
+
     """
     An abstract base class for chunk retrieval strategies.
 

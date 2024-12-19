@@ -26,12 +26,12 @@ class Identifier:
 
 
 class TypeInfo:
-    def __init__(self, entity_type=None, entity_type_zh=None):
-        self.entity_type = entity_type
-        self.entity_type_zh = entity_type_zh
+    def __init__(self, std_entity_type=None, un_std_entity_type=None):
+        self.std_entity_type = std_entity_type
+        self.un_std_entity_type = un_std_entity_type
 
     def __repr__(self):
-        return f"en:{self.entity_type} zh:{self.entity_type_zh}"
+        return f"en:{self.std_entity_type} zh:{self.un_std_entity_type}"
 
 
 def parse_entity(raw_entity):
@@ -52,7 +52,7 @@ class SPOBase:
         self.value_list = []
 
     def __repr__(self):
-        return f"{self.alias_name}:{self.get_entity_first_type_or_en()}"
+        return f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}"
 
     def get_value_list_str(self):
         return [f"{self.alias_name}.{k}={v}" for k, v in self.value_list]
@@ -62,7 +62,7 @@ class SPOBase:
 
     def get_type_with_gql_format(self):
         entity_types = self.get_entity_type_set()
-        entity_zh_types = self.get_entity_type_zh_set()
+        entity_zh_types = self.get_un_std_entity_type_set()
         if len(entity_types) == 0 and len(entity_zh_types) == 0:
             return None
         if None in entity_types and None in entity_zh_types:
@@ -74,53 +74,53 @@ class SPOBase:
         if len(entity_zh_types) > 0:
             return "|".join(entity_zh_types)
 
-    def get_entity_first_type(self):
+    def get_entity_first_std_type(self):
         type_list = list(self.get_entity_type_set())
         if len(type_list) == 0:
             return None
         return type_list[0]
 
-    def get_entity_first_type_or_en(self):
-        en = list(self.get_entity_type_set())
-        zh = list(self.get_entity_type_zh_set())
-        if len(zh) > 0:
-            return zh[0]
-        elif len(en) > 0:
-            return en[0]
+    def get_un_std_entity_first_type_or_std(self):
+        std_type = list(self.get_entity_type_set())
+        un_std_type = list(self.get_un_std_entity_type_set())
+        if len(un_std_type) > 0:
+            return un_std_type[0]
+        elif len(std_type) > 0:
+            return std_type[0]
         else:
             return None
 
-    def get_entity_type_or_zh_list(self):
+    def get_entity_type_or_un_std_list(self):
         ret = []
         for entity_type_info in self.type_set:
-            if entity_type_info.entity_type is not None:
-                ret.append(entity_type_info.entity_type)
-            elif entity_type_info.entity_type_zh is not None:
-                ret.append(entity_type_info.entity_type_zh)
+            if entity_type_info.std_entity_type is not None:
+                ret.append(entity_type_info.std_entity_type)
+            elif entity_type_info.un_std_entity_type is not None:
+                ret.append(entity_type_info.un_std_entity_type)
         return ret
 
-    def get_entity_first_type_or_zh(self):
-        en = list(self.get_entity_type_set())
-        zh = list(self.get_entity_type_zh_set())
-        if len(en) > 0:
-            return en[0]
-        elif len(zh) > 0:
-            return zh[0]
+    def get_entity_first_type_or_un_std(self):
+        std_type = list(self.get_entity_type_set())
+        unstd_type = list(self.get_un_std_entity_type_set())
+        if len(std_type) > 0:
+            return std_type[0]
+        elif len(unstd_type) > 0:
+            return unstd_type[0]
         else:
             return None
 
     def get_entity_type_set(self):
         entity_types = []
         for entity_type_info in self.type_set:
-            if entity_type_info.entity_type is not None:
-                entity_types.append(entity_type_info.entity_type)
+            if entity_type_info.std_entity_type is not None:
+                entity_types.append(entity_type_info.std_entity_type)
         return set(entity_types)
 
-    def get_entity_type_zh_set(self):
+    def get_un_std_entity_type_set(self):
         entity_types = []
         for entity_type_info in self.type_set:
-            if entity_type_info.entity_type_zh is not None:
-                entity_types.append(entity_type_info.entity_type_zh)
+            if entity_type_info.un_std_entity_type is not None:
+                entity_types.append(entity_type_info.un_std_entity_type)
         return set(entity_types)
 
 
@@ -129,8 +129,8 @@ class SPORelation(SPOBase):
         super().__init__()
         if rel_type is not None or rel_type_zh is not None:
             type_info = TypeInfo()
-            type_info.entity_type = rel_type
-            type_info.entity_type_zh = rel_type_zh
+            type_info.std_entity_type = rel_type
+            type_info.un_std_entity_type = rel_type_zh
             self.type_set.append(type_info)
         self.alias_name: Identifier = None
         if alias_name is not None:
@@ -140,7 +140,7 @@ class SPORelation(SPOBase):
         self.o: SPOEntity = None
 
     def __str__(self):
-        show = [f"{self.alias_name}:{self.get_entity_first_type_or_en()}"]
+        show = [f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}"]
         show = show + self.get_value_list_str()
         return ",".join(show)
 
@@ -168,7 +168,7 @@ class SPORelation(SPOBase):
             entity_types = parse_entity(entity_type_part)
             for entity_type in entity_types:
                 entity_type_obj = TypeInfo()
-                entity_type_obj.entity_type_zh = entity_type
+                entity_type_obj.un_std_entity_type = entity_type
                 rel_type_set.append(entity_type_obj)
 
         rel = SPORelation()
@@ -181,8 +181,8 @@ class SPOEntity(SPOBase):
     def __init__(
             self,
             entity_id=None,
-            entity_type=None,
-            entity_type_zh=None,
+            std_entity_type=None,
+            un_std_entity_type=None,
             entity_name=None,
             alias_name=None,
             is_attribute=False,
@@ -196,15 +196,15 @@ class SPOEntity(SPOBase):
             self.alias_name = Identifier(alias_name)
         if entity_id is not None:
             self.id_set.append(entity_id)
-        if entity_type is not None or entity_type_zh is not None:
+        if std_entity_type is not None or un_std_entity_type is not None:
             type_info = TypeInfo()
-            type_info.entity_type = entity_type
-            type_info.entity_type_zh = entity_type_zh
+            type_info.std_entity_type = std_entity_type
+            type_info.un_std_entity_type = un_std_entity_type
             self.type_set.append(type_info)
 
     def __str__(self):
         show = [
-            f"{self.alias_name}:{self.get_entity_first_type_or_en()}{'' if self.entity_name is None else '[' + self.entity_name + ']'} "
+            f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}{'' if self.entity_name is None else '[' + self.entity_name + ']'} "
         ]
         show = show + self.get_value_list_str()
         return ",".join(show)
@@ -229,9 +229,9 @@ class SPOEntity(SPOBase):
             {
                 "alias": self.alias_name.alias_name,
                 "id": info[0],
-                "type": info[1].entity_type
-                if "." in info[1].entity_type
-                else (prefix + "." if prefix is not None else "") + info[1].entity_type,
+                "type": info[1].std_entity_type
+                if "." in info[1].std_entity_type
+                else (prefix + "." if prefix is not None else "") + info[1].std_entity_type,
             }
             for info in id_type_info
         ]
@@ -263,8 +263,8 @@ class SPOEntity(SPOBase):
         spo_entity.entity_name = entity_name
         for entity_type in entity_type_set:
             entity_type_obj = TypeInfo()
-            entity_type_obj.entity_type_zh = entity_type
-            entity_type_obj.entity_type = entity_type
+            entity_type_obj.un_std_entity_type = entity_type
+            entity_type_obj.std_entity_type = entity_type
             spo_entity.type_set.append(entity_type_obj)
         return spo_entity
 

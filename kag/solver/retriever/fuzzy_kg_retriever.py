@@ -12,7 +12,7 @@ from kag.solver.retriever.base.kg_retriever import KGRetriever
 
 
 class FuzzyKgRetriever(KGRetriever, ABC):
-    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], **kwargs) -> List[OneHopGraphData]:
+    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[OneHopGraphData]:
         """
         Recall one-hop graph data for a given entity.
 

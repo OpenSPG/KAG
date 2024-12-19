@@ -51,7 +51,6 @@ def convert_node_to_json(node_str):
         "propertyValues": dict(node),
     }
 
-
 @GraphApiABC.register("openspg", as_default=True)
 class OpenSPGGraphApi(GraphApiABC):
     def __init__(self, project_id: str, host_addr: str, **kwargs):
@@ -103,7 +102,7 @@ class OpenSPGGraphApi(GraphApiABC):
             s_entity.biz_id = s_biz_id
             s_entity.name = prop_values.get("name", "")
             s_entity.description = prop_values.get("description", "")
-            one_hop = OneHopGraphData(None, "")
+            one_hop = OneHopGraphData(None, "s")
             one_hop.s = s_entity
             if enable_cache:
                 self._put_one_hop_graph_cache(one_hop, cached_map)
@@ -210,6 +209,8 @@ class OpenSPGGraphApi(GraphApiABC):
         target_vertex_type_with_prefix = self.schema.get_label_within_prefix(target_vertex_type)
         return self.gr.calculate_pagerank_scores(target_vertex_type_with_prefix, start_nodes)
 
+    def get_entity_prop_by_id(self, biz_id, label) -> Dict:
+        return self.rc.query_node(label=label, id_value=biz_id)
 
 if __name__ == "__main__":
     rc = ReasonerClient(host_addr="http://127.0.0.1:8887", project_id=4)

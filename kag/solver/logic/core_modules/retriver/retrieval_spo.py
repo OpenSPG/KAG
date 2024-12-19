@@ -90,7 +90,7 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
         """
         debug_info = {"el": [], "el_detail": [], "std_out": []}
         logger.debug(f"std_best_p_with_value_and_p_name begin std " + str(n))
-        un_std_p_list = n.p.get_entity_type_or_zh_list()
+        un_std_p_list = n.p.get_entity_type_or_un_std_list()
         final_result_list = []
         if len(un_std_p_list) == 0:
             # return all
@@ -203,11 +203,11 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         self.language = KAG_PROJECT_CONF.language
 
     def get_unstd_p_text(self, n: GetSPONode):
-        un_std_p = n.p.get_entity_first_type_or_zh()
-        start_value_type = n.s.get_entity_first_type_or_zh()
+        un_std_p = n.p.get_entity_first_type_or_un_std()
+        start_value_type = n.s.get_entity_first_type_or_un_std()
         if start_value_type == "Others":
             start_value_type = "Entity"
-        target_value_type = n.o.get_entity_first_type_or_zh()
+        target_value_type = n.o.get_entity_first_type_or_un_std()
         if target_value_type == "Others":
             target_value_type = "Entity"
         un_std_p = f"{start_value_type}{'[' + n.s.entity_name + ']' if n.s.entity_name is not None else ''} {un_std_p} {target_value_type}{'[' + n.o.entity_name + ']' if n.o.entity_name is not None else ''}"

@@ -21,8 +21,10 @@ logger = logging.getLogger()
 
 
 class DefaultLFExecutor(LFExecutorABC):
-    def __init__(self, req_id: str, **kwargs):
+    def __init__(self, req_id: str,
+                 **kwargs):
         super().__init__(**kwargs)
+
         self.req_id = req_id
         self.params = kwargs
 
