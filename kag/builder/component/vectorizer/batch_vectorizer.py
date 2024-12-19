@@ -11,6 +11,7 @@
 # or implied.
 from collections import defaultdict
 from typing import List
+from tenacity import stop_after_attempt, retry
 
 from kag.builder.model.sub_graph import SubGraph
 from kag.common.conf import KAG_PROJECT_CONF
@@ -75,7 +76,10 @@ class EmbeddingVectorManager(object):
         if not texts:
             return []
 
-        n_batchs = len(texts) // batch_size + 1
+        if len(texts) % batch_size == 0:
+            n_batchs = len(texts) // batch_size
+        else:
+            n_batchs = len(texts) // batch_size + 1
         embeddings = []
         for idx in range(n_batchs):
             start = idx * batch_size
@@ -175,6 +179,7 @@ class BatchVectorizer(VectorizerABC):
                     vec_meta[type_name].append(get_vector_field_name(prop_name))
         return vec_meta
 
+    @retry(stop=stop_after_attempt(3))
     def _generate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
         """
         Generates embedding vectors for the nodes in the input SubGraph.
