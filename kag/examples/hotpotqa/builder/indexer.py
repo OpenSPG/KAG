@@ -18,6 +18,7 @@ from kag.builder.component.extractor import KAGExtractor
 from kag.builder.component.splitter import LengthSplitter
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.model.chunk import Chunk
+from kag.examples.utils import generate_hash_id
 from knext.builder.builder_chain_abc import BuilderChainABC
 from kag.interface.builder import SourceReaderABC
 from knext.common.base.runnable import Input, Output
@@ -46,7 +47,7 @@ class HotpotqaCorpusReader(SourceReaderABC):
 
         for item_key, item_value in corpus.items():
             chunk = Chunk(
-                id=item_key,
+                id=generate_hash_id("\n".join(item_value)),
                 name=item_key,
                 content="\n".join(item_value),
             )
