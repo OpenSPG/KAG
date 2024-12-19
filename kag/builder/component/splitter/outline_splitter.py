@@ -16,7 +16,6 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Type, Union, Tuple
 
-import kag_ant
 import matplotlib.pyplot as plt
 from kag.interface.common.prompt import PromptABC
 from knext.common.base.runnable import Input, Output
