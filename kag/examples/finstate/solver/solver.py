@@ -33,14 +33,6 @@ class FinStateSolver(SolverPipeline):
     def __init__(
         self, max_run=3, reflector=None, reasoner=None, generator=None, **kwargs
     ):
-        from kag.common.env import init_env
-        import os
-
-        current_file_path = os.path.abspath(__file__)
-        current_dir = os.path.dirname(current_file_path)
-        work_dir = os.path.join(current_dir, "..")
-        os.chdir(work_dir)
-        init_env()
         super().__init__(max_run, reflector, reasoner, generator, **kwargs)
         self.memory = HistoryMemory(**kwargs)
 

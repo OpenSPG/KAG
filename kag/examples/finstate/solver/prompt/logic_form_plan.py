@@ -58,7 +58,10 @@ class LogicFormPlanPrompt(PromptOp):
 """
     template_zh = """
 {
-  "instruction": "给定一个函数列表，每个函数都有 functionName、function_declaration 和 description，你的任务是使用子查询并结合函数调用来重写查询。我们还将提供示例来指导你完成这个过程。请注意，最后一步应该涉及排序、推断或输出结果。",
+  "instructions": [
+    "给定一个函数列表，每个函数都有 functionName、function_declaration 和 description，你的任务是使用子查询并结合函数调用来重写查询。我们还将提供示例来指导你完成这个过程。请注意，最后一步应该涉及排序、推断或输出结果。",
+    "Step描述尽可能包含完整的描述信息，使得子问题的解决者可以理解他的任务背景。"
+  ],
   "function_description": "functionName 是操作符名称；函数格式为 functionName(arg_name1=arg_value1, [args_name2=arg_value2, args_name3=arg_value3])。括号中的参数为必选参数，方括号中的为可选参数。注意，最后一个函数必须是 Deduce 或 Output。",
   "output_format": "输出字符串时不做格式处理，并且不包含任何 markdown 标签。",
   "function": [
@@ -83,9 +86,9 @@ class LogicFormPlanPrompt(PromptOp):
       "description": "推理，从检索或计算结果中推断答案，其中 'op' 可以是 'judgement'、'extract'、'entailment'、'choice' 或 'multiChoice'。这些分别表示判断题、推理（如条件推理）、规则推理（如医学诊断）、选择题和多项选择题。"
     },
     {
-      "functionName" : "Output"                                       ,
-      "function_decl": "Output(A,B,...)"                              ,
-      "description"  : "直接输出 A, B,... 作为答案，其中 A 和 B 是指之前的检索或计算结果的变量名。"
+      "functionName": "Output",
+      "function_decl": "Output(A,B,...)",
+      "description": "直接输出 A, B,... 作为答案，其中 A 和 B 是指之前的检索或计算结果的变量名。"
     }
   ],
   "cases": [
