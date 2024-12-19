@@ -179,11 +179,8 @@ class KAGPostProcessor(PostProcessorABC):
         origin_num_nodes = len(input.nodes)
         origin_num_edges = len(input.edges)
         new_graph = self.filter_invalid_data(input)
-        try:
-            self.similarity_based_link(new_graph)
-            self.external_graph_based_link(new_graph)
-        except Exception as e:
-            logger.warn(f"failed to perform entity linking, info: {e}")
+        self.similarity_based_link(new_graph)
+        self.external_graph_based_link(new_graph)
         new_num_nodes = len(new_graph.nodes)
         new_num_edges = len(new_graph.edges)
         logger.debug(
