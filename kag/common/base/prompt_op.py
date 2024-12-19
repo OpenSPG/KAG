@@ -134,6 +134,7 @@ class PromptOp(ABC):
             os.path.join(os.getenv("KAG_PROJECT_ROOT_PATH", ""), "solver", "prompt"),
         ]
         module_paths = [
+            '.'.join([BUILDER_PROMPT_PATH, "table", type]),
             '.'.join([BUILDER_PROMPT_PATH, biz_scene, type]),
             '.'.join([SOLVER_PROMPT_PATH, biz_scene, type]),
             '.'.join([BUILDER_PROMPT_PATH, 'default', type]),
