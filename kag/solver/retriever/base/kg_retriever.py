@@ -1,7 +1,8 @@
 from typing import List
 
-from kag.interface import KagBaseModule
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.common.conf import KAG_CONFIG, KAGGlobalConf, KAGConfigMgr, KAG_PROJECT_CONF
+from kag.interface import KagBaseModule, LLMClient, VectorizeModelABC
+from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     OneHopGraphData,
     KgGraph,
@@ -16,24 +17,27 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 
 class KGRetriever(KagBaseModule):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
+                 graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
+        super().__init__(llm_client, **kwargs)
         self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "KAG_PROJECT_ID": kwargs.get("project_id"),
-            "KAG_PROJECT_HOST_ADDR": kwargs.get("host_addr")
+            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
         }))
-        self.graph_api = GraphApiABC.from_config({
+        self.graph_api = graph_api or GraphApiABC.from_config({
             "type": "openspg"}
         )
 
-        self.search_api = SearchApiABC.from_config({
+        self.search_api = search_api or SearchApiABC.from_config({
             "type": "openspg"
         })
 
-        self.text_similarity = TextSimilarity()
+        self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
+            KAG_CONFIG.all_config["vectorize_model"])
+        self.text_similarity = TextSimilarity(vectorize_model)
 
-
-    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[OneHopGraphData]:
+    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
+        OneHopGraphData]:
         """
         Recall one-hop graph data for a given entity.
 

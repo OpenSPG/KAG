@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import List, Optional
 
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import KagBaseModule
 from kag.solver.logic.core_modules.common.one_hop_graph import RelationData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -13,8 +14,8 @@ class ChunkRetriever(KagBaseModule, ABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "KAG_PROJECT_ID": kwargs.get("project_id"),
-            "KAG_PROJECT_HOST_ADDR": kwargs.get("host_addr")
+            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
         }))
         self.graph_api = GraphApiABC.from_config({
             "type": "openspg"}

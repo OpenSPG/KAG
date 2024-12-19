@@ -4,7 +4,7 @@ import sys
 from typing import List
 
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData
 
 sys.path.append("../logic_form_executor/")

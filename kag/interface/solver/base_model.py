@@ -353,6 +353,9 @@ class SubQueryResult:
         self.match_type: str = 'fuzzy'
         self.execute_cost: float = 0.0
 
+    def to_json(self):
+        return json.dumps(self.__dict__, ensure_ascii=False)
+
 
 class LFPlan:
     def __init__(self, query: str, lf_nodes: List[LogicNode]):
@@ -360,10 +363,39 @@ class LFPlan:
         self.lf_nodes: List[LogicNode] = lf_nodes
         self.res: Optional[SubQueryResult] = None
 
+    def to_json(self):
+        res = {} if self.res is None else self.res.to_json()
+        res['lf_expr'] = [str(n) for n in self.lf_nodes]
+        return res
+
 
 class LFExecuteResult:
     def __init__(self):
         self.kg_exact_solved_answer = ''
         self.recall_docs = []
-        self.sub_res: List[SubQueryResult] = []
+        self.rerank_docs = []
+        self.sub_plans: List[LFPlan] = []
         self.retrieved_kg_graph = None
+
+    def get_support_facts(self):
+        facts = []
+        if len(self.sub_plans) != 0:
+            facts.append("sub query:")
+            i = 0
+            for sub_plan in self.sub_plans:
+                sub_res = sub_plan.res
+                if "sub_answer" in sub_res.sub_answer and sub_res.sub_answer.lower() != "i don't know":
+                    facts.append(f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}")
+                    i += 1
+        if len(self.rerank_docs) != 0:
+            facts.append("retrieved docs:")
+            facts += self.rerank_docs
+        return "\n".join(facts)
+
+    def get_trace_log(self):
+        return {
+            "sub question": [x.to_json() for x in self.sub_plans],
+            "recall docs": self.recall_docs,
+            "rerank docs": self.rerank_docs,
+            "kg_exact_solved_answer": self.kg_exact_solved_answer
+        }

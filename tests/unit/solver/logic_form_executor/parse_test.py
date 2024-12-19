@@ -1,6 +1,6 @@
 import unittest
 
-from kag.solver.logic.core_modules.common.base_model import SPOEntity, SPORelation
+from kag.interface.solver.base_model import SPOEntity, SPORelation
 from kag.solver.logic.core_modules.parser.logic_node_parser import binary_expr_parse, ParseLogicForm
 
 parser = ParseLogicForm(None, None)

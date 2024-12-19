@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Dict, List
 
 from kag.common.registry import Registrable
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData
 from kag.solver.tools.graph_api.model.table_model import TableData
 

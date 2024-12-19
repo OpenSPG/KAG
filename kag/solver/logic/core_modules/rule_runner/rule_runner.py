@@ -2,7 +2,7 @@ import logging
 import time
 from enum import Enum
 
-from kag.solver.logic.core_modules.common.base_model import Identifier
+from kag.interface.solver.base_model import Identifier
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
     EntityData,

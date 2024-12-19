@@ -20,16 +20,10 @@ from typing import List, Dict, Optional
 
 import numpy as np
 import logging
-import time
-from knext.reasoner.client import ReasonerClient
 from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
-from knext.search.client import SearchClient
-from kag.interface import LLMClient
 from kag.common.utils import processing_phrases
 from kag.common.conf import KAG_CONFIG
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity, cosine_similarity
 from kag.solver.utils import init_prompt_with_fallback
@@ -62,9 +56,6 @@ class KAGRetriever(ChunkRetriever):
     ):
         super().__init__(**kwargs)
 
-        self.schema_util = SchemaUtils(LogicFormConfiguration(kwargs))
-
-        self._init_search()
         if vectorize_model is None:
             vectorize_model = Vectorizer.from_config(
                 KAG_CONFIG.all_config["vectorize_model"]
@@ -171,7 +162,7 @@ class KAGRetriever(ChunkRetriever):
         try:
             query_vector = self.vectorize_model.vectorize(query)
             top_k = self.search_api.search_vector(
-                label=self.schema_util.get_label_within_prefix(CHUNK_TYPE),
+                label=self.schema.get_label_within_prefix(CHUNK_TYPE),
                 property_key="content",
                 query_vector=query_vector,
                 topk=doc_nums,
@@ -200,7 +191,7 @@ class KAGRetriever(ChunkRetriever):
         if len(start_nodes) != 0:
             try:
                 scores = self.graph_api.calculate_pagerank_scores(
-                    self.schema_util.get_label_within_prefix(CHUNK_TYPE), start_nodes
+                    self.schema.get_label_within_prefix(CHUNK_TYPE), start_nodes
                 )
             except Exception as e:
                 logger.error(
@@ -220,17 +211,17 @@ class KAGRetriever(ChunkRetriever):
         matched_entities = []
         for query, query_type in queries.items():
             query = processing_phrases(query)
-            if query_type not in self.schema_util.node_en_zh.keys():
-                query_type = self.schema_util.get_label_within_prefix(OTHER_TYPE)
+            if query_type not in self.schema.node_en_zh.keys():
+                query_type = self.schema.get_label_within_prefix(OTHER_TYPE)
             typed_nodes = self.search_api.search_vector(
                 label=query_type,
                 property_key="name",
                 query_vector=self.vectorize_model.vectorize(query),
                 topk=top_k,
             )
-            if query_type != self.schema_util.get_label_within_prefix(OTHER_TYPE):
+            if query_type != self.schema.get_label_within_prefix(OTHER_TYPE):
                 nontyped_nodes = self.search_api.search_vector(
-                    label=self.schema_util.get_label_within_prefix(OTHER_TYPE),
+                    label=self.schema.get_label_within_prefix(OTHER_TYPE),
                     property_key="name",
                     query_vector=self.vectorize_model.vectorize(query),
                     topk=top_k,
@@ -241,7 +232,7 @@ class KAGRetriever(ChunkRetriever):
             if len(typed_nodes) == 0 and len(nontyped_nodes) != 0:
                 matched_entities.append(
                     {"name": nontyped_nodes[0]["node"]["name"],
-                     "type": self.schema_util.get_label_within_prefix(OTHER_TYPE), "score": nontyped_nodes[0]["score"]}
+                     "type": self.schema.get_label_within_prefix(OTHER_TYPE), "score": nontyped_nodes[0]["score"]}
                 )
             elif len(typed_nodes) != 0 and len(nontyped_nodes) != 0:
                 if typed_nodes[0]["score"] > 0.8:
@@ -251,7 +242,7 @@ class KAGRetriever(ChunkRetriever):
                 else:
                     matched_entities.append(
                         {"name": nontyped_nodes[0]["node"]["name"],
-                         "type": self.schema_util.get_label_within_prefix(OTHER_TYPE),
+                         "type": self.schema.get_label_within_prefix(OTHER_TYPE),
                          "score": nontyped_nodes[0]["score"]}
                     )
                     matched_entities.append(
@@ -438,7 +429,7 @@ class KAGRetriever(ChunkRetriever):
                 doc_score = doc_ids[doc_id]
             counter += 1
             node = self.graph_api.get_entity_prop_by_id(
-                label=self.schema_util.get_label_within_prefix(CHUNK_TYPE),
+                label=self.schema.get_label_within_prefix(CHUNK_TYPE),
                 biz_id=doc_id,
             )
             node_dict = dict(node.items())
@@ -448,7 +439,7 @@ class KAGRetriever(ChunkRetriever):
             hits_docs.add(node_dict["name"])
         try:
             text_matched = self.search_api.search_text(
-                query, [self.schema_util.get_label_within_prefix(CHUNK_TYPE)], topk=1
+                query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
             )
             if text_matched:
                 for item in text_matched:
@@ -483,7 +474,7 @@ class KAGRetriever(ChunkRetriever):
         return self.reranker.rerank(queries, passages)
 
 
-@ChunkRetriever.register("kag_lf")
+@ChunkRetriever.register("default")
 class LFChunkRetriever(KAGRetriever):
     def __init__(
             self,

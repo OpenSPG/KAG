@@ -1,23 +1,21 @@
 import logging
 from kag.common.registry import Registrable
-from kag.interface import KAGGeneratorABC, KagMemoryABC, KagReasonerABC, KagReflectorABC
 
 # from kag.solver.implementation.default_generator import DefaultGenerator
 # from kag.solver.implementation.default_reasoner import DefaultReasoner
 # from kag.solver.implementation.default_reflector import DefaultReflector
+from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
+from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
+from kag.interface.solver.kag_reflector_abc import KagReflectorABC
+from kag.interface.solver.base_model import LFExecuteResult
 
 logger = logging.getLogger(__name__)
 
 
 class SolverPipeline(Registrable):
-    def __init__(
-        self,
-        max_run=3,
-        reflector: KagReflectorABC = None,
-        reasoner: KagReasonerABC = None,
-        generator: KAGGeneratorABC = None,
-        **kwargs
-    ):
+    def __init__(self, max_run=3, reflector: KagReflectorABC = None, reasoner: KagReasonerABC = None,
+                 generator: KAGGeneratorABC = None, **kwargs):
         """
         Initializes the think-and-act loop class.
 
@@ -26,6 +24,7 @@ class SolverPipeline(Registrable):
         :param reasoner: Reasoner instance for reasoning about tasks.
         :param generator: Generator instance for generating actions.
         """
+        super().__init__(**kwargs)
         self.max_run = max_run
 
         self.memory = KagMemoryABC.from_config({"type": "base"})
@@ -35,6 +34,8 @@ class SolverPipeline(Registrable):
         self.generator = generator or KAGGeneratorABC.from_config({"type": "base"})
 
         self.trace_log = []
+
+        self.param = kwargs
 
     def run(self, question):
         """
@@ -56,13 +57,13 @@ class SolverPipeline(Registrable):
             run_cnt += 1
             logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log
-            solved_answer, supporting_fact, history_log = self.reasoner.reason(
+            reason_res: LFExecuteResult = self.reasoner.reason(
                 present_instruction
             )
 
             # Extract evidence from supporting facts
-            self.memory.save_memory(solved_answer, supporting_fact, instruction)
-
+            self.memory.save_memory(reason_res.kg_exact_solved_answer, reason_res.get_support_facts(), instruction)
+            history_log = reason_res.get_trace_log()
             history_log["present_instruction"] = present_instruction
             history_log["present_memory"] = self.memory.serialize_memory()
             self.trace_log.append(history_log)

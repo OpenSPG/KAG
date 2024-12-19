@@ -1,8 +1,8 @@
 from abc import ABC
-from typing import Union, Dict
+from typing import Dict
 
 from kag.interface import KagBaseModule
-from kag.solver.logic.core_modules.common.base_model import LogicNode
+from kag.interface.solver.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
@@ -14,24 +14,19 @@ class OpExecutor(KagBaseModule, ABC):
     Each subclass must implement the execution and judgment functions.
     """
 
-    def __init__(self, kg_graph: KgGraph, schema: SchemaUtils, process_info: dict, **kwargs):
+    def __init__(self, schema: SchemaUtils, **kwargs):
         """
         Initializes the operator executor with necessary components.
 
         Parameters:
 
-            kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
             schema (SchemaUtils): Semantic structure definition to assist in the parsing process.
-            process_info (dict): Processing information dictionary to record logic node result information during executing.
         """
         super().__init__(**kwargs)
-        self.kg_graph = kg_graph
         self.schema = schema
-        self.process_info = process_info
 
-    def executor(
-        self, nl_query: str, logic_node: LogicNode, req_id: str, param: dict
-    ) -> Dict:
+    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
+                 process_info: dict, param: dict) -> Dict:
         """
         Executes the operation based on the given logic node.
 
@@ -41,6 +36,8 @@ class OpExecutor(KagBaseModule, ABC):
             nl_query (str): Natural language query string.
             logic_node (LogicNode): The logic node that defines the operation to execute.
             req_id (str): Request identifier.
+            kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
+            process_info (dict): Processing information dictionary to record logic node result information during executing.
             param (dict): Parameters needed for the execution.
 
         Returns:

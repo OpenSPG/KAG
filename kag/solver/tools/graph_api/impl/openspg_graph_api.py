@@ -1,12 +1,12 @@
 import logging
-from abc import ABC
 from typing import List, Dict
 
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from knext.graph.client import GraphClient
 from knext.reasoner.rest.models.reason_task import ReasonTask
 
-from kag.solver.logic.core_modules.common.base_model import SPOEntity, TypeInfo
+from kag.interface.solver.base_model import SPOEntity, TypeInfo
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData, Prop, RelationData, \
     copy_one_hop_graph_data
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -51,20 +51,21 @@ def convert_node_to_json(node_str):
         "propertyValues": dict(node),
     }
 
+
 @GraphApiABC.register("openspg", as_default=True)
 class OpenSPGGraphApi(GraphApiABC):
-    def __init__(self, project_id: str, host_addr: str, **kwargs):
+    def __init__(self, project_id=None, host_addr=None, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = project_id
+        self.project_id = project_id or KAG_PROJECT_CONF.project_id
+        self.host_addr = host_addr or KAG_PROJECT_CONF.host_addr
         self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "KAG_PROJECT_ID": project_id,
-            "KAG_PROJECT_HOST_ADDR": host_addr
+            "KAG_PROJECT_ID": str(self.project_id),
+            "KAG_PROJECT_HOST_ADDR": self.host_addr
         }))
-        self.host_addr = host_addr
 
-        self.rc = ReasonerClient(host_addr, int(self.project_id))
-        self.gr = GraphClient(host_addr, int(self.project_id))
 
+        self.rc = ReasonerClient(self.host_addr, int(str(self.project_id)))
+        self.gr = GraphClient(self.host_addr, int(str(self.project_id)))
 
         self.cache_one_hop_graph: [str, OneHopGraphData] = {}
 
@@ -211,6 +212,7 @@ class OpenSPGGraphApi(GraphApiABC):
 
     def get_entity_prop_by_id(self, biz_id, label) -> Dict:
         return self.rc.query_node(label=label, id_value=biz_id)
+
 
 if __name__ == "__main__":
     rc = ReasonerClient(host_addr="http://127.0.0.1:8887", project_id=4)

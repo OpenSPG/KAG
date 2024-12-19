@@ -1,7 +1,7 @@
 from typing import List
 
 from kag.interface import VectorizeModelABC
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
@@ -98,7 +98,7 @@ def default_search_entity_by_name_algorithm(mention_entity: SPOEntity, schema: S
         return sorted_people_dicts[:topk]
 
     if "entity" not in query_type.lower():
-        sorted_nodes = rerank_sematic_type(sorted_nodes, query_type)
+        sorted_nodes = rerank_sematic_type(sorted_nodes, with_prefix_type)
     sorted_people_dicts = sorted(
         sorted_nodes, key=lambda node: node["score"], reverse=True
     )

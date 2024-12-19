@@ -5,7 +5,7 @@ import logging
 from typing import List, Union
 
 from kag.solver.retriever.base.kg_retriever import KGRetriever
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode, GetNode

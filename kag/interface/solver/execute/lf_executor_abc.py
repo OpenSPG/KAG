@@ -3,7 +3,7 @@ from typing import List
 from kag.common.registry import Registrable
 from abc import ABC, abstractmethod
 
-from kag.solver.logic.core_modules.common.base_model import LFExecuteResult, LFPlan
+from kag.interface.solver.base_model import LFExecuteResult, LFPlan
 
 
 class LFExecutorABC(Registrable, ABC):

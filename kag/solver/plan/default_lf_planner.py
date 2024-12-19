@@ -6,7 +6,7 @@ from kag.interface import LLMClient
 from kag.interface import PromptABC
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
-from kag.solver.logic.core_modules.common.base_model import LFPlan, LogicNode
+from kag.interface.solver.base_model import LFPlan, LogicNode
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicForm

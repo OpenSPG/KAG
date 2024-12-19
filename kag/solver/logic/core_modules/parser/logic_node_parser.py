@@ -1,7 +1,7 @@
 import logging
 import re
 
-from kag.solver.logic.core_modules.common.base_model import (
+from kag.interface.solver.base_model import (
     SPOBase,
     SPOEntity,
     SPORelation,

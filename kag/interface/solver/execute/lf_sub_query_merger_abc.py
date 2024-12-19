@@ -3,7 +3,7 @@ from typing import List
 from kag.common.registry import Registrable
 from abc import ABC, abstractmethod
 
-from kag.solver.logic.core_modules.common.base_model import LFExecuteResult, LFPlan, SubQueryResult
+from kag.interface.solver.base_model import LFExecuteResult, LFPlan
 
 
 class LFSubQueryResMerger(Registrable, ABC):
@@ -15,6 +15,6 @@ class LFSubQueryResMerger(Registrable, ABC):
         super().__init__(**kwargs)
 
     @abstractmethod
-    def merge(self, query, lf_sub_res: List[LFPlan]) -> LFExecuteResult:
+    def merge(self, query, lf_res_list: List[LFPlan]) -> LFExecuteResult:
         pass
 

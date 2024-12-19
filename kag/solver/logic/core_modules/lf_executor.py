@@ -6,7 +6,7 @@ from kag.common.conf import KAG_CONFIG
 from kag.interface import Question
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.base.kg_retriever import KGRetriever
-from kag.solver.logic.core_modules.common.base_model import LFPlan
+from kag.interface.solver.base_model import LFPlan
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity

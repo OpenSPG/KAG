@@ -3,18 +3,15 @@ import time
 from abc import ABC
 from typing import List
 
-from kag.solver.logic.core_modules.common.base_model import SPOEntity
+from kag.interface import LLMClient, VectorizeModelABC
+from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     OneHopGraphData,
     KgGraph,
     EntityData, RelationData,
 )
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
-from kag.solver.logic.core_modules.common.utils import get_recall_node_label
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.solver.retriever.base.kg_retriever import KGRetriever
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.tools.algorithm.entity_linker import default_search_entity_by_name_algorithm
 from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
@@ -141,8 +138,9 @@ class ExactMatchRetrieval:
 
 @ExactKgRetriever.register("default", as_default=True)
 class DefaultExactKgRetriever(ExactKgRetriever, ABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
+                 graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
+        super().__init__(llm_client, vectorize_model, graph_api, search_api, **kwargs)
         self.match = ExactMatchRetrieval(self.schema)
 
     def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[

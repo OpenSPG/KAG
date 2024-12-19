@@ -7,7 +7,7 @@ from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.base.kg_retriever import KGRetriever
-from kag.solver.logic.core_modules.common.base_model import LFPlan, LFExecuteResult
+from kag.interface.solver.base_model import LFPlan, LFExecuteResult
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.common.utils import generate_random_string
@@ -23,21 +23,14 @@ from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
 logger = logging.getLogger()
 
 
-@LFExecutorABC.register("base", as_default=True)
 class LFSolver(LFExecutorABC):
     """
     Solver class that integrates various components to solve queries using logic forms.
     This class can't be extended to implement custom solver strategies.
     """
 
-    def __init__(
-        self,
-        kg_retriever: KGRetriever = None,
-        chunk_retriever: ChunkRetriever = None,
-        vectorize_model: Vectorizer = None,
-        report_tool=None,
-        **kwargs,
-    ):
+    def __init__(self, kg_retriever: KGRetriever = None, chunk_retriever: ChunkRetriever = None,
+                 vectorize_model: Vectorizer = None, report_tool=None, **kwargs):
         """
         Initializes the solver with necessary modules and configurations.
 
@@ -52,6 +45,7 @@ class LFSolver(LFExecutorABC):
         Raises:
         ValueError: If both `kg_retriever` and `chunk_retriever` are None.
         """
+        super().__init__(**kwargs)
         if kg_retriever is None and chunk_retriever is None:
             raise ValueError(
                 "At least one of `kg_retriever` or `chunk_retriever` must be provided."

@@ -14,7 +14,7 @@ from typing import List
 
 from kag.interface.solver.base import KagBaseModule
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
-from kag.solver.logic.core_modules.common.base_model import LFPlan
+from kag.interface.solver.base_model import LFPlan
 
 
 class LFPlannerABC(KagBaseModule, ABC):

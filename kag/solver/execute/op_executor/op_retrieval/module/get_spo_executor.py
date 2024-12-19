@@ -1,9 +1,8 @@
 import logging
-import time
 from typing import List, Dict
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
-from kag.solver.logic.core_modules.common.base_model import LogicNode, SPOEntity, SPOBase
+from kag.interface.solver.base_model import LogicNode, SPOEntity, SPOBase
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, KgGraph, RelationData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
@@ -38,37 +37,26 @@ class GetSPOExecutor(OpExecutor):
 
     def __init__(
             self,
-            kg_graph: KgGraph,
             schema: SchemaUtils,
-            process_info: dict,
             **kwargs,
     ):
         """
         Initializes the GetSPOExecutor with necessary components.
 
         Parameters:
-            nl_query (str): Natural language query string.
-            kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
             schema (SchemaUtils): Semantic structure definition to assist in the parsing process.
-            process_info (dict): Debug information dictionary to record debugging information during parsing.
         """
-        super().__init__(kg_graph, schema, process_info, **kwargs)
+        super().__init__(schema, **kwargs)
 
-        self.exact_kg_retriever: ExactKgRetriever = ExactKgRetriever.from_config({
-            "type": kwargs.get("exact_kg_retriever", "default_exact_kg_retriever")
-        })
-        self.fuzzy_kg_retriever: FuzzyKgRetriever = FuzzyKgRetriever.from_config({
-            "type": kwargs.get("fuzzy_kg_retriever", "base")
-        })
-        self.chunk_retriever: ChunkRetriever = ChunkRetriever.from_config({
-            "type": kwargs.get("chunk_retriever", "base")
-        })
+        self.exact_kg_retriever: ExactKgRetriever = kwargs.get("exact_kg_retriever")
+        self.fuzzy_kg_retriever: FuzzyKgRetriever = kwargs.get("fuzzy_kg_retriever")
+        self.chunk_retriever: ChunkRetriever = kwargs.get("chunk_retriever")
 
         self.force_chunk = kwargs.get("force_chunk", False)
 
-    def get_mentioned_entity(self, n: GetSPONode):
+    def get_mentioned_entity(self, n: GetSPONode, kg_graph: KgGraph):
         entities_candis = []
-        s_data = self.kg_graph.get_entity_by_alias(n.s.alias_name)
+        s_data = kg_graph.get_entity_by_alias(n.s.alias_name)
         if (
                 s_data is None
                 and isinstance(n.s, SPOEntity)
@@ -79,7 +67,7 @@ class GetSPOExecutor(OpExecutor):
 
         el_kg_graph = KgGraph()
         if isinstance(n, GetSPONode):
-            o_data = self.kg_graph.get_entity_by_alias(n.o.alias_name)
+            o_data = kg_graph.get_entity_by_alias(n.o.alias_name)
             if (
                     o_data is None
                     and isinstance(n.o, SPOEntity)
@@ -94,12 +82,12 @@ class GetSPOExecutor(OpExecutor):
             }
         return entities_candis
 
-    def _get_start_node_list(self, s: SPOBase) -> List[EntityData]:
+    def _get_start_node_list(self, s: SPOBase, kg_graph: KgGraph) -> List[EntityData]:
         s_data_set = []
         if isinstance(s, SPOEntity) and len(s.id_set) > 0:
             s_data_set = _get_entity_node_from_lf(s)
         else:
-            s_data_set_up = self.kg_graph.get_entity_by_alias(s.alias_name)
+            s_data_set_up = kg_graph.get_entity_by_alias(s.alias_name)
             if s_data_set_up is not None:
                 for s_data in s_data_set_up:
                     if isinstance(s_data, EntityData) and s_data.type != "attribute":
@@ -108,13 +96,14 @@ class GetSPOExecutor(OpExecutor):
                         s_data_set.append(s_data)
         return s_data_set
 
-    def _kg_match(self, logic_node: LogicNode, req_id: str, kg_retriever: KGRetriever, param: dict) -> tuple[
+    def _kg_match(self, logic_node: LogicNode, req_id: str, kg_retriever: KGRetriever, kg_graph: KgGraph,
+                  process_info: dict, param: dict) -> tuple[
         bool, KgGraph]:
         cur_kg_graph = KgGraph()
         if not isinstance(logic_node, GetSPONode):
             return False, cur_kg_graph
         n: GetSPONode = logic_node
-        mentioned_entities = self.get_mentioned_entity(n)
+        mentioned_entities = self.get_mentioned_entity(n, kg_graph)
         if mentioned_entities:
             el_kg_graph = KgGraph()
             el_kg_graph.query_graph[n.p.alias_name] = {
@@ -135,45 +124,48 @@ class GetSPOExecutor(OpExecutor):
                     entity_id_info.type_zh = entity_type_zh
                 el_kg_graph.nodes_alias.append(mentioned_entity.alias_name)
                 el_kg_graph.entity_map[mentioned_entity.alias_name] = linked_entities
-            self.kg_graph.merge_kg_graph(el_kg_graph)
+            kg_graph.merge_kg_graph(el_kg_graph)
 
-        s_data_set = self._get_start_node_list(n.s)
-        o_data_set = self._get_start_node_list(n.o)
+        s_data_set = self._get_start_node_list(n.s, kg_graph)
+        o_data_set = self._get_start_node_list(n.o, kg_graph)
+        if len(s_data_set) == 0 and len(o_data_set) == 0:
+            return False, cur_kg_graph
 
         one_hop_graph_list = kg_retriever.recall_one_hop_graph(logic_node, s_data_set, o_data_set, kwargs=param)
         cur_kg_graph = kg_retriever.retrieval_relation(logic_node, one_hop_graph_list, kwargs=param)
         spo_res = cur_kg_graph.get_entity_by_alias(n.p.alias_name)
-        if len(spo_res) == 0:
+        if not spo_res:
             return False, cur_kg_graph
 
-        self.process_info[logic_node.query]['spo_retrieved'] = spo_res
-        self.process_info[logic_node.query]['match_type'] = "exact spo" if isinstance(kg_retriever,
-                                                                                      ExactKgRetriever) else "fuzzy spo"
+        process_info[logic_node.sub_query]['spo_retrieved'] = spo_res
+        process_info[logic_node.sub_query]['match_type'] = "exact spo" if isinstance(kg_retriever,
+                                                                                 ExactKgRetriever) else "fuzzy spo"
         return True, cur_kg_graph
 
-    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, param: dict) -> Dict:
+    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
+                 process_info: dict, param: dict) -> Dict:
         if not isinstance(logic_node, GetSPONode):
             return {}
         n = logic_node
 
-        self.kg_graph.logic_form_base[n.s.alias_name] = n.s
-        self.kg_graph.logic_form_base[n.p.alias_name] = n.p
-        self.kg_graph.logic_form_base[n.o.alias_name] = n.o
+        kg_graph.logic_form_base[n.s.alias_name] = n.s
+        kg_graph.logic_form_base[n.p.alias_name] = n.p
+        kg_graph.logic_form_base[n.o.alias_name] = n.o
 
-        is_success, exact_matched_graph = self._kg_match(n, req_id, self.exact_kg_retriever, param)
+        is_success, exact_matched_graph = self._kg_match(n, req_id, self.exact_kg_retriever, kg_graph, process_info,
+                                                         param)
         if is_success and not self.force_chunk:
-            self.kg_graph.merge_kg_graph(exact_matched_graph)
-            return self.process_info[logic_node.query]
+            kg_graph.merge_kg_graph(exact_matched_graph)
+            return process_info[logic_node.sub_query]
 
-        is_success, fuzzy_matched_graph = self._kg_match(n, req_id, self.fuzzy_kg_retriever, param)
-        if is_success and not self.force_chunk:
-            self.kg_graph.merge_kg_graph(fuzzy_matched_graph)
-            return self.process_info[logic_node.query]
+        _, fuzzy_matched_graph = self._kg_match(n, req_id, self.fuzzy_kg_retriever, kg_graph, process_info,
+                                                         param)
+        kg_graph.merge_kg_graph(fuzzy_matched_graph)
 
-        docs_retrieved = self.chunk_retriever.recall_docs(logic_node.query,
-                                                          fuzzy_matched_graph.get_entity_by_alias(n.p.alias_name),
+        doc_retrieved = self.chunk_retriever.recall_docs(logic_node.sub_query,
+                                                          retrieved_spo=fuzzy_matched_graph.get_entity_by_alias(n.p.alias_name),
                                                           nl_query=nl_query, kwargs=param)
-        self.process_info[logic_node.query]['docs_retrieved'] = docs_retrieved
-        self.process_info[logic_node.query]['match_type'] = "chunk"
+        process_info[logic_node.sub_query]['doc_retrieved'] = doc_retrieved
+        process_info[logic_node.sub_query]['match_type'] = "chunk"
 
-        return self.process_info[logic_node.query]
+        return process_info[logic_node.sub_query]

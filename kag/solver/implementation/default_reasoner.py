@@ -4,8 +4,7 @@ from typing import List
 from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
-from kag.solver.logic.core_modules.common.base_model import LFPlan
-from kag.solver.logic.core_modules.lf_solver import LFSolver
+from kag.interface.solver.base_model import LFPlan
 from kag.interface import LLMClient
 
 logger = logging.getLogger()
@@ -20,7 +19,7 @@ class DefaultReasoner(KagReasonerABC):
 
     Parameters:
     - lf_planner (LFBasePlanner): The planner for structuring logical forms. Defaults to None. If not provided, the default implementation of LFPlanner is used.
-    - lf_solver: Instance of the logical form solver, which solves logical form problems. If not provided, the default implementation of LFSolver is used.
+    - lf_executor: Instance of the logical form executor, which solves logical form problems. If not provided, the default implementation of LFSolver is used.
 
     Attributes:
     - lf_planner: Instance of the logical form planner.
@@ -33,7 +32,7 @@ class DefaultReasoner(KagReasonerABC):
     def __init__(
         self,
         lf_planner: LFPlannerABC = None,
-        lf_solver: LFSolver = None,
+        lf_executor: LFExecutorABC = None,
         llm_client: LLMClient = None,
         **kwargs,
     ):
@@ -41,14 +40,7 @@ class DefaultReasoner(KagReasonerABC):
 
         self.lf_planner = lf_planner or LFPlannerABC.from_config({"type": "base"})
 
-        solver_config = {
-            "type": "base",
-            "kg_retriever": {"type": "base"},
-            "chunk_retriever": {"type": "kag_lf"},
-        }
-
-        self.lf_executor = lf_solver or LFExecutorABC.from_config(solver_config)
-
+        self.lf_executor = lf_executor or LFExecutorABC.from_config({"type": "base"})
         self.sub_query_total = 0
         self.kg_direct = 0
         self.trace_log = []
@@ -69,23 +61,6 @@ class DefaultReasoner(KagReasonerABC):
         lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question)
 
         # logic form execution
-        solved_answer, sub_qa_pair, recall_docs, history_qa_log = self.lf_executor.solve(
+        return self.lf_executor.execute(
             question, lf_nodes
         )
-        # Generate supporting facts for sub question-answer pair
-        supporting_fact = "\n".join(sub_qa_pair)
-
-        # Retrieve and rank documents
-        sub_querys = [lf.query for lf in lf_nodes]
-        if self.lf_executor.chunk_retriever:
-            docs = self.lf_executor.chunk_retriever.rerank_docs(
-                [question] + sub_querys, recall_docs
-            )
-        else:
-            logger.info("DefaultReasoner not enable chunk retriever")
-            docs = []
-        history_log = {"history": history_qa_log, "rerank_docs": docs}
-        if len(docs) > 0:
-            # Append supporting facts for retrieved chunks
-            supporting_fact += f"\nPassages:{str(docs)}"
-        return solved_answer, supporting_fact, history_log

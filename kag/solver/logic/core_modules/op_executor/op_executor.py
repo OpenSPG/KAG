@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Union
 
 from kag.interface import KagBaseModule
-from kag.solver.logic.core_modules.common.base_model import LogicNode
+from kag.interface.solver.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
