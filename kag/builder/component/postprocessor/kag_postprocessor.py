@@ -11,6 +11,7 @@
 # or implied.
 import logging
 from typing import List
+from tenacity import stop_after_attempt, retry
 from kag.interface import PostProcessorABC
 from kag.interface import ExternalGraphLoaderABC
 from kag.builder.model.sub_graph import SubGraph
@@ -98,6 +99,7 @@ class KAGPostProcessor(PostProcessorABC):
                 valid_edges.append(edge)
         return SubGraph(nodes=valid_nodes, edges=valid_edges)
 
+    @retry(stop=stop_after_attempt(3))
     def _entity_link(
         self, graph: SubGraph, property_key: str = "name", labels: List[str] = None
     ):
@@ -177,9 +179,11 @@ class KAGPostProcessor(PostProcessorABC):
         origin_num_nodes = len(input.nodes)
         origin_num_edges = len(input.edges)
         new_graph = self.filter_invalid_data(input)
-        self.similarity_based_link(new_graph)
-        self.external_graph_based_link(new_graph)
-
+        try:
+            self.similarity_based_link(new_graph)
+            self.external_graph_based_link(new_graph)
+        except Exception as e:
+            logger.warn(f"failed to perform entity linking, info: {e}")
         new_num_nodes = len(new_graph.nodes)
         new_num_edges = len(new_graph.edges)
         logger.debug(
