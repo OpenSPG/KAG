@@ -44,3 +44,4 @@ pyhocon
 scikit-learn
 zodb
 matplotlib
+PyPDF2

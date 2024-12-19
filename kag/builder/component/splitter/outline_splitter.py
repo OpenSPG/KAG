@@ -16,9 +16,11 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Type, Union, Tuple
 
+import kag_ant
 import matplotlib.pyplot as plt
+from kag.interface.common.prompt import PromptABC
 from knext.common.base.runnable import Input, Output
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
@@ -36,15 +38,17 @@ class OutlineSplitter(SplitterABC):
         self,
         llm: LLMClient,
         min_length: int = 100,
-        workers: int = 32,
+        workers: int = 10,
         chunk_size: int = 500,
-        llm_max_tokens: int = 102400,
+        llm_max_tokens: int = 8000,
         align_parallel: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm = llm
-        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
+        self.prompt = PromptABC.from_config(
+            {"type": "outline", "language": KAG_PROJECT_CONF.language}
+        )
         self.min_length = min_length
         self.workers = workers
         self.chunk_size = chunk_size
@@ -176,8 +180,10 @@ class OutlineSplitter(SplitterABC):
             return []
 
         # 初始化align prompt
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        align_prompt = OutlineAlignPrompt(language)
+        align_prompt = PromptABC.from_config(
+            {"type": "outline_align", "language": KAG_PROJECT_CONF.language}
+        )
+
         max_length = 4000
 
         try:
@@ -1093,7 +1099,9 @@ if __name__ == "__main__":
     docx_reader = DocxReader()
     txt_reader = TXTReader()
     length_splitter = LengthSplitter(split_length=5000)
-    outline_splitter = OutlineSplitter()
+
+    llm = LLMClient.from_config(KAG_CONFIG.all_config["llm"])
+    outline_splitter = OutlineSplitter(llm=llm)
     txt_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/儿科学_short.txt"
     )

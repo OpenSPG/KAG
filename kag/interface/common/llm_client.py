@@ -109,7 +109,7 @@ class LLMClient(Registrable):
         except Exception as e:
             import traceback
 
-            logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.error(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
                     f"call llm exception! llm output = {response} , llm input={prompt}, err={e}"

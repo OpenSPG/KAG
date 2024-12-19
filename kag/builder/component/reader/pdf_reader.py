@@ -31,6 +31,7 @@ from pdfminer.layout import LTTextContainer, LTPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 import pdfminer  # noqa
+import PyPDF2
 
 
 import logging
@@ -57,11 +58,11 @@ class PDFReader(ReaderABC):
         self.is_ocr = kwargs.get("is_ocr", False)
 
     @property
-    def input_types(self) -> Type[Input]:
+    def input_types(self):
         return str
 
     @property
-    def output_types(self) -> Type[Output]:
+    def output_types(self):
         return Chunk
 
     def _get_full_outlines(self):
@@ -202,7 +203,7 @@ class PDFReader(ReaderABC):
     def convert_finel_content_to_chunks(self, final_content):
         def create_chunk(title, content, basename):
             return Chunk(
-                id=Chunk.generate_hash_id(f"{basename}#{title}"),
+                id=generate_hash_id(f"{basename}#{title}"),
                 name=f"{basename}#{title}",
                 content=content,
                 sub_chunks=[],
@@ -249,7 +250,7 @@ class PDFReader(ReaderABC):
         chunks = []
         for idx, pc in enumerate(position_check):
             chunk = Chunk(
-                id=Chunk.generate_hash_id(f"{basename}#{pc[0]}"),
+                id=generate_hash_id(f"{basename}#{pc[0]}"),
                 name=f"{basename}#{pc[0]}",
                 content=content[
                     pc[1] : (
@@ -362,7 +363,7 @@ class PDFReader(ReaderABC):
                             if hasattr(element, "get_text"):
                                 content = content + element.get_text()
                         chunk = Chunk(
-                            id=Chunk.generate_hash_id(f"{basename}#{idx}"),
+                            id=generate_hash_id(f"{basename}#{idx}"),
                             name=f"{basename}#{idx}",
                             content=content,
                         )
@@ -434,7 +435,7 @@ class PDFReader(ReaderABC):
 
                 for idx, position in enumerate(positions):
                     chunk = Chunk(
-                        id=Chunk.generate_hash_id(f"{basename}#{position[0]}"),
+                        id=generate_hash_id(f"{basename}#{position[0]}"),
                         name=f"{basename}#{position[0]}",
                         content=content[
                             position[1] : (
@@ -470,5 +471,6 @@ if __name__ == "__main__":
         os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
     )
     pdf_path = "/Users/zhangxinhong.zxh/Downloads/labor-law-v5.pdf"
-    pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
+    # pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
     chunk = pdf_reader.invoke(pdf_path)
+    a = 1

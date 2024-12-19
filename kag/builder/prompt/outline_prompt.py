@@ -16,6 +16,7 @@ from kag.interface import PromptABC
 import ast
 
 
+@PromptABC.register("outline")
 class OutlinePrompt(PromptABC):
     template_zh = """
 {
