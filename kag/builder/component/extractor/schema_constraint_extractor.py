@@ -334,8 +334,8 @@ class SchemaConstraintExtractor(ExtractorABC):
         _, event_nodes, event_edges = self.parse_nodes_and_edges(events)
         graph.nodes.extend(event_nodes)
         graph.edges.extend(event_edges)
-        self.add_chunk_to_graph(graph, chunk)
         self.add_relations_to_graph(graph, entities, relations)
+        self.add_chunk_to_graph(graph, chunk)
         return graph
 
     def append_official_name(
@@ -411,24 +411,18 @@ class SchemaConstraintExtractor(ExtractorABC):
         passage = title + "\n" + input.content
 
         out = []
-        try:
-            entities = self.named_entity_recognition(passage)
-            events = self.event_extraction(passage)
-            named_entities = []
-            for entity in entities:
-                named_entities.append(
-                    {"name": entity["name"], "category": entity["category"]}
-                )
-            relations = self.relations_extraction(passage, named_entities)
-            std_entities = self.named_entity_standardization(passage, named_entities)
-            self.append_official_name(entities, std_entities)
-            subgraph = self.assemble_subgraph(input, entities, relations, events)
-            out.append(self.postprocess_graph(subgraph))
-        except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            logger.info(e)
+        entities = self.named_entity_recognition(passage)
+        events = self.event_extraction(passage)
+        named_entities = []
+        for entity in entities:
+            named_entities.append(
+                {"name": entity["name"], "category": entity["category"]}
+            )
+        relations = self.relations_extraction(passage, named_entities)
+        std_entities = self.named_entity_standardization(passage, named_entities)
+        self.append_official_name(entities, std_entities)
+        subgraph = self.assemble_subgraph(input, entities, relations, events)
+        out.append(self.postprocess_graph(subgraph))
         logger.debug(f"input passage:\n{passage}")
         logger.debug(f"output graphs:\n{out}")
         return out

@@ -157,6 +157,7 @@ class BuilderChainRunner(Registrable):
                     )
                     futures.append(fut)
 
+                success = 0
                 for future in tqdm(
                     as_completed(futures),
                     total=len(futures),
@@ -183,11 +184,13 @@ class BuilderChainRunner(Registrable):
                         self.checkpointer.write_to_ckpt(
                             item_id, {"abstract": item_abstract, "graph_stat": info}
                         )
+                        success += 1
         except:
             traceback.print_exc()
         CheckpointerManager.close()
         msg = (
-            f"{bold}{red}The log file is located at {self.checkpointer._ckpt_file_path}. "
+            f"{bold}{red}Done process {len(futures)} records, with {success} successfully processed and {len(futures)-success} failures encountered.\n"
+            f"The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"
         )
         print(msg)
