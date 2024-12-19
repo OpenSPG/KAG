@@ -13,8 +13,8 @@
 import os
 from typing import List, Dict
 
-from knext.common.base.component import Component
-from knext.common.base.runnable import Input, Output
+from kag.common.base.component import Component
+from kag.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.checkpointer import CheckPointer, CheckpointerManager

@@ -14,8 +14,8 @@ from typing import List, Type, Dict
 
 from kag.interface.builder.mapping_abc import MappingABC
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import OTHER_TYPE
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import OTHER_TYPE
 
 
 @MappingABC.register("spo")

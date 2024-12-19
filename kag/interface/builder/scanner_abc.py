@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 class ScannerABC(BuilderComponent, ABC):

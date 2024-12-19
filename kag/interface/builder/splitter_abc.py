@@ -14,7 +14,7 @@ from abc import ABC
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.chunk import Chunk
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 class SplitterABC(BuilderComponent, ABC):

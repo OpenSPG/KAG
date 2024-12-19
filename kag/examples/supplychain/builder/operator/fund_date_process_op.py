@@ -1,8 +1,8 @@
 from abc import ABC
 from typing import Dict, List
 
-from knext.common.base.component import Component
-from knext.common.base.runnable import Output, Input
+from kag.common.base.component import Component
+from kag.common.base.runnable import Output, Input
 
 
 def change_new_date(a: str, b: str):

@@ -14,7 +14,7 @@ import os
 from typing import List
 
 from kag.interface import ReaderABC
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 from kag.builder.component.reader.txt_reader import TXTReader
 from kag.builder.component.reader.pdf_reader import PDFReader
 from kag.builder.component.reader.docx_reader import DocxReader

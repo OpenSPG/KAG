@@ -20,7 +20,7 @@ from kag.interface import ReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 def split_txt(content):

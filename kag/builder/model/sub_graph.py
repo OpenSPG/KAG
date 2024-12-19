@@ -14,8 +14,8 @@ import copy
 from typing import Dict, List, Any
 
 from kag.builder.model.spg_record import SPGRecord
-from knext.schema.client import BASIC_TYPES
-from knext.schema.model.base import BaseSpgType
+from kag.schema.client import BASIC_TYPES
+from kag.schema.model.base import BaseSpgType
 
 
 class Node(object):
@@ -207,7 +207,7 @@ class SubGraph(object):
             spg_type = spg_types.get(record.spg_type_name)
             for prop_name, prop_value in record.properties.items():
                 if prop_name in spg_type.properties:
-                    from knext.schema.model.property import Property
+                    from kag.schema.model.property import Property
 
                     prop: Property = spg_type.properties.get(prop_name)
                     o_label = prop.object_type_name.split(".")[-1]

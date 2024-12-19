@@ -2,13 +2,13 @@ import json
 import logging
 from enum import Enum
 
-from knext.common.rest import ApiClient, Configuration
-from knext.reasoner.rest.models.ca_pipeline import CaPipeline
-from knext.reasoner.rest.models.edge import Edge
-from knext.reasoner.rest.models.node import Node
-from knext.reasoner.rest.models.report_pipeline_request import ReportPipelineRequest
-from knext.reasoner.rest.models.reason_markdown_request import ReportMarkdownRequest
-from knext.reasoner.rest.reasoner_api import ReasonerApi
+from kag.common.rest import ApiClient, Configuration
+from kag.reasoner.rest.models.ca_pipeline import CaPipeline
+from kag.reasoner.rest.models.edge import Edge
+from kag.reasoner.rest.models.node import Node
+from kag.reasoner.rest.models.report_pipeline_request import ReportPipelineRequest
+from kag.reasoner.rest.models.reason_markdown_request import ReportMarkdownRequest
+from kag.reasoner.rest.reasoner_api import ReasonerApi
 
 logger = logging.getLogger(__name__)
 

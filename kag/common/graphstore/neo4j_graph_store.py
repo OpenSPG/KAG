@@ -20,7 +20,7 @@ from neo4j import GraphDatabase
 
 from kag.common.graphstore.graph_store import GraphStore
 from kag.common.utils import escape_single_quotes
-from knext.schema.model.base import IndexTypeEnum
+from kag.schema.model.base import IndexTypeEnum
 
 logger = logging.getLogger(__name__)
 

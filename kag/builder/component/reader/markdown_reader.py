@@ -32,7 +32,7 @@ from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
-from knext.common.base.runnable import Output, Input
+from kag.common.base.runnable import Output, Input
 
 
 logger = logging.getLogger(__name__)

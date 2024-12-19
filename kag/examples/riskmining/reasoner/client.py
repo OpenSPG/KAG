@@ -1,6 +1,6 @@
 import os
 from kag.common.conf import KAG_PROJECT_CONF
-from knext.reasoner.client import ReasonerClient
+from kag.reasoner.client import ReasonerClient
 
 
 def read_dsl_files(directory):

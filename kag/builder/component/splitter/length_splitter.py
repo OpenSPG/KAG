@@ -15,7 +15,7 @@ from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface.builder.base import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 
 

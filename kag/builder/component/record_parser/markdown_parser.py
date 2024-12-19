@@ -24,7 +24,7 @@ import pandas as pd
 from kag.interface import RecordParserABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
-from knext.common.base.runnable import Output, Input
+from kag.common.base.runnable import Output, Input
 from kag.common.utils import generate_hash_id
 
 

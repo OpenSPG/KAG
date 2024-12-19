@@ -16,12 +16,12 @@ import copy
 from typing import List, Dict
 
 from kag.interface import PromptABC
-from knext.schema.client import SchemaClient
-from knext.schema.model.base import SpgTypeEnum, ConstraintTypeEnum
-from knext.schema.model.schema_helper import SPGTypeName
+from kag.schema.client import SchemaClient
+from kag.schema.model.base import SpgTypeEnum, ConstraintTypeEnum
+from kag.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
 from kag.common.conf import KAG_PROJECT_CONF
-from knext.schema.client import OTHER_TYPE
+from kag.schema.client import OTHER_TYPE
 
 logger = logging.getLogger(__name__)
 

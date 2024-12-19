@@ -15,7 +15,7 @@ from string import Template
 from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
-from knext.reasoner.client import ReasonerClient
+from kag.reasoner.client import ReasonerClient
 
 
 @PromptABC.register("default_question_ner")
