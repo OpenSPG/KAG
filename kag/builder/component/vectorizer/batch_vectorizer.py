@@ -75,7 +75,10 @@ class EmbeddingVectorManager(object):
         if not texts:
             return []
 
-        n_batchs = len(texts) // batch_size + 1
+        if len(texts) % batch_size == 0:
+            n_batchs = len(texts) // batch_size
+        else:
+            n_batchs = len(texts) // batch_size + 1
         embeddings = []
         for idx in range(n_batchs):
             start = idx * batch_size
