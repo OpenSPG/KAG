@@ -1085,13 +1085,13 @@ class OutlineSplitter(SplitterABC):
 
 if __name__ == "__main__":
     from kag.builder.component.splitter.length_splitter import LengthSplitter
-    from kag.builder.component.record_parser.docx_parser import DocxParser
-    from kag.builder.component.record_parser.txt_parser import TXTParser
-    from kag.builder.component.record_parser.pdf_parser import PDFParser
+    from kag.builder.component.reader.docx_reader import DocxReader
+    from kag.builder.component.reader.txt_reader import TXTReader
+    from kag.builder.component.reader.pdf_reader import PDFReader
 
-    pdf_reader = PDFParser()
-    docx_reader = DocxParser()
-    txt_reader = TXTParser()
+    pdf_reader = PDFReader()
+    docx_reader = DocxReader()
+    txt_reader = TXTReader()
     length_splitter = LengthSplitter(split_length=5000)
     outline_splitter = OutlineSplitter()
     txt_path = os.path.join(
