@@ -11,17 +11,17 @@
 # or implied.
 
 from typing import Dict, List
-from kag.interface import RecordParserABC
+from kag.interface import ReaderABC
 from knext.common.base.runnable import Output, Input
 from kag.builder.model.chunk import Chunk
 
 
-@RecordParserABC.register("dict")
-class DictParser(RecordParserABC):
+@ReaderABC.register("dict")
+class DictReader(ReaderABC):
     """
-    A class for parsing dictionaries into Chunk objects.
+    A class for reading dictionaries into Chunk objects.
 
-    This class inherits from RecordParserABC and provides the functionality to convert dictionary inputs
+    This class inherits from ReaderABC and provides the functionality to convert dictionary inputs
     into a list of Chunk objects.
 
     Attributes:
@@ -34,7 +34,7 @@ class DictParser(RecordParserABC):
         self, id_col: str = "id", name_col: str = "name", content_col: str = "content"
     ):
         """
-        Initializes the DictParser with the specified column names.
+        Initializes the DictReader with the specified column names.
 
         Args:
             id_col (str): The key in the input dictionary that corresponds to the chunk's ID. Defaults to "id".

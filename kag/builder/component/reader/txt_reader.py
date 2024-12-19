@@ -14,17 +14,17 @@ import os
 from typing import List
 
 from kag.builder.model.chunk import Chunk
-from kag.interface import RecordParserABC
+from kag.interface import ReaderABC
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
-@RecordParserABC.register("txt")
-class TXTParser(RecordParserABC):
+@ReaderABC.register("txt")
+class TXTReader(ReaderABC):
     """
     A class for parsing text files or text content into Chunk objects.
 
-    This class inherits from RecordParserABC and provides the functionality to read text content,
+    This class inherits from ReaderABC and provides the functionality to read text content,
     whether it is from a file or directly provided as a string, and convert it into a list of Chunk objects.
     """
 

@@ -78,7 +78,7 @@ class TxtCheckPointer(CheckPointer):
         self._writer.write("\n")
         self._writer.flush()
 
-    def close(self):
+    def _close(self):
         """
         Closes the checkpoint file and ensures data is written to disk.
         """

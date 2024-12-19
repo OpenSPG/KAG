@@ -36,8 +36,8 @@ runner:
         type: default_std
       triple_prompt:
         type: default_triple
-      type: kag
-    parser:
+      type: schema_free
+    reader:
       type: dict
     post_processor:
       similarity_threshold: 0.9
@@ -52,14 +52,14 @@ runner:
       vectorize_model: &id002
         api_key: key
         base_url: https://api.siliconflow.cn/v1/
-        model: BAAI/bge-large-en-v1.5
+        model: BAAI/bge-m3
         type: openai
         vector_dimensions: 1024
     writer:
       type: kg
-  chain_level_num_paralle: 1
-  num_parallel: 8
-  reader:
+  num_threads_per_chain: 2
+  num_chains: 4
+  scanner:
     type: 2wiki
 vectorize_model: *id002
 vectorizer: *id002
