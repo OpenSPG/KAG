@@ -383,21 +383,15 @@ class SchemaFreeExtractor(ExtractorABC):
         title = input.name
         passage = title + "\n" + input.content
         out = []
-        try:
-            entities = self.named_entity_recognition(passage)
-            sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
-            filtered_entities = [
-                {k: v for k, v in ent.items() if k in ["name", "category"]}
-                for ent in entities
-            ]
-            triples = self.triples_extraction(passage, filtered_entities)
-            std_entities = self.named_entity_standardization(passage, filtered_entities)
-            self.append_official_name(entities, std_entities)
-            self.assemble_sub_graph(sub_graph, input, entities, triples)
-            out.append(sub_graph)
-        except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            logger.info(e)
+        entities = self.named_entity_recognition(passage)
+        sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
+        filtered_entities = [
+            {k: v for k, v in ent.items() if k in ["name", "category"]}
+            for ent in entities
+        ]
+        triples = self.triples_extraction(passage, filtered_entities)
+        std_entities = self.named_entity_standardization(passage, filtered_entities)
+        self.append_official_name(entities, std_entities)
+        self.assemble_sub_graph(sub_graph, input, entities, triples)
+        out.append(sub_graph)
         return out
