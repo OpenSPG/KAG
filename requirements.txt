@@ -41,3 +41,4 @@ sympy==1.13.3
 openspg-knext==0.5.2.20241214
 ollama
 retry
+sympy
