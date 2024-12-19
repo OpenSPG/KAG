@@ -36,7 +36,7 @@ class LogicFormPlanPrompt(PromptOp):
       },
       {
           "functionName": "get",
-          "function_decl:aration": "get(alias)",
+          "function_declaration": "get(alias)",
           "description": "返回指定的别名代表的信息，可以是实体、关系路径或get_spo中获取到的属性值；可作为最后的输出结果"
       }
     ],
@@ -89,7 +89,7 @@ class LogicFormPlanPrompt(PromptOp):
       },
       {
           "functionName": "get",
-          "function_decl:aration": "get(alias)",
+          "function_declaration": "get(alias)",
           "description": "Return the information represented by a specified alias. This can be an entity, a relationship path, or an attribute value obtained in the get_spo query. It can be used as the final output result."
       }
     ],"""
