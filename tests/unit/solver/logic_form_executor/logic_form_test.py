@@ -57,7 +57,7 @@ class LogicFormTest(unittest.TestCase):
 
     def test_entity_linker(self):
         get_node = GetNode.parse_node("s")
-        get_node.s = SPOEntity(entity_name='david eagleman', entity_type='Person', entity_type_zh='自然人')
+        get_node.s = SPOEntity(entity_name='david eagleman', std_entity_type='Person', un_std_entity_type='自然人')
         el_data, _ = el.entity_linking("When was David Eagleman born?", [get_node.s])
         print(el_data)
         assert len(el_data) > 0
@@ -65,7 +65,7 @@ class LogicFormTest(unittest.TestCase):
 
     def test_entity_linker2(self):
         get_node = GetNode.parse_node("s")
-        get_node.s = SPOEntity(entity_name='Lover Come Back', entity_type='Person', entity_type_zh='自然人')
+        get_node.s = SPOEntity(entity_name='Lover Come Back', std_entity_type='Person', un_std_entity_type='自然人')
         el_data, _ = el.entity_linking(
             "Lover Come Back contained the actress who played which part on The Brady Bunch?", [get_node.s])
         print(el_data)
