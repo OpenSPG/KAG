@@ -18,6 +18,7 @@ from kag.builder.component.extractor import KAGExtractor
 from kag.builder.component.splitter import LengthSplitter
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.model.chunk import Chunk
+from kag.examples.utils import generate_hash_id
 from kag.interface.builder.reader_abc import SourceReaderABC
 from knext.common.base.runnable import Input, Output
 from knext.builder.builder_chain_abc import BuilderChainABC
@@ -46,7 +47,7 @@ class TwowikiCorpusReader(SourceReaderABC):
 
         for idx, item in enumerate(corpus):
             chunk = Chunk(
-                id=str(idx),
+                id=generate_hash_id(item['text']),
                 name=item['title'],
                 content=item['text'],
             )
