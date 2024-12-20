@@ -8,13 +8,11 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
-
+import knext.common.cache
 from kag.interface import PromptABC, VectorizeModelABC
 from tenacity import retry, stop_after_attempt
 
 from kag.interface import VectorizeModelABC as Vectorizer
-from knext.graph.client import GraphClient
 
 from typing import List, Dict, Optional
 
@@ -30,6 +28,8 @@ from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger(__name__)
 
+ner_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
+query_sim_doc_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @ChunkRetriever.register("kag")
 class KAGRetriever(ChunkRetriever):
     """
@@ -159,6 +159,9 @@ class KAGRetriever(ChunkRetriever):
         """
         scores = dict()
         try:
+            scores = query_sim_doc_cache.get(query)
+            if scores:
+                return scores
             query_vector = self.vectorize_model.vectorize(query)
             top_k = self.search_api.search_vector(
                 label=self.schema.get_label_within_prefix(CHUNK_TYPE),
@@ -167,6 +170,7 @@ class KAGRetriever(ChunkRetriever):
                 topk=doc_nums,
             )
             scores = {item["node"]["id"]: item["score"] for item in top_k}
+            query_sim_doc_cache.put(query, scores)
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
         return scores
@@ -350,8 +354,19 @@ class KAGRetriever(ChunkRetriever):
             matched_entities_scores.append(v["score"])
         return matched_entities
 
-    def recall_docs(self, query: str, top_k: int = 5, retrieved_spo: Optional[List[RelationData]] = None, **kwargs) -> \
-    List[str]:
+    def _parse_ner_list(self, query):
+        ner_list = ner_cache.get(query)
+        if ner_list:
+            return ner_list
+        ner_list = self.named_entity_recognition(query)
+        if self.with_semantic:
+            std_ner_list = self.named_entity_standardization(query, ner_list)
+            self.append_official_name(ner_list, std_ner_list)
+        ner_cache.put(query, ner_list)
+        return ner_list
+
+    def recall_docs(self, queries: List[str], top_k: int = 5, retrieved_spo: Optional[List[RelationData]] = None,
+                    **kwargs) -> List[str]:
         """
         Recall relevant documents based on the query string.
 
@@ -365,19 +380,16 @@ class KAGRetriever(ChunkRetriever):
         Returns:
         - list: A list containing the top_k most relevant documents.
         """
-        assert isinstance(query, str), "Query must be a string"
-
         chunk_nums = top_k * 20
         if chunk_nums == 0:
             return []
-
-        ner_list = self.named_entity_recognition(query)
-        print(ner_list)
-        if self.with_semantic:
-            std_ner_list = self.named_entity_standardization(query, ner_list)
-            self.append_official_name(ner_list, std_ner_list)
+        ner_list = []
+        for query in queries:
+            assert isinstance(query, str), "Query must be a string"
+            ner_list += self._parse_ner_list(query)
 
         entities = {}
+
         for item in ner_list:
             entity = item.get("name", "")
             category = item.get("category", "")
@@ -389,7 +401,6 @@ class KAGRetriever(ChunkRetriever):
             else:
                 entities[entity] = official_name or category
 
-        sim_scores = self.calculate_sim_scores(query, chunk_nums)
         matched_entities = self.match_entities(entities)
         matched_entities = self._add_extra_entity_from_spo(retrieved_spo=retrieved_spo,
                                                            matched_entities=matched_entities)
@@ -399,27 +410,37 @@ class KAGRetriever(ChunkRetriever):
         else:
             pagerank_scores = []
 
-        if not matched_entities:
-            combined_scores = sim_scores
-        elif matched_entities and np.min(matched_scores) > self.pagerank_threshold:
+
+        if matched_entities and np.min(matched_scores) > self.pagerank_threshold:
             combined_scores = pagerank_scores
         else:
-            combined_scores = self.calculate_combined_scores(
-                sim_scores, pagerank_scores
-            )
+            sim_scores = {}
+            for query in queries:
+                query_sim_scores = self.calculate_sim_scores(query, chunk_nums)
+                for doc_id,score in query_sim_scores.items():
+                    if doc_id not in sim_scores:
+                        sim_scores[doc_id] = score
+                    elif score > sim_scores[doc_id]:
+                        sim_scores[doc_id] = score
+            if not matched_entities:
+                combined_scores = sim_scores
+            else:
+                combined_scores = self.calculate_combined_scores(
+                    sim_scores, pagerank_scores
+                )
         sorted_scores = sorted(
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
         logger.debug(f"sorted_scores: {sorted_scores}")
 
-        return self.get_all_docs_by_id(query, sorted_scores, top_k)
+        return self.get_all_docs_by_id(queries, sorted_scores, top_k)
 
-    def get_all_docs_by_id(self, query: str, doc_ids: list, top_k: int):
+    def get_all_docs_by_id(self, queries: List[str], doc_ids: list, top_k: int):
         """
         Retrieve a list of documents based on their IDs.
 
         Parameters:
-        - query (str): The query string for text matching.
+        - queries (list of str): The query string for text matching.
         - doc_ids (list): A list of document IDs to retrieve documents.
         - top_k (int): The maximum number of documents to return.
 
@@ -447,6 +468,7 @@ class KAGRetriever(ChunkRetriever):
                 f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
             )
             hits_docs.add(node_dict["name"])
+        query = "\n".join(queries)
         try:
             text_matched = self.search_api.search_text(
                 query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1

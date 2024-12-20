@@ -1,18 +1,14 @@
-lf_solver_pipeline:
-  generator:
-    generate_prompt:
-      type: resp_simple
 llm: &id001
   api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   type: maas
 log:
-  level: INFO
+  level: DEBUG
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '2'
+  id: '5'
   language: en
   namespace: HotpotQA
 resp_solver_pipeline:
@@ -57,9 +53,34 @@ runner:
         vector_dimensions: 1024
     writer:
       type: kg
-  num_threads_per_chain: 2
-  num_chains: 4      
+  num_threads_per_chain: 1
+  num_chains: 16
   scanner:
     type: hotpotqa
 vectorize_model: *id002
 vectorizer: *id002
+
+lf_solver_pipeline:
+  generator:
+    generate_prompt:
+      type: resp_simple
+  reasoner:
+    type: base
+    lf_executor:
+      type: base
+      exact_kg_retriever:
+        type: default
+        search_api: &id003
+          type: openspg
+        graph_api: &id004
+          type: openspg
+      fuzzy_kg_retriever:
+        type: default
+        vectorize_model: *id002
+        llm_client: *id001
+        search_api: *id003
+        graph_api: *id004
+      chunk_retriever:
+        type: default
+      merger:
+        type: base

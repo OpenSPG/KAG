@@ -139,7 +139,7 @@ class GetSPOExecutor(OpExecutor):
 
         process_info[logic_node.sub_query]['spo_retrieved'] = spo_res
         process_info[logic_node.sub_query]['match_type'] = "exact spo" if isinstance(kg_retriever,
-                                                                                 ExactKgRetriever) else "fuzzy spo"
+                                                                                     ExactKgRetriever) else "fuzzy spo"
         return True, cur_kg_graph
 
     def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
@@ -159,13 +159,6 @@ class GetSPOExecutor(OpExecutor):
             return process_info[logic_node.sub_query]
 
         _, fuzzy_matched_graph = self._kg_match(n, req_id, self.fuzzy_kg_retriever, kg_graph, process_info,
-                                                         param)
+                                                param)
         kg_graph.merge_kg_graph(fuzzy_matched_graph)
-
-        doc_retrieved = self.chunk_retriever.recall_docs(logic_node.sub_query,
-                                                          retrieved_spo=fuzzy_matched_graph.get_entity_by_alias(n.p.alias_name),
-                                                          nl_query=nl_query, kwargs=param)
-        process_info[logic_node.sub_query]['doc_retrieved'] = doc_retrieved
-        process_info[logic_node.sub_query]['match_type'] = "chunk"
-
         return process_info[logic_node.sub_query]

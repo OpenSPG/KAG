@@ -39,12 +39,13 @@ class ChunkRetriever(KagBaseModule, ABC):
             Reranks the retrieved passages based on the given queries.
     """
 
-    def recall_docs(self, query: str, top_k: int = 5, retrieved_spo: Optional[List[RelationData]] = None, **kwargs) -> List[str]:
+    def recall_docs(self, queries: List[str], top_k: int = 5, retrieved_spo: Optional[List[RelationData]] = None,
+                    **kwargs) -> List[str]:
         """
         Recalls documents based on the given query.
 
         Parameters:
-            query (str): The query string to search for.
+            queries (list of str): The queries string to search for.
             top_k (int, optional): The number of top documents to return. Defaults to 5.
             retrieved_spo (Optional[List[RelationData]], optional): A list of previously retrieved relation data. Defaults to None.
             **kwargs: Additional keyword arguments for retrieval.
