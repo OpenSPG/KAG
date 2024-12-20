@@ -9,13 +9,14 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+from collections import OrderedDict
 import re
 import json
 import os
 import sys
 from configparser import ConfigParser
 from pathlib import Path
-import yaml
+from ruamel.yaml import YAML
 from typing import Optional
 
 import click
@@ -25,6 +26,8 @@ from kag.project.client import ProjectClient
 
 from kag.common.env import env, DEFAULT_HOST_ADDR
 from shutil import copy2
+
+yaml = YAML()
 
 
 def _render_template(namespace: str, tmpl: str, **kwargs):
@@ -58,12 +61,12 @@ def _render_template(namespace: str, tmpl: str, **kwargs):
 
     tmpls = [tmpl, "default"] if tmpl != "default" else [tmpl]
     # find all .cfg files in project dir
-    config = yaml.safe_load(Path(config_path).read_text())
+    config = yaml.load(Path(config_path).read_text() or "{}")
     project_id = kwargs.get("id", None)
     config["project"]["id"] = project_id
     config_file_path = project_dir.resolve() / "kag_config.yaml"
     with open(config_file_path, "w") as config_file:
-        yaml.safe_dump(config, config_file)
+        yaml.dump(config, config_file)
     return project_dir
 
 
@@ -119,7 +122,7 @@ def create_project(
     Create new project with a demo case.
     """
 
-    config = yaml.safe_load(Path(config_path).read_text())
+    config = yaml.load(Path(config_path).read_text() or "{}")
     project_config = config.get("project", {})
     namespace = project_config.get("namespace", None)
     name = project_config.get("namespace", None)
@@ -160,7 +163,7 @@ def create_project(
         delete_cfg=delete_cfg,
     )
 
-    config = yaml.safe_load((Path(project_dir) / "kag_config.yaml").read_text())
+    config = yaml.load((Path(project_dir) / "kag_config.yaml").read_text() or "{}")
     client.update(id=project_id, config=json.dumps(config))
 
     if delete_cfg:

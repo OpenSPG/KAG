@@ -44,7 +44,7 @@ class ListRegisterInfo(Command):
             data.append([cls.__name__, cls.__module__])
         headers = [f"{bold}{red}class{reset}", f"{bold}{red}module{reset}"]
         msg = (
-            f"{bold}{red}Below are the interfaces provided by KAG."
+            f"{bold}{red}Below are the interfaces provided by KAG.\n"
             f"For detailed information on each class, please use the command `kag interface --cls $class_name`{reset}"
         )
         print(msg)

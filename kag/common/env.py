@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
 import os
 import json
 import sys
-import yaml
-from kag.common.constants import KAGConstants
+from ruamel.yaml import YAML
 import logging
 from pathlib import Path
 from typing import Union, Optional
 
+from kag.common.constants import KAGConstants
+
 logger = logging.getLogger(__name__)
+
+yaml = YAML()
 
 
 def parse_tf_config():
@@ -129,9 +133,9 @@ def sync_hosts():
     print("Done init process group, get all hosts...")
     host_tensors = [torch.tensor([0, 0, 0, 0, 0]) for x in range(world_size)]
     dist.all_gather(host_tensors, host2tensor(master_port))
-    # we need to destory torch process group to release MASTER_PORT, otherwise the server
-    # can't serving on it .
-    print("Done get all hosts, destory process group...")
+    # we need to destroy torch process group to release MASTER_PORT, otherwise the server
+    # can't serving on it.
+    print("Done get all hosts, destroy process group...")
     dist.destroy_process_group()
     time.sleep(10)
     return [tensor2host(x) for x in host_tensors]
@@ -171,7 +175,8 @@ class Environment:
         if self._config is None:
             self._config = self.get_config()
         if self._config != self.get_config():
-            yaml.safe_dump(self._config, open(self.config_path, "w"))
+            with open(self.config_path, "w") as f:
+                yaml.dump(self._config, f)
         return self._config
 
     @property
@@ -194,7 +199,7 @@ class Environment:
         id = self.project_config.get("id", None)
         if id is None:
             raise Exception(
-                "project id not restore in spgserver, please restore project first"
+                "project id not restored in spgserver, please restore project first"
             )
         return id
 
@@ -230,7 +235,8 @@ class Environment:
         """
         local_cfg_path = self._closest_config()
         try:
-            local_cfg = yaml.safe_load(Path(local_cfg_path).read_text())
+            with open(local_cfg_path) as f:
+                local_cfg = yaml.load(f)
         except Exception as e:
             raise Exception(f"failed to load config from {local_cfg_path}, error: {e}")
         projdir = ""
@@ -247,7 +253,7 @@ class Environment:
         prev_path: Optional[Union[str, os.PathLike]] = None,
     ) -> str:
         """
-        Return the path to the closest .kag.cfg file by traversing the current
+        Return the path to the closest kag_config.yaml file by traversing the current
         directory and its parents
         """
         if prev_path is not None and str(path) == str(prev_path):
@@ -259,7 +265,8 @@ class Environment:
         return self._closest_config(path.parent, path)
 
     def dump(self, path=None, **kwargs):
-        yaml.safe_dump(self.config, open(path or self.config_path, "w"))
+        with open(path or self.config_path, "w") as f:
+            yaml.dump(self.config, f, **kwargs)
 
 
 env = Environment()
