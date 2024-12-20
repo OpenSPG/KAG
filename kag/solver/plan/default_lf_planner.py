@@ -10,7 +10,7 @@ from kag.interface.solver.base_model import LFPlan, LogicNode
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicForm
-from kag.solver.logic.core_modules.retriver.schema_std import SchemaRetrieval
+from kag.solver.logic.core_modules.parser.schema_std import SchemaRetrieval
 from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
