@@ -40,10 +40,13 @@ class LFSubGenerator(KagBaseModule):
         Returns:
         str: The generated sub-answer.
         """
-        history_qa = [
-            f"query{i}: {item.res.sub_query}\nanswer{i}: {item.res.sub_answer}"
-            for i, item in enumerate(history)
-        ]
+        history_qa = []
+        for i, item in enumerate(history):
+            sub_answer = item.res.sub_answer
+            if sub_answer and "i don't know" not in sub_answer.lower():
+                history_qa.append(f"query{i}: {item.res.sub_answer} answer{i}:{sub_answer}")
+            else:
+                history_qa.append(f"query{i}: {item.res.sub_answer}")
         if knowledge_graph:
             if len(docs) > 0:
                 prompt = self.solve_question_prompt

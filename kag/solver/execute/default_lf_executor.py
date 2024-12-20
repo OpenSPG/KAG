@@ -89,7 +89,6 @@ class DefaultLFExecutor(LFExecutorABC):
                 logger.warning(f"unknown operator: {n.operator}")
 
         res.spo_retrieved = process_info[lf.query].get('spo_retrieved', [])
-        res.match_type = process_info[lf.query].get('match_type', 'chunk')
         kg_answer = process_info[lf.query]['kg_answer']
         # generate sub answer
         if not self._judge_sub_answered(kg_answer):
@@ -102,6 +101,7 @@ class DefaultLFExecutor(LFExecutorABC):
                 # chunk retriever
                 doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, lf.query],
                                                                  retrieved_spo=res.spo_retrieved, kwargs=self.params)
+                res.doc_retrieved = doc_retrieved
                 process_info[lf.query]['doc_retrieved'] = doc_retrieved
                 process_info[lf.query]['match_type'] = "chunk"
                 # generate sub answer by chunk ans spo
@@ -109,6 +109,8 @@ class DefaultLFExecutor(LFExecutorABC):
                                                                 history)
         else:
             sub_answer = kg_answer
+
+        res.match_type = process_info[lf.query].get('match_type', 'chunk')
         res.sub_answer = sub_answer
         return res
 
