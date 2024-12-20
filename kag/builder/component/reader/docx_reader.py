@@ -180,27 +180,12 @@ class DocxReader(ReaderABC):
 
         basename, _ = os.path.splitext(os.path.basename(input))
 
-        for text in full_text:
-            title, text = self._get_title_from_text(text)
-            chunk = Chunk(
-                id=generate_hash_id(f"{basename}#{title}"),
-                name=f"{basename}#{title}",
-                content=text,
-            )
-            chunks.append(chunk)
-
-        if len(chunks) < 2 and self.llm is not None:
-            chunks = self.outline_chunk(chunks, basename)
-
-        if len(chunks) < 2:
-            semantic_res = split_txt(content)
-            chunks = [
-                Chunk(
-                    id=generate_hash_id(input + "#" + r[:10]),
-                    name=basename + "#" + r[:10],
-                    content=r,
-                )
-                for r in semantic_res
-            ]
+        chunk = Chunk(
+            id=generate_hash_id(input),
+            name=basename,
+            content=content,
+            **{"documentId": basename, "documentName": basename},
+        )
+        chunks.append(chunk)
 
         return chunks

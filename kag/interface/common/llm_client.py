@@ -109,7 +109,7 @@ class LLMClient(Registrable):
         except Exception as e:
             import traceback
 
-            logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.error(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
                     f"call llm exception! llm output = {response} , llm input={prompt}, err={e}"
@@ -160,8 +160,14 @@ class LLMClient(Registrable):
         return results
 
     def check(self):
-        try:
-            self.__call__("Are you OK?")
-        except Exception as e:
-            logger.error("LLM health check failed!")
-            raise e
+        from kag.common.conf import KAG_PROJECT_CONF
+
+        if (
+            hasattr(KAG_PROJECT_CONF, "llm_config_check")
+            and KAG_PROJECT_CONF.llm_config_check
+        ):
+            try:
+                self.__call__("Are you OK?")
+            except Exception as e:
+                logger.error("LLM config check failed!")
+                raise e

@@ -33,11 +33,11 @@ runner:
       triple_prompt:
         type: default_triple
       type: schema_free
+    reader:
+      type: dict
     post_processor:
       similarity_threshold: 0.9
       type: base
-    reader:
-      type: dict
     splitter:
       split_length: 100000
       type: length
@@ -53,8 +53,8 @@ runner:
         vector_dimensions: 1024
     writer:
       type: kg
+  num_threads_per_chain: 2
   num_chains: 4
-  num_threads_per_chain: 1
   scanner:
     type: 2wiki
 vectorize_model: *id002
