@@ -14,7 +14,7 @@ from typing import List, Union, Any
 from kag.builder.model.sub_graph import Node, SubGraph
 from kag.common.registry import Registrable
 from kag.interface.builder.base import BuilderComponent
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 class MatchConfig(Registrable):

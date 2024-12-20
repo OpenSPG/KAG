@@ -18,7 +18,7 @@ from typing import Type, List, Union
 from kag.builder.model.chunk import Chunk
 from kag.interface import SplitterABC
 from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 @SplitterABC.register("pattern")

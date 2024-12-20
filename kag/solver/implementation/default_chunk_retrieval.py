@@ -14,16 +14,16 @@ from kag.interface import PromptABC, VectorizeModelABC
 from tenacity import retry, stop_after_attempt
 
 from kag.interface import VectorizeModelABC as Vectorizer
-from knext.graph.client import GraphClient
+from kag.graph.client import GraphClient
 
 from typing import List, Dict
 
 import numpy as np
 import logging
 import time
-from knext.reasoner.client import ReasonerClient
-from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
-from knext.search.client import SearchClient
+from kag.reasoner.client import ReasonerClient
+from kag.schema.client import CHUNK_TYPE, OTHER_TYPE
+from kag.search.client import SearchClient
 from kag.interface import LLMClient
 from kag.common.utils import processing_phrases
 from kag.common.conf import KAG_CONFIG

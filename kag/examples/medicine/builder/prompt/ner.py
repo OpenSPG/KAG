@@ -15,7 +15,7 @@ from string import Template
 from typing import List, Optional
 
 from kag.interface import PromptABC
-from knext.schema.client import SchemaClient
+from kag.schema.client import SchemaClient
 
 
 @PromptABC.register("example_medical_ner")

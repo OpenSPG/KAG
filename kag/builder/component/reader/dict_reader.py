@@ -12,7 +12,7 @@
 
 from typing import Dict, List
 from kag.interface import ReaderABC
-from knext.common.base.runnable import Output, Input
+from kag.common.base.runnable import Output, Input
 from kag.builder.model.chunk import Chunk
 
 

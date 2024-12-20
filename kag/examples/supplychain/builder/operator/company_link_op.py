@@ -14,7 +14,7 @@ from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.builder.model.sub_graph import Node
 from kag.builder.operator.base import LinkOpABC
-from knext.search.client import SearchClient
+from kag.search.client import SearchClient
 
 
 class CompanyLinkOp(LinkOpABC):

@@ -6,8 +6,8 @@ import json
 from collections import defaultdict
 from typing import List
 
-from knext.reasoner.client import ReasonerClient
-from knext.schema.model.property import Property
+from kag.reasoner.client import ReasonerClient
+from kag.schema.model.property import Property
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 
 

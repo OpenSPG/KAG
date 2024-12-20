@@ -13,13 +13,13 @@
 from typing import List, Type, Dict
 
 from kag.interface import AlignerABC
-from knext.schema.client import BASIC_TYPES
+from kag.schema.client import BASIC_TYPES
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.builder.model.spg_record import SPGRecord
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import SchemaClient
-from knext.schema.model.base import ConstraintTypeEnum, BaseSpgType
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import SchemaClient
+from kag.schema.model.base import ConstraintTypeEnum, BaseSpgType
 
 
 @AlignerABC.register("spg")
@@ -112,7 +112,7 @@ class SPGAligner(AlignerABC):
             spg_type = spg_types.get(record.spg_type_name)
             for prop_name, prop_value in record.properties.items():
                 if prop_name in spg_type.properties:
-                    from knext.schema.model.property import Property
+                    from kag.schema.model.property import Property
 
                     prop: Property = spg_type.properties.get(prop_name)
                     o_label = prop.object_type_name

@@ -18,9 +18,9 @@ from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.common.utils import get_vector_field_name
 from kag.interface import VectorizerABC, VectorizeModelABC
-from knext.schema.client import SchemaClient
-from knext.schema.model.base import IndexTypeEnum
-from knext.common.base.runnable import Input, Output
+from kag.schema.client import SchemaClient
+from kag.schema.model.base import IndexTypeEnum
+from kag.common.base.runnable import Input, Output
 
 
 class EmbeddingVectorPlaceholder(object):

@@ -69,7 +69,7 @@ class VectorizeModelABC(Registrable):
         Raises:
             RuntimeError: If the embedding service is not available.
         """
-        if self._vector_dimensions is not None:
+        if hasattr(self, "_vector_dimensions"):
             return int(self._vector_dimensions)
         try:
             example_input = "This is a test."

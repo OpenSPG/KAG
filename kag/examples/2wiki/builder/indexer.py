@@ -8,6 +8,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
 import logging
 from kag.common.registry import import_modules_from_path
 
@@ -27,6 +28,7 @@ def buildKB(file_path):
 
 if __name__ == "__main__":
     import_modules_from_path(".")
-    file_path = "./data/2wiki_sub_corpus.json"
+    dir_path = os.path.dirname(__file__)
+    file_path = os.path.join(dir_path, "data/2wiki_sub_corpus.json")
 
     buildKB(file_path)

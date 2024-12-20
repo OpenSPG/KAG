@@ -15,7 +15,7 @@ from string import Template
 from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
-from knext.schema.client import SchemaClient
+from kag.schema.client import SchemaClient
 
 
 @PromptABC.register("default_ner")

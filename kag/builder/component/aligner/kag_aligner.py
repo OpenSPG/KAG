@@ -14,7 +14,7 @@ from typing import List, Sequence, Dict, Type
 
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import AlignerABC
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 @AlignerABC.register("kag")

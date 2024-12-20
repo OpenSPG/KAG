@@ -16,9 +16,9 @@ from typing import List, Union, Dict
 from kag.interface import ExternalGraphLoaderABC, MatchConfig
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.builder.model.sub_graph import Node, Edge, SubGraph
-from knext.schema.client import SchemaClient
+from kag.schema.client import SchemaClient
 
-from knext.search.client import SearchClient
+from kag.search.client import SearchClient
 
 
 logger = logging.getLogger()
