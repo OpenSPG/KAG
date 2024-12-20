@@ -354,7 +354,14 @@ class SubQueryResult:
         self.execute_cost: float = 0.0
 
     def to_json(self):
-        return json.dumps(self.__dict__, ensure_ascii=False)
+        return {
+            "sub_query": self.sub_query,
+            "sub_answer": self.sub_answer,
+            "doc_retrieved": self.doc_retrieved,
+            "spo_retrieved": [str(spo) for spo in self.spo_retrieved],
+            "match_type": self.match_type,
+            "execute_cost": self.execute_cost
+        }
 
 
 class LFPlan:

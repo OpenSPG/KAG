@@ -41,7 +41,7 @@ class LFSubGenerator(KagBaseModule):
         str: The generated sub-answer.
         """
         history_qa = [
-            f"query{i}: {item['sub_query']}\nanswer{i}: {item['sub_answer']}"
+            f"query{i}: {item.res.sub_query}\nanswer{i}: {item.res.sub_answer}"
             for i, item in enumerate(history)
         ]
         if knowledge_graph:

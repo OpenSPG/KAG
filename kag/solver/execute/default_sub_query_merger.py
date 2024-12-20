@@ -48,8 +48,6 @@ class DefaultLFSubQueryResMerger(LFSubQueryResMerger):
         list: A list of passages sorted by their scores.
         """
         score_map = {}
-        if len(self.last_iter_docs) > 0:
-            passages_set.append(self.last_iter_docs)
         for passages in passages_set:
             passages = ["#".join(item.split("#")[:-1]) for item in passages]
             for i, passage in enumerate(passages):
