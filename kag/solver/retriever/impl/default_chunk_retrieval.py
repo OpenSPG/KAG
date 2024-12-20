@@ -365,7 +365,7 @@ class KAGRetriever(ChunkRetriever):
         ner_cache.put(query, ner_list)
         return ner_list
 
-    def recall_docs(self, queries: List[str], top_k: int = 5, retrieved_spo: Optional[List[RelationData]] = None,
+    def recall_docs(self, queries: List[str], top_k: int = 10, retrieved_spo: Optional[List[RelationData]] = None,
                     **kwargs) -> List[str]:
         """
         Recall relevant documents based on the query string.
