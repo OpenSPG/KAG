@@ -234,6 +234,8 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                         executor.submit(self.graph_api.get_entity_one_hop, entity) for entity in v]
                     results = [future.result() for future in concurrent.futures.as_completed(futures)]
                     for r in results:
+                        if r is None:
+                            continue
                         r.s_alias_name = k
                         one_hop_graph_list.append(r)
             return one_hop_graph_list

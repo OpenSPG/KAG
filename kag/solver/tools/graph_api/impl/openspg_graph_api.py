@@ -164,6 +164,7 @@ class OpenSPGGraphApi(GraphApiABC):
             self.cache_one_hop_graph.update(cached_map)
             one_hop = self._get_cached_one_hop_graph(entity.biz_id, entity.type, self.cache_one_hop_graph)
         if one_hop is None:
+            logger.warning(f"get_entity_one_hop failed! {dsl_query}")
             return None
         return copy_one_hop_graph_data(one_hop, "s")
 
