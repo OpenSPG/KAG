@@ -37,11 +37,16 @@ class FuzzyMatchRetrieval:
 
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_un_std()
+        if un_std_p is None:
+            logger.warning(f"get_unstd_p_text get p emtpy {n}")
+            un_std_p = ''
         start_value_type = n.s.get_entity_first_type_or_un_std()
-        if start_value_type == "Others":
+        if start_value_type is None or start_value_type == "Others":
+            logger.warning(f"get_unstd_p_text get start_value_type {start_value_type} {n}")
             start_value_type = "Entity"
         target_value_type = n.o.get_entity_first_type_or_un_std()
-        if target_value_type == "Others":
+        if target_value_type is None or target_value_type == "Others":
+            logger.warning(f"get_unstd_p_text get target_value_type {target_value_type} {n}")
             target_value_type = "Entity"
         un_std_p = f"{start_value_type}{'[' + n.get_ele_name('s') + ']' if n.get_ele_name('s') != '' else ''} {un_std_p} {target_value_type}{'[' + n.o.entity_name + ']' if n.o.entity_name is not None else ''}"
         return un_std_p
@@ -235,6 +240,7 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                     results = [future.result() for future in concurrent.futures.as_completed(futures)]
                     for r in results:
                         if r is None:
+                            logger.warning(f"{n} recall chunk data")
                             continue
                         r.s_alias_name = k
                         one_hop_graph_list.append(r)

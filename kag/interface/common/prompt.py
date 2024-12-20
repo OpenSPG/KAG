@@ -158,6 +158,7 @@ class PromptABC(Registrable, ABC):
         Raises:
         - ValueError: If the template format is unsupported.
         """
+        self.template_variables_value = variables
         if isinstance(self.template, str):
             return self._build_str_prompt(variables)
         elif isinstance(self.template, dict):
