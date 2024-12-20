@@ -116,5 +116,5 @@ class DefaultLFExecutor(LFExecutorABC):
         # merge all results
         res = self.merger.merge(query, history)
         res.retrieved_kg_graph = kg_graph
-        res.kg_exact_solved_answer = process_info['kg_solved_answer']
+        res.kg_exact_solved_answer = "\n".join(process_info['kg_solved_answer'])
         return res

@@ -30,7 +30,6 @@ from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger(__name__)
 
-
 @ChunkRetriever.register("kag")
 class KAGRetriever(ChunkRetriever):
     """
@@ -133,14 +132,14 @@ class KAGRetriever(ChunkRetriever):
         """
         tmp_dict = {}
         for tmp_entity in entities_with_official_name:
-            name = tmp_entity["entity"]
+            name = tmp_entity["name"]
             category = tmp_entity["category"]
             official_name = tmp_entity["official_name"]
             key = f"{category}{name}"
             tmp_dict[key] = official_name
 
         for tmp_entity in source_entities:
-            name = tmp_entity["entity"]
+            name = tmp_entity["name"]
             category = tmp_entity["category"]
             key = f"{category}{name}"
             if key in tmp_dict:
@@ -190,8 +189,14 @@ class KAGRetriever(ChunkRetriever):
         scores = dict()
         if len(start_nodes) != 0:
             try:
+                target_type = self.schema.get_label_within_prefix(CHUNK_TYPE)
+                start_node_set = []
+                for s in start_nodes:
+                    if s['type'] == target_type:
+                        continue
+                    start_node_set.append(s)
                 scores = self.graph_api.calculate_pagerank_scores(
-                    self.schema.get_label_within_prefix(CHUNK_TYPE), start_nodes
+                    self.schema.get_label_within_prefix(CHUNK_TYPE), start_node_set
                 )
             except Exception as e:
                 logger.error(
@@ -213,6 +218,8 @@ class KAGRetriever(ChunkRetriever):
             query = processing_phrases(query)
             if query_type not in self.schema.node_en_zh.keys():
                 query_type = self.schema.get_label_within_prefix(OTHER_TYPE)
+            else:
+                query_type = self.schema.get_label_within_prefix(query_type)
             typed_nodes = self.search_api.search_vector(
                 label=query_type,
                 property_key="name",
@@ -315,7 +322,7 @@ class KAGRetriever(ChunkRetriever):
             all_related_entities = list(set(all_related_entities))
 
         if len(all_related_entities) == 0:
-            return []
+            return matched_entities
 
         ner_cands = {}
         for m in matched_entities:
@@ -372,7 +379,7 @@ class KAGRetriever(ChunkRetriever):
 
         entities = {}
         for item in ner_list:
-            entity = item.get("entity", "")
+            entity = item.get("name", "")
             category = item.get("category", "")
             official_name = item.get("official_name", "")
             if not entity or not (category or official_name):
