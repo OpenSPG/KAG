@@ -131,7 +131,7 @@ class MarkDownReader(ReaderABC):
         current_content = []
 
         # Traverse all elements
-        for element in soup.find_all(
+        all_elements = soup.find_all(
             [
                 "h1",
                 "h2",
@@ -147,7 +147,8 @@ class MarkDownReader(ReaderABC):
                 "pre",
                 "code",
             ]
-        ):
+        )
+        for element in all_elements:
             if element.name.startswith("h") and not is_in_code_block(element):
                 # Only process headers that are not in code blocks
                 # Handle title logic
@@ -166,7 +167,7 @@ class MarkDownReader(ReaderABC):
                     stack[-1].children.append(new_node)
                 stack.append(new_node)
 
-            elif element.name in ["pre", "code"]:
+            elif element.name in ["code"]:
                 # Preserve code blocks as is
                 text = element.get_text()
                 if text:
