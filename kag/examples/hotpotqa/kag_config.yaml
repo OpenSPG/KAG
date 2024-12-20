@@ -82,9 +82,10 @@ lf_solver_pipeline:
         llm_client: *id001
         search_api: *id003
         graph_api: *id004
-      chunk_retriever:
+      chunk_retriever: &id005
         type: default
         recall_num: 10
-        rerank_topk: 10
+        rerank_topk: 5
       merger:
         type: base
+        chunk_retriever: *id005

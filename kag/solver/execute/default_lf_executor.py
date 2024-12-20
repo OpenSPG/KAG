@@ -43,9 +43,7 @@ class DefaultLFExecutor(LFExecutorABC):
         # Generate
         self.generator = LFSubGenerator()
 
-        self.merger: LFSubQueryResMerger = merger or LFSubQueryResMerger.from_config({
-            "type": "base"
-        })
+        self.merger: LFSubQueryResMerger = merger
 
         # Initialize executors for different operations.
         self.retrieval_executor = RetrievalExecutor(schema=self.schema,

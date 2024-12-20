@@ -536,7 +536,7 @@ class LFChunkRetriever(KAGRetriever):
         )
         self.text_sim = TextSimilarity(vectorizer=self.vectorize_model)
 
-    def rerank(self, queries: List[str], passages: List[str]):
+    def rerank_docs(self, queries: List[str], passages: List[str]):
         if not isinstance(queries, list):
             queries = [queries]
         if len(passages) == 0:
