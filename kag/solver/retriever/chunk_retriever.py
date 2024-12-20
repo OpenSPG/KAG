@@ -11,8 +11,11 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 
 class ChunkRetriever(KagBaseModule, ABC):
-    def __init__(self, **kwargs):
+    def __init__(self, recall_num: int = 10,
+                 rerank_topk: int = 10, **kwargs):
         super().__init__(**kwargs)
+        self.recall_num = recall_num
+        self.rerank_topk = rerank_topk
         self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
             "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
             "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
@@ -39,14 +42,13 @@ class ChunkRetriever(KagBaseModule, ABC):
             Reranks the retrieved passages based on the given queries.
     """
 
-    def recall_docs(self, queries: List[str], top_k: int = 10, retrieved_spo: Optional[List[RelationData]] = None,
+    def recall_docs(self, queries: List[str], retrieved_spo: Optional[List[RelationData]] = None,
                     **kwargs) -> List[str]:
         """
         Recalls documents based on the given query.
 
         Parameters:
             queries (list of str): The queries string to search for.
-            top_k (int, optional): The number of top documents to return. Defaults to 5.
             retrieved_spo (Optional[List[RelationData]], optional): A list of previously retrieved relation data. Defaults to None.
             **kwargs: Additional keyword arguments for retrieval.
 

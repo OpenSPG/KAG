@@ -49,12 +49,13 @@ class KAGRetriever(ChunkRetriever):
             pagerank_threshold: float = 0.9,
             match_threshold: float = 0.9,
             pagerank_weight: float = 0.5,
+            recall_num: int = 10,
+            rerank_topk: int = 10,
             reranker_model_path: str = None,
             vectorize_model: Vectorizer = None,
             **kwargs,
     ):
-        super().__init__(**kwargs)
-
+        super().__init__(recall_num, rerank_topk, **kwargs)
         if vectorize_model is None:
             vectorize_model = Vectorizer.from_config(
                 KAG_CONFIG.all_config["vectorize_model"]
@@ -365,7 +366,7 @@ class KAGRetriever(ChunkRetriever):
         ner_cache.put(query, ner_list)
         return ner_list
 
-    def recall_docs(self, queries: List[str], top_k: int = 10, retrieved_spo: Optional[List[RelationData]] = None,
+    def recall_docs(self, queries: List[str], retrieved_spo: Optional[List[RelationData]] = None,
                     **kwargs) -> List[str]:
         """
         Recall relevant documents based on the query string.
@@ -380,7 +381,7 @@ class KAGRetriever(ChunkRetriever):
         Returns:
         - list: A list containing the top_k most relevant documents.
         """
-        chunk_nums = top_k * 20
+        chunk_nums = self.recall_num * 20
         if chunk_nums == 0:
             return []
         ner_list = []
@@ -433,7 +434,7 @@ class KAGRetriever(ChunkRetriever):
         )
         logger.debug(f"sorted_scores: {sorted_scores}")
 
-        return self.get_all_docs_by_id(queries, sorted_scores, top_k)
+        return self.get_all_docs_by_id(queries, sorted_scores, self.recall_num)
 
     def get_all_docs_by_id(self, queries: List[str], doc_ids: list, top_k: int):
         """
@@ -515,6 +516,8 @@ class LFChunkRetriever(KAGRetriever):
             pagerank_threshold: float = 0.9,
             match_threshold: float = 0.9,
             pagerank_weight: float = 0.5,
+            recall_num: int = 10,
+            rerank_topk: int = 10,
             reranker_model_path: str = None,
             vectorize_model: VectorizeModelABC = None,
             **kwargs,
@@ -525,6 +528,8 @@ class LFChunkRetriever(KAGRetriever):
             pagerank_threshold,
             match_threshold,
             pagerank_weight,
+            recall_num,
+            rerank_topk,
             reranker_model_path,
             vectorize_model,
             **kwargs
@@ -554,4 +559,4 @@ class LFChunkRetriever(KAGRetriever):
         merged_sorted_idx = np.argsort(-passage_scores)
 
         new_passages = [passages[x] for x in merged_sorted_idx]
-        return new_passages[:10]
+        return new_passages[:self.rerank_topk]

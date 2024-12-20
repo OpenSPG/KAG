@@ -4,11 +4,11 @@ llm: &id001
   model: deepseek-chat
   type: maas
 log:
-  level: DEBUG
+  level: INFO
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '5'
+  id: '1'
   language: en
   namespace: HotpotQA
 resp_solver_pipeline:
@@ -70,17 +70,21 @@ lf_solver_pipeline:
       type: base
       exact_kg_retriever:
         type: default
+        el_num: 5
         search_api: &id003
           type: openspg
         graph_api: &id004
           type: openspg
       fuzzy_kg_retriever:
         type: default
+        el_num: 5
         vectorize_model: *id002
         llm_client: *id001
         search_api: *id003
         graph_api: *id004
       chunk_retriever:
         type: default
+        recall_num: 10
+        rerank_topk: 10
       merger:
         type: base

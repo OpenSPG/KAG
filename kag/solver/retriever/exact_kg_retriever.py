@@ -41,7 +41,7 @@ class ExactKgRetriever(KGRetriever, ABC):
         """
 
     def retrieval_entity(
-            self, mention_entity: SPOEntity, topk=1, **kwargs
+            self, mention_entity: SPOEntity, **kwargs
     ) -> List[EntityData]:
         """
         Retrieve related entities based on the given entity mention.
@@ -50,7 +50,6 @@ class ExactKgRetriever(KGRetriever, ABC):
 
         Parameters:
             entity_mention (str): The name of the entity to retrieve.
-            topk (int, optional): The number of top results to return. Defaults to 1.
             kwargs: additional optional parameters
 
         Returns:

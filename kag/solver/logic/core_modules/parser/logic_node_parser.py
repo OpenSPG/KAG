@@ -29,7 +29,7 @@ class GetSPONode(LogicNode):
         if ele is None:
             return ""
         if isinstance(ele, SPOEntity):
-            return ele.entity_name
+            return ele.entity_name if ele.entity_name else ''
         return ""
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")

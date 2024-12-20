@@ -138,9 +138,9 @@ class ExactMatchRetrieval:
 
 @ExactKgRetriever.register("default", as_default=True)
 class DefaultExactKgRetriever(ExactKgRetriever, ABC):
-    def __init__(self, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
+    def __init__(self, el_num=5, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
-        super().__init__(llm_client, vectorize_model, graph_api, search_api, **kwargs)
+        super().__init__(el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs)
         self.match = ExactMatchRetrieval(self.schema)
 
     def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
@@ -231,7 +231,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         return total_one_kg_graph
 
     def retrieval_entity(
-            self, mention_entity: SPOEntity, topk=1, **kwargs
+            self, mention_entity: SPOEntity, **kwargs
     ) -> List[EntityData]:
         """
         Retrieve related entities based on the given entity mention.
@@ -253,7 +253,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             vectorize_model=self.vectorize_model,
             text_similarity=self.text_similarity,
             search_api=self.search_api,
-            topk=topk,
+            topk=self.el_num,
             recognition_threshold=0.9,
             kwargs=kwargs
         )
