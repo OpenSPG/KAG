@@ -94,9 +94,9 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         self,
         reader: ReaderABC,
         splitter: SplitterABC,
-        extractor: ExtractorABC,
-        vectorizer: VectorizerABC,
-        writer: SinkWriterABC,
+        extractor: ExtractorABC = None,
+        vectorizer: VectorizerABC = None,
+        writer: SinkWriterABC = None,
         post_processor: PostProcessorABC = None,
     ):
         """
