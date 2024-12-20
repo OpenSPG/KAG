@@ -27,8 +27,6 @@ class SolverPipeline(Registrable):
         super().__init__(**kwargs)
         self.max_run = max_run
 
-        self.memory = KagMemoryABC.from_config({"type": "base"})
-
         self.reflector = reflector or KagReflectorABC.from_config({"type": "base"})
         self.reasoner = reasoner or KagReasonerABC.from_config({"type": "base"})
         self.generator = generator or KAGGeneratorABC.from_config({"type": "base"})
@@ -52,6 +50,7 @@ class SolverPipeline(Registrable):
         logger.debug("input instruction:{}".format(instruction))
         present_instruction = instruction
         run_cnt = 0
+        memory = KagMemoryABC.from_config({"type": "base"})
 
         while not if_finished and run_cnt < self.max_run:
             run_cnt += 1
@@ -62,18 +61,18 @@ class SolverPipeline(Registrable):
             )
 
             # Extract evidence from supporting facts
-            self.memory.save_memory(reason_res.kg_exact_solved_answer, reason_res.get_support_facts(), instruction)
+            memory.save_memory(reason_res.kg_exact_solved_answer, reason_res.get_support_facts(), instruction)
             history_log = reason_res.get_trace_log()
             history_log["present_instruction"] = present_instruction
-            history_log["present_memory"] = self.memory.serialize_memory()
+            history_log["present_memory"] = memory.serialize_memory()
             self.trace_log.append(history_log)
 
             # Reflect the current instruction based on the current memory and instruction
             if_finished, present_instruction = self.reflector.reflect_query(
-                self.memory, present_instruction
+                memory, present_instruction
             )
 
-        response = self.generator.generate(instruction, self.memory)
+        response = self.generator.generate(instruction, memory)
         return response, self.trace_log
 
     def get_kg_answer_num(self):
