@@ -57,7 +57,7 @@ class FuzzyMatchRetrieval:
         return self.llm.invoke(
             {"question": question, "mention": mention, "candis": candis},
             resp_plan_prompt,
-            with_json_parse=True,
+            with_json_parse=False,
             with_except=True,
         )
 
@@ -74,11 +74,16 @@ class FuzzyMatchRetrieval:
             res = ""
             try:
                 res = self._choosed_by_llm(query, p_mention, p_candis)
-                for res_ in res:
-                    self.cached_map[p_mention] = self.cached_map.get(
-                        p_mention, []
-                    ) + [res_]
-                    intersection.append(res_)
+                res = res.replace("Output:", "output:")
+                if "output:" in res:
+                    res = re.search("output:(.*)", res).group(1).strip()
+                if res != "":
+                    res = json.loads(res.replace("'", '"'))
+                    for res_ in res:
+                        self.cached_map[p_mention] = self.cached_map.get(
+                            p_mention, []
+                        ) + [res_]
+                        intersection.append(res_)
             except Exception as e:
                 logger.warning(f"retrieval_spo json failed：query={query},  res={res} , except={e}", exc_info=True)
         return [[x, 1.0] for x in intersection]
