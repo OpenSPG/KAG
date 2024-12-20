@@ -21,11 +21,12 @@ class EvaForHotpotqa:
     """
 
     def __init__(self):
-        self.resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
+        pass
 
     def qa(self, query):
         # CA
-        answer, traceLog = self.resp.run(query)
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
+        answer, traceLog = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, traceLog

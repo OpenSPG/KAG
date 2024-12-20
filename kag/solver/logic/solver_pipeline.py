@@ -31,8 +31,6 @@ class SolverPipeline(Registrable):
         self.reasoner = reasoner or KagReasonerABC.from_config({"type": "base"})
         self.generator = generator or KAGGeneratorABC.from_config({"type": "base"})
 
-        self.trace_log = []
-
         self.param = kwargs
 
     def run(self, question):
@@ -48,6 +46,7 @@ class SolverPipeline(Registrable):
         instruction = question
         if_finished = False
         logger.debug("input instruction:{}".format(instruction))
+        trace_log = []
         present_instruction = instruction
         run_cnt = 0
         memory = KagMemoryABC.from_config({"type": "base"})
@@ -65,7 +64,7 @@ class SolverPipeline(Registrable):
             history_log = reason_res.get_trace_log()
             history_log["present_instruction"] = present_instruction
             history_log["present_memory"] = memory.serialize_memory()
-            self.trace_log.append(history_log)
+            trace_log.append(history_log)
 
             # Reflect the current instruction based on the current memory and instruction
             if_finished, present_instruction = self.reflector.reflect_query(
@@ -73,7 +72,7 @@ class SolverPipeline(Registrable):
             )
 
         response = self.generator.generate(instruction, memory)
-        return response, self.trace_log
+        return response, trace_log
 
     def get_kg_answer_num(self):
         """
