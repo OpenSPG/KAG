@@ -394,7 +394,10 @@ class KAGRetriever(ChunkRetriever):
         matched_entities = self._add_extra_entity_from_spo(retrieved_spo=retrieved_spo,
                                                            matched_entities=matched_entities)
         matched_scores = [k['score'] for k in matched_entities]
-        pagerank_scores = self.calculate_pagerank_scores(matched_entities)
+        if len(matched_entities):
+            pagerank_scores = self.calculate_pagerank_scores(matched_entities)
+        else:
+            pagerank_scores = []
 
         if not matched_entities:
             combined_scores = sim_scores
