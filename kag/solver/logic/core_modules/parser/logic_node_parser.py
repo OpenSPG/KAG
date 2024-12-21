@@ -620,11 +620,14 @@ class ParseLogicForm:
     def std_node_type_name(self, type_name):
         if self.schema_retrieval is None:
             return type_name
-        search_entity_labels = self.schema_retrieval.retrieval_entity(
-            SPOEntity(entity_name=type_name)
-        )
-        if len(search_entity_labels) > 0:
-            return search_entity_labels[0].name
+        try:
+            search_entity_labels = self.schema_retrieval.retrieval_entity(
+                SPOEntity(entity_name=type_name)
+            )
+            if len(search_entity_labels) > 0:
+                return search_entity_labels[0].name
+        except Exception as e:
+            logger.warning(f"parse node {type_name} error", exc_info=True)
         return type_name
 
     def get_edge_type_en_by_name(self, type_name):

@@ -11,12 +11,11 @@ from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHo
     copy_one_hop_graph_data
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.utils import generate_biz_id_with_type
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.solver.tools.graph_api.model.table_model import TableData
 from knext.reasoner.client import ReasonerClient
 
 logger = logging.getLogger()
-
 
 def update_cached_one_hop_rel(rel_dict: dict, rel: RelationData):
     rel_set = rel_dict.get(rel.type, [])
@@ -62,7 +61,6 @@ class OpenSPGGraphApi(GraphApiABC):
             "KAG_PROJECT_ID": str(self.project_id),
             "KAG_PROJECT_HOST_ADDR": self.host_addr
         }))
-
 
         self.rc = ReasonerClient(self.host_addr, int(str(self.project_id)))
         self.gr = GraphClient(self.host_addr, int(str(self.project_id)))
@@ -136,30 +134,29 @@ class OpenSPGGraphApi(GraphApiABC):
         for entity_type in entity_type_list:
             entity_type_list_with_prefix.append(f"`{self.schema.get_label_within_prefix(entity_type)}`")
         entity_labels = '|'.join(entity_type_list_with_prefix)
+        n_id_param = generate_gql_id_params(entity.id_set)
         id_set = []
         for entity_id in entity.id_set:
             id_set.append(f'"{entity_id}"')
-        id_sets = ",".join(id_set)
         dsl_query = f"""
         MATCH (n:{entity_labels})
-        WHERE n.id in [{id_sets}]
-        )
+        WHERE n.id in $nid
         RETURN n,n.id
         """
-        tables: TableData = self.execute_dsl(dsl_query)
+        tables: TableData = self.execute_dsl(dsl_query, nid=n_id_param)
         return [self.convert_raw_data_to_node(row[0], False, {}) for row in tables.data]
 
     def get_entity_one_hop(self, entity: EntityData) -> OneHopGraphData:
-        id = f'"{entity.biz_id}"'
+        s_id_param = generate_gql_id_params([entity.biz_id])
         dsl_query = f"""
         MATCH (s:`{entity.type}`)-[p:rdf_expand()]-(o:Entity)
-        WHERE s.id in [{id}]
+        WHERE s.id in $sid
         )
         RETURN s,p,o,s.id,o.id
         """
         one_hop: OneHopGraphData = self._get_cached_one_hop_graph(entity.biz_id, entity.type, self.cache_one_hop_graph)
         if not one_hop:
-            table: TableData = self.execute_dsl(dsl_query)
+            table: TableData = self.execute_dsl(dsl_query, sid=s_id_param)
             cached_map = self.convert_spo_to_one_graph(table)
             self.cache_one_hop_graph.update(cached_map)
             one_hop = self._get_cached_one_hop_graph(entity.biz_id, entity.type, self.cache_one_hop_graph)
@@ -195,8 +192,8 @@ class OpenSPGGraphApi(GraphApiABC):
 
         return cached_map
 
-    def execute_dsl(self, dsl: str) -> TableData:
-        res = self.rc.syn_execute(dsl_content=dsl)
+    def execute_dsl(self, dsl: str, **kwargs) -> TableData:
+        res = self.rc.syn_execute(dsl_content=dsl, **kwargs)
         task_resp: ReasonTask = res.task
         if task_resp is None or task_resp.status != "FINISH":
             logger.warning(f"execute dsl failed! {res}")

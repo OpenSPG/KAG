@@ -14,7 +14,7 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.tools.algorithm.entity_linker import default_search_entity_by_name_algorithm
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
@@ -162,20 +162,21 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             tail_ids = set(tail.biz_id for tail in tails)
             where_caluse = []
             header_labels = set(f'`{head.type}`' for head in heads)
+            params = {}
             if not header_labels:
                 dsl_header_label = 'Entity'
             else:
                 dsl_header_label = "|".join(header_labels)
-                id_set = ','.join([f'"{biz_id}"' for biz_id in header_ids])
-                where_caluse.append(f's.id in [{id_set}]')
+                params['sid'] = generate_gql_id_params(list(header_ids))
+                where_caluse.append(f's.id in $sid')
 
             tail_labels = set(f'`{tail.type}`' for tail in tails)
             if not tail_labels:
                 dsl_tail_label = 'Entity'
             else:
                 dsl_tail_label = "|".join(tail_labels)
-                id_set = ','.join([f'"{biz_id}"' for biz_id in tail_ids])
-                where_caluse.append(f'o.id in [{id_set}]')
+                params['oid'] = generate_gql_id_params(list(tail_ids))
+                where_caluse.append(f'o.id in $oid')
 
             p_type_set = n.p.type_set
             p_label_set = []
@@ -192,7 +193,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             WHERE {' and '.join(where_caluse)}
             RETURN s,p,o,s.id,o.id
             """
-            fat_table = self.graph_api.execute_dsl(dsl)
+            fat_table = self.graph_api.execute_dsl(dsl, **params)
             one_graph_map = self.graph_api.convert_spo_to_one_graph(fat_table)
             return list(one_graph_map.values())
         except Exception as e:

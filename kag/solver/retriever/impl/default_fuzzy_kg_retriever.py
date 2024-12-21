@@ -17,7 +17,7 @@ from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilari
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
 from kag.solver.tools.algorithm.entity_linker import default_search_entity_by_name_algorithm
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 from kag.solver.utils import init_prompt_with_fallback
 
@@ -200,30 +200,34 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                 tail_ids = set(tail.biz_id for tail in tails)
                 where_caluse = []
                 header_labels = set(f'`{head.type}`' for head in heads)
+                params = {}
                 if not header_labels:
                     dsl_header_label = 'Entity'
                 else:
                     dsl_header_label = "|".join(header_labels)
-                    id_set = ','.join([f'"{biz_id}"' for biz_id in header_ids])
-                    where_caluse.append(f's.id in [{id_set}]')
+                    params['sid'] = generate_gql_id_params(list(header_ids))
+                    where_caluse.append(f's.id in $sid')
 
                 tail_labels = set(f'`{tail.type}`' for tail in tails)
                 if not tail_labels:
                     dsl_tail_label = 'Entity'
                 else:
                     dsl_tail_label = "|".join(tail_labels)
-                    id_set = ','.join([f'"{biz_id}"' for biz_id in tail_ids])
-                    where_caluse.append(f'o.id in [{id_set}]')
+                    params['oid'] = generate_gql_id_params(list(tail_ids))
+                    where_caluse.append(f'o.id in $oid')
+                try:
+                    dsl = f"""
+                    MATCH (s:{dsl_header_label})-[p:rdf_expand()]-(o:{dsl_tail_label})
+                    WHERE {' and '.join(where_caluse)}
+                    RETURN s,p,o,s.id,o.id
+                    """
+                    fat_table = self.graph_api.execute_dsl(dsl, **params)
+                    one_graph_map = self.graph_api.convert_spo_to_one_graph(fat_table)
+                    if len(one_graph_map) > 0:
+                        return list(one_graph_map.values())
+                except Exception as e:
+                    logger.warning(f"An error occurred: {e}, so we will call head and tail same time", exc_info=True)
 
-                dsl = f"""
-                MATCH (s:{dsl_header_label})-[p:rdf_expand()]-(o:{dsl_tail_label})
-                WHERE {' and '.join(where_caluse)}
-                RETURN s,p,o,s.id,o.id
-                """
-                fat_table = self.graph_api.execute_dsl(dsl)
-                one_graph_map = self.graph_api.convert_spo_to_one_graph(fat_table)
-                if len(one_graph_map) > 0:
-                    return list(one_graph_map.values())
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 map_dict = {
                     "s": heads,

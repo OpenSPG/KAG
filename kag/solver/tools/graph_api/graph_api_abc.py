@@ -7,6 +7,15 @@ from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHo
 from kag.solver.tools.graph_api.model.table_model import TableData
 
 
+def replace_qota(s: str):
+    return s.replace('"', '\\"')
+
+
+def generate_gql_id_params(ids: List[str]):
+    s_biz_id_set = [f'"{replace_qota(biz_id)}"' for biz_id in ids]
+    return f'[{",".join(s_biz_id_set)}]'
+
+
 class GraphApiABC(Registrable):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -28,7 +37,7 @@ class GraphApiABC(Registrable):
         pass
 
     @abstractmethod
-    def execute_dsl(self, dsl: str) -> TableData:
+    def execute_dsl(self, dsl: str, **kwargs) -> TableData:
         pass
 
     @abstractmethod
