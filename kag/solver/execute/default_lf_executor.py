@@ -23,7 +23,7 @@ logger = logging.getLogger()
 @LFExecutorABC.register("base", as_default=True)
 class DefaultLFExecutor(LFExecutorABC):
     def __init__(self, exact_kg_retriever: ExactKgRetriever, fuzzy_kg_retriever: FuzzyKgRetriever,
-                 chunk_retriever: ChunkRetriever, merger: LFSubQueryResMerger,
+                 chunk_retriever: ChunkRetriever, merger: LFSubQueryResMerger, force_chunk_retriever: bool = False,
                  **kwargs):
         super().__init__(**kwargs)
 
@@ -36,9 +36,11 @@ class DefaultLFExecutor(LFExecutorABC):
         self.exact_kg_retriever = exact_kg_retriever
         self.fuzzy_kg_retriever = fuzzy_kg_retriever
         self.chunk_retriever = chunk_retriever
+        self.force_chunk_retriever = force_chunk_retriever
         self.params['exact_kg_retriever'] = exact_kg_retriever
         self.params['fuzzy_kg_retriever'] = fuzzy_kg_retriever
         self.params['chunk_retriever'] = chunk_retriever
+        self.params['force_chunk_retriever'] = force_chunk_retriever
 
         # Generate
         self.generator = LFSubGenerator()
@@ -92,7 +94,7 @@ class DefaultLFExecutor(LFExecutorABC):
         if not self._judge_sub_answered(kg_answer):
             # try to use spo to generate answer
             sub_answer = "i don't know"
-            if len(res.spo_retrieved):
+            if len(res.spo_retrieved) and not self.force_chunk_retriever:
                 sub_answer = self.generator.generate_sub_answer(lf.query, res.spo_retrieved, [], history)
 
             if not self._judge_sub_answered(sub_answer):

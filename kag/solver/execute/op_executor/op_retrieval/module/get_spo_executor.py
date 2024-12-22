@@ -52,7 +52,7 @@ class GetSPOExecutor(OpExecutor):
         self.fuzzy_kg_retriever: FuzzyKgRetriever = kwargs.get("fuzzy_kg_retriever")
         self.chunk_retriever: ChunkRetriever = kwargs.get("chunk_retriever")
 
-        self.force_chunk = kwargs.get("force_chunk", False)
+        self.force_chunk_retriever = kwargs.get("force_chunk_retriever", False)
 
     def get_mentioned_entity(self, n: GetSPONode, kg_graph: KgGraph):
         entities_candis = []
@@ -96,14 +96,22 @@ class GetSPOExecutor(OpExecutor):
                         s_data_set.append(s_data)
         return s_data_set
 
-    def _kg_match(self, logic_node: LogicNode, req_id: str, kg_retriever: KGRetriever, kg_graph: KgGraph,
+    def _kg_match(self, logic_node: GetSPONode, req_id: str, kg_retriever: KGRetriever, kg_graph: KgGraph,
                   process_info: dict, param: dict) -> tuple[
         bool, KgGraph]:
-        cur_kg_graph = KgGraph()
         if not isinstance(logic_node, GetSPONode):
-            return False, cur_kg_graph
+            return False, KgGraph()
+
         n: GetSPONode = logic_node
-        mentioned_entities = self.get_mentioned_entity(n, kg_graph)
+
+        copy_kg_graph = KgGraph()
+        copy_kg_graph.merge_kg_graph(kg_graph)
+        copy_kg_graph.query_graph[n.p.alias_name] = {
+            "s": n.s.alias_name,
+            "p": n.p.alias_name,
+            "o": n.o.alias_name
+        }
+        mentioned_entities = self.get_mentioned_entity(n, copy_kg_graph)
         if mentioned_entities:
             el_kg_graph = KgGraph()
             el_kg_graph.query_graph[n.p.alias_name] = {
@@ -124,12 +132,12 @@ class GetSPOExecutor(OpExecutor):
                     entity_id_info.type_zh = entity_type_zh
                 el_kg_graph.nodes_alias.append(mentioned_entity.alias_name)
                 el_kg_graph.entity_map[mentioned_entity.alias_name] = linked_entities
-            kg_graph.merge_kg_graph(el_kg_graph)
+            copy_kg_graph.merge_kg_graph(el_kg_graph)
 
-        s_data_set = self._get_start_node_list(n.s, kg_graph)
-        o_data_set = self._get_start_node_list(n.o, kg_graph)
+        s_data_set = self._get_start_node_list(n.s, copy_kg_graph)
+        o_data_set = self._get_start_node_list(n.o, copy_kg_graph)
         if len(s_data_set) == 0 and len(o_data_set) == 0:
-            return False, cur_kg_graph
+            return False, KgGraph()
 
         one_hop_graph_list = kg_retriever.recall_one_hop_graph(logic_node, s_data_set, o_data_set, kwargs=param)
         cur_kg_graph = kg_retriever.retrieval_relation(logic_node, one_hop_graph_list, kwargs=param)
@@ -154,7 +162,7 @@ class GetSPOExecutor(OpExecutor):
 
         is_success, exact_matched_graph = self._kg_match(n, req_id, self.exact_kg_retriever, kg_graph, process_info,
                                                          param)
-        if is_success and not self.force_chunk:
+        if is_success:
             kg_graph.merge_kg_graph(exact_matched_graph)
             return process_info[logic_node.sub_query]
 

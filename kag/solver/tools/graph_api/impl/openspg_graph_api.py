@@ -32,8 +32,6 @@ def convert_edge_to_json(p_str):
         logger.warning(f"_convert_edge_to_json failed {p_str}, {e}", exc_info=True)
         return {}
     prop = dict(p)
-    prop["original_src_id1__"] = p["__from_id__"]
-    prop["original_dst_id2__"] = p["__to_id__"]
     return {"type": p["__label__"], "propertyValues": prop}
 
 

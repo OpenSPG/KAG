@@ -292,6 +292,6 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
             text_similarity=self.text_similarity,
             search_api=self.search_api,
             topk=self.el_num,
-            recognition_threshold=0.7,
+            recognition_threshold=0.8,
             kwargs=kwargs
         )

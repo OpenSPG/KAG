@@ -59,7 +59,6 @@ runner:
     type: hotpotqa
 vectorize_model: *id002
 vectorizer: *id002
-
 lf_solver_pipeline:
   generator:
     generate_prompt:
@@ -68,6 +67,7 @@ lf_solver_pipeline:
     type: base
     lf_executor:
       type: base
+      force_chunk_retriever: true
       exact_kg_retriever:
         type: default
         el_num: 5
@@ -85,7 +85,7 @@ lf_solver_pipeline:
       chunk_retriever: &id005
         type: default
         recall_num: 10
-        rerank_topk: 5
+        rerank_topk: 10
       merger:
         type: base
         chunk_retriever: *id005

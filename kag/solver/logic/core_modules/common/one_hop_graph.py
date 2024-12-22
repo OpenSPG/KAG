@@ -305,6 +305,15 @@ class RelationData:
                 )
         return spo_list
 
+    def rel_to_detail_prop(self):
+        spo = str(self)
+        if self.end_type != 'Text':
+            prop_map = self.prop.get_properties_map_list_value() if self.prop else {}
+            if prop_map:
+                prop_str = ",".join([f"{k}={';'.join(v)}" for k, v in prop_map.items()])
+                return f"{spo} with prop: {prop_str}"
+        return spo
+
     def __repr__(self):
         from_entity_desc = self._get_entity_description(self.from_entity)
         from_entity_desc_str = (
@@ -568,7 +577,7 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.in_relations[k]:
-                    spo_list.append(str(v).strip("(").strip(")"))
+                    spo_list.append(v.rel_to_detail_prop().strip("(").strip(")"))
                 relation_name_set_map[k] = spo_list
         if len(self.out_relations) > 0:
             for k in self.out_relations.keys():
@@ -576,7 +585,7 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.out_relations[k]:
-                    spo_list.append(str(v).strip("(").strip(")"))
+                    spo_list.append(v.rel_to_detail_prop().strip("(").strip(")"))
                 relation_name_set_map[k] = spo_list
         return relation_name_set_map
 
