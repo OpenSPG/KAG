@@ -25,7 +25,7 @@ from kag_ant.medicine_thinker.med_thinker import MedicineThinker
 
 class SolverMain:
 
-    def invoke(
+    def invoke_backup(
         self,
         project_id: int,
         task_id: int,
@@ -73,7 +73,7 @@ class SolverMain:
         )
         return answer
 
-    def invoke_finstate(
+    def invoke(
         self,
         project_id: int,
         task_id: int,
@@ -90,10 +90,9 @@ class SolverMain:
             host_addr=host_addr,
         )
         solver = FinStateSolver(report_tool=report_tool, KAG_PROJECT_ID=project_id)
+        answer = solver.run(query)
         question = Question(query)
         question.id = 0
-        answer, trace_log = solver.run(query)
-        print(trace_log)
         report_tool.report_node(
             question, answer, ReporterIntermediateProcessTool.STATE.FINISH
         )

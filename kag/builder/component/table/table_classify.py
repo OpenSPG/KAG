@@ -40,10 +40,10 @@ class TableClassify(ExtractorABC):
         self.language = self.prompt_config.get("language") or os.getenv(
             "KAG_PROMPT_LANGUAGE", "zh"
         )
-        self.table_context = PromptOp.load(self.biz_scene, "table_context")(
+        self.table_context = PromptOp.load("table", "table_context")(
             language=self.language, project_id=self.project_id
         )
-        self.classify_prompt = PromptOp.load(self.biz_scene, "table_classify")(
+        self.classify_prompt = PromptOp.load("table", "table_classify")(
             language=self.language, project_id=self.project_id
         )
 
@@ -63,6 +63,7 @@ class TableClassify(ExtractorABC):
             return self.do_invoke(input, **kwargs)
         except Exception:
             logger.exception("error")
+            return []
 
     def do_invoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -73,7 +74,9 @@ class TableClassify(ExtractorABC):
             return []
 
         # 提取全局信息
-        table_desc, keywords = self._get_table_context(table_chunk=table_chunk)
+        table_desc, keywords, table_name = self._get_table_context(
+            table_chunk=table_chunk
+        )
         table_desc = "\n".join(table_desc)
 
         _content = table_chunk.content
@@ -89,6 +92,7 @@ class TableClassify(ExtractorABC):
         )
         table_chunk.kwargs["table_type"] = table_type
         table_chunk.kwargs["table_info"] = table_info
+        table_chunk.kwargs["table_name"] = table_name
         table_chunk.kwargs["context"] = table_desc
         table_chunk.kwargs["keywords"] = keywords
         return [table_chunk]
@@ -98,9 +102,7 @@ class TableClassify(ExtractorABC):
         table_desc = ""
         keywords = []
         table_context_str = self._get_table_context_str(table_chunk=table_chunk)
-        if len(table_context_str) <= 0:
-            return "", []
-        table_context = self.llm.invoke(
+        _table_context = self.llm.invoke(
             {
                 "input": table_context_str,
             },
@@ -108,11 +110,13 @@ class TableClassify(ExtractorABC):
             with_json_parse=True,
             with_except=True,
         )
-        table_desc = table_context["table_desc"]
-        keywords = table_context["keywords"]
-        return table_desc, keywords
+        table_desc = _table_context["table_desc"]
+        keywords = _table_context["keywords"]
+        table_name = _table_context["table_name"]
+        return table_desc, keywords, table_name
 
     def _get_table_context_str(self, table_chunk: Chunk):
+        max_context_len = 500
         if "context" in table_chunk.kwargs:
             table_context_str = table_chunk.name + "\n" + table_chunk.kwargs["context"]
         else:
@@ -120,6 +124,16 @@ class TableClassify(ExtractorABC):
         if len(table_context_str) <= 0:
             return None
         # replace markdown table
-        pattern = r'(\|.*\|\n\|[-:|\s]*\|\n(?:\|.*\|\n)*)'
-        replaced_text = re.sub(pattern, "\n** Target Table **\n", table_context_str, flags=re.DOTALL)
-        return replaced_text
+        target_table_str = "\n** Target Table **\n"
+        pattern = r"(\|.*\|\n\|[-:|\s]*\|\n(?:\|.*\|\n)*)"
+        replaced_text = re.sub(
+            pattern, target_table_str, table_context_str, flags=re.DOTALL
+        )
+        start = 0
+        end = len(replaced_text)
+        index = replaced_text.find(target_table_str)
+        if index > max_context_len:
+            start = index - max_context_len
+        if len(replaced_text) - index > max_context_len:
+            end = index + max_context_len
+        return replaced_text[start:end]

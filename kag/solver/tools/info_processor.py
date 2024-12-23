@@ -30,6 +30,15 @@ class ReporterIntermediateProcessTool:
             api_client=ApiClient(configuration=Configuration(host=host_addr))
         )
 
+    def report_ca_pipeline(self, ca_pipeline: CaPipeline):
+        request = ReportPipelineRequest(task_id=self.task_id, pipeline=ca_pipeline)
+        if self.report_log:
+            self.client.reasoner_dialog_report_pipeline_post(
+                report_pipeline_request=request
+            )
+        else:
+            logger.info(request)
+
     def report_pipeline(self, question, rewrite_question_list=[]):
         # print(question)
         for idx, item in enumerate(rewrite_question_list, start=2):

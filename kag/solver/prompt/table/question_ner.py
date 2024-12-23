@@ -21,35 +21,32 @@ from knext.reasoner.client import ReasonerClient
 class QuestionNER(PromptOp):
 
     template_en = """
+{
+  "instruction": "You are an expert in named entity recognition. Please extract entities and keywords. Please respond in the format of a JSON string. You can refer to the example for extraction.",
+  "schema": "$schema",
+  "example": [
     {
-        "instruction": "You are an expert in named entity recognition. Please extract entities and keywords. Please respond in the format of a JSON string. You can refer to the example for extraction.",
-        "schema": $schema,
-        "example": [
-            {
-                "input": "Which year is Total Revenues of Group retirement products the most?",
-                "output": [
-                        {
-                            "entity": "Total Revenues",
-                            "category": "Keyword"
-                        },
-                        {
-                            "entity": "Group retirement products",
-                            "category": "Keyword"
-                        }
-                    ]
-            }
-        ],
-        "input": "$input"
-    }    
-        """
+      "input": "Which year is Total Revenues of Group retirement products the most?",
+      "output": [
+        {
+          "entity": "Total Revenues",
+          "category": "Keyword"
+        },
+        {
+          "entity": "Group retirement products",
+          "category": "Keyword"
+        }
+      ]
+    }
+  ],
+  "input": "$input"
+}"""
 
     template_zh = template_en
 
-    def __init__(
-            self, language: Optional[str] = "en", **kwargs
-    ):
+    def __init__(self, language: Optional[str] = "en", **kwargs):
         super().__init__(language, **kwargs)
-        #self.template = Template(self.template)
+        # self.template = Template(self.template)
 
     @property
     def template_variables(self) -> List[str]:

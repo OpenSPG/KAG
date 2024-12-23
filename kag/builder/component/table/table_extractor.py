@@ -13,6 +13,8 @@
 import json
 import logging
 import os
+import markdown
+from bs4 import BeautifulSoup, Tag
 from typing import List, Set, Dict
 
 
@@ -65,7 +67,10 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         self.language = self.prompt_config.get("language") or os.getenv(
             "KAG_PROMPT_LANGUAGE", "zh"
         )
-        self.table_keywords_prompt = PromptOp.load(self.biz_scene, "table_keywords")(
+        self.table_keywords_prompt = PromptOp.load("table", "table_keywords")(
+            language=self.language, project_id=self.project_id
+        )
+        self.table_reformat = PromptOp.load("table", "table_reformat")(
             language=self.language, project_id=self.project_id
         )
         self.kag_extractor = KAGExtractor(**kwargs)
@@ -95,20 +100,31 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         table_info = input_table.kwargs["table_info"]
         header = table_info["header"]
         index_col = table_info["index_col"]
-        table_df = self._std_table(
+        table_df, header, index_col = self._std_table(
             input_table=input_table, header=header, index_col=index_col
         )
-        table_name = table_info["name"]
+        table_name = input_table.kwargs["table_name"]
+        cell_value_desc = None
+        scale = table_info.get("scale", None)
+        units = table_info.get("units", None)
+        if scale is not None:
+            cell_value_desc = str(scale)
+        if units is not None and isinstance(units, str):
+            cell_value_desc += "," + units
+        if cell_value_desc is not None:
+            cell_value_desc = "(" + cell_value_desc + ")"
+
         table_cell_info: TableInfo = self._generate_table_cell_info(
             data=table_df,
             header=header,
             table_name=table_name,
+            cell_value_desc=cell_value_desc,
         )
-        table_cell_info.sacle = table_info.get("sacle", None)
-        table_cell_info.unit = table_info.get("unit", None)
+        table_cell_info.sacle = table_info.get("scale", None)
+        table_cell_info.unit = table_info.get("units", None)
         table_cell_info.context_keywords = input_table.kwargs["keywords"]
         keyword_set = set()
-        keyword_set.add(table_cell_info.table_name)
+        keyword_set.add(table_name)
         for table_cell in table_cell_info.cell_dict.values():
             table_cell: TableCell = table_cell
             keyword_set.update(list(table_cell.row_keywords.keys()))
@@ -116,7 +132,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             keyword_set=keyword_set, table_name=table_name
         )
         for k, v in keywords_and_colloquial_expression.items():
-            if k == table_cell_info.table_name:
+            if k == table_name:
                 table_cell_info.table_name_colloquial = v
                 continue
             for table_cell in table_cell_info.cell_dict.values():
@@ -167,6 +183,10 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         """
         按照表格新识别的表头，生成markdown文本
         """
+        try:
+            return self._std_table2(input_table=input_table)
+        except:
+            pass
         if "html" in input_table.kwargs:
             html = input_table.kwargs["html"]
             try:
@@ -187,7 +207,28 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             del input_table.kwargs["html"]
             input_table.kwargs["content_type"] = "markdown"
             input_table.kwargs["csv"] = table_df.to_csv()
-            return table_df
+            return table_df, header, index_col
+
+    def _std_table2(self, input_table: Chunk):
+        """
+        转换表格
+        使用大模型转换
+        """
+        input_str = input_table.content
+        new_markdown = self.llm.invoke(
+            {"input": input_str}, self.table_reformat, with_except=True
+        )
+        html_content = markdown.markdown(
+            new_markdown, extensions=["markdown.extensions.tables"]
+        )
+        table_df = pd.read_html(StringIO(html_content), header=[0], index_col=[0])[0]
+        table_df = table_df.fillna("")
+        table_df = table_df.astype(str)
+        input_table.content = table_df.to_markdown()
+        del input_table.kwargs["html"]
+        input_table.kwargs["content_type"] = "markdown"
+        input_table.kwargs["csv"] = table_df.to_csv()
+        return table_df, [0], [0]
 
     def get_subgraph(
         self, input_table: Chunk, table_df: pd.DataFrame, table_cell_info: TableInfo
@@ -199,8 +240,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
 
         # Table node
         table_desc = input_table.kwargs["context"]
-        _table_llm_info = input_table.kwargs["table_info"]
-        table_name = _table_llm_info["name"]
+        table_name = input_table.kwargs["table_name"]
         table_node = Node(
             _id=table_id,
             name=table_name,
@@ -240,8 +280,35 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             )
             edges.append(edge)
 
-            # all row_keywords
             all_keywords_dict = {}
+
+            # all table global keywords
+            global_keywords = input_table.kwargs.get("keywords", [])
+            for gk in global_keywords:
+                global_keyword: str = gk
+                keyword_id = f"{table_name}_{global_keyword}"
+                if keyword_id in all_keywords_dict:
+                    continue
+                keyword_node = Node(
+                    _id=keyword_id,
+                    name=global_keyword,
+                    label="MetricConstraint",
+                    properties={"type": "global"},
+                )
+                all_keywords_dict[keyword_id] = keyword_node
+                nodes.append(keyword_node)
+
+                # keywrod to metric
+                edge = Edge(
+                    _id="gk2c_" + keyword_id,
+                    from_node=keyword_node,
+                    to_node=metric,
+                    label="dimension",
+                    properties={},
+                )
+                edges.append(edge)
+
+            # all row_keywords
             for rk, rv in table_cell.row_keywords.items():
                 row_keyword: str = rk
                 keyword_id = f"{table_name}_{row_keyword}"
@@ -350,6 +417,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         data: pd.DataFrame,
         header,
         table_name,
+        cell_value_desc,
     ):
         table_info = TableInfo(table_name=table_name)
         sub_item_dict = {}
@@ -413,7 +481,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                         describe += f" {data.columns[j][temp_j]}"
                         row_keywords[f"{data.columns[j][temp_j]}"] = {}
                         prev = data.columns[j][temp_j]
-                describe += f" is {data.iloc[i, j]}."
+                describe += f" is {data.iloc[i, j]}{cell_value_desc}"
                 describe = f"[{table_name}]cell[{cell_id}] shows " + describe
                 table_cell = TableCell(desc=describe, row_keywords=row_keywords)
                 table_cell.value = data.iloc[i, j]
