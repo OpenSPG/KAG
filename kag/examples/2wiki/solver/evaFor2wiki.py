@@ -10,12 +10,12 @@ from kag.common.benchmarks.evaluate import Evaluate
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
+from kag.common.checkpointer import CheckpointerManager
 
 logger = logging.getLogger(__name__)
 
 
 class EvaFor2wiki:
-
     """
     init for kag client
     """
@@ -43,13 +43,22 @@ class EvaFor2wiki:
     def parallelQaAndEvaluate(
         self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
-        def process_sample(data):
+        ckpt = CheckpointerManager.get_checkpointer(
+            {"type": "zodb", "ckpt_dir": "ckpt"}
+        )
+
+        def process_sample(data, ckpt):
             try:
                 sample_idx, sample = data
                 sample_id = sample["_id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction, traceLog = self.qa(question)
+                if question in ckpt:
+                    print(f"found existing answer to question: {question}")
+                    prediction, traceLog = ckpt.read_from_ckpt(question)
+                else:
+                    prediction, traceLog = self.qa(question)
+                    ckpt.write_to_ckpt(question, (prediction, traceLog))
 
                 evalObj = Evaluate()
                 metrics = evalObj.getBenchMark([prediction], [gold])
@@ -71,7 +80,7 @@ class EvaFor2wiki:
         }
         with ThreadPoolExecutor(max_workers=threadNum) as executor:
             futures = [
-                executor.submit(process_sample, (sample_idx, sample))
+                executor.submit(process_sample, (sample_idx, sample), ckpt)
                 for sample_idx, sample in enumerate(qaList[:upperLimit])
             ]
             for future in tqdm(
@@ -107,6 +116,7 @@ class EvaFor2wiki:
                 res_metrics[item_key] = item_value / total_metrics["processNum"]
             else:
                 res_metrics[item_key] = total_metrics["processNum"]
+        CheckpointerManager.close()
         return res_metrics
 
 

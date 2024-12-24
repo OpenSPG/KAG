@@ -89,7 +89,7 @@ class KAGPostProcessor(PostProcessorABC):
             if not node.id or not node.label:
                 continue
             if node.label not in self.schema:
-                continue
+                node.label = self.format_label(KAGConstants.KAG_OTHERS_ENTITY_NAME)
             # for k in node.properties.keys():
             #     if k not in self.schema[node.label]:
             #         continue
