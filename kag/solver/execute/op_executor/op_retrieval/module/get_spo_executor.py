@@ -7,7 +7,6 @@ from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, KgGra
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.base.kg_retriever import KGRetriever
-from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
 
@@ -50,9 +49,6 @@ class GetSPOExecutor(OpExecutor):
 
         self.exact_kg_retriever: ExactKgRetriever = kwargs.get("exact_kg_retriever")
         self.fuzzy_kg_retriever: FuzzyKgRetriever = kwargs.get("fuzzy_kg_retriever")
-        self.chunk_retriever: ChunkRetriever = kwargs.get("chunk_retriever")
-
-        self.force_chunk_retriever = kwargs.get("force_chunk_retriever", False)
 
     def get_mentioned_entity(self, n: GetSPONode, kg_graph: KgGraph):
         entities_candis = []
@@ -144,11 +140,11 @@ class GetSPOExecutor(OpExecutor):
         spo_res = cur_kg_graph.get_entity_by_alias(n.p.alias_name)
         if not spo_res:
             return False, cur_kg_graph
-
+        copy_kg_graph.merge_kg_graph(cur_kg_graph)
         process_info[logic_node.sub_query]['spo_retrieved'] = spo_res
         process_info[logic_node.sub_query]['match_type'] = "exact spo" if isinstance(kg_retriever,
                                                                                      ExactKgRetriever) else "fuzzy spo"
-        return True, cur_kg_graph
+        return True, copy_kg_graph
 
     def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
                  process_info: dict, param: dict) -> Dict:

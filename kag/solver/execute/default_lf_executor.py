@@ -99,8 +99,10 @@ class DefaultLFExecutor(LFExecutorABC):
 
             if not self._judge_sub_answered(sub_answer):
                 # chunk retriever
+                all_related_entities = kg_graph.get_all_entity()
+                all_related_entities = list(set(all_related_entities))
                 doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, lf.query],
-                                                                 retrieved_spo=res.spo_retrieved, kwargs=self.params)
+                                                                 retrieved_spo=all_related_entities, kwargs=self.params)
                 res.doc_retrieved = doc_retrieved
                 process_info[lf.query]['doc_retrieved'] = doc_retrieved
                 process_info[lf.query]['match_type'] = "chunk"

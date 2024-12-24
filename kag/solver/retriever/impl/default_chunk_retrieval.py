@@ -318,12 +318,14 @@ class KAGRetriever(ChunkRetriever):
 
     def _add_extra_entity_from_spo(self, matched_entities: list, retrieved_spo: List[RelationData]):
         all_related_entities = []
-        if retrieved_spo is not None:
+        if retrieved_spo:
             for spo in retrieved_spo:
-                if spo.from_entity.type != "Text":
-                    all_related_entities.append(spo.from_entity)
-                if spo.end_entity.type != "Text":
-                    all_related_entities.append(spo.end_entity)
+                if spo.type not in  ['Text', 'attribute']:
+                    all_related_entities.append(spo)
+                # if spo.from_entity.type not in ['Text', 'attribute']:
+                #     all_related_entities.append(spo.from_entity)
+                # if spo.end_entity.type not in ['Text', 'attribute']:
+                #     all_related_entities.append(spo.end_entity)
             all_related_entities = list(set(all_related_entities))
 
         if len(all_related_entities) == 0:

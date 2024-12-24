@@ -42,7 +42,7 @@ def default_search_entity_by_name_algorithm(mention_entity: SPOEntity, schema: S
         recall_topk = 10
     query_vector = vectorize_model.vectorize(mention_entity.entity_name)
     typed_nodes = search_api.search_vector(
-        label=with_prefix_type,
+        label="Entity",
         property_key="name",
         query_vector=query_vector,
         topk=recall_topk,
@@ -98,7 +98,7 @@ def default_search_entity_by_name_algorithm(mention_entity: SPOEntity, schema: S
         return sorted_people_dicts[:topk]
 
     if "entity" not in query_type.lower():
-        sorted_nodes = rerank_sematic_type(sorted_nodes, with_prefix_type)
+        sorted_nodes = rerank_sematic_type(sorted_nodes, query_type)
     sorted_people_dicts = sorted(
         sorted_nodes, key=lambda node: node["score"], reverse=True
     )
