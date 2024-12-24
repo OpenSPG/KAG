@@ -99,16 +99,15 @@ class ScannerABC(BuilderComponent, ABC):
 
     def download_data(self, input: Input, **kwargs) -> List[Output]:
         """
-        Loads data by returning the input file path as a list of strings.
-
-        This method takes the input file path and returns it as a list containing the file path.
+        Downloads data from a given input URL or returns the input directly if it is not a URL.
 
         Args:
-            input (Input): The file path to load.
-            **kwargs: Additional keyword arguments.
+            input (Input): The input source, which can be a URL (starting with "http://" or "https://") or a local path.
+            **kwargs: Additional keyword arguments (currently unused).
 
         Returns:
-            List[Output]: A list containing the input file path.
+            List[Output]: A list containing the local file path if the input is a URL, or the input itself if it is not a URL.
+
         """
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
