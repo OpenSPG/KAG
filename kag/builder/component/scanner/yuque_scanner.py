@@ -49,7 +49,7 @@ class YuqueScanner(ScannerABC):
     @property
     def input_types(self) -> Type[Input]:
         """The type of input this Runnable object accepts specified as a type annotation."""
-        return str
+        return Union[str, List[str]]
 
     @property
     def output_types(self) -> Type[Output]:
@@ -90,12 +90,15 @@ class YuqueScanner(ScannerABC):
             List[Output]: A list of strings, where each string contains the token and the URL of each document.
         """
         url = input
-        data = self.get_yuque_api_data(url)
-        if isinstance(data, dict):
-            # for single yuque doc
-            return [f"{self.token}@{url}"]
-        output = []
-        for item in data:
-            slug = item["slug"]
-            output.append(os.path.join(url, slug))
-        return [f"{self.token}@{url}" for url in output]
+        if isinstance(url, str):
+            data = self.get_yuque_api_data(url)
+            if isinstance(data, dict):
+                # for single yuque doc
+                return [f"{self.token}@{url}"]
+            output = []
+            for item in data:
+                slug = item["slug"]
+                output.append(os.path.join(url, slug))
+            return [f"{self.token}@{url}" for url in output]
+        else:
+            return [f"{self.token}@{x}" for x in url]

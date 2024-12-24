@@ -95,6 +95,7 @@ class JSONScanner(ScannerABC):
         Raises:
             ValueError: If there is an error reading the JSON data or if the input is not a valid JSON array or object.
         """
+        input = self.download_data(input)
         try:
             if os.path.exists(input):
                 corpus = self._read_from_file(input)

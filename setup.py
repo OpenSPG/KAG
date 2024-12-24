@@ -54,6 +54,8 @@ setup(
             "*.tests",
             "*.tests.*",
             "*.pyc",
+            "__pycache__",
+            "*/__pycache__/*",
         ],
     ),
     python_requires=">=3.8",
@@ -69,6 +71,8 @@ setup(
     entry_points={
         "console_scripts": [
             "kag = kag.bin.kag_cmds:main",
+            "knext=knext.command.knext_cli:_main",
         ]
     },
 )
+

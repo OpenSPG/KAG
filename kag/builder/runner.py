@@ -143,6 +143,7 @@ class BuilderChainRunner(Registrable):
 
         futures = []
         print(f"Processing {input}")
+        success = 0
         try:
             with ThreadPoolExecutor(self.num_chains) as executor:
                 for item in self.scanner.generate(input):

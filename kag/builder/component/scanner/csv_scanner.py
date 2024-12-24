@@ -19,32 +19,18 @@ from knext.common.base.runnable import Input, Output
 
 @ScannerABC.register("csv")
 class CSVScanner(ScannerABC):
-    """
-    A class for reading CSV files and converting them into a list of dictionaries.
-
-    This class inherits from `ScannerABC` and provides functionality to read CSV files.
-    It can either return the entire row as a dictionary or split the row into multiple dictionaries
-    based on specified columns.
-
-    Attributes:
-        cols (List[str]): A list of column names to be processed. If None, the entire row is returned as a dictionary.
-        rank (int): The rank of the current process (used for distributed processing).
-        world_size (int): The total number of processes (used for distributed processing).
-    """
-
-    def __init__(self, cols: List[str] = None, rank: int = 0, world_size: int = 1):
-        """
-        Initializes the CSVScanner with optional columns, rank, and world size.
-
-        Args:
-            cols (List[str], optional): A list of column names to be processed. Defaults to None.
-                - If not specified, each row of the CSV file will be returned as a single dictionary.
-                - If specified, each row will be split into multiple dictionaries, one for each specified column.
-            rank (int, optional): The rank of the current process. Defaults to None.
-            world_size (int, optional): The total number of processes. Defaults to None.
-        """
+    def __init__(
+        self,
+        header: bool = True,
+        col_names: List[str] = None,
+        col_ids: List[int] = None,
+        rank: int = 0,
+        world_size: int = 1,
+    ):
         super().__init__(rank=rank, world_size=world_size)
-        self.cols = cols
+        self.header = header
+        self.col_names = col_names
+        self.col_ids = col_ids
 
     @property
     def input_types(self) -> Input:
@@ -65,14 +51,19 @@ class CSVScanner(ScannerABC):
         Returns:
             List[Output]: A list of dictionaries containing the processed data.
         """
-        data = pd.read_csv(input, dtype=str)
-        if self.cols is None:
+        input = self.download_data(input)
+        if self.header:
+            data = pd.read_csv(input, dtype=str)
+        else:
+            data = pd.read_csv(input, dtype=str, header=None)
+        col_keys = self.col_names if self.col_names else self.col_ids
+        if col_keys is None:
             return data.to_dict(orient="records")
 
         contents = []
         for _, row in data.iterrows():
             for k, v in row.items():
-                if k in self.cols:
+                if k in col_keys:
                     v = str(v)
                     name = v[:5] + "..." + v[-5:]
                     contents.append(
