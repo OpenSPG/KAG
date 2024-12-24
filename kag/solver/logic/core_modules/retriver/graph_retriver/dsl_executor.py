@@ -4,8 +4,8 @@ import logging
 import time
 from typing import List
 
-from knext.reasoner import TableResult, ReasonTask
-from knext.reasoner.client import ReasonerClient
+from kag.reasoner import TableResult, ReasonTask
+from kag.reasoner.client import ReasonerClient
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     copy_one_hop_graph_data,
     EntityData,

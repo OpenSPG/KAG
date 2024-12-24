@@ -15,7 +15,7 @@ from typing import List
 
 from kag.interface import ScannerABC
 
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("dir")

@@ -14,11 +14,11 @@ import logging
 from enum import Enum
 from typing import Type, Dict, List
 
-from knext.graph.client import GraphClient
+from kag.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
 from kag.common.conf import KAG_PROJECT_CONF
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF, init_env, KAGConstants
-from knext.project.client import ProjectClient
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF, KAGConstants
+from kag.common.env import init_env
+from kag.project.client import ProjectClient
 
 
 def test_local_config():

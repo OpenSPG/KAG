@@ -17,7 +17,7 @@ import yaml
 from pathlib import Path
 from typing import Union, Optional
 
-from knext.project.client import ProjectClient
+from kag.project.client import ProjectClient
 
 
 class KAGConstants(object):

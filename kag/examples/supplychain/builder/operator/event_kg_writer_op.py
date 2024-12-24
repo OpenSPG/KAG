@@ -3,7 +3,7 @@ from typing import List
 
 from kag.builder.component.writer.kg_writer import AlterOperationEnum
 
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 class EventKGWriter(KGWriter):

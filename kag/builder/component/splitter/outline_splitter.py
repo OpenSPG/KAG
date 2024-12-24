@@ -18,7 +18,7 @@ from typing import List, Type, Union, Tuple
 
 import matplotlib.pyplot as plt
 from kag.interface.common.prompt import PromptABC
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks

@@ -13,8 +13,8 @@
 from typing import Dict, List
 
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import SchemaClient
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import SchemaClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import MappingABC
 

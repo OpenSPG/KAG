@@ -20,9 +20,9 @@ from kag.examples.supplychain.builder.operator.fund_date_process_op import (
     FundDateProcessComponent,
 )
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
-from knext.search.client import SearchClient
+from kag.search.client import SearchClient
 from kag.interface import KAGBuilderChain as BuilderChainABC
-from knext.search.client import SearchClient
+from kag.search.client import SearchClient
 from kag.builder.runner import BuilderChainRunner
 
 

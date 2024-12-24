@@ -69,6 +69,7 @@ setup(
     entry_points={
         "console_scripts": [
             "kag = kag.bin.kag_cmds:main",
+            "knext=kag.command.knext_cli:_main"
         ]
     },
 )

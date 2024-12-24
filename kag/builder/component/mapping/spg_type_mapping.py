@@ -14,12 +14,12 @@ from typing import Dict, List, Callable
 
 import pandas
 
-from knext.schema.client import BASIC_TYPES
+from kag.schema.client import BASIC_TYPES
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import SchemaClient
-from knext.schema.model.base import SpgTypeEnum
-from knext.schema.model.schema_helper import (
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import SchemaClient
+from kag.schema.model.base import SpgTypeEnum
+from kag.schema.model.schema_helper import (
     PropertyName,
 )
 from kag.common.conf import KAG_PROJECT_CONF

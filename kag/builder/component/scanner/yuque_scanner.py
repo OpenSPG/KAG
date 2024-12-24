@@ -15,7 +15,7 @@ from typing import Type, List
 
 # from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.interface import ScannerABC
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("yuque")

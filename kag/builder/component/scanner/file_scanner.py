@@ -14,7 +14,7 @@ from typing import List
 
 from kag.interface import ScannerABC
 from kag.common.conf import KAG_PROJECT_CONF
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("file")

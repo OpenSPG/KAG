@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 class SinkWriterABC(BuilderComponent, ABC):

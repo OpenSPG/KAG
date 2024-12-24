@@ -23,9 +23,9 @@ from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
-from knext.schema.client import CHUNK_TYPE, BASIC_TYPES
-from knext.common.base.runnable import Input, Output
-from knext.schema.client import SchemaClient
+from kag.schema.client import CHUNK_TYPE, BASIC_TYPES
+from kag.common.base.runnable import Input, Output
+from kag.schema.client import SchemaClient
 
 logger = logging.getLogger(__name__)
 

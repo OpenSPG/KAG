@@ -15,10 +15,11 @@ from tenacity import stop_after_attempt, retry
 from kag.interface import PostProcessorABC
 from kag.interface import ExternalGraphLoaderABC
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAGConstants, KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.constants import KAGConstants
 from kag.common.utils import get_vector_field_name
-from knext.search.client import SearchClient
-from knext.schema.client import SchemaClient
+from kag.search.client import SearchClient
+from kag.schema.client import SchemaClient
 
 
 logger = logging.getLogger()

@@ -25,6 +25,7 @@ from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Output
+
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTPage

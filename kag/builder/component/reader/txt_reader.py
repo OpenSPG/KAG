@@ -16,7 +16,7 @@ from typing import List
 from kag.builder.model.chunk import Chunk
 from kag.interface import ReaderABC
 from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Input, Output
+from kag.common.base.runnable import Input, Output
 
 
 @ReaderABC.register("txt")
