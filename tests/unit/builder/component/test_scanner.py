@@ -61,7 +61,7 @@ def test_csv_scanner():
 def test_csv_scanner_with_cols():
     file_path = os.path.join(pwd, "../data/test_csv.csv")
     scanner = ScannerABC.from_config(
-        {"type": "csv", "rank": 0, "world_size": 1, "cols": ["title", "text"]}
+        {"type": "csv", "rank": 0, "world_size": 1, "col_names": ["title", "text"]}
     )
     csv_content = []
     for _, item in pd.read_csv(file_path, dtype=str).iterrows():
@@ -71,15 +71,26 @@ def test_csv_scanner_with_cols():
     assert len(data) == len(csv_content) * 2
 
     scanner_1 = ScannerABC.from_config(
-        {"type": "csv", "rank": 0, "world_size": 2, "cols": ["title", "text"]}
+        {"type": "csv", "rank": 0, "world_size": 2, "col_names": ["title", "text"]}
     )
     scanner_2 = ScannerABC.from_config(
-        {"type": "csv", "rank": 1, "world_size": 2, "cols": ["title", "text"]}
+        {"type": "csv", "rank": 1, "world_size": 2, "col_names": ["title", "text"]}
     )
 
     data_1 = scanner_1.invoke(file_path)
     data_2 = scanner_2.invoke(file_path)
     data = data_1 + data_2
+    assert len(data) == len(csv_content) * 2
+
+    file_path = os.path.join(pwd, "../data/test_csv_headerless.csv")
+    scanner = ScannerABC.from_config(
+        {"type": "csv", "rank": 0, "world_size": 1, "col_ids": [0, 1], "header": False}
+    )
+    csv_content = []
+    for _, item in pd.read_csv(file_path, dtype=str, header=None).iterrows():
+        csv_content.append(item.to_dict())
+    data = scanner.invoke(file_path)
+
     assert len(data) == len(csv_content) * 2
 
 
@@ -127,15 +138,20 @@ def test_directory_scanner():
 
 
 def test_yuque_scanner():
-    scanner = ScannerABC.from_config(
-        {
-            "type": "yuque",
-            "token": "f6QiFu1gIDEGJIsI6jziOWbE7E9MsFkipeV69NHq",
-        }
-    )
+    token = "pKjtrFOr7w4QUzBTEjXdpV33QzVEHR49kvkZmGFV"
+    scanner = ScannerABC.from_config({"type": "yuque", "token": token})
     urls = scanner.invoke(
         "https://yuque-api.antfin-inc.com/api/v2/repos/un8gkl/kg7h1z/docs/"
     )
     for url in urls:
         token, rea_url = url.split("@", 1)
         assert token == scanner.token
+
+    urls = scanner.invoke(
+        ["https://yuque-api.antfin-inc.com/api/v2/repos/un8gkl/kg7h1z/docs/"]
+    )
+    assert (
+        len(urls) == 1
+        and urls[0]
+        == f"{token}@https://yuque-api.antfin-inc.com/api/v2/repos/un8gkl/kg7h1z/docs/"
+    )
