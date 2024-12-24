@@ -381,7 +381,7 @@ class SchemaFreeExtractor(ExtractorABC):
         """
 
         title = input.name
-        passage = title + "\n" + input.content
+        passage = str(title + "\n" + input.content)
         out = []
         entities = self.named_entity_recognition(passage)
         sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)

@@ -121,6 +121,9 @@ class CheckPointer(Registrable):
 
         raise NotImplementedError("size not implemented yet.")
 
+    def __contains__(self, key):
+        return self.exists(key)
+
 
 class CheckpointerManager:
     """

@@ -11,6 +11,7 @@ from kag.examples.utils import delay_run
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
+from kag.common.checkpointer import CheckpointerManager
 
 logger = logging.getLogger(__name__)
 
@@ -39,17 +40,27 @@ class EvaForHotpotqa:
     def parallelQaAndEvaluate(
         self, qaFilePath, resFilePath, threadNum=1, upperLimit=10, run_failed=False
     ):
-        def process_sample(data):
+        ckpt = CheckpointerManager.get_checkpointer(
+            {"type": "zodb", "ckpt_dir": "ckpt"}
+        )
+
+        def process_sample(data, ckpt):
             try:
                 sample_idx, sample = data
                 sample_id = sample["_id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                if "prediction" not in sample.keys():
-                    prediction, traceLog = self.qa(question)
+                # if "prediction" not in sample.keys():
+                #     prediction, traceLog = self.qa(question)
+                # else:
+                #     prediction = sample["prediction"]
+                #     traceLog = sample["traceLog"]
+                if question in ckpt:
+                    print(f"found existing answer to question: {question}")
+                    prediction, traceLog = ckpt.read_from_ckpt(question)
                 else:
-                    prediction = sample["prediction"]
-                    traceLog = sample["traceLog"]
+                    prediction, traceLog = self.qa(question)
+                    ckpt.write_to_ckpt(question, (prediction, traceLog))
 
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
@@ -71,7 +82,7 @@ class EvaForHotpotqa:
         }
         with ThreadPoolExecutor(max_workers=threadNum) as executor:
             futures = [
-                executor.submit(process_sample, (sample_idx, sample))
+                executor.submit(process_sample, (sample_idx, sample), ckpt)
                 for sample_idx, sample in enumerate(qaList[:upperLimit])
             ]
             for future in tqdm(
@@ -107,6 +118,7 @@ class EvaForHotpotqa:
                 res_metrics[item_key] = item_value / total_metrics["processNum"]
             else:
                 res_metrics[item_key] = total_metrics["processNum"]
+        CheckpointerManager.close()
         return res_metrics
 
 

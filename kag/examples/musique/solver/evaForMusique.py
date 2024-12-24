@@ -5,16 +5,18 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
+
+from kag.common.benchmarks.evaluate import Evaluate
+from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
-from kag.common.benchmarks.evaluate import Evaluate
-from kag.examples.utils import delay_run
-from kag.solver.logic.solver_pipeline import SolverPipeline
+
+from kag.common.checkpointer import CheckpointerManager
 
 logger = logging.getLogger(__name__)
 
 
-class EvaForMusique:
+class EvaFormusique:
     """
     init for kag client
     """
@@ -22,18 +24,17 @@ class EvaForMusique:
     def __init__(self):
         pass
 
+    """
+        qa from knowledge base, 
+    """
+
     def qa(self, query):
+        # CA
         resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
-        answer, trace_log = resp.run(query)
+        answer, traceLog = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
-        return answer, trace_log
-
-    def qaWithoutLogicForm(self, query):
-        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["resp_solver_pipeline"])
-        answer, trace_log = resp.run(query)
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
-        return answer, trace_log
+        return answer, traceLog
 
     """
         parallel qa from knowledge base
@@ -43,16 +44,24 @@ class EvaForMusique:
     def parallelQaAndEvaluate(
         self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
-        def process_sample(data):
+        ckpt = CheckpointerManager.get_checkpointer(
+            {"type": "zodb", "ckpt_dir": "ckpt"}
+        )
+
+        def process_sample(data, ckpt):
             try:
                 sample_idx, sample = data
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction, traceLog = self.qaWithoutLogicForm(question)
-
-                evaObj = Evaluate()
-                metrics = evaObj.getBenchMark([prediction], [gold])
+                if question in ckpt:
+                    print(f"found existing answer to question: {question}")
+                    prediction, traceLog = ckpt.read_from_ckpt(question)
+                else:
+                    prediction, traceLog = self.qa(question)
+                    ckpt.write_to_ckpt(question, (prediction, traceLog))
+                evalObj = Evaluate()
+                metrics = evalObj.getBenchMark([prediction], [gold])
                 return sample_idx, sample_id, prediction, metrics, traceLog
             except Exception as e:
                 import traceback
@@ -71,7 +80,7 @@ class EvaForMusique:
         }
         with ThreadPoolExecutor(max_workers=threadNum) as executor:
             futures = [
-                executor.submit(process_sample, (sample_idx, sample))
+                executor.submit(process_sample, (sample_idx, sample, ckpt))
                 for sample_idx, sample in enumerate(qaList[:upperLimit])
             ]
             for future in tqdm(
@@ -107,23 +116,24 @@ class EvaForMusique:
                 res_metrics[item_key] = item_value / total_metrics["processNum"]
             else:
                 res_metrics[item_key] = total_metrics["processNum"]
+        CheckpointerManager.close()
         return res_metrics
 
 
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
-    delay_run(hours=0)
-    evaObj = EvaForMusique()
+    evalObj = EvaFormusique()
 
     start_time = time.time()
     filePath = "./data/musique_qa_sub.json"
-    # filePath = "./data/musique_qa_train.json"
+
+    evalObj.qa("When did Lothair Ii's mother die?")
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"musique_res_{start_time}.json"
     )
-    total_metrics = evaObj.parallelQaAndEvaluate(
+    total_metrics = evalObj.parallelQaAndEvaluate(
         qaFilePath, resFilePath, threadNum=20, upperLimit=10000
     )
 
