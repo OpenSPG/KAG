@@ -64,7 +64,8 @@ kag-indexer:
 lf_solver_pipeline:
   generator:
     generate_prompt:
-      type: resp_simple
+      type: default_resp_generator # kag.solver.prompt.default.resp_generator.RespGenerator
+      #type: resp_simple # solver.prompt.resp_generator.RespGenerator
   reasoner:
     type: base
     lf_executor:
