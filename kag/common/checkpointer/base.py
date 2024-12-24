@@ -121,6 +121,18 @@ class CheckPointer(Registrable):
 
         raise NotImplementedError("size not implemented yet.")
 
+    def __contains__(self, key):
+        """
+        Defines the behavior of the `in` operator for the object.
+        Args:
+            key (str): The key to check for existence in the checkpoint.
+
+        Returns:
+            bool: True if the key exists in the checkpoint, False otherwise.
+        """
+
+        return self.exists(key)
+
 
 class CheckpointerManager:
     """
