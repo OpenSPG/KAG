@@ -54,6 +54,8 @@ setup(
             "*.tests",
             "*.tests.*",
             "*.pyc",
+            "__pycache__",
+            "*/__pycache__/*",
         ],
     ),
     python_requires=">=3.8",
