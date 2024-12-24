@@ -62,9 +62,8 @@ class DefaultLFExecutor(LFExecutorABC):
     def _judge_sub_answered(self, sub_answer: str):
         return sub_answer and "i don't know" not in sub_answer.lower()
 
-    def _execute_lf(self, req_id: str, query: str, lf: LFPlan, process_info: Dict,
+    def _execute_spo_answer(self, req_id: str, query: str, lf: LFPlan, process_info: Dict,
                     kg_graph: KgGraph, history: List[LFPlan]) -> SubQueryResult:
-
         res = SubQueryResult()
         res.sub_query = lf.query
         process_info[lf.query] = {
@@ -89,33 +88,40 @@ class DefaultLFExecutor(LFExecutorABC):
                 logger.warning(f"unknown operator: {n.operator}")
 
         res.spo_retrieved = process_info[lf.query].get('spo_retrieved', [])
-        kg_answer = process_info[lf.query]['kg_answer']
+        res.sub_answer = process_info[lf.query]['kg_answer']
+        res.doc_retrieved = []
+        res.match_type = process_info[lf.query]['match_type']
         # generate sub answer
-        if not self._judge_sub_answered(kg_answer):
+        if not self._judge_sub_answered(res.sub_answer) and (len(res.spo_retrieved) and not self.force_chunk_retriever):
             # try to use spo to generate answer
-            sub_answer = "i don't know"
-            if len(res.spo_retrieved) and not self.force_chunk_retriever:
-                sub_answer = self.generator.generate_sub_answer(lf.query, res.spo_retrieved, [], history)
+            res.sub_answer = self.generator.generate_sub_answer(lf.query, res.spo_retrieved, [], history)
+        return res
 
-            if not self._judge_sub_answered(sub_answer):
-                # chunk retriever
-                all_related_entities = kg_graph.get_all_entity()
-                all_related_entities = list(set(all_related_entities))
-                sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
-                doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, sub_query],
-                                                                 retrieved_spo=all_related_entities, kwargs=self.params)
-                res.doc_retrieved = doc_retrieved
-                process_info[lf.query]['doc_retrieved'] = doc_retrieved
-                process_info[lf.query]['match_type'] = "chunk"
-                # generate sub answer by chunk ans spo
-                docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
-                sub_answer = self.generator.generate_sub_answer(lf.query, res.spo_retrieved, docs,
-                                                                history)
-        else:
-            sub_answer = kg_answer
+    def _execute_chunk_answer(self, req_id: str, query: str, lf: LFPlan, process_info: Dict,
+                    kg_graph: KgGraph, history: List[LFPlan], res: SubQueryResult) -> SubQueryResult:
+        if not self._judge_sub_answered(res.sub_answer):
+            # chunk retriever
+            all_related_entities = kg_graph.get_all_entity()
+            all_related_entities = list(set(all_related_entities))
+            sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
+            doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, sub_query],
+                                                             retrieved_spo=all_related_entities, kwargs=self.params)
+            res.doc_retrieved = doc_retrieved
+            process_info[lf.query]['doc_retrieved'] = doc_retrieved
+            process_info[lf.query]['match_type'] = "chunk"
+            # generate sub answer by chunk ans spo
+            docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
+            res.sub_answer = self.generator.generate_sub_answer(lf.query, res.spo_retrieved, docs,
+                                                            history)
+        return res
 
-        res.match_type = process_info[lf.query].get('match_type', 'chunk')
-        res.sub_answer = sub_answer
+
+    def _execute_lf(self, req_id: str, query: str, lf: LFPlan, process_info: Dict,
+                    kg_graph: KgGraph, history: List[LFPlan]) -> SubQueryResult:
+        res = self._execute_spo_answer(req_id, query, lf, process_info, kg_graph, history)
+        if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
+            # if not found answer in kg, we retrieved chunk to answer.
+            return self._execute_chunk_answer(req_id, query, lf, process_info, kg_graph, history, res)
         return res
 
     def _generate_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):

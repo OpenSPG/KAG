@@ -157,49 +157,65 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         Returns:
             List[OneHopGraphData]: A list of one-hop graph data for the given entity.
         """
-        try:
-            header_ids = set(head.biz_id for head in heads)
-            tail_ids = set(tail.biz_id for tail in tails)
-            where_caluse = []
-            header_labels = set(f'`{head.type}`' for head in heads)
-            params = {}
-            if not header_labels:
-                dsl_header_label = 'Entity'
-            else:
-                dsl_header_label = "|".join(header_labels)
-                params['sid'] = generate_gql_id_params(list(header_ids))
-                where_caluse.append(f's.id in $sid')
+        header_ids = set(head.biz_id for head in heads)
+        tail_ids = set(tail.biz_id for tail in tails)
+        where_caluse = []
+        header_labels = set(f'`{head.type}`' for head in heads)
+        params = {}
+        if not header_labels:
+            dsl_header_label = 'Entity'
+        else:
+            dsl_header_label = "|".join(header_labels)
+            params['sid'] = generate_gql_id_params(list(header_ids))
+            where_caluse.append(f's.id in $sid')
 
-            tail_labels = set(f'`{tail.type}`' for tail in tails)
-            if not tail_labels:
-                dsl_tail_label = 'Entity'
-            else:
-                dsl_tail_label = "|".join(tail_labels)
-                params['oid'] = generate_gql_id_params(list(tail_ids))
-                where_caluse.append(f'o.id in $oid')
+        tail_labels = set(f'`{tail.type}`' for tail in tails)
+        if not tail_labels:
+            dsl_tail_label = 'Entity'
+        else:
+            dsl_tail_label = "|".join(tail_labels)
+            params['oid'] = generate_gql_id_params(list(tail_ids))
+            where_caluse.append(f'o.id in $oid')
 
-            p_type_set = n.p.type_set
-            p_label_set = []
-            for type in p_type_set:
-                if type.std_entity_type is not None:
-                    p_label_set.append(f'"{type.std_entity_type}"')
-                else:
-                    p_label_set.append(f'"{type.un_std_entity_type}"')
-            p_label = ''
-            if len(p_label_set):
-                p_label = '[' + ",".join(p_label_set) + ']'
-            dsl = f"""
-            MATCH (s:{dsl_header_label})-[p:rdf_expand({p_label})]->(o:{dsl_tail_label})
-            WHERE {' and '.join(where_caluse)}
-            RETURN s,p,o,s.id,o.id
-            """
-            fat_table = self.graph_api.execute_dsl(dsl, **params)
-            one_graph_map = self.graph_api.convert_spo_to_one_graph(fat_table)
-            return list(one_graph_map.values())
-        except Exception as e:
-            # Log the error or handle it appropriately
-            logger.warning(f"An error occurred: {e}", exc_info=True)
-            return []
+        p_type_set = n.p.type_set
+        p_label_str_set = []
+        p_label_set = []
+        for type in p_type_set:
+            if type.std_entity_type is not None:
+                p_label_set.append(type.std_entity_type)
+                p_label_str_set.append(f'"{type.std_entity_type}"')
+            else:
+                p_label_str_set.append(f'"{type.un_std_entity_type}"')
+        p_label = ''
+        if len(p_label_str_set):
+            p_label = '[' + ",".join(p_label_str_set) + ']'
+
+        exact_dsls = []
+        if len(p_label_set) > 0:
+            # first we use exact ql to query
+            exact_dsls.append(f"""
+        MATCH (s:{dsl_header_label})-[p:{'|'.join(exact_dsls)}]->(o:{dsl_tail_label})
+        WHERE {' and '.join(where_caluse)}
+        RETURN s,p,o,s.id,o.id
+        """)
+        # if exact ql failed, we call one hop graph to filter
+        exact_dsls.append(f"""
+        MATCH (s:{dsl_header_label})-[p:rdf_expand({p_label})]->(o:{dsl_tail_label})
+        WHERE {' and '.join(where_caluse)}
+        RETURN s,p,o,s.id,o.id
+        """)
+        res = []
+        for exact_dsl in exact_dsls:
+            try:
+                fat_table = self.graph_api.execute_dsl(exact_dsl, **params)
+                one_graph_map = self.graph_api.convert_spo_to_one_graph(fat_table)
+                res = list(one_graph_map.values())
+                if len(res) > 0:
+                    return res
+            except Exception as e:
+                # Log the error or handle it appropriately
+                logger.warning(f"An error occurred: {e}", exc_info=True)
+        return res
 
     def retrieval_relation(
             self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
