@@ -101,7 +101,8 @@ class DefaultLFExecutor(LFExecutorABC):
                 # chunk retriever
                 all_related_entities = kg_graph.get_all_entity()
                 all_related_entities = list(set(all_related_entities))
-                doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, lf.query],
+                sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
+                doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, sub_query],
                                                                  retrieved_spo=all_related_entities, kwargs=self.params)
                 res.doc_retrieved = doc_retrieved
                 process_info[lf.query]['doc_retrieved'] = doc_retrieved
@@ -115,6 +116,16 @@ class DefaultLFExecutor(LFExecutorABC):
         res.match_type = process_info[lf.query].get('match_type', 'chunk')
         res.sub_answer = sub_answer
         return res
+
+    def _generate_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):
+        # Generate a sub-query with history qa pair
+        if history:
+            history_sub_answer = [h.res.sub_answer for h in history[:3] if
+                                  "i don't know" not in h.res.sub_answer.lower()]
+            sub_query_with_history_qa = '\n'.join(history_sub_answer) + '\n' + sub_query
+        else:
+            sub_query_with_history_qa = sub_query
+        return sub_query_with_history_qa
 
     def execute(self, query, lf_nodes: List[LFPlan]) -> LFExecuteResult:
         process_info = {

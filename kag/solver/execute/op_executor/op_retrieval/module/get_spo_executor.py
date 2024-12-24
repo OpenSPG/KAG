@@ -133,13 +133,13 @@ class GetSPOExecutor(OpExecutor):
         s_data_set = self._get_start_node_list(n.s, copy_kg_graph)
         o_data_set = self._get_start_node_list(n.o, copy_kg_graph)
         if len(s_data_set) == 0 and len(o_data_set) == 0:
-            return False, KgGraph()
+            return False, copy_kg_graph
 
         one_hop_graph_list = kg_retriever.recall_one_hop_graph(logic_node, s_data_set, o_data_set, kwargs=param)
         cur_kg_graph = kg_retriever.retrieval_relation(logic_node, one_hop_graph_list, kwargs=param)
         spo_res = cur_kg_graph.get_entity_by_alias(n.p.alias_name)
         if not spo_res:
-            return False, cur_kg_graph
+            return False, copy_kg_graph
         copy_kg_graph.merge_kg_graph(cur_kg_graph)
         process_info[logic_node.sub_query]['spo_retrieved'] = spo_res
         process_info[logic_node.sub_query]['match_type'] = "exact spo" if isinstance(kg_retriever,
