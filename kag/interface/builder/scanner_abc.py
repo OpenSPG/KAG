@@ -9,9 +9,11 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 
@@ -94,6 +96,29 @@ class ScannerABC(BuilderComponent, ABC):
         data = self.load_data(input, **kwargs)
         for item in self._generate(data):
             yield item
+
+    def download_data(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Downloads data from a given input URL or returns the input directly if it is not a URL.
+
+        Args:
+            input (Input): The input source, which can be a URL (starting with "http://" or "https://") or a local path.
+            **kwargs: Additional keyword arguments (currently unused).
+
+        Returns:
+            List[Output]: A list containing the local file path if the input is a URL, or the input itself if it is not a URL.
+
+        """
+        if input.startswith("http://") or input.startswith("https://"):
+            from kag.common.utils import download_from_http
+
+            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
+            if not os.path.exists(local_file_path):
+                os.makedirs(local_file_path)
+            local_file = os.path.join(local_file_path, os.path.basename(input))
+            local_file = download_from_http(input, local_file)
+            return local_file
+        return input
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
         """

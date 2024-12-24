@@ -11,6 +11,8 @@ from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.solver.logic.solver_pipeline import SolverPipeline
 
+from kag.common.checkpointer import CheckpointerManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,13 +45,22 @@ class EvaForMusique:
     def parallelQaAndEvaluate(
         self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
+        ckpt = CheckpointerManager.get_checkpointer(
+            {"type": "zodb", "ckpt_dir": "ckpt"}
+        )
+
         def process_sample(data):
             try:
                 sample_idx, sample = data
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction, traceLog = self.qaWithoutLogicForm(question)
+                if question in ckpt:
+                    print(f"found existing answer to question: {question}")
+                    prediction, traceLog = ckpt.read_from_ckpt(question)
+                else:
+                    prediction, traceLog = self.qa(question)
+                    ckpt.write_to_ckpt(question, (prediction, traceLog))
 
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
@@ -107,6 +118,7 @@ class EvaForMusique:
                 res_metrics[item_key] = item_value / total_metrics["processNum"]
             else:
                 res_metrics[item_key] = total_metrics["processNum"]
+        CheckpointerManager.close()
         return res_metrics
 
 
