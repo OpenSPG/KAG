@@ -140,6 +140,9 @@ class GetSPOExecutor(OpExecutor):
         spo_res = cur_kg_graph.get_entity_by_alias(n.p.alias_name)
         if not spo_res:
             return False, copy_kg_graph
+        cur_kg_graph.nodes_alias.append(n.s.alias_name)
+        cur_kg_graph.nodes_alias.append(n.o.alias_name)
+        cur_kg_graph.edge_alias.append(n.p.alias_name)
         copy_kg_graph.merge_kg_graph(cur_kg_graph)
         process_info[logic_node.sub_query]['spo_retrieved'] = spo_res
         process_info[logic_node.sub_query]['match_type'] = "exact spo" if isinstance(kg_retriever,

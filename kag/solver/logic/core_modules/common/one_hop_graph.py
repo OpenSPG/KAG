@@ -125,6 +125,11 @@ class EntityData:
         self.type_zh: str = None
         self.score = 1.0
 
+    def get_short_name(self):
+        if self.name:
+            return self.name
+        return self.biz_id
+
     def get_properties_map_list_value(self):
         if self.prop is None:
             return {}

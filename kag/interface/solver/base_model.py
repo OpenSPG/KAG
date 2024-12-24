@@ -391,12 +391,10 @@ class LFExecuteResult:
             i = 0
             for sub_plan in self.sub_plans:
                 sub_res = sub_plan.res
-                if "i don't know" in sub_res.sub_answer.lower():
-                    continue
                 facts.append(f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}")
                 i += 1
         if len(self.rerank_docs) != 0:
-            facts.append("retrieved docs:")
+            facts.append("Passages:")
             facts += self.rerank_docs
         return "\n".join(facts)
 

@@ -316,7 +316,7 @@ class KAGRetriever(ChunkRetriever):
             )
         return combined_scores
 
-    def _add_extra_entity_from_spo(self, matched_entities: list, retrieved_spo: List[RelationData]):
+    def _add_extra_entity_from_spo(self, matched_entities: Dict, retrieved_spo: List[RelationData]):
         all_related_entities = []
         if retrieved_spo:
             for spo in retrieved_spo:
@@ -329,11 +329,9 @@ class KAGRetriever(ChunkRetriever):
             all_related_entities = list(set(all_related_entities))
 
         if len(all_related_entities) == 0:
-            return matched_entities
+            return matched_entities.values()
 
-        ner_cands = {}
-        for m in matched_entities:
-            ner_cands[f"{m['name']}_{m['type']}"] = m
+        ner_cands = matched_entities
 
         def convert_entity_data_to_ppr_cand(related_entities: List[EntityData]):
             ret_ppr_candis = {}
@@ -386,28 +384,34 @@ class KAGRetriever(ChunkRetriever):
         chunk_nums = self.recall_num * 20
         if chunk_nums == 0:
             return []
-        ner_list = []
+        matched_entities_map = {}
         for query in queries:
+            entities = {}
             assert isinstance(query, str), "Query must be a string"
-            ner_list += self._parse_ner_list(query)
+            ner_list = self._parse_ner_list(query)
+            for item in ner_list:
+                entity = item.get("name", "")
+                category = item.get("category", "")
+                official_name = item.get("official_name", "")
+                if not entity or not (category or official_name):
+                    continue
+                if category.lower() in ["works", "person", "other"]:
+                    entities[entity] = category
+                else:
+                    entities[entity] = official_name or category
 
-        entities = {}
+            cur_matched = self.match_entities(entities)
+            for matched_entity in cur_matched:
+                key = f"{matched_entity['name']}_{matched_entity['type']}"
+                if key not in matched_entities_map or matched_entity['score'] > matched_entities_map[key]['score']:
+                    matched_entities_map[key] = matched_entity
 
-        for item in ner_list:
-            entity = item.get("name", "")
-            category = item.get("category", "")
-            official_name = item.get("official_name", "")
-            if not entity or not (category or official_name):
-                continue
-            if category.lower() in ["works", "person", "other"]:
-                entities[entity] = category
-            else:
-                entities[entity] = official_name or category
-
-        matched_entities = self.match_entities(entities)
         matched_entities = self._add_extra_entity_from_spo(retrieved_spo=retrieved_spo,
-                                                           matched_entities=matched_entities)
-        matched_scores = [k['score'] for k in matched_entities]
+                                                           matched_entities=matched_entities_map)
+        try:
+            matched_scores = [k['score'] for k in matched_entities]
+        except Exception as e:
+            logger.error(f"mathematics error: {e}")
         if len(matched_entities):
             pagerank_scores = self.calculate_pagerank_scores(matched_entities)
         else:
@@ -418,6 +422,7 @@ class KAGRetriever(ChunkRetriever):
             combined_scores = pagerank_scores
         else:
             sim_scores = {}
+            queries = queries[1:]
             for query in queries:
                 query_sim_scores = self.calculate_sim_scores(query, chunk_nums)
                 for doc_id,score in query_sim_scores.items():

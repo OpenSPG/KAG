@@ -124,9 +124,10 @@ class FuzzyMatchRetrieval:
                     revert_graph_map[v] = one_hop_graph
             for k, v_set in one_hop_graph.get_s_all_attribute_spo().items():
                 for v in v_set:
-                    all_spo_text.append(v)
-                    revert_value_p_map[v] = k
-                    revert_graph_map[v] = one_hop_graph
+                    attr_txt = f"{one_hop_graph.s.get_short_name()} {k} {v}"
+                    all_spo_text.append(attr_txt)
+                    revert_value_p_map[attr_txt] = k
+                    revert_graph_map[attr_txt] = one_hop_graph
         start_time = time.time()
         tok5_res = self.text_similarity.text_sim_result(
             n.sub_query, all_spo_text, 5, low_score=0.3
