@@ -13,7 +13,7 @@ import copy
 import os
 import logging
 import yaml
-
+import json
 from pathlib import Path
 from typing import Union, Optional
 
@@ -52,9 +52,15 @@ class KAGGlobalConf:
 
     def initialize(self, **kwargs):
         if not self._initialized:
-            self.project_id = kwargs.pop(KAGConstants.KAG_PROJECT_ID_KEY, "1")
+            self.project_id = kwargs.pop(
+                KAGConstants.KAG_PROJECT_ID_KEY,
+                os.getenv(KAGConstants.ENV_KAG_PROJECT_ID, "1"),
+            )
             self.host_addr = kwargs.pop(
-                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY, "http://127.0.0.1:8887"
+                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY,
+                os.getenv(
+                    KAGConstants.ENV_KAG_PROJECT_HOST_ADDR, "http://127.0.0.1:8887"
+                ),
             )
             self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
             self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
@@ -91,7 +97,20 @@ def load_config(prod: bool = False):
     if prod:
         project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
         host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-        config = ProjectClient(host_addr=host_addr).get_config(project_id)
+        project_client = ProjectClient(host_addr=host_addr)
+        project = project_client.get_by_id(project_id)
+        config = json.loads(project.config)
+        if "project" not in config:
+            config["project"] = {
+                KAGConstants.KAG_PROJECT_ID_KEY: project_id,
+                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY: host_addr,
+                KAGConstants.KAG_NAMESPACE_KEY: project.namespace,
+                KAGConstants.KAG_BIZ_SCENE_KEY: project,
+            }
+            prompt_config = config.pop("prompt", {})
+            for key in [KAGConstants.KAG_LANGUAGE_KEY, KAGConstants.KAG_BIZ_SCENE_KEY]:
+                if key in prompt_config:
+                    config["project"][key] = prompt_config[key]
         return config
     else:
         config_file = _closest_cfg()

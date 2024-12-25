@@ -51,6 +51,13 @@ class ProjectClient(Client):
                 return project
         return None
 
+    def get_by_id(self, project_id: str):
+        projects = self._rest_client.project_get()
+        for project in projects:
+            if str(project.id) == str(project_id):
+                return project
+        return None
+
     def create(self, name: str, namespace: str, desc: str = None, auto_schema=False):
         project_create_request = rest.ProjectCreateRequest(
             name=name, desc=desc, namespace=namespace, auto_schema=auto_schema
