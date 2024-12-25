@@ -124,7 +124,7 @@ class KAGPostProcessor(PostProcessorABC):
                     similar_nodes = self._search_client.search_vector(
                         label=label,
                         property_key=property_key,
-                        query_vector=vector,
+                        query_vector=[float(x) for x in vector],
                         topk=1,
                         params={},
                     )
