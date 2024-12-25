@@ -171,7 +171,7 @@ class FuzzyMatchRetrieval:
         return total_one_kg_graph
 
 
-@FuzzyKgRetriever.register("default", as_default=True)
+@FuzzyKgRetriever.register("default_fuzzy_kg_retriever", as_default=True)
 class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
     def __init__(self, el_num=1, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):

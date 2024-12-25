@@ -514,8 +514,8 @@ class KAGRetriever(ChunkRetriever):
         return self.reranker.rerank(queries, passages)
 
 
-@ChunkRetriever.register("default")
-class LFChunkRetriever(KAGRetriever):
+@ChunkRetriever.register("default_chunk_retriever")
+class DefaultChunkRetriever(KAGRetriever):
     def __init__(
             self,
             ner_prompt: PromptABC = None,

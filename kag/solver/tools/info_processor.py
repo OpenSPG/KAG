@@ -227,7 +227,7 @@ class ReporterIntermediateProcessTool:
         context = []
         sub_answer = None
         if len(spo_retrieved) > 0:
-            spo_answer_path = json.dumps(kg_graph.to_spo_path(spo_retrieved), ensure_ascii=False, indent=4)
+            spo_answer_path = json.dumps(kg_graph.to_spo_path(spo_retrieved, self.language), ensure_ascii=False, indent=4)
             spo_answer_path = f"```json\n{spo_answer_path}\n```"
             graph_id = f"{req_id}_{index}"
             graph_div = f"<div class='{graph_id}'></div>\n\n"
@@ -265,7 +265,7 @@ class ReporterIntermediateProcessTool:
                 node = DataNode(
                     id=entity.to_show_id(self.language),
                     name=entity.get_short_name(),
-                    label=entity.type_zh,
+                    label=entity.type_zh if self.language == 'zh' else entity.type,
                     properties=entity.prop.get_properties_map() if entity.prop else {}
                 )
                 return node
@@ -284,7 +284,7 @@ class ReporterIntermediateProcessTool:
                 to=end_node.id,
                 to_type=end_node.label,
                 properties=spo.prop.get_properties_map() if spo.prop else {},
-                label=spo.type_zh
+                label=spo.type_zh if self.language == 'zh' else spo.type,
             )
             edges.append(data_spo)
         sub_graph = SubGraph(

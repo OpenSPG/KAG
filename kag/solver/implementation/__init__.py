@@ -5,7 +5,7 @@ from kag.solver.implementation.default_reasoner import DefaultReasoner
 from kag.solver.implementation.default_reflector import DefaultReflector
 from kag.solver.retriever.impl.default_chunk_retrieval import (
     KAGRetriever,
-    LFChunkRetriever,
+    DefaultChunkRetriever,
 )
 
 __all__ = [
@@ -15,5 +15,5 @@ __all__ = [
     "DefaultReasoner",
     "DefaultReflector",
     "KAGRetriever",
-    "LFChunkRetriever",
+    "DefaultChunkRetriever",
 ]

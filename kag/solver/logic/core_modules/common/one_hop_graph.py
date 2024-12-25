@@ -379,6 +379,7 @@ class RelationData:
     def from_prop_value(s: EntityData, p: str, o: EntityData):
         rel = RelationData()
         rel.type = p
+        rel.type_zh = p
 
         rel.from_id = s.biz_id
         rel.from_type = s.type

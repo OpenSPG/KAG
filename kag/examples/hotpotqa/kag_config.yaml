@@ -69,21 +69,21 @@ lf_solver_pipeline:
       type: base
       force_chunk_retriever: true
       exact_kg_retriever:
-        type: default
+        type: default_exact_kg_retriever
         el_num: 5
         search_api: &id003
           type: openspg
         graph_api: &id004
           type: openspg
       fuzzy_kg_retriever:
-        type: default
+        type: default_fuzzy_kg_retriever
         el_num: 5
         vectorize_model: *id002
         llm_client: *id001
         search_api: *id003
         graph_api: *id004
       chunk_retriever: &id005
-        type: default
+        type: default_chunk_retriever
         recall_num: 10
         rerank_topk: 10
       merger:

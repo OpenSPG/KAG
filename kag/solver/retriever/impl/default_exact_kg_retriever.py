@@ -136,7 +136,7 @@ class ExactMatchRetrieval:
         return one_kg_graph, matched_flag
 
 
-@ExactKgRetriever.register("default", as_default=True)
+@ExactKgRetriever.register("default_exact_kg_retriever", as_default=True)
 class DefaultExactKgRetriever(ExactKgRetriever, ABC):
     def __init__(self, el_num=5, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):

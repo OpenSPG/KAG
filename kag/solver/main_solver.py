@@ -47,7 +47,7 @@ class SolverMain:
                     'chunk_retriever': {
                         'recall_num': 10,
                         'rerank_topk': 10,
-                        'type': 'default'
+                        'type': 'default_chunk_retriever'
                     },
                     'exact_kg_retriever': {
                         'el_num': 5,
@@ -57,7 +57,7 @@ class SolverMain:
                         'search_api': {
                             'type': 'openspg'
                         },
-                        'type': 'default'
+                        'type': 'default_exact_kg_retriever'
                     },
                     'force_chunk_retriever': True,
                     'fuzzy_kg_retriever': {
@@ -68,13 +68,13 @@ class SolverMain:
                         'search_api': {
                             'type': 'openspg'
                         },
-                        'type': 'default',
+                        'type': 'default_fuzzy_kg_retriever',
                     },
                     'merger': {
                         'chunk_retriever': {
                             'recall_num': 10,
                             'rerank_topk': 10,
-                            'type': 'default',
+                            'type': 'default_chunk_retriever',
                         },
                         'type': 'base'
                     },
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     res = SolverMain().invoke(
         300027,
         2800106,
-        "介绍下周杰伦",
+        "who is Jay Zhou",
         True
     )
     print("*" * 80)
