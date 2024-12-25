@@ -12,7 +12,10 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 class ChunkRetriever(KagBaseModule, ABC):
     def __init__(self, recall_num: int = 10,
-                 rerank_topk: int = 10, **kwargs):
+                 rerank_topk: int = 10,
+                 graph_api: GraphApiABC = None,
+                 search_api: SearchApiABC = None,
+                 **kwargs):
         super().__init__(**kwargs)
         self.recall_num = recall_num
         self.rerank_topk = rerank_topk
@@ -20,11 +23,11 @@ class ChunkRetriever(KagBaseModule, ABC):
             "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
             "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
         }))
-        self.graph_api = GraphApiABC.from_config({
+        self.graph_api = graph_api or GraphApiABC.from_config({
             "type": "openspg"}
         )
 
-        self.search_api = SearchApiABC.from_config({
+        self.search_api = search_api or SearchApiABC.from_config({
             "type": "openspg"
         })
 

@@ -18,6 +18,9 @@ from typing import List, Dict, Optional
 
 import numpy as np
 import logging
+
+from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
 from kag.common.utils import processing_phrases
 from kag.common.conf import KAG_CONFIG
@@ -53,9 +56,11 @@ class KAGRetriever(ChunkRetriever):
             rerank_topk: int = 10,
             reranker_model_path: str = None,
             vectorize_model: Vectorizer = None,
+            graph_api: GraphApiABC = None,
+            search_api: SearchApiABC = None,
             **kwargs,
     ):
-        super().__init__(recall_num, rerank_topk, **kwargs)
+        super().__init__(recall_num, rerank_topk, graph_api, search_api, **kwargs)
         if vectorize_model is None:
             vectorize_model = Vectorizer.from_config(
                 KAG_CONFIG.all_config["vectorize_model"]
@@ -527,6 +532,8 @@ class DefaultChunkRetriever(KAGRetriever):
             rerank_topk: int = 10,
             reranker_model_path: str = None,
             vectorize_model: VectorizeModelABC = None,
+            graph_api: GraphApiABC = None,
+            search_api: SearchApiABC = None,
             **kwargs,
     ):
         super().__init__(
@@ -539,6 +546,8 @@ class DefaultChunkRetriever(KAGRetriever):
             rerank_topk,
             reranker_model_path,
             vectorize_model,
+            graph_api,
+            search_api,
             **kwargs
         )
         self.text_sim = TextSimilarity(vectorizer=self.vectorize_model)
