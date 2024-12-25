@@ -13,6 +13,7 @@ from typing import List, Dict
 
 import knext.common.cache
 from knext.common.base.client import Client
+from knext.common.rest import ApiClient, Configuration
 from knext.schema import rest
 from knext.schema.model.base import BaseSpgType, AlterOperationEnum, SpgTypeEnum
 from knext.schema.model.relation import Relation
@@ -127,12 +128,12 @@ class SchemaSession:
 class SchemaClient(Client):
     """ """
 
-    _rest_client = rest.SchemaApi()
-
     def __init__(self, host_addr: str = None, project_id: str = None):
         super().__init__(host_addr, project_id)
         self._session = None
-
+        self._rest_client: rest.SchemaApi = rest.SchemaApi(
+            api_client=ApiClient(configuration=Configuration(host=host_addr))
+        )
     def query_spg_type(self, spg_type_name: str) -> BaseSpgType:
         """Query SPG type by name."""
         rest_model = self._rest_client.schema_query_spg_type_get(spg_type_name)

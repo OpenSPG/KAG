@@ -1,6 +1,8 @@
 import logging
 from typing import List, Dict
 
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import LLMClient
 from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
 from kag.interface.solver.execute.lf_sub_query_merger_abc import LFSubQueryResMerger
 from kag.solver.execute.op_executor.op_deduce.deduce_executor import DeduceExecutor
@@ -13,9 +15,11 @@ from kag.interface.solver.base_model import LFExecuteResult, LFPlan, SubQueryRes
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.utils import generate_random_string
+from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
+from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
 logger = logging.getLogger()
 
@@ -24,14 +28,17 @@ logger = logging.getLogger()
 class DefaultLFExecutor(LFExecutorABC):
     def __init__(self, exact_kg_retriever: ExactKgRetriever, fuzzy_kg_retriever: FuzzyKgRetriever,
                  chunk_retriever: ChunkRetriever, merger: LFSubQueryResMerger, force_chunk_retriever: bool = False,
+                 llm_client: LLMClient = None,
                  **kwargs):
         super().__init__(**kwargs)
 
         self.params = kwargs
 
         # tmp graph data
-        self.schema: SchemaUtils = kwargs.get("schema", None)
-        self.process_info = {}
+        self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
+            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
+        }))
 
         self.exact_kg_retriever = exact_kg_retriever
         self.fuzzy_kg_retriever = fuzzy_kg_retriever
@@ -43,7 +50,7 @@ class DefaultLFExecutor(LFExecutorABC):
         self.params['force_chunk_retriever'] = force_chunk_retriever
 
         # Generate
-        self.generator = LFSubGenerator()
+        self.generator = LFSubGenerator(llm_client=llm_client)
 
         self.merger: LFSubQueryResMerger = merger
 
@@ -116,12 +123,19 @@ class DefaultLFExecutor(LFExecutorABC):
         return res
 
 
-    def _execute_lf(self, req_id: str, query: str, lf: LFPlan, process_info: Dict,
-                    kg_graph: KgGraph, history: List[LFPlan]) -> SubQueryResult:
+    def _execute_lf(self, req_id: str, query: str, index: int, lf: LFPlan, process_info: Dict,
+                    kg_graph: KgGraph, history: List[LFPlan], **kwargs) -> SubQueryResult:
+        # change node state from WAITING to RUNNING
+        self._update_sub_question_status(report_tool=kwargs.get("report_tool", None), req_id=req_id, index=index, status=ReporterIntermediateProcessTool.STATE.RUNNING, plan=lf, kg_graph=kg_graph)
         res = self._execute_spo_answer(req_id, query, lf, process_info, kg_graph, history)
+        lf.res = res
+        # update node state information
+        self._update_sub_question_status(report_tool=kwargs.get("report_tool", None), req_id=req_id, index=index, status=ReporterIntermediateProcessTool.STATE.RUNNING, plan=lf, kg_graph=kg_graph)
         if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
             # if not found answer in kg, we retrieved chunk to answer.
-            return self._execute_chunk_answer(req_id, query, lf, process_info, kg_graph, history, res)
+            res = self._execute_chunk_answer(req_id, query, lf, process_info, kg_graph, history, res)
+        # change node state from RUNNING to FINISH
+        self._update_sub_question_status(report_tool=kwargs.get("report_tool", None), req_id=req_id, index=index, status=ReporterIntermediateProcessTool.STATE.FINISH, plan=lf, kg_graph=kg_graph)
         return res
 
     def _generate_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):
@@ -134,15 +148,18 @@ class DefaultLFExecutor(LFExecutorABC):
             sub_query_with_history_qa = sub_query
         return sub_query_with_history_qa
 
-    def execute(self, query, lf_nodes: List[LFPlan]) -> LFExecuteResult:
+    def execute(self, query, lf_nodes: List[LFPlan], **kwargs) -> LFExecuteResult:
+        self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
+
         process_info = {
             'kg_solved_answer': []
         }
         kg_graph = KgGraph()
         history = []
         # Process each sub-query.
-        for lf in lf_nodes:
-            sub_result = self._execute_lf(generate_random_string(10), query, lf, process_info, kg_graph, history)
+        for idx, lf in enumerate(lf_nodes):
+            sub_result = self._execute_lf(req_id=generate_random_string(10), index=idx + 1, query=query, lf=lf,
+                                          process_info=process_info, kg_graph=kg_graph, history=history, **kwargs)
             lf.res = sub_result
             history.append(lf)
         # merge all results
@@ -150,3 +167,10 @@ class DefaultLFExecutor(LFExecutorABC):
         res.retrieved_kg_graph = kg_graph
         res.kg_exact_solved_answer = "\n".join(process_info['kg_solved_answer'])
         return res
+    def _create_report_pipeline(self, report_tool: ReporterIntermediateProcessTool, query, lf_nodes):
+        if report_tool:
+            report_tool.report_pipeline(query, lf_nodes)
+
+    def _update_sub_question_status(self, report_tool: ReporterIntermediateProcessTool, req_id, index, status, plan: LFPlan, kg_graph:KgGraph):
+        if report_tool:
+            report_tool.report_node(req_id, index, status, plan, kg_graph)

@@ -25,11 +25,9 @@ logger = logging.getLogger()
 
 
 class FuzzyMatchRetrieval:
-    def __init__(self):
-        config = KAG_CONFIG.all_config
-        model = config.get("llm", {})
-        self.llm: LLMClient = LLMClient.from_config(model)
-        self.text_similarity = TextSimilarity()
+    def __init__(self, llm: LLMClient, text_similarity: TextSimilarity):
+        self.llm: LLMClient = llm
+        self.text_similarity: TextSimilarity = text_similarity
         self.cached_map = {}
 
         self.biz_scene = KAG_PROJECT_CONF.biz_scene
@@ -178,7 +176,7 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
     def __init__(self, el_num=1, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
         super().__init__(el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs)
-        self.match = FuzzyMatchRetrieval()
+        self.match = FuzzyMatchRetrieval(self.llm_module, self.text_similarity)
 
     def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
         OneHopGraphData]:

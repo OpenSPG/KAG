@@ -33,7 +33,7 @@ class SolverPipeline(Registrable):
 
         self.param = kwargs
 
-    def run(self, question):
+    def run(self, question, **kwargs):
         """
         Executes the core logic of the problem-solving system.
 
@@ -56,7 +56,8 @@ class SolverPipeline(Registrable):
             logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log
             reason_res: LFExecuteResult = self.reasoner.reason(
-                present_instruction
+                present_instruction,
+                ** kwargs
             )
 
             # Extract evidence from supporting facts

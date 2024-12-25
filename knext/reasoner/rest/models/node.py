@@ -49,6 +49,8 @@ class Node(object):
         "question": "str",
         "answer": "str",
         "logs": "str",
+        'title': 'str',
+        'subgraph': 'list[SubGraph]'
     }
 
     attribute_map = {
@@ -57,6 +59,8 @@ class Node(object):
         "question": "question",
         "answer": "answer",
         "logs": "logs",
+        'title': 'title',
+        'subgraph': 'subgraph'
     }
 
     def __init__(
@@ -66,6 +70,8 @@ class Node(object):
         question=None,
         answer=None,
         logs=None,
+        title=None,
+        subgraph=None,
         local_vars_configuration=None,
     ):  # noqa: E501
         """Node - a model defined in OpenAPI"""  # noqa: E501
@@ -78,6 +84,8 @@ class Node(object):
         self._question = None
         self._answer = None
         self._logs = None
+        self._title = None
+        self._subgraph = None
         self.discriminator = None
 
         if id is not None:
@@ -90,6 +98,10 @@ class Node(object):
             self.answer = answer
         if logs is not None:
             self.logs = logs
+        if title is not None:
+            self.title = title
+        if subgraph is not None:
+            self.subgraph = subgraph
 
     @property
     def id(self):
@@ -195,6 +207,48 @@ class Node(object):
         """
 
         self._logs = logs
+
+    @property
+    def title(self):
+        """Gets the title of this Node.  # noqa: E501
+
+
+        :return: The title of this Node.  # noqa: E501
+        :rtype: str
+        """
+        return self._title
+
+    @title.setter
+    def title(self, title):
+        """Sets the title of this Node.
+
+
+        :param title: The title of this Node.  # noqa: E501
+        :type: str
+        """
+
+        self._title = title
+
+    @property
+    def subgraph(self):
+        """Gets the subgraph of this Node.  # noqa: E501
+
+
+        :return: The subgraph of this Node.  # noqa: E501
+        :rtype: list[SubGraph]
+        """
+        return self._subgraph
+
+    @subgraph.setter
+    def subgraph(self, subgraph):
+        """Sets the subgraph of this Node.
+
+
+        :param subgraph: The subgraph of this Node.  # noqa: E501
+        :type: list[SubGraph]
+        """
+
+        self._subgraph = subgraph
 
     def to_dict(self):
         """Returns the model properties as a dict"""

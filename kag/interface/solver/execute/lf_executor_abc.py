@@ -15,6 +15,6 @@ class LFExecutorABC(Registrable, ABC):
         super().__init__(**kwargs)
 
     @abstractmethod
-    def execute(self, query, lf_plans: List[LFPlan]) -> LFExecuteResult:
+    def execute(self, query, lf_plans: List[LFPlan], **kwargs) -> LFExecuteResult:
         pass
 

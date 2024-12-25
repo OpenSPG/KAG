@@ -2,7 +2,8 @@ import re
 import logging
 from typing import List
 
-from kag.interface import LLMClient
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import LLMClient, VectorizeModelABC
 from kag.interface import PromptABC
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
@@ -26,14 +27,17 @@ class DefaultLFPlanner(LFPlannerABC):
         self,
         logic_form_plan_prompt: PromptABC = None,
         llm_client: LLMClient = None,
+        vectorize_model: VectorizeModelABC = None,
         **kwargs,
     ):
         super().__init__(llm_client, **kwargs)
-        config = LogicFormConfiguration(kwargs)
-        schema = SchemaUtils(config)
-        schema.get_schema()
-        std_schema = SchemaRetrieval(**kwargs)
-        self.parser = ParseLogicForm(schema, std_schema)
+        self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
+            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
+        }))
+        self.schema.get_schema()
+        std_schema = SchemaRetrieval(vectorize_model=vectorize_model, llm_client=llm_client, **kwargs)
+        self.parser = ParseLogicForm(self.schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
         if logic_form_plan_prompt is None:
             logic_form_plan_prompt = init_prompt_with_fallback(

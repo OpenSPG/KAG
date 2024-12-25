@@ -35,7 +35,7 @@ class KagReasonerABC(KagBaseModule):
     """
 
     @abstractmethod
-    def reason(self, question: str) -> LFExecuteResult:
+    def reason(self, question: str, **kwargs) -> LFExecuteResult:
         """
         Processes a given question by planning and executing logical forms to derive an answer.
 

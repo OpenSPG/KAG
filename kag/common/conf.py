@@ -52,9 +52,15 @@ class KAGGlobalConf:
 
     def initialize(self, **kwargs):
         if not self._initialized:
-            self.project_id = kwargs.pop(KAGConstants.KAG_PROJECT_ID_KEY, "1")
+            self.project_id = kwargs.pop(
+                KAGConstants.KAG_PROJECT_ID_KEY,
+                os.getenv(KAGConstants.ENV_KAG_PROJECT_ID, "1"),
+            )
             self.host_addr = kwargs.pop(
-                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY, "http://127.0.0.1:8887"
+                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY,
+                os.getenv(
+                    KAGConstants.ENV_KAG_PROJECT_HOST_ADDR, "http://127.0.0.1:8887"
+                ),
             )
             self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
             self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")

@@ -45,7 +45,7 @@ class DefaultReasoner(KagReasonerABC):
         self.kg_direct = 0
         self.trace_log = []
 
-    def reason(self, question: str):
+    def reason(self, question: str, **kwargs):
         """
         Processes a given question by planning and executing logical forms to derive an answer.
 
@@ -62,5 +62,5 @@ class DefaultReasoner(KagReasonerABC):
 
         # logic form execution
         return self.lf_executor.execute(
-            question, lf_nodes
+            question, lf_nodes, **kwargs
         )
