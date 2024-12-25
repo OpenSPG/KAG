@@ -11,7 +11,8 @@
 # or implied.
 import os
 
-from kag.common.llm.client import LLMClient
+from knext.project.client import ProjectClient
+
 from kag.solver.common.base import Question
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
 from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
@@ -21,6 +22,7 @@ from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 from kag_ant.medicine_thinker.med_thinker import MedicineThinker
+from kag_ant.thinker.thinker import Thinker
 
 
 class SolverMain:
@@ -116,6 +118,23 @@ class SolverMain:
         thinker = MedicineThinker(report_tool=report_tool)
         resp = thinker.diagnostic_evidence(query)
         return resp
+
+    def invoke_folio(
+        self,
+        project_id: int,
+        task_id: int,
+        query: str,
+        report_tool=True,
+        host_addr="http://127.0.0.1:8887",
+    ):
+        # resp
+        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
+        config = ProjectClient(host_addr=host_addr, project_id=project_id).get_config(project_id)
+        llm_config = eval(os.getenv("KAG_LLM", "{}"))
+        llm_config.update(config.get("llm", {}))
+        thinker = Thinker(env="dev", report_tool=report_tool, llm_config=llm_config)
+        response = thinker.run_folio(question=query)
+        return response['thinkerCot']
 
 
 if __name__ == "__main__":
