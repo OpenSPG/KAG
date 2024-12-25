@@ -32,6 +32,7 @@ class SolverMain:
             task_id=str(task_id),
             project_id=str(project_id),
             host_addr=host_addr,
+            language=KAG_PROJECT_CONF.language
         )
         default_pipeline_config = {
             'generator': {
