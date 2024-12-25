@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
 from kag.interface.solver.base_model import LogicNode, SPOEntity, SPOBase
@@ -93,7 +93,7 @@ class GetSPOExecutor(OpExecutor):
         return s_data_set
 
     def _kg_match(self, logic_node: GetSPONode, req_id: str, kg_retriever: KGRetriever, kg_graph: KgGraph,
-                  process_info: dict, param: dict) -> tuple[
+                  process_info: dict, param: dict) -> Tuple[
         bool, KgGraph]:
         if not isinstance(logic_node, GetSPONode):
             return False, KgGraph()

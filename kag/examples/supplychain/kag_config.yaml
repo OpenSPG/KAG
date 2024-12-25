@@ -4,6 +4,9 @@ lf_solver_pipeline:
       logic_form_plan_prompt:
         type: supplychain_lf_plan
       type: base
+  generator:
+    generate_prompt:
+      type: resp_supplychain
 llm:
   api_key: key
   base_url: https://api.deepseek.com
