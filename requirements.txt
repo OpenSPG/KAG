@@ -38,5 +38,7 @@ python-docx
 charset_normalizer==3.3.2
 pdfminer.six==20231228
 sympy==1.13.3
-openspg-knext==0.5.2b2
+openspg-knext==0.5.2.20241214
 ollama
+retry
+sympy

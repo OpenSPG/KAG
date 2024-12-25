@@ -30,6 +30,7 @@ class LengthSplitter(BaseTableSplitter):
         super().__init__(**kwargs)
         self.split_length = int(split_length)
         self.window_length = int(window_length)
+        self.with_table = kwargs.get("with_table", True)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -84,6 +85,8 @@ class LengthSplitter(BaseTableSplitter):
             List[Chunk]: A list of Chunk objects.
         """
         if org_chunk.type == ChunkTypeEnum.Table:
+            if not self.with_table:
+                return []
             table_chunks = self.split_table(org_chunk=org_chunk, chunk_size=chunk_size, sep=sep)
             if table_chunks is not None:
                 return table_chunks

@@ -63,6 +63,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         self.reranker_model_path = os.getenv("KAG_RETRIEVER_RERANKER_MODEL_PATH")
         if self.reranker_model_path:
             from kag.common.reranker.reranker import BGEReranker
+
             self.reranker = BGEReranker(self.reranker_model_path, use_fp16=True)
         else:
             self.reranker = None
@@ -329,7 +330,6 @@ class DefaultRetriever(ChunkRetrieverABC):
             return []
 
         ner_list = self.named_entity_recognition(query)
-        print(ner_list)
         if self.with_semantic:
             std_ner_list = self.named_entity_standardization(query, ner_list)
             self.append_official_name(ner_list, std_ner_list)
@@ -394,8 +394,8 @@ class DefaultRetriever(ChunkRetrieverABC):
                     id_value=doc_id,
                 )
                 node_dict = dict(node.items())
-                if 'name' not in node_dict:
-                    if 'content' not in node_dict:
+                if "name" not in node_dict:
+                    if "content" not in node_dict:
                         continue
                     node_dict["name"] = ""
                 matched_docs.append(
@@ -443,16 +443,16 @@ class DefaultRetriever(ChunkRetrieverABC):
         return self.reranker.rerank(queries, passages)
 
     def retrieval_table_metric_by_page_rank(
-        self, entities: list, topk=10, **kwargs
+        self, entities: list, topk=10, target_type: str = "TableMetric"
     ) -> List[str]:
         rst = []
         if len(entities) <= 0:
             return rst
-        label = self.schema_util.get_label_within_prefix("TableMetric")
+        label = self.schema_util.get_label_within_prefix(target_type)
         for entity in entities:
             entity["name"] = entity["id"]
         scores = self.graph_algo.calculate_pagerank_scores(
-            self.schema_util.get_label_within_prefix("TableMetric"), entities
+            self.schema_util.get_label_within_prefix(target_type), entities
         )
         scores = {k: s for k, s in scores.items() if float(s) > sys.float_info.min}
         if len(scores) > topk:
@@ -472,27 +472,48 @@ class DefaultRetriever(ChunkRetrieverABC):
             rst.append(node_dict)
         return rst
 
-    def get_table_metrics_by_query(self, query: str):
+    def get_table_metrics_by_query(self, query: str, topk=10):
         """
         query table metrics from entities
         """
         entities = self.named_entity_recognition(query)
         if len(entities) <= 0:
             return {}
-        (entities, scores) = self._match_table_mertric_constraint(entities)
-        table_metrics_list = self.retrieval_table_metric_by_page_rank(entities=entities)
+        (entities, scores) = self.match_table_mertric_constraint(entities)
+        table_metrics_list = self.retrieval_table_metric_by_page_rank(
+            entities=entities, topk=topk
+        )
         rst_list = [
             {k: d[k] for k in {"id", "name"} if k in d} for d in table_metrics_list
         ]
         return rst_list
 
-    def get_table_content_by_query(self, query: str):
-        """
-        query table
-        """
-        return []
+    def get_table_metrics_by_entities(self, entities: List, topk: int = 10):
+        table_metrics_list = self.retrieval_table_metric_by_page_rank(
+            entities=entities, topk=topk
+        )
+        rst_list = [
+            {k: d[k] for k in {"id", "name"} if k in d} for d in table_metrics_list
+        ]
+        return rst_list
 
-    def _match_table_mertric_constraint(self, queries: List[str], top_k: int = 3):
+    def query_table_subitem(self, entities: List, item_key: str):
+        """
+        query subitem
+        """
+        pass
+
+    def query_row_table(self, entities: List, num: int = 1):
+        """
+        query row table
+        """
+        table_list = self.retrieval_table_metric_by_page_rank(
+            entities=entities, topk=num, target_type="Table"
+        )
+        rst_list = [{k: d[k] for k in {"id", "content"} if k in d} for d in table_list]
+        return rst_list
+
+    def match_table_mertric_constraint(self, queries: List[str], top_k: int = 3):
         matched_entities = []
         matched_entities_scores = []
         for query_ner in queries:
@@ -508,7 +529,7 @@ class DefaultRetriever(ChunkRetrieverABC):
                     topk=top_k,
                 )
                 for node in typed_nodes:
-                    if node["score"] > 0.8:
+                    if node["score"] > 0.85:
                         matched_entities.append(
                             {
                                 "name": node["node"]["name"],

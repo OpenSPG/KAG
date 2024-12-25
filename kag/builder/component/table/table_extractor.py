@@ -13,7 +13,9 @@
 import json
 import logging
 import os
-from typing import List
+import markdown
+from bs4 import BeautifulSoup, Tag
+from typing import List, Set, Dict
 
 
 from kag.interface.builder import ExtractorABC
@@ -30,6 +32,7 @@ from io import StringIO
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 from kag.builder.component.extractor.kag_extractor import KAGExtractor
+from kag.builder.component.table.table_cell import TableCell, TableInfo
 from knext.common.base.runnable import Input, Output
 
 
@@ -64,7 +67,10 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         self.language = self.prompt_config.get("language") or os.getenv(
             "KAG_PROMPT_LANGUAGE", "zh"
         )
-        self.table_keywords_prompt = PromptOp.load(self.biz_scene, "table_keywords")(
+        self.table_keywords_prompt = PromptOp.load("table", "table_keywords")(
+            language=self.language, project_id=self.project_id
+        )
+        self.table_reformat = PromptOp.load("table", "table_reformat")(
             language=self.language, project_id=self.project_id
         )
         self.kag_extractor = KAGExtractor(**kwargs)
@@ -94,42 +100,53 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         table_info = input_table.kwargs["table_info"]
         header = table_info["header"]
         index_col = table_info["index_col"]
-        table_df = self._std_table(
+        table_df, header, index_col = self._std_table(
             input_table=input_table, header=header, index_col=index_col
         )
-        table_name = table_info["name"]
-        cell_describe_dict, keyword_dict, value_dict = (
-            self._generate_metric_table_description(
-                data=table_df,
-                header=header,
-                top_header_nonexist_flag=False,
-                table_name=table_name,
-            )
+        table_name = input_table.kwargs["table_name"]
+        cell_value_desc = None
+        scale = table_info.get("scale", None)
+        units = table_info.get("units", None)
+        if scale is not None:
+            cell_value_desc = str(scale)
+        if units is not None and isinstance(units, str):
+            cell_value_desc += "," + units
+        if cell_value_desc is not None:
+            cell_value_desc = "(" + cell_value_desc + ")"
+
+        table_cell_info: TableInfo = self._generate_table_cell_info(
+            data=table_df,
+            header=header,
+            table_name=table_name,
+            cell_value_desc=cell_value_desc,
         )
-        scale = table_info.get("sacle", None)
-        unit = table_info.get("unit", None)
-        table_global_keywords = input_table.kwargs["keywords"]
+        table_cell_info.sacle = table_info.get("scale", None)
+        table_cell_info.unit = table_info.get("units", None)
+        table_cell_info.context_keywords = input_table.kwargs["keywords"]
+        keyword_set = set()
+        keyword_set.add(table_name)
+        for table_cell in table_cell_info.cell_dict.values():
+            table_cell: TableCell = table_cell
+            keyword_set.update(list(table_cell.row_keywords.keys()))
         keywords_and_colloquial_expression = self._extract_keyword_from_table_header(
-            keyword_dict=keyword_dict, table_name=table_name
+            keyword_set=keyword_set, table_name=table_name
         )
+        for k, v in keywords_and_colloquial_expression.items():
+            if k == table_name:
+                table_cell_info.table_name_colloquial = v
+                continue
+            for table_cell in table_cell_info.cell_dict.values():
+                if k in table_cell.row_keywords:
+                    table_cell.row_keywords[k] = v
         return self.get_subgraph(
             input_table,
             table_df,
-            cell_describe_dict,
-            keyword_dict,
-            value_dict,
-            table_global_keywords,
-            scale,
-            unit,
-            keywords_and_colloquial_expression,
+            table_cell_info,
         )
 
-    def _extract_keyword_from_table_header(self, keyword_dict: dict, table_name: str):
-        keyword_list = set()
-        for _, v in keyword_dict.items():
-            keyword_list.update(v)
+    def _extract_keyword_from_table_header(self, keyword_set: Set, table_name: str):
         context = table_name
-        keyword_list = list(keyword_list)
+        keyword_list = list(keyword_set)
         keyword_list.sort()
         input_dict = {"key_list": keyword_list, "context": context}
         keywords_and_colloquial_expression = self.llm.invoke(
@@ -166,6 +183,10 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         """
         按照表格新识别的表头，生成markdown文本
         """
+        try:
+            return self._std_table2(input_table=input_table)
+        except:
+            pass
         if "html" in input_table.kwargs:
             html = input_table.kwargs["html"]
             try:
@@ -180,35 +201,48 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 )[0]
             except IndexError:
                 logging.exception("read html errro")
-            table_df = table_df.astype(str)
             table_df = table_df.fillna("")
+            table_df = table_df.astype(str)
             input_table.content = table_df.to_markdown()
             del input_table.kwargs["html"]
             input_table.kwargs["content_type"] = "markdown"
             input_table.kwargs["csv"] = table_df.to_csv()
-            return table_df
+            return table_df, header, index_col
+
+    def _std_table2(self, input_table: Chunk):
+        """
+        转换表格
+        使用大模型转换
+        """
+        input_str = input_table.content
+        new_markdown = self.llm.invoke(
+            {"input": input_str}, self.table_reformat, with_except=True
+        )
+        html_content = markdown.markdown(
+            new_markdown, extensions=["markdown.extensions.tables"]
+        )
+        table_df = pd.read_html(StringIO(html_content), header=[0], index_col=[0])[0]
+        table_df = table_df.fillna("")
+        table_df = table_df.astype(str)
+        input_table.content = table_df.to_markdown()
+        del input_table.kwargs["html"]
+        input_table.kwargs["content_type"] = "markdown"
+        input_table.kwargs["csv"] = table_df.to_csv()
+        return table_df, [0], [0]
 
     def get_subgraph(
-        self,
-        input_table,
-        table_df,
-        cell_describe_dict,
-        keyword_dict,
-        value_dict,
-        table_global_keywords,
-        scale,
-        unit,
-        keywords_and_colloquial_expression,
+        self, input_table: Chunk, table_df: pd.DataFrame, table_cell_info: TableInfo
     ):
         nodes = []
         edges = []
 
+        table_id = input_table.id
+
         # Table node
         table_desc = input_table.kwargs["context"]
-        table_info = input_table.kwargs["table_info"]
-        table_name = table_info["name"]
+        table_name = input_table.kwargs["table_name"]
         table_node = Node(
-            _id=input_table.id,
+            _id=table_id,
             name=table_name,
             label="Table",
             properties={
@@ -219,29 +253,26 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         )
         nodes.append(table_node)
 
-        all_keywords = {}
-
-        for k, cell in cell_describe_dict.items():
-            keywords_map = {kw: "local" for kw in keyword_dict[k]}
-            for kw in table_global_keywords:
-                keywords_map[kw] = "global"
-            cell_value = value_dict[k]
-            metric_id = f"{input_table.id}_{k}"
+        # all cell node
+        for k, cell in table_cell_info.cell_dict.items():
+            table_cell: TableCell = cell
+            cell_id = f"{table_id}_{k}"
+            # cell node
             metric = Node(
-                _id=metric_id,
-                name=cell,
+                _id=cell_id,
+                name=table_cell.desc,
                 label="TableMetric",
                 properties={
-                    "value": cell_value,
-                    "scale": scale,
-                    "unit": unit,
+                    "value": table_cell.value,
+                    "scale": table_cell_info.sacle,
+                    "unit": table_cell_info.unit,
                 },
             )
             nodes.append(metric)
 
-            # mertic to table
+            # cell to table
             edge = Edge(
-                _id="m2t_" + metric_id,
+                _id="c2t_" + cell_id,
                 from_node=metric,
                 to_node=table_node,
                 label="source",
@@ -249,23 +280,27 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             )
             edges.append(edge)
 
-            for keyword, _type in keywords_map.items():
-                edge_id = f"{input_table.id}_{k}_{keyword}"
-                keyword = keyword.lower()
-                if keyword not in all_keywords:
-                    keyword_node = Node(
-                        _id=f"{table_name}_{keyword}",
-                        name=keyword,
-                        label="MetricConstraint",
-                        properties={"type": _type},
-                    )
-                    all_keywords[keyword] = keyword_node
-                    nodes.append(keyword_node)
-                else:
-                    keyword_node = all_keywords[keyword]
+            all_keywords_dict = {}
+
+            # all table global keywords
+            global_keywords = input_table.kwargs.get("keywords", [])
+            for gk in global_keywords:
+                global_keyword: str = gk
+                keyword_id = f"{table_name}_{global_keyword}"
+                if keyword_id in all_keywords_dict:
+                    continue
+                keyword_node = Node(
+                    _id=keyword_id,
+                    name=global_keyword,
+                    label="MetricConstraint",
+                    properties={"type": "global"},
+                )
+                all_keywords_dict[keyword_id] = keyword_node
+                nodes.append(keyword_node)
+
                 # keywrod to metric
                 edge = Edge(
-                    _id="k2m_" + edge_id,
+                    _id="gk2c_" + keyword_id,
                     from_node=keyword_node,
                     to_node=metric,
                     label="dimension",
@@ -273,69 +308,119 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 )
                 edges.append(edge)
 
-        for k, keyword_node in all_keywords.items():
-            # keyword to table
-            edge_id = f"e_{input_table.id}_{k}"
-            edge = Edge(
-                _id=edge_id,
-                from_node=keyword_node,
-                to_node=table_node,
-                label="source",
-                properties={},
-            )
-            edges.append(edge)
+            # all row_keywords
+            for rk, rv in table_cell.row_keywords.items():
+                row_keyword: str = rk
+                keyword_id = f"{table_name}_{row_keyword}"
+                if keyword_id in all_keywords_dict:
+                    continue
+                keyword_node = Node(
+                    _id=keyword_id,
+                    name=row_keyword,
+                    label="MetricConstraint",
+                    properties={"type": "row"},
+                )
+                all_keywords_dict[keyword_id] = keyword_node
+                nodes.append(keyword_node)
 
-            # keyword and colloquial expression
-            if k in keywords_and_colloquial_expression:
-                colloquial: dict = keywords_and_colloquial_expression[k]
-                for k_split, colloquial_list in colloquial.items():
-                    k_split_node = Node(
-                        _id=f"{table_name}_{k_split}",
-                        name=k_split,
+                # keywrod to metric
+                edge = Edge(
+                    _id="k2c_" + keyword_id,
+                    from_node=keyword_node,
+                    to_node=metric,
+                    label="dimension",
+                    properties={},
+                )
+                edges.append(edge)
+
+                # all splited keywords
+                for sk, sv in rv.items():
+                    splited_keyword: str = sk
+                    s_keyword_id = f"{table_name}_{splited_keyword}"
+                    if s_keyword_id in all_keywords_dict:
+                        splited_keyword_node = all_keywords_dict[s_keyword_id]
+                        c_nodes, c_edges = self._get_colloquial_nodes_and_edges(
+                            colloquial_list=sv,
+                            table_name=table_name,
+                            all_keywords_dict=all_keywords_dict,
+                            splited_keyword_node=splited_keyword_node,
+                        )
+                        nodes.extend(c_nodes)
+                        edges.extend(c_edges)
+                        continue
+                    splited_keyword_node = Node(
+                        _id=s_keyword_id,
+                        name=splited_keyword,
                         label="MetricConstraint",
-                        properties={"type": "ks"},
+                        properties={"type": "splited"},
                     )
-                    nodes.append(k_split_node)
-                    edge_id = f"ks_{input_table.id}_{k_split}"
+                    all_keywords_dict[s_keyword_id] = splited_keyword_node
+                    nodes.append(splited_keyword_node)
+
+                    # keyword to row_keyword
                     edge = Edge(
-                        _id=edge_id,
-                        from_node=k_split_node,
+                        _id="k2rk_" + s_keyword_id,
+                        from_node=splited_keyword_node,
                         to_node=keyword_node,
-                        label="source",
+                        label="parent",
                         properties={},
                     )
                     edges.append(edge)
-                    for coll in colloquial_list:
-                        k_coll_node = Node(
-                            _id=f"{table_name}_{coll}",
-                            name=coll,
-                            label="MetricConstraint",
-                            properties={"type": "ks_coll"},
-                        )
-                        nodes.append(k_coll_node)
-                        edge_id = f"ks_coll_{input_table.id}_{coll}"
-                        edge = Edge(
-                            _id=edge_id,
-                            from_node=k_coll_node,
-                            to_node=keyword_node,
-                            label="source",
-                            properties={},
-                        )
-                        edges.append(edge)
 
+                    c_nodes, c_edges = self._get_colloquial_nodes_and_edges(
+                        colloquial_list=sv,
+                        table_name=table_name,
+                        all_keywords_dict=all_keywords_dict,
+                        splited_keyword_node=splited_keyword_node,
+                    )
+                    nodes.extend(c_nodes)
+                    edges.extend(c_edges)
         subgraph = SubGraph(nodes=nodes, edges=edges)
         return [subgraph]
 
-    def _generate_metric_table_description(
+    def _get_colloquial_nodes_and_edges(
+        self,
+        colloquial_list: List,
+        table_name: str,
+        all_keywords_dict: Dict,
+        splited_keyword_node: Node,
+    ):
+        nodes = []
+        edges = []
+        for ck in colloquial_list:
+            colloquial_keyword: str = ck
+            c_keyword_id = f"{table_name}_{colloquial_keyword}"
+            if c_keyword_id in all_keywords_dict:
+                continue
+            c_keyword_node = Node(
+                _id=c_keyword_id,
+                name=colloquial_keyword,
+                label="MetricConstraint",
+                properties={"type": "colloquial"},
+            )
+            all_keywords_dict[c_keyword_id] = c_keyword_node
+            nodes.append(c_keyword_node)
+
+            # keyword to row_keyword
+            edge = Edge(
+                _id="k2rk2c_" + c_keyword_id,
+                from_node=c_keyword_node,
+                to_node=splited_keyword_node,
+                label="colloquial",
+                properties={},
+            )
+            edges.append(edge)
+        return nodes, edges
+
+    def _generate_table_cell_info(
         self,
         data: pd.DataFrame,
         header,
-        top_header_nonexist_flag,
         table_name,
+        cell_value_desc,
     ):
-        describe_dict = {}
-        value_dict = {}
-        keyword_dict = {}
+        table_info = TableInfo(table_name=table_name)
+        sub_item_dict = {}
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 value = data.iloc[i, j]
@@ -346,60 +431,63 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                     or str(value) == "\u2014"
                 ):
                     continue
+                x_index = i + len(header)
+                y_index = j + 1
+                cell_id = f"{x_index}-{y_index}"
+                row_keywords = {}
                 describe = ""
-                keywords = set()
+                now_index_str = None
                 if pd.isnull(data.index[i]):
                     describe += "total"
-                    keywords.add("total")
+                    row_keywords["total"] = {}
                 else:
-                    describe += f"{data.index[i]}"
-                    keywords.add(f"{data.index[i]}")
+                    now_index_str = f"{data.index[i]}"
+                    describe += now_index_str
+                    row_keywords[now_index_str] = {}
                 temp_i = i - 1
                 while temp_i >= 0:
                     if (data.iloc[temp_i] == "").all():
-                        describe += f" {data.index[temp_i]}"
-                        keywords.add(f"{data.index[temp_i]}")
+                        parent_str = f"{data.index[temp_i]}"
+                        parent_str = parent_str.strip(":").strip("：")
+                        describe += f" in {parent_str}"
+                        row_keywords[parent_str] = {}
+                        if now_index_str is not None:
+                            sub_item_set = sub_item_dict.get(parent_str, set())
+                            sub_item_set.add(now_index_str)
+                            sub_item_dict[parent_str] = sub_item_set
                         break
                     temp_i -= 1
-                if not top_header_nonexist_flag:
-                    describe += " of"
-                    if len(header) == 0:
-                        pass
-                    elif len(header) == 1:
-                        header_str = self._handle_unnamed_single_topheader(
-                            data.columns, j
-                        )
-                        describe += f" {header_str}"
-                        keywords.add(header_str)
-                    else:
-                        header_str = self._handle_unnamed_multi_topheader(
-                            data.columns, j
-                        )
-                        describe += f" {header_str}"
-                        keywords.add(header_str)
-                        prev = self._handle_unnamed_multi_topheader(data.columns, j)
-                        for temp_j in header[1:]:
-                            if (
-                                data.columns[j][temp_j].startswith("Unnamed")
-                                or data.columns[j][temp_j] == ""
-                            ):
-                                continue
-                            if data.columns[j][temp_j] == prev:
-                                continue
-                            describe += f" {data.columns[j][temp_j]}"
-                            keywords.add(f"{data.columns[j][temp_j]}")
-                            prev = data.columns[j][temp_j]
-                describe += f" is {data.iloc[i, j]}."
-                x_index = i + len(header)
-                y_index = j + 1
-                if top_header_nonexist_flag == 1:
-                    x_index -= 1
-                describe_dict[f"{x_index}-{y_index}"] = (
-                    f"[{table_name}][{x_index}-{y_index}]shows: {describe}"
-                )
-                value_dict[f"{x_index}-{y_index}"] = f"{data.iloc[i, j]}"
-                keyword_dict[f"{x_index}-{y_index}"] = keywords
-        return describe_dict, keyword_dict, value_dict
+
+                describe += " of"
+                if len(header) == 0:
+                    pass
+                elif len(header) == 1:
+                    header_str = self._handle_unnamed_single_topheader(data.columns, j)
+                    describe += f" {header_str}"
+                    row_keywords[header_str] = {}
+                else:
+                    header_str = self._handle_unnamed_multi_topheader(data.columns, j)
+                    describe += f" {header_str}"
+                    row_keywords[header_str] = {}
+                    prev = self._handle_unnamed_multi_topheader(data.columns, j)
+                    for temp_j in header[1:]:
+                        if (
+                            data.columns[j][temp_j].startswith("Unnamed")
+                            or data.columns[j][temp_j] == ""
+                        ):
+                            continue
+                        if data.columns[j][temp_j] == prev:
+                            continue
+                        describe += f" {data.columns[j][temp_j]}"
+                        row_keywords[f"{data.columns[j][temp_j]}"] = {}
+                        prev = data.columns[j][temp_j]
+                describe += f" is {data.iloc[i, j]}{cell_value_desc}"
+                describe = f"[{table_name}]cell[{cell_id}] shows " + describe
+                table_cell = TableCell(desc=describe, row_keywords=row_keywords)
+                table_cell.value = data.iloc[i, j]
+                table_info.cell_dict[cell_id] = table_cell
+        table_info.sub_item_dict = sub_item_dict
+        return table_info
 
     def _handle_unnamed_single_topheader(self, columns, j):
         tmp = j

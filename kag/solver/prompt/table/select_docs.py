@@ -8,10 +8,26 @@ from kag.common.base.prompt_op import PromptOp
 logger = logging.getLogger(__name__)
 
 
-class RespGenerator(PromptOp):
+class SelectDocsPrompt(PromptOp):
     template_zh = """
-基于给定的引用信息回答问题。根据子问题求解过程，直接给出总结性答案。输出格式要求是纯文本，不要包含markdown格式。
-给定的引用信息：'$memory'\n问题：'$instruction'
+# instruction
+基于问题和召回数据，选择最相关的原文返回。
+原文如果是表格，返回表格。
+如果所有数据都与问题无关，返回：I don't know.
+
+# output format
+markdown格式
+
+# pay attention
+忠实的返回原文文本，不要改动任何一个字。
+
+# question
+$question
+
+# recall docs
+$docs
+
+# your answer
 """
     template_en = template_zh
 
@@ -20,7 +36,7 @@ class RespGenerator(PromptOp):
 
     @property
     def template_variables(self) -> List[str]:
-        return ["memory", "instruction"]
+        return ["docs", "question"]
 
     def parse_response(self, response: str, **kwargs):
         logger.debug("推理器判别:{}".format(response))
