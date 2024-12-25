@@ -1,28 +1,34 @@
-llm: &id001
+openie-llm: &id001
   api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   type: maas
+
+llm:
+  api_key: key
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  type: maas
+
+vectorize_model: &id002
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+vectorizer: *id002
+
 log:
   level: INFO
+
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '2'
+  id: '7'
   language: zh
   namespace: BaiKe
-resp_solver_pipeline:
-  generator:
-    generate_prompt:
-      type: resp_simple
-  reasoner:
-    lf_planner:
-      type: empty
-    lf_solver:
-      chunk_retriever:
-        type: kag
-      kg_retriever: null
-runner:
+
+kag-indexer:
   chain:
     extractor:
       llm: *id001
@@ -36,7 +42,7 @@ runner:
         type: spg_relation
       type: schema_constraint
     reader:
-      type: txt
+      type: txt # kag.builder.component.reader.txt_reader.TXTReader
     post_processor:
       similarity_threshold: 0.9
       type: base
@@ -44,22 +50,45 @@ runner:
       split_length: 300
       type: length
       window_length: 0
-    type: unstructured
+    type: unstructured # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     vectorizer:
       type: batch
-      vectorize_model: &id002
-        api_key: key
-        base_url: https://api.siliconflow.cn/v1/
-        model: BAAI/bge-m3
-        type: openai
-        vector_dimensions: 1024
+      vectorize_model: *id002
     writer:
       type: kg
   num_threads_per_chain: 2
-  num_chains: 4      
+  num_chains: 4
   scanner:
     type: dir
-vectorize_model: *id002
-vectorizer: *id002
-qa:
-  force_chunk_retriever: true
+
+lf_solver_pipeline:
+  generator:
+    generate_prompt:
+      type: default_resp_generator # kag.solver.prompt.default.resp_generator.RespGenerator
+      #type: resp_simple # solver.prompt.resp_generator.RespGenerator
+  reasoner:
+    type: base
+    lf_executor:
+      type: base
+      force_chunk_retriever: true
+      exact_kg_retriever:
+        type: default
+        el_num: 5
+        search_api: &id003
+          type: openspg
+        graph_api: &id004
+          type: openspg
+      fuzzy_kg_retriever:
+        type: default
+        el_num: 5
+        vectorize_model: *id002
+        llm_client: *id001
+        search_api: *id003
+        graph_api: *id004
+      chunk_retriever: &id005
+        type: default
+        recall_num: 10
+        rerank_topk: 10
+      merger:
+        type: base
+        chunk_retriever: *id005

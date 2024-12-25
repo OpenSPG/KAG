@@ -97,7 +97,8 @@ class BuilderComponent(Component, Registrable):
         )
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
-        if self.checkpointer:
+        write_ckpt = kwargs.get("write_ckpt", True)
+        if write_ckpt and self.checkpointer:
             input_key = kwargs.get("key")
             # found existing data in checkpointer
             if input_key and self.checkpointer.exists(input_key):
