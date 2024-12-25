@@ -105,7 +105,6 @@ def load_config(prod: bool = False):
                 KAGConstants.KAG_PROJECT_ID_KEY: project_id,
                 KAGConstants.KAG_PROJECT_HOST_ADDR_KEY: host_addr,
                 KAGConstants.KAG_NAMESPACE_KEY: project.namespace,
-                KAGConstants.KAG_BIZ_SCENE_KEY: project,
             }
             prompt_config = config.pop("prompt", {})
             for key in [KAGConstants.KAG_LANGUAGE_KEY, KAGConstants.KAG_BIZ_SCENE_KEY]:
