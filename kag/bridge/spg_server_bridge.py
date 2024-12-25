@@ -26,7 +26,7 @@ class SPGServerBridge:
         reader = interface.ReaderABC.from_config(reader_config)
         chunks = []
         for data in scanner.generate(input_data):
-            chunks += reader.invoke(data)
+            chunks += reader.invoke(data, write_ckpt=False)
         return [x.to_dict() for x in chunks]
 
     def run_component(self, component_name, component_config, input_data):
@@ -35,4 +35,6 @@ class SPGServerBridge:
 
         cls = getattr(interface, component_name)
         instance = cls.from_config(component_config)
-        return [x.to_dict() for x in instance.invoke(input_data)]
+        if hasattr(instance.input_types, "from_dict"):
+            input_data = instance.input_types.from_dict(input_data)
+        return [x.to_dict() for x in instance.invoke(input_data, write_ckpt=False)]
