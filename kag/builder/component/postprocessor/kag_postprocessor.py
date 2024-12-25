@@ -18,7 +18,7 @@ from kag.builder.model.sub_graph import SubGraph
 from kag.common.conf import KAGConstants, KAG_PROJECT_CONF
 from kag.common.utils import get_vector_field_name
 from knext.search.client import SearchClient
-from knext.schema.client import SchemaClient
+from knext.schema.client import SchemaClient, OTHER_TYPE
 
 
 logger = logging.getLogger()
@@ -89,7 +89,7 @@ class KAGPostProcessor(PostProcessorABC):
             if not node.id or not node.label:
                 continue
             if node.label not in self.schema:
-                continue
+                node.label = self.format_label(OTHER_TYPE)
             # for k in node.properties.keys():
             #     if k not in self.schema[node.label]:
             #         continue
