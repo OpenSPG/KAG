@@ -1,9 +1,22 @@
+import json
+import logging
+import os
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from tqdm import tqdm
+
+from kag.common.benchmarks.evaluate import Evaluate
 from kag.solver.logic.solver_pipeline import SolverPipeline
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
+
+from kag.common.checkpointer import CheckpointerManager
 
 
 def qa(query):
     # CA
-    resp = SolverPipeline()
+    resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
     answer, traceLog = resp.run(query)
 
     print(f"\n\nso the answer for '{query}' is: {answer}\n\n")  #
@@ -12,6 +25,7 @@ def qa(query):
 
 
 if __name__ == "__main__":
+    import_modules_from_path("./prompt")
     queries = [
         "周星驰的姓名有何含义？",
         "周星驰和万梓良有什么关系",
