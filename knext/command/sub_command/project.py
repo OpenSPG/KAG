@@ -25,6 +25,9 @@ from knext.common.utils import copytree, copyfile
 from knext.project.client import ProjectClient
 
 from knext.common.env import env, DEFAULT_HOST_ADDR
+
+from kag.common.llm.llm_config_checker import LLMConfigChecker
+from kag.common.vectorize_model.vectorize_model_config_checker import VectorizeModelConfigChecker   
 from shutil import copy2
 
 yaml = YAML()
@@ -209,6 +212,18 @@ def update_project(proj_path):
     if not proj_path:
         proj_path = env.project_path
     client = ProjectClient(host_addr=env.host_addr)
+
+    llm_config_checker = LLMConfigChecker()
+    vectorize_model_config_checker = VectorizeModelConfigChecker()
+    llm_config = env.config.get("llm", {})
+    vectorize_model_config = env.config.get("vectorize_model", {})
+    try:
+        llm_config_checker.check(json.dumps(llm_config))
+        print(json.dumps(llm_config))
+        vectorize_model_config_checker.check(json.dumps(vectorize_model_config))
+    except Exception as e:
+        click.secho(f"Error: {e}", fg="bright_red")
+        sys.exit()
 
     client.update(id=env.id, config=json.dumps(env.config))
     click.secho(
