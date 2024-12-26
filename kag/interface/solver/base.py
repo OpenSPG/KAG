@@ -105,6 +105,7 @@ class KagBaseModule(Registrable):
 
         If the module is computational, it initializes the state dictionary with the prompt template.
         """
+        super().__init__(**kwargs)
         self.host_addr = KAG_PROJECT_CONF.host_addr
         self.project_id = KAG_PROJECT_CONF.project_id
         self.config = KAG_CONFIG.all_config

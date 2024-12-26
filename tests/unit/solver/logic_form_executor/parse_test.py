@@ -1,6 +1,6 @@
 import unittest
 
-from kag.solver.logic.core_modules.common.base_model import SPOEntity, SPORelation
+from kag.interface.solver.base_model import SPOEntity, SPORelation
 from kag.solver.logic.core_modules.parser.logic_node_parser import binary_expr_parse, ParseLogicForm
 
 parser = ParseLogicForm(None, None)
@@ -12,7 +12,7 @@ class ParseTest(unittest.TestCase):
         assert spo_entity.entity_name == None
         assert len(spo_entity.id_set) == 0
         assert len(spo_entity.type_set) == 1
-        assert spo_entity.type_set[0].entity_type_zh == "政务事项"
+        assert spo_entity.type_set[0].un_std_entity_type == "政务事项"
         assert spo_entity.alias_name == "s1"
 
     def test_binary_expr_parse_1(self):
@@ -33,7 +33,7 @@ class ParseTest(unittest.TestCase):
         assert spo_entity.entity_name == "浙江省-杭州市-西湖区申领"
         assert len(spo_entity.id_set) == 0
         assert len(spo_entity.type_set) == 1
-        assert spo_entity.type_set[0].entity_type_zh == "政务事项"
+        assert spo_entity.type_set[0].un_std_entity_type == "政务事项"
         assert spo_entity.alias_name == "s1"
 
     def test_entity_parse2(self):
@@ -41,7 +41,7 @@ class ParseTest(unittest.TestCase):
         assert spo_entity.entity_name == "张三"
         assert len(spo_entity.id_set) == 0
         assert len(spo_entity.type_set) == 2
-        assert spo_entity.type_set[0].entity_type_zh == "电影明星"
+        assert spo_entity.type_set[0].un_std_entity_type == "电影明星"
         assert spo_entity.alias_name == "s1"
 
     def test_entity_parse3(self):
@@ -50,7 +50,7 @@ class ParseTest(unittest.TestCase):
         assert len(spo_entity.id_set) == 1
         assert spo_entity.id_set[0] == "1"
         assert len(spo_entity.type_set) == 1
-        assert spo_entity.type_set[0].entity_type_zh == "电影明星"
+        assert spo_entity.type_set[0].un_std_entity_type == "电影明星"
         assert spo_entity.alias_name == "s1"
 
     def test_entity_parse4(self):
@@ -60,8 +60,8 @@ class ParseTest(unittest.TestCase):
         assert spo_entity.id_set[0] == "1|3"
         assert spo_entity.id_set[1] == "2"
         assert len(spo_entity.type_set) == 2
-        assert spo_entity.type_set[0].entity_type_zh == "电影（，明星"
-        assert spo_entity.type_set[1].entity_type_zh == "电影导演"
+        assert spo_entity.type_set[0].un_std_entity_type == "电影（，明星"
+        assert spo_entity.type_set[1].un_std_entity_type == "电影导演"
         assert spo_entity.alias_name == "s1"
 
     def test_entity_parse5(self):
@@ -76,23 +76,23 @@ class ParseTest(unittest.TestCase):
         spo_rel = SPORelation.parse_logic_form("p1:演）员")
         assert spo_rel.alias_name == "p1"
         assert len(spo_rel.type_set) == 1
-        assert spo_rel.type_set[0].entity_type_zh == "演）员"
+        assert spo_rel.type_set[0].un_std_entity_type == "演）员"
 
     def test_rel_parse3(self):
         spo_rel = SPORelation.parse_logic_form("p1:`参演`|`导演`")
         assert spo_rel.alias_name == "p1"
         assert len(spo_rel.type_set) == 2
-        assert spo_rel.type_set[0].entity_type_zh == "参演"
-        assert spo_rel.type_set[1].entity_type_zh == "导演"
+        assert spo_rel.type_set[0].un_std_entity_type == "参演"
+        assert spo_rel.type_set[1].un_std_entity_type == "导演"
 
     def test_get_spo_parse(self):
         spo_node = parser.parse_logic_form("get_spo(s=s1:政务事项[身份证挂失], p=p1:线上办事渠道， o=o1:办事渠道）", {})
-        assert spo_node.o.get_entity_first_type_or_en() == "办事渠道"
+        assert spo_node.o.get_un_std_entity_first_type_or_std() == "办事渠道"
         print(spo_node.to_dict())
 
     def test_get_spo_parse2(self):
         spo_node = parser.parse_logic_form("get_spo(s=s1:政务事项[身份证挂失],p=p1:线上办事渠道,o=o1:办事渠道)", {})
-        assert spo_node.o.get_entity_first_type_or_en() == "办事渠道"
+        assert spo_node.o.get_un_std_entity_first_type_or_std() == "办事渠道"
         print(spo_node.to_dict())
 
     def test_get_spo_parse3(self):
@@ -157,13 +157,13 @@ class ParseTest(unittest.TestCase):
     def test_search_s_parse1(self):
         spo_node = parser.parse_logic_form("search_s(s=s1:医院, s.省份=浙江省, s.城市=杭州市)", {})
         assert spo_node.s.alias_name == "s1"
-        assert spo_node.s.type_set[0].entity_type_zh == '医院'
+        assert spo_node.s.type_set[0].un_std_entity_type == '医院'
         assert '省份' in spo_node.s.value_list.keys()
         assert '城市' in spo_node.s.value_list.keys()
 
         spo_node = parser.parse_logic_form("search_s(s=s2:医生, s.主执业医院=s1.name, s.主执业科室=心内科)", {})
         assert spo_node.s.alias_name == "s2"
-        assert spo_node.s.type_set[0].entity_type_zh == '医生'
+        assert spo_node.s.type_set[0].un_std_entity_type == '医生'
         assert '主执业医院' in spo_node.s.value_list.keys()
         assert '主执业科室' in spo_node.s.value_list.keys()
         assert spo_node.s.value_list['主执业医院'] == ['s1', 'name']

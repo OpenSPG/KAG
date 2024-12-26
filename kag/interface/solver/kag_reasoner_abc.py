@@ -10,9 +10,9 @@
 # or implied.
 
 from abc import abstractmethod
-from typing import Tuple
 
 from kag.interface.solver.base import KagBaseModule
+from kag.interface.solver.base_model import LFExecuteResult
 
 
 class KagReasonerABC(KagBaseModule):
@@ -35,7 +35,7 @@ class KagReasonerABC(KagBaseModule):
     """
 
     @abstractmethod
-    def reason(self, question: str) -> Tuple[str, str, dict]:
+    def reason(self, question: str, **kwargs) -> LFExecuteResult:
         """
         Processes a given question by planning and executing logical forms to derive an answer.
 
@@ -43,7 +43,7 @@ class KagReasonerABC(KagBaseModule):
         - question (str): The input question to be processed.
 
         Returns:
-        Tuple
+        LFExecuteResult
         - solved_answer: The final answer derived from solving the logical forms.
         - supporting_fact: Supporting facts gathered during the reasoning process.
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.

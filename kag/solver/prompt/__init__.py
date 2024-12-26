@@ -27,11 +27,6 @@ from kag.solver.prompt.default.solve_question_without_docs import (
 )
 from kag.solver.prompt.default.solve_question_without_spo import SolveQuestionWithOutSPO
 from kag.solver.prompt.default.spo_retrieval import SpoRetrieval
-from kag.solver.prompt.medical.question_ner import QuestionNER as MedicalQuestionNER
-from kag.solver.prompt.lawbench.logic_form_plan import (
-    LogicFormPlanPrompt as LawbenchLogicFormPlanPrompt,
-)
-
 
 __all__ = [
     "DeduceChoice",
@@ -49,6 +44,4 @@ __all__ = [
     "SolveQuestionWithOutDocs",
     "SolveQuestionWithOutSPO",
     "SpoRetrieval",
-    "MedicalQuestionNER",
-    "LawbenchLogicFormPlanPrompt",
 ]

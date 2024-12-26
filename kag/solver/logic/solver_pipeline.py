@@ -1,23 +1,21 @@
 import logging
 from kag.common.registry import Registrable
-from kag.interface import KAGGeneratorABC, KagMemoryABC, KagReasonerABC, KagReflectorABC
 
 # from kag.solver.implementation.default_generator import DefaultGenerator
 # from kag.solver.implementation.default_reasoner import DefaultReasoner
 # from kag.solver.implementation.default_reflector import DefaultReflector
+from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
+from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
+from kag.interface.solver.kag_reflector_abc import KagReflectorABC
+from kag.interface.solver.base_model import LFExecuteResult
 
 logger = logging.getLogger(__name__)
 
 
 class SolverPipeline(Registrable):
-    def __init__(
-        self,
-        max_run=3,
-        reflector: KagReflectorABC = None,
-        reasoner: KagReasonerABC = None,
-        generator: KAGGeneratorABC = None,
-        **kwargs
-    ):
+    def __init__(self, max_run=3, reflector: KagReflectorABC = None, reasoner: KagReasonerABC = None,
+                 generator: KAGGeneratorABC = None, **kwargs):
         """
         Initializes the think-and-act loop class.
 
@@ -26,17 +24,16 @@ class SolverPipeline(Registrable):
         :param reasoner: Reasoner instance for reasoning about tasks.
         :param generator: Generator instance for generating actions.
         """
+        super().__init__(**kwargs)
         self.max_run = max_run
-
-        self.memory = KagMemoryABC.from_config({"type": "base"})
 
         self.reflector = reflector or KagReflectorABC.from_config({"type": "base"})
         self.reasoner = reasoner or KagReasonerABC.from_config({"type": "base"})
         self.generator = generator or KAGGeneratorABC.from_config({"type": "base"})
 
-        self.trace_log = []
+        self.param = kwargs
 
-    def run(self, question):
+    def run(self, question, **kwargs):
         """
         Executes the core logic of the problem-solving system.
 
@@ -49,31 +46,34 @@ class SolverPipeline(Registrable):
         instruction = question
         if_finished = False
         logger.debug("input instruction:{}".format(instruction))
+        trace_log = []
         present_instruction = instruction
         run_cnt = 0
+        memory = KagMemoryABC.from_config({"type": "base"})
 
         while not if_finished and run_cnt < self.max_run:
             run_cnt += 1
             logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log
-            solved_answer, supporting_fact, history_log = self.reasoner.reason(
-                present_instruction
+            reason_res: LFExecuteResult = self.reasoner.reason(
+                present_instruction,
+                ** kwargs
             )
 
             # Extract evidence from supporting facts
-            self.memory.save_memory(solved_answer, supporting_fact, instruction)
-
+            memory.save_memory(reason_res.kg_exact_solved_answer, reason_res.get_support_facts(), instruction)
+            history_log = reason_res.get_trace_log()
             history_log["present_instruction"] = present_instruction
-            history_log["present_memory"] = self.memory.serialize_memory()
-            self.trace_log.append(history_log)
+            history_log["present_memory"] = memory.serialize_memory()
+            trace_log.append(history_log)
 
             # Reflect the current instruction based on the current memory and instruction
             if_finished, present_instruction = self.reflector.reflect_query(
-                self.memory, present_instruction
+                memory, present_instruction
             )
 
-        response = self.generator.generate(instruction, self.memory)
-        return response, self.trace_log
+        response = self.generator.generate(instruction, memory)
+        return response, trace_log
 
     def get_kg_answer_num(self):
         """

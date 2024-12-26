@@ -1,8 +1,9 @@
 import logging
 from tenacity import retry, stop_after_attempt
 
-from kag.interface import PromptABC, KagMemoryABC
+from kag.interface import PromptABC
 from kag.interface import LLMClient
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
@@ -59,7 +60,7 @@ class DefaultMemory(KagMemoryABC):
             self.evidence_memory.append(evidence)
 
     def save_memory(self, solved_answer, supporting_fact, instruction):
-        if solved_answer != "":
+        if solved_answer:
             self.exact_answer.append(solved_answer)
             return
         # skip first instruction to verifier

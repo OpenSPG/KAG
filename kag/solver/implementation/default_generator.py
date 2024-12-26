@@ -1,7 +1,9 @@
 import logging
 from tenacity import stop_after_attempt, retry
+
+from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 from kag.solver.utils import init_prompt_with_fallback
-from kag.interface import PromptABC, KAGGeneratorABC
+from kag.interface import PromptABC
 from kag.interface import LLMClient
 from kag.solver.implementation.default_memory import DefaultMemory
 

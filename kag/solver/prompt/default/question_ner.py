@@ -23,18 +23,18 @@ class QuestionNER(PromptABC):
 
     template_en = """
     {
-        "instruction": "You are an expert in named entity recognition. Please extract entities and that match the schema definition from the input. Return an empty list if the entity type does not exist. Please respond in the format of a JSON string.You can refer to the example for extraction.",
+        "instruction": "You are an expert in named entity recognition. Please extract entities and that match the schema definition from the input. Please respond in the format of a JSON string.You can refer to the example for extraction.",
         "schema": $schema,
         "example": [
             {
                 "input": "Which magazine was started first, Arthur's Magazine or First for Women?",
                 "output": [
                         {
-                            "entity": "First for Women",
+                            "name": "First for Women",
                             "category": "Works"
                         },
                         {
-                            "entity": "Arthur's Magazine",
+                            "name": "Arthur's Magazine",
                             "category": "Works"
                         }
                     ]

@@ -1,7 +1,3 @@
-lf_solver_pipeline:
-  generator:
-    generate_prompt:
-      type: resp_simple
 llm: &id001
   api_key: key
   base_url: https://api.deepseek.com
@@ -12,7 +8,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '1'
+  id: '5'
   language: en
   namespace: TwoWiki
 resp_solver_pipeline:
@@ -63,3 +59,34 @@ runner:
     type: 2wiki
 vectorize_model: *id002
 vectorizer: *id002
+
+lf_solver_pipeline:
+  generator:
+    generate_prompt:
+      type: resp_simple
+  reasoner:
+    type: base
+    lf_executor:
+      type: base
+      force_chunk_retriever: true
+      exact_kg_retriever:
+        type: default_exact_kg_retriever
+        el_num: 5
+        search_api: &id003
+          type: openspg
+        graph_api: &id004
+          type: openspg
+      fuzzy_kg_retriever:
+        type: default_fuzzy_kg_retriever
+        el_num: 5
+        vectorize_model: *id002
+        llm_client: *id001
+        search_api: *id003
+        graph_api: *id004
+      chunk_retriever: &id005
+        type: default_chunk_retriever
+        recall_num: 10
+        rerank_topk: 10
+      merger:
+        type: base
+        chunk_retriever: *id005

@@ -128,6 +128,8 @@ if __name__ == "__main__":
     start_time = time.time()
     filePath = "./data/2wiki_qa_sub.json"
 
+    evalObj.qa("When did Lothair Ii's mother die?")
+
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"2wiki_res_{start_time}.json"

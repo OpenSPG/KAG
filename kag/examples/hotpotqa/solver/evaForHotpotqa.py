@@ -123,9 +123,9 @@ if __name__ == "__main__":
     delay_run(hours=0)
     evaObj = EvaForHotpotqa()
 
-    # filePath = "./data/hotpotqa_qa_train.json"
-    filePath = "./data/hotpotqa_qa_sub.json"
-
+    filePath = "./data/hotpotqa_qa_train.json"
+    # filePath = "./data/hotpotqa_qa_sub.json"
+    evaObj.qa("Which film was shot in or around Leland, North Carolina in 1986?")
     start_time = time.time()
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
