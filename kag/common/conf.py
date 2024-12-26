@@ -110,6 +110,8 @@ def load_config(prod: bool = False):
             for key in [KAGConstants.KAG_LANGUAGE_KEY, KAGConstants.KAG_BIZ_SCENE_KEY]:
                 if key in prompt_config:
                     config["project"][key] = prompt_config[key]
+        if "vectorizer" in config and "vectorize_model" not in config:
+            config["vectorize_model"] = config["vectorizer"]
         return config
     else:
         config_file = _closest_cfg()
