@@ -40,8 +40,8 @@ class VectorizeModelConfigChecker:
             from kag.interface import VectorizeModelABC
 
             vectorizer = VectorizeModelABC.from_config(config)
-            vector_dimensions = vectorizer.vector_dimensions
-            return vector_dimensions
+            res = vectorizer.vectorize("hello")
+            return len(res)
         except Exception as ex:
             message = "invalid vectorizer config: %s" % str(ex)
             raise RuntimeError(message) from ex
