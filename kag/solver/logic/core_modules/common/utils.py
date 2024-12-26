@@ -6,7 +6,8 @@ import string
 
 def generate_random_string(bit=8):
     possible_characters = string.ascii_letters + string.digits
-    return "".join(random.choice(possible_characters) for _ in range(bit))
+    random_str = "".join(random.choice(possible_characters) for _ in range(bit))
+    return "gen" + random_str
 
 
 def generate_biz_id_with_type(biz_id, type_name):
