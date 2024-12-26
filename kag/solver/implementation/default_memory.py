@@ -9,7 +9,7 @@ from kag.solver.utils import init_prompt_with_fallback
 logger = logging.getLogger()
 
 
-@KagMemoryABC.register("base", as_default=True)
+@KagMemoryABC.register("default_memory", as_default=True)
 class DefaultMemory(KagMemoryABC):
     def __init__(
         self,

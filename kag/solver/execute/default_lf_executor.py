@@ -24,7 +24,7 @@ from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 logger = logging.getLogger()
 
 
-@LFExecutorABC.register("base", as_default=True)
+@LFExecutorABC.register("default_lf_executor", as_default=True)
 class DefaultLFExecutor(LFExecutorABC):
     def __init__(self, exact_kg_retriever: ExactKgRetriever, fuzzy_kg_retriever: FuzzyKgRetriever,
                  chunk_retriever: ChunkRetriever, merger: LFSubQueryResMerger, force_chunk_retriever: bool = False,

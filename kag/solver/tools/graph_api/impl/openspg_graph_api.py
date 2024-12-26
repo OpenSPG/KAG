@@ -49,7 +49,7 @@ def convert_node_to_json(node_str):
     }
 
 
-@GraphApiABC.register("openspg", as_default=True)
+@GraphApiABC.register("openspg_graph_api", as_default=True)
 class OpenSPGGraphApi(GraphApiABC):
     def __init__(self, project_id=None, host_addr=None, **kwargs):
         super().__init__(**kwargs)

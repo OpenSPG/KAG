@@ -9,15 +9,15 @@ from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilari
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 
 
-@LFSubQueryResMerger.register("base", as_default=True)
+@LFSubQueryResMerger.register("default_lf_sub_query_res_merger", as_default=True)
 class DefaultLFSubQueryResMerger(LFSubQueryResMerger):
     """
     Initializes the base planner.
     """
 
-    def __init__(self, chunk_retriever: ChunkRetriever = None, vectorize_model: VectorizeModelABC = None, **kwargs):
+    def __init__(self, chunk_retriever: ChunkRetriever, vectorize_model: VectorizeModelABC = None, **kwargs):
         super().__init__(**kwargs)
-        self.chunk_retriever = chunk_retriever or ChunkRetriever.from_config({"type": "default"})
+        self.chunk_retriever = chunk_retriever
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"])
         self.text_similarity = TextSimilarity(vectorize_model)

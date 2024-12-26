@@ -10,7 +10,7 @@ from kag.interface import LLMClient
 logger = logging.getLogger()
 
 
-@KagReasonerABC.register("base", as_default=True)
+@KagReasonerABC.register("default_reasoner", as_default=True)
 class DefaultReasoner(KagReasonerABC):
     """
     A processor class for handling logical form tasks in language processing.
@@ -31,16 +31,16 @@ class DefaultReasoner(KagReasonerABC):
 
     def __init__(
         self,
-        lf_planner: LFPlannerABC = None,
-        lf_executor: LFExecutorABC = None,
+        lf_planner: LFPlannerABC,
+        lf_executor: LFExecutorABC,
         llm_client: LLMClient = None,
         **kwargs,
     ):
         super().__init__(llm_client, **kwargs)
 
-        self.lf_planner = lf_planner or LFPlannerABC.from_config({"type": "base"})
+        self.lf_planner = lf_planner
 
-        self.lf_executor = lf_executor or LFExecutorABC.from_config({"type": "base"})
+        self.lf_executor = lf_executor
         self.sub_query_total = 0
         self.kg_direct = 0
         self.trace_log = []

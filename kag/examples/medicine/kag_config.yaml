@@ -36,18 +36,7 @@ extract_runner:
   num_chains: 8
   scanner:
     type: csv
-lf_solver_pipeline:
-  generator:
-    generate_prompt:
-      type: example_resp_generator
-  reasoner:
-    lf_solver:
-      chunk_retriever:
-        ner_prompt:
-          type: example_medical_question_ner
-        type: kag
-      kg_retriever:
-        type: base
+
 llm: *id001
 log:
   level: INFO
@@ -85,3 +74,41 @@ vectorize_model: *id002
 vectorizer:
   type: batch
   vectorize_model: *id002
+
+lf_solver_pipeline:
+  memory: default_memory
+  max_iterations: 3
+  generator:
+    type: default_generator
+    generate_prompt:
+      type: example_resp_generator
+  reflector:
+    type: default_reflector
+  reasoner:
+    type: default_reasoner
+    lf_planner:
+      type: default_lf_planner
+    lf_executor:
+      type: default_lf_executor
+      force_chunk_retriever: true
+      exact_kg_retriever:
+        type: default_exact_kg_retriever
+        el_num: 5
+        search_api: &id003
+          type: openspg_search_api
+        graph_api: &id004
+          type: openspg_graph_api
+      fuzzy_kg_retriever:
+        type: default_fuzzy_kg_retriever
+        el_num: 5
+        vectorize_model: *id002
+        llm_client: *id001
+        search_api: *id003
+        graph_api: *id004
+      chunk_retriever: &id005
+        type: default_chunk_retriever
+        recall_num: 10
+        rerank_topk: 10
+      merger:
+        type: default_lf_sub_query_res_merger
+        chunk_retriever: *id005

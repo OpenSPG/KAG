@@ -7,7 +7,7 @@ from kag.interface.solver.kag_reflector_abc import KagReflectorABC
 from kag.solver.utils import init_prompt_with_fallback
 
 
-@KagReflectorABC.register("base", as_default=True)
+@KagReflectorABC.register("default_reflector", as_default=True)
 class DefaultReflector(KagReflectorABC):
     def __init__(
         self,

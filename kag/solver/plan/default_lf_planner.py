@@ -17,7 +17,7 @@ from kag.solver.utils import init_prompt_with_fallback
 logger = logging.getLogger()
 
 
-@LFPlannerABC.register("base", as_default=True)
+@LFPlannerABC.register("default_lf_planner", as_default=True)
 class DefaultLFPlanner(LFPlannerABC):
     """
     Planner class that extends the base planner functionality to generate sub-queries and logic forms.

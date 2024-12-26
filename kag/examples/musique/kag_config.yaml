@@ -61,21 +61,28 @@ vectorize_model: *id002
 vectorizer: *id002
 
 lf_solver_pipeline:
+  memory: default_memory
+  max_iterations: 3
   generator:
+    type: default_generator
     generate_prompt:
       type: resp_simple
+  reflector:
+    type: default_reflector
   reasoner:
-    type: base
+    type: default_reasoner
+    lf_planner:
+      type: default_lf_planner
     lf_executor:
-      type: base
+      type: default_lf_executor
       force_chunk_retriever: true
       exact_kg_retriever:
         type: default_exact_kg_retriever
         el_num: 5
         search_api: &id003
-          type: openspg
+          type: openspg_search_api
         graph_api: &id004
-          type: openspg
+          type: openspg_graph_api
       fuzzy_kg_retriever:
         type: default_fuzzy_kg_retriever
         el_num: 5
@@ -88,5 +95,5 @@ lf_solver_pipeline:
         recall_num: 10
         rerank_topk: 10
       merger:
-        type: base
+        type: default_lf_sub_query_res_merger
         chunk_retriever: *id005

@@ -8,7 +8,7 @@ from kag.interface import LLMClient
 from kag.solver.implementation.default_memory import DefaultMemory
 
 
-@KAGGeneratorABC.register("base", as_default=True)
+@KAGGeneratorABC.register("default_generator", as_default=True)
 class DefaultGenerator(KAGGeneratorABC):
     """
     The Generator class is an abstract base class for generating responses using a language model module.

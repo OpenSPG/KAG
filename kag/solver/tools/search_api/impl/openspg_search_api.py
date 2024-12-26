@@ -5,7 +5,7 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 from knext.search.client import SearchClient
 
 
-@SearchApiABC.register("openspg", as_default=True)
+@SearchApiABC.register("openspg_search_api", as_default=True)
 class OpenSPGSearchAPI(SearchApiABC):
     def __init__(self, project_id=None, host_addr=None, **kwargs):
         super().__init__(**kwargs)
