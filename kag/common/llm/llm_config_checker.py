@@ -37,7 +37,6 @@ class LLMConfigChecker(object):
         llm_client = LLMClient.from_config(config)
         try:
             res = llm_client("who are you?")
-            print(res)
             return res
         except Exception as ex:
             raise RuntimeError(f"invalid llm config: {config}, for details: {ex}")
