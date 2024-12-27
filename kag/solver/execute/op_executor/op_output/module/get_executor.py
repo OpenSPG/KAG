@@ -39,5 +39,5 @@ class GetExecutor(OpExecutor):
             if isinstance(s_data, RelationData):
                 kg_qa_result.append(str(s_data))
         process_info[logic_node.sub_query]['kg_answer'] += f"\n{';'.join(kg_qa_result)}"
-        process_info['kg_solved_answer'] += f"\n{';'.join(kg_qa_result)}"
+        process_info['kg_solved_answer'].append(f"\n{';'.join(kg_qa_result)}")
         return process_info[logic_node.sub_query]

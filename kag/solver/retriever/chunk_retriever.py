@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import KagBaseModule
+from kag.interface import LLMClient
 from kag.solver.logic.core_modules.common.one_hop_graph import RelationData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
@@ -15,8 +16,9 @@ class ChunkRetriever(KagBaseModule, ABC):
                  rerank_topk: int = 10,
                  graph_api: GraphApiABC = None,
                  search_api: SearchApiABC = None,
+                 llm_client: LLMClient = None,
                  **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(llm_client, **kwargs)
         self.recall_num = recall_num
         self.rerank_topk = rerank_topk
         self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
