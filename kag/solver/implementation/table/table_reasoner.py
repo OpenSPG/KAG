@@ -181,8 +181,10 @@ class TableReasoner(KagReasonerABC):
 
         res, trace_log = self._call_spo_retravel_func(init_question)
         if len(trace_log) == 1 and "report_info" in trace_log[0]:
-            if res.lower() == "i don't know" or  (answer is not None and "i don't know" not in answer.lower()):
+            if answer is not None and "i don't know" not in answer.lower():
                 return answer
+            if res.lower() == "i don't know":
+                res = answer
             node.answer = res
             node.answer_desc = "\n".join(trace_log[0]['report_info']['context'])
             node.sub_graph = trace_log[0]['report_info']['sub_graph']
