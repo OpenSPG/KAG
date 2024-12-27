@@ -19,6 +19,7 @@ from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
+@ReaderABC.register("txt")
 @ReaderABC.register("txt_reader")
 class TXTReader(ReaderABC):
     """

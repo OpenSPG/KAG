@@ -30,6 +30,7 @@ from knext.schema.client import SchemaClient
 logger = logging.getLogger(__name__)
 
 
+@ExtractorABC.register("schema_constraint")
 @ExtractorABC.register("schema_constraint_extractor")
 class SchemaConstraintExtractor(ExtractorABC):
     """
