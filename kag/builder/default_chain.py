@@ -84,7 +84,6 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
     #             node.checkpointer.close()
 
 
-@KAGBuilderChain.register("unstructured")
 @KAGBuilderChain.register("unstructured_builder_chain")
 class DefaultUnstructuredBuilderChain(KAGBuilderChain):
     """

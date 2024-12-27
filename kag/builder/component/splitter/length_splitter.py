@@ -19,7 +19,6 @@ from knext.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 
 
-@SplitterABC.register("length")
 @SplitterABC.register("length_splitter")
 class LengthSplitter(BaseTableSplitter):
     """

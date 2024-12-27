@@ -28,7 +28,6 @@ class AlterOperationEnum(str, Enum):
     Delete = "DELETE"
 
 
-@SinkWriterABC.register("kg", as_default=True)
 @SinkWriterABC.register("kg_writer", as_default=True)
 class KGWriter(SinkWriterABC):
     """

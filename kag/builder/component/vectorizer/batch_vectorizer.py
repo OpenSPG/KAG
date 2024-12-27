@@ -129,7 +129,6 @@ class EmbeddingVectorGenerator(object):
         manager.patch()
 
 
-@VectorizerABC.register("batch")
 @VectorizerABC.register("batch_vectorizer")
 class BatchVectorizer(VectorizerABC):
     """
