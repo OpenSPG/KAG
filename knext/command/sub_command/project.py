@@ -215,7 +215,7 @@ def update_project(proj_path):
 
     llm_config_checker = LLMConfigChecker()
     vectorize_model_config_checker = VectorizeModelConfigChecker()
-    llm_config = env.config.get("llm", {})
+    llm_config = env.config.get("chat_llm", {})
     vectorize_model_config = env.config.get("vectorize_model", {})
     try:
         llm_config_checker.check(json.dumps(llm_config))

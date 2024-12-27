@@ -81,4 +81,4 @@ class DefaultReflector(KagReflectorABC):
         )
         if len(update_reason_path) == 0:
             return None
-        return update_reason_path[0]
+        return "\n".join(update_reason_path)

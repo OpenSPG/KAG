@@ -1,3 +1,4 @@
+import copy
 import logging
 from kag.common.registry import Registrable
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SolverPipeline(Registrable):
     def __init__(self, reflector: KagReflectorABC, reasoner: KagReasonerABC,
-                 generator: KAGGeneratorABC, memory: str = "default_memory", max_iterations=3, **kwargs):
+                 generator: KAGGeneratorABC, memory: KagMemoryABC, max_iterations=3, **kwargs):
         """
         Initializes the think-and-act loop class.
 
@@ -31,9 +32,7 @@ class SolverPipeline(Registrable):
         self.reflector = reflector
         self.reasoner = reasoner
         self.generator = generator
-
-        self.memory_type = memory
-
+        self.memory = memory
         self.param = kwargs
 
     def run(self, question, **kwargs):
@@ -52,7 +51,7 @@ class SolverPipeline(Registrable):
         trace_log = []
         present_instruction = instruction
         run_cnt = 0
-        memory = KagMemoryABC.from_config({"type": self.memory_type})
+        memory = copy.copy(self.memory)
 
         while not if_finished and run_cnt < self.max_iterations:
             run_cnt += 1

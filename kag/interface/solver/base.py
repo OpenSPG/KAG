@@ -112,10 +112,8 @@ class KagBaseModule(Registrable):
         self.biz_scene = KAG_PROJECT_CONF.biz_scene
         self.language = KAG_PROJECT_CONF.language
 
-        self.llm_module = kwargs.get("llm_model")
         if llm_client is None:
-            llm_config = self.config["llm"]
-            llm_client = LLMClient.from_config(llm_config)
+            llm_client = kwargs["llm_module"]
         self.llm_module = llm_client
 
     def get_module_name(self):

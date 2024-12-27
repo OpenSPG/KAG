@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @ExtractorABC.register("schema_free")
+@ExtractorABC.register("schema_free_extractor")
 class SchemaFreeExtractor(ExtractorABC):
     """
     A class for extracting knowledge graph subgraphs from text using a large language model (LLM).

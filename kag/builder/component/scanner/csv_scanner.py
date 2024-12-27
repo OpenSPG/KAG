@@ -18,6 +18,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("csv")
+@ScannerABC.register("csv_scanner")
 class CSVScanner(ScannerABC):
     def __init__(
         self,

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 @KAGBuilderChain.register("structured")
+@KAGBuilderChain.register("structured_builder_chain")
 class DefaultStructuredBuilderChain(KAGBuilderChain):
     """
     A class representing a default SPG builder chain, used to import structured data based on schema definitions.
@@ -169,7 +170,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             for inner_future in tqdm(
                 as_completed(futures),
                 total=len(futures),
-                desc="Chunk Extraction",
+                desc="KAG Extraction From Chunk",
                 position=1,
                 leave=False,
             ):

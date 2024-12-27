@@ -75,9 +75,19 @@ class DefaultLFPlanner(LFPlannerABC):
             plan_result.append(LFPlan(query=k, lf_nodes=v))
         return plan_result
 
+    def _process_output_query(self, question, sub_query: str):
+        if sub_query is None:
+            return question
+        if 'output' == sub_query.lower():
+            return f"output `{question}` answer:"
+        return sub_query
+
     def _parse_lf(self, question, sub_querys, logic_forms) -> List[LFPlan]:
         if sub_querys is None:
             sub_querys = []
+        # process sub query
+        sub_querys = [ self._process_output_query(question, q) for q in sub_querys]
+
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )

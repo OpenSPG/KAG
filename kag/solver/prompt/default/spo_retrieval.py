@@ -47,12 +47,12 @@ class SpoRetrieval(PromptABC):
       ]
     }
   ],
-  "模板": {
+  "任务": {
     "问题": "$question",
     "SPO 提及": "$mention",
-    "SPO 候选项": "$candis",
-    "output": []
-  }
+    "SPO 候选项": "$candis"
+  },
+  "output": "提供一个JSON列表，其中包含根据SPO提及内容选出的最佳回答问题的SPO候选者。"
 }
 """
     template_en = """{
@@ -107,11 +107,13 @@ class SpoRetrieval(PromptABC):
     def template_variables(self) -> List[str]:
         return ["question", "mention", "candis"]
 
-    def parse_response(self, response: Dict, **kwargs):
+    def parse_response(self, response, **kwargs):
         logger.debug(
             f"SpoRetrieval {response} mention:{self.template_variables_value.get('mention', '')} "
             f"candis:{self.template_variables_value.get('candis', '')}"
         )
+        if not isinstance(response, dict):
+            return []
         if "output" in response:
             return response["output"]
         if "Output" in response:

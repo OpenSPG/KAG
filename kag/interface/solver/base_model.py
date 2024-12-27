@@ -77,7 +77,7 @@ class SPOBase:
     def get_entity_first_std_type(self):
         type_list = list(self.get_entity_type_set())
         if len(type_list) == 0:
-            return None
+            return "Entity"
         return type_list[0]
 
     def get_un_std_entity_first_type_or_std(self):
@@ -88,7 +88,7 @@ class SPOBase:
         elif len(std_type) > 0:
             return std_type[0]
         else:
-            return None
+            return "Entity"
 
     def get_entity_type_or_un_std_list(self):
         ret = []
@@ -107,7 +107,7 @@ class SPOBase:
         elif len(unstd_type) > 0:
             return unstd_type[0]
         else:
-            return None
+            return "Entity"
 
     def get_entity_type_set(self):
         entity_types = []
@@ -121,7 +121,10 @@ class SPOBase:
         for entity_type_info in self.type_set:
             if entity_type_info.un_std_entity_type is not None:
                 entity_types.append(entity_type_info.un_std_entity_type)
-        return set(entity_types)
+        entity_types = set(entity_types)
+        if len(entity_types) == 0:
+            return ["Entity"]
+        return entity_types
 
 
 class SPORelation(SPOBase):

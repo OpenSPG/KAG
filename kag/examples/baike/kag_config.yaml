@@ -94,7 +94,9 @@ chunk_retriever: &chunk_retriever
   rerank_topk: 10
 
 kag_solver_pipeline:
-  memory: default_memory # str default_memory
+  memory:
+    type: default_memory # kag.solver.implementation.default_memory.DefaultMemory
+    llm_client: *chat_llm
   max_iterations: 3
   reasoner:
     type: default_reasoner # kag.solver.implementation.default_reasoner.DefaultReasoner
