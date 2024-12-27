@@ -31,8 +31,11 @@ class FinStateSolver(SolverPipeline):
 if __name__ == "__main__":
     solver = FinStateSolver()
     #question = "阿里巴巴最新的营业收入是多少，哪个部分收入占比最高，占了百分之多少？"
-    question = "阿里巴巴的总收入是多少，哪个部分收入占比最高，占了百分之多少？"
+    #question = "阿里国际数字商业集团24年截至9月30日止六个月的收入是多少？它的经营利润率是多少？"
+    #question = "阿里巴巴财报中，最新的经营成本和费用总额是多少？每个部分分别占比多少？"
+    #question = "公允价值计量表中，24年9月30日，第二级资产各项目哪个占比最高，占了百分之多少？"
     # question = "231243423乘以13334233等于多少？"
+    question = "李妈妈有12个糖果，她给李明了3个，李红4个，那么李妈妈还剩下多少个糖果？"
     response = solver.run(question)
     print("*" * 80)
     print(question)

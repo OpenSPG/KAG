@@ -442,6 +442,27 @@ class DefaultRetriever(ChunkRetrieverABC):
             return passages
         return self.reranker.rerank(queries, passages)
 
+    def retrieval_table_metric_by_vector(
+        self, query, query_type: str, top_k: int = 3, threashold=0.8
+    ) -> List[str]:
+        query_type = self.schema_util.get_label_within_prefix(query_type)
+        rst = []
+        try:
+            typed_nodes = self.sc.search_vector(
+                label=query_type,
+                property_key="name",
+                query_vector=self.vectorizer.vectorize(query),
+                topk=top_k,
+            )
+            for node in typed_nodes:
+                if node["score"] > threashold:
+                    rst.append(node)
+                    if len(rst) >= top_k:
+                        return rst
+        except Exception:
+            logger.exception("query_vertor_error,%s", query)
+        return rst
+
     def retrieval_table_metric_by_page_rank(
         self, entities: list, topk=10, target_type: str = "TableMetric"
     ) -> List[str]:
@@ -516,8 +537,7 @@ class DefaultRetriever(ChunkRetrieverABC):
     def match_table_mertric_constraint(self, queries: List[str], top_k: int = 3):
         matched_entities = []
         matched_entities_scores = []
-        for query_ner in queries:
-            entity = query_ner["entity"]
+        for entity in queries:
             query = processing_phrases(entity)
             query_type = "MetricConstraint"
             query_type = self.schema_util.get_label_within_prefix(query_type)
@@ -529,12 +549,13 @@ class DefaultRetriever(ChunkRetrieverABC):
                     topk=top_k,
                 )
                 for node in typed_nodes:
-                    if node["score"] > 0.85:
+                    if node["score"] > 0.9:
                         matched_entities.append(
                             {
                                 "name": node["node"]["name"],
                                 "type": query_type,
                                 "id": node["node"]["id"],
+                                "score": node["score"],
                             }
                         )
                         matched_entities_scores.append(node["score"])

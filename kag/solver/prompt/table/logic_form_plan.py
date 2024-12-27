@@ -16,7 +16,7 @@ class LogicFormPlanPrompt(PromptOp):
   "instruction": [
     "找出解决问题的核心关键步骤，总结为子问题。",
     "参考函数的能力，将子问题分配给合适的函数进行处理。",
-    "failed_cases中是失败的尝试，不允许再出现相同的子问题，而是尝试其他的拆分方式"
+    "参考failed_cases中失败的尝试，其中已回答的子问题不要修改，无法回答的子问题，必须改变思路尝试其他拆解方式，生成新的子问题！"
   ],
   "pay_attention": [
     "你的数学计算能力能力很差，必须使用PythonCoder对数学计算和数值比较问题进行求解。",
@@ -85,14 +85,18 @@ class LogicFormPlanPrompt(PromptOp):
       ]
     },
     {
-      "input": "资产负债信息中流动资产最高的子项是那个？其占流动资产的比例是多少？",
+      "input": "阿里巴巴财报中最新的资产负债信息中流动资产最高的子项是哪个？其占流动资产的比例是多少？",
       "output": [
         {
-          "sub_question": "从资产负债信息中召回流动资产的所有子项。如果有多个年度，召回最新的数据。",
+          "sub_question": "召回阿里巴巴最新的资产负债信息中流动资产总值",
           "process_function": "Retrieval"
         },
         {
-          "sub_question": "根据给出的流动资产子项，计算最高的子项是哪个？并计算最高子项占流动资产的比例是多少？",
+          "sub_question": "查询阿里巴巴最新的资产负债信息中所有流动资产详情",
+          "process_function": "Retrieval"
+        },
+        {
+          "sub_question": "根据召回的阿里巴巴流动资产详情，计算最高的子项是哪个？并计算最高子项占总流动资产的比例是多少？",
           "process_function": "PythonCoder"
         }
       ]

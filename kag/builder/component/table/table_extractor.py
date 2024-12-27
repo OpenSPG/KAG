@@ -101,7 +101,10 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         header = table_info["header"]
         index_col = table_info["index_col"]
         table_df, header, index_col = self._std_table(
-            input_table=input_table, header=header, index_col=index_col
+            input_table=input_table,
+            header=header,
+            index_col=index_col,
+            use_llm_reformat=True,
         )
         table_name = input_table.kwargs["table_name"]
         cell_value_desc = None
@@ -114,6 +117,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         if cell_value_desc is not None:
             cell_value_desc = "(" + cell_value_desc + ")"
 
+        spo_list = self._get_table_sub_item_info(data=table_df)
         table_cell_info: TableInfo = self._generate_table_cell_info(
             data=table_df,
             header=header,
@@ -142,6 +146,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             input_table,
             table_df,
             table_cell_info,
+            spo_list,
         )
 
     def _extract_keyword_from_table_header(self, keyword_set: Set, table_name: str):
@@ -179,14 +184,21 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
     def _extract_other_table(self, input_table: Chunk):
         return self._extract_simple_table(input_table=input_table)
 
-    def _std_table(self, input_table: Chunk, header: List, index_col: List):
+    def _std_table(
+        self,
+        input_table: Chunk,
+        header: List,
+        index_col: List,
+        use_llm_reformat: bool = False,
+    ):
         """
         按照表格新识别的表头，生成markdown文本
         """
-        try:
-            return self._std_table2(input_table=input_table)
-        except:
-            pass
+        if use_llm_reformat:
+            try:
+                return self._std_table2(input_table=input_table)
+            except:
+                pass
         if "html" in input_table.kwargs:
             html = input_table.kwargs["html"]
             try:
@@ -231,10 +243,16 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         return table_df, [0], [0]
 
     def get_subgraph(
-        self, input_table: Chunk, table_df: pd.DataFrame, table_cell_info: TableInfo
+        self,
+        input_table: Chunk,
+        table_df: pd.DataFrame,
+        table_cell_info: TableInfo,
+        subitem_spo_list: List,
     ):
         nodes = []
         edges = []
+
+        all_keywords_dict = {}
 
         table_id = input_table.id
 
@@ -252,6 +270,25 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             },
         )
         nodes.append(table_node)
+
+        # table name
+        table_name_node = Node(
+            _id="tn_" + table_id,
+            name=table_name,
+            label="MetricConstraint",
+            properties={
+                "type": "table_name",
+            },
+        )
+        nodes.append(table_name_node)
+        edge = Edge(
+            _id="t2tn_" + table_id,
+            from_node=table_name_node,
+            to_node=table_node,
+            label="dimension",
+            properties={},
+        )
+        edges.append(edge)
 
         # all cell node
         for k, cell in table_cell_info.cell_dict.items():
@@ -280,13 +317,11 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             )
             edges.append(edge)
 
-            all_keywords_dict = {}
-
             # all table global keywords
             global_keywords = input_table.kwargs.get("keywords", [])
             for gk in global_keywords:
                 global_keyword: str = gk
-                keyword_id = f"{table_name}_{global_keyword}"
+                keyword_id = f"global_keywords_{global_keyword}"
                 if keyword_id in all_keywords_dict:
                     continue
                 keyword_node = Node(
@@ -375,6 +410,20 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                     )
                     nodes.extend(c_nodes)
                     edges.extend(c_edges)
+        # subitem edge
+        for spo in subitem_spo_list:
+            s_id = f"{table_name}_{spo[0]}"
+            o_id = f"{table_name}_{spo[2]}"
+            if s_id in all_keywords_dict and o_id in all_keywords_dict:
+                edge = Edge(
+                    _id="subitem_" + s_id + "_" + o_id,
+                    from_node=all_keywords_dict[s_id],
+                    to_node=all_keywords_dict[o_id],
+                    label="subitem",
+                    properties={},
+                )
+                edges.append(edge)
+
         subgraph = SubGraph(nodes=nodes, edges=edges)
         return [subgraph]
 
@@ -387,6 +436,8 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
     ):
         nodes = []
         edges = []
+        if len(colloquial_list) > 2:
+            colloquial_list = colloquial_list[:2]
         for ck in colloquial_list:
             colloquial_keyword: str = ck
             c_keyword_id = f"{table_name}_{colloquial_keyword}"
@@ -411,6 +462,34 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             )
             edges.append(edge)
         return nodes, edges
+
+    def _get_table_sub_item_info(
+        self,
+        data: pd.DataFrame,
+    ):
+        spo_list = []
+        for i in range(data.shape[0]):
+            index_column = str(data.index[i])
+            if not index_column.strip().startswith("-"):
+                continue
+            level = self._count_leading_hyphens(index_column)
+            for j in reversed(range(0, i)):
+                parent_name = str(data.index[j])
+                p_level = self._count_leading_hyphens(parent_name)
+                if p_level + 1 == level:
+                    spo_list.append((parent_name, "包含", index_column))
+                    break
+        return spo_list
+
+    def _count_leading_hyphens(self, s):
+        count = 0
+        s = s.strip()
+        for char in s:
+            if char == "-":
+                count += 1
+            else:
+                break
+        return count
 
     def _generate_table_cell_info(
         self,

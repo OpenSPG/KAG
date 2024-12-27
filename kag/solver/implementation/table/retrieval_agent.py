@@ -24,27 +24,54 @@ class RetrievalAgent(ChunkRetrieverABC):
         )
 
     def recall_docs(self, query: str, top_k: int = 5, **kwargs) -> List[str]:
-        entities = self.chunk_retriever.named_entity_recognition(query=query)
-        parent_entity = self.get_sub_item_reall(entities=entities)
+        # ner_query = f"{self.init_question}；子问题：{query}"
+        ner_query = query
+        entities = self.chunk_retriever.named_entity_recognition(query=ner_query)
+        all_entities = set()
+        for entity in entities:
+            all_entities.add(entity["entity"])
+            for i, alias in enumerate(entity["alias"]):
+                if i <= 1:
+                    all_entities.add(alias)
+
+        entities = list(all_entities)
 
         recall_rst = []
         kg_entities, _ = self.chunk_retriever.match_table_mertric_constraint(
-            entities, top_k=100
+            entities, top_k=10
         )
 
         # table recall
         if len(kg_entities) > 0:
-            table_chunk_list = self.chunk_retriever.retrieval_table_metric_by_page_rank(
-                entities=kg_entities, topk=2, target_type="Table"
+            tables = self.chunk_retriever.retrieval_table_metric_by_vector(
+                self.question, query_type="Table", top_k=1
             )
-            table_chunk_list = [d["content"] for d in table_chunk_list]
-            recall_rst.extend(table_chunk_list)
+            tables = {
+                table["node"]["name"]: table["node"]["content"]
+                for table in tables
+                if "name" in table["node"] and "content" in table["node"]
+            }
+            table_chunk_list = self.chunk_retriever.retrieval_table_metric_by_page_rank(
+                entities=kg_entities, topk=1, target_type="Table"
+            )
+            table_chunk_list = {d["name"]: d["content"] for d in table_chunk_list}
+            table_value_list = []
+            for k, v in tables.items():
+                table_value_list.append(f"# {k}\n{v}")
+            for k, v in table_chunk_list.items():
+                table_value_list.append(f"# {k}\n{v}")
+            recall_rst.extend(table_value_list)
 
         # table metrics recall
         if len(kg_entities) > 0:
-            table_metrics_list = self.chunk_retriever.get_table_metrics_by_entities(
-                entities=kg_entities, topk=20
+            table_metrics_list1 = self.chunk_retriever.retrieval_table_metric_by_vector(
+                self.question, query_type="TableMetric", top_k=10
             )
+            table_metrics_list1 = [node["node"] for node in table_metrics_list1]
+            table_metrics_list2 = self.chunk_retriever.get_table_metrics_by_entities(
+                entities=kg_entities, topk=10
+            )
+            table_metrics_list = table_metrics_list1 + table_metrics_list2
             table_metrics_list = [mertic["name"] for mertic in table_metrics_list]
             recall_rst.extend(table_metrics_list)
 
@@ -52,10 +79,6 @@ class RetrievalAgent(ChunkRetrieverABC):
         docs_with_score = self.chunk_retriever.recall_docs(query=query, top_k=5)
         docs = ["#".join(item.split("#")[:-1]) for item in docs_with_score]
         recall_rst.extend(docs)
-
-        # subitem recall
-        if parent_entity is not None:
-            self.sub_item_recall(parent_entity=parent_entity)
 
         return recall_rst
 
@@ -69,31 +92,34 @@ class RetrievalAgent(ChunkRetrieverABC):
         )
 
     def answer(self):
-        docs = self.recall_docs(query=self.question)
-        docs = self.rerank_docs(queries=[], passages=docs)
+        row_docs = self.recall_docs(query=self.question)
+        print(f"rowdocs,query={self.question}\n{row_docs}")
+        rerank_docs = self.rerank_docs(queries=[], passages=row_docs)
+        print(f"rerank,query={self.question}\n{rerank_docs}")
+        docs = "\n\n".join(rerank_docs)
         llm: LLMClient = self.llm_module
         answer = llm.invoke(
             {"docs": docs, "question": self.question},
             self.sub_question_answer,
             with_except=True,
         )
-        return answer, docs
+        if "i don't know" in answer.lower():
+            # 尝试使用原始召回数据再回答一次
+            docs = "\n\n".join(row_docs)
+            llm: LLMClient = self.llm_module
+            answer = llm.invoke(
+                {"docs": docs, "question": self.question},
+                self.sub_question_answer,
+                with_except=True,
+            )
+        return answer, rerank_docs
 
     def get_sub_item_reall(self, entities):
         index = self.question.find("的所有子项")
         if index < 0:
             return None
         for entity in entities:
-            entity = entity["name"]
             index2 = self.question.find(entity)
             if index2 > 0 and index2 < index and len(entity) == (index - index2):
                 return entity
         return None
-
-    def sub_item_recall(self, parent_entity):
-        kg_entities, _ = self.chunk_retriever.match_table_mertric_constraint(
-            parent_entity, top_k=1
-        )
-        # TODO 查询子项目
-
-        return ""

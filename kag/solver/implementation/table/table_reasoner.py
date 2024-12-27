@@ -25,9 +25,6 @@ class TableReasoner(KagReasonerABC):
         self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan")(
             language=self.language
         )
-        # self.reflection_sub_question = PromptOp.load(
-        #     self.biz_scene, "reflection_sub_question"
-        # )(language=self.language)
 
         self.resp_generator = PromptOp.load(self.biz_scene, "resp_generator")(
             language=self.language
@@ -73,6 +70,11 @@ class TableReasoner(KagReasonerABC):
                 func_str = sub_question["process_function"]
 
                 node = SearchTreeNode(sub_q_str, func_str)
+                if history.has_node(node=node):
+                    node: SearchTreeNode = history.get_node_in_graph(node)
+                    if "i don't know" in node.answer.lower():
+                        break
+                    continue
                 history.add_now_procesing_ndoe(node)
 
                 # 新的子问题出来了
@@ -108,15 +110,16 @@ class TableReasoner(KagReasonerABC):
             else:
                 # 所有子问题都被解答
                 break
-        if not sub_question_faild:
-            # 总结答案
-            llm: LLMClient = self.llm_module
-            return llm.invoke(
-                {"memory": str(history), "question": history.root_node.question},
-                self.resp_generator,
-                with_except=True,
-            )
-        return "I don't know"
+        final_answer = "I don't know"
+        # 总结答案
+        llm: LLMClient = self.llm_module
+        final_answer = llm.invoke(
+            {"memory": str(history), "question": history.root_node.question},
+            self.resp_generator,
+            with_except=True,
+        )
+        self.report_pipleline(history, final_answer)
+        return final_answer
 
     def _get_sub_question_list(self, history: SearchTree, kg_content: str):
         llm: LLMClient = self.llm_module
@@ -134,7 +137,6 @@ class TableReasoner(KagReasonerABC):
             prompt_op=self.logic_form_plan_prompt,
             with_except=True,
         )
-
         history.set_now_plan(sub_question_list)
         return sub_question_list
 
@@ -153,13 +155,21 @@ class TableReasoner(KagReasonerABC):
         agent = PythonCoderAgent(init_question, node.question, history, **self.kwargs)
         sub_answer, code = agent.answer()
         node.answer = sub_answer
-        node.answer_desc = code
+        node.answer_desc = self._process_coder_desc(code)
         return sub_answer
 
-    def report_pipleline(self, history: SearchTree):
+    def _process_coder_desc(self, coder_desc: str):
+        # 拆分文本为行
+        lines = coder_desc.splitlines()
+        # 过滤掉包含 'print' 的行
+        filtered_lines = [line for line in lines if "print(" not in line]
+        # 将过滤后的行重新组合为文本
+        return "\n".join(filtered_lines)
+
+    def report_pipleline(self, history: SearchTree, final_answer: str = None):
         """
         report search tree
         """
-        pipeline = history.convert_to_pipleline()
+        pipeline = history.convert_to_pipleline(final_anser=final_answer)
         if self.report_tool is not None:
             self.report_tool.report_ca_pipeline(pipeline)
