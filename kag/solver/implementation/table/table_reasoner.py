@@ -1,12 +1,18 @@
 from typing import List
 
+from kag.examples.finstate.solver.impl.spo_generator import SPOGenerator
+from kag.examples.finstate.solver.impl.spo_lf_planner import SPOLFPlanner
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
+from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
+from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
+from kag.solver.implementation.default_reasoner import DefaultReasoner
 from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNode
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.common.llm.client import LLMClient
 from kag.common.base.prompt_op import PromptOp
 from kag.solver.implementation.table.retrieval_agent import RetrievalAgent
+from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 from kag.solver.implementation.table.python_coder import PythonCoderAgent
 
@@ -17,7 +23,7 @@ class TableReasoner(KagReasonerABC):
     """
 
     def __init__(
-        self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
+            self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
     ):
         super().__init__(lf_planner=lf_planner, lf_solver=lf_solver, **kwargs)
         self.kwargs = kwargs
@@ -140,17 +146,38 @@ class TableReasoner(KagReasonerABC):
         history.set_now_plan(sub_question_list)
         return sub_question_list
 
+    def _call_spo_retravel_func(self, query):
+        lf_planner = SPOLFPlanner()
+        lf_solver = LFSolver(
+            kg_retriever=KGRetrieverByLlm(),
+        )
+        reason = DefaultReasoner(
+            lf_planner=lf_planner,
+            lf_solver=lf_solver,
+        )
+        resp = SolverPipeline(
+            reasoner=reason,
+            generator=SPOGenerator()
+        )
+        answer, trace_log = resp.run(query)
+        return answer, trace_log
+
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
+
         agent = RetrievalAgent(
             init_question=init_question, question=node.question, **self.kwargs
         )
         answer, docs = agent.answer()
         node.answer = answer
         node.answer_desc = docs
+
+        res, trace_log = self._call_spo_retravel_func(init_question)
+        if res.lower() != "i don't know":
+            return res
         return answer
 
     def _call_python_coder_func(
-        self, init_question, node: SearchTreeNode, history: SearchTree
+            self, init_question, node: SearchTreeNode, history: SearchTree
     ):
         agent = PythonCoderAgent(init_question, node.question, history, **self.kwargs)
         sub_answer, code = agent.answer()
