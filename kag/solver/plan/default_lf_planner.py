@@ -87,7 +87,6 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys = []
         # process sub query
         sub_querys = [ self._process_output_query(question, q) for q in sub_querys]
-
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )

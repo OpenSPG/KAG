@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import kag_ant
 from collections import OrderedDict
 import re
 import json
@@ -216,11 +217,11 @@ def update_project(proj_path):
     llm_config_checker = LLMConfigChecker()
     vectorize_model_config_checker = VectorizeModelConfigChecker()
     llm_config = env.config.get("chat_llm", {})
-    vectorize_model_config = env.config.get("vectorize_model", {})
+    vectorize_model_config = env.config.get("vectorizer", {})
     try:
         llm_config_checker.check(json.dumps(llm_config))
-        print(json.dumps(llm_config))
-        vectorize_model_config_checker.check(json.dumps(vectorize_model_config))
+        dim = vectorize_model_config_checker.check(json.dumps(vectorize_model_config))
+        env.config["vectorizer"]["vector_dimensions"] = dim
     except Exception as e:
         click.secho(f"Error: {e}", fg="bright_red")
         sys.exit()
