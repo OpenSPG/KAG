@@ -83,7 +83,7 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
     #             node.checkpointer.close()
 
 
-@KAGBuilderChain.register("unstructured")
+@KAGBuilderChain.register("unstructured_builder_chain")
 class DefaultUnstructuredBuilderChain(KAGBuilderChain):
     """
     A class representing a default unstructured builder chain, used to build a knowledge graph from unstructured text data such as txt and pdf files.

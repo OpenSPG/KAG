@@ -129,7 +129,7 @@ class EmbeddingVectorGenerator(object):
         manager.patch()
 
 
-@VectorizerABC.register("batch")
+@VectorizerABC.register("batch_vectorizer")
 class BatchVectorizer(VectorizerABC):
     """
     A class for generating embedding vectors for node attributes in a SubGraph in batches.
