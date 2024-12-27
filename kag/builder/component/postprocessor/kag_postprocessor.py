@@ -24,6 +24,7 @@ from knext.schema.client import SchemaClient, OTHER_TYPE
 logger = logging.getLogger()
 
 
+@PostProcessorABC.register("base", as_default=True)
 @PostProcessorABC.register("kag_post_processor", as_default=True)
 class KAGPostProcessor(PostProcessorABC):
     """

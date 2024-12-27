@@ -18,6 +18,7 @@ from kag.interface import ScannerABC
 from knext.common.base.runnable import Input, Output
 
 
+@ScannerABC.register("dir")
 @ScannerABC.register("dir_file_scanner")
 class DirectoryScanner(ScannerABC):
     """
