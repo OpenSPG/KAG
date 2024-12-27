@@ -321,7 +321,7 @@ class KAGRetriever(ChunkRetriever):
             )
         return combined_scores
 
-    def _add_extra_entity_from_spo(self, matched_entities: Dict, retrieved_spo: List[RelationData]):
+    def _add_extra_entity_from_spo(self, matched_entities: Dict, retrieved_spo: List[RelationData], retrieved_entities: List[EntityData]):
         all_related_entities = []
         if retrieved_spo:
             for spo in retrieved_spo:
@@ -329,7 +329,13 @@ class KAGRetriever(ChunkRetriever):
                     all_related_entities.append(spo.from_entity)
                 if spo.end_entity.type not in ['Text', 'attribute']:
                     all_related_entities.append(spo.end_entity)
-            all_related_entities = list(set(all_related_entities))
+
+        if retrieved_entities:
+            for entity in retrieved_entities:
+                if entity.type not in ['Text', 'attribute']:
+                    all_related_entities.append(entity)
+
+        all_related_entities = list(set(all_related_entities))
 
         if len(all_related_entities) == 0:
             return matched_entities.values()
@@ -370,6 +376,7 @@ class KAGRetriever(ChunkRetriever):
         return ner_list
 
     def recall_docs(self, queries: List[str], retrieved_spo: Optional[List[RelationData]] = None,
+                    retrieved_entities: Optional[List[EntityData]] = None,
                     **kwargs) -> List[str]:
         """
         Recall relevant documents based on the query string.
@@ -410,6 +417,7 @@ class KAGRetriever(ChunkRetriever):
                     matched_entities_map[key] = matched_entity
 
         matched_entities = self._add_extra_entity_from_spo(retrieved_spo=retrieved_spo,
+                                                           retrieved_entities=retrieved_entities,
                                                            matched_entities=matched_entities_map)
         try:
             matched_scores = [k['score'] for k in matched_entities]

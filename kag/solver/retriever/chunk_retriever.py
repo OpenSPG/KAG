@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import KagBaseModule
-from kag.solver.logic.core_modules.common.one_hop_graph import RelationData
+from kag.solver.logic.core_modules.common.one_hop_graph import RelationData, EntityData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
@@ -46,6 +46,7 @@ class ChunkRetriever(KagBaseModule, ABC):
     """
 
     def recall_docs(self, queries: List[str], retrieved_spo: Optional[List[RelationData]] = None,
+                    retrieved_entities: Optional[List[EntityData]] = None,
                     **kwargs) -> List[str]:
         """
         Recalls documents based on the given query.
@@ -53,6 +54,7 @@ class ChunkRetriever(KagBaseModule, ABC):
         Parameters:
             queries (list of str): The queries string to search for.
             retrieved_spo (Optional[List[RelationData]], optional): A list of previously retrieved relation data. Defaults to None.
+            retrieved_entities (Optional[List[EntityData]], optional ): A list of retrieved entity, Defaults to None
             **kwargs: Additional keyword arguments for retrieval.
 
         Returns:
