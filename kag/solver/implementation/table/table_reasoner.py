@@ -2,11 +2,13 @@ from typing import List
 
 from kag.examples.finstate.solver.impl.spo_generator import SPOGenerator
 from kag.examples.finstate.solver.impl.spo_lf_planner import SPOLFPlanner
+from kag.examples.finstate.solver.impl.spo_memory import SpoMemory
+from kag.examples.finstate.solver.impl.spo_reflector import SPOReflector
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
 from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_lf_planner import DefaultLFPlanner
 from kag.solver.implementation.default_reasoner import DefaultReasoner
+from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
 from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNode
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.common.llm.client import LLMClient
@@ -147,17 +149,23 @@ class TableReasoner(KagReasonerABC):
         return sub_question_list
 
     def _call_spo_retravel_func(self, query):
-        lf_planner = SPOLFPlanner()
+        lf_planner = SPOLFPlanner(KAG_PROJECT_ID = self.project_id, KAG_PROJECT_HOST_ADDR = self.host_addr)
         lf_solver = LFSolver(
-            kg_retriever=KGRetrieverByLlm(),
+            kg_retriever=KGRetrieverByLlm(KAG_PROJECT_ID = self.project_id, KAG_PROJECT_HOST_ADDR = self.host_addr),
+            chunk_retriever=LFChunkRetriever(KAG_PROJECT_ID = self.project_id, KAG_PROJECT_HOST_ADDR = self.host_addr),
+            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
         )
         reason = DefaultReasoner(
             lf_planner=lf_planner,
             lf_solver=lf_solver,
+            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
         )
         resp = SolverPipeline(
+            max_run=1,
+            reflector=SPOReflector(),
             reasoner=reason,
-            generator=SPOGenerator()
+            generator=SPOGenerator(),
+            memory=SpoMemory()
         )
         answer, trace_log = resp.run(query)
         return answer, trace_log
@@ -172,7 +180,12 @@ class TableReasoner(KagReasonerABC):
         node.answer_desc = docs
 
         res, trace_log = self._call_spo_retravel_func(init_question)
-        if res.lower() != "i don't know":
+        if len(trace_log) == 1 and "report_info" in trace_log[0]:
+            if res.lower() == "i don't know" or  (answer is not None and "i don't know" not in answer.lower()):
+                return answer
+            node.answer = res
+            node.answer_desc = "\n".join(trace_log[0]['report_info']['context'])
+            node.sub_graph = trace_log[0]['report_info']['sub_graph']
             return res
         return answer
 

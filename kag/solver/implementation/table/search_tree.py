@@ -20,6 +20,7 @@ class SearchTreeNode:
         self.func = func
         self.time_stamp = int(time.time() * 1000)
         self.answer = None
+        self.sub_graph = None
         self.answer_desc = None
 
     def __str__(self):
@@ -174,6 +175,7 @@ class SearchTree:
                         question=tree_node.question,
                         answer=tree_node.answer,
                         logs=tree_node.answer_desc,
+                        subgraph=[tree_node.sub_graph] if tree_node.sub_graph else Node
                     )
                 )
                 pipeline.edges.append(

@@ -12,7 +12,7 @@ class SPOGenerator(KAGGeneratorABC):
      """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.generate_prompt = PromptOp.load('default', "resp_generator")(
+        self.generate_prompt = PromptOp.load('finstate', "retriever_generator")(
             language=self.language
         )
 
