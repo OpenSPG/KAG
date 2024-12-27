@@ -24,11 +24,11 @@ class ChunkRetriever(KagBaseModule, ABC):
             "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
         }))
         self.graph_api = graph_api or GraphApiABC.from_config({
-            "type": "openspg"}
+            "type": "openspg_graph_api"}
         )
 
         self.search_api = search_api or SearchApiABC.from_config({
-            "type": "openspg"
+            "type": "openspg_search_api"
         })
 
 

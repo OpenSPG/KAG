@@ -1,13 +1,4 @@
-lf_solver_pipeline:
-  reasoner:
-    lf_planner:
-      logic_form_plan_prompt:
-        type: supplychain_lf_plan
-      type: base
-  generator:
-    generate_prompt:
-      type: resp_supplychain
-llm:
+llm: &id001
   api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
@@ -20,9 +11,50 @@ project:
   id: '5'
   language: zh
   namespace: SupplyChain
-vectorize_model: &id001
+vectorize_model: &id002
   type: mock
   vector_dimensions: 768
 vectorizer:
   type: batch
-  vectorize_model: *id001
+  vectorize_model: *id002
+
+
+lf_solver_pipeline:
+  memory: default_memory
+  max_iterations: 3
+  generator:
+    type: default_generator
+    generate_prompt:
+      type: resp_supplychain
+  reflector:
+    type: default_reflector
+  reasoner:
+    type: default_reasoner
+    lf_planner:
+      logic_form_plan_prompt:
+        type: supplychain_lf_plan
+      type: default_lf_planner
+    lf_executor:
+      type: default_lf_executor
+      force_chunk_retriever: true
+      exact_kg_retriever:
+        type: default_exact_kg_retriever
+        el_num: 1
+        search_api: &id003
+          type: openspg_search_api
+        graph_api: &id004
+          type: openspg_graph_api
+      fuzzy_kg_retriever:
+        type: default_fuzzy_kg_retriever
+        el_num: 1
+        vectorize_model: *id002
+        llm_client: *id001
+        search_api: *id003
+        graph_api: *id004
+      chunk_retriever: &id005
+        type: default_chunk_retriever
+        recall_num: 10
+        rerank_topk: 10
+      merger:
+        type: default_lf_sub_query_res_merger
+        chunk_retriever: *id005

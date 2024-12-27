@@ -14,22 +14,25 @@ logger = logging.getLogger(__name__)
 
 
 class SolverPipeline(Registrable):
-    def __init__(self, max_run=3, reflector: KagReflectorABC = None, reasoner: KagReasonerABC = None,
-                 generator: KAGGeneratorABC = None, **kwargs):
+    def __init__(self, reflector: KagReflectorABC, reasoner: KagReasonerABC,
+                 generator: KAGGeneratorABC, memory: str = "default_memory", max_iterations=3, **kwargs):
         """
         Initializes the think-and-act loop class.
 
-        :param max_run: Maximum number of runs to limit the thinking and acting loop, defaults to 3.
+        :param max_iterations: Maximum number of iteration to limit the thinking and acting loop, defaults to 3.
         :param reflector: Reflector instance for reflect tasks.
         :param reasoner: Reasoner instance for reasoning about tasks.
         :param generator: Generator instance for generating actions.
+        :param memory: Assign memory store type
         """
         super().__init__(**kwargs)
-        self.max_run = max_run
+        self.max_iterations = max_iterations
 
-        self.reflector = reflector or KagReflectorABC.from_config({"type": "base"})
-        self.reasoner = reasoner or KagReasonerABC.from_config({"type": "base"})
-        self.generator = generator or KAGGeneratorABC.from_config({"type": "base"})
+        self.reflector = reflector
+        self.reasoner = reasoner
+        self.generator = generator
+
+        self.memory_type = memory
 
         self.param = kwargs
 
@@ -49,9 +52,9 @@ class SolverPipeline(Registrable):
         trace_log = []
         present_instruction = instruction
         run_cnt = 0
-        memory = KagMemoryABC.from_config({"type": "base"})
+        memory = KagMemoryABC.from_config({"type": self.memory_type})
 
-        while not if_finished and run_cnt < self.max_run:
+        while not if_finished and run_cnt < self.max_iterations:
             run_cnt += 1
             logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log

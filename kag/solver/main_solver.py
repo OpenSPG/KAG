@@ -14,7 +14,7 @@ import copy
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
-from kag.common.conf import KAG_CONFIG,KAG_PROJECT_CONF
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 
 
 class SolverMain:
@@ -35,15 +35,15 @@ class SolverMain:
             language=KAG_PROJECT_CONF.language
         )
         default_pipeline_config = {
+            'max_iterations': 3,
+            'memory': 'default_memory',
             'generator': {
                 'generate_prompt': {
                     'type': 'default_resp_generator'
-                }
+                },
+                'type': 'default_generator'
             },
             'reasoner': {
-                'lf_planner': {
-                    'type': 'base'
-                },
                 'lf_executor': {
                     'chunk_retriever': {
                         'recall_num': 10,
@@ -53,10 +53,10 @@ class SolverMain:
                     'exact_kg_retriever': {
                         'el_num': 5,
                         'graph_api': {
-                            'type': 'openspg'
+                            'type': 'openspg_graph_api'
                         },
                         'search_api': {
-                            'type': 'openspg'
+                            'type': 'openspg_search_api'
                         },
                         'type': 'default_exact_kg_retriever'
                     },
@@ -64,10 +64,10 @@ class SolverMain:
                     'fuzzy_kg_retriever': {
                         'el_num': 5,
                         'graph_api': {
-                            'type': 'openspg'
+                            'type': 'openspg_graph_api'
                         },
                         'search_api': {
-                            'type': 'openspg'
+                            'type': 'openspg_search_api'
                         },
                         'type': 'default_fuzzy_kg_retriever',
                     },
@@ -75,13 +75,19 @@ class SolverMain:
                         'chunk_retriever': {
                             'recall_num': 10,
                             'rerank_topk': 10,
-                            'type': 'default_chunk_retriever',
+                            'type': 'default_chunk_retriever'
                         },
-                        'type': 'base'
+                        'type': 'default_lf_sub_query_res_merger'
                     },
-                    'type': 'base'
+                    'type': 'default_lf_executor'
                 },
-                'type': 'base'
+                'lf_planner': {
+                    'type': 'default_lf_planner'
+                },
+                'type': 'default_reasoner'
+            },
+            'reflector': {
+                'type': 'default_reflector'
             }
         }
         conf = copy.deepcopy(KAG_CONFIG.all_config.get("lf_solver_pipeline", default_pipeline_config))

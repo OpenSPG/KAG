@@ -24,7 +24,7 @@ from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 logger = logging.getLogger()
 
 
-@LFExecutorABC.register("base", as_default=True)
+@LFExecutorABC.register("default_lf_executor", as_default=True)
 class DefaultLFExecutor(LFExecutorABC):
     def __init__(self, exact_kg_retriever: ExactKgRetriever, fuzzy_kg_retriever: FuzzyKgRetriever,
                  chunk_retriever: ChunkRetriever, merger: LFSubQueryResMerger, force_chunk_retriever: bool = False,
@@ -48,6 +48,7 @@ class DefaultLFExecutor(LFExecutorABC):
         self.params['fuzzy_kg_retriever'] = fuzzy_kg_retriever
         self.params['chunk_retriever'] = chunk_retriever
         self.params['force_chunk_retriever'] = force_chunk_retriever
+        self.params['llm_module'] = llm_client
 
         # Generate
         self.generator = LFSubGenerator(llm_client=llm_client)
@@ -106,7 +107,10 @@ class DefaultLFExecutor(LFExecutorABC):
 
     def _execute_chunk_answer(self, req_id: str, query: str, lf: LFPlan, process_info: Dict,
                     kg_graph: KgGraph, history: List[LFPlan], res: SubQueryResult) -> SubQueryResult:
-        if not self._judge_sub_answered(res.sub_answer):
+        if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
+            if self.force_chunk_retriever:
+                # force chunk retriever, so we clear kg solved answer
+                process_info['kg_solved_answer'] = []
             # chunk retriever
             all_related_entities = kg_graph.get_all_entity()
             all_related_entities = list(set(all_related_entities))
