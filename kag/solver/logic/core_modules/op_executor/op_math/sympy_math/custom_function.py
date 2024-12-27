@@ -22,7 +22,13 @@ custom_functions_call = {
     'min': MinSet().process,
     'abs': AbsSet().process
 }
-
+def is_number(s):
+    """检查字符串是否可以转换为数字。"""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 def evaluate_expression_eval(expression, data_dict):
     """
     Evaluates a mathematical expression using SymPy and custom functions.
@@ -31,6 +37,11 @@ def evaluate_expression_eval(expression, data_dict):
     :param data_dict: A dictionary containing variable names and their corresponding values.
     :return: The result of the evaluated expression.
     """
+    for key, value_list in data_dict.items():
+        # 检查列表是否不为空，并且所有元素都是数字
+        if value_list and all(is_number(value) for value in value_list):
+            # 将所有字符串转换为浮点数
+            data_dict[key] = [float(value) for value in value_list]
     data_dict.update(custom_functions_call)
     result = eval(expression, data_dict)
 
