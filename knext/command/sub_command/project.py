@@ -63,7 +63,7 @@ def _render_template(namespace: str, tmpl: str, **kwargs):
     copyfile(src, dst, namespace=namespace, **{tmpl: namespace})
 
     tmpls = [tmpl, "default"] if tmpl != "default" else [tmpl]
-    # find all .cfg files in project dir
+    # find all .yaml files in project dir
     config = yaml.load(Path(config_path).read_text() or "{}")
     project_id = kwargs.get("id", None)
     config["project"]["id"] = project_id
@@ -114,7 +114,7 @@ def _recover_project(prj_path: str):
 )
 @click.option(
     "--delete_cfg",
-    help="whether delete your defined .cfg file.",
+    help="whether delete your defined .yaml file.",
     default=True,
     hidden=True,
 )
@@ -197,7 +197,7 @@ def restore_project(host_addr, proj_path):
             project_id = project.id
     else:
         project_id = project_wanted.id
-    # write project id and host addr to kag_config.cfg
+    # write project id and host addr to kag_config.yaml
 
     env.config["project"]["id"] = project_id
     env.config["project"]["host_addr"] = host_addr
