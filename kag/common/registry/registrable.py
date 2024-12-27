@@ -812,9 +812,7 @@ class Registrable:
             logger.warn(f"Failed to initialize class {cls}, info: {e}")
             raise e
         if len(params) > 0:
-            raise ConfigurationError(
-                f"These params are not used for constructing {cls}:\n{params}"
-            )
+            logger.warn(f"These params are not used for constructing {cls}:\n{params}")
 
         return instant
 
