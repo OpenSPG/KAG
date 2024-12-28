@@ -5,33 +5,24 @@ from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
 from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNode
 from kag.common.retriever.kag_retriever import DefaultRetriever
 from kag.common.llm.client import LLMClient
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    EntityData,
+    OneHopGraphData,
+    Prop,
+    RelationData,
+    copy_one_hop_graph_data,
+)
 from kag.common.base.prompt_op import PromptOp
 from knext.reasoner.client import ReasonerClient
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from knext.reasoner.rest.models.reason_task_response import ReasonTaskResponse
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from knext.reasoner import ReasonTask
-from kag.solver.logic.core_modules.common.one_hop_graph import (
-    copy_one_hop_graph_data,
-    EntityData,
-    Prop,
+from kag.solver.tools.graph_api.model.table_model import TableData
+from kag.solver.tools.graph_api.openspg_graph_api import (
+    OpenSPGGraphApi,
     OneHopGraphData,
-    RelationData,
 )
-from kag.solver.logic.core_modules.common.base_model import (
-    SPOBase,
-    SPOEntity,
-    SPORelation,
-    Identifer,
-    TypeInfo,
-    LogicNode,
-)
-from kag.solver.logic.core_modules.retriver.graph_retriver.dsl_executor import (
-    DslRunner,
-    DslRunnerOnGraphStore,
-)
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
 
 class TableRetrievalAgent(ChunkRetrieverABC):
@@ -43,12 +34,9 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         self.chunk_retriever = DefaultRetriever(**kwargs)
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
 
-        self.schema = SchemaUtils(LogicFormConfiguration(kwargs))
-        self.schema.get_schema()
-        self.dsl_runner: DslRunnerOnGraphStore = DslRunnerOnGraphStore(
-            self.project_id, self.schema, LogicFormConfiguration(kwargs)
+        self.graph_api: OpenSPGGraphApi = OpenSPGGraphApi(
+            project_id=self.project_id, host_addr=self.host_addr
         )
-        self.cache_map = {}
 
         self.sub_question_answer = PromptOp.load(self.biz_scene, "sub_question_answer")(
             language=self.language
@@ -149,40 +137,63 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             with_except=True,
         )
 
-        kg_graph = KgGraph()
         # 在图上查询
+        graph_dict = {}
         for get_spo in get_spo_list:
             s = get_spo["s"]
             p = get_spo["p"]
             o = get_spo["o"]
 
-            s_link = s["link"]
+            self._query_spo(s, p, o, graph_dict)
+        # 返回结果
 
-            s_type = s["type"]
+    def _query_spo(self, s, p, o, graph_dict=None):
+        s_var_name = s["var"]
+        s_link = s["link"]
+        s_type = s["type"]
+
+        s_id_list = []
+        if s_var_name not in graph_dict:
             # 链指s
             s_nodes = self.chunk_retriever._search_nodes_by_vector(
                 s_link, s_type, threshold=0.9, topk=1
             )
             if s_nodes is None or len(s_nodes) <= 0:
-                break
-            nid_list = [n["node"]["id"] for n in s_nodes]
-            nid_str = json.dumps(nid_list)
+                return None
+            s_id_list = [n["node"]["id"] for n in s_nodes]
+        else:
+            for node in graph_dict[s_var_name]:
+                s_id_list.append(node.biz_id)
 
-            s_type = self._std_type(s)
-            p_type = self._std_type(p)
-            o_type = self._std_type(o)
-            p_type = ""
-            o_type = ""
+        sid_str = json.dumps(s_id_list)
 
-            task_response: ReasonTaskResponse = self.reason.syn_execute(
-                dsl_content=f"MATCH (n{s_type})-[p{p_type}]-(o{o_type}) WHERE n.id in {nid_str} RETURN n,p,o",
-                start_alias="n",
-            )
-            task: ReasonTask = task_response.task
-            if task.status != "FINISH":
-                break
+        p_var_name = p["var"]
+        o_var_name = o["var"]
+        s_type = self._std_type(s)
+        p_type = self._std_type(p)
+        o_type = self._std_type(o)
+        p_type = ""
+        o_type = ""
 
-        # 返回结果
+        task_response: ReasonTaskResponse = self.reason.syn_execute(
+            dsl_content=f"MATCH (s{s_type})-[p{p_type}]-(o{o_type}) WHERE s.id in {sid_str} RETURN s,p,o,s.id as s_id,o.id as o_id",
+            start_alias="s",
+        )
+        task: ReasonTask = task_response.task
+        if task.status != "FINISH":
+            return None
+        detail = task.result_table_result
+        table_data = TableData.from_dict({"header": detail.header, "data": detail.rows})
+        rsp_map = self.graph_api.convert_spo_to_one_graph(table=table_data)
+        for _, v in rsp_map.items():
+            onehop_graph: OneHopGraphData = v
+            if s_var_name not in graph_dict:
+                graph_dict[s_var_name] = []
+            graph_dict[s_var_name].append(onehop_graph.s)
+            for edge_type, edge_list in onehop_graph.in_relations.items():
+                for e in edge_list:
+                    e: RelationData = e
+            print(onehop_graph)
 
     def _std_type(self, type_str):
         if isinstance(type_str, dict):

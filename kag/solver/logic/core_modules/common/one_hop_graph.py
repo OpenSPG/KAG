@@ -208,6 +208,18 @@ class EntityData:
     #     return f"({self.name} [{self.type}] ({self.biz_id}) {self.description}"
     def __repr__(self):
         return f"{self.name} [{self.type}]"
+    
+
+    def _id(self) -> str:
+        return f"{self.biz_id}_{self.type}"
+
+    def __hash__(self):
+        return hash(self._id())
+
+    def __eq__(self, value):
+        if not isinstance(value, EntityData):
+            return False
+        return self._id() == value._id()
 
 
 def get_label_without_prefix(schema: SchemaUtils, label):
@@ -348,6 +360,23 @@ class RelationData:
         rel.end_type = o.type
         rel.end_entity = o
         return rel
+
+    def _id(self) -> str:
+        from_id = "None"
+        to_id = "None"
+        if self.from_entity is not None:
+            from_id = self.from_entity.biz_id
+        if self.end_entity is not None:
+            to_id = self.end_entity.biz_id
+        return f"{from_id}_{self.type}_{to_id}"
+
+    def __hash__(self):
+        return hash(self._id())
+
+    def __eq__(self, value):
+        if not isinstance(value, RelationData):
+            return False
+        return self._id() == value._id()
 
 
 class OneHopGraphData:
