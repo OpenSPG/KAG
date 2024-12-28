@@ -58,14 +58,28 @@ class ListRegisterInfo(Command):
         availables = cls_obj.list_available_with_detail()
         seg = " " * 20
 
+        deduped_availables = {}
+        for register_name, cls_info in availables.items():
+            cls = cls_info["class"]
+            if cls not in deduped_availables:
+                deduped_availables[cls] = [register_name]
+            else:
+                deduped_availables[cls].append(register_name)
+
         print(f"{bold}{red}{seg}Documentation of {args.cls}{seg}{reset}")
         import inspect
 
         print(inspect.getdoc(cls_obj))
         print(f"{bold}{red}{seg}Registered subclasses of {args.cls}{seg}{reset}")
+        visited = set()
         for register_name, cls_info in availables.items():
-            print(f"{bold}{blue}[{cls_info['class']}]{reset}")
-            print(f"{bold}{green}Register Name:{reset} {register_name}\n")
+            cls = cls_info["class"]
+            if cls in visited:
+                continue
+            visited.add(cls)
+            print(f"{bold}{blue}[{cls}]{reset}")
+            register_names = " / ".join([f'"{x}"' for x in deduped_availables[cls]])
+            print(f"{bold}{green}Register Name:{reset} {register_names}\n")
 
             # print(f"Class Name: {cls_info['class']}")
             print(f"{bold}{green}Documentation:{reset}\n{cls_info['doc']}\n")
