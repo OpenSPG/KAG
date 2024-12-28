@@ -259,6 +259,8 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         revert_graph_map = {}
         for one_hop_graph in one_hop_graph_list:
             for k, v_set in one_hop_graph.get_s_all_relation_spo().items():
+                if k in ['similarity', 'source']:
+                    continue
                 for v in v_set:
                     all_spo_text.append(v)
                     revert_value_p_map[v] = k
@@ -270,7 +272,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
                     revert_graph_map[v] = one_hop_graph
         start_time = time.time()
         tok5_res = self.text_similarity.text_sim_result(n.sub_query, all_spo_text, 5, low_score=0.3)
-        logger.debug(f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}")
+        logger.info(f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}")
 
         if len(tok5_res) == 0:
             return one_kg_graph, matched_flag

@@ -88,21 +88,23 @@ class DefaultReasoner(KagReasonerABC):
         if len(docs) > 0:
             # Append supporting facts for retrieved chunks
             supporting_fact += f"\nPassages:{str(docs)}"
-        # process with retrieved graph
-        logic_form_list = []
-        for lf in lf_nodes:
-            for l in lf.lf_nodes:
-                logic_form_list.append(str(l))
-        sub_logic_nodes_str = "\n".join(logic_form_list)
-        # 为产品展示隐藏冗余信息
-        sub_logic_nodes_str = re.sub(
-            r"(\s,sub_query=[^)]+|get\([^)]+\))", "", sub_logic_nodes_str
-        ).strip()
-        context = [
-            "## SPO Retriever",
-            "#### logic_form expression: ",
-            f"```java\n{sub_logic_nodes_str}\n```",
-        ]
+        context = []
+        if self.lf_solver.kg_retriever is not None:
+            # process with retrieved graph
+            logic_form_list = []
+            for lf in lf_nodes:
+                for l in lf.lf_nodes:
+                    logic_form_list.append(str(l))
+            sub_logic_nodes_str = "\n".join(logic_form_list)
+            # 为产品展示隐藏冗余信息
+            sub_logic_nodes_str = re.sub(
+                r"(\s,sub_query=[^)]+|get\([^)]+\))", "", sub_logic_nodes_str
+            ).strip()
+            context = [
+                "## SPO Retriever",
+                "#### logic_form expression: ",
+                f"```java\n{sub_logic_nodes_str}\n```",
+            ]
         cur_content, sub_graph = self._convert_lf_res_to_report_format(
             req_id=f"graph_{generate_random_string(3)}",
             index=0,
@@ -122,6 +124,7 @@ class DefaultReasoner(KagReasonerABC):
         self, req_id, index, doc_retrieved, kg_graph: KgGraph
     ):
         context = []
+        sub_graph = None
         spo_retrieved = kg_graph.get_all_spo()
         if len(spo_retrieved) > 0:
             spo_answer_path = json.dumps(
@@ -136,10 +139,9 @@ class DefaultReasoner(KagReasonerABC):
             context.append(graph_div)
             context.append(f"#### Triplet Retrieved:")
             context.append(spo_answer_path)
-        else:
+        elif self.lf_solver.kg_retriever is not None:
             context.append(f"#### Triplet Retrieved:")
             context.append("No triplets were retrieved.")
-            sub_graph = None
 
         context += self._update_sub_question_recall_docs(doc_retrieved)
         return context, sub_graph

@@ -24,7 +24,7 @@ class SPOLFPlanner(LFPlannerABC):
         std_schema = SchemaRetrieval(**kwargs)
         self.parser = ParseLogicForm(schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
-        self.logic_form_plan_prompt = PromptOp.load('default', "logic_form_plan")(
+        self.logic_form_plan_prompt = PromptOp.load('finstate', "get_spo_plan")(
             language=self.language
         )
 
