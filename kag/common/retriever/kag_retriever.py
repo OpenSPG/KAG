@@ -563,3 +563,35 @@ class DefaultRetriever(ChunkRetrieverABC):
                 logger.exception("query_vertor_error,%s", query)
                 continue
         return matched_entities, matched_entities_scores
+
+    def _table_retrival_spo(self, s_name, s_type, p_type, o_id, o_type):
+        s_type = self.schema_util.get_label_within_prefix(s_type)
+        o_type = self.schema_util.get_label_within_prefix(o_type)
+        p_type = self.schema_util.get_label_within_prefix(p_type)
+
+        # link s
+        typed_nodes = self.sc.search_vector(
+            label=s_type,
+            property_key="name",
+            query_vector=self.vectorizer.vectorize(s_name),
+            topk=1,
+        )
+        text_matched = self.sc.search_text(
+            query_string=s_name, label_constraints=[s_type], topk=1
+        )
+
+        # query edge
+
+        return [n for n in typed_nodes if n["score"] > 0.9]
+
+    def _search_nodes_by_vector(self, query, _type, threshold=0.9, topk=10):
+        query_type = self.schema_util.get_label_within_prefix(_type)
+        query_vector = self.vectorizer.vectorize(query)
+        typed_nodes = self.sc.search_vector(
+            label=query_type,
+            property_key="name",
+            query_vector=query_vector,
+            topk=topk,
+        )
+        filtered_typed_nodes = [n for n in typed_nodes if n["score"] > threshold]
+        return filtered_typed_nodes

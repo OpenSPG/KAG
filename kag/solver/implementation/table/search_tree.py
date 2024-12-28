@@ -22,6 +22,7 @@ class SearchTreeNode:
         self.answer = None
         self.sub_graph = None
         self.answer_desc = None
+        self.subgraph = None
 
     def __str__(self):
         return f"Node(question={self.question},answer={self.answer})"
@@ -175,7 +176,7 @@ class SearchTree:
                         question=tree_node.question,
                         answer=tree_node.answer,
                         logs=tree_node.answer_desc,
-                        subgraph=[tree_node.sub_graph] if tree_node.sub_graph else Node
+                        #subgraph=[tree_node.sub_graph] if tree_node.sub_graph else Node
                     )
                 )
                 pipeline.edges.append(

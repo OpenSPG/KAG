@@ -13,7 +13,7 @@ from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNo
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.common.llm.client import LLMClient
 from kag.common.base.prompt_op import PromptOp
-from kag.solver.implementation.table.retrieval_agent import RetrievalAgent
+from kag.solver.implementation.table.retrieval_agent import TableRetrievalAgent
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 from kag.solver.implementation.table.python_coder import PythonCoderAgent
@@ -171,11 +171,14 @@ class TableReasoner(KagReasonerABC):
         return answer, trace_log
 
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
-
-        agent = RetrievalAgent(
+        table_retrical_agent = TableRetrievalAgent(
             init_question=init_question, question=node.question, **self.kwargs
         )
-        answer, docs = agent.answer()
+        # 先做符号求解
+        table_retrical_agent.symbol_solver()
+
+        # 再通过chunk求解
+        answer, docs = table_retrical_agent.answer()
         node.answer = answer
         node.answer_desc = docs
 
