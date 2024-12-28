@@ -399,6 +399,18 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
 
         table_id = input_table.id
 
+        # keywords node
+        keywords = []
+
+        for keyword in input_table.kwargs["keywords"]:
+            node = Node(
+                _id=f"{table_id}-keyword{keyword}",
+                name=keyword,
+                label="KeyWord",
+                properties={},
+            )
+            keywords.append(node.id)
+            nodes.append(node)
         # Table node
         table_desc = input_table.kwargs["context"]
         table_name = input_table.kwargs["table_name"]
@@ -593,6 +605,17 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                         )
                         edges.append(edge)
                         break
+
+        # table ->keyword
+        for keyword_id in keywords:
+            edge = Edge(
+                _id=f"keyword-{keyword_id}-table-{table_id}",
+                from_node=node_map[keyword_id],
+                to_node=node_map[table_id],
+                label="InTable",
+                properties={},
+            )
+            edges.append(edge)
 
         subgraph = SubGraph(nodes=nodes, edges=edges)
         print("*" * 80)
