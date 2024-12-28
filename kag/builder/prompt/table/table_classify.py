@@ -37,18 +37,17 @@ class TableClassifyPrompt(PromptOp):
       },
       "examples": [
         {
-          "input": "下面是各个成员国关税收入统计:\n| (in millions) | 收入       |      收入 |\n| ------------- | ---------- | ---------:|\n|               | 2019       |     2018  |\n| 亚洲          | 21,614     |   20,156  |\n| 　中国        | 16,883     |   14,465  |\n| 　印度        | 4,731      |    5,691  |\n| 澳洲          | 2,341      |    2,231  |\n| 总计          | 23,955     |   22,387  |",
+          "input": "所示期间内我们按分部划分的经调整EBITA明细如下表：\n\n|  | 2023-截至9月30日止六个月-人民币(以百万计，百分比除外) | 2024-截至9月30日止六个月-人民币(以百万计，百分比除外) | 2024-截至9月30日止六个月-美元(以百万计，百分比除外) | %同比变动 |\n| --- | --- | --- | --- | --- |\n| 淘天集团 | 96,396 | 93,400 | 13,309 | (3)% |\n",
           "output": {
             "table_type": "指标型表格",
             "header": [
               0,
-              1
             ],
             "index_col": [
               0
             ],
-            "units": "美元",
-            "scale": "millions"
+            "units": ["人民币", "美元"],
+            "scale": "百万"
           }
         },
         {
@@ -120,11 +119,23 @@ class TableClassifyPrompt(PromptOp):
         table_type = None
         table_info = None
         rsp = response
-        if isinstance(rsp, str):
-            rsp = json.loads(rsp)
-        if isinstance(rsp, dict) and "output" in rsp:
-            rsp = rsp["output"]
-        if isinstance(rsp, dict) and "table_type" in rsp:
+        try:
+            if isinstance(rsp, str):
+                rsp = json.loads(rsp)
+            if isinstance(rsp, dict) and "output" in rsp:
+                rsp = rsp["output"]
+            if isinstance(rsp, dict) and "table_type" in rsp:
+                table_type = rsp["table_type"]
+                table_info = rsp
+            return table_type, table_info
+        except:
+            rsp = {
+                "table_type": "指标型表格",
+                "header": [0],
+                "index_col": [0],
+                "units": ["人民币", "美元"],
+                "scale": "百万",
+            }
             table_type = rsp["table_type"]
             table_info = rsp
-        return table_type, table_info
+            return table_type, table_info

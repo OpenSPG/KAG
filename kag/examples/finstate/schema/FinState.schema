@@ -83,6 +83,36 @@ Table(表格): EntityType
           index: None
         csv(csv格式的表格数据): Text
           index: None
+          
+TableRow(表格行): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        content(内容): Text
+          index: None
+TableCol(表格列): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        content(内容): Text
+          index: None
+
+TableCell(单元格): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector     
+        value(指标值): Text
+            index: None
+        scale(量级): Text
+            index: None
+        unit(单位): Text
+            index: None
+
+KeyWord(单元格): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector     
+
 
 MetricConstraint(限定条件): EntityType
      properties:
@@ -91,18 +121,6 @@ MetricConstraint(限定条件): EntityType
         source(源自): Table
             constraint: MultiValue
 
-TableMetric(指标): EntityType
-     properties:
-        value(指标值): Text
-            index: None
-        magnitude(量级): Text
-            index: None
-        unit(单位): Text
-            index: None
-        dimension(维度): MetricConstraint
-            constraint: MultiValue
-        source(源自): Table
-            constraint: MultiValue
 
 Others(其他): EntityType
      properties:
