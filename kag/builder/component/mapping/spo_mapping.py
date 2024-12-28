@@ -19,6 +19,7 @@ from knext.schema.client import OTHER_TYPE
 
 
 @MappingABC.register("spo")
+@MappingABC.register("spo_mapping")
 class SPOMapping(MappingABC):
     """
     A class that extends the MappingABC base class.

@@ -17,6 +17,7 @@ from kag.builder.model.chunk import Chunk
 
 
 @ReaderABC.register("dict")
+@ReaderABC.register("dict_reader")
 class DictReader(ReaderABC):
     """
     A class for reading dictionaries into Chunk objects.

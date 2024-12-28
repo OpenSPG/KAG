@@ -20,6 +20,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @ReaderABC.register("txt")
+@ReaderABC.register("txt_reader")
 class TXTReader(ReaderABC):
     """
     A class for parsing text files or text content into Chunk objects.

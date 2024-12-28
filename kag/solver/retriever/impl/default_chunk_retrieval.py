@@ -13,7 +13,7 @@ from kag.interface import PromptABC, VectorizeModelABC
 from tenacity import retry, stop_after_attempt
 
 from kag.interface import VectorizeModelABC as Vectorizer
-
+from kag.interface import LLMClient
 from typing import List, Dict, Optional
 
 import numpy as np
@@ -58,9 +58,10 @@ class KAGRetriever(ChunkRetriever):
             vectorize_model: Vectorizer = None,
             graph_api: GraphApiABC = None,
             search_api: SearchApiABC = None,
+            llm_client: LLMClient = None,
             **kwargs,
     ):
-        super().__init__(recall_num, rerank_topk, graph_api, search_api, **kwargs)
+        super().__init__(recall_num, rerank_topk, graph_api, search_api,llm_client, **kwargs)
         if vectorize_model is None:
             vectorize_model = Vectorizer.from_config(
                 KAG_CONFIG.all_config["vectorize_model"]
@@ -534,6 +535,7 @@ class DefaultChunkRetriever(KAGRetriever):
             vectorize_model: VectorizeModelABC = None,
             graph_api: GraphApiABC = None,
             search_api: SearchApiABC = None,
+            llm_client: LLMClient = None,
             **kwargs,
     ):
         super().__init__(
@@ -548,6 +550,7 @@ class DefaultChunkRetriever(KAGRetriever):
             vectorize_model,
             graph_api,
             search_api,
+            llm_client,
             **kwargs
         )
         self.text_sim = TextSimilarity(vectorizer=self.vectorize_model)

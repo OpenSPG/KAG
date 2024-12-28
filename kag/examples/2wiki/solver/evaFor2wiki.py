@@ -30,7 +30,7 @@ class EvaFor2wiki:
 
     def qa(self, query):
         # CA
-        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, traceLog = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")

@@ -20,6 +20,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("hotpotqa")
+@ScannerABC.register("hotpotqa_dataset_scanner")
 class HotpotqaCorpusScanner(ScannerABC):
     """
     A class for reading HotpotQA dataset and converting it into a list of dictionaries, inheriting from `ScannerABC`.
@@ -66,6 +67,8 @@ class HotpotqaCorpusScanner(ScannerABC):
 
 @ScannerABC.register("musique")
 @ScannerABC.register("2wiki")
+@ScannerABC.register("musique_dataset_scanner")
+@ScannerABC.register("2wiki_dataset_scanner")
 class MusiqueCorpusScanner(ScannerABC):
     """
     A class for reading Musique/2Wiki dataset and converting it into a list of dictionaries, inheriting from `ScannerABC`.

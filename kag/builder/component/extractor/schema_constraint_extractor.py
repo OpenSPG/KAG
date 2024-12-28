@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @ExtractorABC.register("schema_constraint")
+@ExtractorABC.register("schema_constraint_extractor")
 class SchemaConstraintExtractor(ExtractorABC):
     """
     Perform knowledge extraction for enforcing schema constraints, including entities, events and their edges.

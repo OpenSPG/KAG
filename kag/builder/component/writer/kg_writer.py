@@ -29,6 +29,7 @@ class AlterOperationEnum(str, Enum):
 
 
 @SinkWriterABC.register("kg", as_default=True)
+@SinkWriterABC.register("kg_writer", as_default=True)
 class KGWriter(SinkWriterABC):
     """
     A class for writing SubGraphs to a Knowledge Graph (KG) storage.
