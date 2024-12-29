@@ -16,14 +16,14 @@ from kag.builder.default_chain import DefaultUnstructuredBuilderChain
 from kag.examples.finstate.builder.graph_db_tools import clear_neo4j_data
 
 if __name__ == "__main__":
-    # clear_neo4j_data("finstate")
+    clear_neo4j_data("finstate")
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # file_path = os.path.join(current_dir, "data", "差旅管理办法.md")
     # file_path = os.path.join(current_dir, "data", "中芯国际财报2024_3.pdf.md")
-    # file_path = os.path.join(current_dir, "data", "阿里巴巴2025财年度中期报告.md")
-    file_path = os.path.join(current_dir, "data", "阿里巴巴2025财年度中期报告-1.md")
-    DefaultUnstructuredTableBuilderChain().invoke(file_path=file_path, max_workers=20)
+    file_path = os.path.join(current_dir, "data", "阿里巴巴2025财年度中期报告.md")
+    #file_path = os.path.join(current_dir, "data", "阿里巴巴2025财年度中期报告-1.md")
+    DefaultUnstructuredTableBuilderChain().invoke(file_path=file_path, max_workers=1)
     # DefaultUnstructuredBuilderChain().invoke(
     #     file_path=file_path, with_table=False, max_workers=20
     # )

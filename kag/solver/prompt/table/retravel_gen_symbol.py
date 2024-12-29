@@ -29,57 +29,54 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
       "name": "Table",
       "properties": ["name", "desc"],
       "relationships": [
-        {"p": "contain_row"   , "s": "Table", "o": "TableRow"   },
-        {"p": "contain_column", "s": "Table", "o": "TableColumn"}
+        {"p": "containRow"   , "s": "Table", "o": "TableRow"   },
+        {"p": "containColumn", "s": "Table", "o": "TableColumn"}
       ]
     },
     {
       "name": "TableRow",
       "properties": ["name", "desc"],
       "relationships": [
-        {"p": "contain_cell", "s": "TableRow", "o": "TableCell"},
-        {"p": "part_of"     , "s": "TableRow", "o": "Table"    },
-        {"p": "subitem"     , "s": "TableRow", "o": "TableRow" }
+        {"p": "containCell", "s": "TableRow", "o": "TableCell"},
+        {"p": "partOf"     , "s": "TableRow", "o": "Table"    },
+        {"p": "subitem"    , "s": "TableRow", "o": "TableRow" }
       ]
     },
     {
       "name": "TableColumn",
       "properties": ["name", "desc"],
       "relationships": [
-        {"p": "contain_cell", "s": "TableColumn", "o": "TableCell"},
-        {"p": "part_of"     , "s": "TableColumn", "o": "Table"    }
+        {"p": "containCell", "s": "TableColumn", "o": "TableCell"},
+        {"p": "partOf"     , "s": "TableColumn", "o": "Table"    }
       ]
     },
     {
       "name": "TableCell",
       "properties": ["name", "value", "scale", "unit"],
       "relationships": [
-        {"p": "part_of" , "s": "TableCell", "o": "TableRow"   },
-        {"p": "part_of" , "s": "TableCell", "o": "TableColumn"},
-        {"p": "part_of" , "s": "TableCell", "o": "Table"      },
-        {"p": "belongTo", "s": "TableCell", "o": "TaxoConcept"}
+        {"p": "partOfTableRow"   , "s": "TableCell", "o": "TableRow"   },
+        {"p": "partOfTableColumn", "s": "TableCell", "o": "TableColumn"},
+        {"p": "partOfTable"      , "s": "TableCell", "o": "Table"      }
       ]
     },
     {
       "name": "TableKeyword",
       "properties": [ {"name": "name", "type": "string"} ],
       "relationships": [
-        {"p": "table" , "s": "TableKeyword", "o": "Table"      },
-        {"p": "row"   , "s": "TableKeyword", "o": "TableRow"   },
-        {"p": "column", "s": "TableKeyword", "o": "TableColumn"},
-        {"p": "cells" , "s": "TableKeyword", "o": "TableCell"  }
+        {"p": "keyword", "s": "TableKeyword", "o": "Table"      },
+        {"p": "keyword", "s": "TableKeyword", "o": "TableColumn"}
       ]
     }
   ],
   "data_examples": [
     {
       "s": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表", "type": "Table"},
-      "p": "contain_row",
+      "p": "containRow",
       "o": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表-淘天集团", "type": "TableRow"}
     },
     {
       "s": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表", "type": "Table"},
-      "p": "contain_row",
+      "p": "containRow",
       "o": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表-中国零售商业", "type": "TableRow"}
     },
     {
@@ -89,7 +86,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     },
     {
       "s": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表", "type": "Table"},
-      "p": "contain_column",
+      "p": "containColumn",
       "o": {
         "id"  : "阿里巴巴2025财年上半年财报-营业收入明细表-截至9月30日止6个月-2024-人民币",
         "type": "TableColumn"
@@ -97,34 +94,34 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     },
     {
       "s": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表-淘天集团", "type": "TableRow"},
-      "p": "contain_cell",
+      "p": "containCell",
       "o": {
         "id"   : "阿里巴巴2025财年上半年财报-营业收入明细表-淘天集团-截至9月30日止6个月-2023-人民币",
-        "type" : "TableCell",
-        "value": "212,607",
-        "scale": "百万",
+        "type" : "TableCell"                                        ,
+        "value": "212,607"                                          ,
+        "scale": "百万"                                               ,
         "unit" : "人民币"
       }
     },
     {
       "s": {
         "id"   : "阿里巴巴2025财年上半年财报-营业收入明细表-淘天集团-截至9月30日止6个月-2023-人民币",
-        "type" : "TableCell",
-        "value": "212,607",
-        "scale": "百万",
+        "type" : "TableCell"                                        ,
+        "value": "212,607"                                          ,
+        "scale": "百万"                                               ,
         "unit" : "人民币"
       },
-      "p": "part_of",
+      "p": "partOfTableRow",
       "o": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表-中国零售商业", "type": "TableRow"}
     },
     {
       "s": {"id": "阿里巴巴", "type": "TableKeyword"},
-      "p": "table",
+      "p": "keyword",
       "o": {"id": "阿里巴巴2025财年上半年财报-营业收入明细表", "type": "Table"}
     },
     {
       "s": {"id": "人民币", "type": "TableKeyword"},
-      "p": "column",
+      "p": "keyword",
       "o": {
         "id"  : "阿里巴巴2025财年上半年财报-营业收入明细表-截至9月30日止6个月-2023-人民币",
         "type": "TableColumn"
@@ -150,7 +147,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     },
     "p": {
       "var": "p1",
-      "type": "contain_row"
+      "type": "containRow"
     },
     "o": {
       "var": "o1",
@@ -169,7 +166,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     },
     "p": {
       "var": "p2",
-      "type": "contain_cell"
+      "type": "containCell"
     },
     "o": {
       "var": "o2",
@@ -194,7 +191,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     },
     "p": {
       "var": "p1",
-      "type": "contain_row"
+      "type": "containRow"
     },
     "o": {
       "var": "o1",
@@ -225,7 +222,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     },
     "p": {
       "var": "p3",
-      "type": "contain_cell"
+      "type": "containCell"
     },
     "o": {
       "var": "o3",

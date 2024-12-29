@@ -120,7 +120,13 @@ class Prop:
         if p in self.extend_prop_map.keys():
             return self.extend_prop_map[p]
         return None
-
+    
+    def reomve_prop_value(self, p):
+        if p in self.origin_prop_map.keys():
+            self.origin_prop_map.pop(p)
+        if p in self.extend_prop_map.keys():
+            self.extend_prop_map.pop(p)
+ 
 
 class EntityData:
     def __init__(self):

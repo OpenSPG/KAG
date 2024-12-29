@@ -539,7 +539,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         matched_entities_scores = []
         for entity in queries:
             query = processing_phrases(entity)
-            query_type = "MetricConstraint"
+            query_type = "TableKeyWord"
             query_type = self.schema_util.get_label_within_prefix(query_type)
             try:
                 typed_nodes = self.sc.search_vector(

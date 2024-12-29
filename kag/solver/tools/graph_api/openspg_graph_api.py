@@ -114,7 +114,7 @@ class OpenSPGGraphApi:
         p_info = p_json["propertyValues"]
         rel = RelationData.from_dict(p_info, self.schema)
         s_id = generate_biz_id_with_type(
-            start_node.biz_id, start_node.type
+            start_node.biz_id, self.schema.get_label_without_prefix(start_node.type)
         )
         rel_s_id = generate_biz_id_with_type(
             rel.from_id, rel.from_type

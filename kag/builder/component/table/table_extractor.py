@@ -88,23 +88,21 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         invoke
         """
         input_table: Chunk = input
-        # table_type = input_table.kwargs["table_type"]
+        table_type = input_table.kwargs["table_type"]
 
-        return self._extract_metric_table(input_table)
-        # if table_type in ["指标型表格", "Metric_Based_Table"]:
-        #     return self._extract_metric_table(input_table)
-        # elif table_type in ["简单表格", "Simple_Table"]:
-        #     return self._extract_simple_table(input_table)
-        # else:
-        #     return self._extract_other_table(input_table)
+        # return self._extract_metric_table(input_table)
+        if table_type in ["指标型表格", "Metric_Based_Table"]:
+            return self._extract_metric_table(input_table)
+        elif table_type in ["简单表格", "Simple_Table"]:
+            return self._extract_simple_table(input_table)
+        else:
+            return self._extract_other_table(input_table)
 
     def _extract_metric_table(self, input_table: Chunk):
         table_info = input_table.kwargs["table_info"]
         header = table_info["header"]
         index_col = table_info["index_col"]
-        table_df, header, index_col = self._std_table(
-            input_table=input_table, header=header, index_col=index_col
-        )
+        table_df, header, index_col = self._std_table2(input_table=input_table)
         table_name = input_table.kwargs["table_name"]
         cell_value_desc = None
         scale = table_info.get("scale", None)
@@ -164,7 +162,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
     def _extract_simple_table(self, input_table: Chunk):
         rst = []
         if "table_info" in input_table.kwargs:
-            table_info = input_table.kwargs["table_info"]
+            table_info = input_table.kwargs.pop("table_info")
         else:
             table_info = {}
         if "header" in table_info and "index_col" in table_info:
@@ -185,10 +183,6 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         """
         按照表格新识别的表头，生成markdown文本
         """
-        try:
-            return self._std_table2(input_table=input_table)
-        except:
-            pass
         if "html" in input_table.kwargs:
             html = input_table.kwargs["html"]
             try:
@@ -218,16 +212,29 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         """
         input_str = input_table.content
         # skip table reformat
-        # new_markdown = self.llm.invoke(
-        #     {"input": input_str}, self.table_reformat, with_except=True
-        # )
-        new_markdown = input_str
-        new_markdown = new_markdown.replace("&nbsp;&nbsp;", "-")
+        new_markdown = self.llm.invoke(
+            {"input": input_str}, self.table_reformat, with_except=True
+        )
+        # new_markdown = input_str
+        # new_markdown = new_markdown.replace("&nbsp;&nbsp;", "-")
 
         html_content = markdown.markdown(
             new_markdown, extensions=["markdown.extensions.tables"]
         )
-        table_df = pd.read_html(StringIO(html_content), header=[0], index_col=[0])[0]
+        try:
+            table_df = pd.read_html(StringIO(html_content), header=[0], index_col=[0])[
+                0
+            ]
+        except ValueError:
+            # 可能是表头数量没对齐，再尝试一次
+            new_markdown = self._fix_llm_markdown(llm_markdown=new_markdown)
+            html_content = markdown.markdown(
+                new_markdown, extensions=["markdown.extensions.tables"]
+            )
+            table_df = pd.read_html(StringIO(html_content), header=[0], index_col=[0])[
+                0
+            ]
+
         table_df = table_df.fillna("")
         table_df = table_df.astype(str)
         input_table.content = table_df.to_markdown()
@@ -235,6 +242,34 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         input_table.kwargs["content_type"] = "markdown"
         input_table.kwargs["csv"] = table_df.to_csv()
         return table_df, [0], [0]
+
+    def _fix_llm_markdown(self, llm_markdown: str):
+        # 将输入的表格按行分割
+        lines = llm_markdown.strip().split("\n")
+
+        # 获取表头
+        header = lines[0].strip()
+
+        # 获取分隔行并根据 '|' 分割
+        separator = lines[1].strip().split("|")
+
+        # 确保 header 和每行都有前后的 '|'
+        if not header.startswith("|"):
+            header = "|" + header
+        if not header.endswith("|"):
+            header = header + "|"
+
+        # 获取列数
+        num_columns = header.count("|") - 1
+
+        # 修复分隔行
+        fixed_separator = "|" + "|".join(["---"] * num_columns) + "|"
+
+        # 创建修复后的表格
+        fixed_lines = [header, fixed_separator] + lines[2:]
+
+        # 返回修复后的表格
+        return "\n".join(fixed_lines)
 
     # def get_subgraph(
     #     self, input_table: Chunk, table_df: pd.DataFrame, table_cell_info: TableInfo
@@ -400,13 +435,17 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         table_id = input_table.id
 
         # keywords node
+        keyword_str_set = set(table_cell_info.context_keywords)
         keywords = []
 
-        for keyword in input_table.kwargs["keywords"]:
+        for k, cell in table_cell_info.cell_dict.items():
+            keyword_str_set = keyword_str_set.union(set(cell.row_keywords.keys()))
+
+        for keyword in keyword_str_set:
             node = Node(
                 _id=f"{table_id}-keyword{keyword}",
                 name=keyword,
-                label="KeyWord",
+                label="TableKeyWord",
                 properties={},
             )
             keywords.append(node.id)
@@ -436,6 +475,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 name=f"{table_name}-{row_name.lstrip('-').strip()}",
                 label="TableRow",
                 properties={
+                    "row_name": row_name.lstrip("-").strip(),
                     "content": row_value.to_csv(),
                     "desc": table_desc,
                 },
@@ -457,8 +497,9 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             node = Node(
                 _id=f"{table_id}-col-{idx}",
                 name=f"{table_name}-{col_name}",
-                label="TableCol",
+                label="TableColumn",
                 properties={
+                    "col_name": col_name,
                     "content": col_value.to_csv(),
                     "desc": table_desc,
                 },
@@ -483,6 +524,8 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 name=f"{table_name}-{row_name}-{col_name}",
                 label="TableCell",
                 properties={
+                    "row_name": row_name,
+                    "col_name": col_name,
                     "desc": table_cell.desc,
                     "value": table_cell.value,
                     "scale": table_cell_info.sacle,
@@ -501,7 +544,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"table-{table_id}-col-{row_id}",
                 from_node=node_map[table_id],
                 to_node=node_map[row_id],
-                label="ContainRow",
+                label="containRow",
                 properties={},
             )
 
@@ -511,7 +554,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"row-{row_id}-table-{table_id}",
                 from_node=node_map[row_id],
                 to_node=node_map[table_id],
-                label="PartOf",
+                label="partOf",
                 properties={},
             )
             edges.append(edge)
@@ -523,7 +566,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"table-{table_id}-col-{col_id}",
                 from_node=node_map[table_id],
                 to_node=node_map[col_id],
-                label="ContainColumn",
+                label="containColumn",
                 properties={},
             )
             edges.append(edge)
@@ -532,7 +575,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"col-{col_id}-table-{table_id}",
                 from_node=node_map[col_id],
                 to_node=node_map[table_id],
-                label="PartOf",
+                label="partOf",
                 properties={},
             )
             edges.append(edge)
@@ -546,7 +589,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"row-{row_id}-contain-cell-{cell_id}",
                 from_node=node_map[row_id],
                 to_node=node_map[cell_id],
-                label="ContainCell",
+                label="containCell",
                 properties={},
             )
             edges.append(edge)
@@ -554,7 +597,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"cell-{cell_id}-part-of-row-{row_id}",
                 from_node=node_map[cell_id],
                 to_node=node_map[row_id],
-                label="PartOf",
+                label="partOfTableRow",
                 properties={},
             )
             edges.append(edge)
@@ -563,7 +606,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"col-{col_id}-contain_cell-{cell_id}",
                 from_node=node_map[col_id],
                 to_node=node_map[cell_id],
-                label="ContainCell",
+                label="containCell",
                 properties={},
             )
             edges.append(edge)
@@ -571,7 +614,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"cell-{cell_id}-part-of-col-{col_id}",
                 from_node=node_map[cell_id],
                 to_node=node_map[col_id],
-                label="PartOf",
+                label="partOfTableColumn",
                 properties={},
             )
             edges.append(edge)
@@ -580,7 +623,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"cell-{cell_id}-part-of-table-{table_id}",
                 from_node=node_map[cell_id],
                 to_node=node_map[col_id],
-                label="PartOf",
+                label="partOfTable",
                 properties={},
             )
 
@@ -600,7 +643,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                             _id=f"row-{row_id}-sub-item-{tmp_row_id}",
                             from_node=node_map[tmp_row_id],
                             to_node=node_map[row_id],
-                            label="SubItem",
+                            label="subitem",
                             properties={},
                         )
                         edges.append(edge)
@@ -612,7 +655,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 _id=f"keyword-{keyword_id}-table-{table_id}",
                 from_node=node_map[keyword_id],
                 to_node=node_map[table_id],
-                label="InTable",
+                label="keyword",
                 properties={},
             )
             edges.append(edge)

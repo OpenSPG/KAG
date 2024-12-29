@@ -19,7 +19,10 @@ from kag.solver.implementation.table.retrieval_agent import TableRetrievalAgent
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 from kag.solver.implementation.table.python_coder import PythonCoderAgent
+from concurrent.futures import ThreadPoolExecutor,  as_completed
+
 logger = logging.getLogger()
+
 
 class TableReasoner(KagReasonerABC):
     """
@@ -27,7 +30,7 @@ class TableReasoner(KagReasonerABC):
     """
 
     def __init__(
-            self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
+        self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
     ):
         super().__init__(lf_planner=lf_planner, lf_solver=lf_solver, **kwargs)
         self.kwargs = kwargs
@@ -151,87 +154,111 @@ class TableReasoner(KagReasonerABC):
         return sub_question_list
 
     def _call_chunk_retravel_func(self, query):
-        lf_planner = ChunkLFPlanner(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr)
-        lf_solver = LFSolver(
-            chunk_retriever=LFChunkRetriever(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+        lf_planner = ChunkLFPlanner(
             KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+        )
+        lf_solver = LFSolver(
+            chunk_retriever=LFChunkRetriever(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
         )
         reason = DefaultReasoner(
             lf_planner=lf_planner,
             lf_solver=lf_solver,
-            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
         )
         resp = SolverPipeline(
             max_run=1,
             reflector=SPOReflector(),
             reasoner=reason,
             generator=SPOGenerator(),
-            memory=SpoMemory()
+            memory=SpoMemory(),
         )
         answer, trace_log = resp.run(query)
         return answer, trace_log
 
     def _call_spo_retravel_func(self, query):
-        lf_planner = SPOLFPlanner(KAG_PROJECT_ID = self.project_id, KAG_PROJECT_HOST_ADDR = self.host_addr)
-        lf_solver = LFSolver(
-            kg_retriever=KGRetrieverByLlm(KAG_PROJECT_ID = self.project_id, KAG_PROJECT_HOST_ADDR = self.host_addr),
+        lf_planner = SPOLFPlanner(
             KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+        )
+        lf_solver = LFSolver(
+            kg_retriever=KGRetrieverByLlm(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
         )
         reason = DefaultReasoner(
             lf_planner=lf_planner,
             lf_solver=lf_solver,
-            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
         )
         resp = SolverPipeline(
             max_run=1,
             reflector=SPOReflector(),
             reasoner=reason,
             generator=SPOGenerator(),
-            memory=SpoMemory()
+            memory=SpoMemory(),
         )
         answer, trace_log = resp.run(query)
         return answer, trace_log
 
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
-        try:
-            table_retrical_agent = TableRetrievalAgent(
-                init_question=init_question, question=node.question, **self.kwargs
-            )
-            # 先做符号求解
-            table_retrical_agent.symbol_solver()
+        table_retrical_agent = TableRetrievalAgent(
+            init_question=init_question, question=node.question, **self.kwargs
+        )
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # 两路召回同时做符号求解
+            futures = [
+                executor.submit(table_retrical_agent.symbol_solver),
+                executor.submit(self._call_spo_retravel_func, node.question),
+            ]
 
-            # 再通过chunk求解
-            answer, docs = table_retrical_agent.answer()
-            node.answer = answer
-            node.answer_desc = docs
-        except Exception as e:
-            logger.warning(f"call table retrieval {e}", exc_info=True)
-            answer = "i don't know"
-        # use table retrieved first
-        if "i don't know" not in answer.lower():
-            return answer
+            # 等待任务完成并获取结果
+            for i, future in enumerate(futures):
+                if 0 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+                elif 1 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+            # 同时进行chunk求解
+            futures = [
+                executor.submit(table_retrical_agent.answer),
+                executor.submit(self._call_chunk_retravel_func, node.question),
+            ]
+            for i, future in enumerate(futures):
+                if 0 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+                elif 1 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+        return "I don't know"
 
-        # use spo second
-        res, trace_log = self._call_spo_retravel_func(node.question)
-        self.update_node(node, res, trace_log)
-        if "i don't know" not in res.lower():
-            return res
-        #finally use chunk retriever
-        answer, trace_log = self._call_chunk_retravel_func(node.question)
-        self.update_node(node, answer, trace_log)
-
-        return answer
     def update_node(self, node, res, trace_log):
         if len(trace_log) == 1 and "report_info" in trace_log[0]:
             node.answer = res
             if node.answer_desc is None:
-                node.answer_desc = ''
-            node.answer_desc += "\n".join(trace_log[0]['report_info']['context'])
-            if trace_log[0]['report_info']['sub_graph']:
-                node.sub_graph = trace_log[0]['report_info']['sub_graph']
+                node.answer_desc = ""
+            node.answer_desc += "\n".join(trace_log[0]["report_info"]["context"])
+            if trace_log[0]["report_info"]["sub_graph"]:
+                node.sub_graph = trace_log[0]["report_info"]["sub_graph"]
 
     def _call_python_coder_func(
-            self, init_question, node: SearchTreeNode, history: SearchTree
+        self, init_question, node: SearchTreeNode, history: SearchTree
     ):
         agent = PythonCoderAgent(init_question, node.question, history, **self.kwargs)
         sub_answer, code = agent.answer()
