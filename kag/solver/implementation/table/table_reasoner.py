@@ -215,7 +215,7 @@ class TableReasoner(KagReasonerABC):
             # 两路召回同时做符号求解
             futures = [
                 executor.submit(table_retrical_agent.symbol_solver),
-                executor.submit(self._call_spo_retravel_func, node.question),
+                #executor.submit(self._call_spo_retravel_func, node.question),
             ]
 
             # 等待任务完成并获取结果
@@ -233,7 +233,7 @@ class TableReasoner(KagReasonerABC):
             # 同时进行chunk求解
             futures = [
                 executor.submit(table_retrical_agent.answer),
-                executor.submit(self._call_chunk_retravel_func, node.question),
+                #executor.submit(self._call_chunk_retravel_func, node.question),
             ]
             for i, future in enumerate(futures):
                 if 0 == i:

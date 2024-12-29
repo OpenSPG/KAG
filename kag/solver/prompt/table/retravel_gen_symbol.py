@@ -15,8 +15,8 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
 根据给出的问题，结合schema信息，生成图数据查询过程。
 
 # Instruction
-根据要查询的数据，先确定数据所在的Table。
-再从Table出发，查找数据所在的TableRow或TableColumn，最后找到TableCell值。
+根据要查询的数据，先确定数据所在的Table，可以一次查询多张Table的数据。
+从Table出发，查找数据所在的TableRow或TableColumn，最后找到TableCell值。
 如果可能有多重查询路径，全部输出出来。
 如果需要查询TableRow之间的上下位关系，使用subitem关系。
 如果无法回答，返回: I don't know.
@@ -139,11 +139,11 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
 ```json
 [
   {
-    "desc": "通过表查询营业收入那一行数据，link表示通过给定的名称链指到图上的实体",
+    "desc": "通过表查询收入那一行",
     "s": {
       "var": "s1",
       "type": "Table",
-      "link": "阿里巴巴营收明细表"
+      "link": ["阿里巴巴营收明细表", "阿里巴巴业绩概要表"]
     },
     "p": {
       "var": "p1",
@@ -160,7 +160,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     }
   },
   {
-    "desc": "通过上一步查询到的营业收入那一行数据，查询具体的TableCell",
+    "desc": "通过收入那一行的数据，查询2024年截至9月30日6个月那个格子的",
     "s": {
       "var": "o1"
     },
@@ -184,10 +184,11 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
 ```json
 [
   {
+    "desc": "通过表格查找经营利润那一行数据，再通过这一行数据查找其子项目",
     "s": {
       "var": "s1",
       "type": "Table",
-      "link": "阿里巴巴经营利润详情表"
+      "link": ["阿里巴巴经营利润详情表"]
     },
     "p": {
       "var": "p1",
@@ -202,7 +203,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     }
   },
   {
-    "desc": "通过上一步查询到的经营利润那一行数据，查询经营利润的所有子项目",
+    "desc": "通过经营利润这一行数据，查找其子项目，在表格中也是行",
     "s": {
       "var": "o1"
     },
@@ -216,7 +217,7 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
     }
   },
   {
-    "desc": "通过上一步查询到的所有子项目(多行数据)，查找每行数据上的某个cell",
+    "desc": "通过查询到的所有子项目(多行数据)，查找每行数据上的2024年截至9月30日6个月表格cell",
     "s": {
       "var": "o2"
     },

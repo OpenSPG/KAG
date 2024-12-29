@@ -458,6 +458,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             name=table_name,
             label="Table",
             properties={
+                "raw_name": table_name,
                 "content": input_table.content,
                 "csv": table_df.to_csv(),
                 "desc": table_desc,
@@ -475,7 +476,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 name=f"{table_name}-{row_name.lstrip('-').strip()}",
                 label="TableRow",
                 properties={
-                    "row_name": row_name.lstrip("-").strip(),
+                    "raw_name": row_name.lstrip("-").strip(),
                     "content": row_value.to_csv(),
                     "desc": table_desc,
                 },
@@ -499,7 +500,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 name=f"{table_name}-{col_name}",
                 label="TableColumn",
                 properties={
-                    "col_name": col_name,
+                    "raw_name": col_name,
                     "content": col_value.to_csv(),
                     "desc": table_desc,
                 },
@@ -524,6 +525,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
                 name=f"{table_name}-{row_name}-{col_name}",
                 label="TableCell",
                 properties={
+                    "raw_name": f"{row_name}-{col_name}",
                     "row_name": row_name,
                     "col_name": col_name,
                     "desc": table_cell.desc,

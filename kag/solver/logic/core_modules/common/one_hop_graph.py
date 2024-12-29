@@ -152,7 +152,9 @@ class EntityData:
             return f"{self.type_zh}[{self.name}]({self.description})"
         if self.name == self.biz_id:
             return f"{self.type_zh}[{self.name}]"
-        return f"{self.type_zh}[{self.name}]({self.biz_id})"
+        if len(self.biz_id) > 0:
+            return f"{self.type_zh}[{self.name}]({self.biz_id})"
+        return f"{self.type_zh}[{self.name}]"
 
     def to_json(self):
         return {
