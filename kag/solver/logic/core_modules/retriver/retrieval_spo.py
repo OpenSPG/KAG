@@ -232,7 +232,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         sen_condi_set = []
         spo_name_map = {}
         for p_name, spo_l in candi_set.items():
-            if p_name.startswith("_") or p_name == "id" or p_name == 'content':
+            if p_name.startswith("_") or p_name == "id" or p_name == 'source':
                 continue
             for spo in spo_l:
                 spo_name_map[spo] = p_name
