@@ -1,7 +1,10 @@
+import re
 from typing import List
 import json
 import os
 
+from kag.solver.implementation.default_reasoner import convert_lf_res_to_report_format
+from kag.solver.logic.core_modules.common.utils import generate_random_string
 from knext.project.client import ProjectClient
 from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
 from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNode
@@ -167,6 +170,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         )
 
         # 在图上查询
+        retrieved_spo_lf_list = []
         kg_graph = KgGraph()
         for get_spo in get_spo_list:
             s = get_spo["s"]
@@ -177,7 +181,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             if len(onehop_graph_list) <= 0:
                 return "I don't know", None
             n: GetSPONode = self._gen_get_spo_node(get_spo, self.question, kg_graph)
-
+            retrieved_spo_lf_list.append(n)
             total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
                 n=n, one_hop_graph_list=onehop_graph_list, sim_topk=20, disable_attr=True
             )
@@ -194,10 +198,27 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             with_except=True,
         )
 
-        get_spo_str = self._get_spo_list_to_str(get_spo_list)
         # 转换graph为可以页面可展示的格式
+        logic_form_str_list = [str(lf) for lf in retrieved_spo_lf_list]
+        sub_logic_nodes_str = "\n".join(logic_form_str_list)
+        # 为产品展示隐藏冗余信息
+        sub_logic_nodes_str = re.sub(
+            r"(\s,sub_query=[^)]+|get\([^)]+\))", "", sub_logic_nodes_str
+        ).strip()
+        context = [
+            "## SPO Retriever",
+            "#### logic_form expression: ",
+            f"```java\n{sub_logic_nodes_str}\n```",
+        ]
+        cur_content, sub_graph = convert_lf_res_to_report_format(None,
+                                                                 f"graph_{generate_random_string(3)}", 0, [], kg_graph)
+        context += cur_content
+        history_log = {'report_info': {
+            'context': context,
+            'sub_graph': sub_graph
+        }}
 
-        return answer, [{"report_info": {"context": get_spo_str, "sub_graph": None}}]
+        return answer, [history_log]
 
     def _gen_get_spo_node(
         self, get_spo: dict, query: str, kg_graph: KgGraph
