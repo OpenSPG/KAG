@@ -170,7 +170,6 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         )
 
         # 在图上查询
-        retrieved_spo_lf_list = []
         kg_graph = KgGraph()
         for get_spo in get_spo_list:
             s = get_spo["s"]
@@ -181,7 +180,6 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             if len(onehop_graph_list) <= 0:
                 return "I don't know", None
             n: GetSPONode = self._gen_get_spo_node(get_spo, self.question, kg_graph)
-            retrieved_spo_lf_list.append(n)
             total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
                 n=n, one_hop_graph_list=onehop_graph_list, sim_topk=20, disable_attr=True
             )
@@ -199,12 +197,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         )
 
         # 转换graph为可以页面可展示的格式
-        logic_form_str_list = [str(lf) for lf in retrieved_spo_lf_list]
-        sub_logic_nodes_str = "\n".join(logic_form_str_list)
-        # 为产品展示隐藏冗余信息
-        sub_logic_nodes_str = re.sub(
-            r"(\s,sub_query=[^)]+|get\([^)]+\))", "", sub_logic_nodes_str
-        ).strip()
+        sub_logic_nodes_str = self._get_spo_list_to_str(get_spo_list)
         context = [
             "## SPO Retriever",
             "#### logic_form expression: ",
@@ -247,6 +240,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
 
     def _gen_so_base(self, s_obj: dict, kg_graph: KgGraph) -> SPOBase:
         alias_name = s_obj["var"]
+        # _name = s_obj.get("link", None)
+        _name = None
         if "type" not in s_obj:
             entity_datas = kg_graph.get_entity_by_alias(alias_name)
             if entity_datas is None:
@@ -259,7 +254,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             entity_id=None,
             entity_type=_type,
             entity_type_zh=_type,
-            entity_name=None,
+            entity_name=str(_name) if _name else None,
             alias_name=alias_name,
         )
         return s
