@@ -177,11 +177,14 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             if len(onehop_graph_list) <= 0:
                 return "I don't know", None
             n: GetSPONode = self._gen_get_spo_node(get_spo, self.question, kg_graph)
+
             total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
-                n=n, one_hop_graph_list=onehop_graph_list
+                n=n, one_hop_graph_list=onehop_graph_list, sim_topk=20, disable_attr=True
             )
             kg_graph.merge_kg_graph(total_one_kg_graph)
-
+            kg_graph.nodes_alias.append(n.s.alias_name)
+            kg_graph.nodes_alias.append(n.o.alias_name)
+            kg_graph.edge_alias.append(n.p.alias_name)
         graph_docs = kg_graph.to_answer_path()
 
         # 回答子问题
@@ -200,7 +203,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         self, get_spo: dict, query: str, kg_graph: KgGraph
     ) -> GetSPONode:
         args = {
-            "query": query,
+            "sub_query": query,
             "s": self._gen_so_base(get_spo["s"], kg_graph),
             "p": self._gen_p_base(get_spo["p"], kg_graph),
             "o": self._gen_so_base(get_spo["o"], kg_graph),
@@ -224,7 +227,11 @@ class TableRetrievalAgent(ChunkRetrieverABC):
     def _gen_so_base(self, s_obj: dict, kg_graph: KgGraph) -> SPOBase:
         alias_name = s_obj["var"]
         if "type" not in s_obj:
-            _type = kg_graph.entity_map[alias_name][0].type
+            entity_datas = kg_graph.get_entity_by_alias(alias_name)
+            if entity_datas is None:
+                _type = "Entity"
+            else:
+                _type = entity_datas[0].type
         else:
             _type = s_obj["type"]
         s: SPOBase = SPOEntity(
@@ -302,7 +309,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         s_var_name = s["var"]
 
         s_id_list = []
-        if s_var_name not in kg_graph.entity_map.keys():
+        s_data = kg_graph.get_entity_by_alias(s_var_name)
+        if s_data is None:
             s_type = s["type"]
             s_link = s["link"]
             # 链指s
@@ -313,7 +321,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 return None
             s_id_list = [n["node"]["id"] for n in s_nodes]
         else:
-            for node in kg_graph.entity_map[s_var_name]:
+            for node in s_data:
                 s_id_list.append(node.biz_id)
 
         sid_str = json.dumps(s_id_list)
@@ -336,25 +344,26 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             return None
         onehop_graph_list = []
         for _, v in rsp_map.items():
-            onehop_graph: OneHopGraphData = v
-            new_out_relations_dict = {}
-            for edge_type, edge_list in onehop_graph.out_relations.items():
-                o_score_and_edges = [
-                    (self._get_o_score(o, e.end_entity), e.end_entity)
-                    for e in edge_list
-                ]
-                o_score_and_edges = sorted(
-                    o_score_and_edges, key=lambda x: x[0], reverse=True
-                )
-                if len(o_score_and_edges) > o_with_topk:
-                    o_score_and_edges = o_score_and_edges[:o_with_topk]
-                if len(o_score_and_edges) > 0:
-                    new_out_relations_dict[edge_type] = [
-                        e[1] for e in o_score_and_edges
-                    ]
-            onehop_graph.out_relations = new_out_relations_dict
-            if len(onehop_graph.out_relations) > 0:
-                onehop_graph_list.append(onehop_graph)
+            onehop_graph_list.append(v)
+            # onehop_graph: OneHopGraphData = v
+            # new_out_relations_dict = {}
+            # for edge_type, edge_list in onehop_graph.out_relations.items():
+            #     o_score_and_edges = [
+            #         (self._get_o_score(o, e.end_entity), e)
+            #         for e in edge_list
+            #     ]
+            #     o_score_and_edges = sorted(
+            #         o_score_and_edges, key=lambda x: x[0], reverse=True
+            #     )
+            #     if len(o_score_and_edges) > o_with_topk:
+            #         o_score_and_edges = o_score_and_edges[:o_with_topk]
+            #     if len(o_score_and_edges) > 0:
+            #         new_out_relations_dict[edge_type] = [
+            #             e[1] for e in o_score_and_edges
+            #         ]
+            # onehop_graph.out_relations = new_out_relations_dict
+            # if len(onehop_graph.out_relations) > 0:
+            #     onehop_graph_list.append(onehop_graph)
         return onehop_graph_list
 
     def _get_o_score(self, o, o_entity: EntityData):
@@ -393,7 +402,11 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             tmp_type_str = type_str.get("type", None)
             if tmp_type_str is None:
                 var_name = type_str["var"]
-                type_str = next(iter(kg_graph.entity_map[var_name])).type
+                entity_datas = kg_graph.get_entity_by_alias(var_name)
+                if entity_datas is None:
+                    type_str = tmp_type_str
+                else:
+                    type_str = next(iter(entity_datas)).type
             else:
                 type_str = tmp_type_str
         if type_str is None or len(type_str) <= 0:
