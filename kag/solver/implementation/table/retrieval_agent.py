@@ -1,6 +1,8 @@
 from typing import List
 import json
+import os
 
+from knext.project.client import ProjectClient
 from kag.interface.retriever.chunk_retriever_abc import ChunkRetrieverABC
 from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNode
 from kag.common.retriever.kag_retriever import DefaultRetriever
@@ -11,6 +13,17 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
     Prop,
     RelationData,
     copy_one_hop_graph_data,
+)
+from kag.solver.logic.core_modules.retriver.retrieval_spo import (
+    FuzzyMatchRetrievalSpo,
+    ExactMatchRetrievalSpo,
+)
+from kag.solver.logic.core_modules.common.base_model import (
+    SPOBase,
+    SPOEntity,
+    SPORelation,
+    Identifer,
+    TypeInfo,
 )
 from kag.common.base.prompt_op import PromptOp
 from knext.reasoner.client import ReasonerClient
@@ -23,6 +36,8 @@ from kag.solver.tools.graph_api.openspg_graph_api import (
     OpenSPGGraphApi,
     OneHopGraphData,
 )
+from kag.common.vectorizer import Vectorizer
+from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 
 
 class TableRetrievalAgent(ChunkRetrieverABC):
@@ -33,6 +48,18 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         self.history = SearchTree(question)
         self.chunk_retriever = DefaultRetriever(**kwargs)
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
+
+        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
+        if self.host_addr and self.project_id:
+            config = ProjectClient(
+                host_addr=self.host_addr, project_id=self.project_id
+            ).get_config(self.project_id)
+            vectorizer_config.update(config.get("vectorizer", {}))
+        self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
+        self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
+        self.fuzzy_match = FuzzyMatchRetrievalSpo(
+            text_similarity=self.text_similarity, llm=self.llm_module
+        )
 
         self.graph_api: OpenSPGGraphApi = OpenSPGGraphApi(
             project_id=self.project_id, host_addr=self.host_addr
@@ -140,36 +167,26 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         )
 
         # 在图上查询
-        graph_dict = {}
+        kg_graph = KgGraph()
         for get_spo in get_spo_list:
             s = get_spo["s"]
             p = get_spo["p"]
             o = get_spo["o"]
 
-            graph_dict = self._query_spo(s, p, o, graph_dict)
-            if graph_dict is None:
+            onehop_graph_list = self._query_spo(s, p, o, kg_graph)
+            if len(onehop_graph_list) <= 0:
                 return "I don't know", None
+            n: GetSPONode = self._gen_get_spo_node(get_spo, self.question, kg_graph)
+            total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
+                n=n, one_hop_graph_list=onehop_graph_list
+            )
+            kg_graph.merge_kg_graph(total_one_kg_graph)
 
-        # 将查询结果组织为llm容易理解的方式
-        graph_dict_json_str = self._graph_dict_llm_understanding(graph_dict)
-
-        # # 选择子图
-        # llm: LLMClient = self.llm_module
-        # selected_graph = llm.invoke(
-        #     {
-        #         "graph_query_restult": graph_dict_json_str,
-        #         "graph_query_plan": json.dumps(get_spo_list, ensure_ascii=False),
-        #         "question": self.question,
-        #     },
-        #     self.select_graph,
-        #     with_except=True,
-        # )
-
-        # selected_graph = self._get_graph_from_ids(selected_graph, graph_dict)
+        graph_docs = kg_graph.to_answer_path()
 
         # 回答子问题
         answer = llm.invoke(
-            {"docs": graph_dict_json_str, "question": self.question},
+            {"docs": graph_docs, "question": self.question},
             self.sub_question_answer,
             with_except=True,
         )
@@ -177,7 +194,47 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         get_spo_str = self._get_spo_list_to_str(get_spo_list)
         # 转换graph为可以页面可展示的格式
 
-        return answer, [{"report_info": {"context": graph_dict_json_str, "sub_graph": None}}]
+        return answer, [{"report_info": {"context": get_spo_str, "sub_graph": None}}]
+
+    def _gen_get_spo_node(
+        self, get_spo: dict, query: str, kg_graph: KgGraph
+    ) -> GetSPONode:
+        args = {
+            "query": query,
+            "s": self._gen_so_base(get_spo["s"], kg_graph),
+            "p": self._gen_p_base(get_spo["p"], kg_graph),
+            "o": self._gen_so_base(get_spo["o"], kg_graph),
+        }
+        n: GetSPONode = GetSPONode(operator="", args=args)
+        return n
+
+    def _gen_p_base(self, p_obj: dict, kg_graph: KgGraph) -> SPOBase:
+        alias_name = p_obj["var"]
+        if "type" not in p_obj:
+            _type = kg_graph.edge_map[alias_name][0].type
+        else:
+            _type = p_obj["type"]
+        p: SPOBase = SPORelation(
+            alias_name=alias_name,
+            rel_type=_type,
+            rel_type_zh=_type,
+        )
+        return p
+
+    def _gen_so_base(self, s_obj: dict, kg_graph: KgGraph) -> SPOBase:
+        alias_name = s_obj["var"]
+        if "type" not in s_obj:
+            _type = kg_graph.entity_map[alias_name][0].type
+        else:
+            _type = s_obj["type"]
+        s: SPOBase = SPOEntity(
+            entity_id=None,
+            entity_type=_type,
+            entity_type_zh=_type,
+            entity_name=None,
+            alias_name=alias_name,
+        )
+        return s
 
     def _get_graph_from_ids(self, id_list, graph_dict):
         valid_name_set = set(id_list)
@@ -241,11 +298,11 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             the_str += f"{json.dumps(link_list_str, ensure_ascii=False)}"
         return the_str
 
-    def _query_spo(self, s, p, o, graph_dict=None):
+    def _query_spo(self, s, p, o, kg_graph: KgGraph, o_with_topk=30):
         s_var_name = s["var"]
 
         s_id_list = []
-        if s_var_name not in graph_dict:
+        if s_var_name not in kg_graph.entity_map.keys():
             s_type = s["type"]
             s_link = s["link"]
             # 链指s
@@ -256,16 +313,14 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 return None
             s_id_list = [n["node"]["id"] for n in s_nodes]
         else:
-            for node in graph_dict[s_var_name]:
+            for node in kg_graph.entity_map[s_var_name]:
                 s_id_list.append(node.biz_id)
 
         sid_str = json.dumps(s_id_list)
 
-        p_var_name = p["var"]
-        o_var_name = o["var"]
-        s_type = self._std_type(s, graph_dict)
-        p_type = self._std_type(p, graph_dict)
-        o_type = self._std_type(o, graph_dict)
+        s_type = self._std_type(s, kg_graph)
+        p_type = self._std_type(p, kg_graph)
+        o_type = self._std_type(o, kg_graph)
 
         task_response: ReasonTaskResponse = self.reason.syn_execute(
             dsl_content=f"MATCH (s{s_type})-[p{p_type}]->(o{o_type}) WHERE s.id in {sid_str} RETURN s,p,o,s.id as s_id,o.id as o_id",
@@ -279,33 +334,33 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         rsp_map = self.graph_api.convert_spo_to_one_graph(table=table_data)
         if len(rsp_map) <= 0:
             return None
-        find_one_o = False
+        onehop_graph_list = []
         for _, v in rsp_map.items():
             onehop_graph: OneHopGraphData = v
-            if s_var_name not in graph_dict:
-                graph_dict[s_var_name] = set()
-            graph_dict[s_var_name].add(onehop_graph.s)
-            for _, edge_list in onehop_graph.out_relations.items():
-                for e in edge_list:
-                    e: RelationData = e
-                    o_entity = e.end_entity
-                    # 判断o的相似度
-                    if not self.is_valid_o(o, o_entity):
-                        continue
-                    find_one_o = True
-                    if p_var_name not in graph_dict:
-                        graph_dict[p_var_name] = set()
-                    graph_dict[p_var_name].add(e)
-                    if o_var_name not in graph_dict:
-                        graph_dict[o_var_name] = set()
-                    graph_dict[o_var_name].add(e.end_entity)
-            if not find_one_o:
-                return None
-        return graph_dict
+            new_out_relations_dict = {}
+            for edge_type, edge_list in onehop_graph.out_relations.items():
+                o_score_and_edges = [
+                    (self._get_o_score(o, e.end_entity), e.end_entity)
+                    for e in edge_list
+                ]
+                o_score_and_edges = sorted(
+                    o_score_and_edges, key=lambda x: x[0], reverse=True
+                )
+                if len(o_score_and_edges) > o_with_topk:
+                    o_score_and_edges = o_score_and_edges[:o_with_topk]
+                if len(o_score_and_edges) > 0:
+                    new_out_relations_dict[edge_type] = [
+                        e[1] for e in o_score_and_edges
+                    ]
+            onehop_graph.out_relations = new_out_relations_dict
+            if len(onehop_graph.out_relations) > 0:
+                onehop_graph_list.append(onehop_graph)
+        return onehop_graph_list
 
-    def is_valid_o(self, o, o_entity: EntityData):
+    def _get_o_score(self, o, o_entity: EntityData):
         if "link" not in o:
-            return True
+            # 不需要约束，全部返回
+            return 1
         link_list = o["link"]
         if isinstance(link_list, str):
             link_list = [link_list]
@@ -314,14 +369,15 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             o_entity.prop.get_prop_value("col_name"),
         ]
         entity_str_list = [s for s in entity_str_list if s is not None]
+        max_cosine_similarity = 0
         for link_str in link_list:
             for entity_str in entity_str_list:
                 link_vector = self.chunk_retriever.vectorizer.vectorize(link_str)
                 entity_vector = self.chunk_retriever.vectorizer.vectorize(entity_str)
                 cosine_similarity = self.cosine_similarity(link_vector, entity_vector)
-                if cosine_similarity > 0.4:
-                    return True
-        return False
+                if cosine_similarity > max_cosine_similarity:
+                    max_cosine_similarity = cosine_similarity
+        return max_cosine_similarity
 
     def cosine_similarity(self, vec1, vec2):
         import numpy as np
@@ -332,12 +388,12 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         value = dot_product / (norm_vec1 * norm_vec2)
         return value
 
-    def _std_type(self, type_str, graph_dict):
+    def _std_type(self, type_str, kg_graph: KgGraph):
         if isinstance(type_str, dict):
             tmp_type_str = type_str.get("type", None)
             if tmp_type_str is None:
                 var_name = type_str["var"]
-                type_str = next(iter(graph_dict[var_name])).type
+                type_str = next(iter(kg_graph.entity_map[var_name])).type
             else:
                 type_str = tmp_type_str
         if type_str is None or len(type_str) <= 0:
