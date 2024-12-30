@@ -42,6 +42,7 @@ def split_txt(content):
 
 
 @ReaderABC.register("docx")
+@ReaderABC.register("docx_reader")
 class DocxReader(ReaderABC):
     """
     A class for reading Docx files into Chunk objects.

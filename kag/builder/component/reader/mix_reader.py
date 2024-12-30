@@ -23,6 +23,7 @@ from kag.builder.component.reader.dict_reader import DictReader
 
 
 @ReaderABC.register("mix", as_default=True)
+@ReaderABC.register("mix_reader")
 class MixReader(ReaderABC):
     """
     A reader class that can handle multiple types of inputs by delegating to specific readers.
