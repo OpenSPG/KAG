@@ -85,6 +85,8 @@ class TableReasoner(KagReasonerABC):
                 node = SearchTreeNode(sub_q_str, func_str)
                 if history.has_node(node=node):
                     node: SearchTreeNode = history.get_node_in_graph(node)
+                    if node.answer is None:
+                        break
                     if "i don't know" in node.answer.lower():
                         break
                     continue
@@ -227,8 +229,8 @@ class TableReasoner(KagReasonerABC):
                         return res
                 elif 1 == i:
                     res, trace_log = future.result()
+                    self.update_node(node, res, trace_log)
                     if "i don't know" not in res.lower():
-                        self.update_node(node, res, trace_log)
                         return res
             # 同时进行chunk求解
             futures = [
@@ -243,9 +245,8 @@ class TableReasoner(KagReasonerABC):
                         return res
                 elif 1 == i:
                     res, trace_log = future.result()
-                    if "i don't know" not in res.lower():
-                        self.update_node(node, res, trace_log)
-                        return res
+                    self.update_node(node, res, trace_log)
+                    return res
         return "I don't know"
 
     def update_node(self, node, res, trace_log):
