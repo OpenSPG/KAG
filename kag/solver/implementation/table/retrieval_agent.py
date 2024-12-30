@@ -192,6 +192,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 sim_topk=20,
                 disable_attr=True,
             )
+            if not matched_flag:
+                return "I don't know", None
             kg_graph.merge_kg_graph(total_one_kg_graph)
             kg_graph.nodes_alias.append(n.s.alias_name)
             kg_graph.nodes_alias.append(n.o.alias_name)

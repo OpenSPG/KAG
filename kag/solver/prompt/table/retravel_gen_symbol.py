@@ -21,6 +21,10 @@ class RetrivalGenerateSymbolPrompt(PromptOp):
 如果需要查询TableRow之间的上下位关系，使用subitem关系。
 如果无法回答，返回: I don't know.
 
+# output format
+输出json格式，内容是路径查询列表，每个路径包含desc，以及需要查询的三元组spo。
+spo中必须包含var（变量名），type（实体或关系类型），link（目标实体或关系的名称，在图数据上进行链指）
+
 # Schema and data example
 ```json
 {
