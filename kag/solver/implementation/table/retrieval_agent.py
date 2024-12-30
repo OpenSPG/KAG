@@ -197,7 +197,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             kg_graph.nodes_alias.append(n.o.alias_name)
             kg_graph.edge_alias.append(n.p.alias_name)
 
-        kg_graph_deep_copy = copy.deepcopy(kg_graph)
+        #kg_graph_deep_copy = copy.deepcopy(kg_graph)
+        kg_graph_deep_copy = kg_graph
         self._table_kg_graph_with_desc(kg_graph_deep_copy)
         graph_docs = kg_graph_deep_copy.to_answer_path()
         graph_docs = json.dumps(graph_docs, ensure_ascii=False)
