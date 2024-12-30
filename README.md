@@ -102,8 +102,8 @@ Use the following commands to download the docker-compose.yml file and launch th
 # set the HOME environment variable (only Windows users need to execute this command)
 # set HOME=%USERPROFILE%
 
-curl -sSL https://raw.githubusercontent.com/OpenSPG/openspg/refs/heads/master/dev/release/docker-compose.yml -o docker-compose.yml
-docker compose -f docker-compose.yml up -d
+curl -sSL https://raw.githubusercontent.com/OpenSPG/openspg/refs/heads/master/dev/release/docker-compose-west.yml -o docker-compose-west.yml
+docker compose -f docker-compose-west.yml up -d
 ```
 
 ### 4.1.2 Use the product
