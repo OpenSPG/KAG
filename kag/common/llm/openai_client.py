@@ -16,6 +16,7 @@ from openai import OpenAI
 import logging
 
 from kag.interface import LLMClient
+from tenacity import retry, stop_after_attempt
 
 logging.getLogger("openai").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -104,6 +105,7 @@ class OpenAIClient(LLMClient):
             rsp = response.choices[0].message.content
             return rsp
 
+    @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt):
         """
         Calls the model and attempts to parse the response into JSON format.
