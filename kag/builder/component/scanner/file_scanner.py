@@ -18,6 +18,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("file")
+@ScannerABC.register("file_scanner")
 class FileScanner(ScannerABC):
     """
     A class for reading single file and returning the path, inheriting from `ScannerABC`.

@@ -19,6 +19,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("json")
+@ScannerABC.register("json_scanner")
 class JSONScanner(ScannerABC):
     """
     A class for reading JSON files or parsing JSON-formatted strings into a list of dictionaries, inheriting from `ScannerABC`.

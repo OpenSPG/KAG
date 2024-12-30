@@ -12,25 +12,18 @@
 
 import os
 
-import bs4.element
 import markdown
 from bs4 import BeautifulSoup, Tag
-from typing import List
 
 import logging
 import re
 import requests
-import pandas as pd
-from io import StringIO
-from tenacity import stop_after_attempt, retry
 from typing import List, Dict
 
 
 from kag.interface import ReaderABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.builder.model.chunk import Chunk
 from kag.interface import LLMClient
-from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.utils import generate_hash_id
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
 
@@ -48,6 +41,7 @@ class MarkdownNode:
 
 
 @ReaderABC.register("md")
+@ReaderABC.register("md_reader")
 class MarkDownReader(ReaderABC):
     """
     A class for reading MarkDown files, inheriting from `SourceReader`.
@@ -60,10 +54,10 @@ class MarkDownReader(ReaderABC):
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 3, **kwargs):
+    def __init__(self, cut_depth: int = 3, llm: LLMClient = None, **kwargs):
         super().__init__(**kwargs)
         self.cut_depth = int(cut_depth)
-        self.llm_module = kwargs.get("llm_module", None)
+        self.llm = llm
         self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
         self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
 
@@ -440,6 +434,7 @@ class MarkDownReader(ReaderABC):
 
 
 @ReaderABC.register("yuque")
+@ReaderABC.register("yuque_reader")
 class YuequeReader(MarkDownReader):
     """
     A class for parsing Yueque documents into Chunk objects.
@@ -473,12 +468,3 @@ class YuequeReader(MarkDownReader):
 
         chunks = self.solve_content(id, title, content)
         return chunks
-
-
-if __name__ == "__main__":
-    markdown_parser = MarkDownReader(cut_depth=4)
-    res = markdown_parser._invoke("/Users/zhangxinhong.zxh/Downloads/Noah文档中心-sdk.md")
-    from kag.builder.model.chunk import dump_chunks
-
-    dump_chunks(res)
-    a = 1

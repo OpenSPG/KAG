@@ -24,7 +24,7 @@ from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Input, Output
+from knext.common.base.runnable import Output
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTPage
@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 @ReaderABC.register("pdf")
+@ReaderABC.register("pdf_reader")
 class PDFReader(ReaderABC):
     """
     A class for reading PDF files into a list of text chunks, inheriting from `ReaderABC`.
@@ -48,14 +49,21 @@ class PDFReader(ReaderABC):
     It inherits from `ReaderABC` and overrides the necessary methods to handle PDF-specific operations.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        cut_depth: int = 3,
+        outline_flag: bool = True,
+        is_ocr: bool = False,
+        llm: LLMClient = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-        self.split_level = kwargs.get("split_level", 3)
-        self.outline_flag = True
-        self.llm = kwargs.get("llm", None)
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
+        self.cut_depth = cut_depth
+        self.outline_flag = outline_flag
+        self.is_ocr = is_ocr
+        self.llm = llm
+        language = KAG_PROJECT_CONF.language
         self.prompt = OutlinePrompt(language)
-        self.is_ocr = kwargs.get("is_ocr", False)
 
     @property
     def input_types(self):

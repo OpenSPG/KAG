@@ -25,7 +25,7 @@ logger = logging.getLogger()
 
 
 @PostProcessorABC.register("base", as_default=True)
-@PostProcessorABC.register("kag_post_processor", as_default=True)
+@PostProcessorABC.register("kag_post_processor")
 class KAGPostProcessor(PostProcessorABC):
     """
     A class that extends the PostProcessorABC base class.

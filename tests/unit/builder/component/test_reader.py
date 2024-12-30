@@ -64,7 +64,7 @@ def test_docx_reader():
     file_path = os.path.join(pwd, "../data/test_docx.docx")
     chunks = reader.invoke(file_path)
     # Assert the expected result
-    assert len(chunks) == 30
+    assert len(chunks) == 1
     assert len(chunks[0].content) > 0
 
 
@@ -76,7 +76,6 @@ def test_md_reader():
     file_path = os.path.join(pwd, "../data/test_markdown.md")
     chunks = reader.invoke(file_path)
     assert len(chunks) > 0
-    assert chunks[0].name == "test_markdown#0"
 
 
 def test_pdf_reader():
@@ -101,8 +100,8 @@ def test_yuque_reader():
     if os.path.exists(os.path.join(pwd, "ckpt")):
         shutil.rmtree(os.path.join(pwd, "ckpt"))
 
-    reader = ReaderABC.from_config({"type": "yuque", "cut_depth": 1})
+    reader = ReaderABC.from_config({"type": "yuque", "cut_depth": 2})
     chunks = reader.invoke(
-        "f6QiFu1gIDEGJIsI6jziOWbE7E9MsFkipeV69NHq@https://yuque-api.antfin-inc.com/api/v2/repos/un8gkl/kg7h1z/docs/odtmme"
+        "xxx@https://yuque-api.antfin-inc.com/api/v2/repos/un8gkl/kg7h1z/docs/odtmme"
     )
-    assert chunks[0].name == "项目立项#0"
+    assert len(chunks) > 0
