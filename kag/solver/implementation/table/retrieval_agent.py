@@ -2,6 +2,7 @@ import re
 from typing import List
 import json
 import os
+import copy
 
 from kag.solver.implementation.default_reasoner import convert_lf_res_to_report_format
 from kag.solver.logic.core_modules.common.utils import generate_random_string
@@ -196,8 +197,9 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             kg_graph.nodes_alias.append(n.o.alias_name)
             kg_graph.edge_alias.append(n.p.alias_name)
 
-        self._table_kg_graph_with_desc(kg_graph)
-        graph_docs = kg_graph.to_answer_path()
+        kg_graph_deep_copy = copy.deepcopy(kg_graph)
+        self._table_kg_graph_with_desc(kg_graph_deep_copy)
+        graph_docs = kg_graph_deep_copy.to_answer_path()
         graph_docs = json.dumps(graph_docs, ensure_ascii=False)
 
         # 回答子问题
