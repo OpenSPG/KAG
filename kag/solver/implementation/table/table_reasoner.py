@@ -85,9 +85,7 @@ class TableReasoner(KagReasonerABC):
                 node = SearchTreeNode(sub_q_str, func_str)
                 if history.has_node(node=node):
                     node: SearchTreeNode = history.get_node_in_graph(node)
-                    if node.answer is None:
-                        break
-                    if "i don't know" in node.answer.lower():
+                    if node.answer is None or "i don't know" in node.answer.lower():
                         break
                     continue
                 history.add_now_procesing_ndoe(node)
@@ -239,15 +237,22 @@ class TableReasoner(KagReasonerABC):
             ]
             for i, future in enumerate(futures):
                 if 0 == i:
-                    res, trace_log = future.result()
-                    if "i don't know" not in res.lower():
+                    try:
+                        res, trace_log = future.result()
+                        if "i don't know" not in res.lower():
+                            self.update_node(node, res, trace_log)
+                            return res
+                    except Exception as e:
+                        logger.warning(f"table chunk failed {e}", exc_info=True)
+                elif 1 == i:
+                    try:
+                        res, trace_log = future.result()
                         self.update_node(node, res, trace_log)
                         return res
-                elif 1 == i:
-                    res, trace_log = future.result()
-                    self.update_node(node, res, trace_log)
-                    return res
-        return "I don't know"
+                    except Exception as e:
+                        logger.warning(f"chunk failed {e}", exc_info=True)
+        node.answer = "I don't know"
+        return node.answer
 
     def update_node(self, node, res, trace_log):
         if len(trace_log) == 1 and "report_info" in trace_log[0]:

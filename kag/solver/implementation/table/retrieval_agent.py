@@ -104,7 +104,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         # table recall
         if len(kg_entities) > 0:
             tables = self.chunk_retriever.retrieval_table_metric_by_vector(
-                self.question, query_type="Table", top_k=1
+                self.question, query_type="Table", top_k=2
             )
             tables = {
                 table["node"]["name"]: table["node"]["content"]
@@ -112,37 +112,24 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 if "name" in table["node"] and "content" in table["node"]
             }
             table_chunk_list = self.chunk_retriever.retrieval_table_metric_by_page_rank(
-                entities=kg_entities, topk=1, target_type="Table"
+                entities=kg_entities, topk=3, target_type="Table"
             )
-            table_chunk_list = {d["name"]: d["content"] for d in table_chunk_list}
-            table_value_list = []
-            for k, v in tables.items():
-                table_value_list.append(f"# {k}\n{v}")
-            for k, v in table_chunk_list.items():
-                table_value_list.append(f"# {k}\n{v}")
+            table_chunk_list_map = {}
+            for d in table_chunk_list:
+                name = d.get("name", None)
+                content = d.get("content", None)
+                if content is None or name is None:
+                    continue
+                table_chunk_list_map[name] = content
+            tables.update(table_chunk_list_map)
+            table_value_list = [f"# {k}\n{v}" for k, v in tables.items()]
             recall_rst.extend(table_value_list)
-
-        # table metrics recall
-        if len(kg_entities) > 0:
-            table_metrics_list1 = self.chunk_retriever.retrieval_table_metric_by_vector(
-                self.question, query_type="TableRow", top_k=10
-            )
-            table_metrics_list1 = [node["node"] for node in table_metrics_list1]
-            table_metrics_list2 = self.chunk_retriever.get_table_metrics_by_entities(
-                entities=kg_entities, topk=10
-            )
-            table_metrics_list = table_metrics_list1 + table_metrics_list2
-            table_metrics_list = [mertic["name"] for mertic in table_metrics_list]
-            recall_rst.extend(table_metrics_list)
-
-        # recall from docs
-        docs_with_score = self.chunk_retriever.recall_docs(query=query, top_k=5)
-        docs = ["#".join(item.split("#")[:-1]) for item in docs_with_score]
-        recall_rst.extend(docs)
 
         return recall_rst
 
     def rerank_docs(self, queries: List[str], passages: List[str]) -> List[str]:
+        if len(passages) == 0:
+            return []
         docs = "\n\n".join(passages)
         llm: LLMClient = self.llm_module
         return llm.invoke(
@@ -199,7 +186,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             kg_graph.nodes_alias.append(n.o.alias_name)
             kg_graph.edge_alias.append(n.p.alias_name)
 
-        #kg_graph_deep_copy = copy.deepcopy(kg_graph)
+        # kg_graph_deep_copy = copy.deepcopy(kg_graph)
         kg_graph_deep_copy = KgGraph()
         kg_graph_deep_copy.merge_kg_graph(kg_graph)
         self._table_kg_graph_with_desc(kg_graph_deep_copy)
@@ -462,8 +449,12 @@ class TableRetrievalAgent(ChunkRetrieverABC):
 
     def answer(self):
         row_docs = self.recall_docs(query=self.question)
+        if len(row_docs) <= 0:
+            return "I don't know", None
         print(f"rowdocs,query={self.question}\n{row_docs}")
         rerank_docs = self.rerank_docs(queries=[], passages=row_docs)
+        if "i don't know" in rerank_docs.lower():
+            return "I don't know", None
         print(f"rerank,query={self.question}\n{rerank_docs}")
         docs = "\n\n".join(rerank_docs)
         llm: LLMClient = self.llm_module
