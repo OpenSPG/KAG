@@ -116,24 +116,10 @@ class TableClassify(ExtractorABC):
         return table_desc, keywords, table_name
 
     def _get_table_context_str(self, table_chunk: Chunk):
-        max_context_len = 500
         if "context" in table_chunk.kwargs:
             table_context_str = table_chunk.name + "\n" + table_chunk.kwargs["context"]
         else:
             table_context_str = table_chunk.name + "\n" + table_chunk.content
         if len(table_context_str) <= 0:
             return None
-        # replace markdown table
-        target_table_str = "\n** Target Table **\n"
-        pattern = r"(\|.*\|\n\|[-:|\s]*\|\n(?:\|.*\|\n)*)"
-        replaced_text = re.sub(
-            pattern, target_table_str, table_context_str, flags=re.DOTALL
-        )
-        start = 0
-        end = len(replaced_text)
-        index = replaced_text.find(target_table_str)
-        if index > max_context_len:
-            start = index - max_context_len
-        if len(replaced_text) - index > max_context_len:
-            end = index + max_context_len
-        return replaced_text[start:end]
+        return table_context_str

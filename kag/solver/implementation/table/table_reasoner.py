@@ -1,14 +1,27 @@
 from typing import List
+import logging
 
+from kag.examples.finstate.solver.impl.chunk_lf_planner import ChunkLFPlanner
+from kag.examples.finstate.solver.impl.spo_generator import SPOGenerator
+from kag.examples.finstate.solver.impl.spo_lf_planner import SPOLFPlanner
+from kag.examples.finstate.solver.impl.spo_memory import SpoMemory
+from kag.examples.finstate.solver.impl.spo_reflector import SPOReflector
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.lf_planner_abc import LFPlannerABC
+from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
+from kag.solver.implementation.default_reasoner import DefaultReasoner
+from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
 from kag.solver.implementation.table.search_tree import SearchTree, SearchTreeNode
 from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.common.llm.client import LLMClient
 from kag.common.base.prompt_op import PromptOp
-from kag.solver.implementation.table.retrieval_agent import RetrievalAgent
+from kag.solver.implementation.table.retrieval_agent import TableRetrievalAgent
+from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 from kag.solver.implementation.table.python_coder import PythonCoderAgent
+from concurrent.futures import ThreadPoolExecutor,  as_completed
+
+logger = logging.getLogger()
 
 
 class TableReasoner(KagReasonerABC):
@@ -25,9 +38,6 @@ class TableReasoner(KagReasonerABC):
         self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan")(
             language=self.language
         )
-        # self.reflection_sub_question = PromptOp.load(
-        #     self.biz_scene, "reflection_sub_question"
-        # )(language=self.language)
 
         self.resp_generator = PromptOp.load(self.biz_scene, "resp_generator")(
             language=self.language
@@ -73,6 +83,11 @@ class TableReasoner(KagReasonerABC):
                 func_str = sub_question["process_function"]
 
                 node = SearchTreeNode(sub_q_str, func_str)
+                if history.has_node(node=node):
+                    node: SearchTreeNode = history.get_node_in_graph(node)
+                    if "i don't know" in node.answer.lower():
+                        break
+                    continue
                 history.add_now_procesing_ndoe(node)
 
                 # 新的子问题出来了
@@ -108,15 +123,16 @@ class TableReasoner(KagReasonerABC):
             else:
                 # 所有子问题都被解答
                 break
-        if not sub_question_faild:
-            # 总结答案
-            llm: LLMClient = self.llm_module
-            return llm.invoke(
-                {"memory": str(history), "question": history.root_node.question},
-                self.resp_generator,
-                with_except=True,
-            )
-        return "I don't know"
+        final_answer = "I don't know"
+        # 总结答案
+        llm: LLMClient = self.llm_module
+        final_answer = llm.invoke(
+            {"memory": str(history), "question": history.root_node.question},
+            self.resp_generator,
+            with_except=True,
+        )
+        self.report_pipleline(history, final_answer)
+        return final_answer
 
     def _get_sub_question_list(self, history: SearchTree, kg_content: str):
         llm: LLMClient = self.llm_module
@@ -134,18 +150,112 @@ class TableReasoner(KagReasonerABC):
             prompt_op=self.logic_form_plan_prompt,
             with_except=True,
         )
-
         history.set_now_plan(sub_question_list)
         return sub_question_list
 
+    def _call_chunk_retravel_func(self, query):
+        lf_planner = ChunkLFPlanner(
+            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+        )
+        lf_solver = LFSolver(
+            chunk_retriever=LFChunkRetriever(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
+        )
+        reason = DefaultReasoner(
+            lf_planner=lf_planner,
+            lf_solver=lf_solver,
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
+        )
+        resp = SolverPipeline(
+            max_run=1,
+            reflector=SPOReflector(),
+            reasoner=reason,
+            generator=SPOGenerator(),
+            memory=SpoMemory(),
+        )
+        answer, trace_log = resp.run(query)
+        return answer, trace_log
+
+    def _call_spo_retravel_func(self, query):
+        lf_planner = SPOLFPlanner(
+            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+        )
+        lf_solver = LFSolver(
+            kg_retriever=KGRetrieverByLlm(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
+        )
+        reason = DefaultReasoner(
+            lf_planner=lf_planner,
+            lf_solver=lf_solver,
+            KAG_PROJECT_ID=self.project_id,
+            KAG_PROJECT_HOST_ADDR=self.host_addr,
+        )
+        resp = SolverPipeline(
+            max_run=1,
+            reflector=SPOReflector(),
+            reasoner=reason,
+            generator=SPOGenerator(),
+            memory=SpoMemory(),
+        )
+        answer, trace_log = resp.run(query)
+        return answer, trace_log
+
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
-        agent = RetrievalAgent(
+        table_retrical_agent = TableRetrievalAgent(
             init_question=init_question, question=node.question, **self.kwargs
         )
-        answer, docs = agent.answer()
-        node.answer = answer
-        node.answer_desc = docs
-        return answer
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # 两路召回同时做符号求解
+            futures = [
+                executor.submit(table_retrical_agent.symbol_solver),
+                executor.submit(self._call_spo_retravel_func, node.question),
+            ]
+
+            # 等待任务完成并获取结果
+            for i, future in enumerate(futures):
+                if 0 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+                elif 1 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+            # 同时进行chunk求解
+            futures = [
+                executor.submit(table_retrical_agent.answer),
+                executor.submit(self._call_chunk_retravel_func, node.question),
+            ]
+            for i, future in enumerate(futures):
+                if 0 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+                elif 1 == i:
+                    res, trace_log = future.result()
+                    if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
+                        return res
+        return "I don't know"
+
+    def update_node(self, node, res, trace_log):
+        if len(trace_log) == 1 and "report_info" in trace_log[0]:
+            node.answer = res
+            if node.answer_desc is None:
+                node.answer_desc = ""
+            node.answer_desc += "\n".join(trace_log[0]["report_info"]["context"])
+            if trace_log[0]["report_info"]["sub_graph"]:
+                node.sub_graph = trace_log[0]["report_info"]["sub_graph"]
 
     def _call_python_coder_func(
         self, init_question, node: SearchTreeNode, history: SearchTree
@@ -153,13 +263,21 @@ class TableReasoner(KagReasonerABC):
         agent = PythonCoderAgent(init_question, node.question, history, **self.kwargs)
         sub_answer, code = agent.answer()
         node.answer = sub_answer
-        node.answer_desc = code
+        node.answer_desc = self._process_coder_desc(code)
         return sub_answer
 
-    def report_pipleline(self, history: SearchTree):
+    def _process_coder_desc(self, coder_desc: str):
+        # 拆分文本为行
+        lines = coder_desc.splitlines()
+        # 过滤掉包含 'print' 的行
+        filtered_lines = [line for line in lines if "print(" not in line]
+        # 将过滤后的行重新组合为文本
+        return "\n".join(filtered_lines)
+
+    def report_pipleline(self, history: SearchTree, final_answer: str = None):
         """
         report search tree
         """
-        pipeline = history.convert_to_pipleline()
+        pipeline = history.convert_to_pipleline(final_anser=final_answer)
         if self.report_tool is not None:
             self.report_tool.report_ca_pipeline(pipeline)

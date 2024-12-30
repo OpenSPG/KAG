@@ -23,7 +23,7 @@ class SolverPipeline:
         :param generator: Generator instance for generating actions.
         """
         self.max_run = max_run
-        self.memory = DefaultMemory(**kwargs)
+        self.memory = kwargs.get("memory") or DefaultMemory(**kwargs)
 
         self.reflector = reflector or DefaultReflector(**kwargs)
         self.reasoner = reasoner or DefaultReasoner(**kwargs)

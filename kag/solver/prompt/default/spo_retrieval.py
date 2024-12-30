@@ -21,6 +21,12 @@ SPO 候选项：['C大调长笛奏鸣曲，BWV 1033 归因于 Johann Sebastian B
 分析：根据问题和 SPO 提及，我们需要找出谁持有《C大调长笛奏鸣曲，BWV 1033》的手稿。根据提供的 SPO 候选项，SPO "C大调长笛奏鸣曲，BWV 1033 归因于 Johann Sebastian Bach" 与问题相关。可以推断出《C大调长笛奏鸣曲，BWV 1033》的手稿应在 Johann Sebastian Bach 的手中。
 output：['C大调长笛奏鸣曲，BWV 1033 归因于 Johann Sebastian Bach']
 
+示例 3:
+问题：查找某公司2019年利润
+SPO 提及：Table containRow TableRow
+SPO 候选项：['某公司业绩概要表 containRow 某公司业绩概要表-净利润', '某公司业绩概要表 containRow 某公司业绩概要表-摊薄每股收益']
+output：['某公司业绩概要表 containRow 某公司业绩概要表-净利润']
+
 要求：
 你是一名语言专家。你的任务是根据以下规则从给定的 SPO 候选项中选择正确的 SPO 文本来回答给定的问题。请确保它与 SPO 提及或问题匹配。
 

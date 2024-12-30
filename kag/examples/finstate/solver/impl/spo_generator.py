@@ -5,14 +5,14 @@ from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 from kag.solver.implementation.default_memory import DefaultMemory
 
 
-class DefaultGenerator(KAGGeneratorABC):
+class SPOGenerator(KAGGeneratorABC):
     """
      The Generator class is an abstract base class for generating responses using a language model module.
      It initializes prompts for judging and generating responses based on the business scene and language settings.
      """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.generate_prompt = PromptOp.load(self.biz_scene, "resp_generator")(
+        self.generate_prompt = PromptOp.load('finstate', "retriever_generator")(
             language=self.language
         )
 

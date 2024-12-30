@@ -162,16 +162,10 @@ class LogicExecutor:
             question.context.append(f"{spo_retrieved if len(spo_retrieved) > 0 else 'no spo tuple retrieved'}.")
             self._update_sub_question_status(question, None, ReporterIntermediateProcessTool.STATE.RUNNING)
 
-
-            if isinstance(lf.lf_nodes[0], MathNode):
-                # math op maintain progress
-                # 重写后精度丢失，math的答案不进行重写
-                sub_answer = str(kg_qa_result[0])
-            else:
-                answer_source = "spo"
-                docs_with_score = []
-                all_related_entities, sub_answer = self._generate_sub_answer_by_graph(
-                    history, kg_qa_result, spo_retrieved, sub_query, init_query)
+            answer_source = "spo"
+            docs_with_score = []
+            all_related_entities, sub_answer = self._generate_sub_answer_by_graph(
+                history, kg_qa_result, spo_retrieved, sub_query, init_query)
 
             # if sub answer is `I don't know`, we use chunk retriever
             if "i don't know" in sub_answer.lower() and self.chunk_retriever:
@@ -190,15 +184,6 @@ class LogicExecutor:
                 sub_query_with_history_qa = self._generate_sub_query_with_history_qa(history, sub_query)
                 docs_with_score = self.chunk_retriever.recall_docs(sub_query_with_history_qa, top_k=10, **params)
                 docs = ["#".join(item.split("#")[:-1]) for item in docs_with_score]
-
-                # Retrieve table mertic
-                if self.chunk_retriever and hasattr(self.chunk_retriever, 'get_table_metrics_by_query'):
-                    table_metrics_list = self.chunk_retriever.get_table_metrics_by_query(sub_query)
-                    if len(table_metrics_list) <= 0:
-                        table_metrics_list = self.chunk_retriever.get_table_content_by_query(sub_query)
-                    table_metrics_list = [mertic["name"] for mertic in table_metrics_list]
-                    if len(table_metrics_list) > 0:
-                        docs = table_metrics_list + docs
 
                 self._update_sub_question_recall_docs(docs, question)
                 self._update_sub_question_status(question, None, ReporterIntermediateProcessTool.STATE.RUNNING)

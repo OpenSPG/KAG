@@ -13,6 +13,7 @@ class RespGenerator(PromptOp):
 # task
 基于给定的信息回答问题。
 答案要包含上下文信息，使得没有任何背景的人也能理解。
+不要尝试进行数值单位换算，忠实的按照原文输出数值，带上单位和变量。
 如果基于给定的信息，无法给出答案，那么回答：I don't know.
 
 # output format

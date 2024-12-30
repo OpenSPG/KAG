@@ -20,7 +20,9 @@ class SearchTreeNode:
         self.func = func
         self.time_stamp = int(time.time() * 1000)
         self.answer = None
+        self.sub_graph = None
         self.answer_desc = None
+        self.subgraph = None
 
     def __str__(self):
         return f"Node(question={self.question},answer={self.answer})"
@@ -47,6 +49,15 @@ class SearchTree:
         self.faild_plan = []
 
         self.id_allocator = IDAllocator()
+
+    def has_node(self, node: SearchTreeNode):
+        return self.dag.has_node(node)
+
+    def get_node_in_graph(self, node: SearchTreeNode):
+        for n in self.dag.nodes():
+            if n == node:
+                return n
+        return None
 
     def set_now_plan(self, now_plan):
         if self.now_plan is not None:
@@ -116,7 +127,7 @@ class SearchTree:
 
         return build_tree(self.root_node)
 
-    def convert_to_pipleline(self) -> CaPipeline:
+    def convert_to_pipleline(self, final_anser: str = None) -> CaPipeline:
         """
         转出思考树
         """
@@ -165,6 +176,7 @@ class SearchTree:
                         question=tree_node.question,
                         answer=tree_node.answer,
                         logs=tree_node.answer_desc,
+                        subgraph=[tree_node.sub_graph] if tree_node.sub_graph else None
                     )
                 )
                 pipeline.edges.append(
@@ -180,6 +192,22 @@ class SearchTree:
                 build_sub_nodes(child)
 
         build_sub_nodes(self.root_node)
+
+        if final_anser is not None:
+            answer_node = Node(
+                id=0,
+                state=ReporterIntermediateProcessTool.STATE.FINISH,
+                question=self.root_node.question,
+                answer=final_anser,
+                logs="",
+            )
+            pipeline.nodes.append(answer_node)
+            answer_edge = Edge(
+                self.id_allocator.get_max_id(),
+                0,
+            )
+            pipeline.edges.append(answer_edge)
+
         return pipeline
 
 
@@ -189,8 +217,8 @@ class IDAllocator:
         self.next_id = 2
 
     def allocate_root(self, root_str):
-        self.string_to_id[root_str] = 0
-        return 0
+        self.string_to_id[root_str] = 1
+        return 1
 
     def allocate_id(self, input_str):
         if input_str in self.string_to_id:
@@ -199,3 +227,6 @@ class IDAllocator:
             self.string_to_id[input_str] = self.next_id
             self.next_id += 1
             return self.string_to_id[input_str]
+
+    def get_max_id(self):
+        return self.next_id - 1

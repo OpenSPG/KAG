@@ -93,11 +93,6 @@ class SolverMain:
         )
         solver = FinStateSolver(report_tool=report_tool, KAG_PROJECT_ID=project_id)
         answer = solver.run(query)
-        question = Question(query)
-        question.id = 0
-        report_tool.report_node(
-            question, answer, ReporterIntermediateProcessTool.STATE.FINISH
-        )
         return answer
 
     def invoke_med_thinker(

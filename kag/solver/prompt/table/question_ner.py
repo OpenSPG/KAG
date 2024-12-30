@@ -22,25 +22,36 @@ class QuestionNER(PromptOp):
 
     template_en = """
 {
-  "instruction": "You are an expert in named entity recognition. Please extract entities and keywords. Please respond in the format of a JSON string. You can refer to the example for extraction.",
-  "schema": "$schema",
+  "instruction": [
+    "识别子问题中的关键字，同时给出关键字的多种常见别名"
+  ],
   "example": [
     {
-      "input": "Which year is Total Revenues of Group retirement products the most?",
+      "input": "查找阿里巴巴各部分收入",
       "output": [
         {
-          "entity": "Total Revenues",
-          "category": "Keyword"
+          "entity": "阿里巴巴",
+          "category": "Keyword",
+          "alias": [
+            "阿里巴巴集团"
+            "阿里集团",
+            "阿里",
+          ]
         },
         {
-          "entity": "Group retirement products",
-          "category": "Keyword"
+          "entity": "收入",
+          "category": "Keyword",
+          "alias": [
+            "营业收入",
+            "营收"
+          ]
         }
       ]
     }
   ],
   "input": "$input"
-}"""
+}
+"""
 
     template_zh = template_en
 
@@ -58,9 +69,4 @@ class QuestionNER(PromptOp):
             rsp = json.loads(rsp)
         if isinstance(rsp, dict) and "output" in rsp:
             rsp = rsp["output"]
-        if isinstance(rsp, dict) and "named_entities" in rsp:
-            entities = rsp["named_entities"]
-        else:
-            entities = rsp
-
-        return entities
+        return rsp

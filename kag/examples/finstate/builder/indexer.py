@@ -22,7 +22,8 @@ if __name__ == "__main__":
     # file_path = os.path.join(current_dir, "data", "差旅管理办法.md")
     # file_path = os.path.join(current_dir, "data", "中芯国际财报2024_3.pdf.md")
     file_path = os.path.join(current_dir, "data", "阿里巴巴2025财年度中期报告.md")
+    #file_path = os.path.join(current_dir, "data", "阿里巴巴2025财年度中期报告-1.md")
     DefaultUnstructuredTableBuilderChain().invoke(file_path=file_path, max_workers=20)
     DefaultUnstructuredBuilderChain().invoke(
-        file_path=file_path, with_table=False, max_workers=30
+        file_path=file_path, with_table=False, max_workers=20
     )

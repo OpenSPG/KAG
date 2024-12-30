@@ -232,7 +232,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         sen_condi_set = []
         spo_name_map = {}
         for p_name, spo_l in candi_set.items():
-            if p_name.startswith("_") or p_name == "id" or p_name == 'content':
+            if p_name.startswith("_") or p_name == "id" or p_name == 'source':
                 continue
             for spo in spo_l:
                 spo_name_map[spo] = p_name
@@ -249,7 +249,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
             spo_retrieved.append([spo, spo_p_name])
         return spo_retrieved
 
-    def match_spo(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData]):
+    def match_spo(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], sim_topk=5, disable_attr=False):
         matched_flag = False
         one_kg_graph = KgGraph()
         # sort graph
@@ -259,23 +259,24 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         revert_graph_map = {}
         for one_hop_graph in one_hop_graph_list:
             for k, v_set in one_hop_graph.get_s_all_relation_spo().items():
+                if k in ['similarity', 'source']:
+                    continue
                 for v in v_set:
                     all_spo_text.append(v)
                     revert_value_p_map[v] = k
                     revert_graph_map[v] = one_hop_graph
-            for k, v_set in one_hop_graph.get_s_all_attribute_spo().items():
-                for v in v_set:
-                    all_spo_text.append(v)
-                    revert_value_p_map[v] = k
-                    revert_graph_map[v] = one_hop_graph
+            if not disable_attr:
+                for k, v_set in one_hop_graph.get_s_all_attribute_spo().items():
+                    for v in v_set:
+                        all_spo_text.append(v)
+                        revert_value_p_map[v] = k
+                        revert_graph_map[v] = one_hop_graph
         start_time = time.time()
-        tok5_res = self.text_similarity.text_sim_result(n.sub_query, all_spo_text, 5, low_score=0.3)
-        logger.debug(f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}")
+        tok5_res = self.text_similarity.text_sim_result(n.sub_query, all_spo_text, sim_topk, low_score=0.3)
+        logger.info(f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}")
 
         if len(tok5_res) == 0:
             return one_kg_graph, matched_flag
-
-        matched_flag = True
 
         candi_name_set = {}
         for res in tok5_res:
@@ -298,6 +299,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         for std_spo_text, std_p in spo_retrieved:
             if std_p is None or std_p == '':
                 continue
+            matched_flag = True
             one_hop_graph = revert_graph_map[std_spo_text]
             rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text)
             one_kg_graph_ = KgGraph()

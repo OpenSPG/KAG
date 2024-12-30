@@ -83,25 +83,57 @@ Table(表格): EntityType
           index: None
         csv(csv格式的表格数据): Text
           index: None
-
-MetricConstraint(限定条件): EntityType
-     properties:
-        subclass(子类): MetricConstraint
+        containRow(包含行): TableRow
             constraint: MultiValue
-        source(源自): Table
+        containColumn(包含列): TableColumn
+            constraint: MultiValue
+          
+TableRow(表格行): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        content(内容): Text
+          index: None
+        containCell(包含格子): TableCell
+            constraint: MultiValue
+        partOf(属于): Table
+            constraint: MultiValue
+        subitem(下位关系): TableRow
             constraint: MultiValue
 
-TableMetric(指标): EntityType
+TableColumn(表格列): EntityType
      properties:
+        desc(描述): Text
+            index: TextAndVector
+        content(内容): Text
+          index: None
+        containCell(包含格子): TableCell
+            constraint: MultiValue
+        partOf(属于): Table
+            constraint: MultiValue
+
+TableCell(单元格): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector     
         value(指标值): Text
             index: None
-        magnitude(量级): Text
+        scale(量级): Text
             index: None
         unit(单位): Text
             index: None
-        dimension(维度): MetricConstraint
+        partOfTable(属于): Table
             constraint: MultiValue
-        source(源自): Table
+        partOfTableRow(属于): TableRow
+            constraint: MultiValue
+        partOfTableColumn(属于): TableColumn
+            constraint: MultiValue
+
+TableKeyWord(表格关键字): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector     
+        keyword(归属于表格): Table
             constraint: MultiValue
 
 Others(其他): EntityType

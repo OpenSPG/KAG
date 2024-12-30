@@ -49,6 +49,14 @@ class Prop:
         self.extend_prop_map = {}
         self.linked_prop_map = {}
 
+    def get_properties_map(self):
+        result = {}
+        for k in self.origin_prop_map.keys():
+            result[k] = self.origin_prop_map[k]
+        for k in self.extend_prop_map.keys():
+            result[k] = self.extend_prop_map[k]
+        return result
+
     def get_properties_map_list_value(self):
         result = {}
         for k in self.origin_prop_map.keys():
@@ -112,7 +120,13 @@ class Prop:
         if p in self.extend_prop_map.keys():
             return self.extend_prop_map[p]
         return None
-
+    
+    def reomve_prop_value(self, p):
+        if p in self.origin_prop_map.keys():
+            self.origin_prop_map.pop(p)
+        if p in self.extend_prop_map.keys():
+            self.extend_prop_map.pop(p)
+ 
 
 class EntityData:
     def __init__(self):
@@ -124,6 +138,10 @@ class EntityData:
         self.type_zh: str = None
         self.score = 1.0
 
+    def get_short_name(self):
+        if self.name:
+            return self.name
+        return self.biz_id
     def get_properties_map_list_value(self):
         if self.prop is None:
             return {}
@@ -134,7 +152,9 @@ class EntityData:
             return f"{self.type_zh}[{self.name}]({self.description})"
         if self.name == self.biz_id:
             return f"{self.type_zh}[{self.name}]"
-        return f"{self.type_zh}[{self.name}]({self.biz_id})"
+        if len(self.biz_id) > 0:
+            return f"{self.type_zh}[{self.name}]({self.biz_id})"
+        return f"{self.type_zh}[{self.name}]"
 
     def to_json(self):
         return {
@@ -196,6 +216,18 @@ class EntityData:
     #     return f"({self.name} [{self.type}] ({self.biz_id}) {self.description}"
     def __repr__(self):
         return f"{self.name} [{self.type}]"
+    
+
+    def _id(self) -> str:
+        return f"{self.biz_id}_{self.type}"
+
+    def __hash__(self):
+        return hash(self._id())
+
+    def __eq__(self, value):
+        if not isinstance(value, EntityData):
+            return False
+        return self._id() == value._id()
 
 
 def get_label_without_prefix(schema: SchemaUtils, label):
@@ -216,6 +248,7 @@ class RelationData:
         self.end_entity: EntityData = None
         self.end_alias = "o"
         self.type: str = None
+        self.type_zh: str = None
 
     def get_spo_type(self):
         return f"{self.from_type}_{self.type}_{self.end_type}"
@@ -298,11 +331,12 @@ class RelationData:
         rel.end_id = json_dict["__to_id__"]
         rel.end_type = get_label_without_prefix(schema, json_dict["__to_id_type__"])
         rel.type = json_dict["__label__"]
+        rel.type_zh = rel.type
         spo_label_name = f"{rel.from_type}_{rel.type}_{rel.end_type}"
         rel.prop = Prop.from_dict(json_dict, spo_label_name, schema)
         if schema is not None:
             if spo_label_name in schema.spo_en_zh.keys():
-                rel.type = schema.get_spo_with_p(schema.spo_en_zh[spo_label_name])
+                rel.type_zh = schema.get_spo_with_p(schema.spo_en_zh[spo_label_name])
         return rel
 
     def revert_spo(self):
@@ -316,6 +350,7 @@ class RelationData:
         rel.end_entity = self.from_entity
 
         rel.type = self.type
+        rel.type_zh = self.type_zh
         rel.prop = self.prop
         return rel
 
@@ -323,6 +358,7 @@ class RelationData:
     def from_prop_value(s: EntityData, p: str, o: EntityData):
         rel = RelationData()
         rel.type = p
+        rel.type_zh = p
 
         rel.from_id = s.biz_id
         rel.from_type = s.type
@@ -332,6 +368,23 @@ class RelationData:
         rel.end_type = o.type
         rel.end_entity = o
         return rel
+
+    def _id(self) -> str:
+        from_id = "None"
+        to_id = "None"
+        if self.from_entity is not None:
+            from_id = self.from_entity.biz_id
+        if self.end_entity is not None:
+            to_id = self.end_entity.biz_id
+        return f"{from_id}_{self.type}_{to_id}"
+
+    def __hash__(self):
+        return hash(self._id())
+
+    def __eq__(self, value):
+        if not isinstance(value, RelationData):
+            return False
+        return self._id() == value._id()
 
 
 class OneHopGraphData:
@@ -883,6 +936,13 @@ class KgGraph:
             return
         self.entity_map.pop(alias)
         self.nodes_alias.remove(alias)
+
+    def get_all_spo(self):
+        all_spo = []
+        for k in self.edge_map.keys():
+            for d in self.edge_map[k]:
+                all_spo.append(d)
+        return all_spo
 
     def get_all_relation_spo(self, alias):
         res = []
