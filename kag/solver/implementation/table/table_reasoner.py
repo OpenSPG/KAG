@@ -213,7 +213,7 @@ class TableReasoner(KagReasonerABC):
             answer = history_log['history'][-1].get('sub_answer', "I don't know")
         else:
             answer = "I don't know"
-        return answer, history_log
+        return answer, [history_log]
 
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
         table_retrical_agent = TableRetrievalAgent(
