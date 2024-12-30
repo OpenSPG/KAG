@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @SplitterABC.register("semantic")
+@SplitterABC.register("semantic_splitter")
 class SemanticSplitter(SplitterABC):
     """
     A class for semantically splitting text into smaller chunks based on the content's structure and meaning.

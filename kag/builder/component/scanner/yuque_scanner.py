@@ -11,7 +11,7 @@
 # or implied.
 import os
 import requests
-from typing import Type, List
+from typing import Type, List, Union
 
 # from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.interface import ScannerABC
@@ -19,6 +19,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @ScannerABC.register("yuque")
+@ScannerABC.register("yuque_scanner")
 class YuqueScanner(ScannerABC):
     """
     A class for reading data from Yuque, a Chinese documentation platform, inheriting from `ScannerABC`.

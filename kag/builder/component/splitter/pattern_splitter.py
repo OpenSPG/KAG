@@ -22,6 +22,7 @@ from knext.common.base.runnable import Input, Output
 
 
 @SplitterABC.register("pattern")
+@SplitterABC.register("pattern_splitter")
 class PatternSplitter(SplitterABC):
     """
     A class for splitting text content based on specified patterns and chunking strategies.

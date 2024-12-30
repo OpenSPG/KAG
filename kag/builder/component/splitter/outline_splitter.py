@@ -24,7 +24,6 @@ from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_align_prompt import OutlineAlignPrompt
-from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import SplitterABC
 from kag.interface import LLMClient
 
@@ -32,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @SplitterABC.register("outline")
+@SplitterABC.register("outline_splitter")
 class OutlineSplitter(SplitterABC):
     def __init__(
         self,
