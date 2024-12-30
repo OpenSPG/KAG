@@ -198,7 +198,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             kg_graph.edge_alias.append(n.p.alias_name)
 
         #kg_graph_deep_copy = copy.deepcopy(kg_graph)
-        kg_graph_deep_copy = kg_graph
+        kg_graph_deep_copy = KgGraph()
+        kg_graph_deep_copy.merge_kg_graph(kg_graph)
         self._table_kg_graph_with_desc(kg_graph_deep_copy)
         graph_docs = kg_graph_deep_copy.to_answer_path()
         graph_docs = json.dumps(graph_docs, ensure_ascii=False)
@@ -389,21 +390,21 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         onehop_graph_list = []
         for _, v in rsp_map.items():
             onehop_graph: OneHopGraphData = v
-            new_out_relations_dict = {}
-            for edge_type, edge_list in onehop_graph.out_relations.items():
-                o_score_and_edges = [
-                    (self._get_o_score(o, e.end_entity), e) for e in edge_list
-                ]
-                o_score_and_edges = sorted(
-                    o_score_and_edges, key=lambda x: x[0], reverse=True
-                )
-                if len(o_score_and_edges) > o_with_topk:
-                    o_score_and_edges = o_score_and_edges[:o_with_topk]
-                if len(o_score_and_edges) > 0:
-                    new_out_relations_dict[edge_type] = [
-                        e[1] for e in o_score_and_edges
-                    ]
-            onehop_graph.out_relations = new_out_relations_dict
+            # new_out_relations_dict = {}
+            # for edge_type, edge_list in onehop_graph.out_relations.items():
+            #     o_score_and_edges = [
+            #         (self._get_o_score(o, e.end_entity), e) for e in edge_list
+            #     ]
+            #     o_score_and_edges = sorted(
+            #         o_score_and_edges, key=lambda x: x[0], reverse=True
+            #     )
+            #     if len(o_score_and_edges) > o_with_topk:
+            #         o_score_and_edges = o_score_and_edges[:o_with_topk]
+            #     if len(o_score_and_edges) > 0:
+            #         new_out_relations_dict[edge_type] = [
+            #             e[1] for e in o_score_and_edges
+            #         ]
+            # onehop_graph.out_relations = new_out_relations_dict
             if len(onehop_graph.out_relations) > 0:
                 onehop_graph_list.append(onehop_graph)
         return onehop_graph_list

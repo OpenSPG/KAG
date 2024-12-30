@@ -278,8 +278,6 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         if len(tok5_res) == 0:
             return one_kg_graph, matched_flag
 
-        matched_flag = True
-
         candi_name_set = {}
         for res in tok5_res:
             k = revert_value_p_map[res[0]]
@@ -301,6 +299,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
         for std_spo_text, std_p in spo_retrieved:
             if std_p is None or std_p == '':
                 continue
+            matched_flag = True
             one_hop_graph = revert_graph_map[std_spo_text]
             rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text)
             one_kg_graph_ = KgGraph()
