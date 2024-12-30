@@ -92,6 +92,9 @@ class BinCheckPointer(CheckPointer):
 
         return len(self._ckpt)
 
+    def keys(self):
+        return set(self._ckpt.keys())
+
 
 @CheckPointer.register("zodb")
 class ZODBCheckPointer(CheckPointer):
@@ -207,3 +210,8 @@ class ZODBCheckPointer(CheckPointer):
         with self._lock:
             with self._ckpt.transaction() as conn:
                 return len(conn.root.data)
+
+    def keys(self):
+        with self._lock:
+            with self._ckpt.transaction() as conn:
+                return set(conn.root.data.keys())

@@ -108,6 +108,14 @@ class BuilderChainRunner(Registrable):
                 "world_size": self.scanner.sharding_info.get_world_size(),
             }
         )
+        self.processed_chunks = CheckpointerManager.get_checkpointer(
+            {
+                "type": "zodb",
+                "ckpt_dir": os.path.join(self.ckpt_dir, "chain"),
+                "rank": self.scanner.sharding_info.get_rank(),
+                "world_size": self.scanner.sharding_info.get_world_size(),
+            }
+        )
         self._local = threading.local()
 
     def invoke(self, input):
@@ -135,7 +143,11 @@ class BuilderChainRunner(Registrable):
 
         def process(data, data_id, data_abstract):
             try:
-                result = self.chain.invoke(data, max_workers=self.num_threads_per_chain)
+                result = self.chain.invoke(
+                    data,
+                    max_workers=self.num_threads_per_chain,
+                    processed_chunk_keys=self.processed_chunks.keys(),
+                )
                 return data, data_id, data_abstract, result
             except Exception:
                 traceback.print_exc()
@@ -177,6 +189,15 @@ class BuilderChainRunner(Registrable):
                                 num_nodes += len(item.nodes)
                                 num_edges += len(item.edges)
                                 num_subgraphs += 1
+                            elif isinstance(item, dict):
+
+                                for k, v in item.items():
+                                    self.processed_chunks.write_to_ckpt(k, k)
+                                    if isinstance(v, SubGraph):
+                                        num_nodes += len(v.nodes)
+                                        num_edges += len(v.edges)
+                                        num_subgraphs += 1
+
                         info = {
                             "num_nodes": num_nodes,
                             "num_edges": num_edges,

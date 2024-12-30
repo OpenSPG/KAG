@@ -9,7 +9,6 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from kag.interface import (
@@ -22,7 +21,6 @@ from kag.interface import (
     SinkWriterABC,
     KAGBuilderChain,
 )
-
 from kag.common.utils import generate_hash_id
 
 logger = logging.getLogger(__name__)
@@ -155,16 +153,28 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 if node is None:
                     continue
                 flow_data = execute_node(node, flow_data, key=input_key)
-            return flow_data
+            return {input_key: flow_data[0]}
 
         reader_output = self.reader.invoke(input_data, key=generate_hash_id(input_data))
         splitter_output = []
+
         for chunk in reader_output:
             splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
 
+        processed_chunk_keys = kwargs.get("processed_chunk_keys", set())
+        filtered_chunks = []
+        processed = 0
+        for chunk in splitter_output:
+            if chunk.hash_key not in processed_chunk_keys:
+                filtered_chunks.append(chunk)
+            else:
+                processed += 1
+        logger.debug(
+            f"Total chunks: {len(splitter_output)}. Checkpointed: {processed}, Pending: {len(filtered_chunks)}."
+        )
         result = []
         with ThreadPoolExecutor(max_workers) as executor:
-            futures = [executor.submit(run_extract, chunk) for chunk in splitter_output]
+            futures = [executor.submit(run_extract, chunk) for chunk in filtered_chunks]
 
             from tqdm import tqdm
 
@@ -176,5 +186,5 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 leave=False,
             ):
                 ret = inner_future.result()
-                result.extend(ret)
+                result.append(ret)
         return result
