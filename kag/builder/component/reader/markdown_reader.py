@@ -281,7 +281,7 @@ class MarkDownReader(ReaderABC):
         current_titles = parent_titles + ([node.title] if node.title != "root" else [])
 
         # If current node level equals target level, create output
-        if node.level == self.cut_depth:
+        if node.level >= self.cut_depth:
             full_title = " / ".join(current_titles)
 
             # Merge content: parent content + current content
