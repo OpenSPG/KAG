@@ -139,8 +139,8 @@ class LogicExecutor:
         history = []
         query_ner_list = {}
         # get NER results for the initial query, for chunk retrieve
-        if self.chunk_retriever and hasattr(self.chunk_retriever, 'get_std_ner_by_query'):
-            query_ner_list = self.chunk_retriever.get_std_ner_by_query(init_query)
+        # if self.chunk_retriever and hasattr(self.chunk_retriever, 'get_std_ner_by_query'):
+        #     query_ner_list = self.chunk_retriever.get_std_ner_by_query(init_query)
 
         query_num = 0
 

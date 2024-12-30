@@ -185,20 +185,22 @@ class DslRunnerOnGraphStore(DslRunner):
         s_gql = f"(s{self._generate_gql_type(s_biz_id_set, s_type)})"
         o_gql = f"(o{self._generate_gql_type(o_biz_id_set, o_type)})"
         rdf_expand_gql = f"""match {s_gql}-[p:rdf_expand()]-{o_gql}
-        {'where ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
+        {'where p.__label__ != "source" ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
         return {','.join(return_cluase)}"""
         if p_type == "rdf_expand()":
             return [rdf_expand_gql]
         s_without_prefix_type = self.schema.get_label_without_prefix(s_type)
         o_without_prefix_type = self.schema.get_label_without_prefix(o_type)
         ret_gql = []
-        if (s_without_prefix_type, o_without_prefix_type) in self.schema.so_p_en and p_type in self.schema.so_p_en[(s_without_prefix_type, o_without_prefix_type)]:
+        if (s_without_prefix_type, o_without_prefix_type) in self.schema.so_p_en and p_type in self.schema.so_p_en[
+            (s_without_prefix_type, o_without_prefix_type)]:
             ret_gql.append(f"""match (s:{s_type})-[p:{p_type}]->(o:{o_type})
-        {'where ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
+        {'where p.__label__ != "source" ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
         return {','.join(return_cluase)}""")
-        if (o_without_prefix_type, s_without_prefix_type) in self.schema.op_s_en  and p_type in self.schema.op_s_en[(o_without_prefix_type, s_without_prefix_type)]:
+        if (o_without_prefix_type, s_without_prefix_type) in self.schema.op_s_en and p_type in self.schema.op_s_en[
+            (o_without_prefix_type, s_without_prefix_type)]:
             ret_gql.append(f"""match (s:{s_type})<-[p:{p_type}]-(o:{o_type})
-                    {'where ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
+                    {'where p.__label__ != "source" ' + "and".join(where_cluase) if len(where_cluase) > 0 else ''}
                     return {','.join(return_cluase)}""")
         ret_gql.append(rdf_expand_gql)
         return ret_gql

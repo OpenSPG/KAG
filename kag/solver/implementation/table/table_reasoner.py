@@ -1,3 +1,4 @@
+import time
 from typing import List
 import logging
 
@@ -188,6 +189,9 @@ class TableReasoner(KagReasonerABC):
             kg_retriever=KGRetrieverByLlm(
                 KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
             ),
+            chunk_retriever=LFChunkRetriever(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
             KAG_PROJECT_ID=self.project_id,
             KAG_PROJECT_HOST_ADDR=self.host_addr,
         )
@@ -204,8 +208,12 @@ class TableReasoner(KagReasonerABC):
             generator=SPOGenerator(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
             memory=SpoMemory(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
         )
-        answer, trace_log = resp.run(query)
-        return answer, trace_log
+        solved_answer, supporting_fact, history_log = reason.reason(query)
+        if "history" in history_log and len(history_log['history']) > 0:
+            answer = history_log['history'][-1].get('sub_answer', "I don't know")
+        else:
+            answer = "I don't know"
+        return answer, history_log
 
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
         table_retrical_agent = TableRetrievalAgent(
@@ -233,7 +241,7 @@ class TableReasoner(KagReasonerABC):
             # 同时进行chunk求解
             futures = [
                 executor.submit(table_retrical_agent.answer),
-                executor.submit(self._call_chunk_retravel_func, node.question),
+                # executor.submit(self._call_chunk_retravel_func, node.question),
             ]
             for i, future in enumerate(futures):
                 if 0 == i:

@@ -11,6 +11,8 @@
 
 import sys
 import os
+import time
+
 from tenacity import retry, stop_after_attempt
 
 from kag.common.base.prompt_op import PromptOp
@@ -68,7 +70,7 @@ class DefaultRetriever(ChunkRetrieverABC):
         else:
             self.reranker = None
 
-        self.with_semantic = True
+        self.with_semantic = False
 
     def _init_search(self):
         self.sc: SearchClient = SearchClient(self.host_addr, self.project_id)
