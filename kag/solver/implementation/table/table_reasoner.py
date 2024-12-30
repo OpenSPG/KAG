@@ -172,10 +172,10 @@ class TableReasoner(KagReasonerABC):
         )
         resp = SolverPipeline(
             max_run=1,
-            reflector=SPOReflector(),
+            reflector=SPOReflector(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
             reasoner=reason,
-            generator=SPOGenerator(),
-            memory=SpoMemory(),
+            generator=SPOGenerator(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+            memory=SpoMemory(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
         )
         answer, trace_log = resp.run(query)
         return answer, trace_log
@@ -199,10 +199,10 @@ class TableReasoner(KagReasonerABC):
         )
         resp = SolverPipeline(
             max_run=1,
-            reflector=SPOReflector(),
+            reflector=SPOReflector(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
             reasoner=reason,
-            generator=SPOGenerator(),
-            memory=SpoMemory(),
+            generator=SPOGenerator(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+            memory=SpoMemory(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
         )
         answer, trace_log = resp.run(query)
         return answer, trace_log
