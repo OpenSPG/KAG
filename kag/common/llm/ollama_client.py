@@ -16,6 +16,7 @@ import logging
 from ollama import Client
 
 from kag.interface import LLMClient
+from tenacity import retry, stop_after_attempt
 
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -75,6 +76,7 @@ class OllamaClient(LLMClient):
 
         return self.sync_request(prompt, image)
 
+    @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt):
         """
         Calls the model and attempts to parse the response into JSON format.
