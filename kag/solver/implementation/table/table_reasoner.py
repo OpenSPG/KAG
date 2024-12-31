@@ -66,7 +66,9 @@ class TableReasoner(KagReasonerABC):
         self.report_pipleline(history)
 
         # get what we have in KG
-        kg_content = "阿里巴巴2025财年年度中期报告"
+        # kg_content = "阿里巴巴2025财年年度中期报告"
+        # TODO
+        kg_content = ""
 
         try_times = 3
         while try_times > 0:
@@ -296,7 +298,7 @@ class TableReasoner(KagReasonerABC):
         context = []
         sub_graphs = []
         for trace_log in trace_logs:
-            if len(trace_log) < 1:
+            if trace_log is None or len(trace_log) < 1:
                 continue
             if "report_info" not in trace_log[0]:
                 continue
