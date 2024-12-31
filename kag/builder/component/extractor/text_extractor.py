@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+kag/builder/component/extractor/text_extractor.py # -*- coding: utf-8 -*-
 # Copyright 2023 OpenSPG Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -349,14 +349,14 @@ class TextExtractor(ExtractorABC):
             self.append_official_name(entities, std_entities)
             self.assemble_sub_graph(sub_graph, input, entities, triples)
 
-            article_name = title.split("#")[0]
-            article_node = Node(
+            document_name = title.split("#")[0]
+            document_node = Node(
                 _id=article_name,
                 name=article_name,
                 label="Document",
                 properties={},
             )
-            sub_graph.nodes.append(article_node)
+            sub_graph.nodes.append(document_node)
             return [sub_graph]
         except Exception as e:
             import traceback
