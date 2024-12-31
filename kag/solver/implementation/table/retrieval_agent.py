@@ -147,9 +147,13 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         # 根据问题，搜索10张表
         start_time = time.time()
         s_nodes = self.chunk_retriever._search_nodes_by_vector(
-            self.question, "Table", threshold=0.5, topk=10
+            self.question, "Table", threshold=0.5, topk=5
         )
-        table_name_list = [t["node"]["name"] for t in s_nodes]
+        s_nodes_with_desc = self.chunk_retriever._search_nodes_by_vector(
+            self.question, "Table", threshold=0.5, topk=5, property_key="desc"
+        )
+        table_name_list = [t["node"]["name"] for t in s_nodes] + [t["node"]["name"] for t in s_nodes_with_desc]
+        table_name_list = list(set(table_name_list))
         # table_name_list = [
         #     f"表名：{t['node']['name']}\n{t['node']['content']}" for t in s_nodes
         # ]
@@ -216,7 +220,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             None, f"graph_{generate_random_string(3)}", 0, [], kg_graph
         )
         context += cur_content
-        history_log = {"report_info": {"context": context, "sub_graph": sub_graph}}
+        history_log = {"report_info": {"context": context, "sub_graph": [sub_graph] if sub_graph else None}}
 
         return answer, [history_log]
 

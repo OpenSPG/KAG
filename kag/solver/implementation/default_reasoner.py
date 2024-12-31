@@ -198,7 +198,7 @@ class DefaultReasoner(KagReasonerABC):
 
         history_log['report_info'] = {
             'context': context,
-            'sub_graph': sub_graph
+            'sub_graph': [sub_graph] if sub_graph else None
 
         }
         return solved_answer, supporting_fact, history_log
