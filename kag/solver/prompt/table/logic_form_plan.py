@@ -20,7 +20,7 @@ class LogicFormPlanPrompt(PromptOp):
   ],
   "pay_attention": [
     "你的数学计算能力能力很差，必须使用PythonCoder对数学计算和数值比较问题进行求解。",
-    "子问题描述信息要完整；关键字要清晰，利于提取；使得子问题解决者方便处理。"
+    "子问题描述信息要完整，不要遗漏任何关键字，语义要清晰，利于理解。"
   ],
   "output_format": [
     "输出json格式，output给出子问题列表",
@@ -51,7 +51,7 @@ class LogicFormPlanPrompt(PromptOp):
         {
           "input": "9.8和9.11哪个大？",
           "internal_processing_logic": "编写python代码```python\nanswer=max(9.8, 9.11)\nprint(answer)```, 调用执行器获得结果",
-          "output": "9.11"
+          "output": "9.8"
         },
         {
           "input": "今天星期几？",
@@ -61,12 +61,12 @@ class LogicFormPlanPrompt(PromptOp):
       ]
     }
   ],
-  "cases": [
+  "examples": [
     {
-      "input": "如果游戏收入按照目前的速度增长，2020年的游戏收入是多少？",
+      "input": "如果游戏收入按照目前的速度增长，2020年的游戏收入是多少美元？",
       "output": [
         {
-          "sub_question": "查找2018年和2019年游戏收入",
+          "sub_question": "查找2018年和2019年游戏收入，按照美元计算",
           "process_function": "Retrieval"
         },
         {

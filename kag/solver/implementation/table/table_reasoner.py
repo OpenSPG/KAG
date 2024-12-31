@@ -1,6 +1,7 @@
 import time
 from typing import List
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from kag.examples.finstate.solver.impl.chunk_lf_planner import ChunkLFPlanner
 from kag.examples.finstate.solver.impl.spo_generator import SPOGenerator
@@ -20,7 +21,6 @@ from kag.solver.implementation.table.retrieval_agent import TableRetrievalAgent
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 from kag.solver.implementation.table.python_coder import PythonCoderAgent
-from concurrent.futures import ThreadPoolExecutor,  as_completed
 
 logger = logging.getLogger()
 
@@ -43,6 +43,9 @@ class TableReasoner(KagReasonerABC):
         self.resp_generator = PromptOp.load(self.biz_scene, "resp_generator")(
             language=self.language
         )
+        self.llm_backup = PromptOp.load(self.biz_scene, "llm_backup")(
+            language=self.language
+        )
         self.report_tool: ReporterIntermediateProcessTool = kwargs.get(
             "report_tool", None
         )
@@ -63,8 +66,7 @@ class TableReasoner(KagReasonerABC):
         self.report_pipleline(history)
 
         # get what we have in KG
-        # TODO
-        kg_content = ""
+        kg_content = "阿里巴巴2025财年年度中期报告"
 
         try_times = 3
         while try_times > 0:
@@ -132,7 +134,16 @@ class TableReasoner(KagReasonerABC):
             self.resp_generator,
             with_except=True,
         )
-        self.report_pipleline(history, final_answer)
+        final_answer_form_llm = False
+        if final_answer is None or "i don't know" in final_answer.lower():
+            # 大模型兜底
+            final_answer_form_llm = True
+            final_answer = llm.invoke(
+                {"question": history.root_node.question},
+                self.llm_backup,
+                with_except=True,
+            )
+        self.report_pipleline(history, final_answer, final_answer_form_llm)
         return final_answer
 
     def _get_sub_question_list(self, history: SearchTree, kg_content: str):
@@ -173,10 +184,16 @@ class TableReasoner(KagReasonerABC):
         )
         resp = SolverPipeline(
             max_run=1,
-            reflector=SPOReflector(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+            reflector=SPOReflector(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
             reasoner=reason,
-            generator=SPOGenerator(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
-            memory=SpoMemory(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+            generator=SPOGenerator(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
+            memory=SpoMemory(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
         )
         answer, trace_log = resp.run(query)
         return answer, trace_log
@@ -203,14 +220,20 @@ class TableReasoner(KagReasonerABC):
         )
         resp = SolverPipeline(
             max_run=1,
-            reflector=SPOReflector(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+            reflector=SPOReflector(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
             reasoner=reason,
-            generator=SPOGenerator(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
-            memory=SpoMemory(KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr),
+            generator=SPOGenerator(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
+            memory=SpoMemory(
+                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
+            ),
         )
         solved_answer, supporting_fact, history_log = reason.reason(query)
-        if "history" in history_log and len(history_log['history']) > 0:
-            answer = history_log['history'][-1].get('sub_answer', "I don't know")
+        if "history" in history_log and len(history_log["history"]) > 0:
+            answer = history_log["history"][-1].get("sub_answer", "I don't know")
         else:
             answer = "I don't know"
         return answer, [history_log]
@@ -219,6 +242,7 @@ class TableReasoner(KagReasonerABC):
         table_retrical_agent = TableRetrievalAgent(
             init_question=init_question, question=node.question, **self.kwargs
         )
+        all_cannot_answer_reason = {}
         with ThreadPoolExecutor(max_workers=2) as executor:
             # 两路召回同时做符号求解
             futures = [
@@ -233,15 +257,19 @@ class TableReasoner(KagReasonerABC):
                     if "i don't know" not in res.lower():
                         self.update_node(node, res, trace_log)
                         return res
+                    else:
+                        all_cannot_answer_reason["table_symbol_retrieval"] = res
                 elif 1 == i:
                     res, trace_log = future.result()
                     self.update_node(node, res, trace_log)
                     if "i don't know" not in res.lower():
                         return res
+                    else:
+                        all_cannot_answer_reason["text_symbol_retrieval"] = res
             # 同时进行chunk求解
             futures = [
                 executor.submit(table_retrical_agent.answer),
-                # executor.submit(self._call_chunk_retravel_func, node.question),
+                executor.submit(self._call_chunk_retravel_func, node.question),
             ]
             for i, future in enumerate(futures):
                 if 0 == i:
@@ -250,16 +278,24 @@ class TableReasoner(KagReasonerABC):
                         if "i don't know" not in res.lower():
                             self.update_node(node, res, trace_log)
                             return res
+                        else:
+                            all_cannot_answer_reason["fuzzy_table_retrieval"] = res
                     except Exception as e:
                         logger.warning(f"table chunk failed {e}", exc_info=True)
                 elif 1 == i:
                     try:
                         res, trace_log = future.result()
-                        self.update_node(node, res, trace_log)
-                        return res
+                        if "i don't know" not in res.lower():
+                            self.update_node(node, res, trace_log)
+                            return res
+                        else:
+                            all_cannot_answer_reason["fuzzy_text_retrieval"] = res
                     except Exception as e:
                         logger.warning(f"chunk failed {e}", exc_info=True)
-        node.answer = "I don't know"
+        # 综合4种无法获得答案的原因，总结出召回失败的原因
+        node.answer = "\n".join(
+            [f"{key}={value}" for key, value in all_cannot_answer_reason.items()]
+        )
         return node.answer
 
     def update_node(self, node, res, trace_log):
@@ -288,10 +324,17 @@ class TableReasoner(KagReasonerABC):
         # 将过滤后的行重新组合为文本
         return "\n".join(filtered_lines)
 
-    def report_pipleline(self, history: SearchTree, final_answer: str = None):
+    def report_pipleline(
+        self,
+        history: SearchTree,
+        final_answer: str = None,
+        final_answer_form_llm: bool = False,
+    ):
         """
         report search tree
         """
-        pipeline = history.convert_to_pipleline(final_anser=final_answer)
+        pipeline = history.convert_to_pipleline(
+            final_answer=final_answer, final_answer_form_llm=final_answer_form_llm
+        )
         if self.report_tool is not None:
             self.report_tool.report_ca_pipeline(pipeline)

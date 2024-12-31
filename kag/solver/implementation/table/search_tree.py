@@ -113,7 +113,7 @@ class SearchTree:
                 }
             }
 
-        context = f"overall_goal:{self.root_node.question}\nsearch_tree:{json.dumps(build_tree_context(self.root_node),ensure_ascii=False,indent=2)}"
+        context = f"subquestions_and_their_answers:\n{json.dumps(build_tree_context(self.root_node),ensure_ascii=False,indent=2)}"
         return context
 
     def _graph_to_json(self):
@@ -127,7 +127,9 @@ class SearchTree:
 
         return build_tree(self.root_node)
 
-    def convert_to_pipleline(self, final_anser: str = None) -> CaPipeline:
+    def convert_to_pipleline(
+        self, final_answer: str = None, final_answer_form_llm: bool = False
+    ) -> CaPipeline:
         """
         转出思考树
         """
@@ -176,7 +178,7 @@ class SearchTree:
                         question=tree_node.question,
                         answer=tree_node.answer,
                         logs=tree_node.answer_desc,
-                        subgraph=[tree_node.sub_graph] if tree_node.sub_graph else None
+                        subgraph=[tree_node.sub_graph] if tree_node.sub_graph else None,
                     )
                 )
                 pipeline.edges.append(
@@ -193,17 +195,17 @@ class SearchTree:
 
         build_sub_nodes(self.root_node)
 
-        if final_anser is not None:
+        if final_answer is not None:
             answer_node = Node(
                 id=0,
                 state=ReporterIntermediateProcessTool.STATE.FINISH,
                 question=self.root_node.question,
-                answer=final_anser,
+                answer=final_answer,
                 logs="",
             )
             pipeline.nodes.append(answer_node)
             answer_edge = Edge(
-                self.id_allocator.get_max_id(),
+                1 if final_answer_form_llm else self.id_allocator.get_max_id(),
                 0,
             )
             pipeline.edges.append(answer_edge)

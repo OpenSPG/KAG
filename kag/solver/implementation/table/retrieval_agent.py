@@ -173,8 +173,9 @@ class TableRetrievalAgent(ChunkRetrieverABC):
 
             onehop_graph_list = self._query_spo(s, p, o, kg_graph)
             if onehop_graph_list is None or len(onehop_graph_list) <= 0:
-                return "I don't know", None
-            query = f"overall_goal: {self.question}, current_step: {desc}"
+                # 没检索到数据
+                break
+            query = f"overall_goal: {self.init_question}, current_subquestion: {self.question}, current_step: {desc}"
             n: GetSPONode = self._gen_get_spo_node(get_spo, query, kg_graph)
             total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
                 n=n,
@@ -183,7 +184,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 disable_attr=True,
             )
             if not matched_flag:
-                return "I don't know", None
+                # 没有合理的数据
+                break
             kg_graph.merge_kg_graph(total_one_kg_graph)
             kg_graph.nodes_alias.append(n.s.alias_name)
             kg_graph.nodes_alias.append(n.o.alias_name)
@@ -351,12 +353,14 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             if isinstance(s_link, str):
                 s_link = [s_link]
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+
                 def run_linker(link_str):
                     s_nodes = self.chunk_retriever._search_nodes_by_vector(
                         link_str, s_type, threshold=0.9, topk=1
                     )
                     return s_nodes
-                future_res_list = list(executor.map(run_linker,s_link))
+
+                future_res_list = list(executor.map(run_linker, s_link))
                 for s_nodes in future_res_list:
                     if s_nodes is not None and len(s_nodes) > 0:
                         s_id_list.extend([n["node"]["id"] for n in s_nodes])
@@ -440,13 +444,13 @@ class TableRetrievalAgent(ChunkRetrieverABC):
 
     def answer(self):
         row_docs = self.recall_docs(query=self.question)
-        if len(row_docs) <= 0:
-            return "I don't know", None
         print(f"rowdocs,query={self.question}\n{row_docs}")
+        if len(row_docs) <= 0:
+            return "I don't know, Unable to find any relevant tables", None
         rerank_docs = self.rerank_docs(queries=[], passages=row_docs)
-        if "i don't know" in rerank_docs.lower():
-            return "I don't know", None
         print(f"rerank,query={self.question}\n{rerank_docs}")
+        if isinstance(rerank_docs, str) and "i don't know" in rerank_docs.lower():
+            return rerank_docs, None
         docs = "\n\n".join(rerank_docs)
         llm: LLMClient = self.llm_module
         answer = llm.invoke(
@@ -463,7 +467,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 self.sub_question_answer,
                 with_except=True,
             )
-        return answer, [{"report_info": {"context": rerank_docs, "sub_graph": None}}]
+        return answer, [{"report_info": {"context": docs, "sub_graph": None}}]
 
     def get_sub_item_reall(self, entities):
         index = self.question.find("的所有子项")

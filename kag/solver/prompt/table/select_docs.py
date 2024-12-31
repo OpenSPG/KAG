@@ -14,7 +14,7 @@ class SelectDocsPrompt(PromptOp):
 基于问题和召回数据，选择最相关的原文返回。
 原文如果是表格，返回表格。
 忠实的返回原文文本，不要改动任何一个字。
-如果所有数据都与问题无关，返回：I don't know.
+如果所有数据都与问题无关，返回：I don't know. 并给出详细的理由。
 
 # output format
 markdown格式

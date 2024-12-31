@@ -12,12 +12,16 @@ from kag.common.base.prompt_op import PromptOp
 class PythonCoderPrompt(PromptOp):
     template_zh = """
 # instruction
-根据给出的问题和数据，编写python代码，输出问题结果。
-为了便于理解，输出从context中提取的数据，输出中间计算过程和结果。
-如果无法回答问题，直接返回：I don't know.
+根据给出的问题和数据，编写python代码，解决问题，输出结果。
+为了便于理解，在python代码中print中间结果。
+如果无法解决问题，或找不到答案，在python中print：I don't know，并给出原因。
 
 # output format
-直接输出python代码，python版本为3.8，不要包含任何其他信息
+只输出python代码，不要输出其他任何内容。
+python代码版本为3.8
+
+# pay attention
+context只作为参考，不要回答context中的问题，你只需要专注于回答question中的问题。
 
 # examples
 ## 例子1
@@ -72,10 +76,14 @@ print(f"2020年的预计收入为: {revenue_2020:.2f}万")
 # input
 ## question
 $question
+
 ## context
 $context
+
 ## error
 $error
+
+# output
 """
     template_en = template_zh
 
