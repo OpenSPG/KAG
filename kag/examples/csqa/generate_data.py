@@ -5,6 +5,7 @@ def to_snake_case(name):
     result = "_".join(words).lower()
     return result
 
+
 def main():
     import io
     import os
@@ -13,7 +14,9 @@ def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir_path, "cs.jsonl")
     if not os.path.isfile(file_path):
-        print("Please download cs.jsonl from https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main")
+        print(
+            "Please download cs.jsonl from https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main"
+        )
         return
     with io.open(file_path, "r", encoding="utf-8", newline="\n") as fin:
         questions = []
@@ -24,15 +27,22 @@ def main():
             content = title + "\n" + item["context"]
             if content not in documents:
                 name = to_snake_case(title)
-                output_file_path = os.path.join(dir_path, "builder", "data", name + ".txt")
-                with io.open(output_file_path, "w", encoding="utf-8", newline="\n") as fout:
+                output_file_path = os.path.join(
+                    dir_path, "builder", "data", name + ".txt"
+                )
+                with io.open(
+                    output_file_path, "w", encoding="utf-8", newline="\n"
+                ) as fout:
                     print(content, file=fout)
             item["context"] = title
             questions.append(item)
         output_file_path = os.path.join(dir_path, "solver", "data", "questions.json")
         with io.open(output_file_path, "w", encoding="utf-8", newline="\n") as fout:
-            json.dump(questions, fout, separators=(",", ": "), indent=4, ensure_ascii=False)
+            json.dump(
+                questions, fout, separators=(",", ": "), indent=4, ensure_ascii=False
+            )
             print(file=fout)
+
 
 if __name__ == "__main__":
     main()

@@ -23,14 +23,20 @@ class CsQaEvaluator(object):
         dir_path = os.path.join(dir_path, "data")
         file_path = os.path.join(dir_path, "csqa_kag_answers.json")
         with io.open(file_path, "w", encoding="utf-8", newline="\n") as fout:
-            json.dump(self._questions, fout, separators=(",", ": "), indent=4, ensure_ascii=False)
+            json.dump(
+                self._questions,
+                fout,
+                separators=(",", ": "),
+                indent=4,
+                ensure_ascii=False,
+            )
             print(file=fout)
 
     def _get_question_answer(self, item):
         from kag.common.conf import KAG_CONFIG
         from kag.solver.logic.solver_pipeline import SolverPipeline
 
-        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, trace_log = resp.run(item["input"])
 
         print(f"\n\nso the answer for '{item['input']}' is: {answer}\n\n")
