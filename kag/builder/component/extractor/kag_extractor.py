@@ -38,7 +38,7 @@ class KAGExtractor(ExtractorABC):
         from kag.builder.component.table.table_extractor import TableExtractor
         from kag.builder.component.extractor.text_extractor import TextExtractor
 
-        self._table_classify = TableClassify()
+        self._table_classify = TableClassify(**kwargs)
         self._table_extractor = TableExtractor(**kwargs)
         self._text_extractor = TextExtractor(**kwargs)
 
