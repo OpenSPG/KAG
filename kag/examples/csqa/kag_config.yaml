@@ -30,7 +30,7 @@ runner:
       similarity_threshold: 0.9
       type: base
     splitter:
-      split_length: 2000
+      split_length: 4950
       type: length
       window_length: 100
     type: unstructured
@@ -44,7 +44,7 @@ runner:
         vector_dimensions: 1024
     writer:
       type: kg
-  num_threads_per_chain: 1
+  num_threads_per_chain: 50
   num_chains: 16
   scanner:
     type: dir
