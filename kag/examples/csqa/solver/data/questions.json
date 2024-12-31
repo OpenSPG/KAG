@@ -1,0 +1,1502 @@
+[
+    {
+        "input": "How does Spark Streaming enable real-time data processing?",
+        "answers": [
+            "Spark Streaming extends the core Spark API to process real-time data streams from sources like Kafka and Flume. It divides the streaming data into batches, which are then processed by the Spark engine to generate the final stream of results in real-time."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "b2fd8d9c6d1499d521d778ce3d6d06fa",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "What does the book suggest about the use of histograms in data analysis?",
+        "answers": [
+            "The book suggests that histograms are a powerful tool for visualizing the distribution of data, especially continuous data. They help in understanding the shape, central tendency, and spread of the data, which are crucial for subsequent statistical analyses."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "a06e053884d3820c53753979a5d1583e",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What are some advanced topics covered in the book related to Linux Kernel Networking?",
+        "answers": [
+            "Advanced topics covered in the book include Linux namespaces, network namespaces, cgroups, Busy Poll Sockets, the Bluetooth subsystem, the IEEE 802.15.4 subsystem, and Near Field Communication (NFC) subsystem."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "dd5f8955ff5dc51715d0693b376b9a45",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "What is the significance of the R tool in the context of modern optimization methods?",
+        "answers": [
+            "The R tool is significant because it is a free, open-source, and multi-platform tool specifically developed for statistical analysis, and it has an active community that continuously enhances its capabilities with new packages, including those that implement modern optimization methods."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "e7c78431710abdba3ea98535d03e28c8",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "What are the key features of this text that aid in learning object-oriented concepts in Java?",
+        "answers": [
+            "Key features include an early introduction to object-oriented programming, the use of contour diagrams to illustrate object-oriented concepts, and the inclusion of questions for readers to interact with the material, reinforcing concepts through practice."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "7d61004e5f34e290af4c7c37fc09723b",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "What is the role of the RegExr tool in the book?",
+        "answers": [
+            "The RegExr tool is used in the book as a web-based, JavaScript-powered regex implementation to help readers practice and understand regular expressions through interactive examples."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "9cc02e52ecbe63b45e21e1cdaec2b120",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "How does the text compare to other Java programming texts in terms of content and detail?",
+        "answers": [
+            "The text aims to fill the gap between comprehensive texts that might cover too many details, making them difficult for beginners, and shortened introductions that might lack necessary examples and illustrations. It provides a balance by concentrating on the fundamentals and being accessible to readers with no prior programming experience."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "1da0c1c91eb0140738cb64ecc8004d05",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "What role do Bayesian inference and priors play in the book?",
+        "answers": [
+            "Bayesian inference and priors play a significant role in the book as they provide a framework for updating beliefs (priors) with new data to form posteriors. This approach is particularly useful in situations where prior knowledge is available and needs to be integrated with new evidence."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "89c6e8076674b2c6333b750682a7d9ca",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What is the difference between recording a macro and writing code from scratch in VBA?",
+        "answers": [
+            "Recording a macro involves using the Macro Recorder to translate user actions into VBA code, while writing code from scratch involves manually typing VBA statements in the Visual Basic Editor to create a macro."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "54079bdf524a760f148f5719b9d6b1cf",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "How does the book address the implementation of IPv6 in comparison to IPv4?",
+        "answers": [
+            "The book discusses the implementation of IPv6, highlighting its larger address space, fixed-length header, and additional features like Neighbor Discovery and Multicast Listener Discovery, which enhance and replace certain functionalities of IPv4."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "d415e4fa0db729e2c156fc711d56567d",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "Can you explain the concept of standard coordinates as discussed in the book?",
+        "answers": [
+            "Standard coordinates involve normalizing data by subtracting the mean and dividing by the standard deviation for each variable. This transformation helps in comparing different datasets on a common scale, making it easier to visualize and analyze relationships between variables."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "2889bf6322872f411e8eaaa854393ca9",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What are IP options and why might they be used?",
+        "answers": [
+            "IP options are optional fields in the IPv4 header that enable advanced features like strict or loose routing, record routing, time stamping, and router alert. They are used for specific networking tasks that require additional control over packet handling."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "adeb98871fc954a358d3f686ee9a701f",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "How does the book approach the teaching of jargon related to regular expressions?",
+        "answers": [
+            "The book approaches jargon by sharing the correct terms in small doses and emphasizing practical application over overwhelming readers with dry language."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "651b194a399fdf8f19eb47ec9f31a90d",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "What role do netlink sockets play in Linux Kernel Networking?",
+        "answers": [
+            "Netlink sockets provide a bidirectional communication channel between userspace and the kernel, allowing for tasks such as adding or deleting routes, configuring neighboring tables, and setting IPsec policies and states."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "68e8a60e5e7f7fe1048bc0e0d88d07ac",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "What is the primary purpose of \"Joe Celko's SQL Programming Style\"?",
+        "answers": [
+            "The primary purpose of the book is to improve SQL programming style and proficiency, helping individual programmers write Standard SQL without an accent or dialect and to give SQL shops a coding standard for internal use."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "bcf778eb653c69da482aa29ae4133d37",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What is the role of the tempdb database in SQL Server?",
+        "answers": [
+            "The tempdb database is a key working area for the server. It is used for storing temporary objects such as complex query interim tables, user-created temporary tables, and other temporary storage needs. It is rebuilt from scratch every time the SQL Server restarts."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "af3176b476908e8a18b0ec8e0a27c6b4",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What audience is the text primarily intended for?",
+        "answers": [
+            "The text is intended primarily for readers who have not had any previous programming experience. However, it can also serve as a useful resource for others, including those who have programmed in the past but are new to Java."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "e7b68cf28240fdf4b611a7b6c5f1fdb5",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "How does the book recommend handling the complexity of regular expressions?",
+        "answers": [
+            "The book recommends learning by doing, encouraging readers to follow examples and try out new concepts in practical exercises."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "914ab1cd78585d24f2049fe2db29ebc1",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "What is a principal type in the context of type inference?",
+        "answers": [
+            "A principal type is the most general type that can be assigned to an expression without losing information. Any other type for the expression can be derived by substituting type variables in the principal type."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "8b60cd4fd9e3578409412680b1d69c0e",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "What are user-defined functions (UDFs) in SQL Server and how do they differ from stored procedures?",
+        "answers": [
+            "User-defined functions are similar to sprocs but can return a value of most SQL Server data types and cannot have side effects like changing tables. They are used to encapsulate reusable logic and return a single value or a table result."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "31b27ce444fc7177802c16d0beea99b1",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What are the two categories of indexes in SQL Server and what distinguishes them?",
+        "answers": [
+            "Indexes in SQL Server fall into two categories: clustered and non-clustered. A clustered index can have only one per table and means the table is physically sorted according to that index. Non-clustered indexes are more like traditional indexes and can have many per table."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "a7e68e0890a882b80e2a0bcb9c3e94b9",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What caution does the book provide regarding the use of maximum likelihood estimation?",
+        "answers": [
+            "The book cautions that while maximum likelihood estimation is a powerful tool for estimating model parameters from data, it can be sensitive to the presence of outliers and may not always provide the best fit if the model assumptions are not met."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "1b096fe0e27b3aa78ed00205f1998547",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What is the significance of the ICMP protocol in Linux Kernel Networking?",
+        "answers": [
+            "The ICMP protocol is significant in Linux Kernel Networking for sending error and control messages about the network layer, helping to keep the system behaving correctly by providing feedback about problems in the communication environment."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "fd89ca52cc6b3c8e0d521d445faf2465",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "What is the significance of the ALS algorithm in Spark's MLlib?",
+        "answers": [
+            "The ALS (Alternating Least Squares) algorithm is used in Spark's MLlib for collaborative filtering, particularly in recommendation systems. It is used to factorize a user-item rating matrix into user and item factor matrices, which can then be used to predict missing ratings."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "4efd3e57ae57229b5d83754ba39df1fa",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "What does the book recommend regarding the use of proprietary data types?",
+        "answers": [
+            "The book recommends avoiding proprietary data types as they do not port to other products or from one release to another of the same product, and standard SQL has enough data types to model most real-world situations."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "2467ca0b4b3afc74d95a04fe58832bb2",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "How do you assign a macro to a button on the Quick Access Toolbar in Word?",
+        "answers": [
+            "To assign a macro to a button on the Quick Access Toolbar in Word, right-click the Quick Access Toolbar, choose Customize Quick Access Toolbar, select Macros from the Choose Commands From drop-down list, select the macro, click Add, and then modify the button's name and icon if desired."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "52552813e55408b4b15c849771b5e0f0",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is Apache Spark and what are its key features?",
+        "answers": [
+            "Apache Spark is a framework for distributed computing designed to handle large-scale data processing tasks efficiently. Its key features include in-memory processing, fault tolerance, flexible data structures, and support for multiple programming languages like Scala, Java, and Python."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "e17c82938a0a24b191c0642f5bc3afe5",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "What does the dollar sign ($) signify in regular expressions?",
+        "answers": [
+            "The dollar sign ($) in regular expressions signifies the end of a line or string."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "586693a4e121a947e66802b4f964dd7e",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "How does the book approach the topic of data encoding schemes?",
+        "answers": [
+            "The book discusses various data encoding schemes, emphasizing the importance of using existing standard encoding schemes and providing guidelines for designing encoding schemes that allow for expansion and avoid NULLs."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "670305552b1ce595a41912dbf0e37778",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What are the three main techniques used for semantic definitions in programming languages?",
+        "answers": [
+            "The three main techniques are denotational semantics, big-step operational semantics, and small-step operational semantics."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "438ca00c6c6501f04e0d71f35a85a0dd",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "What are stored procedures (sprocs) and what advantages do they offer over sending individual SQL statements?",
+        "answers": [
+            "Stored procedures are pre-compiled objects that contain a series of SQL statements. They offer advantages such as reduced network traffic, pre-optimization and precompilation, encapsulation of complex logic, and reusability."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "b53e6c46b777af351513d4af10554228",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What is the primary purpose of VBA in Office applications?",
+        "answers": [
+            "The primary purpose of VBA in Office applications is to automate tasks and operations, allowing users to streamline complex and repetitive processes."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "acb3efc774059a3f6a857c3543647786",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the role of confluence in the operational semantics of programming languages?",
+        "answers": [
+            "Confluence ensures that regardless of the order in which reductions are applied, a term will always reduce to the same irreducible term, thus guaranteeing the uniqueness of the result of a computation."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "3bf7d70db749f8edb0b8131ed38041fd",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "How does the MovieLens dataset contribute to building recommendation engines?",
+        "answers": [
+            "The MovieLens dataset, containing user ratings for movies, is used to train recommendation models. It provides the necessary data to apply collaborative filtering techniques, where user preferences are used to predict and recommend other movies they might like."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "7de6a30b09f1560f3161376771bf79a0",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "What is the primary goal of the book \"Introducing Regular Expressions\"?",
+        "answers": [
+            "The primary goal of the book is to make learning regular expressions as easy as possible through examples and practical applications."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "5443d621a027c59e78e253ef44bfa502",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "What tools or methodologies does the text use to help readers understand and design programs?",
+        "answers": [
+            "The text uses pseudocode to outline programs, making the logic clear without being tied to specific syntax. It also employs UML diagrams to visually represent the relationships among classes, aiding in the design of more complex programs."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "fad588e5aa55fbd5eb3a9640365b0917",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "How does the FOR XML clause in SQL Server facilitate the conversion of relational data into XML format?",
+        "answers": [
+            "The FOR XML clause is an option added to the end of a SELECT statement to instruct SQL Server to return the result set in XML format. It provides several modes (RAW, AUTO, EXPLICIT, PATH) to control the structure and formatting of the XML output."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "5f4dc0b9d5cb8e3d70a682084a659bb0",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What role do examples and exercises play in the learning process according to the text?",
+        "answers": [
+            "Examples and exercises are crucial in the learning process. The text includes numerous examples and illustrations throughout each chapter, and provides exercises at the end of each chapter to reinforce the concepts presented. Selected answers to exercises are provided in an appendix."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "75d698b059b5a104e6ef6d548bbb3a42",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "What is the significance of the correlation coefficient in the book?",
+        "answers": [
+            "The correlation coefficient is significant as it measures the strength and direction of the relationship between two variables. It helps in predicting one variable from another and is a key tool in understanding data relationships."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "7182350cd8041542acab7b678130b2a7",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What are the three main approaches to handle multi-objective tasks discussed in the book?",
+        "answers": [
+            "The three main approaches discussed are the weighted-formula approach, lexicographic approach, and Pareto front approach."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "8aada2c07ffcd605670c0322fd07f7cd",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "What is a view in SQL Server and what are its primary uses?",
+        "answers": [
+            "A view is a virtual table based on the result-set of an SQL statement. It contains rows and columns, just like a real table, and is used for security (controlling what users see) and ease of use (hiding complexity and unnecessary information)."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "4948f1ca278e86c71e252878fe02cfd1",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "How can you debug a macro in the Visual Basic Editor?",
+        "answers": [
+            "You can debug a macro in the Visual Basic Editor by setting breakpoints, stepping through the code line by line using the Step Into command, and examining variables and expressions in the Immediate window or other debugging windows."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "88ded4e33236e7d4d990d0f9db62e915",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "How does the book differentiate between probability and statistics?",
+        "answers": [
+            "The book differentiates between probability and statistics by explaining that probability deals with predicting the likelihood of future events based on known probabilities, while statistics involves making inferences about unknown probabilities based on observed data."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "6548f38f05a7c1334f452b8a0ce79554",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What does the book consider as the biggest hurdle in learning SQL?",
+        "answers": [
+            "According to the book, the biggest hurdle in learning SQL is thinking in sets and logic instead of in sequences and processes, which is a common mistake among new programmers."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "174fae450333f362e8b30bdc893eabd9",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What are the four types of operators in VBA?",
+        "answers": [
+            "The four types of operators in VBA are arithmetic operators, comparison operators, logical operators, and concatenation operators."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "ae6e66d052fcf8f736b04624589ff901",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the book's stance on the use of jargon in regular expressions?",
+        "answers": [
+            "The book takes a light approach to jargon, using it sparingly and only when necessary, to avoid creating barriers for readers."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "c8fc43e65361da563733e97c2cc96143",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "How does the book advocate for the use of views in SQL?",
+        "answers": [
+            "The book advocates for the use of views to provide row- and column-level security, ensure efficient access paths, mask complexity from users, and enforce complicated integrity constraints, among other benefits."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "0d23d9f53f66018c1eed5131bd087ab3",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What are some of the tools and languages covered in the book for working with regular expressions?",
+        "answers": [
+            "The book covers tools and languages such as sed, Perl, grep, RegExr, Reggy, and various programming languages like Ruby, Python, and JavaScript."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "3d8a298c07e6bf6324b98ef3b1c88aca",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "What is the significance of the Option Explicit statement in VBA?",
+        "answers": [
+            "The Option Explicit statement in VBA enforces explicit variable declarations, which helps in preventing errors and makes the code more readable and maintainable."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "30dc7a464a5d4ad0b809afac77ea0d6d",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is an object in the context of VBA?",
+        "answers": [
+            "In the context of VBA, an object is a representation of a part of an application, such as a document in Word, a worksheet in Excel, or a slide in PowerPoint."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "6f68ec52ee65e56e8d13d446d19f1a04",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the purpose of the Object Browser in the Visual Basic Editor?",
+        "answers": [
+            "The purpose of the Object Browser in the Visual Basic Editor is to help users find and understand objects, methods, properties, and events within VBA projects and libraries."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "507f7410adea0bb66a5d3416cd7cf311",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the rationale behind using full reserved words in SQL according to the book?",
+        "answers": [
+            "The book suggests using full reserved words to document the program, making it easier to read and understand the code, as uppercase words are seen as a unit and act to announce a statement or clause."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "1b5823e14c1b177f76837c1d58f32918",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "Can you name some popular modern optimization methods discussed in the book?",
+        "answers": [
+            "Some popular modern optimization methods discussed in the book include simulated annealing, tabu search, genetic algorithms, genetic programming, NSGA-II (multi-objective optimization), differential evolution, and particle swarm optimization."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "f365affdc673cb61e13ed46968e9b5bb",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "What fundamental shift in thinking does the book encourage for effective SQL programming?",
+        "answers": [
+            "The book encourages a shift from thinking in sequences and processes to thinking in sets and logic, which is fundamental to mastering SQL programming."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "dc8a7fdfb3333fd72e18b01c03b0f12b",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "How does the author approach the topic of statistical significance?",
+        "answers": [
+            "The author approaches statistical significance by explaining its importance in determining the reliability of evidence in experiments. It involves discussing p-values, t-tests, F-tests, and χ²-tests, emphasizing the need to avoid misinterpretation and misuse of these tools."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "f5fdff2a87d84971c75175592636aef0",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What is the primary purpose of the text \"Guide to Java: A Concise Introduction to Programming\"?",
+        "answers": [
+            "The primary purpose of the text is to help readers quickly learn how to program using the Java programming language, focusing on the fundamentals, providing illustrations and examples, and using visual contour diagrams to illustrate object-oriented semantics."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "c455b7328867b7131b34bec23dbf5486",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "How can you customize the Visual Basic Editor in Office applications?",
+        "answers": [
+            "You can customize the Visual Basic Editor by adjusting settings such as editor and view preferences, window layouts, toolbar and menu customizations, and Toolbox settings to suit your workflow and preferences."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "115366e36d584ef281e25982fab866fb",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the significance of the QED editor in the history of regular expressions?",
+        "answers": [
+            "The QED editor, written by Ken Thompson, yielded one of the earliest practical implementations of regular expressions in computing."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "a696fb4fb29c953cc4209879647cb073",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "How does the book address the issue of infeasible solutions in optimization problems?",
+        "answers": [
+            "The book addresses infeasible solutions through several methods, including the death-penalty approach (assigning a very large penalty value), penalty-weights (modifying the evaluation function to include penalties), repair (transforming an infeasible solution into a feasible one), and generating only feasible solutions using domain knowledge or special operators."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "80221419c8122e84644b46df2cf798cc",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "What are the main components of a machine learning system designed with Spark?",
+        "answers": [
+            "A machine learning system with Spark typically includes components such as data ingestion and storage, data cleansing and transformation, model training and testing, model deployment and integration, and model monitoring and feedback."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "6228906a75b83aef34b197a2cfb0a9a4",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "What is the purpose of the caret (^) in regular expressions?",
+        "answers": [
+            "The caret (^) in regular expressions is used to match the beginning of a line or string."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "153e939b06da8693da93626e62f5d90a",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "What is the significance of the `fix` construct in PCF (Programming language for computable functions)?",
+        "answers": [
+            "The `fix` construct allows for the definition of recursive functions in PCF, enabling the computation of functions that would otherwise require iteration or recursive definitions."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "065edc3713c4ba9e63ba4f064302e2d0",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "What does the book suggest as a strategy for testing SQL?",
+        "answers": [
+            "The book recommends testing all possible combinations of NULLs, inspecting and testing all CHECK () constraints, and being wary of character columns, as they often lack sufficient constraints."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "6fb16360d09136e63e30475fa3261ada",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What is the purpose of normalization in database design and what are its benefits?",
+        "answers": [
+            "Normalization is the process of organizing data in a database to reduce redundancy and improve data integrity. Its benefits include efficient data storage, fewer modification anomalies, and better adherence to the principles of relational database design."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "6d089ff9d766a947ffd4c3d299aea38c",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What is the difference between a variable and a constant in VBA?",
+        "answers": [
+            "A variable in VBA is a named storage location in memory that can hold different values during the execution of a program, whereas a constant holds a fixed value that does not change."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "511e94495adb05cc91831684a0319c89",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "How does the concept of \"environment\" differ between denotational and operational semantics?",
+        "answers": [
+            "In denotational semantics, an environment maps variables to their denotations (usually values or functions). In operational semantics, an environment maps variables to their current values or states during the execution of a program."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "570c894ee9a40ace84dcce3fb9227902",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "How can you ensure that a macro runs automatically when an application starts?",
+        "answers": [
+            "You can ensure that a macro runs automatically when an application starts by naming the macro \"Auto_Open\" for Excel or using the appropriate event handler for other applications, such as \"Document_Open\" for Word."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "33b180f7c06c2ad7d7e68b59aa0ad4aa",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the significance of the XML data type introduced in SQL Server 2005?",
+        "answers": [
+            "The XML data type allows SQL Server to recognize and manage data as truly XML data, enabling advanced features like indexing, data validation through schema collections, and intrinsic methods for querying and modifying XML data."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "83b7aee070a8d594d1f0777b7e61c7d2",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What is the significance of the `DEoptim` package in R for optimization tasks?",
+        "answers": [
+            "The `DEoptim` package in R implements the differential evolution algorithm, which is a global optimization method useful for continuous numerical optimization. It is significant because it provides a robust and efficient way to handle complex optimization problems that may be difficult to solve using traditional methods."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "89b16302915e65e42d9dc4c009b541e4",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "How does the author suggest handling categorical data in the context of plotting?",
+        "answers": [
+            "The author suggests using bar charts, pie charts, stacked bar charts, and heat maps to visualize categorical data effectively. Each method has its advantages depending on the specific dataset and the comparisons one wishes to make."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "6b33b185034283f6f54f316e656c36b7",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "How does the text address the potential for errors in programming?",
+        "answers": [
+            "The text acknowledges the possibility of errors and emphasizes the importance of careful program design to minimize logic errors. It also introduces debugging as a process for finding and fixing logic errors, and suggests using output statements at critical points in the program to assist in this process."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "aa72087fc9806e8a8052d9ee94e536d9",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "What is the role of the Immediate window in the Visual Basic Editor?",
+        "answers": [
+            "The Immediate window in the Visual Basic Editor allows users to test individual lines of code, execute statements, and debug procedures quickly without running an entire macro."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "6561d403389bcadf0d8a2a0170ffcf1f",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the concept of Pareto front in multi-objective optimization?",
+        "answers": [
+            "The Pareto front in multi-objective optimization consists of all non-dominated solutions, where a solution is non-dominated if there is no other solution that is better in all objectives. It represents the set of solutions that offer the best trade-offs between conflicting objectives."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "ded99eeb790f2a4f64685bfdfd5c4fd5",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "How does the text handle the introduction of complex topics like inheritance and polymorphism?",
+        "answers": [
+            "The text introduces complex topics like inheritance and polymorphism gradually, ensuring that foundational concepts are well understood before advancing to more complex topics. It provides clear explanations and practical examples to facilitate understanding."
+        ],
+        "context": "Guide to Java",
+        "length": 132156,
+        "context_id": "9acb1e7611785d05ed363e0a12ff81c4",
+        "_id": "bae9b2c6c4fec171a2aed180ab7baed1",
+        "label": "cs",
+        "meta": {
+            "title": "Guide to Java",
+            "authors": "James T. Streib"
+        }
+    },
+    {
+        "input": "What is the role of the `optim` function in R when dealing with optimization problems?",
+        "answers": [
+            "The `optim` function in R is a general-purpose optimization function that includes various methods such as Nelder-Mead, BFGS, CG, L-BFGS-B, and SANN (simulated annealing) for minimizing or maximizing a function. It is used to solve optimization problems by providing the function to be optimized and other parameters like initial values and bounds."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "ee400e24ee25691ae17588b3c114110d",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "What are the three main types of quantifiers discussed in the book?",
+        "answers": [
+            "The three main types of quantifiers discussed in the book are greedy, lazy (reluctant), and possessive quantifiers."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "d4d2cefe8061c0465c5f266f9f4555fb",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "What are the three major types of relationships in database design and give an example of each?",
+        "answers": [
+            "The three major types of relationships are one-to-one, one-to-many, and many-to-many. Examples include a person and their social security number (one-to-one), a customer and their orders (one-to-many), and products and orders (many-to-many)."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "4d32d4026fc0d305b8bfcfb2809cdb5e",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What naming convention does the book recommend for tables and views?",
+        "answers": [
+            "The book recommends that table and view names should be industry standards, collective, class, or plural nouns, following the principle that a table is a set and not a scalar value."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "44d9d8d01f14afe5c04bef3c21c6da19",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What is the primary goal of the book \"Modern Optimization with R\"?",
+        "answers": [
+            "The primary goal of the book is to gather relevant concepts related to modern optimization methods and demonstrate how these concepts and methods can be addressed using the R tool, providing a self-contained document with practical application examples."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "cdfa9fa646614a9d70a36e29f1146609",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "How can you run Spark on Amazon EC2?",
+        "answers": [
+            "Spark can be run on Amazon EC2 by using the provided scripts in the `ec2` directory of the Spark package. These scripts automate the process of launching a Spark cluster on EC2 instances, handling setup and configuration."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "e7df0b58497343e180bd6289562edddf",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "Describe the structure and function of the IPv4 header.",
+        "answers": [
+            "The IPv4 header consists of fields such as version, IHL (Internet Header Length), Type of Service (TOS), total length, identification, flags, fragment offset, TTL (Time To Live), protocol, header checksum, source address, and destination address. It provides essential information for routing and handling packets in the network."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "11a8dffaa240e12a786904a464f8a92e",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "How does the book suggest handling special characters in names?",
+        "answers": [
+            "The book advises avoiding all special characters in names to ensure compatibility across different SQL products and host language programs, recommending the use of letters, digits, and underscores only."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "13f850f6c26aed5d72e47af31bc0c777",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What are the challenges in defining a denotational semantics for a language with side effects like references and assignments?",
+        "answers": [
+            "Defining a denotational semantics for languages with side effects requires modeling the state of the program and how it changes over time, which can be complex due to the need to track and update the state consistently across different program executions."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "8d146f8de1405ae49c52e22e2413bf96",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "How does the Macro Recorder work in Word and Excel?",
+        "answers": [
+            "The Macro Recorder in Word and Excel translates user actions into VBA code, allowing users to automate sequences of actions by recording them once and playing them back as needed."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "ba51eb8a1b1c96450160db13b175d0b5",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What are the two types of procedures in VBA?",
+        "answers": [
+            "The two types of procedures in VBA are functions and subprocedures (subs). Functions return a value, while subprocedures do not."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "0704a96fe06ed0e5aff62cc3e4522ea0",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "How does the use of de Bruijn indices simplify the interpretation of terms in programming languages?",
+        "answers": [
+            "De Bruijn indices replace named variables with numerical indices, reducing the need for alpha-conversion and simplifying the handling of variable bindings and substitutions."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "0f18e6d577f37580eebc8b5fe4872e16",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "How does Spark differ from Hadoop in terms of performance?",
+        "answers": [
+            "Spark is optimized for low-latency tasks and iterative analytics, storing intermediate data in memory, which significantly improves performance over Hadoop's MapReduce, where data is stored on disk, leading to slower processing times."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "23b6c2db6571d4be02cc6b8e91187d82",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "How does the model database function as a template in SQL Server?",
+        "answers": [
+            "The model database serves as a template for any new database that you create. Altering the model database can change what standard, newly created databases look like, such as including audit tables or predefined user groups."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "829d8b5ca614145212d9fa46c9f468ab",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What is the primary purpose of the Linux Kernel Networking stack as described in the book?",
+        "answers": [
+            "The primary purpose of the Linux Kernel Networking stack is to handle the traversal of packets in the network stack and interact with various networking layers and subsystems, describing how various networking protocols are implemented."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "98600e07f48f68a6d91ca74cc49f777e",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "How does the fixed point theorem play a role in the semantics of programming languages?",
+        "answers": [
+            "The fixed point theorem is used in operational semantics to give rise to inductive definitions and reflexive-transitive closures. In denotational semantics, it is primarily used to define the meaning of the `fix` construct."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "b222dab4687973ade81a88dc5c7e1c0e",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "Explain the process of IPv4 fragmentation and defragmentation.",
+        "answers": [
+            "IPv4 fragmentation occurs when a packet is larger than the MTU (Maximum Transmission Unit) of the outgoing interface, and it needs to be broken into smaller fragments. Defragmentation is the process of reassembling these fragments back into the original packet at the destination."
+        ],
+        "context": "Linux Kernel Networking",
+        "length": 324154,
+        "context_id": "a26e2a9fe9627588b3f37969996aa053",
+        "_id": "004498a62b48d961ab580adbec81836d",
+        "label": "cs",
+        "meta": {
+            "title": "Linux Kernel Networking",
+            "authors": "Rami Rosen"
+        }
+    },
+    {
+        "input": "What is the primary purpose of the master database in SQL Server?",
+        "answers": [
+            "The master database is critical to the system and cannot be deleted. It holds a special set of tables (system tables) that keeps track of the system as a whole, including entries for new databases, extended and system stored procedures, and more."
+        ],
+        "context": "Professional Microsoft SQL Server 2008 Programming",
+        "length": 398984,
+        "context_id": "36442820cc1428a4b4c0edb51ea0a9e4",
+        "_id": "3304e79d0509d96bcbe4e273f6886f30",
+        "label": "cs",
+        "meta": {
+            "title": "Professional Microsoft SQL Server 2008 Programming",
+            "authors": "Robert Vieira"
+        }
+    },
+    {
+        "input": "What are some of the practical applications of Markov chains and Hidden Markov Models discussed in the book?",
+        "answers": [
+            "The book discusses practical applications of Markov chains and Hidden Markov Models in areas such as text generation, web ranking, and dynamic programming for HMMs, illustrating their utility in modeling sequences and processes where future states depend on the current state."
+        ],
+        "context": "Probability and Statistics for Computer Science",
+        "length": 340084,
+        "context_id": "cd05f98133352f12d464fe3184263356",
+        "_id": "2952ed98935d20d7f959093eb252713d",
+        "label": "cs",
+        "meta": {
+            "title": "Probability and Statistics for Computer Science",
+            "authors": "David Forsyth"
+        }
+    },
+    {
+        "input": "What is the significance of the \"dotall\" option in regular expressions?",
+        "answers": [
+            "The \"dotall\" option allows the dot (.) character in regular expressions to match all characters, including newline characters."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "5aa412726e58606de576d5bc416faa25",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    },
+    {
+        "input": "How can you run a macro from the Visual Basic Editor?",
+        "answers": [
+            "You can run a macro from the Visual Basic Editor by pressing the F5 key, choosing Run ⇒ Run Sub/UserForm, or clicking the Run Sub/UserForm button on the Standard toolbar."
+        ],
+        "context": "Mastering VBA for Microsoft Office 2013",
+        "length": 437070,
+        "context_id": "a04a1e6250de7eaf6c98aeed6882d9f9",
+        "_id": "c385585026ebeeb0d06746d26f8724fd",
+        "label": "cs",
+        "meta": {
+            "title": "Mastering VBA for Microsoft Office 2013",
+            "authors": "Richard Mansfield"
+        }
+    },
+    {
+        "input": "What is the book's stance on using triggers in SQL programming?",
+        "answers": [
+            "The book advises avoiding triggers in favor of Declarative Referential Integrity (DRI) actions, as triggers are often proprietary and can complicate schema design and maintenance."
+        ],
+        "context": "Joe Celko's SQL Programming Style",
+        "length": 72144,
+        "context_id": "12d652369a8284cdb57d61f710229568",
+        "_id": "57b64f7e48364d3661a6fd7b2aaa9722",
+        "label": "cs",
+        "meta": {
+            "title": "Joe Celko's SQL Programming Style",
+            "authors": "Joe Celko"
+        }
+    },
+    {
+        "input": "What are the challenges in using naive Bayes models with numerical features?",
+        "answers": [
+            "Naive Bayes models assume that features are conditionally independent and typically work well with categorical data. When dealing with numerical features, special handling is required, such as binning or transforming the data to fit the model's assumptions."
+        ],
+        "context": "Machine Learning With Spark",
+        "length": 131651,
+        "context_id": "7bcef8714a477fd61fc8fb0d499b2cc3",
+        "_id": "86062f01fbe48f830ccb15f58aa75a98",
+        "label": "cs",
+        "meta": {
+            "title": "Machine Learning With Spark",
+            "authors": "Nick Pentreath"
+        }
+    },
+    {
+        "input": "What is the difference between call by name and call by value reduction strategies?",
+        "answers": [
+            "Call by name evaluates arguments only when they are needed, while call by value evaluates arguments before the function is applied. Call by name can avoid unnecessary evaluations but may repeat evaluations of the same expression."
+        ],
+        "context": "Introduction to the Theory of Programming Languages",
+        "length": 51704,
+        "context_id": "2369ec0826789a4f553cb31b1635c15d",
+        "_id": "6940e37f5596aababeca8282bf7b702e",
+        "label": "cs",
+        "meta": {
+            "title": "Introduction to the Theory of Programming Languages",
+            "authors": "Gilles Dowek"
+        }
+    },
+    {
+        "input": "How does the book encourage the reader to engage with the R code examples?",
+        "answers": [
+            "The book encourages the reader to execute the R code examples and try to solve the proposed exercises. This hands-on approach helps readers to better understand and apply the concepts and methods discussed in the book."
+        ],
+        "context": "Modern Optimization With R",
+        "length": 98105,
+        "context_id": "31aa6012fa9cdbd6e17cdc426851e487",
+        "_id": "754e1461ce33a36cefa3fe22931fd9d1",
+        "label": "cs",
+        "meta": {
+            "title": "Modern Optimization With R",
+            "authors": "Paulo Cortez"
+        }
+    },
+    {
+        "input": "How does the book introduce the concept of alternation in regular expressions?",
+        "answers": [
+            "The book introduces alternation by explaining how to use the vertical bar (|) character to separate a list of regular expressions, indicating an \"or\" condition."
+        ],
+        "context": "Introducing Regular Expressions",
+        "length": 61814,
+        "context_id": "3036128592818913f474799d44870db9",
+        "_id": "4e533bbebfea3219e9d2cc9661a8f517",
+        "label": "cs",
+        "meta": {
+            "title": "Introducing Regular Expressions",
+            "authors": "Michael Fitzgerald"
+        }
+    }
+]
