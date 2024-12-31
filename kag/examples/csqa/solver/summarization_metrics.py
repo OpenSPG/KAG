@@ -56,15 +56,21 @@ class SummarizationMetricsEvaluator(object):
         from kag.common.benchmarks.evaluate import Evaluate
 
         evaluator = Evaluate()
-        metrics = evaluator.getSummarizationMetrics(questions, answers1, answers2, **self._evaluator_kwargs)
+        metrics = evaluator.getSummarizationMetrics(
+            questions, answers1, answers2, **self._evaluator_kwargs
+        )
         if self._rounds >= 2:
             all_keys = "Comprehensiveness", "Diversity", "Empowerment", "Overall"
             all_items = "Score 1", "Score 2"
             for _ in range(self._rounds - 1):
-                another_metrics = evaluator.getSummarizationMetrics(questions, answers1, answers2, **self._evaluator_kwargs)
+                another_metrics = evaluator.getSummarizationMetrics(
+                    questions, answers1, answers2, **self._evaluator_kwargs
+                )
                 for key in all_keys:
                     for item in all_items:
-                        metrics["average_metrics"][key][item] += another_metrics["average_metrics"][key][item]
+                        metrics["average_metrics"][key][item] += another_metrics[
+                            "average_metrics"
+                        ][key][item]
             for key in all_keys:
                 for item in all_items:
                     metrics["average_metrics"][key][item] /= self._rounds
@@ -73,15 +79,23 @@ class SummarizationMetricsEvaluator(object):
     def _compute_summarization_metrics(self):
         questions = [item["question"] for item in self._questions_and_answers]
         kag_answers = [item["kag_answer"] for item in self._questions_and_answers]
-        lightrag_answers = [item["lightrag_answer"] for item in self._questions_and_answers]
-        metrics = self._compute_average_metrics(questions, kag_answers, lightrag_answers)
+        lightrag_answers = [
+            item["lightrag_answer"] for item in self._questions_and_answers
+        ]
+        metrics = self._compute_average_metrics(
+            questions, kag_answers, lightrag_answers
+        )
         return metrics
 
     def _compute_reverse_summarization_metrics(self):
         questions = [item["question"] for item in self._questions_and_answers]
         kag_answers = [item["kag_answer"] for item in self._questions_and_answers]
-        lightrag_answers = [item["lightrag_answer"] for item in self._questions_and_answers]
-        metrics = self._compute_average_metrics(questions, lightrag_answers, kag_answers)
+        lightrag_answers = [
+            item["lightrag_answer"] for item in self._questions_and_answers
+        ]
+        metrics = self._compute_average_metrics(
+            questions, lightrag_answers, kag_answers
+        )
         return metrics
 
     def _compute_average_summarization_metrics(self, metrics, reverse_metrics):
@@ -99,14 +113,17 @@ class SummarizationMetricsEvaluator(object):
         for key in all_keys:
             for item, reverse_item in zip(all_items, reversed(all_items)):
                 average_metrics["average_metrics"][key][item] = (
-                    metrics["average_metrics"][key][item] +
-                    reverse_metrics["average_metrics"][key][reverse_item]) / 2
+                    metrics["average_metrics"][key][item]
+                    + reverse_metrics["average_metrics"][key][reverse_item]
+                ) / 2
         return average_metrics
 
     def run(self):
         metrics = self._compute_summarization_metrics()
         reverse_metrics = self._compute_reverse_summarization_metrics()
-        average_metrics = self._compute_average_summarization_metrics(metrics, reverse_metrics)
+        average_metrics = self._compute_average_summarization_metrics(
+            metrics, reverse_metrics
+        )
         all_keys = "Comprehensiveness", "Diversity", "Empowerment", "Overall"
         all_items = "Score 1", "Score 2"
         titles = (
@@ -133,9 +150,11 @@ class SummarizationMetricsEvaluator(object):
                     string += " %.2f" % metrics["average_metrics"][key][item]
         print(string)
 
+
 def main():
     evaluator = SummarizationMetricsEvaluator()
     evaluator.run()
+
 
 if __name__ == "__main__":
     main()

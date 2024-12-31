@@ -23,7 +23,13 @@ class CsQaEvaluator(object):
         dir_path = os.path.join(dir_path, "data")
         file_path = os.path.join(dir_path, "csqa_kag_answers.json")
         with io.open(file_path, "w", encoding="utf-8", newline="\n") as fout:
-            json.dump(self._questions, fout, separators=(",", ": "), indent=4, ensure_ascii=False)
+            json.dump(
+                self._questions,
+                fout,
+                separators=(",", ": "),
+                indent=4,
+                ensure_ascii=False,
+            )
             print(file=fout)
 
     def _get_question_answer(self, item):
