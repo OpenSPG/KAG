@@ -219,6 +219,7 @@ class TableReasoner(KagReasonerABC):
         table_retrical_agent = TableRetrievalAgent(
             init_question=init_question, question=node.question, **self.kwargs
         )
+        answer_history = []
         with ThreadPoolExecutor(max_workers=2) as executor:
             # 两路召回同时做符号求解
             futures = [
@@ -230,13 +231,21 @@ class TableReasoner(KagReasonerABC):
             for i, future in enumerate(futures):
                 if 0 == i:
                     res, trace_log = future.result()
+                    answer_history.append({
+                        "res": res,
+                        "trace_log": trace_log
+                    })
                     if "i don't know" not in res.lower():
                         self.update_node(node, res, trace_log)
                         return res
                 elif 1 == i:
                     res, trace_log = future.result()
-                    self.update_node(node, res, trace_log)
+                    answer_history.append({
+                        "res": res,
+                        "trace_log": trace_log
+                    })
                     if "i don't know" not in res.lower():
+                        self.update_node(node, res, trace_log)
                         return res
             # 同时进行chunk求解
             futures = [
@@ -247,21 +256,37 @@ class TableReasoner(KagReasonerABC):
                 if 0 == i:
                     try:
                         res, trace_log = future.result()
+                        answer_history.append({
+                            "res": res,
+                            "trace_log": trace_log
+                        })
                         if "i don't know" not in res.lower():
                             self.update_node(node, res, trace_log)
                             return res
                     except Exception as e:
                         logger.warning(f"table chunk failed {e}", exc_info=True)
-                elif 1 == i:
-                    try:
-                        res, trace_log = future.result()
-                        self.update_node(node, res, trace_log)
-                        return res
-                    except Exception as e:
-                        logger.warning(f"chunk failed {e}", exc_info=True)
-        node.answer = "I don't know"
+        answer = "\n".join(list(set([h['res'] for h in answer_history])))
+        trace_log = self._merge_trace_log([h['trace_log'] for h in answer_history])
+        self.update_node(node, answer, trace_log)
+        node.answer = answer
         return node.answer
-
+    def _merge_trace_log(self, trace_logs):
+        context = []
+        sub_graphs = []
+        for trace_log in trace_logs:
+            if len(trace_log) < 1:
+                continue
+            if "report_info" not in trace_log[0]:
+                continue
+            context += trace_log[0]["report_info"]["context"]
+            if trace_log[0]["report_info"].get("sub_graph", None):
+                sub_graphs += trace_log[0]["report_info"]["sub_graph"]
+        return [{
+            "report_info": {
+                "context": context,
+                "sub_graph": sub_graphs
+            }
+        }]
     def update_node(self, node, res, trace_log):
         if len(trace_log) == 1 and "report_info" in trace_log[0]:
             node.answer = res

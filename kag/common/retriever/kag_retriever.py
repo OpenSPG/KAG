@@ -586,12 +586,12 @@ class DefaultRetriever(ChunkRetrieverABC):
 
         return [n for n in typed_nodes if n["score"] > 0.9]
 
-    def _search_nodes_by_vector(self, query, _type, threshold=0.9, topk=10):
+    def _search_nodes_by_vector(self, query, _type, threshold=0.9, topk=10, property_key="name"):
         query_type = self.schema_util.get_label_within_prefix(_type)
         query_vector = self.vectorizer.vectorize(query)
         typed_nodes = self.sc.search_vector(
             label=query_type,
-            property_key="name",
+            property_key=property_key,
             query_vector=query_vector,
             topk=topk,
         )

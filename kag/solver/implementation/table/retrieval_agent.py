@@ -147,9 +147,13 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         # 根据问题，搜索10张表
         start_time = time.time()
         s_nodes = self.chunk_retriever._search_nodes_by_vector(
-            self.question, "Table", threshold=0.5, topk=10
+            self.question, "Table", threshold=0.5, topk=5
         )
-        table_name_list = [t["node"]["name"] for t in s_nodes]
+        s_nodes_with_desc = self.chunk_retriever._search_nodes_by_vector(
+            self.question, "Table", threshold=0.5, topk=5, property_key="desc"
+        )
+        table_name_list = [t["node"]["name"] for t in s_nodes] + [t["node"]["name"] for t in s_nodes_with_desc]
+        table_name_list = list(set(table_name_list))
         # table_name_list = [
         #     f"表名：{t['node']['name']}\n{t['node']['content']}" for t in s_nodes
         # ]
@@ -173,7 +177,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
 
             onehop_graph_list = self._query_spo(s, p, o, kg_graph)
             if onehop_graph_list is None or len(onehop_graph_list) <= 0:
-                return "I don't know", None
+                break
             query = f"overall_goal: {self.question}, current_step: {desc}"
             n: GetSPONode = self._gen_get_spo_node(get_spo, query, kg_graph)
             total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
@@ -183,7 +187,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
                 disable_attr=True,
             )
             if not matched_flag:
-                return "I don't know", None
+                break
             kg_graph.merge_kg_graph(total_one_kg_graph)
             kg_graph.nodes_alias.append(n.s.alias_name)
             kg_graph.nodes_alias.append(n.o.alias_name)
@@ -214,7 +218,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             None, f"graph_{generate_random_string(3)}", 0, [], kg_graph
         )
         context += cur_content
-        history_log = {"report_info": {"context": context, "sub_graph": sub_graph}}
+        history_log = {"report_info": {"context": context, "sub_graph": [sub_graph] if sub_graph else None}}
 
         return answer, [history_log]
 
@@ -445,7 +449,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         print(f"rowdocs,query={self.question}\n{row_docs}")
         rerank_docs = self.rerank_docs(queries=[], passages=row_docs)
         if "i don't know" in rerank_docs.lower():
-            return "I don't know", None
+            return "I don't know.", None
         print(f"rerank,query={self.question}\n{rerank_docs}")
         docs = "\n\n".join(rerank_docs)
         llm: LLMClient = self.llm_module

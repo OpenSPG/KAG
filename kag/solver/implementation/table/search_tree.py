@@ -176,7 +176,7 @@ class SearchTree:
                         question=tree_node.question,
                         answer=tree_node.answer,
                         logs=tree_node.answer_desc,
-                        subgraph=[tree_node.sub_graph] if tree_node.sub_graph else None
+                        subgraph=tree_node.sub_graph if tree_node.sub_graph else None
                     )
                 )
                 pipeline.edges.append(
