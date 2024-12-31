@@ -1,4 +1,4 @@
-kag/builder/component/extractor/text_extractor.py # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2023 OpenSPG Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
