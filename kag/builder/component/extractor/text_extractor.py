@@ -356,7 +356,7 @@ class TextExtractor(ExtractorABC):
                 label="Document",
                 properties={},
             )
-            sub_graph.nodes.append(node)
+            sub_graph.nodes.append(article_node)
             return [sub_graph]
         except Exception as e:
             import traceback
