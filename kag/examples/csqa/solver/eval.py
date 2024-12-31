@@ -30,7 +30,7 @@ class CsQaEvaluator(object):
         from kag.common.conf import KAG_CONFIG
         from kag.solver.logic.solver_pipeline import SolverPipeline
 
-        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["lf_solver_pipeline"])
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, trace_log = resp.run(item["input"])
 
         print(f"\n\nso the answer for '{item['input']}' is: {answer}\n\n")
