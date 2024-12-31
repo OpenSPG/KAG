@@ -351,8 +351,8 @@ class TextExtractor(ExtractorABC):
 
             document_name = title.split("#")[0]
             document_node = Node(
-                _id=article_name,
-                name=article_name,
+                _id=document_name,
+                name=document_name,
                 label="Document",
                 properties={},
             )
