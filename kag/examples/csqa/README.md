@@ -18,7 +18,7 @@ answers with those from other RAG systems.
 2. (Optional) Download [UltraDomain](https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main)
    ``cs.jsonl`` and execute [generate_data.py](./generate_data.py) to generate data files in
    [./builder/data](./builder/data) and [./solver/data](./solver/data). Since the generated files
-   was committed, this step is optional.
+   were committed, this step is optional.
 
    ```bash
    python generate_data.py
