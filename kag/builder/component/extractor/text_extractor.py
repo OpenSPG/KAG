@@ -16,16 +16,17 @@ from typing import Dict, Type, List
 
 from tenacity import stop_after_attempt, retry
 
+
 from kag.builder.prompt.spg_prompt import SPG_KGPrompt
 from kag.interface.builder import ExtractorABC
 from kag.common.base.prompt_op import PromptOp
-from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
-from kag.builder.model.sub_graph import SubGraph
+from kag.builder.model.sub_graph import SubGraph, Node
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import SpgTypeEnum
+from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -347,6 +348,15 @@ class TextExtractor(ExtractorABC):
             std_entities = self.named_entity_standardization(passage, filtered_entities)
             self.append_official_name(entities, std_entities)
             self.assemble_sub_graph(sub_graph, input, entities, triples)
+
+            article_name = title.split("#")[0]
+            article_node = Node(
+                _id=article_name,
+                name=article_name,
+                label="Document",
+                properties={},
+            )
+            sub_graph.nodes.append(node)
             return [sub_graph]
         except Exception as e:
             import traceback
