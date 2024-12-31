@@ -146,11 +146,14 @@ class OpenIENERPrompt(PromptOp):
     }    
         """
 
-    def __init__(
-            self, language: Optional[str] = "en", **kwargs
-    ):
+    def __init__(self, language: Optional[str] = "en", **kwargs):
         super().__init__(language, **kwargs)
-        self.schema = SchemaClient(project_id=self.project_id).extract_types()
+        schema = SchemaClient(project_id=self.project_id).extract_types()
+        filtered = []
+        for obj_type in schema:
+            if not obj_type.startswith("Table") and not obj_type == "Document":
+                filtered.append(obj_type)
+        self.schema = filtered
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property

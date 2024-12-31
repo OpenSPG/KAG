@@ -31,7 +31,7 @@ from io import StringIO
 
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
-from kag.builder.component.extractor.kag_extractor import KAGExtractor
+from kag.builder.component.extractor.text_extractor import TextExtractor
 from kag.builder.component.table.table_cell import TableCell, TableInfo
 from knext.common.base.runnable import Input, Output
 
@@ -73,7 +73,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         self.table_reformat = PromptOp.load("table", "table_reformat")(
             language=self.language, project_id=self.project_id
         )
-        self.kag_extractor = KAGExtractor(**kwargs)
+        self.text_extractor = TextExtractor(**kwargs)
 
     @property
     def input_types(self) -> Input:
@@ -172,7 +172,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         # 调用ner进行实体识别
         table_chunks = self.split_table(input_table, 500)
         for c in table_chunks:
-            subgraph_lsit = self.kag_extractor.invoke(input=c)
+            subgraph_lsit = self.text_extractor.invoke(input=c)
             rst.extend(subgraph_lsit)
         return rst
 
@@ -668,7 +668,7 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
             f"done process {table_df.shape} table to subgraph with {len(nodes)} nodes and {len(edges)} edges"
         )
         print(f"node stat: {self.stat(nodes)}")
-        print(f"edee stat: {self.stat(edges)}")
+        print(f"edge stat: {self.stat(edges)}")
         return [subgraph]
 
     def stat(self, items):
