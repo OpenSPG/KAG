@@ -191,40 +191,6 @@ class TableReasoner(KagReasonerABC):
         )
         history.set_now_plan(sub_question_list)
         return sub_question_list
-
-    def _call_chunk_retravel_func(self, query):
-        lf_planner = ChunkLFPlanner(
-            KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
-        )
-        lf_solver = LFSolver(
-            chunk_retriever=LFChunkRetriever(
-                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
-            ),
-            KAG_PROJECT_ID=self.project_id,
-            KAG_PROJECT_HOST_ADDR=self.host_addr,
-        )
-        reason = DefaultReasoner(
-            lf_planner=lf_planner,
-            lf_solver=lf_solver,
-            KAG_PROJECT_ID=self.project_id,
-            KAG_PROJECT_HOST_ADDR=self.host_addr,
-        )
-        resp = SolverPipeline(
-            max_run=1,
-            reflector=SPOReflector(
-                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
-            ),
-            reasoner=reason,
-            generator=SPOGenerator(
-                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
-            ),
-            memory=SpoMemory(
-                KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr
-            ),
-        )
-        answer, trace_log = resp.run(query)
-        return answer, trace_log
-
     def _call_spo_retravel_func(self, query):
         lf_planner = SPOLFPlanner(
             KAG_PROJECT_ID=self.project_id, KAG_PROJECT_HOST_ADDR=self.host_addr

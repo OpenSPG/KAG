@@ -13,7 +13,7 @@ class RespGenerator(PromptOp):
     "指令": "你是一个信息分析专家，根据给定的信息和领域知识进行分析，并且按照指定格式输出分析内容",
     "要求": [
         "基于给定的信息进行分析",
-        ”json格式输出，包含两个字段‘can_answer’和‘analysis’, can_answer为bool值，表示是否能根据给定信息进行回答； analysis为输出的分析结果“
+        ”json格式输出，包含两个字段‘can_answer’和‘analysis’, can_answer为'yes' 或者 'no'，表示是否能根据给定信息进行回答； analysis为输出的分析结果“
         "答案要包含上下文信息，使得没有任何背景的人也能理解。",
         "不要尝试进行数值单位换算，忠实的按照原文输出数值，带上单位和变量"
     ],

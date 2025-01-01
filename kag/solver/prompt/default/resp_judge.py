@@ -12,7 +12,8 @@ class RespJudge(PromptOp):
     template_zh = """请根据以下已知信息分析是否能够回答问题，并以 JSON 格式输出结果。输出格式如下：
 
 {
-  "canAnswer": "是" 或 "否"
+  "canAnswer": "能够回答" 或 "不能回答",
+  "reason": '输出判断理由'
 }
 问题：
 '$instruction'
@@ -47,7 +48,7 @@ $memory"""
                 if_finished = False
         elif isinstance(satisfied_info, dict):
             if 'canAnswer' in satisfied_info:
-                if_finished = satisfied_info['canAnswer'] == '是'
+                if_finished = satisfied_info['canAnswer'] == '能够回答'
             else:
                 if_finished = False
         else:
