@@ -274,6 +274,8 @@ class TableReasoner(KagReasonerABC):
         context = []
         sub_graphs = []
         for trace_log in trace_logs:
+            if trace_log is None:
+                continue
             if len(trace_log) < 1:
                 continue
             if "report_info" not in trace_log[0]:
