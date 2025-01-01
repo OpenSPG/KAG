@@ -1,3 +1,4 @@
+import os
 import time
 from typing import List
 import logging
@@ -30,11 +31,16 @@ class TableReasoner(KagReasonerABC):
     table reasoner
     """
 
+    DOMAIN_KNOWLEDGE_INJECTION = "在当前会话注入领域知识"
+    DOMAIN_KNOWLEDGE_QUERY = "返回当前会话的领域知识"
+
     def __init__(
         self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs
     ):
         super().__init__(lf_planner=lf_planner, lf_solver=lf_solver, **kwargs)
         self.kwargs = kwargs
+        self.session_id = kwargs.get("session_id", 0)
+        self.dk = self._query_dk()
 
         self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan")(
             language=self.language
@@ -68,7 +74,13 @@ class TableReasoner(KagReasonerABC):
         - supporting_fact: Supporting facts gathered during the reasoning process.
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
-        history = SearchTree(question)
+        history = SearchTree(question, self.dk)
+
+        if question.startswith(TableReasoner.DOMAIN_KNOWLEDGE_INJECTION):
+            self._save_dk(question, history)
+            return "done"
+        elif question.startswith(TableReasoner.DOMAIN_KNOWLEDGE_QUERY):
+            return self._query_dk_and_report(history)
 
         # 上报root
         self.report_pipleline(history)
@@ -109,7 +121,7 @@ class TableReasoner(KagReasonerABC):
                 # answer subquestion
                 sub_answer = None
                 if "Retrieval" == func_str:
-                    can_answer, sub_answer = self._call_retravel_func(question, node)
+                    can_answer, sub_answer = self._call_retravel_func(question, node, history)
                 elif "PythonCoder" == func_str:
                     can_answer, sub_answer = self._call_python_coder_func(
                         init_question=question, node=node, history=history
@@ -138,7 +150,7 @@ class TableReasoner(KagReasonerABC):
                 break
         final_answer = "I don't know"
         # 判定答案
-        can_answer = self.llm_module.invoke({'memory': str(history), 'instruction': history.root_node.question}, self.judge_prompt,
+        can_answer = self.llm_module.invoke({'memory': str(history), 'instruction': history.root_node.question, "dk": history.dk}, self.judge_prompt,
                                       with_json_parse=False, with_except=True)
         llm: LLMClient = self.llm_module
         if can_answer:
@@ -153,7 +165,7 @@ class TableReasoner(KagReasonerABC):
             # 无法直接给出答案，则给出用户关心的信息
             final_answer_form_llm = True
             final_answer = llm.invoke(
-                {"memory": str(history), "question": history.root_node.question},
+                {"memory": str(history), "question": history.root_node.question, "dk": history.dk},
                 self.resp_think_generator,
                 with_except=True,
             )
@@ -170,6 +182,7 @@ class TableReasoner(KagReasonerABC):
             "input": history.root_node.question,
             "kg_content": kg_content,
             "history": history_str,
+            "dk": history.dk,
         }
         sub_question_list = llm.invoke(
             variables=variables,
@@ -252,9 +265,14 @@ class TableReasoner(KagReasonerABC):
             answer = "I don't know"
         return  "i don't know" not in answer.lower(), answer, [history_log]
 
-    def _call_retravel_func(self, init_question, node: SearchTreeNode):
+    def _call_retravel_func(
+        self, init_question, node: SearchTreeNode, history: SearchTree
+    ):
         table_retrical_agent = TableRetrievalAgent(
-            init_question=init_question, question=node.question, **self.kwargs
+            init_question=init_question,
+            question=node.question,
+            dk=history.dk,
+            **self.kwargs,
         )
         answer_history = []
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -318,12 +336,8 @@ class TableReasoner(KagReasonerABC):
             context += trace_log[0]["report_info"]["context"]
             if trace_log[0]["report_info"].get("sub_graph", None):
                 sub_graphs += trace_log[0]["report_info"]["sub_graph"]
-        return [{
-            "report_info": {
-                "context": context,
-                "sub_graph": sub_graphs
-            }
-        }]
+        return [{"report_info": {"context": context, "sub_graph": sub_graphs}}]
+
     def update_node(self, node, res, trace_log):
         if len(trace_log) == 1 and "report_info" in trace_log[0]:
             node.answer = res
@@ -364,3 +378,30 @@ class TableReasoner(KagReasonerABC):
         )
         if self.report_tool is not None:
             self.report_tool.report_ca_pipeline(pipeline)
+
+    def _save_dk(self, dk: str, history: SearchTree):
+        dk = dk.strip(TableReasoner.DOMAIN_KNOWLEDGE_INJECTION)
+        dk = dk.strip().strip("\n")
+
+        file_name = f"/tmp/dk/{self.session_id}"
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+        # 打开文件并写入字符串
+        with open(file_name, "w", encoding="utf-8") as file:
+            file.write(dk)
+        self.report_pipleline(history, "done", True)
+
+    def _query_dk(self) -> str:
+        file_name = f"/tmp/dk/{self.session_id}"
+        if not os.path.exists(file_name):
+            return None
+        with open(file_name, "r", encoding="utf-8") as file:
+            dk = file.read()
+        return dk
+
+    def _query_dk_and_report(self, history) -> str:
+        dk = self._query_dk()
+        if dk is None:
+            self.report_pipleline(history, "当前会话没有设置领域知识", True)
+        else:
+            self.report_pipleline(history, dk, True)

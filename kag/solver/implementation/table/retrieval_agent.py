@@ -47,11 +47,11 @@ from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilari
 
 
 class TableRetrievalAgent(ChunkRetrieverABC):
-    def __init__(self, init_question, question, **kwargs):
+    def __init__(self, init_question, question, dk, **kwargs):
         super().__init__(**kwargs)
         self.init_question = init_question
         self.question = question
-        self.history = SearchTree(question)
+        self.dk = dk
         self.chunk_retriever = DefaultRetriever(**kwargs)
         self.reason: ReasonerClient = ReasonerClient(self.host_addr, self.project_id)
 
@@ -225,8 +225,8 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             graph_docs = [str(d) for d in last_data]
 
         # 回答子问题
-        answer_analysis = llm.invoke(
-            {"docs": graph_docs, "question": self.question},
+        answer = llm.invoke(
+            {"docs": graph_docs, "question": self.question, "dk": self.dk},
             self.sub_question_answer,
             with_except=True,
             with_json_parse=True

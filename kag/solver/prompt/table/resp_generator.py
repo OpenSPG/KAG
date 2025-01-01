@@ -22,6 +22,9 @@ class RespGenerator(PromptOp):
 # context
 $memory
 
+# domain_knowledge
+$dk
+
 # question
 $question
 
@@ -34,7 +37,7 @@ $question
 
     @property
     def template_variables(self) -> List[str]:
-        return ["memory", "question"]
+        return ["memory", "question", "dk"]
 
     def parse_response(self, response: str, **kwargs):
         return response

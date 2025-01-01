@@ -33,6 +33,7 @@ class SolverMain:
         task_id: int,
         query: str,
         report_tool=True,
+        session_id: int = 0,
         host_addr="http://127.0.0.1:8887",
     ):
         # resp
@@ -81,6 +82,7 @@ class SolverMain:
         task_id: int,
         query: str,
         report_tool=True,
+        session_id: int = 0,
         host_addr="http://127.0.0.1:8887",
     ):
         from kag.examples.finstate.solver.solver import FinStateSolver
@@ -91,7 +93,9 @@ class SolverMain:
             project_id=project_id,
             host_addr=host_addr,
         )
-        solver = FinStateSolver(report_tool=report_tool, KAG_PROJECT_ID=project_id)
+        solver = FinStateSolver(
+            report_tool=report_tool, KAG_PROJECT_ID=project_id, session_id=session_id
+        )
         answer = solver.run(query)
         return answer
 
@@ -101,6 +105,7 @@ class SolverMain:
         task_id: int,
         query: str,
         report_tool=True,
+        session_id: int = 0,
         host_addr="http://127.0.0.1:8887",
     ):
         # resp
@@ -120,16 +125,24 @@ class SolverMain:
         task_id: int,
         query: str,
         report_tool=True,
+        session_id: int = 0,
         host_addr="http://127.0.0.1:8887",
     ):
         # resp
-        report_tool = ReporterIntermediateProcessTool(report_log=report_tool, task_id=task_id, project_id=project_id, host_addr=host_addr)
-        config = ProjectClient(host_addr=host_addr, project_id=project_id).get_config(project_id)
+        report_tool = ReporterIntermediateProcessTool(
+            report_log=report_tool,
+            task_id=task_id,
+            project_id=project_id,
+            host_addr=host_addr,
+        )
+        config = ProjectClient(host_addr=host_addr, project_id=project_id).get_config(
+            project_id
+        )
         llm_config = eval(os.getenv("KAG_LLM", "{}"))
         llm_config.update(config.get("llm", {}))
         thinker = Thinker(env="dev", report_tool=report_tool, llm_config=llm_config)
         response = thinker.run_folio(question=query)
-        return response['thinkerCot']
+        return response["thinkerCot"]
 
 
 if __name__ == "__main__":
