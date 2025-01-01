@@ -225,7 +225,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             graph_docs = [str(d) for d in last_data]
 
         # 回答子问题
-        answer = llm.invoke(
+        answer_analysis = llm.invoke(
             {"docs": graph_docs, "question": self.question, "dk": self.dk},
             self.sub_question_answer,
             with_except=True,
