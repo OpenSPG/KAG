@@ -15,23 +15,25 @@ class LogicFormPlanPrompt(PromptOp):
   "task": "拆解子问题",
   "instruction": [
     "找出解决问题的核心关键步骤，总结为子问题。",
-    "参考函数的能力，将子问题分配给合适的函数进行处理。",
-    "参考failed_cases中失败的尝试，其中已回答的子问题不要修改，无法回答的子问题，必须改变思路尝试其他拆解方式，生成新的子问题！"
+    "参考函数能力，将子问题分配给合适的函数进行处理。",
+    "参考failed_cases中失败的尝试，改变思路尝试其他拆解方式，生成新的子问题！"
   ],
   "pay_attention": [
-    "你的数学计算能力能力很差，必须使用PythonCoder对数学计算和数值比较问题进行求解。",
-    "子问题描述信息要完整，不要遗漏任何关键字，语义要清晰，利于理解。"
+    "你的数学计算能力能力很差，必须使用PythonCoder求解。",
+    "拆解子问题要详略得当，每个子问题可独立求解；子问题必须是核心关键步骤，而不是极度详细的执行步骤。",
+    "子问题描述信息要完整，不要遗漏任何关键字，语义要清晰，利于理解。",
+    "你有领域知识domain_knowledge可供参考"
   ],
   "output_format": [
     "输出json格式，output给出子问题列表",
     "每个子问题包含sub_question和process_function"
   ],
+  "domain_knowledge": "$dk",
   "functions": [
     {
       "functionName": "Retrieval",
       "description": "包含一个知识库，根据给出的检索条件(自然语言)，返回检索结果。",
       "pay_attention": [
-        "进行子项目召回时，为了保证数据完整性，子问题格式为：***的所有子项",
         "Retrieval的问题必须是具体明确的；不合格的问题：查找财务报表。具体明确的问题：查找2024年全年的净利润值。"
       ],
       "knowledge_base_content": "$kg_content",
@@ -39,7 +41,7 @@ class LogicFormPlanPrompt(PromptOp):
         {
           "knowledge_base_content": "中芯国际2024第3季度财务报表",
           "input": "从资产负债信息中召回流动资产的所有子项",
-          "output": "| 项目             | 2024年9月30日 | 2023年12月31日 |\n|------------------|---------------|----------------|\n| 流动资产：       |               |                |\n| 货币资金         | 29,878,544    | 51,235,370     |\n| 结算备付金       | -             | -              |\n| 拆出资金         | -             | -              |\n| 交易性金融资产   | 1,633,233     | 1,520,160      |\n| 衍生金融资产     | 494,335       | 303,397        |\n| 应收票据         | 528,810       | 442,456        |\n| 应收账款         | 3,428,498     | 3,501,291      |\n| 应收款项融资     | -             | -              |\n| 预付款项         | 552,591       | 751,860        |\n| 应收保费         | -             | -              |\n| 应收分保账款     | -             | -              |\n| 应收分保合同准备金 | -           | -              |\n| 其他应收款       | 230,987       | 160,063        |\n| 其中：应收利息   | -             | -              |\n| 应收股利         | -             | -              |\n| 买入返售金融资产 | -             | -              |\n| 存货             | 20,168,932    | 19,377,706     |\n| 其中：数据资源   | -             | -              |\n| 合同资产         | -             | -              |\n| 持有待售资产     | 154,434       | 156,033        |\n| 一年内到期的非流动资产 | 17,834,516 | 15,125,314  |\n| 其他流动资产     | 2,392,787     | 4,000,122      |\n| 流动资产合计     | 77,297,667    | 96,573,772     |"
+          "output": "略"
         }
       ]
     },
@@ -76,10 +78,10 @@ class LogicFormPlanPrompt(PromptOp):
       ]
     },
     {
-      "input": "471乘以473等于多少？",
+      "input": "找到两个数，他们的乘积为1038155，他们的和为2508",
       "output": [
         {
-          "sub_question": "计算471乘以473的结果",
+          "sub_question": "解方程组以找到满足条件的数：\n1. 两数乘积为 X * Y = 1038155\n2. 两数和为 X + Y = 2508\n使用数学方法或编程计算 X 和 Y 的具体值。",
           "process_function": "PythonCoder"
         }
       ]
@@ -113,7 +115,7 @@ class LogicFormPlanPrompt(PromptOp):
 
     @property
     def template_variables(self) -> List[str]:
-        return ["input", "kg_content", "history"]
+        return ["input", "kg_content", "history", "dk"]
 
     def parse_response(self, response: str, **kwargs):
         rsp = response

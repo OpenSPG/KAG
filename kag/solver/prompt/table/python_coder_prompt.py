@@ -18,10 +18,14 @@ class PythonCoderPrompt(PromptOp):
 
 # output format
 只输出python代码，不要输出其他任何内容。
-python代码版本为3.8
+python代码版本为3.8，包含sympy符号计算库。
 
 # pay attention
-context只作为参考，不要回答context中的问题，你只需要专注于回答question中的问题。
+context中包含上游子问题的答案，你在回答问题是必须要引入。
+context只作为参考，不要回答context中其他问题，你只需要专注于回答question中的问题。
+
+# domain_knowledge
+$dk
 
 # examples
 ## 例子1
@@ -92,7 +96,7 @@ $error
 
     @property
     def template_variables(self) -> List[str]:
-        return ["question", "context", "error"]
+        return ["question", "context", "error", "dk"]
 
     def parse_response(self, response: str, **kwargs):
         rsp = response

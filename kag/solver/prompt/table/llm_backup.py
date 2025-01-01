@@ -9,7 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class RespGenerator(PromptOp):
-    template_zh = "$question"
+    template_zh = """
+# 背景知识
+$dk
+
+# 问题
+$question
+"""
     template_en = template_zh
 
     def __init__(self, language: str):
@@ -17,7 +23,7 @@ class RespGenerator(PromptOp):
 
     @property
     def template_variables(self) -> List[str]:
-        return ["question"]
+        return ["dk", "question"]
 
     def parse_response(self, response: str, **kwargs):
         return response

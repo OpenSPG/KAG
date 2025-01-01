@@ -40,13 +40,16 @@ class SearchTreeNode:
 
 
 class SearchTree:
-    def __init__(self, root_question):
+    def __init__(self, root_question, dk=None):
         self.root_node = SearchTreeNode(root_question, "root")
         self.dag = nx.DiGraph()
         self.dag.add_node(self.root_node)
         self.now_processing_node = self.root_node
         self.now_plan = None
         self.faild_plan = []
+
+        # 领域知识，Domain Knowledge
+        self.dk = dk
 
         self.id_allocator = IDAllocator()
 
@@ -84,9 +87,9 @@ class SearchTree:
         return parents
 
     def __str__(self):
-        return self.as_subquestion_context()
+        return self.as_subquestion_context_json()
 
-    def as_subquestion_context(self):
+    def as_subquestion_context_json(self):
         """
         作为根节点的上下文
         """
@@ -97,7 +100,7 @@ class SearchTree:
                 if node.answer is not None:
                     return {f"{node.question}": [{"answer": f"{node.answer}"}]}
                 elif node == self.get_now_processing_node():
-                    return {f"{node.question}": [{"answer": "processing"}]}
+                    return {f"{node.question}": [{"answer": "当前正在处理的子问题"}]}
                 else:
                     return None
             children = sorted(children, key=lambda x: x.time_stamp)
@@ -106,14 +109,17 @@ class SearchTree:
                 result = build_tree_context(child)
                 if result is not None:
                     filtered_results.append(result)
+            answer_str = node.answer
+            if answer_str is None:
+                answer_str = "等待子问题解答中"
             return {
                 f"{node.question}": {
-                    "answer": node.answer,
+                    "answer": answer_str,
                     "children": filtered_results,
                 }
             }
 
-        context = f"subquestions_and_their_answers:\n{json.dumps(build_tree_context(self.root_node),ensure_ascii=False,indent=2)}"
+        context = f"Solution_Space_Tree:\n{json.dumps(build_tree_context(self.root_node),ensure_ascii=False,indent=2)}"
         return context
 
     def _graph_to_json(self):
@@ -178,7 +184,7 @@ class SearchTree:
                         question=tree_node.question,
                         answer=tree_node.answer,
                         logs=tree_node.answer_desc,
-                        subgraph=tree_node.sub_graph if tree_node.sub_graph else None
+                        subgraph=tree_node.sub_graph if tree_node.sub_graph else None,
                     )
                 )
                 pipeline.edges.append(
