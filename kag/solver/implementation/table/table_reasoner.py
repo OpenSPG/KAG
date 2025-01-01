@@ -42,7 +42,7 @@ class TableReasoner(KagReasonerABC):
         self.session_id = kwargs.get("session_id", 0)
         self.dk = self._query_dk()
 
-        self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan")(
+        self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan_table")(
             language=self.language
         )
 
