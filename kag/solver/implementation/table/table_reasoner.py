@@ -307,6 +307,7 @@ class TableReasoner(KagReasonerABC):
         answer = "\n".join(list(set([h["res"] for h in answer_history])))
         trace_log = self._merge_trace_log([h["trace_log"] for h in answer_history])
         self.update_node(node, answer, trace_log)
+        node.answer = answer
         return node.answer
 
     def _merge_trace_log(self, trace_logs):
