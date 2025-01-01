@@ -22,7 +22,7 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
 )
 from kag.solver.logic.core_modules.retriver.retrieval_spo import (
     FuzzyMatchRetrievalSpo,
-    ExactMatchRetrievalSpo,
+    ExactMatchRetrievalSpo, default_process_relation_key,
 )
 from kag.solver.logic.core_modules.common.base_model import (
     SPOBase,
@@ -45,6 +45,10 @@ from kag.solver.tools.graph_api.openspg_graph_api import (
 from kag.common.vectorizer import Vectorizer
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 
+def process_table_rel(rel: RelationData):
+    if rel.type in ['containRow', 'containColumn', 'containCell']:
+        return f"{rel.end_entity.name}"
+    return default_process_relation_key(rel)
 
 class TableRetrievalAgent(ChunkRetrieverABC):
     def __init__(self, init_question, question, dk, **kwargs):
@@ -64,7 +68,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
         self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
         self.fuzzy_match = FuzzyMatchRetrievalSpo(
-            text_similarity=self.text_similarity, llm=self.llm_module, KAG_PROMPT_BIZ_SCENE='finstate'
+            text_similarity=self.text_similarity, llm=self.llm_module, KAG_PROMPT_BIZ_SCENE='finstate', process_rel_func= process_table_rel
         )
 
         self.graph_api: OpenSPGGraphApi = OpenSPGGraphApi(
@@ -198,7 +202,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
             if onehop_graph_list is None or len(onehop_graph_list) <= 0:
                 # 没检索到数据
                 break
-            query = f"overall_goal: {self.init_question}, current_subquestion: {self.question}, current_step: {desc}"
+            query = desc
             n: GetSPONode = self._gen_get_spo_node(get_spo, query, kg_graph)
             total_one_kg_graph, matched_flag = self.fuzzy_match.match_spo(
                 n=n,
