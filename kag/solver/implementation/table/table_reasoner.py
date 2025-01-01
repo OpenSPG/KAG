@@ -46,6 +46,14 @@ class TableReasoner(KagReasonerABC):
         self.llm_backup = PromptOp.load(self.biz_scene, "llm_backup")(
             language=self.language
         )
+        self.resp_think_generator = PromptOp.load(self.biz_scene, "resp_think_generator")(
+            language=self.language
+        )
+
+        self.judge_prompt = PromptOp.load(self.biz_scene, "resp_judge")(
+            language=self.language
+        )
+
         self.report_tool: ReporterIntermediateProcessTool = kwargs.get(
             "report_tool", None
         )
@@ -101,9 +109,9 @@ class TableReasoner(KagReasonerABC):
                 # answer subquestion
                 sub_answer = None
                 if "Retrieval" == func_str:
-                    sub_answer = self._call_retravel_func(question, node)
+                    can_answer, sub_answer = self._call_retravel_func(question, node)
                 elif "PythonCoder" == func_str:
-                    sub_answer = self._call_python_coder_func(
+                    can_answer, sub_answer = self._call_python_coder_func(
                         init_question=question, node=node, history=history
                     )
                 else:
@@ -114,7 +122,7 @@ class TableReasoner(KagReasonerABC):
 
                 print("subquestion=" + str(sub_q_str) + ",answer=" + str(sub_answer))
                 # reflection
-                if sub_answer is None or "i don't know" in sub_answer.lower():
+                if not can_answer:
                     # 重新进行规划
                     sub_question_faild = True
                     break
@@ -129,20 +137,24 @@ class TableReasoner(KagReasonerABC):
                 # 所有子问题都被解答
                 break
         final_answer = "I don't know"
-        # 总结答案
+        # 判定答案
+        can_answer = self.llm_module.invoke({'memory': str(history), 'instruction': history.root_node.question}, self.judge_prompt,
+                                      with_json_parse=False, with_except=True)
         llm: LLMClient = self.llm_module
-        final_answer = llm.invoke(
-            {"memory": str(history), "question": history.root_node.question},
-            self.resp_generator,
-            with_except=True,
-        )
-        final_answer_form_llm = False
-        if final_answer is None or "i don't know" in final_answer.lower():
-            # 大模型兜底
+        if can_answer:
+            final_answer_form_llm = False
+            # 总结答案
+            final_answer = llm.invoke(
+                {"memory": str(history), "question": history.root_node.question},
+                self.resp_generator,
+                with_except=True,
+            )
+        else:
+            # 无法直接给出答案，则给出用户关心的信息
             final_answer_form_llm = True
             final_answer = llm.invoke(
-                {"question": history.root_node.question},
-                self.llm_backup,
+                {"memory": str(history), "question": history.root_node.question},
+                self.resp_think_generator,
                 with_except=True,
             )
         self.report_pipleline(history, final_answer, final_answer_form_llm)
@@ -238,7 +250,7 @@ class TableReasoner(KagReasonerABC):
             answer = history_log["history"][-1].get("sub_answer", "I don't know")
         else:
             answer = "I don't know"
-        return answer, [history_log]
+        return  "i don't know" not in answer.lower(), answer, [history_log]
 
     def _call_retravel_func(self, init_question, node: SearchTreeNode):
         table_retrical_agent = TableRetrievalAgent(
@@ -255,23 +267,23 @@ class TableReasoner(KagReasonerABC):
             # 等待任务完成并获取结果
             for i, future in enumerate(futures):
                 if 0 == i:
-                    res, trace_log = future.result()
+                    is_answer, res, trace_log = future.result()
                     answer_history.append({
                         "res": res,
                         "trace_log": trace_log
                     })
-                    if "i don't know" not in res.lower():
+                    if is_answer:
                         self.update_node(node, res, trace_log)
-                        return res
+                        return True, res
                 elif 1 == i:
-                    res, trace_log = future.result()
+                    is_answer, res, trace_log = future.result()
                     answer_history.append({
                         "res": res,
                         "trace_log": trace_log
                     })
-                    if "i don't know" not in res.lower():
+                    if is_answer:
                         self.update_node(node, res, trace_log)
-                        return res
+                        return True, res
             # 同时进行chunk求解
             futures = [
                 executor.submit(table_retrical_agent.answer),
@@ -280,21 +292,21 @@ class TableReasoner(KagReasonerABC):
             for i, future in enumerate(futures):
                 if 0 == i:
                     try:
-                        res, trace_log = future.result()
+                        is_answer, res, trace_log = future.result()
                         answer_history.append({
                             "res": res,
                             "trace_log": trace_log
                         })
-                        if "i don't know" not in res.lower():
+                        if is_answer:
                             self.update_node(node, res, trace_log)
-                            return res
+                            return True, res
                     except Exception as e:
                         logger.warning(f"table chunk failed {e}", exc_info=True)
         answer = "\n".join(list(set([h['res'] for h in answer_history])))
         trace_log = self._merge_trace_log([h['trace_log'] for h in answer_history])
         self.update_node(node, answer, trace_log)
         node.answer = answer
-        return node.answer
+        return False, node.answer
     def _merge_trace_log(self, trace_logs):
         context = []
         sub_graphs = []
@@ -328,7 +340,7 @@ class TableReasoner(KagReasonerABC):
         sub_answer, code = agent.answer()
         node.answer = sub_answer
         node.answer_desc = self._process_coder_desc(code)
-        return sub_answer
+        return (sub_answer is not None and  "i don't know" not in sub_answer.lower()), sub_answer
 
     def _process_coder_desc(self, coder_desc: str):
         # 拆分文本为行

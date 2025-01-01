@@ -64,7 +64,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         self.vectorizer: Vectorizer = Vectorizer.from_config(vectorizer_config)
         self.text_similarity = TextSimilarity(vec_config=vectorizer_config)
         self.fuzzy_match = FuzzyMatchRetrievalSpo(
-            text_similarity=self.text_similarity, llm=self.llm_module
+            text_similarity=self.text_similarity, llm=self.llm_module, KAG_PROMPT_BIZ_SCENE='finstate'
         )
 
         self.graph_api: OpenSPGGraphApi = OpenSPGGraphApi(
@@ -152,8 +152,25 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         s_nodes_with_desc = self.chunk_retriever._search_nodes_by_vector(
             self.question, "Table", threshold=0.5, topk=5, property_key="desc"
         )
-        table_name_list = [t["node"]["name"] for t in s_nodes] + [t["node"]["name"] for t in s_nodes_with_desc]
-        table_name_list = list(set(table_name_list))
+        s_table_info = {}
+        for node in s_nodes:
+            if node["node"]["name"] not in s_table_info:
+                s_table_info[node["node"]["name"]] = {
+                    "name": node["node"]["name"],
+                    "desc": node["node"].get("desc", ""),
+                    "content": node["node"].get("content", ""),
+                    "score": node["score"]
+                }
+        for node in s_nodes_with_desc:
+            if node["node"]["name"] not in s_table_info or node["score"] > s_table_info[node["node"]["name"]]["score"]:
+                s_table_info[node["node"]["name"]] = {
+                    "name": node["node"]["name"],
+                    "desc": node["node"].get("desc", ""),
+                    "content": node["node"].get("content", ""),
+                    "score": node["score"]
+                }
+
+        table_name_list = list(s_table_info.values())
         # table_name_list = [
         #     f"表名：{t['node']['name']}\n{t['node']['content']}" for t in s_nodes
         # ]
@@ -161,18 +178,20 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         # 生成get_spo符号
         llm: LLMClient = self.llm_module
         get_spo_list = llm.invoke(
-            {"input": self.question, "table_names": "\n".join(table_name_list)},
+            {"input": self.question, "table_names": "\n".join([str(d) for d in table_name_list])},
             self.gen_symbol,
             with_json_parse=False,
             with_except=True,
         )
 
         # 在图上查询
+        last_var = None
         kg_graph = KgGraph()
         for get_spo in get_spo_list:
             s = get_spo["s"]
             p = get_spo["p"]
             o = get_spo["o"]
+            last_var = o.get('var', None)
             desc = get_spo["desc"]
 
             onehop_graph_list = self._query_spo(s, p, o, kg_graph)
@@ -201,12 +220,16 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         self._table_kg_graph_with_desc(kg_graph_deep_copy)
         graph_docs = kg_graph_deep_copy.to_answer_path()
         graph_docs = json.dumps(graph_docs, ensure_ascii=False)
+        last_data = kg_graph_deep_copy.get_entity_by_alias(last_var)
+        if last_data:
+            graph_docs = [str(d) for d in last_data]
 
         # 回答子问题
-        answer = llm.invoke(
+        answer_analysis = llm.invoke(
             {"docs": graph_docs, "question": self.question},
             self.sub_question_answer,
             with_except=True,
+            with_json_parse=True
         )
 
         # 转换graph为可以页面可展示的格式
@@ -222,7 +245,7 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         context += cur_content
         history_log = {"report_info": {"context": context, "sub_graph": [sub_graph] if sub_graph else None}}
 
-        return answer, [history_log]
+        return answer_analysis.get("can_answer", 'no').lower() == "yes", answer_analysis.get('analysis', ""), [history_log]
 
     def _table_kg_graph_with_desc(self, kg_graph: KgGraph):
         table_cell_type = self.chunk_retriever.schema_util.get_label_within_prefix(
@@ -450,28 +473,32 @@ class TableRetrievalAgent(ChunkRetrieverABC):
         row_docs = self.recall_docs(query=self.question)
         print(f"rowdocs,query={self.question}\n{row_docs}")
         if len(row_docs) <= 0:
-            return "I don't know, Unable to find any relevant tables", None
+            return False, "I don't know, Unable to find any relevant tables", None
         rerank_docs = self.rerank_docs(queries=[], passages=row_docs)
         print(f"rerank,query={self.question}\n{rerank_docs}")
         if isinstance(rerank_docs, str) and "i don't know" in rerank_docs.lower():
-            return rerank_docs, None
+            return False, rerank_docs, None
         docs = "\n\n".join(rerank_docs)
         llm: LLMClient = self.llm_module
-        answer = llm.invoke(
+        answer_analysis = llm.invoke(
             {"docs": docs, "question": self.question},
             self.sub_question_answer,
             with_except=True,
         )
-        if "i don't know" in answer.lower():
+        can_answer = answer_analysis.get("can_answer", 'no')
+        answer_res = answer_analysis.get('analysis', "")
+        if "no" in can_answer.lower():
             # 尝试使用原始召回数据再回答一次
             docs = "\n\n".join(row_docs)
             llm: LLMClient = self.llm_module
-            answer = llm.invoke(
+            answer_analysis = llm.invoke(
                 {"docs": docs, "question": self.question},
                 self.sub_question_answer,
                 with_except=True,
             )
-        return answer, [{"report_info": {"context": docs, "sub_graph": None}}]
+            can_answer = answer_analysis.get("can_answer", 'no')
+            answer_res = answer_analysis.get('analysis', "")
+        return can_answer.lower() == "yes", answer_res, [{"report_info": {"context": docs, "sub_graph": None}}]
 
     def get_sub_item_reall(self, entities):
         index = self.question.find("的所有子项")
