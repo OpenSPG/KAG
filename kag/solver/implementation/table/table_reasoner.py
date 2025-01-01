@@ -46,7 +46,7 @@ class TableReasoner(KagReasonerABC):
             language=self.language
         )
 
-        self.resp_generator = PromptOp.load(self.biz_scene, "resp_generator")(
+        self.resp_generator = PromptOp.load(self.biz_scene, "resp_with_dk_generator")(
             language=self.language
         )
         self.llm_backup = PromptOp.load(self.biz_scene, "llm_backup")(
@@ -151,13 +151,13 @@ class TableReasoner(KagReasonerABC):
         final_answer = "I don't know"
         # 判定答案
         can_answer = self.llm_module.invoke({'memory': str(history), 'instruction': history.root_node.question, "dk": history.dk}, self.judge_prompt,
-                                      with_json_parse=False, with_except=True)
+                                      with_json_parse=True)
         llm: LLMClient = self.llm_module
         if can_answer:
             final_answer_form_llm = False
             # 总结答案
             final_answer = llm.invoke(
-                {"memory": str(history), "question": history.root_node.question},
+                {"memory": str(history), "question": history.root_node.question, "dk": history.dk},
                 self.resp_generator,
                 with_except=True,
             )
