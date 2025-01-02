@@ -42,6 +42,9 @@ class TableReasoner(KagReasonerABC):
         self.session_id = kwargs.get("session_id", 0)
         self.dk = self._query_dk()
 
+        self.direct_call_prompt = PromptOp.load(self.biz_scene, "direct_call")(
+            language=self.language
+        )
         self.logic_form_plan_prompt = PromptOp.load(self.biz_scene, "logic_form_plan_table")(
             language=self.language
         )
@@ -188,6 +191,7 @@ class TableReasoner(KagReasonerABC):
             variables=variables,
             prompt_op=self.logic_form_plan_prompt,
             with_except=True,
+            with_json_parse=True,
         )
         history.set_now_plan(sub_question_list)
         return sub_question_list

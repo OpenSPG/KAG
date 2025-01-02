@@ -106,8 +106,11 @@ class LLMClient:
         :raises NotImplementedError: If the subclass has not implemented this method
         """
         res = self(prompt)
-        _end = res.rfind("```")
         _start = res.find("```json")
+        if _start != -1:
+            _end =  len("```json") + res[_start + len("```json"):].find("```")
+        else:
+            _end = -1
         if _end != -1 and _start != -1:
             json_str = res[_start + len("```json"): _end].strip()
         else:

@@ -136,8 +136,11 @@ class OpenAIClient(LLMClient):
         """
         # Call the model and attempt to parse the response into JSON format
         rsp = self(prompt)
-        _end = rsp.rfind("```")
         _start = rsp.find("```json")
+        if _start != -1:
+            _end = len("```json") + rsp[_start + len("```json"):].find("```")
+        else:
+            _end = -1
         if _end != -1 and _start != -1:
             json_str = rsp[_start + len("```json"): _end].strip()
         else:
