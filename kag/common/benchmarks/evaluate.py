@@ -69,10 +69,19 @@ class Evaluate:
         # Return evaluation metrics dictionary
         return total_metrics
 
-
-    def getSummarizationMetrics(self, queries: List[str], answers1: List[str], answers2: List[str], *,
-                                api_key="EMPTY", base_url="http://127.0.0.1:38080/v1", model="gpt-4o-mini",
-                                language="English", retries=3, max_workers=50):
+    def getSummarizationMetrics(
+        self,
+        queries: List[str],
+        answers1: List[str],
+        answers2: List[str],
+        *,
+        api_key="EMPTY",
+        base_url="http://127.0.0.1:38080/v1",
+        model="gpt-4o-mini",
+        language="English",
+        retries=3,
+        max_workers=50,
+    ):
         """
         Calculates and returns QFS (query-focused summarization) evaluation metrics
         for the given queries, answers1 and answers2.
@@ -100,23 +109,39 @@ class Evaluate:
         all_items = "Score 1", "Score 2"
         average_metrics = {key: {item: 0.0 for item in all_items} for key in all_keys}
         success_count = 0
+
         def process_sample(index, query, answer1, answer2):
-            metrics = compare_summarization_answers(query, answer1, answer2,
-                                                    api_key=api_key, base_url=base_url, model=model,
-                                                    language=language, retries=retries)
+            metrics = compare_summarization_answers(
+                query,
+                answer1,
+                answer2,
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                language=language,
+                retries=retries,
+            )
             if metrics is None:
-                print(f"fail to compare answers of query {index + 1}.\n"
-                      f"      query: {query}\n"
-                      f"    answer1: {answer1}\n"
-                      f"    answer2: {answer2}\n")
+                print(
+                    f"fail to compare answers of query {index + 1}.\n"
+                    f"      query: {query}\n"
+                    f"    answer1: {answer1}\n"
+                    f"    answer2: {answer2}\n"
+                )
             else:
                 responses[index] = metrics
             return metrics
+
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(process_sample, index, query, answer1, answer2)
-                       for index, (query, answer1, answer2)
-                       in enumerate(zip(queries, answers1, answers2))]
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Evaluating: "):
+            futures = [
+                executor.submit(process_sample, index, query, answer1, answer2)
+                for index, (query, answer1, answer2) in enumerate(
+                    zip(queries, answers1, answers2)
+                )
+            ]
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc="Evaluating: "
+            ):
                 metrics = future.result()
                 if metrics is not None:
                     for key in all_keys:

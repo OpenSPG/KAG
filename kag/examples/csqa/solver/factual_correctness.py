@@ -1,5 +1,6 @@
 from tenacity import retry, stop_after_attempt
 
+
 class FactualCorrectnessEvaluator(object):
     def __init__(self):
         import os
@@ -63,7 +64,9 @@ class FactualCorrectnessEvaluator(object):
         import json
         from openai import OpenAI
 
-        prompt = 'Given the following QUESTION, GROUND-TRUTH ANSWER and ANSWER you must analyze the provided answer and determine whether it is faithful to the contents of the GROUND-TRUTH ANSWER.\n The ANSWER must not offer new information beyond the context provided in the GROUND-TRUTH ANSWER. The ANSWER also must not contradict information provided in the GROUND-TRUTH ANSWER. Output your final verdict by strictly following this format: "PASS" if the answer is faithful to the GROUND-TRUTH ANSWER and "FAIL" if the answer is not faithful to the GROUND-TRUTH ANSWER. Show your reasoning.\n --\n QUESTION:\n{}\n --\n GROUND-TRUTH ANSWER:{}\n--\nANSWER:{}\n--\n Your output should be in JSON FORMAT with the keys "REASONING" and "SCORE": {{"REASONING": <your reasoning as bullet points>, "SCORE": <your final score>}}'.format(item["question"], item["groundtruth_answer"], item["answer"])
+        prompt = 'Given the following QUESTION, GROUND-TRUTH ANSWER and ANSWER you must analyze the provided answer and determine whether it is faithful to the contents of the GROUND-TRUTH ANSWER.\n The ANSWER must not offer new information beyond the context provided in the GROUND-TRUTH ANSWER. The ANSWER also must not contradict information provided in the GROUND-TRUTH ANSWER. Output your final verdict by strictly following this format: "PASS" if the answer is faithful to the GROUND-TRUTH ANSWER and "FAIL" if the answer is not faithful to the GROUND-TRUTH ANSWER. Show your reasoning.\n --\n QUESTION:\n{}\n --\n GROUND-TRUTH ANSWER:{}\n--\nANSWER:{}\n--\n Your output should be in JSON FORMAT with the keys "REASONING" and "SCORE": {{"REASONING": <your reasoning as bullet points>, "SCORE": <your final score>}}'.format(
+            item["question"], item["groundtruth_answer"], item["answer"]
+        )
         client = OpenAI(
             api_key=self._evaluator_llm_kwargs["api_key"],
             base_url=self._evaluator_llm_kwargs["base_url"],
@@ -94,16 +97,20 @@ class FactualCorrectnessEvaluator(object):
 
     def _process_item(self, item):
         results = {}
-        results["kag"] = self._check_factual_correctness({
-            "question": item["question"],
-            "groundtruth_answer": item["groundtruth_answer"],
-            "answer": item["kag_answer"],
-        })
-        results["lightrag"] = self._check_factual_correctness({
-            "question": item["question"],
-            "groundtruth_answer": item["groundtruth_answer"],
-            "answer": item["lightrag_answer"],
-        })
+        results["kag"] = self._check_factual_correctness(
+            {
+                "question": item["question"],
+                "groundtruth_answer": item["groundtruth_answer"],
+                "answer": item["kag_answer"],
+            }
+        )
+        results["lightrag"] = self._check_factual_correctness(
+            {
+                "question": item["question"],
+                "groundtruth_answer": item["groundtruth_answer"],
+                "answer": item["lightrag_answer"],
+            }
+        )
         return results
 
     def _get_metrics(self):
@@ -114,9 +121,13 @@ class FactualCorrectnessEvaluator(object):
         all_keys = "kag", "lightrag"
         metrics = {key: 0.0 for key in all_keys}
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(self._process_item, item)
-                       for item in self._questions_and_answers]
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Evaluating: "):
+            futures = [
+                executor.submit(self._process_item, item)
+                for item in self._questions_and_answers
+            ]
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc="Evaluating: "
+            ):
                 results = future.result()
                 for key in all_keys:
                     metrics[key] += results[key]
@@ -128,9 +139,11 @@ class FactualCorrectnessEvaluator(object):
         metrics = self._get_metrics()
         print(metrics)
 
+
 def main():
     evaluator = FactualCorrectnessEvaluator()
     evaluator.run()
+
 
 if __name__ == "__main__":
     main()

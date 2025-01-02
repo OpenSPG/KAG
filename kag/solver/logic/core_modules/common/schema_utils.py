@@ -165,6 +165,8 @@ class SchemaUtils:
                 s_name_zh = name_zh
                 p_name_en = relation.name
                 p_name_zh = relation.name_zh
+                if relation.object_type_name not in spg_schema:
+                    continue
                 spg_o_type = spg_schema[relation.object_type_name]
                 o_name_en = spg_o_type.name_en
                 o_name_zh = spg_o_type.name_zh
