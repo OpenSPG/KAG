@@ -48,29 +48,34 @@ class KAGConstants(object):
 
 class KAGGlobalConf:
     def __init__(self):
-        self._initialized = False
+        self._extra = {}
 
     def initialize(self, **kwargs):
-        if not self._initialized:
-            self.project_id = kwargs.pop(
-                KAGConstants.KAG_PROJECT_ID_KEY,
-                os.getenv(KAGConstants.ENV_KAG_PROJECT_ID, "1"),
-            )
-            self.host_addr = kwargs.pop(
-                KAGConstants.KAG_PROJECT_HOST_ADDR_KEY,
-                os.getenv(
-                    KAGConstants.ENV_KAG_PROJECT_HOST_ADDR, "http://127.0.0.1:8887"
-                ),
-            )
-            self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
-            self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
-            self.namespace = kwargs.pop(KAGConstants.KAG_NAMESPACE_KEY, None)
-            self.ckpt_dir = kwargs.pop(KAGConstants.KAG_CKPT_DIR_KEY, "ckpt")
-            for k, v in kwargs.items():
-                setattr(self, k, v)
-            self._initialized = True
-        else:
-            print("KAGGlobalConf has been initialized and cannot be initialized again!")
+        self.project_id = kwargs.pop(
+            KAGConstants.KAG_PROJECT_ID_KEY,
+            os.getenv(KAGConstants.ENV_KAG_PROJECT_ID, "1"),
+        )
+        self.host_addr = kwargs.pop(
+            KAGConstants.KAG_PROJECT_HOST_ADDR_KEY,
+            os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR, "http://127.0.0.1:8887"),
+        )
+        self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
+        self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
+        self.namespace = kwargs.pop(KAGConstants.KAG_NAMESPACE_KEY, None)
+        self.ckpt_dir = kwargs.pop(KAGConstants.KAG_CKPT_DIR_KEY, "ckpt")
+
+        # process configs set to class attr directly
+        for k in self._extra.keys():
+            if hasattr(self, k):
+                delattr(self, k)
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        self._extra = kwargs
+
+        print(
+            f"Done initialize project config with host addr {self.host_addr} and project_id {self.project_id}"
+        )
 
 
 def _closest_cfg(
@@ -124,31 +129,37 @@ def load_config(prod: bool = False):
             return {}
 
 
-def init_kag_config(config):
-    log_conf = config.get("log", {})
-    if log_conf:
-        log_level = log_conf.get("level", "INFO")
-    else:
-        log_level = "INFO"
-    logging.basicConfig(level=logging.getLevelName(log_level))
-    logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
-    logging.getLogger("neo4j.io").setLevel(logging.INFO)
-    logging.getLogger("neo4j.pool").setLevel(logging.INFO)
-
-
 class KAGConfigMgr:
     def __init__(self):
         self.config = {}
         self.global_config = KAGGlobalConf()
-        self._is_initialize = False
+        self._is_initialized = False
+
+    def init_log_config(self, config):
+        log_conf = config.get("log", {})
+        if log_conf:
+            log_level = log_conf.get("level", "INFO")
+        else:
+            log_level = "INFO"
+        logging.basicConfig(level=logging.getLevelName(log_level))
+        logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
+        logging.getLogger("neo4j.io").setLevel(logging.INFO)
+        logging.getLogger("neo4j.pool").setLevel(logging.INFO)
 
     def initialize(self, prod: bool = True):
+        config = load_config(prod)
+        if self._is_initialized:
+            print(
+                "Reinitialize the KAG configuration, an operation that should exclusively be triggered within the Java invocation context."
+            )
+            print(f"original config: {self.config}")
+            print(f"new config: {config}")
         self.prod = prod
-        self.config = load_config(prod)
+        self.config = config
         global_config = self.config.get(KAGConstants.PROJECT_CONFIG_KEY, {})
         self.global_config.initialize(**global_config)
-        init_kag_config(self.config)
-        self._is_initialize = True
+        self.init_log_config(self.config)
+        self._is_initialized = True
 
     @property
     def all_config(self):
