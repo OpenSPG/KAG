@@ -10,7 +10,7 @@ answers with those from other RAG systems.
 
 ## Steps to reproduce
 
-1. Follow the Quick Start guide of KAG to install OpenSPG server and KAG.
+1. Follow the Quick Start guide of KAG to install the OpenSPG server and KAG.
 
    The following steps assume the Python virtual environment with KAG installed
    is activated and the current directory is [csqa](.).
@@ -24,9 +24,10 @@ answers with those from other RAG systems.
    python generate_data.py
    ```
 
-3. Update the ``llm`` and ``vectorizer_model`` configurations in [kag_config.yaml](./kag_config.yaml)
-   properly. The ``splitter`` and ``num_threads_per_chain`` configurations
-   may also be updated to match with other systems.
+3. Update the ``openie_llm``, ``chat_llm`` and ``vectorizer_model`` configurations
+   in [kag_config.yaml](./kag_config.yaml) properly.
+   The ``splitter`` and ``num_threads_per_chain`` configurations may also be updated
+   to match with other systems.
 
 4. Restore the KAG project.
 
@@ -67,3 +68,17 @@ answers with those from other RAG systems.
    python ./solver/summarization_metrics.py
    python ./solver/factual_correctness.py
    ```
+
+10. (Optional) To delete checkpoints, execute the following commands.
+
+    ```bash
+    rm -rf ./builder/ckpt
+    rm -rf ./solver/ckpt
+    ```
+
+    To delete the KAG project and related knowledge graph, execute the following similar command.
+    Replace the OpenSPG server address and KAG project id with actual values.
+
+    ```bash
+    curl http://127.0.0.1:8887/project/api/delete?projectId=1
+    ```
