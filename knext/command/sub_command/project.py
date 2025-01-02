@@ -27,7 +27,9 @@ from knext.project.client import ProjectClient
 from knext.common.env import env, DEFAULT_HOST_ADDR
 
 from kag.common.llm.llm_config_checker import LLMConfigChecker
-from kag.common.vectorize_model.vectorize_model_config_checker import VectorizeModelConfigChecker   
+from kag.common.vectorize_model.vectorize_model_config_checker import (
+    VectorizeModelConfigChecker,
+)
 from shutil import copy2
 
 yaml = YAML()
@@ -169,8 +171,8 @@ def create_project(
     config = yaml.load((Path(project_dir) / "kag_config.yaml").read_text() or "{}")
     client.update(id=project_id, config=json.dumps(config))
 
-    if delete_cfg:
-        os.remove(env.config_path)
+    if delete_cfg and os.path.exists(config_path):
+        os.remove(config_path)
 
     click.secho(
         f"Project with namespace [{namespace}] was successfully created in {project_dir.resolve()} \n"

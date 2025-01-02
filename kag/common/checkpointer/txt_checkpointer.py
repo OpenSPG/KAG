@@ -87,3 +87,6 @@ class TxtCheckPointer(CheckPointer):
 
     def size(self):
         return len(self._ckpt)
+
+    def keys(self):
+        return set(self._ckpt.keys())

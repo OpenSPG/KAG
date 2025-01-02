@@ -111,6 +111,16 @@ class CheckPointer(Registrable):
         """
         raise NotImplementedError("close not implemented yet.")
 
+    def keys(self):
+        """
+        Returns the key set contained in the checkpoint file.
+
+        Returns:
+            set:  The key set contained in the checkpoint.
+        """
+
+        raise NotImplementedError("keys not implemented yet.")
+
     def size(self):
         """
         Return the number of records in the checkpoint file.

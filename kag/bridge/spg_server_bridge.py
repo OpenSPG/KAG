@@ -9,8 +9,17 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
 import json
 import kag.interface as interface
+from kag.common.conf import KAGConstants, init_env
+
+
+def init_kag_config(project_id: str, host_addr: str):
+
+    os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = project_id
+    os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = host_addr
+    init_env()
 
 
 class SPGServerBridge:

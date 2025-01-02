@@ -25,9 +25,9 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '9'
+  id: "1"
   language: en
-  namespace: HotpotQA
+  namespace: TwoWikiTest
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
@@ -60,7 +60,7 @@ kag_builder_pipeline:
   num_threads_per_chain: 1
   num_chains: 16
   scanner:
-    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
@@ -118,7 +118,7 @@ kag_solver_pipeline:
     type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
     generate_prompt:
-      type: resp_simple # kag/examples/hotpotqa/solver/prompt/resp_generator.py
+      type: resp_simple # kag/examples/2wiki/solver/prompt/resp_generator.py
   reflector:
     type: default_reflector # kag.solver.implementation.default_reflector.DefaultReflector
     llm_client: *chat_llm

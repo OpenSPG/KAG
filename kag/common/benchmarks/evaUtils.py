@@ -122,9 +122,17 @@ def get_em_f1(prediction, gold):
     return float(em), f1
 
 
-def compare_summarization_answers(query, answer1, answer2, *,
-                                  api_key="EMPTY", base_url="http://127.0.0.1:38080/v1", model="gpt-4o-mini",
-                                  language="English", retries=3):
+def compare_summarization_answers(
+    query,
+    answer1,
+    answer2,
+    *,
+    api_key="EMPTY",
+    base_url="http://127.0.0.1:38080/v1",
+    model="gpt-4o-mini",
+    language="English",
+    retries=3,
+):
     """
     Given a query and two answers, compare the answers with an LLM for Comprehensiveness, Diversity and Empowerment.
 
@@ -213,7 +221,7 @@ def compare_summarization_answers(query, answer1, answer2, *,
                 messages=[
                     {"role": "system", "content": sys_prompt},
                     {"role": "user", "content": prompt},
-                ]
+                ],
             )
             content = response.choices[0].message.content
             if content.startswith("```json") and content.endswith("```"):
@@ -222,11 +230,13 @@ def compare_summarization_answers(query, answer1, answer2, *,
             return metrics
         except Exception:
             if index == retries - 1:
-                message = (f"Comparing summarization answers failed.\n"
-                           f"query: {query}\n"
-                           f"answer1: {answer1}\n"
-                           f"answer2: {answer2}\n"
-                           f"content: {content}\n"
-                           f"exception:\n{traceback.format_exc()}")
+                message = (
+                    f"Comparing summarization answers failed.\n"
+                    f"query: {query}\n"
+                    f"answer1: {answer1}\n"
+                    f"answer2: {answer2}\n"
+                    f"content: {content}\n"
+                    f"exception:\n{traceback.format_exc()}"
+                )
                 print(message)
                 return None
