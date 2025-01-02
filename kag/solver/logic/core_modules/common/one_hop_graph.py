@@ -559,18 +559,18 @@ class OneHopGraphData:
                         spo_list.append(self._prase_attribute_relation(p, spo_text))
         return spo_list
 
-    def get_std_p_value_by_spo_text(self, p, spo_text, process_rel_func):
+    def get_std_p_value_by_spo_text(self, p, spo_text):
         relation_value_set = []
         if p in self.in_relations.keys():
             for rel in self.in_relations[p]:
-                if spo_text == process_rel_func(rel):
+                if spo_text == str(rel).strip('(').strip(')'):
                     if "s" == self.s_alias_name:
                         relation_value_set.append(rel.revert_spo())
                     else:
                         relation_value_set.append(rel)
         if p in self.out_relations.keys():
             for rel in self.out_relations[p]:
-                if spo_text == process_rel_func(rel):
+                if spo_text == str(rel).strip('(').strip(')'):
                     if "o" == self.s_alias_name:
                         relation_value_set.append(rel.revert_spo())
                     else:
@@ -597,7 +597,7 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.in_relations[k]:
-                    spo_list.append(v)
+                    spo_list.append(str(v).strip('(').strip(')'))
                 relation_name_set_map[k] = spo_list
         if len(self.out_relations) > 0:
             for k in self.out_relations.keys():
@@ -605,7 +605,7 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.out_relations[k]:
-                    spo_list.append(v)
+                    spo_list.append(str(v).strip('(').strip(')'))
                 relation_name_set_map[k] = spo_list
         return relation_name_set_map
 

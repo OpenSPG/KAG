@@ -167,9 +167,6 @@ class ExactMatchRetrievalSpo(RetrievalSpoBase):
             matched_flag = True
         return one_kg_graph, matched_flag
 
-def default_process_relation_key(rel: RelationData):
-    return str(rel).strip('(').strip(')')
-
 
 class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
     def __init__(self, text_similarity: TextSimilarity = None, llm: LLMClient=None, **kwargs):
@@ -181,8 +178,6 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
 
         self.biz_scene = kwargs.get("KAG_PROMPT_BIZ_SCENE") or os.getenv("KAG_PROMPT_BIZ_SCENE", "default")
         self.language = os.getenv("KAG_PROMPT_LANGUAGE", "en")
-
-        self.process_rel_func = kwargs.get("process_rel_func", default_process_relation_key)
 
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_zh()
@@ -266,8 +261,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
             for k, v_set in one_hop_graph.get_s_all_relation_spo().items():
                 if k in ['similarity', 'source']:
                     continue
-                for rel in v_set:
-                    v = self.process_rel_func(rel)
+                for v in v_set:
                     all_spo_text.append(v)
                     revert_value_p_map[v] = k
                     revert_graph_map[v] = one_hop_graph
@@ -307,7 +301,7 @@ class FuzzyMatchRetrievalSpo(RetrievalSpoBase):
                 continue
             matched_flag = True
             one_hop_graph = revert_graph_map[std_spo_text]
-            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text, self.process_rel_func)
+            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text)
             one_kg_graph_ = KgGraph()
             recall_alias_name = n.s.alias_name if one_hop_graph.s_alias_name == "s" else n.o.alias_name
             one_kg_graph_.entity_map[recall_alias_name] = [one_hop_graph.s]
