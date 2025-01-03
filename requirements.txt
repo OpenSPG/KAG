@@ -37,5 +37,11 @@ openai
 python-docx
 charset_normalizer==3.3.2
 pdfminer.six==20231228
-openspg-knext==0.5.2b2
 ollama
+tenacity
+pyhocon
+scikit-learn
+zodb
+matplotlib
+PyPDF2
+ruamel.yaml
