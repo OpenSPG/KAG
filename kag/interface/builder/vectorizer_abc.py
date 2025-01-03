@@ -9,17 +9,18 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from abc import ABC, abstractmethod
-from typing import List
 
-from kag.builder.component.base import BuilderComponent
+from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
 
 
-class VectorizerABC(BuilderComponent, ABC):
+class VectorizerABC(BuilderComponent):
     """
-    Interface for vectorizer.
+    Abstract base class for generating embedding vectors for node attributes in a graph.
+
+    This class defines the interface for generating embedding vectors for node attributes
+    in a SubGraph. It inherits from BuilderComponent, ensuring that any subclass must implement
+    the `invoke` method.
     """
 
     @property
@@ -30,8 +31,6 @@ class VectorizerABC(BuilderComponent, ABC):
     def output_types(self):
         return SubGraph
 
-    @abstractmethod
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    # @property
+    # def ckpt_subdir(self):
+    #     return "vectorizer"

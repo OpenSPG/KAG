@@ -9,17 +9,18 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import os
 from collections import defaultdict
 from typing import List
+from tenacity import stop_after_attempt, retry
 
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
-from kag.common.vectorizer import Vectorizer
-from kag.interface.builder.vectorizer_abc import VectorizerABC
+from kag.common.conf import KAG_PROJECT_CONF
+
+from kag.common.utils import get_vector_field_name
+from kag.interface import VectorizerABC, VectorizeModelABC
 from knext.schema.client import SchemaClient
-from knext.project.client import ProjectClient
 from knext.schema.model.base import IndexTypeEnum
+from knext.common.base.runnable import Input, Output
 
 
 class EmbeddingVectorPlaceholder(object):
@@ -43,22 +44,15 @@ class EmbeddingVectorManager(object):
     def __init__(self):
         self._placeholders = []
 
-    def _create_vector_field_name(self, property_key):
-        from kag.common.utils import to_snake_case
-
-        name = f"{property_key}_vector"
-        name = to_snake_case(name)
-        return "_" + name
-
     def get_placeholder(self, properties, vector_field):
         for property_key, property_value in properties.items():
-            field_name = self._create_vector_field_name(property_key)
+            field_name = get_vector_field_name(property_key)
             if field_name != vector_field:
                 continue
             if not property_value:
                 return None
             if not isinstance(property_value, str):
-                message = f"property {property_key!r} must be string to generate embedding vector"
+                message = f"property {property_key!r} must be string to generate embedding vector, got {property_value} with type {type(property_value)}"
                 raise RuntimeError(message)
             num = len(self._placeholders)
             placeholder = EmbeddingVectorPlaceholder(
@@ -78,11 +72,10 @@ class EmbeddingVectorManager(object):
         return text_batch
 
     def _generate_vectors(self, vectorizer, text_batch, batch_size=32):
-        if isinstance(text_batch, str):
-            text_batch = [text_batch]
         texts = list(text_batch)
         if not texts:
             return []
+
         if len(texts) % batch_size == 0:
             n_batchs = len(texts) // batch_size
         else:
@@ -99,9 +92,9 @@ class EmbeddingVectorManager(object):
             for placeholder in placeholders:
                 placeholder._embedding_vector = vector
 
-    def batch_generate(self, vectorizer):
+    def batch_generate(self, vectorizer, batch_size=32):
         text_batch = self._get_text_batch()
-        vectors = self._generate_vectors(vectorizer, text_batch)
+        vectors = self._generate_vectors(vectorizer, text_batch, batch_size)
         self._fill_vectors(vectors, text_batch)
 
     def patch(self):
@@ -115,7 +108,7 @@ class EmbeddingVectorGenerator(object):
         self._extra_labels = extra_labels
         self._vector_index_meta = vector_index_meta or {}
 
-    def batch_generate(self, node_batch):
+    def batch_generate(self, node_batch, batch_size=32):
         manager = EmbeddingVectorManager()
         vector_index_meta = self._vector_index_meta
         for node_item in node_batch:
@@ -132,41 +125,49 @@ class EmbeddingVectorGenerator(object):
                     placeholder = manager.get_placeholder(properties, vector_field)
                     if placeholder is not None:
                         properties[vector_field] = placeholder
-        manager.batch_generate(self._vectorizer)
+        manager.batch_generate(self._vectorizer, batch_size)
         manager.patch()
 
 
+@VectorizerABC.register("batch")
+@VectorizerABC.register("batch_vectorizer")
 class BatchVectorizer(VectorizerABC):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.project_id = self.project_id or os.getenv("KAG_PROJECT_ID")
-        self._init_graph_store()
-        self.vec_meta = self._init_vec_meta()
-        self.vectorizer = Vectorizer.from_config(self.vectorizer_config)
+    """
+    A class for generating embedding vectors for node attributes in a SubGraph in batches.
 
-    def _init_graph_store(self):
+    This class inherits from VectorizerABC and provides the functionality to generate embedding vectors
+    for node attributes in a SubGraph in batches. It uses a specified vectorization model and processes
+    the nodes of a specified batch size.
+
+    Attributes:
+        project_id (int): The ID of the project associated with the SubGraph.
+        vec_meta (defaultdict): Metadata for vector fields in the SubGraph.
+        vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
+        batch_size (int): The size of the batches in which to process the nodes.
+    """
+
+    def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 32):
         """
-        Initializes the Graph Store client.
-
-        This method retrieves the graph store configuration from environment variables and the project ID.
-        It then fetches the project configuration using the project ID and updates the graph store configuration
-        with any additional settings from the project. Finally, it creates and initializes the graph store client
-        using the updated configuration.
+        Initializes the BatchVectorizer with the specified vectorization model and batch size.
 
         Args:
-            project_id (str): The id of project.
-
-        Returns:
-            GraphStore
+            vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
+            batch_size (int): The size of the batches in which to process the nodes. Defaults to 32.
         """
-        graph_store_config = eval(os.getenv("KAG_GRAPH_STORE", "{}"))
-        vectorizer_config = eval(os.getenv("KAG_VECTORIZER", "{}"))
-        config = ProjectClient().get_config(self.project_id)
-        graph_store_config.update(config.get("graph_store", {}))
-        vectorizer_config.update(config.get("vectorizer", {}))
-        self.vectorizer_config = vectorizer_config
+        super().__init__()
+        self.project_id = KAG_PROJECT_CONF.project_id
+        # self._init_graph_store()
+        self.vec_meta = self._init_vec_meta()
+        self.vectorize_model = vectorize_model
+        self.batch_size = batch_size
 
     def _init_vec_meta(self):
+        """
+        Initializes the vector metadata for the SubGraph.
+
+        Returns:
+            defaultdict: Metadata for vector fields in the SubGraph.
+        """
         vec_meta = defaultdict(list)
         schema_client = SchemaClient(project_id=self.project_id)
         spg_types = schema_client.load()
@@ -176,32 +177,31 @@ class BatchVectorizer(VectorizerABC):
                     IndexTypeEnum.Vector,
                     IndexTypeEnum.TextAndVector,
                 ]:
-                    vec_meta[type_name].append(
-                        self._create_vector_field_name(prop_name)
-                    )
+                    vec_meta[type_name].append(get_vector_field_name(prop_name))
         return vec_meta
 
-    def _create_vector_field_name(self, property_key):
-        from kag.common.utils import to_snake_case
+    @retry(stop=stop_after_attempt(3))
+    def _generate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
+        """
+        Generates embedding vectors for the nodes in the input SubGraph.
 
-        name = f"{property_key}_vector"
-        name = to_snake_case(name)
-        return "_" + name
+        Args:
+            input_subgraph (SubGraph): The SubGraph for which to generate embedding vectors.
 
-    def _generate_embedding_vectors(
-        self, vectorizer: Vectorizer, input: SubGraph
-    ) -> SubGraph:
+        Returns:
+            SubGraph: The modified SubGraph with generated embedding vectors.
+        """
         node_list = []
         node_batch = []
-        for node in input.nodes:
+        for node in input_subgraph.nodes:
             if not node.id or not node.name:
                 continue
             properties = {"id": node.id, "name": node.name}
             properties.update(node.properties)
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
-        generator = EmbeddingVectorGenerator(vectorizer, self.vec_meta)
-        generator.batch_generate(node_batch)
+        generator = EmbeddingVectorGenerator(self.vectorize_model, self.vec_meta)
+        generator.batch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(
             node_list, node_batch
         ):
@@ -209,8 +209,18 @@ class BatchVectorizer(VectorizerABC):
                 if key in new_properties and new_properties[key] == value:
                     del new_properties[key]
             node.properties.update(new_properties)
-        return input
+        return input_subgraph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        modified_input = self._generate_embedding_vectors(self.vectorizer, input)
+    def _invoke(self, input_subgraph: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the generation of embedding vectors for the input SubGraph.
+
+        Args:
+            input_subgraph (Input): The SubGraph for which to generate embedding vectors.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list containing the modified SubGraph with generated embedding vectors.
+        """
+        modified_input = self._generate_embedding_vectors(input_subgraph)
         return [modified_input]

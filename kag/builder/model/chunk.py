@@ -9,9 +9,10 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import hashlib
 from enum import Enum
 from typing import Dict, Any
+from kag.common.utils import generate_hash_id
+import json
 
 
 class ChunkTypeEnum(str, Enum):
@@ -26,29 +27,27 @@ class Chunk:
         name: str,
         content: str,
         type: ChunkTypeEnum = ChunkTypeEnum.Text,
-        **kwargs
+        **kwargs,
     ):
         self.id = id
         self.name = name
         self.type = type
         self.content = content
         self.kwargs = kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-    @staticmethod
-    def generate_hash_id(value):
-        if isinstance(value, str):
-            value = value.encode("utf-8")
-        hasher = hashlib.sha256()
-        hasher.update(value)
-        return hasher.hexdigest()
+    @property
+    def hash_key(self):
+        return generate_hash_id(f"{self.id}{self.name}{self.content}")
 
     def __str__(self):
         tmp = {
             "id": self.id,
             "name": self.name,
-            "content": self.content
-            if len(self.content) <= 64
-            else self.content[:64] + " ...",
+            "content": (
+                self.content if len(self.content) <= 64 else self.content[:64] + " ..."
+            ),
         }
         return f"<Chunk>: {tmp}"
 
@@ -59,7 +58,9 @@ class Chunk:
             "id": self.id,
             "name": self.name,
             "content": self.content,
-            "type": self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type,
+            "type": (
+                self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type
+            ),
             "properties": self.kwargs,
         }
 
@@ -72,3 +73,10 @@ class Chunk:
             type=input_.get("type"),
             **input_.get("properties", {}),
         )
+
+
+def dump_chunks(chunks, **kwargs):
+    if kwargs.get("output_path"):
+        with open(kwargs.get("output_path"), "w") as f:
+            for chunk in chunks:
+                f.write(json.dumps(chunk.to_dict(), ensure_ascii=False) + "\n")

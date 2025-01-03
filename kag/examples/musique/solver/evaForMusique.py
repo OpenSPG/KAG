@@ -5,15 +5,13 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
-
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.solver.implementation.default_kg_retrieval import KGRetrieverByLlm
-from kag.solver.implementation.default_reasoner import DefaultReasoner
-from kag.solver.implementation.lf_chunk_retriever import LFChunkRetriever
-from kag.solver.logic.core_modules.lf_solver import LFSolver
 from kag.solver.logic.solver_pipeline import SolverPipeline
+
+from kag.common.checkpointer import CheckpointerManager
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +25,14 @@ class EvaForMusique:
         pass
 
     def qa(self, query):
-        resp = SolverPipeline()
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, trace_log = resp.run(query)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
 
     def qaWithoutLogicForm(self, query):
-        # CA
-        lf_solver = LFSolver(chunk_retriever=LFChunkRetriever(),
-                             kg_retriever=KGRetrieverByLlm())
-        reasoner = DefaultReasoner(lf_planner=LFPlannerABC(), lf_solver=lf_solver)
-        resp = SolverPipeline(reasoner=reasoner)
+        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["resp_solver_pipeline"])
         answer, trace_log = resp.run(query)
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
@@ -49,15 +43,24 @@ class EvaForMusique:
     """
 
     def parallelQaAndEvaluate(
-            self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
+        self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
+        ckpt = CheckpointerManager.get_checkpointer(
+            {"type": "zodb", "ckpt_dir": "ckpt"}
+        )
+
         def process_sample(data):
             try:
                 sample_idx, sample = data
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction, traceLog = self.qa(question)
+                if question in ckpt:
+                    print(f"found existing answer to question: {question}")
+                    prediction, traceLog = ckpt.read_from_ckpt(question)
+                else:
+                    prediction, traceLog = self.qa(question)
+                    ckpt.write_to_ckpt(question, (prediction, traceLog))
 
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
@@ -83,9 +86,9 @@ class EvaForMusique:
                 for sample_idx, sample in enumerate(qaList[:upperLimit])
             ]
             for future in tqdm(
-                    as_completed(futures),
-                    total=len(futures),
-                    desc="parallelQaAndEvaluate completing: ",
+                as_completed(futures),
+                total=len(futures),
+                desc="parallelQaAndEvaluate completing: ",
             ):
                 result = future.result()
                 if result is not None:
@@ -115,20 +118,20 @@ class EvaForMusique:
                 res_metrics[item_key] = item_value / total_metrics["processNum"]
             else:
                 res_metrics[item_key] = total_metrics["processNum"]
+        CheckpointerManager.close()
         return res_metrics
 
 
 if __name__ == "__main__":
+    import_modules_from_path("./prompt")
     delay_run(hours=0)
     evaObj = EvaForMusique()
 
     start_time = time.time()
     filePath = "./data/musique_qa_sub.json"
-    #filePath = "./data/musique_qa_train.json"
+    # filePath = "./data/musique_qa_train.json"
 
-    qaFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), filePath
-    )
+    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"musique_res_{start_time}.json"
     )
@@ -136,7 +139,7 @@ if __name__ == "__main__":
         qaFilePath, resFilePath, threadNum=20, upperLimit=10000
     )
 
-    total_metrics['cost'] = time.time() - start_time
+    total_metrics["cost"] = time.time() - start_time
     with open(f"./musique_metrics_{start_time}.json", "w") as f:
         json.dump(total_metrics, f)
     print(total_metrics)
