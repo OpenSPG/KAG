@@ -3,7 +3,7 @@
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
-In this example, all the data are structured. There are two main capabilities required in this example:
+In this example, all the data are structured. There are two main capabilities required in to import the data:
 
 * Structured Mapping: The original data and the schema-defined fields are not completely consistent, so a data field mapping process needs to be defined.
 

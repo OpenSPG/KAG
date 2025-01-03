@@ -140,7 +140,7 @@ Company(企业): EntityType
             ]]
 ```
 
-具体内容可参见 [企业供应链查询](../reasoner/README_cn.md) 中场景一、场景二的示例。
+具体内容可参见 [图谱查询](../reasoner/README_cn.md) 中场景 1、场景 2 的示例。
 
 ### 2.3 概念体系 vs 实体体系
 
@@ -187,5 +187,5 @@ CompanyEvent(公司事件): EventType
         belongTo(属于): TaxOfCompanyEvent
 ```
 
-上述的事件中，属性类型均为已被定义类型，没有基本类型表达，SPG 基于此申明实现事件多元要素表达，具体应用示例可见 [企业供应链查询](../reasoner/README_cn.md) 中场景三的具体描述。
+上述的事件中，属性类型均为已被定义类型，没有基本类型表达，SPG 基于此申明实现事件多元要素表达，具体应用示例可见 [图谱查询](../reasoner/README_cn.md) 中场景 3 的具体描述。
 
