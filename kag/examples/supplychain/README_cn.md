@@ -11,7 +11,7 @@
 
 ## 2. 总览
 
-建模参考文件企业供应链图谱 schema，如下图示意。
+建模参考 [基于 SPG 建模的产业链企业图谱](./schema/README_cn.md)，如下图示意。
 
 ![KAG SupplyChain Schema Diagram](./images/kag-supplychain-schema-diag.gif)
 
@@ -27,7 +27,7 @@
 
 ### 3.1 前置条件
 
-参考文档 [快速开始](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17)，安装 KAG 及其依赖的 OpenSPG server。
+参考文档 [快速开始](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17) 安装 KAG 及其依赖的 OpenSPG server。
 
 ### 3.2 复现步骤
 
@@ -59,7 +59,7 @@ schema 文件已创建好，可执行如下命令提交。
 knext schema commit
 ```
 
-提交 leadto 关系逻辑规则。
+提交 *leadto* 关系逻辑规则。
 
 ```bash
 knext schema reg_concept_rule --file ./schema/concept.rule
@@ -89,7 +89,7 @@ knext reasoner execute --dsl "${ql}"
 
 具体任务详情可参见文档 [产业链企业信用图谱查询任务](./reasoner/README_cn.md)。
 
-信用评级因子获取：
+查询信用评级因子：
 
 ```bash
 knext reasoner execute --dsl "

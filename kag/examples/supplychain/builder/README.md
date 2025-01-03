@@ -1,4 +1,4 @@
-# Knowledge Graph Construction
+# Enterprise Supply Chain Case Knowledge Graph Construction
 
 [English](./README.md) |
 [简体中文](./README_cn.md)

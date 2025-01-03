@@ -1,4 +1,4 @@
-# Data Introduction
+# Introduction to Data of Enterprise Supply Chain
 
 [English](./README.md) |
 [简体中文](./README_cn.md)

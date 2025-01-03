@@ -1,4 +1,4 @@
-# Knowledge Modeling
+# Schema of Enterprise Supply Chain Knowledge Graph
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
@@ -100,7 +100,7 @@ CSF0000000254,北大*药*份限公司,"医疗器械批发,医药批发,制药,�
 
 Assuming the goal is to obtain the industry of a company. Based on the available data, the following query can be executed:
 
-```text
+```cypher
 MATCH
     (s:Company)-[:product]->(o:Product)-[:belongToIndustry]->(i:Industry)
 RETURN
@@ -146,7 +146,7 @@ Company(企业): EntityType
             ]]
 ```
 
-You can refer to the examples in Scenario 1 and Scenario 2 of the [Knowledge Graph Query](../reasoner/README.md) for specific details.
+You can refer to the examples in Scenario 1 and Scenario 2 of the [Enterprise Credit Graph Query Tasks in Supply Chain](../reasoner/README.md) for specific details.
 
 ### 2.3 Concepts vs Entities
 
@@ -193,5 +193,5 @@ CompanyEvent(公司事件): EventType
         belongTo(属于): TaxOfCompanyEvent
 ```
 
-In the above event, all attribute types are defined SPG types, without any basic type expressions. OpenSPG utilizes this declaration to implement the expression of multiple elements in an event. Specific application examples can be found in the detailed description of Scenario 3 in the [Knowledge Graph Query](../reasoner/README.md) document.
+In the above event, all attribute types are defined SPG types, without any basic type expressions. OpenSPG utilizes this declaration to implement the expression of multiple elements in an event. Specific application examples can be found in the detailed description of Scenario 3 in the [Enterprise Credit Graph Query Tasks in Supply Chain](../reasoner/README.md) document.
 

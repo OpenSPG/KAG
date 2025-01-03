@@ -1,4 +1,4 @@
-# Knowledge Graph Query
+# Enterprise Credit Graph Query Tasks in Supply Chain
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
@@ -184,7 +184,7 @@ Define (s:Compnay)-[p:sameLegalReprensentative]->(o:Company) {
 
 Obtaining specific features of a particular company through GQL using the following query:
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)
 RETURN
@@ -193,21 +193,21 @@ RETURN
     s.fundTrans6MonthIn, s.cashflowDiff1Month, s.cashflowDiff3Month, s.cashflowDiff6Month
 ```
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:mainSupply]->(o:SupplyChain.Company)
 RETURN
     s.id, o.id
 ```
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:belongToIndustry]->(o:SupplyChain.Industry)
 RETURN
     s.id, o.id
 ```
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:sameLegalRepresentative]->(o:SupplyChain.Company)
 RETURN
@@ -237,7 +237,7 @@ knext builder execute CompanyUpdate
 
 After the execution is completed, if you query again, only the Two-Wheeled Motorcycle will be returned, and the Three-Wheeled Motorcycle will no longer be associated.
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:product]->(o:SupplyChain.Product)
 WHERE
@@ -319,7 +319,7 @@ Define (s:`TaxonofProductChainEvent`/`价格上涨`)-[p:leadTo]->(o:`TaxonofComp
 
 You can find the impact of a specific event by using the following query statement.
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.ProductChainEvent)-[:leadTo]->(o:SupplyChain.CompanyEvent)
 RETURN
