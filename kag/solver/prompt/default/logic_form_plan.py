@@ -1,16 +1,14 @@
 import logging
 import re
-from string import Template
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
-from kag.common.base.prompt_op import PromptOp
 
-
-class LogicFormPlanPrompt(PromptOp):
+@PromptABC.register("default_logic_form_plan")
+class LogicFormPlanPrompt(PromptABC):
     instruct_zh = """"instruction": "",
     "function_description": "functionName为算子名;基本格式为 functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
     "function": [
@@ -36,7 +34,7 @@ class LogicFormPlanPrompt(PromptOp):
       },
       {
           "functionName": "get",
-          "function_declaration": "get(alias)",
+          "function_decl:aration": "get(alias)",
           "description": "返回指定的别名代表的信息，可以是实体、关系路径或get_spo中获取到的属性值；可作为最后的输出结果"
       }
     ],
@@ -89,7 +87,7 @@ class LogicFormPlanPrompt(PromptOp):
       },
       {
           "functionName": "get",
-          "function_declaration": "get(alias)",
+          "function_decl:aration": "get(alias)",
           "description": "Return the information represented by a specified alias. This can be an entity, a relationship path, or an attribute value obtained in the get_spo query. It can be used as the final output result."
       }
     ],"""
@@ -120,13 +118,9 @@ class LogicFormPlanPrompt(PromptOp):
 }}   
     """
 
-    def __init__(self, language: str):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["question"]
-
 
     def parse_response(self, response: str, **kwargs):
         try:
@@ -135,17 +129,17 @@ class LogicFormPlanPrompt(PromptOp):
             _output_string = response.strip()
             sub_querys = []
             logic_forms = []
-            current_sub_query = ''
-            for line in _output_string.split('\n'):
-                if line.startswith('Step'):
-                    sub_querys_regex = re.search('Step\d+:(.*)', line)
+            current_sub_query = ""
+            for line in _output_string.split("\n"):
+                if line.startswith("Step"):
+                    sub_querys_regex = re.search("Step\d+:(.*)", line)
                     if sub_querys_regex is not None:
                         sub_querys.append(sub_querys_regex.group(1))
                         current_sub_query = sub_querys_regex.group(1)
-                elif line.startswith('Output'):
+                elif line.startswith("Output"):
                     sub_querys.append("output")
-                elif line.startswith('Action'):
-                    logic_forms_regex = re.search('Action\d+:(.*)', line)
+                elif line.startswith("Action"):
+                    logic_forms_regex = re.search("Action\d+:(.*)", line)
                     if logic_forms_regex:
                         logic_forms.append(logic_forms_regex.group(1))
                         if len(logic_forms) - len(sub_querys) == 1:

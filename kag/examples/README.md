@@ -11,14 +11,14 @@ Create your new knext project from knext cli tool.
     host_addr = http://localhost:8887
 
     [vectorizer]
-    vectorizer = kag.common.vectorizer.OpenAIVectorizer
+    type = openai
     model = bge-m3
     api_key = EMPTY
     base_url = http://127.0.0.1:11434/v1
     vector_dimensions = 1024
 
     [llm]
-    client_type = ollama
+    type = ollama
     base_url = http://localhost:11434/api/generate
     model = llama3.1
 
@@ -130,7 +130,6 @@ Create your new knext project from knext cli tool.
             pass
 
         def qa(self, query):
-            # CA
             resp = SolverPipeline()
             answer, trace_log = resp.run(query)
 

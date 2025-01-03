@@ -1,12 +1,14 @@
 import logging
 import re
 from typing import List
+
 logger = logging.getLogger(__name__)
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class LogicFormPlanPrompt(PromptOp):
+@PromptABC.register("supplychain_lf_plan")
+class LogicFormPlanPrompt(PromptABC):
     instruct_zh = """"instruction": "",
     "function_description": "functionName为算子名;基本格式为 functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
     "function": [
@@ -95,13 +97,9 @@ class LogicFormPlanPrompt(PromptOp):
 }}   
     """
 
-    def __init__(self, language: str):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["question"]
-
 
     def parse_response(self, response: str, **kwargs):
         try:
@@ -110,17 +108,17 @@ class LogicFormPlanPrompt(PromptOp):
             _output_string = response.strip()
             sub_querys = []
             logic_forms = []
-            current_sub_query = ''
-            for line in _output_string.split('\n'):
-                if line.startswith('Step'):
-                    sub_querys_regex = re.search('Step\d+:(.*)', line)
+            current_sub_query = ""
+            for line in _output_string.split("\n"):
+                if line.startswith("Step"):
+                    sub_querys_regex = re.search("Step\d+:(.*)", line)
                     if sub_querys_regex is not None:
                         sub_querys.append(sub_querys_regex.group(1))
                         current_sub_query = sub_querys_regex.group(1)
-                elif line.startswith('Output'):
+                elif line.startswith("Output"):
                     sub_querys.append("output")
-                elif line.startswith('Action'):
-                    logic_forms_regex = re.search('Action\d+:(.*)', line)
+                elif line.startswith("Action"):
+                    logic_forms_regex = re.search("Action\d+:(.*)", line)
                     if logic_forms_regex:
                         logic_forms.append(logic_forms_regex.group(1))
                         if len(logic_forms) - len(sub_querys) == 1:

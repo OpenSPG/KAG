@@ -12,51 +12,30 @@
 import re
 import sys
 import json
-from typing import Type,Tuple
-import inspect
+import hashlib
 import os
-from pathlib import Path
+import tempfile
+import requests
 import importlib
+from typing import Tuple
+from pathlib import Path
+
 from shutil import copystat, copy2
 from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
+from tenacity import retry, stop_after_attempt
 
-
-def _register(root, path, files, class_type):
-    relative_path = os.path.relpath(path, root)
-    module_prefix = relative_path.replace(".", "").replace("/", ".")
-    module_prefix = module_prefix + "." if module_prefix else ""
-    for file_name in files:
-        if file_name.endswith(".py"):
-            module_name = module_prefix + os.path.splitext(file_name)[0]
-            import importlib
-
-            module = importlib.import_module(module_name)
-            classes = inspect.getmembers(module, inspect.isclass)
-            for class_name, class_obj in classes:
-                if (
-                    issubclass(class_obj, class_type)
-                    and inspect.getmodule(class_obj) == module
-                ):
-
-                    class_type.register(
-                        name=class_name,
-                        local_path=os.path.join(path, file_name),
-                        module_path=module_name,
-                    )(class_obj)
-
-
-def register_from_package(path: str, class_type: Type) -> None:
-    """
-    Register all classes under the given package.
-    Only registered classes can be recognized by kag.
-    """
-    if not append_python_path(path):
-        return
-    for root, dirs, files in os.walk(path):
-        _register(path, root, files, class_type)
-    class_type._has_registered = True
+reset = "\033[0m"
+bold = "\033[1m"
+underline = "\033[4m"
+red = "\033[31m"
+green = "\033[32m"
+yellow = "\033[33m"
+blue = "\033[34m"
+magenta = "\033[35m"
+cyan = "\033[36m"
+white = "\033[37m"
 
 
 def append_python_path(path: str) -> bool:
@@ -70,6 +49,7 @@ def append_python_path(path: str) -> bool:
         return True
     return False
 
+
 def render_template(
     root_dir: Union[str, os.PathLike], file: Union[str, os.PathLike], **kwargs: Any
 ) -> None:
@@ -82,7 +62,6 @@ def render_template(
 
     if path_obj.suffix == ".tmpl":
         path_obj.rename(render_path)
-
     render_path.write_text(content, "utf8")
 
 
@@ -113,7 +92,7 @@ def copyfile(src: Path, dst: Path, **kwargs):
     _make_writable(dst)
     if dst.suffix != ".tmpl":
         return
-    render_template('/', dst, **kwargs)
+    render_template("/", dst, **kwargs)
 
 
 def remove_files_except(path, file, new_file):
@@ -137,7 +116,6 @@ def load_json(content):
     try:
         return json.loads(content)
     except json.JSONDecodeError as e:
-
         substr = content[: e.colno - 1]
         return json.loads(substr)
 
@@ -194,8 +172,7 @@ def processing_phrases(phrase):
 def to_camel_case(phrase):
     s = processing_phrases(phrase).replace(" ", "_")
     return "".join(
-        word.capitalize() if i != 0 else word
-        for i, word in enumerate(s.split("_"))
+        word.capitalize() if i != 0 else word for i, word in enumerate(s.split("_"))
     )
 
 
@@ -203,3 +180,98 @@ def to_snake_case(name):
     words = re.findall("[A-Za-z][a-z0-9]*", name)
     result = "_".join(words).lower()
     return result
+
+
+def get_vector_field_name(property_key: str):
+    name = f"{property_key}_vector"
+    name = to_snake_case(name)
+    return "_" + name
+
+
+def split_list_into_n_parts(lst, n):
+    length = len(lst)
+    part_size = length // n
+    seg = [x * part_size for x in range(n)]
+    seg.append(min(length, part_size * n))
+
+    remainder = length % n
+
+    result = []
+
+    # 分割列表
+    start = 0
+    for i in range(n):
+        # 计算当前份的元素数量
+        if i < remainder:
+            end = start + part_size + 1
+        else:
+            end = start + part_size
+
+        # 添加当前份到结果列表
+        result.append(lst[start:end])
+
+        # 更新起始位置
+        start = end
+
+    return result
+
+
+def generate_hash_id(value):
+    """
+    Generates a hash ID and an abstracted version of the input value.
+
+    If the input value is a dictionary, it sorts the dictionary items and abstracts the dictionary.
+    If the input value is not a dictionary, it abstracts the value directly.
+
+    Args:
+        value: The input value to be hashed and abstracted.
+
+    Returns:
+        Tuple[str, Any]: A tuple containing the hash ID and the abstracted value.
+    """
+    if isinstance(value, dict):
+        sorted_items = sorted(value.items())
+        key = str(sorted_items)
+    else:
+        key = value
+    if isinstance(key, str):
+        key = key.encode("utf-8")
+    hasher = hashlib.sha256()
+    hasher.update(key)
+
+    return hasher.hexdigest()
+
+
+@retry(stop=stop_after_attempt(3))
+def download_from_http(url: str, dest: str = None) -> str:
+    """Downloads a file from an HTTP URL and saves it to a temporary directory.
+
+    This function uses the requests library to download a file from the specified
+    HTTP URL and saves it to the system's temporary directory. After the download
+    is complete, it returns the local path of the downloaded file.
+
+    Args:
+        url (str): The HTTP URL of the file to be downloaded.
+
+    Returns:
+        str: The local path of the downloaded file.
+
+    """
+
+    # Send an HTTP GET request to download the file
+    response = requests.get(url, stream=True)
+    response.raise_for_status()  # Check if the request was successful
+
+    if dest is None:
+        # Create a temporary file
+        temp_dir = tempfile.gettempdir()
+        temp_file_path = os.path.join(temp_dir, os.path.basename(url))
+        dest = temp_file_path
+
+    with open(dest, "wb") as temp_file:
+        # Write the downloaded content to the temporary file
+        for chunk in response.iter_content(chunk_size=1024**2):
+            temp_file.write(chunk)
+
+    # Return the path of the temporary file
+    return temp_file.name
