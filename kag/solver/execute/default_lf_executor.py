@@ -112,7 +112,7 @@ class DefaultLFExecutor(LFExecutorABC):
                 # force chunk retriever, so we clear kg solved answer
                 process_info['kg_solved_answer'] = []
             # chunk retriever
-            all_related_entities = kg_graph.get_all_entity()
+            all_related_entities = kg_graph.get_all_spo()
             all_related_entities = list(set(all_related_entities))
             sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
             doc_retrieved = self.chunk_retriever.recall_docs(queries=[query, sub_query],

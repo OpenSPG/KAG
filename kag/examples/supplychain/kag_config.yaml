@@ -14,9 +14,7 @@ chat_llm: &chat_llm
 vectorize_model: &vectorize_model
   type: mock
   vector_dimensions: 768
-vectorizer:
-  type: batch
-  vectorize_model: *vectorize_model
+vectorizer: *vectorize_model
 
 log:
   level: INFO
@@ -36,6 +34,10 @@ search_api: &search_api
 
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+
+chain_vectorizer:
+  type: batch
+  vectorize_model: *vectorize_model
 
 exact_kg_retriever: &exact_kg_retriever
   type: default_exact_kg_retriever # kag.solver.retriever.impl.default_exact_kg_retriever.DefaultExactKgRetriever
@@ -75,7 +77,7 @@ kag_solver_pipeline:
     lf_executor:
       type: default_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
       llm_client: *chat_llm
-      force_chunk_retriever: true
+      force_chunk_retriever: false
       exact_kg_retriever: *exact_kg_retriever
       fuzzy_kg_retriever: *fuzzy_kg_retriever
       chunk_retriever: *chunk_retriever

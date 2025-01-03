@@ -120,9 +120,9 @@ class GetSPOExecutor(OpExecutor):
                                                                                   kwargs=param)
                 for entity_id_info in linked_entities:
                     entity_type_zh = (
-                        self.schema.node_en_zh[entity_id_info.type]
+                        self.schema.node_en_zh[self.schema.get_label_without_prefix(entity_id_info.type)]
                         if self.schema is not None
-                           and entity_id_info.type in self.schema.node_en_zh.keys()
+                           and self.schema.get_label_without_prefix(entity_id_info.type) in self.schema.node_en_zh.keys()
                         else None
                     )
                     entity_id_info.type_zh = entity_type_zh

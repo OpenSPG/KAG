@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
 from typing import List, Dict
 
 import knext.common.cache
@@ -121,7 +122,12 @@ class SchemaSession:
         request = rest.SchemaAlterRequest(
             project_id=self._project_id, schema_draft=rest.SchemaDraft(schema_draft)
         )
-        print(request)
+        key = "KNEXT_DEBUG_DUMP_SCHEMA"
+        dump_flag = os.getenv(key)
+        if dump_flag is not None and dump_flag.strip() == "1":
+            print(request)
+        else:
+            print(f"Committing schema: set {key}=1 to dump the schema")
         self._rest_client.schema_alter_schema_post(schema_alter_request=request)
 
 

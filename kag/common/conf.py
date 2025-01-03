@@ -14,6 +14,7 @@ import os
 import logging
 import yaml
 import json
+import pprint
 from pathlib import Path
 from typing import Union, Optional
 
@@ -36,6 +37,7 @@ class KAGConstants(object):
     KAG_BIZ_SCENE_KEY = "biz_scene"
     ENV_KAG_PROJECT_ID = "KAG_PROJECT_ID"
     ENV_KAG_PROJECT_HOST_ADDR = "KAG_PROJECT_HOST_ADDR"
+    ENV_KAG_DEBUG_DUMP_CONFIG = "KAG_DEBUG_DUMP_CONFIG"
     KAG_SIMILAR_EDGE_NAME = "similar"
 
     KS8_ENV_TF_CONFIG = "TF_CONFIG"
@@ -182,15 +184,17 @@ def init_env():
     KAG_CONFIG.initialize(prod)
 
     if prod:
-        msg = "Done init config from server: "
+        msg = "Done init config from server"
     else:
-        msg = "Done init config from local file: "
+        msg = "Done init config from local file"
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:
-        print(msg)
-        import pprint
-
-        pprint.pprint(KAG_CONFIG.all_config, indent=2)
+        dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
+        if dump_flag is not None and dump_flag.strip() == "1":
+            print(f"{msg}:")
+            pprint.pprint(KAG_CONFIG.all_config, indent=2)
+        else:
+            print(f"{msg}: set {KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG}=1 to dump config")
     else:
         print("No config found.")

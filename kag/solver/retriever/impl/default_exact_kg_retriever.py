@@ -4,7 +4,7 @@ from abc import ABC
 from typing import List
 
 from kag.interface import LLMClient, VectorizeModelABC
-from kag.interface.solver.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity, SPOBase
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     OneHopGraphData,
     KgGraph,
@@ -143,6 +143,22 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         super().__init__(el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs)
         self.match = ExactMatchRetrieval(self.schema)
 
+    def _generate_label(self, s: SPOBase, heads: List[EntityData]):
+        if heads:
+            return list(set([f"{h.type}" for h in heads]))
+
+        if not isinstance(s, SPOEntity):
+            return ["Entity"]
+
+        std_types = s.get_entity_type_set()
+        std_types_with_prefix = []
+        for std_type in std_types:
+            std_type_with_prefix = self.schema.get_label_within_prefix(std_type)
+            if std_types_with_prefix != std_type:
+                std_types_with_prefix.append(f"`{std_type_with_prefix}`")
+        if len(std_types_with_prefix):
+            return list(set(std_types_with_prefix))
+        return ["Entity"]
     def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
         OneHopGraphData]:
         """
@@ -157,25 +173,24 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         Returns:
             List[OneHopGraphData]: A list of one-hop graph data for the given entity.
         """
-        header_ids = set(head.biz_id for head in heads)
-        tail_ids = set(tail.biz_id for tail in tails)
-        where_caluse = []
-        header_labels = set(f'`{head.type}`' for head in heads)
         params = {}
-        if not header_labels:
-            dsl_header_label = 'Entity'
-        else:
-            dsl_header_label = "|".join(header_labels)
+        where_caluse = []
+        header_ids = set(head.biz_id for head in heads)
+        if len(header_ids):
             params['sid'] = generate_gql_id_params(list(header_ids))
             where_caluse.append(f's.id in $sid')
-
-        tail_labels = set(f'`{tail.type}`' for tail in tails)
-        if not tail_labels:
-            dsl_tail_label = 'Entity'
-        else:
-            dsl_tail_label = "|".join(tail_labels)
+        tail_ids = set(tail.biz_id for tail in tails)
+        if len(tail_ids):
             params['oid'] = generate_gql_id_params(list(tail_ids))
             where_caluse.append(f'o.id in $oid')
+
+
+
+        header_std_labels = self._generate_label(n.s, heads)
+        dsl_header_label = "|".join(header_std_labels)
+
+        tail_std_labels = self._generate_label(n.o, tails)
+        dsl_tail_label = "|".join(tail_std_labels)
 
         p_type_set = n.p.type_set
         p_label_str_set = []
@@ -194,7 +209,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         if len(p_label_set) > 0:
             # first we use exact ql to query
             exact_dsls.append(f"""
-        MATCH (s:{dsl_header_label})-[p:{'|'.join(exact_dsls)}]->(o:{dsl_tail_label})
+        MATCH (s:{dsl_header_label})-[p:{'|'.join(p_label_set)}]->(o:{dsl_tail_label})
         WHERE {' and '.join(where_caluse)}
         RETURN s,p,o,s.id,o.id
         """)
@@ -272,5 +287,6 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             search_api=self.search_api,
             topk=self.el_num,
             recognition_threshold=0.9,
+            use_query_type=True,
             kwargs=kwargs
         )

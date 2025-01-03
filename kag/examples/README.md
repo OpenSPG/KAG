@@ -130,7 +130,6 @@ Create your new knext project from knext cli tool.
             pass
 
         def qa(self, query):
-            # CA
             resp = SolverPipeline()
             answer, trace_log = resp.run(query)
 

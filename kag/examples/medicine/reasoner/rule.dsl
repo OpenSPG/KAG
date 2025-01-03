@@ -1,1 +1,1 @@
-MATCH (n:`Medicine.Drug`) RETURN n.id
+MATCH (n:`Medicine.HospitalDepartment`) RETURN n.id

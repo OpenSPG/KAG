@@ -730,7 +730,12 @@ class KgGraph:
             for d in self.entity_map[k]:
                 all_entity.append(d)
         return list(set(all_entity))
-
+    def get_all_spo(self):
+        all_spo = []
+        for k in self.edge_map.keys():
+            for d in self.edge_map[k]:
+                all_spo.append(d)
+        return all_spo
     def _graph_to_json(self):
         total_entity_map = {}
         edge_dict = {}
