@@ -27,7 +27,7 @@ class RiskMiningEntityChain(BuilderChainABC):
 
     def build(self, **kwargs):
         mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["vectorizer"])
+        vectorizer = BatchVectorizer.from_config(KAG_CONFIG.all_config["chain_vectorizer"])
         sink = KGWriter()
 
         chain = mapping >> vectorizer >> sink
