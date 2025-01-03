@@ -77,7 +77,7 @@ kag_solver_pipeline:
     lf_executor:
       type: default_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
       llm_client: *chat_llm
-      force_chunk_retriever: true
+      force_chunk_retriever: false
       exact_kg_retriever: *exact_kg_retriever
       fuzzy_kg_retriever: *fuzzy_kg_retriever
       chunk_retriever: *chunk_retriever
