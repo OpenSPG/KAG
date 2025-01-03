@@ -96,7 +96,8 @@ class Environment:
             return os.getenv("KAG_PROJECT_HOST_ADDR")
         host_addr = self.project_config.get("host_addr", None)
         if host_addr is None:
-            raise Exception("project host_addr is not defined")
+            host_addr = DEFAULT_HOST_ADDR
+            logger.warning(f"project host_addr is not defined, use default host_addr: {host_addr}")
         return host_addr
 
     def get_config(self):

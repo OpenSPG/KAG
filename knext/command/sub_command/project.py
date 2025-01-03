@@ -233,12 +233,10 @@ def update_project(proj_path):
         fg="bright_green",
     )
 
-
-def list_project():
+@click.option("--host_addr", help="Address of spg server.", default=DEFAULT_HOST_ADDR)
+def list_project(host_addr):
     client = ProjectClient(
-        host_addr=env.host_addr
-        or os.getenv("KAG_PROJECT_HOST_ADDR")
-        or DEFAULT_HOST_ADDR
+        host_addr=host_addr
     )
     projects = client.get_all()
 
