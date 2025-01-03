@@ -1,11 +1,11 @@
-# 知识建模
+# 基于 SPG 建模的产业链企业图谱
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
 ## 1. 建模文件
 
-建模描述文档参见 [声明式 schema](https://openspg.yuque.com/ndx6g9/0.6/fzhov4l2sst6bede)。
+schema 文件语法介绍参见 [声明式 schema](https://openspg.yuque.com/ndx6g9/0.6/fzhov4l2sst6bede)。
 
 企业供应链图谱 schema 建模参考文件 [SupplyChain.schema](./SupplyChain.schema)。
 
@@ -140,7 +140,7 @@ Company(企业): EntityType
             ]]
 ```
 
-具体内容可参见 [图谱查询](../reasoner/README_cn.md) 中场景 1、场景 2 的示例。
+具体内容可参见 [产业链企业信用图谱查询任务](../reasoner/README_cn.md) 中场景 1、场景 2 的示例。
 
 ### 2.3 概念体系 vs 实体体系
 
@@ -187,5 +187,5 @@ CompanyEvent(公司事件): EventType
         belongTo(属于): TaxOfCompanyEvent
 ```
 
-上述的事件中，属性类型均为已被定义类型，没有基本类型表达，SPG 基于此申明实现事件多元要素表达，具体应用示例可见 [图谱查询](../reasoner/README_cn.md) 中场景 3 的具体描述。
+上述的事件中，属性类型均为已被定义类型，没有基本类型表达，SPG 基于此申明实现事件多元要素表达，具体应用示例可见 [产业链企业信用图谱查询任务](../reasoner/README_cn.md) 中场景 3 的具体描述。
 

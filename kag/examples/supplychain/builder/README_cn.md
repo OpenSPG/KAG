@@ -1,4 +1,4 @@
-# 图谱构建
+# 产业链案例知识构建
 
 [English](./README.md) |
 [简体中文](./README_cn.md)

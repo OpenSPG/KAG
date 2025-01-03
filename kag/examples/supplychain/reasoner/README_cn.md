@@ -1,4 +1,4 @@
-# 图谱查询
+# 产业链企业信用图谱查询任务
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
@@ -182,7 +182,7 @@ Define (s:Compnay)-[p:sameLegalReprensentative]->(o:Company) {
 
 通过如下 GQL 执行得到某个公司的具体特征:
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)
 RETURN
@@ -191,21 +191,21 @@ RETURN
     s.fundTrans6MonthIn, s.cashflowDiff1Month, s.cashflowDiff3Month, s.cashflowDiff6Month
 ```
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:mainSupply]->(o:SupplyChain.Company)
 RETURN
     s.id, o.id
 ```
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:belongToIndustry]->(o:SupplyChain.Industry)
 RETURN
     s.id, o.id
 ```
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:sameLegalRepresentative]->(o:SupplyChain.Company)
 RETURN
@@ -235,7 +235,7 @@ knext builder execute CompanyUpdate
 
 执行完成后再次查询，只会返回二轮摩托车，而三轮摩托车不再被关联:
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.Company)-[:product]->(o:SupplyChain.Product)
 WHERE
@@ -314,7 +314,7 @@ Define (s:`TaxonofProductChainEvent`/`价格上涨`)-[p:leadTo]->(o:`TaxonofComp
 
 可通过如下查询语句查出某个事件产生的影响。
 
-```text
+```cypher
 MATCH
     (s:SupplyChain.ProductChainEvent)-[:leadTo]->(o:SupplyChain.CompanyEvent)
 RETURN
