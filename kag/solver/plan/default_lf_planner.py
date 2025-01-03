@@ -31,12 +31,18 @@ class DefaultLFPlanner(LFPlannerABC):
         **kwargs,
     ):
         super().__init__(llm_client, **kwargs)
-        self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
-        }))
+        self.schema: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
         self.schema.get_schema()
-        std_schema = SchemaRetrieval(vectorize_model=vectorize_model, llm_client=llm_client, **kwargs)
+        std_schema = SchemaRetrieval(
+            vectorize_model=vectorize_model, llm_client=llm_client, **kwargs
+        )
         self.parser = ParseLogicForm(self.schema, std_schema)
         # Load the prompt for generating logic forms based on the business scene and language
         if logic_form_plan_prompt is None:
@@ -46,7 +52,9 @@ class DefaultLFPlanner(LFPlannerABC):
         self.logic_form_plan_prompt = logic_form_plan_prompt
 
     # 需要把大模型生成结果记录下来
-    def lf_planing(self, question: str, memory: KagMemoryABC = None, llm_output=None) -> List[LFPlan]:
+    def lf_planing(
+        self, question: str, memory: KagMemoryABC = None, llm_output=None
+    ) -> List[LFPlan]:
         """
         Generates sub-queries and logic forms based on the input question or provided LLM output.
 
@@ -78,7 +86,7 @@ class DefaultLFPlanner(LFPlannerABC):
     def _process_output_query(self, question, sub_query: str):
         if sub_query is None:
             return question
-        if 'output' == sub_query.lower():
+        if "output" == sub_query.lower():
             return f"output `{question}` answer:"
         return sub_query
 
@@ -86,7 +94,7 @@ class DefaultLFPlanner(LFPlannerABC):
         if sub_querys is None:
             sub_querys = []
         # process sub query
-        sub_querys = [ self._process_output_query(question, q) for q in sub_querys]
+        sub_querys = [self._process_output_query(question, q) for q in sub_querys]
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )

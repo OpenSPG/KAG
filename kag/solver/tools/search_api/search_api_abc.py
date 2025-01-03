@@ -9,11 +9,13 @@ class SearchApiABC(Registrable):
         super().__init__(**kwargs)
 
     @abstractmethod
-    def search_text(self, query_string, label_constraints=None, topk=10, params=None) -> List:
+    def search_text(
+        self, query_string, label_constraints=None, topk=10, params=None
+    ) -> List:
         pass
 
     @abstractmethod
     def search_vector(
-            self, label, property_key, query_vector, topk=10, ef_search=None, params=None
+        self, label, property_key, query_vector, topk=10, ef_search=None, params=None
     ) -> List:
         pass

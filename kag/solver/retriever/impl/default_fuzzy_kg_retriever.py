@@ -12,11 +12,14 @@ from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     OneHopGraphData,
     KgGraph,
-    EntityData, )
+    EntityData,
+)
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
-from kag.solver.tools.algorithm.entity_linker import default_search_entity_by_name_algorithm
+from kag.solver.tools.algorithm.entity_linker import (
+    default_search_entity_by_name_algorithm,
+)
 from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 from kag.solver.utils import init_prompt_with_fallback
@@ -37,14 +40,18 @@ class FuzzyMatchRetrieval:
         un_std_p = n.p.get_entity_first_type_or_un_std()
         if un_std_p is None:
             logger.warning(f"get_unstd_p_text get p emtpy {n}")
-            un_std_p = ''
+            un_std_p = ""
         start_value_type = n.s.get_entity_first_type_or_un_std()
         if start_value_type is None or start_value_type == "Others":
-            logger.warning(f"get_unstd_p_text get start_value_type {start_value_type} {n}")
+            logger.warning(
+                f"get_unstd_p_text get start_value_type {start_value_type} {n}"
+            )
             start_value_type = "Entity"
         target_value_type = n.o.get_entity_first_type_or_un_std()
         if target_value_type is None or target_value_type == "Others":
-            logger.warning(f"get_unstd_p_text get target_value_type {target_value_type} {n}")
+            logger.warning(
+                f"get_unstd_p_text get target_value_type {target_value_type} {n}"
+            )
             target_value_type = "Entity"
         un_std_p = f"{start_value_type}{'[' + n.get_ele_name('s') + ']' if n.get_ele_name('s') != '' else ''} {un_std_p} {target_value_type}{'[' + n.get_ele_name('o') + ']'}"
         return un_std_p
@@ -73,12 +80,15 @@ class FuzzyMatchRetrieval:
             try:
                 res = self._choosed_by_llm(query, p_mention, p_candis)
                 for res_ in res:
-                    self.cached_map[p_mention] = self.cached_map.get(
-                        p_mention, []
-                    ) + [res_]
+                    self.cached_map[p_mention] = self.cached_map.get(p_mention, []) + [
+                        res_
+                    ]
                     intersection.append(res_)
             except Exception as e:
-                logger.warning(f"retrieval_spo json failed：query={query},  res={res} , except={e}", exc_info=True)
+                logger.warning(
+                    f"retrieval_spo json failed：query={query},  res={res} , except={e}",
+                    exc_info=True,
+                )
         return [[x, 1.0] for x in intersection]
 
     def find_best_match_p_name_by_model(self, query: str, p: str, candi_set: dict):
@@ -88,7 +98,12 @@ class FuzzyMatchRetrieval:
         sen_condi_set = []
         spo_name_map = {}
         for p_name, spo_l in candi_set.items():
-            if p_name.startswith("_") or p_name == "id" or p_name == "source" or p_name == "similar":
+            if (
+                p_name.startswith("_")
+                or p_name == "id"
+                or p_name == "source"
+                or p_name == "similar"
+            ):
                 continue
             for spo in spo_l:
                 spo_name_map[spo] = p_name
@@ -173,13 +188,23 @@ class FuzzyMatchRetrieval:
 
 @FuzzyKgRetriever.register("default_fuzzy_kg_retriever", as_default=True)
 class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
-    def __init__(self, el_num=1, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
-        super().__init__(el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs)
+    def __init__(
+        self,
+        el_num=1,
+        llm_client: LLMClient = None,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        **kwargs,
+    ):
+        super().__init__(
+            el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs
+        )
         self.match = FuzzyMatchRetrieval(self.llm_module, self.text_similarity)
 
-    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
-        OneHopGraphData]:
+    def recall_one_hop_graph(
+        self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs
+    ) -> List[OneHopGraphData]:
         """
         Recall one-hop graph data for a given entity.
 
@@ -198,22 +223,22 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                 header_ids = set(head.biz_id for head in heads)
                 tail_ids = set(tail.biz_id for tail in tails)
                 where_caluse = []
-                header_labels = set(f'`{head.type}`' for head in heads)
+                header_labels = set(f"`{head.type}`" for head in heads)
                 params = {}
                 if not header_labels:
-                    dsl_header_label = 'Entity'
+                    dsl_header_label = "Entity"
                 else:
                     dsl_header_label = "|".join(header_labels)
-                    params['sid'] = generate_gql_id_params(list(header_ids))
-                    where_caluse.append(f's.id in $sid')
+                    params["sid"] = generate_gql_id_params(list(header_ids))
+                    where_caluse.append(f"s.id in $sid")
 
-                tail_labels = set(f'`{tail.type}`' for tail in tails)
+                tail_labels = set(f"`{tail.type}`" for tail in tails)
                 if not tail_labels:
-                    dsl_tail_label = 'Entity'
+                    dsl_tail_label = "Entity"
                 else:
                     dsl_tail_label = "|".join(tail_labels)
-                    params['oid'] = generate_gql_id_params(list(tail_ids))
-                    where_caluse.append(f'o.id in $oid')
+                    params["oid"] = generate_gql_id_params(list(tail_ids))
+                    where_caluse.append(f"o.id in $oid")
                 try:
                     dsl = f"""
                     MATCH (s:{dsl_header_label})-[p:rdf_expand()]-(o:{dsl_tail_label})
@@ -225,17 +250,22 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                     if len(one_graph_map) > 0:
                         return list(one_graph_map.values())
                 except Exception as e:
-                    logger.warning(f"An error occurred: {e}, so we will call head and tail same time", exc_info=True)
+                    logger.warning(
+                        f"An error occurred: {e}, so we will call head and tail same time",
+                        exc_info=True,
+                    )
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                map_dict = {
-                    "s": heads,
-                    "o": tails
-                }
+                map_dict = {"s": heads, "o": tails}
                 for k, v in map_dict.items():
                     futures = [
-                        executor.submit(self.graph_api.get_entity_one_hop, entity) for entity in v]
-                    results = [future.result() for future in concurrent.futures.as_completed(futures)]
+                        executor.submit(self.graph_api.get_entity_one_hop, entity)
+                        for entity in v
+                    ]
+                    results = [
+                        future.result()
+                        for future in concurrent.futures.as_completed(futures)
+                    ]
                     for r in results:
                         if r is None:
                             logger.warning(f"{n} recall chunk data")
@@ -249,7 +279,7 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
             return one_hop_graph_list
 
     def retrieval_relation(
-            self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
+        self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
     ) -> KgGraph:
         """
         Input:
@@ -261,17 +291,11 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
             Returns KgGraph
         """
         start_time = time.time()
-        total_one_kg_graph = self.match.match_spo(
-            n, one_hop_graph_list
-        )
-        logger.debug(
-            f"_exact_match_spo cost={time.time() - start_time}"
-        )
+        total_one_kg_graph = self.match.match_spo(n, one_hop_graph_list)
+        logger.debug(f"_exact_match_spo cost={time.time() - start_time}")
         return total_one_kg_graph
 
-    def retrieval_entity(
-            self, mention_entity: SPOEntity, **kwargs
-    ) -> List[EntityData]:
+    def retrieval_entity(self, mention_entity: SPOEntity, **kwargs) -> List[EntityData]:
         """
         Retrieve related entities based on the given entity mention.
 
@@ -292,5 +316,5 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
             search_api=self.search_api,
             topk=self.el_num,
             recognition_threshold=0.8,
-            kwargs=kwargs
+            kwargs=kwargs,
         )

@@ -8,12 +8,15 @@ from kag.interface.solver.base_model import SPOEntity, SPOBase
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     OneHopGraphData,
     KgGraph,
-    EntityData, RelationData,
+    EntityData,
+    RelationData,
 )
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
-from kag.solver.tools.algorithm.entity_linker import default_search_entity_by_name_algorithm
+from kag.solver.tools.algorithm.entity_linker import (
+    default_search_entity_by_name_algorithm,
+)
 from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
@@ -42,7 +45,7 @@ class ExactMatchRetrieval:
         return RelationData.from_prop_value(s_entity, std_p, o_entity)
 
     def _std_best_p_with_value_and_p_name(
-            self, n: GetSPONode, one_graph: OneHopGraphData
+        self, n: GetSPONode, one_graph: OneHopGraphData
     ):
         """
         :param one_graph:
@@ -121,9 +124,7 @@ class ExactMatchRetrieval:
             "o": n.o.alias_name,
         }
         for tmp_one_hop_graph in one_hop_graph_list:
-            rel_set = self._std_best_p_with_value_and_p_name(
-                n, tmp_one_hop_graph
-            )
+            rel_set = self._std_best_p_with_value_and_p_name(n, tmp_one_hop_graph)
             if len(rel_set) > 0:
                 one_kg_graph_ = KgGraph()
                 recall_alias_name = n.s.alias_name
@@ -138,9 +139,18 @@ class ExactMatchRetrieval:
 
 @ExactKgRetriever.register("default_exact_kg_retriever", as_default=True)
 class DefaultExactKgRetriever(ExactKgRetriever, ABC):
-    def __init__(self, el_num=5, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
-        super().__init__(el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs)
+    def __init__(
+        self,
+        el_num=5,
+        llm_client: LLMClient = None,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        **kwargs,
+    ):
+        super().__init__(
+            el_num, llm_client, vectorize_model, graph_api, search_api, **kwargs
+        )
         self.match = ExactMatchRetrieval(self.schema)
 
     def _generate_label(self, s: SPOBase, heads: List[EntityData]):
@@ -159,8 +169,10 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         if len(std_types_with_prefix):
             return list(set(std_types_with_prefix))
         return ["Entity"]
-    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
-        OneHopGraphData]:
+
+    def recall_one_hop_graph(
+        self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs
+    ) -> List[OneHopGraphData]:
         """
         Recall one-hop graph data for a given entity.
 
@@ -177,14 +189,12 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         where_caluse = []
         header_ids = set(head.biz_id for head in heads)
         if len(header_ids):
-            params['sid'] = generate_gql_id_params(list(header_ids))
-            where_caluse.append(f's.id in $sid')
+            params["sid"] = generate_gql_id_params(list(header_ids))
+            where_caluse.append(f"s.id in $sid")
         tail_ids = set(tail.biz_id for tail in tails)
         if len(tail_ids):
-            params['oid'] = generate_gql_id_params(list(tail_ids))
-            where_caluse.append(f'o.id in $oid')
-
-
+            params["oid"] = generate_gql_id_params(list(tail_ids))
+            where_caluse.append(f"o.id in $oid")
 
         header_std_labels = self._generate_label(n.s, heads)
         dsl_header_label = "|".join(header_std_labels)
@@ -201,24 +211,28 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
                 p_label_str_set.append(f'"{type.std_entity_type}"')
             else:
                 p_label_str_set.append(f'"{type.un_std_entity_type}"')
-        p_label = ''
+        p_label = ""
         if len(p_label_str_set):
-            p_label = '[' + ",".join(p_label_str_set) + ']'
+            p_label = "[" + ",".join(p_label_str_set) + "]"
 
         exact_dsls = []
         if len(p_label_set) > 0:
             # first we use exact ql to query
-            exact_dsls.append(f"""
+            exact_dsls.append(
+                f"""
         MATCH (s:{dsl_header_label})-[p:{'|'.join(p_label_set)}]->(o:{dsl_tail_label})
         WHERE {' and '.join(where_caluse)}
         RETURN s,p,o,s.id,o.id
-        """)
+        """
+            )
         # if exact ql failed, we call one hop graph to filter
-        exact_dsls.append(f"""
+        exact_dsls.append(
+            f"""
         MATCH (s:{dsl_header_label})-[p:rdf_expand({p_label})]->(o:{dsl_tail_label})
         WHERE {' and '.join(where_caluse)}
         RETURN s,p,o,s.id,o.id
-        """)
+        """
+        )
         res = []
         for exact_dsl in exact_dsls:
             try:
@@ -233,7 +247,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
         return res
 
     def retrieval_relation(
-            self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
+        self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
     ) -> KgGraph:
         """
         Input:
@@ -245,9 +259,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             Returns KgGraph
         """
         start_time = time.time()
-        total_one_kg_graph, matched_flag = self.match.match_spo(
-            n, one_hop_graph_list
-        )
+        total_one_kg_graph, matched_flag = self.match.match_spo(n, one_hop_graph_list)
         logger.debug(
             f"_exact_match_spo cost={time.time() - start_time} matched_flag={matched_flag}"
         )
@@ -262,9 +274,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
                 return KgGraph()
         return total_one_kg_graph
 
-    def retrieval_entity(
-            self, mention_entity: SPOEntity, **kwargs
-    ) -> List[EntityData]:
+    def retrieval_entity(self, mention_entity: SPOEntity, **kwargs) -> List[EntityData]:
         """
         Retrieve related entities based on the given entity mention.
 
@@ -288,5 +298,5 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             topk=self.el_num,
             recognition_threshold=0.9,
             use_query_type=True,
-            kwargs=kwargs
+            kwargs=kwargs,
         )

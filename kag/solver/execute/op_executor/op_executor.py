@@ -25,8 +25,15 @@ class OpExecutor(KagBaseModule, ABC):
         super().__init__(**kwargs)
         self.schema = schema
 
-    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
-                 process_info: dict, param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        logic_node: LogicNode,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        param: dict,
+    ) -> Dict:
         """
         Executes the operation based on the given logic node.
 

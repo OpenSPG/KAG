@@ -12,15 +12,18 @@ from kag.solver.logic.core_modules.parser.logic_node_parser import GetNode
 
 
 class GetExecutor(OpExecutor):
-    def __init__(
-            self,
-            schema: SchemaUtils,
-            **kwargs
-    ):
+    def __init__(self, schema: SchemaUtils, **kwargs):
         super().__init__(schema, **kwargs)
 
-    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
-                 process_info: dict, param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        logic_node: LogicNode,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        param: dict,
+    ) -> Dict:
         kg_qa_result = []
         if not isinstance(logic_node, GetNode):
             return process_info[logic_node.sub_query]
@@ -38,6 +41,6 @@ class GetExecutor(OpExecutor):
                     kg_qa_result.append(s_data.name)
             if isinstance(s_data, RelationData):
                 kg_qa_result.append(str(s_data))
-        process_info[logic_node.sub_query]['kg_answer'] += f"\n{';'.join(kg_qa_result)}"
-        process_info['kg_solved_answer'].append(f"\n{';'.join(kg_qa_result)}")
+        process_info[logic_node.sub_query]["kg_answer"] += f"\n{';'.join(kg_qa_result)}"
+        process_info["kg_solved_answer"].append(f"\n{';'.join(kg_qa_result)}")
         return process_info[logic_node.sub_query]

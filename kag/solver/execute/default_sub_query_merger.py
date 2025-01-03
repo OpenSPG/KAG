@@ -15,11 +15,17 @@ class DefaultLFSubQueryResMerger(LFSubQueryResMerger):
     Initializes the base planner.
     """
 
-    def __init__(self, chunk_retriever: ChunkRetriever, vectorize_model: VectorizeModelABC = None, **kwargs):
+    def __init__(
+        self,
+        chunk_retriever: ChunkRetriever,
+        vectorize_model: VectorizeModelABC = None,
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.chunk_retriever = chunk_retriever
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"])
+            KAG_CONFIG.all_config["vectorize_model"]
+        )
         self.text_similarity = TextSimilarity(vectorize_model)
 
     def merge(self, query, lf_res_list: List[LFPlan]) -> LFExecuteResult:
@@ -34,7 +40,9 @@ class DefaultLFSubQueryResMerger(LFSubQueryResMerger):
         passages_set = [lf_res.res.doc_retrieved for lf_res in lf_res_list]
         recall_docs = self._flat_passages_set(passages_set)
         sub_queries = [lf_res.query for lf_res in lf_res_list]
-        rerank_docs = self.chunk_retriever.rerank_docs([query] + sub_queries, recall_docs)
+        rerank_docs = self.chunk_retriever.rerank_docs(
+            [query] + sub_queries, recall_docs
+        )
         return rerank_docs, recall_docs
 
     def _flat_passages_set(self, passages_set: list):

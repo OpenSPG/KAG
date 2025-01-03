@@ -14,9 +14,7 @@ class SchemaRetrieval(KGRetriever):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def retrieval_entity(
-            self, mention_entity: SPOEntity, **kwargs
-    ) -> List[EntityData]:
+    def retrieval_entity(self, mention_entity: SPOEntity, **kwargs) -> List[EntityData]:
         # 根据mention召回
         label = self.schema.get_label_within_prefix("SemanticConcept")
         typed_nodes = self.search_api.search_vector(
