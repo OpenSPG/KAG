@@ -1,11 +1,11 @@
-# Schema Modeling
+# Knowledge Modeling
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
 ## 1. Schema details
 
-For a tutorial of OpenSPG schema, please refer to [Declarative Schema](https://openspg.yuque.com/ndx6g9/cwh47i/fiq6zum3qtzr7cne).
+For an introduction of OpenSPG schema, please refer to [Declarative Schema](https://openspg.yuque.com/ndx6g9/cwh47i/fiq6zum3qtzr7cne).
 
 For the modeling of the Enterprise Supply Chain Knowledge Graph, please refer to the schema source file [SupplyChain.schema](./SupplyChain.schema).
 
