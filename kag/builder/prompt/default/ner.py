@@ -12,66 +12,66 @@
 
 import json
 from string import Template
-from typing import List, Optional
-
-from kag.common.base.prompt_op import PromptOp
+from typing import List
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
 
-class OpenIENERPrompt(PromptOp):
-
+@PromptABC.register("default_ner")
+class OpenIENERPrompt(PromptABC):
     template_en = """
     {
     "instruction": "You're a very effective entity extraction system. Please extract all the entities that are important for knowledge build and question, along with type, category and a brief description of the entity. The description of the entity is based on your OWN KNOWLEDGE AND UNDERSTANDING and does not need to be limited to the context. the entity's category belongs taxonomically to one of the items defined by schema, please also output the category. Note: Type refers to a specific, well-defined classification, such as Professor, Actor, while category is a broader group or class that may contain more than one type, such as Person, Works. Return an empty list if the entity type does not exist. Please respond in the format of a JSON string.You can refer to the example for extraction.",
     "schema": $schema,
     "example": [
         {
-            "input": "The Rezort\nThe Rezort is a 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger.\n It stars Dougray Scott, Jessica De Gouw and Martin McCann.\n After humanity wins a devastating war against zombies, the few remaining undead are kept on a secure island, where they are hunted for sport.\n When something goes wrong with the island's security, the guests must face the possibility of a new outbreak.",
+            "input": "The Rezort is a 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger. It stars Dougray Scott, Jessica De Gouw and Martin McCann. After humanity wins a devastating war against zombies, the few remaining undead are kept on a secure island, where they are hunted for sport. When something goes wrong with the island's security, the guests must face the possibility of a new outbreak.",
             "output": [
                         {
-                            "entity": "The Rezort",
+                            "name": "The Rezort",
                             "type": "Movie",
                             "category": "Works",
                             "description": "A 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger."
                         },
                         {
-                            "entity": "2015",
+                            "name": "2015",
                             "type": "Year",
                             "category": "Date",
                             "description": "The year the movie 'The Rezort' was released."
                         },
                         {
-                            "entity": "British",
+                            "name": "British",
                             "type": "Nationality",
                             "category": "GeographicLocation",
                             "description": "Great Britain, the island that includes England, Scotland, and Wales."
                         },
                         {
-                            "entity": "Steve Barker",
+                            "name": "Steve Barker",
                             "type": "Director",
                             "category": "Person",
                             "description": "Steve Barker is an English film director and screenwriter."
                         },
                         {
-                            "entity": "Paul Gerstenberger",
+                            "name": "Paul Gerstenberger",
                             "type": "Writer",
                             "category": "Person",
                             "description": "Paul is a writer and producer, known for The Rezort (2015), Primeval (2007) and House of Anubis (2011)."
                         },
                         {
-                            "entity": "Dougray Scott",
+                            "name": "Dougray Scott",
                             "type": "Actor",
                             "category": "Person",
                             "description": "Stephen Dougray Scott (born 26 November 1965) is a Scottish actor."
                         },
                         {
-                            "entity": "Jessica De Gouw",
+                            "name": "Jessica De Gouw",
                             "type": "Actor",
                             "category": "Person",
                             "description": "Jessica Elise De Gouw (born 15 February 1988) is an Australian actress. "
                         },
                         {
-                            "entity": "Martin McCann",
+                            "name": "Martin McCann",
                             "type": "Actor",
                             "category": "Person",
                             "description": "Martin McCann is an actor from Northern Ireland. In 2020, he was listed as number 48 on The Irish Times list of Ireland's greatest film actors"
@@ -89,52 +89,52 @@ class OpenIENERPrompt(PromptOp):
         "schema": $schema,
         "example": [
             {
-                "input": "《Rezort》\n《Rezort》是一部 2015 年英国僵尸恐怖片，由史蒂夫·巴克执导，保罗·格斯滕伯格编剧。\n 该片由道格瑞·斯科特、杰西卡·德·古维和马丁·麦凯恩主演。\n 在人类赢得与僵尸的毁灭性战争后，剩下的少数不死生物被关在一个安全的岛屿上，在那里他们被猎杀作为消遣。\n 当岛上的安全出现问题时，客人们必须面对新一轮疫情爆发的可能性。",
+                "input": "《Rezort》是一部 2015年英国僵尸恐怖片，由史蒂夫·巴克执导，保罗·格斯滕伯格编剧。该片由道格瑞·斯科特、杰西卡·德·古维和马丁·麦凯恩主演。在人类赢得与僵尸的毁灭性战争后，剩下的少数不死生物被关在一个安全的岛屿上，在那里他们被猎杀作为消遣。当岛上的安全出现问题时，客人们必须面对新一轮疫情爆发的可能性。",
                 "output": [
                             {
-                                "entity": "The Rezort",
+                                "name": "The Rezort",
                                 "type": "Movie",
                                 "category": "Works",
                                 "description": "一部 2015 年英国僵尸恐怖片，由史蒂夫·巴克执导，保罗·格斯滕伯格编剧。"
                             },
                             {
-                                "entity": "2015",
+                                "name": "2015",
                                 "type": "Year",
                                 "category": "Date",
                                 "description": "电影《The Rezort》上映的年份。"
                             },
                             {
-                                "entity": "英国",
+                                "name": "英国",
                                 "type": "Nationality",
                                 "category": "GeographicLocation",
                                 "description": "大不列颠，包括英格兰、苏格兰和威尔士的岛屿。"
                             },
                             {
-                                "entity": "史蒂夫·巴克",
+                                "name": "史蒂夫·巴克",
                                 "type": "Director",
                                 "category": "Person",
                                 "description": "史蒂夫·巴克 是一名英国电影导演和剧作家"
                             },
                             {
-                                "entity": "保罗·格斯滕伯格",
+                                "name": "保罗·格斯滕伯格",
                                 "type": "Writer",
                                 "category": "Person",
                                 "description": "保罗·格斯滕伯格 (Paul Gerstenberger) 是一名作家和制片人，因《The Rezort》（2015 年）、《Primeval》（2007 年）和《House of Anubis》（2011 年）而闻名。"
                             },
                             {
-                                "entity": "道格雷·斯科特",
+                                "name": "道格雷·斯科特",
                                 "type": "Actor",
                                 "category": "Person",
                                 "description": "斯蒂芬·道格雷·斯科特 (Stephen Dougray Scott，1965 年 11 月 26 日出生) 是一位苏格兰演员。"
                             },
                             {
-                                "entity": "杰西卡·德·古维",
+                                "name": "杰西卡·德·古维",
                                 "type": "Actor",
                                 "category": "Person",
                                 "description": "杰西卡·伊莉斯·德·古维 (Jessica Elise De Gouw，1988 年 2 月 15 日出生) 是一位澳大利亚女演员。"
                             },
                             {
-                                "entity": "马丁·麦肯",
+                                "name": "马丁·麦肯",
                                 "type": "Actor",
                                 "category": "Person",
                                 "description": "马丁·麦肯是来自北爱尔兰的演员。2020 年，他在《爱尔兰时报》爱尔兰最伟大电影演员名单中排名第 48 位"
@@ -146,12 +146,14 @@ class OpenIENERPrompt(PromptOp):
     }    
         """
 
-    def __init__(
-            self, language: Optional[str] = "en", **kwargs
-    ):
+    def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
-        self.schema = SchemaClient(project_id=self.project_id).extract_types()
-        self.template = Template(self.template).safe_substitute(schema=self.schema)
+        self.schema = SchemaClient(
+            project_id=KAG_PROJECT_CONF.project_id
+        ).extract_types()
+        self.template = Template(self.template).safe_substitute(
+            schema=json.dumps(self.schema)
+        )
 
     @property
     def template_variables(self) -> List[str]:

@@ -1,10 +1,11 @@
 from string import Template
 from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class SolveQuestionWithOutDocs(PromptOp):
+@PromptABC.register("default_solve_question_without_docs")
+class SolveQuestionWithOutDocs(PromptABC):
 
     template_zh = """请根据检索到的知识图回答问题“$question”，并结合历史信息进行综合分析。
 要求：
@@ -12,6 +13,7 @@ class SolveQuestionWithOutDocs(PromptOp):
 2.不要重复问题的内容。
 3.根据提供的信息生成答案。如果可能有多个答案，请生成所有答案。
 4.如果没有合适的答案，请回答“I don't know”。
+5.给出答案的同时，也给出理由
 历史：
 $history
 知识图：
@@ -26,7 +28,7 @@ Requirement:
 2. Do not repeat the content of the question.
 3. Generate answers based on the provided information. If multiple answers are possible, generate all of them.
 4. If there is no suitable answer, answer 'I don't know'.
-
+5. Provide the answer and also provide the reason.
 history:
 $history
 
@@ -35,9 +37,6 @@ $knowledge_graph
 
 answer:
 """
-
-    def __init__(self, language: str):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:

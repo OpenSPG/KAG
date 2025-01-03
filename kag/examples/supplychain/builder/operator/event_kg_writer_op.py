@@ -11,6 +11,9 @@ class EventKGWriter(KGWriter):
         super().__init__(project_id, **kwargs)
 
     def invoke(
-            self, input: Input, alter_operation: str = AlterOperationEnum.Upsert, lead_to_builder: bool = True
+        self,
+        input: Input,
+        alter_operation: str = AlterOperationEnum.Upsert,
+        lead_to_builder: bool = True,
     ) -> List[Output]:
         return super().invoke(input, alter_operation, lead_to_builder)

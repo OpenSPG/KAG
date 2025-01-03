@@ -1,0 +1,141 @@
+namespace BaiKe
+
+Chunk(文本块): EntityType
+     desc: A chunk refers to a segment of text.
+     properties:
+        content(内容): Text
+          index: TextAndVector
+
+ArtificialObject(人造物体): EntityType
+     desc: a human-made entity that does not occur naturally.
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Astronomy(天文学): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Building(建筑): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Creature(生物): EntityType
+     desc: generally refers to any living being, especially animals
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Concept(概念): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Date(日期): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+GeographicLocation(地理位置): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Keyword(关键词): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Medicine(药物): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+
+NaturalScience(自然科学): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Organization(组织机构): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Person(人物): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        job(工作): Text
+            constraint: MultiValue
+
+Transport(运输): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+Works(作品): EntityType
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        publisTime(发行时间): Date
+        authors(作者): Person
+            desc: authors of work, such as director, actor,  lyricist, composer and singer
+            constraint: MultiValue
+            
+BaikeEvent(事件): EventType
+     properties:
+        subject(主体): Person
+        participants(参与者): Person
+            desc: the participants of event, such as subject and objects
+            constraint: MultiValue
+        time(时间): Date            
+        location(地点): GeographicLocation
+        abstract(摘要): Text
+            index: TextAndVector        
+        semanticType(事件语义类型): Text
+            desc: a more specific and clearly defined type, such as Professor or Actor for the Person type
+            index: Text
+
+Others(其他): EntityType
+     desc: Entities that does not belong to any other type
+     properties:
+        info(信息): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+SemanticConcept(语义概念): EntityType
+     properties:
+        desc(内容): Text
+            index: Text

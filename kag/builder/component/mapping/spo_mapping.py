@@ -10,7 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import json
-from collections import defaultdict
 from typing import List, Type, Dict
 
 from kag.interface.builder.mapping_abc import MappingABC
@@ -19,17 +18,44 @@ from knext.common.base.runnable import Input, Output
 from knext.schema.client import OTHER_TYPE
 
 
+@MappingABC.register("spo")
+@MappingABC.register("spo_mapping")
 class SPOMapping(MappingABC):
+    """
+    A class that extends the MappingABC base class.
+    It is responsible for mapping structured dictionaries to a list of SubGraphs.
+    """
 
-    def __init__(self):
+    def __init__(
+        self,
+        s_type_col: str = None,
+        s_id_col: str = None,
+        p_type_col: str = None,
+        o_type_col: str = None,
+        o_id_col: str = None,
+        sub_property_col: str = None,
+        sub_property_mapping: dict = {},
+    ):
+        """
+        Initializes the SPOMapping instance.
+
+        Args:
+            s_type_col (str, optional): The column name for the subject type. Defaults to None.
+            s_id_col (str, optional): The column name for the subject ID. Defaults to None.
+            p_type_col (str, optional): The column name for the predicate type. Defaults to None.
+            o_type_col (str, optional): The column name for the object type. Defaults to None.
+            o_id_col (str, optional): The column name for the object ID. Defaults to None.
+            sub_property_col (str, optional): The column name for sub-properties. Defaults to None.
+            sub_property_mapping (dict, optional): A dictionary mapping sub-properties. Defaults to {}.
+        """
         super().__init__()
-        self.s_type_col = None
-        self.s_id_col = None
-        self.p_type_col = None
-        self.o_type_col = None
-        self.o_id_col = None
-        self.sub_property_mapping = defaultdict(list)
-        self.sub_property_col = None
+        self.s_type_col = s_type_col
+        self.s_id_col = s_id_col
+        self.p_type_col = p_type_col
+        self.o_type_col = o_type_col
+        self.o_id_col = o_id_col
+        self.sub_property_col = sub_property_col
+        self.sub_property_mapping = sub_property_mapping
 
     @property
     def input_types(self) -> Type[Input]:
@@ -39,7 +65,27 @@ class SPOMapping(MappingABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
-    def add_field_mappings(self, s_id_col: str, p_type_col: str, o_id_col: str, s_type_col: str = None, o_type_col: str = None):
+    def add_field_mappings(
+        self,
+        s_id_col: str,
+        p_type_col: str,
+        o_id_col: str,
+        s_type_col: str = None,
+        o_type_col: str = None,
+    ):
+        """
+        Adds field mappings for the subject, predicate, and object types and IDs.
+
+        Args:
+            s_id_col (str): The column name for the subject ID.
+            p_type_col (str): The column name for the predicate type.
+            o_id_col (str): The column name for the object ID.
+            s_type_col (str, optional): The column name for the subject type. Defaults to None.
+            o_type_col (str, optional): The column name for the object type. Defaults to None.
+
+        Returns:
+            self
+        """
         self.s_type_col = s_type_col
         self.s_id_col = s_id_col
         self.p_type_col = p_type_col
@@ -63,7 +109,10 @@ class SPOMapping(MappingABC):
         if not target_name:
             self.sub_property_col = source_name
         else:
-            self.sub_property_mapping[target_name].append(source_name)
+            if target_name in self.sub_property_mapping:
+                self.sub_property_mapping[target_name].append(source_name)
+            else:
+                self.sub_property_mapping[target_name] = [source_name]
         return self
 
     def assemble_sub_graph(self, record: Dict[str, str]):
@@ -86,14 +135,21 @@ class SPOMapping(MappingABC):
         sub_graph.add_node(id=o_id, name=o_id, label=o_type)
         sub_properties = {}
         if self.sub_property_col:
-            sub_properties = json.loads(record.get(self.sub_property_col, '{}'))
+            sub_properties = json.loads(record.get(self.sub_property_col, "{}"))
             sub_properties = {k: str(v) for k, v in sub_properties.items()}
         else:
             for target_name, source_names in self.sub_property_mapping.items():
                 for source_name in source_names:
                     value = record.get(source_name)
                     sub_properties[target_name] = value
-        sub_graph.add_edge(s_id=s_id, s_label=s_type, p=p, o_id=o_id, o_label=o_type, properties=sub_properties)
+        sub_graph.add_edge(
+            s_id=s_id,
+            s_label=s_type,
+            p=p,
+            o_id=o_id,
+            o_label=o_type,
+            properties=sub_properties,
+        )
         return sub_graph
 
     def invoke(self, input: Input, **kwargs) -> List[Output]:
@@ -105,7 +161,7 @@ class SPOMapping(MappingABC):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List[Output]: A list of resulting sub-graphs.
+            List[Output]: A list of resulting subgraphs.
         """
         record: Dict[str, str] = input
         sub_graph = self.assemble_sub_graph(record)

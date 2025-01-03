@@ -12,14 +12,16 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
-from kag.builder.component.base import BuilderComponent
+from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
 
 
 class MappingABC(BuilderComponent, ABC):
     """
-    Interface for mapping structured dicts to a list SubGraph, which can be written into KG storage.
+    Abstract base class for mapping structured dictionaries to a list of SubGraphs, which can be written into a Knowledge Graph (KG) storage.
+
+    This class defines the interface for mapping operations and provides properties to define the input and output types.
     """
 
     @property
@@ -32,6 +34,19 @@ class MappingABC(BuilderComponent, ABC):
 
     @abstractmethod
     def invoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Abstract method to be implemented by subclasses. It processes the input and returns a list of outputs.
+
+        Args:
+            input (Input): The input to be processed.
+            **kwargs: Additional keyword arguments.
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+
+        Returns:
+            List[Output]: A list of outputs corresponding to the processed input.
+        """
         raise NotImplementedError(
             f"`invoke` is not currently supported for {self.__class__.__name__}."
         )

@@ -11,66 +11,67 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
-from kag.common.base.prompt_op import PromptOp
+from kag.interface import PromptABC
 
 
-class OpenIETriplePrompt(PromptOp):
+@PromptABC.register("default_triple")
+class OpenIETriplePrompt(PromptABC):
     template_en = """
 {
-    "instruction": "You are an expert specializing in carrying out open information extraction (OpenIE). Please extract any possible relations (including subject, predicate, object) from the given text, and list them following the json format {\"triples\": [[\"subject\", \"predicate\",  \"object\"]]}\n. If there are none, do not list them.\n.\n\nPay attention to the following requirements:\n- Each triple should contain at least one, but preferably two, of the named entities in the entity_list.\n- Clearly resolve pronouns to their specific names to maintain clarity.",
+    "instruction": "You are an expert specializing in carrying out open information extraction (OpenIE). Please extract any possible relations (including subject, predicate, object) from the given text, and list them following the json format {\"triples\": [[\"subject\", \"predicate\",  \"object\"]]}. If there are none, do not list them..Pay attention to the following requirements:- Each triple should contain at least one, but preferably two, of the named entities in the entity_list.- Clearly resolve pronouns to their specific names to maintain clarity.",
     "entity_list": $entity_list,
     "input": "$input",
     "example": {
-        "input": "The Rezort\nThe Rezort is a 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger.\n It stars Dougray Scott, Jessica De Gouw and Martin McCann.\n After humanity wins a devastating war against zombies, the few remaining undead are kept on a secure island, where they are hunted for sport.\n When something goes wrong with the island's security, the guests must face the possibility of a new outbreak.",
+        "input": "The RezortThe Rezort is a 2015 British zombie horror film directed by Steve Barker and written by Paul Gerstenberger. It stars Dougray Scott, Jessica De Gouw and Martin McCann. After humanity wins a devastating war against zombies, the few remaining undead are kept on a secure island, where they are hunted for sport. When something goes wrong with the island's security, the guests must face the possibility of a new outbreak.",
         "entity_list": [
             {
-                "entity": "The Rezort",
+                "name": "The Rezort",
                 "category": "Works"
             },
             {
-                "entity": "2015",
+                "name": "2015",
                 "category": "Others"
             },
             {
-                "entity": "British",
+                "name": "British",
                 "category": "GeographicLocation"
             },
             {
-                "entity": "Steve Barker",
+                "name": "Steve Barker",
                 "category": "Person"
             },
             {
-                "entity": "Paul Gerstenberger",
+                "name": "Paul Gerstenberger",
                 "category": "Person"
             },
             {
-                "entity": "Dougray Scott",
+                "name": "Dougray Scott",
                 "category": "Person"
             },
             {
-                "entity": "Jessica De Gouw",
+                "name": "Jessica De Gouw",
                 "category": "Person"
             },
             {
-                "entity": "Martin McCann",
+                "name": "Martin McCann",
                 "category": "Person"
             },
             {
-                "entity": "zombies",
+                "name": "zombies",
                 "category": "Creature"
             },
             {
-                "entity": "zombie horror film",
+                "name": "zombie horror film",
                 "category": "Concept"
             },
             {
-                "entity": "humanity",
+                "name": "humanity",
                 "category": "Concept"
             },
             {
-                "entity": "secure island",
+                "name": "secure island",
                 "category": "GeographicLocation"
             }
         ],
@@ -151,16 +152,16 @@ class OpenIETriplePrompt(PromptOp):
     "entity_list": $entity_list,
     "input": "$input",
     "example": {
-        "input": "烦躁不安、语妄、失眠酌用镇静药，禁用抑制呼吸的镇静药。\n3.并发症的处理经抗菌药物治疗后，高热常在24小时内消退，或数日内逐渐下降。\n若体温降而复升或3天后仍不降者，应考虑SP的肺外感染，如腋胸、心包炎或关节炎等。治疗：接胸腔压力调节管＋吸引机负压吸引水瓶装置闭式负压吸引宜连续，如经12小时后肺仍未复张，应查找原因。",
+        "input": "烦躁不安、语妄、失眠酌用镇静药，禁用抑制呼吸的镇静药。3.并发症的处理经抗菌药物治疗后，高热常在24小时内消退，或数日内逐渐下降。若体温降而复升或3天后仍不降者，应考虑SP的肺外感染，如腋胸、心包炎或关节炎等。治疗：接胸腔压力调节管＋吸引机负压吸引水瓶装置闭式负压吸引宜连续，如经12小时后肺仍未复张，应查找原因。",
         "entity_list": [
-            {"entity": "烦躁不安", "category": "Symptom"},
-            {"entity": "语妄", "category": "Symptom"},
-            {"entity": "失眠", "category": "Symptom"},
-            {"entity": "镇静药", "category": "Medicine"},
-            {"entity": "肺外感染", "category": "Disease"},
-            {"entity": "胸腔压力调节管", "category": "MedicalEquipment"},
-            {"entity": "吸引机负压吸引水瓶装置", "category": "MedicalEquipment"},
-            {"entity": "闭式负压吸引", "category": "SurgicalOperation"}
+            {"name": "烦躁不安", "category": "Symptom"},
+            {"name": "语妄", "category": "Symptom"},
+            {"name": "失眠", "category": "Symptom"},
+            {"name": "镇静药", "category": "Medicine"},
+            {"name": "肺外感染", "category": "Disease"},
+            {"name": "胸腔压力调节管", "category": "MedicalEquipment"},
+            {"name": "吸引机负压吸引水瓶装置", "category": "MedicalEquipment"},
+            {"name": "闭式负压吸引", "category": "SurgicalOperation"}
         ],
         "output":[
             ["烦躁不安", "酌用", "镇静药"],
@@ -177,9 +178,6 @@ class OpenIETriplePrompt(PromptOp):
     }
 }    
     """
-
-    def __init__(self, language: Optional[str] = "en"):
-        super().__init__(language)
 
     @property
     def template_variables(self) -> List[str]:
