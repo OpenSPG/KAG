@@ -15,7 +15,6 @@ from kag.common.checkpointer import CheckpointerManager
 
 
 def qa(query):
-    # CA
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
     answer, traceLog = resp.run(query)
 

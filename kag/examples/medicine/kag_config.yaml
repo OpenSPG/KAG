@@ -27,7 +27,7 @@ project:
   host_addr: http://127.0.0.1:8887
   id: '10'
   language: zh
-  namespace: Medicine2
+  namespace: Medicine
   checkpoint_path: ./ckpt
 #------------project configuration end----------------#
 
