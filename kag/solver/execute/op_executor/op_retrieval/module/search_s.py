@@ -7,13 +7,16 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
 
 class SearchS(OpExecutor):
-    def __init__(
-        self,
-        schema: SchemaUtils,
-        **kwargs
-    ):
+    def __init__(self, schema: SchemaUtils, **kwargs):
         super().__init__(schema, **kwargs)
 
-    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
-                 process_info: dict, param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        logic_node: LogicNode,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        param: dict,
+    ) -> Dict:
         raise NotImplementedError("search s not impl")

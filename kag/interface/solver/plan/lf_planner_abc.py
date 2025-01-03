@@ -18,7 +18,9 @@ from kag.interface.solver.base_model import LFPlan
 
 
 class LFPlannerABC(KagBaseModule, ABC):
-    def lf_planing(self, question: str, memory: KagMemoryABC = None, llm_output=None) -> List[LFPlan]:
+    def lf_planing(
+        self, question: str, memory: KagMemoryABC = None, llm_output=None
+    ) -> List[LFPlan]:
         """
         Method that should be implemented by all subclasses for planning logic.
         This is a default impl

@@ -61,6 +61,4 @@ class DefaultReasoner(KagReasonerABC):
         lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question)
 
         # logic form execution
-        return self.lf_executor.execute(
-            question, lf_nodes, **kwargs
-        )
+        return self.lf_executor.execute(question, lf_nodes, **kwargs)

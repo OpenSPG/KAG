@@ -3,7 +3,10 @@ from typing import Dict, List
 
 from kag.common.registry import Registrable
 from kag.interface.solver.base_model import SPOEntity
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    EntityData,
+    OneHopGraphData,
+)
 from kag.solver.tools.graph_api.model.table_model import TableData
 
 
@@ -41,7 +44,9 @@ class GraphApiABC(Registrable):
         pass
 
     @abstractmethod
-    def calculate_pagerank_scores(self, target_vertex_type, start_nodes: List[Dict]) -> Dict:
+    def calculate_pagerank_scores(
+        self, target_vertex_type, start_nodes: List[Dict]
+    ) -> Dict:
         """
         Calculate and retrieve PageRank scores for the given starting nodes.
 

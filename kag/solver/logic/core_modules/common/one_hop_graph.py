@@ -143,8 +143,8 @@ class EntityData:
             return {}
         return self.prop.get_properties_map_list_value()
 
-    def to_show_id(self, language='en'):
-        type_name = self.type_zh if language == 'zh' else self.type
+    def to_show_id(self, language="en"):
+        type_name = self.type_zh if language == "zh" else self.type
         if (
             self.type in ["verify_op_result"]
             and self.description is not None
@@ -247,16 +247,20 @@ class RelationData:
         self.type: str = None
         self.type_zh: str = None
 
-    def _get_type_name(self, language='en'):
-        if language == 'zh':
+    def _get_type_name(self, language="en"):
+        if language == "zh":
             return self.type_zh
         else:
             return self.type
 
-    def get_spo_show_id(self, language='en'):
-        return self.from_entity.to_show_id(language), self._get_type_name(language), self.end_entity.to_show_id(language)
+    def get_spo_show_id(self, language="en"):
+        return (
+            self.from_entity.to_show_id(language),
+            self._get_type_name(language),
+            self.end_entity.to_show_id(language),
+        )
 
-    def to_show_id(self, langauge='en'):
+    def to_show_id(self, langauge="en"):
         return f"{self.from_entity.to_show_id(langauge)} {self._get_type_name(langauge)} {self.end_entity.to_show_id(langauge)}"
 
     def get_properties_map_list_value(self):
@@ -274,7 +278,7 @@ class RelationData:
             "end_entity_name": self.end_entity.name,
             "end_type": self.end_type,
             "type": self.type,
-            "type_zh": self.type_zh
+            "type_zh": self.type_zh,
         }
 
     def _get_entity_description(self, entity: EntityData):
@@ -324,7 +328,7 @@ class RelationData:
 
     def rel_to_detail_prop(self):
         spo = str(self)
-        if self.end_type != 'Text':
+        if self.end_type != "Text":
             prop_map = self.prop.get_properties_map_list_value() if self.prop else {}
             if prop_map:
                 prop_str = ",".join([f"{k}={';'.join(v)}" for k, v in prop_map.items()])
@@ -681,7 +685,7 @@ class KgGraph:
             result_dict[k] = rels
         return result_dict
 
-    def to_spo_path(self, filter_list=None, language='en'):
+    def to_spo_path(self, filter_list=None, language="en"):
         answer_path = []
         sp_o_map = {}
         for k in self.edge_map.keys():
@@ -696,11 +700,7 @@ class KgGraph:
                     sp_o_map[(s, p)] = [o]
         used_entities = []
         for k in sp_o_map.keys():
-            answer_path.append({
-                "s": k[0],
-                "p": k[1],
-                "o": sp_o_map[k]
-            })
+            answer_path.append({"s": k[0], "p": k[1], "o": sp_o_map[k]})
             used_entities.append(k[0])
             used_entities = used_entities + sp_o_map[k]
             used_entities = list(set(used_entities))
@@ -730,12 +730,14 @@ class KgGraph:
             for d in self.entity_map[k]:
                 all_entity.append(d)
         return list(set(all_entity))
+
     def get_all_spo(self):
         all_spo = []
         for k in self.edge_map.keys():
             for d in self.edge_map[k]:
                 all_spo.append(d)
         return all_spo
+
     def _graph_to_json(self):
         total_entity_map = {}
         edge_dict = {}

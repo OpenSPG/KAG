@@ -15,8 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class SolverPipeline(Registrable):
-    def __init__(self, reflector: KagReflectorABC, reasoner: KagReasonerABC,
-                 generator: KAGGeneratorABC, memory: KagMemoryABC, max_iterations=3, **kwargs):
+    def __init__(
+        self,
+        reflector: KagReflectorABC,
+        reasoner: KagReasonerABC,
+        generator: KAGGeneratorABC,
+        memory: KagMemoryABC,
+        max_iterations=3,
+        **kwargs
+    ):
         """
         Initializes the think-and-act loop class.
 
@@ -58,12 +65,15 @@ class SolverPipeline(Registrable):
             logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log
             reason_res: LFExecuteResult = self.reasoner.reason(
-                present_instruction,
-                ** kwargs
+                present_instruction, **kwargs
             )
 
             # Extract evidence from supporting facts
-            memory.save_memory(reason_res.kg_exact_solved_answer, reason_res.get_support_facts(), instruction)
+            memory.save_memory(
+                reason_res.kg_exact_solved_answer,
+                reason_res.get_support_facts(),
+                instruction,
+            )
             history_log = reason_res.get_trace_log()
             history_log["present_instruction"] = present_instruction
             history_log["present_memory"] = memory.serialize_memory()

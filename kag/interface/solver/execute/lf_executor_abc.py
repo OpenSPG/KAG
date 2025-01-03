@@ -17,4 +17,3 @@ class LFExecutorABC(Registrable, ABC):
     @abstractmethod
     def execute(self, query, lf_plans: List[LFPlan], **kwargs) -> LFExecuteResult:
         pass
-

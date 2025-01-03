@@ -44,7 +44,9 @@ class LFSubGenerator(KagBaseModule):
         for i, item in enumerate(history):
             sub_answer = item.res.sub_answer
             if sub_answer and "i don't know" not in sub_answer.lower():
-                history_qa.append(f"query{i}: {item.res.sub_query} answer{i}:{sub_answer}")
+                history_qa.append(
+                    f"query{i}: {item.res.sub_query} answer{i}:{sub_answer}"
+                )
             else:
                 history_qa.append(f"query{i}: {item.res.sub_answer}")
         if knowledge_graph:

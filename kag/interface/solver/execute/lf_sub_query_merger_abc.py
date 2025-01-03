@@ -17,4 +17,3 @@ class LFSubQueryResMerger(Registrable, ABC):
     @abstractmethod
     def merge(self, query, lf_res_list: List[LFPlan]) -> LFExecuteResult:
         pass
-

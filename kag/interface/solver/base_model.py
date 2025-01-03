@@ -182,13 +182,13 @@ class SPORelation(SPOBase):
 
 class SPOEntity(SPOBase):
     def __init__(
-            self,
-            entity_id=None,
-            std_entity_type=None,
-            un_std_entity_type=None,
-            entity_name=None,
-            alias_name=None,
-            is_attribute=False,
+        self,
+        entity_id=None,
+        std_entity_type=None,
+        un_std_entity_type=None,
+        entity_name=None,
+        alias_name=None,
+        is_attribute=False,
     ):
         super().__init__()
         self.is_attribute = is_attribute
@@ -234,7 +234,8 @@ class SPOEntity(SPOBase):
                 "id": info[0],
                 "type": info[1].std_entity_type
                 if "." in info[1].std_entity_type
-                else (prefix + "." if prefix is not None else "") + info[1].std_entity_type,
+                else (prefix + "." if prefix is not None else "")
+                + info[1].std_entity_type,
             }
             for info in id_type_info
         ]
@@ -274,12 +275,12 @@ class SPOEntity(SPOBase):
 
 class Entity:
     def __init__(
-            self,
-            entity_id=None,
-            entity_type=None,
-            entity_type_zh=None,
-            entity_name=None,
-            alias_name=None,
+        self,
+        entity_id=None,
+        entity_type=None,
+        entity_type_zh=None,
+        entity_name=None,
+        alias_name=None,
     ):
         self.id = entity_id
         self.type = entity_type
@@ -291,7 +292,7 @@ class Entity:
         return f"{[self.entity_name, self.alias_name]}:{self.id}({self.type, self.entity_type_zh})"
 
     def save_args(
-            self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
+        self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
     ):
         self.id = id if id else self.id
         self.type = type if type else self.type
@@ -349,11 +350,11 @@ class LogicNode:
 
 class SubQueryResult:
     def __init__(self):
-        self.sub_query: str = ''
-        self.sub_answer: str = ''
+        self.sub_query: str = ""
+        self.sub_answer: str = ""
         self.doc_retrieved: list = []
         self.spo_retrieved: list = []
-        self.match_type: str = 'fuzzy'
+        self.match_type: str = "fuzzy"
         self.execute_cost: float = 0.0
 
     def to_json(self):
@@ -363,7 +364,7 @@ class SubQueryResult:
             "doc_retrieved": self.doc_retrieved,
             "spo_retrieved": [str(spo) for spo in self.spo_retrieved],
             "match_type": self.match_type,
-            "execute_cost": self.execute_cost
+            "execute_cost": self.execute_cost,
         }
 
 
@@ -375,13 +376,13 @@ class LFPlan:
 
     def to_json(self):
         res = {} if self.res is None else self.res.to_json()
-        res['lf_expr'] = [str(n) for n in self.lf_nodes]
+        res["lf_expr"] = [str(n) for n in self.lf_nodes]
         return res
 
 
 class LFExecuteResult:
     def __init__(self):
-        self.kg_exact_solved_answer = ''
+        self.kg_exact_solved_answer = ""
         self.recall_docs = []
         self.rerank_docs = []
         self.sub_plans: List[LFPlan] = []
@@ -394,7 +395,9 @@ class LFExecuteResult:
             i = 0
             for sub_plan in self.sub_plans:
                 sub_res = sub_plan.res
-                facts.append(f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}")
+                facts.append(
+                    f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}"
+                )
                 i += 1
         if len(self.rerank_docs) != 0:
             facts.append("Passages:")
@@ -406,5 +409,5 @@ class LFExecuteResult:
             "sub question": [x.to_json() for x in self.sub_plans],
             "recall docs": self.recall_docs,
             "rerank docs": self.rerank_docs,
-            "kg_exact_solved_answer": self.kg_exact_solved_answer
+            "kg_exact_solved_answer": self.kg_exact_solved_answer,
         }

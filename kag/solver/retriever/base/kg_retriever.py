@@ -17,28 +17,41 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 
 class KGRetriever(KagBaseModule):
-    def __init__(self, el_num=5, llm_client: LLMClient = None, vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None, search_api: SearchApiABC = None, **kwargs):
+    def __init__(
+        self,
+        el_num=5,
+        llm_client: LLMClient = None,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        **kwargs
+    ):
         super().__init__(llm_client, **kwargs)
-        self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
-        }))
-        self.graph_api = graph_api or GraphApiABC.from_config({
-            "type": "openspg_graph_api"}
+        self.schema: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
+        self.graph_api = graph_api or GraphApiABC.from_config(
+            {"type": "openspg_graph_api"}
         )
 
-        self.search_api = search_api or SearchApiABC.from_config({
-            "type": "openspg_search_api"
-        })
+        self.search_api = search_api or SearchApiABC.from_config(
+            {"type": "openspg_search_api"}
+        )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"])
+            KAG_CONFIG.all_config["vectorize_model"]
+        )
         self.text_similarity = TextSimilarity(vectorize_model)
         self.el_num = el_num
 
-    def recall_one_hop_graph(self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
-        OneHopGraphData]:
+    def recall_one_hop_graph(
+        self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs
+    ) -> List[OneHopGraphData]:
         """
         Recall one-hop graph data for a given entity.
 
@@ -53,7 +66,7 @@ class KGRetriever(KagBaseModule):
         """
 
     def retrieval_relation(
-            self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
+        self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], **kwargs
     ) -> KgGraph:
         """
         Input:
@@ -65,9 +78,7 @@ class KGRetriever(KagBaseModule):
             Returns KgGraph
         """
 
-    def retrieval_entity(
-            self, mention_entity: SPOEntity, **kwargs
-    ) -> List[EntityData]:
+    def retrieval_entity(self, mention_entity: SPOEntity, **kwargs) -> List[EntityData]:
         """
         Retrieve related entities based on the given entity mention.
 

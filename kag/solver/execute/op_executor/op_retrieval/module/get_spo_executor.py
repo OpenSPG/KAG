@@ -3,7 +3,11 @@ from typing import List, Dict, Tuple
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
 from kag.interface.solver.base_model import LogicNode, SPOEntity, SPOBase
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, KgGraph, RelationData
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    EntityData,
+    KgGraph,
+    RelationData,
+)
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.base.kg_retriever import KGRetriever
@@ -35,9 +39,9 @@ class GetSPOExecutor(OpExecutor):
     """
 
     def __init__(
-            self,
-            schema: SchemaUtils,
-            **kwargs,
+        self,
+        schema: SchemaUtils,
+        **kwargs,
     ):
         """
         Initializes the GetSPOExecutor with necessary components.
@@ -54,10 +58,10 @@ class GetSPOExecutor(OpExecutor):
         entities_candis = []
         s_data = kg_graph.get_entity_by_alias(n.s.alias_name)
         if (
-                s_data is None
-                and isinstance(n.s, SPOEntity)
-                and n.s.entity_name
-                and len(n.s.id_set) == 0
+            s_data is None
+            and isinstance(n.s, SPOEntity)
+            and n.s.entity_name
+            and len(n.s.id_set) == 0
         ):
             entities_candis.append(n.s)
 
@@ -65,10 +69,10 @@ class GetSPOExecutor(OpExecutor):
         if isinstance(n, GetSPONode):
             o_data = kg_graph.get_entity_by_alias(n.o.alias_name)
             if (
-                    o_data is None
-                    and isinstance(n.o, SPOEntity)
-                    and n.o.entity_name
-                    and len(n.o.id_set) == 0
+                o_data is None
+                and isinstance(n.o, SPOEntity)
+                and n.o.entity_name
+                and len(n.o.id_set) == 0
             ):
                 entities_candis.append(n.o)
             el_kg_graph.query_graph[n.p.alias_name] = {
@@ -92,9 +96,15 @@ class GetSPOExecutor(OpExecutor):
                         s_data_set.append(s_data)
         return s_data_set
 
-    def _kg_match(self, logic_node: GetSPONode, req_id: str, kg_retriever: KGRetriever, kg_graph: KgGraph,
-                  process_info: dict, param: dict) -> Tuple[
-        bool, KgGraph]:
+    def _kg_match(
+        self,
+        logic_node: GetSPONode,
+        req_id: str,
+        kg_retriever: KGRetriever,
+        kg_graph: KgGraph,
+        process_info: dict,
+        param: dict,
+    ) -> Tuple[bool, KgGraph]:
         if not isinstance(logic_node, GetSPONode):
             return False, KgGraph()
 
@@ -105,7 +115,7 @@ class GetSPOExecutor(OpExecutor):
         copy_kg_graph.query_graph[n.p.alias_name] = {
             "s": n.s.alias_name,
             "p": n.p.alias_name,
-            "o": n.o.alias_name
+            "o": n.o.alias_name,
         }
         mentioned_entities = self.get_mentioned_entity(n, copy_kg_graph)
         if mentioned_entities:
@@ -116,13 +126,17 @@ class GetSPOExecutor(OpExecutor):
                 "o": n.o.alias_name,
             }
             for mentioned_entity in mentioned_entities:
-                linked_entities: List[EntityData] = kg_retriever.retrieval_entity(mentioned_entity,
-                                                                                  kwargs=param)
+                linked_entities: List[EntityData] = kg_retriever.retrieval_entity(
+                    mentioned_entity, kwargs=param
+                )
                 for entity_id_info in linked_entities:
                     entity_type_zh = (
-                        self.schema.node_en_zh[self.schema.get_label_without_prefix(entity_id_info.type)]
+                        self.schema.node_en_zh[
+                            self.schema.get_label_without_prefix(entity_id_info.type)
+                        ]
                         if self.schema is not None
-                           and self.schema.get_label_without_prefix(entity_id_info.type) in self.schema.node_en_zh.keys()
+                        and self.schema.get_label_without_prefix(entity_id_info.type)
+                        in self.schema.node_en_zh.keys()
                         else None
                     )
                     entity_id_info.type_zh = entity_type_zh
@@ -135,8 +149,12 @@ class GetSPOExecutor(OpExecutor):
         if len(s_data_set) == 0 and len(o_data_set) == 0:
             return False, copy_kg_graph
 
-        one_hop_graph_list = kg_retriever.recall_one_hop_graph(logic_node, s_data_set, o_data_set, kwargs=param)
-        cur_kg_graph = kg_retriever.retrieval_relation(logic_node, one_hop_graph_list, kwargs=param)
+        one_hop_graph_list = kg_retriever.recall_one_hop_graph(
+            logic_node, s_data_set, o_data_set, kwargs=param
+        )
+        cur_kg_graph = kg_retriever.retrieval_relation(
+            logic_node, one_hop_graph_list, kwargs=param
+        )
         spo_res = cur_kg_graph.get_entity_by_alias(n.p.alias_name)
         if not spo_res:
             return False, copy_kg_graph
@@ -144,13 +162,21 @@ class GetSPOExecutor(OpExecutor):
         cur_kg_graph.nodes_alias.append(n.o.alias_name)
         cur_kg_graph.edge_alias.append(n.p.alias_name)
         copy_kg_graph.merge_kg_graph(cur_kg_graph)
-        process_info[logic_node.sub_query]['spo_retrieved'] = spo_res
-        process_info[logic_node.sub_query]['match_type'] = "exact spo" if isinstance(kg_retriever,
-                                                                                     ExactKgRetriever) else "fuzzy spo"
+        process_info[logic_node.sub_query]["spo_retrieved"] = spo_res
+        process_info[logic_node.sub_query]["match_type"] = (
+            "exact spo" if isinstance(kg_retriever, ExactKgRetriever) else "fuzzy spo"
+        )
         return True, copy_kg_graph
 
-    def executor(self, nl_query: str, logic_node: LogicNode, req_id: str, kg_graph: KgGraph,
-                 process_info: dict, param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        logic_node: LogicNode,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        param: dict,
+    ) -> Dict:
         if not isinstance(logic_node, GetSPONode):
             return {}
         n = logic_node
@@ -159,13 +185,15 @@ class GetSPOExecutor(OpExecutor):
         kg_graph.logic_form_base[n.p.alias_name] = n.p
         kg_graph.logic_form_base[n.o.alias_name] = n.o
 
-        is_success, exact_matched_graph = self._kg_match(n, req_id, self.exact_kg_retriever, kg_graph, process_info,
-                                                         param)
+        is_success, exact_matched_graph = self._kg_match(
+            n, req_id, self.exact_kg_retriever, kg_graph, process_info, param
+        )
         if is_success:
             kg_graph.merge_kg_graph(exact_matched_graph)
             return process_info[logic_node.sub_query]
 
-        _, fuzzy_matched_graph = self._kg_match(n, req_id, self.fuzzy_kg_retriever, kg_graph, process_info,
-                                                param)
+        _, fuzzy_matched_graph = self._kg_match(
+            n, req_id, self.fuzzy_kg_retriever, kg_graph, process_info, param
+        )
         kg_graph.merge_kg_graph(fuzzy_matched_graph)
         return process_info[logic_node.sub_query]

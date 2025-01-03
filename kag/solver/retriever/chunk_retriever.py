@@ -12,27 +12,33 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 
 class ChunkRetriever(KagBaseModule, ABC):
-    def __init__(self, recall_num: int = 10,
-                 rerank_topk: int = 10,
-                 graph_api: GraphApiABC = None,
-                 search_api: SearchApiABC = None,
-                 llm_client: LLMClient = None,
-                 **kwargs):
+    def __init__(
+        self,
+        recall_num: int = 10,
+        rerank_topk: int = 10,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        llm_client: LLMClient = None,
+        **kwargs
+    ):
         super().__init__(llm_client, **kwargs)
         self.recall_num = recall_num
         self.rerank_topk = rerank_topk
-        self.schema: SchemaUtils = SchemaUtils(LogicFormConfiguration({
-            "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-            "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr
-        }))
-        self.graph_api = graph_api or GraphApiABC.from_config({
-            "type": "openspg_graph_api"}
+        self.schema: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
+        self.graph_api = graph_api or GraphApiABC.from_config(
+            {"type": "openspg_graph_api"}
         )
 
-        self.search_api = search_api or SearchApiABC.from_config({
-            "type": "openspg_search_api"
-        })
-
+        self.search_api = search_api or SearchApiABC.from_config(
+            {"type": "openspg_search_api"}
+        )
 
     """
     An abstract base class for chunk retrieval strategies.
@@ -47,8 +53,12 @@ class ChunkRetriever(KagBaseModule, ABC):
             Reranks the retrieved passages based on the given queries.
     """
 
-    def recall_docs(self, queries: List[str], retrieved_spo: Optional[List[RelationData]] = None,
-                    **kwargs) -> List[str]:
+    def recall_docs(
+        self,
+        queries: List[str],
+        retrieved_spo: Optional[List[RelationData]] = None,
+        **kwargs
+    ) -> List[str]:
         """
         Recalls documents based on the given query.
 

@@ -9,11 +9,16 @@ from kag.solver.logic.core_modules.common.utils import get_recall_node_label
 from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
 
-def default_search_entity_by_name_algorithm(mention_entity: SPOEntity, schema: SchemaUtils,
-                                            vectorize_model: VectorizeModelABC,
-                                            text_similarity: TextSimilarity,
-                                            search_api: SearchApiABC, topk=1, use_query_type=False, **kwargs) -> List[
-    EntityData]:
+def default_search_entity_by_name_algorithm(
+    mention_entity: SPOEntity,
+    schema: SchemaUtils,
+    vectorize_model: VectorizeModelABC,
+    text_similarity: TextSimilarity,
+    search_api: SearchApiABC,
+    topk=1,
+    use_query_type=False,
+    **kwargs
+) -> List[EntityData]:
     """
     This function searches for entities based on a mention entity's name using various methods including vector similarity and text search.
     It returns a list of the most relevant entities up to 'topk' number of results.
@@ -113,14 +118,14 @@ def default_search_entity_by_name_algorithm(mention_entity: SPOEntity, schema: S
             if recall_node_label == sematic_type:
                 node["type_match_score"] = node["score"]
             elif (
-                    "semanticType" not in node["node"].keys()
-                    or node["node"]["semanticType"] == ""
+                "semanticType" not in node["node"].keys()
+                or node["node"]["semanticType"] == ""
             ):
                 node["type_match_score"] = 0.3
             else:
                 node["type_match_score"] = (
-                        node["score"]
-                        * sematic_match_score_map[node["node"]["semanticType"]]
+                    node["score"]
+                    * sematic_match_score_map[node["node"]["semanticType"]]
                 )
         sorted_people_dicts = sorted(
             cands_nodes, key=lambda node: node["type_match_score"], reverse=True
@@ -137,17 +142,12 @@ def default_search_entity_by_name_algorithm(mention_entity: SPOEntity, schema: S
 
     # Create EntityData objects for the top results that meet the recognition threshold
     for recall in sorted_people_dicts:
-        if (
-                len(sorted_people_dicts) != 0
-                and recall["score"] >= recognition_threshold
-        ):
+        if len(sorted_people_dicts) != 0 and recall["score"] >= recognition_threshold:
             recalled_entity = EntityData()
             recalled_entity.score = recall["score"]
             recalled_entity.biz_id = recall["node"]["id"]
             recalled_entity.name = recall["node"]["name"]
-            recalled_entity.type = get_recall_node_label(
-                recall["node"]["__labels__"]
-            )
+            recalled_entity.type = get_recall_node_label(recall["node"]["__labels__"])
             retdata.append(recalled_entity)
         else:
             break

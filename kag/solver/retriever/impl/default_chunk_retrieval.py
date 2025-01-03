@@ -26,13 +26,18 @@ from kag.common.utils import processing_phrases
 from kag.common.conf import KAG_CONFIG
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity, cosine_similarity
+from kag.solver.logic.core_modules.common.text_sim_by_vector import (
+    TextSimilarity,
+    cosine_similarity,
+)
 from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger(__name__)
 
 ner_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 query_sim_doc_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
+
+
 @ChunkRetriever.register("kag")
 class KAGRetriever(ChunkRetriever):
     """
@@ -46,22 +51,24 @@ class KAGRetriever(ChunkRetriever):
     """
 
     def __init__(
-            self,
-            ner_prompt: PromptABC = None,
-            std_prompt: PromptABC = None,
-            pagerank_threshold: float = 0.9,
-            match_threshold: float = 0.9,
-            pagerank_weight: float = 0.5,
-            recall_num: int = 10,
-            rerank_topk: int = 10,
-            reranker_model_path: str = None,
-            vectorize_model: Vectorizer = None,
-            graph_api: GraphApiABC = None,
-            search_api: SearchApiABC = None,
-            llm_client: LLMClient = None,
-            **kwargs,
+        self,
+        ner_prompt: PromptABC = None,
+        std_prompt: PromptABC = None,
+        pagerank_threshold: float = 0.9,
+        match_threshold: float = 0.9,
+        pagerank_weight: float = 0.5,
+        recall_num: int = 10,
+        rerank_topk: int = 10,
+        reranker_model_path: str = None,
+        vectorize_model: Vectorizer = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        llm_client: LLMClient = None,
+        **kwargs,
     ):
-        super().__init__(recall_num, rerank_topk, graph_api, search_api,llm_client, **kwargs)
+        super().__init__(
+            recall_num, rerank_topk, graph_api, search_api, llm_client, **kwargs
+        )
         if vectorize_model is None:
             vectorize_model = Vectorizer.from_config(
                 KAG_CONFIG.all_config["vectorize_model"]
@@ -127,7 +134,7 @@ class KAGRetriever(ChunkRetriever):
 
     @staticmethod
     def append_official_name(
-            source_entities: List[Dict], entities_with_official_name: List[Dict]
+        source_entities: List[Dict], entities_with_official_name: List[Dict]
     ):
         """
         Appends official names to entities.
@@ -203,7 +210,7 @@ class KAGRetriever(ChunkRetriever):
                 target_type = self.schema.get_label_within_prefix(CHUNK_TYPE)
                 start_node_set = []
                 for s in start_nodes:
-                    if s['type'] == target_type:
+                    if s["type"] == target_type:
                         continue
                     start_node_set.append(s)
                 scores = self.graph_api.calculate_pagerank_scores(
@@ -249,27 +256,44 @@ class KAGRetriever(ChunkRetriever):
 
             if len(typed_nodes) == 0 and len(nontyped_nodes) != 0:
                 matched_entities.append(
-                    {"name": nontyped_nodes[0]["node"]["name"],
-                     "type": self.schema.get_label_within_prefix(OTHER_TYPE), "score": nontyped_nodes[0]["score"]}
+                    {
+                        "name": nontyped_nodes[0]["node"]["name"],
+                        "type": self.schema.get_label_within_prefix(OTHER_TYPE),
+                        "score": nontyped_nodes[0]["score"],
+                    }
                 )
             elif len(typed_nodes) != 0 and len(nontyped_nodes) != 0:
                 if typed_nodes[0]["score"] > 0.8:
                     matched_entities.append(
-                        {"name": typed_nodes[0]["node"]["name"], "type": query_type, "score": typed_nodes[0]["score"]}
+                        {
+                            "name": typed_nodes[0]["node"]["name"],
+                            "type": query_type,
+                            "score": typed_nodes[0]["score"],
+                        }
                     )
                 else:
                     matched_entities.append(
-                        {"name": nontyped_nodes[0]["node"]["name"],
-                         "type": self.schema.get_label_within_prefix(OTHER_TYPE),
-                         "score": nontyped_nodes[0]["score"]}
+                        {
+                            "name": nontyped_nodes[0]["node"]["name"],
+                            "type": self.schema.get_label_within_prefix(OTHER_TYPE),
+                            "score": nontyped_nodes[0]["score"],
+                        }
                     )
                     matched_entities.append(
-                        {"name": typed_nodes[0]["node"]["name"], "type": query_type, "score": typed_nodes[0]["score"]}
+                        {
+                            "name": typed_nodes[0]["node"]["name"],
+                            "type": query_type,
+                            "score": typed_nodes[0]["score"],
+                        }
                     )
             elif len(typed_nodes) != 0 and len(nontyped_nodes) == 0:
                 if typed_nodes[0]["score"] > 0.8:
                     matched_entities.append(
-                        {"name": typed_nodes[0]["node"]["name"], "type": query_type, "score": typed_nodes[0]["score"]}
+                        {
+                            "name": typed_nodes[0]["node"]["name"],
+                            "type": query_type,
+                            "score": typed_nodes[0]["score"],
+                        }
                     )
 
         if not matched_entities:
@@ -277,7 +301,7 @@ class KAGRetriever(ChunkRetriever):
         return matched_entities
 
     def calculate_combined_scores(
-            self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
+        self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
     ):
         """
         Calculate and return the combined scores that integrate both similarity scores and PageRank scores.
@@ -317,18 +341,20 @@ class KAGRetriever(ChunkRetriever):
         combined_scores = dict()
         for key in pagerank_scores.keys():
             combined_scores[key] = (
-                    sim_scores[key] * (1 - self.pagerank_weight)
-                    + pagerank_scores[key] * self.pagerank_weight
+                sim_scores[key] * (1 - self.pagerank_weight)
+                + pagerank_scores[key] * self.pagerank_weight
             )
         return combined_scores
 
-    def _add_extra_entity_from_spo(self, matched_entities: Dict, retrieved_spo: List[RelationData]):
+    def _add_extra_entity_from_spo(
+        self, matched_entities: Dict, retrieved_spo: List[RelationData]
+    ):
         all_related_entities = []
         if retrieved_spo:
             for spo in retrieved_spo:
-                if spo.from_entity.type not in ['Text', 'attribute']:
+                if spo.from_entity.type not in ["Text", "attribute"]:
                     all_related_entities.append(spo.from_entity)
-                if spo.end_entity.type not in ['Text', 'attribute']:
+                if spo.end_entity.type not in ["Text", "attribute"]:
                     all_related_entities.append(spo.end_entity)
             all_related_entities = list(set(all_related_entities))
 
@@ -370,8 +396,12 @@ class KAGRetriever(ChunkRetriever):
         ner_cache.put(query, ner_list)
         return ner_list
 
-    def recall_docs(self, queries: List[str], retrieved_spo: Optional[List[RelationData]] = None,
-                    **kwargs) -> List[str]:
+    def recall_docs(
+        self,
+        queries: List[str],
+        retrieved_spo: Optional[List[RelationData]] = None,
+        **kwargs,
+    ) -> List[str]:
         """
         Recall relevant documents based on the query string.
 
@@ -407,20 +437,23 @@ class KAGRetriever(ChunkRetriever):
             cur_matched = self.match_entities(entities)
             for matched_entity in cur_matched:
                 key = f"{matched_entity['name']}_{matched_entity['type']}"
-                if key not in matched_entities_map or matched_entity['score'] > matched_entities_map[key]['score']:
+                if (
+                    key not in matched_entities_map
+                    or matched_entity["score"] > matched_entities_map[key]["score"]
+                ):
                     matched_entities_map[key] = matched_entity
 
-        matched_entities = self._add_extra_entity_from_spo(retrieved_spo=retrieved_spo,
-                                                           matched_entities=matched_entities_map)
+        matched_entities = self._add_extra_entity_from_spo(
+            retrieved_spo=retrieved_spo, matched_entities=matched_entities_map
+        )
         try:
-            matched_scores = [k['score'] for k in matched_entities]
+            matched_scores = [k["score"] for k in matched_entities]
         except Exception as e:
             logger.error(f"mathematics error: {e}")
         if len(matched_entities):
             pagerank_scores = self.calculate_pagerank_scores(matched_entities)
         else:
             pagerank_scores = []
-
 
         if matched_entities and np.min(matched_scores) > self.pagerank_threshold:
             combined_scores = pagerank_scores
@@ -429,7 +462,7 @@ class KAGRetriever(ChunkRetriever):
             queries = queries[1:]
             for query in queries:
                 query_sim_scores = self.calculate_sim_scores(query, chunk_nums)
-                for doc_id,score in query_sim_scores.items():
+                for doc_id, score in query_sim_scores.items():
                     if doc_id not in sim_scores:
                         sim_scores[doc_id] = score
                     elif score > sim_scores[doc_id]:
@@ -521,20 +554,20 @@ class KAGRetriever(ChunkRetriever):
 @ChunkRetriever.register("default_chunk_retriever")
 class DefaultChunkRetriever(KAGRetriever):
     def __init__(
-            self,
-            ner_prompt: PromptABC = None,
-            std_prompt: PromptABC = None,
-            pagerank_threshold: float = 0.9,
-            match_threshold: float = 0.9,
-            pagerank_weight: float = 0.5,
-            recall_num: int = 10,
-            rerank_topk: int = 10,
-            reranker_model_path: str = None,
-            vectorize_model: VectorizeModelABC = None,
-            graph_api: GraphApiABC = None,
-            search_api: SearchApiABC = None,
-            llm_client: LLMClient = None,
-            **kwargs,
+        self,
+        ner_prompt: PromptABC = None,
+        std_prompt: PromptABC = None,
+        pagerank_threshold: float = 0.9,
+        match_threshold: float = 0.9,
+        pagerank_weight: float = 0.5,
+        recall_num: int = 10,
+        rerank_topk: int = 10,
+        reranker_model_path: str = None,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        llm_client: LLMClient = None,
+        **kwargs,
     ):
         super().__init__(
             ner_prompt,
@@ -549,7 +582,7 @@ class DefaultChunkRetriever(KAGRetriever):
             graph_api,
             search_api,
             llm_client,
-            **kwargs
+            **kwargs,
         )
         self.text_sim = TextSimilarity(vectorizer=self.vectorize_model)
 
@@ -576,4 +609,4 @@ class DefaultChunkRetriever(KAGRetriever):
         merged_sorted_idx = np.argsort(-passage_scores)
 
         new_passages = [passages[x] for x in merged_sorted_idx]
-        return new_passages[:self.rerank_topk]
+        return new_passages[: self.rerank_topk]
