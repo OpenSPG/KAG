@@ -24,7 +24,6 @@ def read_dsl_files(directory):
 if __name__ == "__main__":
     resonser_path = os.path.dirname(os.path.abspath(__file__))
     project_path = os.path.dirname(resonser_path)
-    cfg_path = os.path.join(project_path, "kag_config.cfg")
     host_addr = KAG_PROJECT_CONF.host_addr
     project_id = KAG_PROJECT_CONF.project_id
     namespace = KAG_PROJECT_CONF.namespace

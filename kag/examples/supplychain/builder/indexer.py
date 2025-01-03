@@ -55,7 +55,7 @@ class SupplyChainPersonChain(BuilderChainABC):
             )
         )
         self.vectorizer = BatchVectorizer.from_config(
-            KAG_CONFIG.all_config["vectorizer"]
+            KAG_CONFIG.all_config["chain_vectorizer"]
         )
         self.sink = KGWriter()
         return self.mapping >> self.vectorizer >> self.sink
@@ -87,7 +87,7 @@ class SupplyChainCompanyFundTransCompanyChain(BuilderChainABC):
             .add_sub_property_mapping("transAmt", "transAmt")
         )
         self.vectorizer = BatchVectorizer.from_config(
-            KAG_CONFIG.all_config["vectorizer"]
+            KAG_CONFIG.all_config["chain_vectorizer"]
         )
         self.sink = KGWriter()
         return self.date_process_op >> self.mapping >> self.vectorizer >> self.sink
@@ -116,7 +116,7 @@ class SupplyChainDefaulStructuredBuilderChain(BuilderChainABC):
         self.mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         self.sink = KGWriter()
         self.vectorizer = BatchVectorizer.from_config(
-            KAG_CONFIG.all_config["vectorizer"]
+            KAG_CONFIG.all_config["chain_vectorizer"]
         )
         chain = self.mapping >> self.vectorizer >> self.sink
         return chain
@@ -144,7 +144,7 @@ class SupplyChainEventBuilderChain(DefaultStructuredBuilderChain):
         self.mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
         self.sink = EventKGWriter()
         self.vectorizer = BatchVectorizer.from_config(
-            KAG_CONFIG.all_config["vectorizer"]
+            KAG_CONFIG.all_config["chain_vectorizer"]
         )
         chain = self.mapping >> self.vectorizer >> self.sink
         return chain

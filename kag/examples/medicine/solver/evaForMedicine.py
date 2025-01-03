@@ -14,7 +14,6 @@ class MedicineDemo:
     """
 
     def qa(self, query):
-        # CA
         resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, trace_log = resp.run(query)
 

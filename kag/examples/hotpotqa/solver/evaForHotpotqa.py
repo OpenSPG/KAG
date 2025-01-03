@@ -26,7 +26,6 @@ class EvaForHotpotqa:
         pass
 
     def qa(self, query):
-        # CA
         resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, traceLog = resp.run(query)
 
