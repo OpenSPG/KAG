@@ -13,7 +13,7 @@
 
 ## 2. 复现步骤
 
-### Step 1：进入案例目录
+### Step 1：进入示例目录
 
 ```bash
 cd kag/examples/medicine

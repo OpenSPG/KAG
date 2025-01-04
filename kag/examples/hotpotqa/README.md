@@ -49,7 +49,7 @@ Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory
 cd builder && python indexer.py && cd ..
 ```
 
-### Step 7: Execute the QA tasks
+### Step 6: Execute the QA tasks
 
 Execute [evaForHotpotqa.py](./solver/evaForHotpotqa.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
 
@@ -61,7 +61,7 @@ The generated answers are saved to ``./solver/hotpotqa_res_*.json``.
 
 The calculated EM and F1 metrics are saved to ``./solver/hotpotqa_metrics_*.json``.
 
-### Step 8: (Optional) Cleanup
+### Step 7: (Optional) Cleanup
 
 To delete the checkpoints, execute the following command.
 
@@ -76,7 +76,7 @@ To delete the KAG project and related knowledge graph, execute the following sim
 curl http://127.0.0.1:8887/project/api/delete?projectId=1
 ```
 
-### Step 9: (Optional) Try the larger datasets
+### Step 8: (Optional) Try the larger datasets
 
 Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [evaForHotpotqa.py](./solver/evaForHotpotqa.py) to try the larger datasets.
 

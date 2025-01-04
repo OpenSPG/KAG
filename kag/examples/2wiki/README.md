@@ -3,7 +3,7 @@
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
-[2WikiMultiHopQA](https://arxiv.org/abs/1809.09600) is a multi-hop QA dataset for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
+[2WikiMultiHopQA](https://arxiv.org/abs/2011.01060) is a multi-hop QA dataset for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
 
 Here we demonstrate how to build a knowledge graph for the 2WikiMultiHopQA dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
 
@@ -49,7 +49,7 @@ Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory
 cd builder && python indexer.py && cd ..
 ```
 
-### Step 7: Execute the QA tasks
+### Step 6: Execute the QA tasks
 
 Execute [evaFor2wiki.py](./solver/evaFor2wiki.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
 
@@ -61,7 +61,7 @@ The generated answers are saved to ``./solver/2wiki_res_*.json``.
 
 The calculated EM and F1 metrics are saved to ``./solver/2wiki_metrics_*.json``.
 
-### Step 8: (Optional) Cleanup
+### Step 7: (Optional) Cleanup
 
 To delete the checkpoints, execute the following command.
 
@@ -76,7 +76,7 @@ To delete the KAG project and related knowledge graph, execute the following sim
 curl http://127.0.0.1:8887/project/api/delete?projectId=1
 ```
 
-### Step 9: (Optional) Try the larger datasets
+### Step 8: (Optional) Try the larger datasets
 
 Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [evaFor2wiki.py](./solver/evaFor2wiki.py) to try the larger datasets.
 
