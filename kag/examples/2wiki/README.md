@@ -1,69 +1,82 @@
 # KAG Example: TwoWiki
 
-[2WikiMultiHopQA](https://arxiv.org/abs/1809.09600) is a multi-hop QA dataset
-for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731)
-and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering
-performance evaluation.
+[English](./README.md) |
+[简体中文](./README_cn.md)
 
-Here we demonstrate how to build a knowledge graph for the 2WikiMultiHopQA dataset,
-generate answers to those evaluation questions with KAG and calculate EM and F1
-metrics of the KAG generated answers compared to the ground-truth answers.
+[2WikiMultiHopQA](https://arxiv.org/abs/1809.09600) is a multi-hop QA dataset for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
 
-## Steps to reproduce
+Here we demonstrate how to build a knowledge graph for the 2WikiMultiHopQA dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
 
-1. Follow the Quick Start guide of KAG to install the OpenSPG server and KAG.
+## 1. Precondition
 
-   The following steps assume the Python virtual environment with KAG installed
-   is activated and the current directory is [2wiki](.).
+Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7) to install KAG and its dependency OpenSPG server, and learn about using KAG in developer mode.
 
-2. (Optional) Update [indexer.py](./builder/indexer.py) and [evaFor2wiki.py](./solver/evaFor2wiki.py)
-   to use the larger dataset. You may want to skip this step the first time and
-   use the small dataset to get started quickly.
+## 2. Steps to reproduce
 
-3. Update the ``openie_llm``, ``chat_llm`` and ``vectorizer_model`` configurations
-   in [kag_config.yaml](./kag_config.yaml) properly.
+### Step 1: Enter the example directory
 
-4. Restore the KAG project.
+```bash
+cd kag/examples/2wiki
+```
 
-   ```bash
-   knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
-   ```
+### Step 2: Configure models
 
-5. Commit the schema.
+Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representive model configuration ``vectorizer_model`` in [kag_config.yaml](./kag_config.yaml).
 
-   ```bash
-   knext schema commit
-   ```
+You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
-6. Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph.
+### Step 3: Project initialization
 
-   ```bash
-   cd builder && python indexer.py && cd ..
-   ```
+Initiate the project with the following command.
 
-7. Execute [evaFor2wiki.py](./solver/evaFor2wiki.py) in the [solver](./solver) directory
-   to generate the answers and calculate the EM and F1 metrics.
+```bash
+knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
+```
 
-   ```bash
-   cd solver && python evaFor2wiki.py && cd ..
-   ```
+### Step 4: Commit the schema
 
-   The generated answers are saved to ``./solver/2wiki_res_*.json``.
+Execute the following command to commit the schema [TwoWiki.schema](./schema/TwoWiki.schema).
 
-   The calculated EM and F1 metrics are saved to ``./solver/2wiki_metrics_*.json``.
+```bash
+knext schema commit
+```
 
-8. (Optional) To delete checkpoints, execute the following commands.
+### Step 5: Build the knowledge graph
 
-   ```bash
-   rm -rf ./builder/ckpt
-   rm -rf ./solver/ckpt
-   ```
+Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph.
 
-   To delete the KAG project and related knowledge graph, execute the following similar command.
-   Replace the OpenSPG server address and KAG project id with actual values.
+```bash
+cd builder && python indexer.py && cd ..
+```
 
-   ```bash
-   curl http://127.0.0.1:8887/project/api/delete?projectId=1
-   ```
+### Step 7: Execute the QA tasks
 
-9. (Optional) Restart from Step 2 and try the larger dataset.
+Execute [evaFor2wiki.py](./solver/evaFor2wiki.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
+
+```bash
+cd solver && python evaFor2wiki.py && cd ..
+```
+
+The generated answers are saved to ``./solver/2wiki_res_*.json``.
+
+The calculated EM and F1 metrics are saved to ``./solver/2wiki_metrics_*.json``.
+
+### Step 8: (Optional) Cleanup
+
+To delete the checkpoints, execute the following command.
+
+```bash
+rm -rf ./builder/ckpt
+rm -rf ./solver/ckpt
+```
+
+To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
+
+```bash
+curl http://127.0.0.1:8887/project/api/delete?projectId=1
+```
+
+### Step 9: (Optional) Try the larger datasets
+
+Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [evaFor2wiki.py](./solver/evaFor2wiki.py) to try the larger datasets.
+

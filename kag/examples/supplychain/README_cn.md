@@ -143,7 +143,7 @@ RETURN
 "
 ```
 
-#### Step 7: 执行 DSL 及 QA 任务
+#### Step 7：执行 DSL 及 QA 任务
 
 ```bash
 python ./solver/qa.py
