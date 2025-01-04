@@ -27,7 +27,7 @@
 
 ### 3.1 前置条件
 
-参考文档 [快速开始](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17) 安装 KAG 及其依赖的 OpenSPG server。
+请参考文档 [快速开始](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17) 安装 KAG 及其依赖的 OpenSPG server，并了解开发者模式 KAG 的使用流程。
 
 ### 3.2 复现步骤
 
@@ -73,7 +73,7 @@ schema 建模详细内容可参见 [基于 SPG 建模的产业链企业图谱](.
 
 本例主要为结构化数据，故演示结构化数据转换和实体链指，具体细节可参见文档 [产业链案例知识构建](./builder/README_cn.md)。
 
-提交知识构建任务。
+提交知识构建任务导入数据。
 
 ```bash
 cd builder && python indexer.py && cd ..

@@ -23,9 +23,9 @@ Within the industrial chain, categories of product and company events are establ
 
 ## 3. Quick Start
 
-### 3.1 Preliminaries
+### 3.1 Precondition
 
-Refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7) to install KAG and its dependency: OpenSPG server.
+Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7) to install KAG and its dependency OpenSPG server, and learn about using KAG in developer mode.
 
 ### 3.2 Steps to reproduce
 
@@ -39,7 +39,7 @@ cd kag/examples/supplychain
 
 Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representive model configuration ``vectorizer_model`` in [kag_config.yaml](./kag_config.yaml).
 
-You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you need to update ``base_url`` and ``model``.
+You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
 #### Step 3: Project initialization
 
@@ -57,7 +57,7 @@ The schema file has been created and you can execute the following command to su
 knext schema commit
 ```
 
-Submitting the *leadto* relationship logical rules:
+Submit the *leadto* relationship logical rules:
 
 ```bash
 knext schema reg_concept_rule --file ./schema/concept.rule
@@ -71,7 +71,7 @@ Knowledge construction involves importing data into the knowledge graph storage.
 
 In this example, we will demonstrate the conversion of structured data and entity linking. For specific details, please refer to the document: [Enterprise Supply Chain Case Knowledge Graph Construction](./builder/README.md).
 
-Submit the knowledge import tasks.
+Submit the knowledge importing tasks.
 
 ```bash
 cd builder && python indexer.py && cd ..
