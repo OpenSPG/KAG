@@ -1,95 +1,108 @@
-# KAG Example: Medicine
+# KAG Example: Medical Knowledge Graph (Medicine)
 
-This example demonstrates the application of KAG in the medical domain.
+[English](./README.md) |
+[简体中文](./README_cn.md)
 
-It leaverages LLMs to extract and construct entities and relationships
-into a knowledge graph with a schema-free extractor. It also leaverages
-the schema definitions to import data and domain knowledge into the
-knowledge graph in a schema-constrained style.
+This example aims to demonstrate how to extract and construct entities and relations in a knowledge graph based on the SPG-Schema using LLMs.
 
 ![KAG Medicine Diagram](./images/kag-medicine-diag.png)
 
-## Steps to reproduce
+## 1. Precondition
 
-1. Follow the Quick Start guide of KAG to install the OpenSPG server and KAG.
+Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7) to install KAG and its dependency OpenSPG server, and learn about using KAG in developer mode.
 
-   The following steps assume the Python virtual environment with KAG installed
-   is activated and the current directory is [medicine](.).
+## 2. Steps to reproduce
 
-2. Update the ``openie_llm``, ``chat_llm`` and ``vectorizer_model`` configurations
-   in [kag_config.yaml](./kag_config.yaml) properly.
+### Step 1: Enter the example directory
 
-3. Restore the KAG project.
+```bash
+cd kag/examples/medicine
+```
 
-   ```bash
-   knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
-   ```
+### Step 2: Configure models
 
-4. Commit the schema.
+Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representive model configuration ``vectorizer_model`` in [kag_config.yaml](./kag_config.yaml).
 
-   ```bash
-   knext schema commit
-   ```
+You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
-5. Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph
-   with domain knowledge importing and schema-free extraction.
+### Step 3: Project initialization
 
-   ```bash
-   cd builder && python indexer.py && cd ..
-   ```
+Initiate the project with the following command.
 
-   Check [Disease.csv](./builder/data/Disease.csv) to inspect the descriptions of diseases.
-   Those unstructured descriptions are schema-free extracted by ``extract_runner``
-   defined in [kag_config.yaml](./kag_config.yaml).
+```bash
+knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
+```
 
-   Other structured data in [data](./builder/data) will be imported directly by corresponding
-   builder chains defined in [kag_config.yaml](./kag_config.yaml).
+### Step 4: Commit the schema
 
-6. You can use the ``knext reasoner`` command to inspect the built knowledge graph.
+Execute the following command to commit the Medical Knowledge Graph schema [Medicine.schema](./schema/Medicine.schema).
 
-   The query DSL will be executed by the OpenSPG server, which supports ISO GQL.
+```bash
+knext schema commit
+```
 
-   * Execute the following command to execute DSL directly.
+### Step 5: Build the knowledge graph
 
-     ```bash
-     knext reasoner execute --dsl "
-     MATCH
-         (s:Medicine.HospitalDepartment)-[p]->(o)
-     RETURN
-         s.id, s.name
-     "
-     ```
+Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph with domain knowledge importing and schema-free extraction.
 
-     The results will be displayed on the screen and saved as CSV to the current directory.
+```bash
+cd builder && python indexer.py && cd ..
+```
 
-   * You can also save the DSL to a file and execute the file.
+Check [Disease.csv](./builder/data/Disease.csv) to inspect the descriptions of diseases. Those unstructured descriptions are schema-free extracted by ``extract_runner`` defined in [kag_config.yaml](./kag_config.yaml).
 
-     ```bash
-     knext reasoner execute --file ./reasoner/rule.dsl
-     ```
+Other structured data in [data](./builder/data) will be imported directly by corresponding builder chains defined in [kag_config.yaml](./kag_config.yaml).
 
-   * You can also use the reasoner Python client to query the knowledge graph.
+### Step 6: Query the knowledge graph with GQL
 
-     ```bash
-     python ./reasoner/client.py
-     ```
+You can use the ``knext reasoner`` command to inspect the built knowledge graph.
 
-7. Execute [evaForMedicine.py](./solver/evaForMedicine.py) in the [solver](./solver) directory
-   to ask a demo question and view the answer and trace log.
+The query DSL will be executed by the OpenSPG server, which supports ISO GQL.
 
-   ```bash
-   cd solver && python evaForMedicine.py && cd ..
-   ```
+* Execute the following command to execute DSL directly.
 
-8. (Optional) To delete the checkpoint, execute the following command.
+  ```bash
+  knext reasoner execute --dsl "
+  MATCH
+      (s:Medicine.HospitalDepartment)-[p]->(o)
+  RETURN
+      s.id, s.name
+  "
+  ```
 
-   ```bash
-   rm -rf ./builder/ckpt
-   ```
+  The results will be displayed on the screen and saved as CSV to the current directory.
 
-   To delete the KAG project and related knowledge graph, execute the following similar command.
-   Replace the OpenSPG server address and KAG project id with actual values.
+* You can also save the DSL to a file and execute the file.
 
-   ```bash
-   curl http://127.0.0.1:8887/project/api/delete?projectId=1
-   ```
+  ```bash
+  knext reasoner execute --file ./reasoner/rule.dsl
+  ```
+
+* You can also use the reasoner Python client to query the knowledge graph.
+
+  ```bash
+  python ./reasoner/client.py
+  ```
+
+### Step 7: Execute the QA tasks
+
+Execute [evaForMedicine.py](./solver/evaForMedicine.py) in the [solver](./solver) directory to ask a demo question in natural languages and view the answer and trace log.
+
+```bash
+cd solver && python evaForMedicine.py && cd ..
+```
+
+### Step 8: (Optional) Cleanup
+
+To delete the checkpoint, execute the following command.
+
+```bash
+rm -rf ./builder/ckpt
+```
+
+To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
+
+```bash
+curl http://127.0.0.1:8887/project/api/delete?projectId=1
+```
+

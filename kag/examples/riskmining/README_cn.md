@@ -198,7 +198,7 @@ RETURN
 knext reasoner execute --file dsl_task2.txt
 ```
 
-### Step 7: 使用 KAG 实现自然语言问答
+### Step 7：使用 KAG 实现自然语言问答
 
 以下是 solver 目录的内容。
 

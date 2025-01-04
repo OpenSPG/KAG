@@ -37,9 +37,11 @@ cd kag/examples/supplychain
 
 #### Step 2: Configure models
 
-Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representive model configuration ``vectorizer_model`` in [kag_config.yaml](./kag_config.yaml).
+Update the generative model configurations ``openie_llm`` and ``chat_llm`` in [kag_config.yaml](./kag_config.yaml).
 
 You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
+
+Since the representive model is not used in this example, you can retain the default configuration for the representative model ``vectorizer_model``.
 
 #### Step 3: Project initialization
 

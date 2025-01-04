@@ -223,7 +223,7 @@ class LogicFormPlanPrompt(PromptOp):
     ],"""
 ```
 
-Assemble solver code in ``qa.py``.
+Assemble the solver code in ``qa.py``.
 
 ```python
 def qa(self, query):
