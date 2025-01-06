@@ -219,7 +219,7 @@ knext project update --proj_path .
 
 ## 3. Import documents
 
-#### Step 1: Enter the project directory
+### Step 1: Enter the project directory
 
 ```bash
 cd kag/examples/TwoWikiTest
@@ -320,7 +320,7 @@ Currently, OpenSPG-KAG provides the [Knowledge Exploration](https://openspg.yuqu
 
 ## 4. Reasoning-based question answering
 
-#### Step 1: Enter the project directory
+### Step 1: Enter the project directory
 
 ```bash
 cd kag/examples/TwoWikiTest
