@@ -1,11 +1,7 @@
-# KAG Example: MuSiQue
+# KAG Example: BaiKe
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
-
-[MuSiQue](https://arxiv.org/abs/2108.00573) is a multi-hop QA dataset for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
-
-Here we demonstrate how to build a knowledge graph for the MuSiQue dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
 
 ## 1. Precondition
 
@@ -16,7 +12,7 @@ Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s5
 ### Step 1: Enter the example directory
 
 ```bash
-cd kag/examples/musique
+cd kag/examples/baike
 ```
 
 ### Step 2: Configure models
@@ -35,7 +31,7 @@ knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
 
 ### Step 4: Commit the schema
 
-Execute the following command to commit the schema [MuSiQue.schema](./schema/MuSiQue.schema).
+Execute the following command to commit the schema [BaiKe.schema](./schema/BaiKe.schema).
 
 ```bash
 knext schema commit
@@ -51,15 +47,11 @@ cd builder && python indexer.py && cd ..
 
 ### Step 6: Execute the QA tasks
 
-Execute [evaForMusique.py](./solver/evaForMusique.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
+Execute [eval.py](./solver/eval.py) in the [solver](./solver) directory to ask demo questions and view the answers and trace logs.
 
 ```bash
-cd solver && python evaForMusique.py && cd ..
+cd solver && python eval.py && cd ..
 ```
-
-The generated answers are saved to ``./solver/musique_res_*.json``.
-
-The calculated EM and F1 metrics are saved to ``./solver/musique_metrics_*.json``.
 
 ### Step 7: (Optional) Cleanup
 
@@ -67,7 +59,6 @@ To delete the checkpoints, execute the following command.
 
 ```bash
 rm -rf ./builder/ckpt
-rm -rf ./solver/ckpt
 ```
 
 To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
@@ -75,8 +66,4 @@ To delete the KAG project and related knowledge graph, execute the following sim
 ```bash
 curl http://127.0.0.1:8887/project/api/delete?projectId=1
 ```
-
-### Step 8: (Optional) Try the larger datasets
-
-Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [evaForMusique.py](./solver/evaForMusique.py) to try the larger datasets.
 

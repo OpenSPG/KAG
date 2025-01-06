@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 def buildKB(file_path):
     from kag.common.conf import KAG_CONFIG
 
-    runner = BuilderChainRunner.from_config(KAG_CONFIG.all_config["kag_builder_pipeline"])
+    runner = BuilderChainRunner.from_config(
+        KAG_CONFIG.all_config["kag_builder_pipeline"]
+    )
     runner.invoke(file_path)
 
     logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")

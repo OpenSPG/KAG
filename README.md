@@ -110,7 +110,7 @@ docker compose -f docker-compose-west.yml up -d
 
 Navigate to the default url of the KAG product with your browser: <http://127.0.0.1:8887>
 
-See the [Quick Start for Product Mode](https://openspg.yuque.com/ndx6g9/wc9oyq/yexegklu44bqqicm) for detailed introduction.
+See [KAG usage (product mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#rtOlA) for detailed introduction.
 
 ## 4.2 toolkit-based (for developers)
 
@@ -145,7 +145,7 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 
 ### 4.2.3 Use the toolkit
 
-Please refer to the [Quick Start for Developer Mode](https://openspg.yuque.com/ndx6g9/wc9oyq/yexegklu44bqqicm#cikso) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new busineness scenarios.
+Please refer to [KAG usage (developer mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#cikso) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new busineness scenarios.
 
 # 5. Technical Architecture
 
