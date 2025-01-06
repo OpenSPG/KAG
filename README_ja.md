@@ -149,7 +149,7 @@ docker compose -f docker-compose.yml up -d
 
 ブラウザでKAG製品のデフォルトURLを開きます：<http://127.0.0.1:8887>
 
-詳細な紹介については、[製品使用](https://openspg.yuque.com/ndx6g9/wc9oyq/rgd8ecefccwd1ga5)ガイドを参照してください。
+詳細な紹介については、[製品使用](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#rtOlA)ガイドを参照してください。
 
 ### 3.2 ツールキットベース（開発者向け）
 
@@ -183,13 +183,13 @@ docker compose -f docker-compose.yml up -d
 
 #### 3.2.3 ツールキットの使用
 
-詳細な紹介については、[クイックスタート](https://openspg.yuque.com/ndx6g9/wc9oyq/owp4sxbdip2u7uvv)ガイドを参照してください。その後、組み込みのコンポーネントを使用して、組み込みデータセットのパフォーマンス結果を再現し、新しいビジネスシナリオにこれらのコンポーネントを適用できます。
+詳細な紹介については、[クイックスタート](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#cikso)ガイドを参照してください。その後、組み込みのコンポーネントを使用して、組み込みデータセットのパフォーマンス結果を再現し、新しいビジネスシナリオにこれらのコンポーネントを適用できます。
 
 ## 4. どのように拡張するの？
 
 ### 4.1 KAGの能力を拡張する
 
-KAGが提供する組み込みコンポーネントが要件を満たさない場合、開発者はkag-builderおよびkag-solverの実装を独自に拡張できます。[KAG-Builder拡張](https://openspg.yuque.com/ndx6g9/wc9oyq/ky9swve8g0qfk9zm)および[KAG-Solver拡張](https://openspg.yuque.com/ndx6g9/wc9oyq/kr6m15dc84apobe7)を参照してください。
+KAGが提供する組み込みコンポーネントが要件を満たさない場合、開発者はkag-builderおよびkag-solverの実装を独自に拡張できます。[KAG-Builder拡張](https://openspg.yuque.com/ndx6g9/cwh47i/ephl8hgth3gcgucn)および[KAG-Solver拡張](https://openspg.yuque.com/ndx6g9/cwh47i/rqdwk204izit2hsm)を参照してください。
 
 #### 4.1.1 kag-builder拡張
 
