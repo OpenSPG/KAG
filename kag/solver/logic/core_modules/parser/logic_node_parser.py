@@ -420,7 +420,7 @@ class ParseLogicForm:
         alias_name = entity.alias_name
         if alias_name in parsed_entity_set.keys():
             exist_node = parsed_entity_set[alias_name]
-            exist_node.value_list.extend(entity.value_list)
+            exist_node.value_list.update(entity.value_list)
             return parsed_entity_set[alias_name]
 
         zh_types = entity.get_entity_type_zh_set()
