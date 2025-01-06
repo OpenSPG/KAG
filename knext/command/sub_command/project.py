@@ -149,7 +149,7 @@ def create_project(
     project_id = None
     if host_addr:
         client = ProjectClient(host_addr=host_addr)
-        project = client.create(name=name, namespace=namespace)
+        project = client.create(name=name, namespace=namespace, config=json.dumps(config))
 
         if project and project.id:
             project_id = project.id
@@ -168,8 +168,6 @@ def create_project(
         delete_cfg=delete_cfg,
     )
 
-    config = yaml.load((Path(project_dir) / "kag_config.yaml").read_text() or "{}")
-    client.update(id=project_id, config=json.dumps(config))
 
     if delete_cfg and os.path.exists(config_path):
         os.remove(config_path)
