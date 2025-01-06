@@ -79,7 +79,7 @@ class GetSPONode(LogicNode):
                     node = get_spo_node_op.p
                 elif key == "o":
                     node = get_spo_node_op.o
-                node.value_list.append([str(property), value])
+                node.value_list[str(property)] = value
 
 
 def binary_expr_parse(input_str):
