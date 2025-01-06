@@ -117,7 +117,7 @@ def _recover_project(prj_path: str):
 @click.option(
     "--delete_cfg",
     help="whether delete your defined .yaml file.",
-    default=True,
+    default=False,
     hidden=True,
 )
 def create_project(
