@@ -19,7 +19,8 @@ from pathlib import Path
 from typing import Union, Optional
 
 yaml = YAML()
-
+yaml.default_flow_style = False 
+yaml.indent(mapping=2, sequence=4, offset=2)
 logger = logging.getLogger(__name__)
 
 DEFAULT_HOST_ADDR = "http://127.0.0.1:8887"
@@ -154,7 +155,7 @@ class Environment:
 
     def dump(self, path=None, **kwargs):
         with open(path or self._config_path, "w") as f:
-            yaml.dump(self._config, f, **kwargs)
+            yaml.dump(self._config, f)
 
 
 env = Environment()
