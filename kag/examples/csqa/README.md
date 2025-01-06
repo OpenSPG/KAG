@@ -1,84 +1,99 @@
 # KAG Example: CSQA
 
-The [UltraDomain](https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main)
-``cs.jsonl`` dataset contains 10 documents in Computer Science and
-100 questions with their answers about those documents.
+[English](./README.md) |
+[简体中文](./README_cn.md)
 
-Here we demonstrate how to build a knowledge graph for those documents,
-generate answers to those questions with KAG and compare KAG generated
-answers with those from other RAG systems.
+The [UltraDomain](https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main) ``cs.jsonl`` dataset contains 10 documents in Computer Science and 100 questions with their answers about those documents.
 
-## Steps to reproduce
+Here we demonstrate how to build a knowledge graph for those documents, generate answers to those questions with KAG and compare KAG generated answers with those from other RAG systems.
 
-1. Follow the Quick Start guide of KAG to install the OpenSPG server and KAG.
+## 1. Precondition
 
-   The following steps assume the Python virtual environment with KAG installed
-   is activated and the current directory is [csqa](.).
+Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7) to install KAG and its dependency OpenSPG server, and learn about using KAG in developer mode.
 
-2. (Optional) Download [UltraDomain](https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main)
-   ``cs.jsonl`` and execute [generate_data.py](./generate_data.py) to generate data files in
-   [./builder/data](./builder/data) and [./solver/data](./solver/data). Since the generated files
-   were committed, this step is optional.
+## 2. Steps to reproduce
 
-   ```bash
-   python generate_data.py
-   ```
+### Step 1: Enter the example directory
 
-3. Update the ``openie_llm``, ``chat_llm`` and ``vectorizer_model`` configurations
-   in [kag_config.yaml](./kag_config.yaml) properly.
-   The ``splitter`` and ``num_threads_per_chain`` configurations may also be updated
-   to match with other systems.
+```bash
+cd kag/examples/csqa
+```
 
-4. Restore the KAG project.
+### Step 2: (Optional) Prepare the data
 
-   ```bash
-   knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
-   ```
+Download [UltraDomain](https://huggingface.co/datasets/TommyChien/UltraDomain/tree/main) ``cs.jsonl`` and execute [generate_data.py](./generate_data.py) to generate data files in [./builder/data](./builder/data) and [./solver/data](./solver/data). Since the generated files were committed, this step is optional.
 
-5. Commit the schema.
+```bash
+python generate_data.py
+```
 
-   ```bash
-   knext schema commit
-   ```
+### Step 3: Configure models
 
-6. Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph.
+Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representive model configuration ``vectorizer_model`` in [kag_config.yaml](./kag_config.yaml).
 
-   ```bash
-   cd builder && python indexer.py && cd ..
-   ```
+You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
-7. Execute [eval.py](./solver/eval.py) in the [solver](./solver) directory to generate the answers.
+The ``splitter`` and ``num_threads_per_chain`` configurations may also be updated to match with other systems.
 
-   ```bash
-   cd solver && python eval.py && cd ..
-   ```
+### Step 4: Project initialization
 
-   The results are saved to ``./solver/data/csqa_kag_answers.json``.
+Initiate the project with the following command.
 
-8. (Optional) Follow the LightRAG [Reproduce](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#reproduce)
-   steps to generate answers to the questions and save the results to
-   [./solver/data/csqa_lightrag_answers.json](./solver/data/csqa_lightrag_answers.json).
-   Since a copy was committed, this step is optional.
+```bash
+knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
+```
 
-9. Update the LLM configurations in [summarization_metrics.py](./solver/summarization_metrics.py)
-   and [factual_correctness.py](./solver/factual_correctness.py)
-   and execute them to get the metrics.
+### Step 5: Commit the schema
 
-   ```bash
-   python ./solver/summarization_metrics.py
-   python ./solver/factual_correctness.py
-   ```
+Execute the following command to commit the schema [CsQa.schema](./schema/CsQa.schema).
 
-10. (Optional) To delete checkpoints, execute the following commands.
+```bash
+knext schema commit
+```
 
-    ```bash
-    rm -rf ./builder/ckpt
-    rm -rf ./solver/ckpt
-    ```
+### Step 6: Build the knowledge graph
 
-    To delete the KAG project and related knowledge graph, execute the following similar command.
-    Replace the OpenSPG server address and KAG project id with actual values.
+Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph.
 
-    ```bash
-    curl http://127.0.0.1:8887/project/api/delete?projectId=1
-    ```
+```bash
+cd builder && python indexer.py && cd ..
+```
+
+### Step 7: Generate the answers
+
+Execute [eval.py](./solver/eval.py) in the [solver](./solver) directory to generate the answers.
+
+```bash
+cd solver && python eval.py && cd ..
+```
+
+The results are saved to ``./solver/data/csqa_kag_answers.json``.
+
+### Step 8: (Optional) Get the answers generated by other systems
+
+Follow the LightRAG [Reproduce](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#reproduce) steps to generate answers to the questions and save the results to [./solver/data/csqa_lightrag_answers.json](./solver/data/csqa_lightrag_answers.json). Since a copy was committed, this step is optional.
+
+### Step 9: Calculate the metrics
+
+Update the LLM configurations in [summarization_metrics.py](./solver/summarization_metrics.py) and [factual_correctness.py](./solver/factual_correctness.py) and execute them to calculate the metrics.
+
+```bash
+python ./solver/summarization_metrics.py
+python ./solver/factual_correctness.py
+```
+
+### Step 10: (Optional) Cleanup
+
+To delete the checkpoints, execute the following command.
+
+```bash
+rm -rf ./builder/ckpt
+rm -rf ./solver/ckpt
+```
+
+To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
+
+```bash
+curl http://127.0.0.1:8887/project/api/delete?projectId=1
+```
+

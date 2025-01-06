@@ -106,7 +106,7 @@ docker compose -f docker-compose.yml up -d
 
 浏览器打开 KAG 产品默认链接：<http://127.0.0.1:8887> 。
 
-具体使用参考[产品使用](https://openspg.yuque.com/ndx6g9/0.5/nbb1bn3wegwue6yo)介绍。
+具体使用请参考 [KAG使用(产品模式)](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17#JQH6Y)。
 
 ## 4.2 基于工具包（面向开发者）
 
@@ -140,7 +140,7 @@ docker compose -f docker-compose.yml up -d
 
 ### 4.2.3 使用
 
-开发者可以参考 [KAG 开发者模式](https://openspg.yuque.com/ndx6g9/0.5/nbb1bn3wegwue6yo#MRgKi)，基于 KAG 内置的各种组件，实现内置数据集的效果复现 + 新场景的落地。
+开发者可以参考 [KAG使用(开发者模式)](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17#MRgKi)，基于 KAG 内置的各种组件，实现内置数据集的效果复现 + 新场景的落地。
 
 
 # 5. 技术架构
