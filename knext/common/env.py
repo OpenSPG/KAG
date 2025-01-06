@@ -64,13 +64,14 @@ class Environment:
 
     @property
     def id(self):
-        if os.getenv("KAG_PROJECT_ID"):
-            return os.getenv("KAG_PROJECT_ID")
         id = self.project_config.get("id", None)
         if id is None:
-            raise Exception(
-                "project id not restore in spgserver, please restore project first"
-            )
+            if os.getenv("KAG_PROJECT_ID",None):
+                return os.getenv("KAG_PROJECT_ID")
+            else:
+                raise Exception(
+                    "project id not restore in spgserver, please restore project first"
+                )
         return id
 
     @property
@@ -130,7 +131,7 @@ class Environment:
         if prev_path is not None and str(path) == str(prev_path):
             return ""
         path = Path(path).resolve()
-        cfg_file = path / "kag_config.yaml"
+        cfg_file = path / "*.yaml"
         if cfg_file.exists():
             return str(cfg_file)
         return self._closest_config(path.parent, path)

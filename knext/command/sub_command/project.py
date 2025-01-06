@@ -95,7 +95,7 @@ def _recover_project(prj_path: str):
 
     client = ProjectClient()
     project = client.get(namespace=namespace) or client.create(
-        name=project_name, desc=desc, namespace=namespace
+        name=project_name, desc=desc, namespace=namespace, config=json.dumps(env.config)
     )
 
     env.config["project"]["id"] = project.id
@@ -147,6 +147,19 @@ def create_project(
         tmpl = "default"
 
     project_id = None
+
+    llm_config_checker = LLMConfigChecker()
+    vectorize_model_config_checker = VectorizeModelConfigChecker()
+    llm_config = config.get("chat_llm", {})
+    vectorize_model_config = config.get("vectorizer", {})
+    try:
+        llm_config_checker.check(json.dumps(llm_config))
+        dim = vectorize_model_config_checker.check(json.dumps(vectorize_model_config))
+        config["vectorizer"]["vector_dimensions"] = dim
+    except Exception as e:
+        click.secho(f"Error: {e}", fg="bright_red")
+        sys.exit()
+
     if host_addr:
         client = ProjectClient(host_addr=host_addr)
         project = client.create(name=name, namespace=namespace, config=json.dumps(config))
@@ -168,6 +181,10 @@ def create_project(
         delete_cfg=delete_cfg,
     )
 
+    current_dir = os.getcwd()
+    os.chdir(project_dir)
+    update_project(project_dir)
+    os.chdir(current_dir)
 
     if delete_cfg and os.path.exists(config_path):
         os.remove(config_path)
@@ -193,7 +210,7 @@ def restore_project(host_addr, proj_path):
     if not project_wanted:
         if host_addr:
             client = ProjectClient(host_addr=host_addr)
-            project = client.create(name=env.name, namespace=env.namespace)
+            project = client.create(name=env.name, namespace=env.namespace, config=json.dumps(env.config))
             project_id = project.id
     else:
         project_id = project_wanted.id
