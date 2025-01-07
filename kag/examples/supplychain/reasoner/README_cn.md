@@ -261,7 +261,7 @@ knext builder execute ProductChainEvent
 
 传导链路如下:
 
-![KAG SupplyChain Product Chain Demo](../images/kag-supplychain-product-chain-demo-cn.gif)
+![KAG SupplyChain Product Chain Demo](/_static/images/examples/supplychain/kag-supplychain-product-chain-demo-cn.gif)
 
 顺丁橡胶成本上升，被分类为产业链价格上涨事件，如下 DSL:
 
