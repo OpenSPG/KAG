@@ -13,11 +13,11 @@ This example is based on the SPG framework to construct an industry chain enterp
 
 Please refer to the document for knowledge modeling: [Schema of Enterprise Supply Chain Knowledge Graph](./schema/README.md), As shown in the example below:
 
-![KAG SupplyChain Schema Diagram](./images/kag-supplychain-schema-diag.gif)
+![KAG SupplyChain Schema Diagram](/_static/images/examples/supplychain/kag-supplychain-schema-diag.gif)
 
 Concept knowledge maintains industry chain-related data, including hierarchical relations, supply relations. Entity instances consist of only legal representatives and transfer information. Company instances are linked to product instances based on the attributes of the products they produce, enabling deep information mining between company instances, such as supplier relationships, industry peers, and shared legal representatives. By leveraging deep contextual information, more credit assessment factors can be provided.
 
-![KAG SupplyChain Event Diagram](./images/kag-supplychain-event-diag.gif)
+![KAG SupplyChain Event Diagram](/_static/images/examples/supplychain/kag-supplychain-event-diag.gif)
 
 Within the industrial chain, categories of product and company events are established. These categories are a combination of indices and trends. For example, an increase in price consists of the index "价格" (price) and the trend "上涨" (rising). Causal knowledge sets the events of a company's profit decrease and cost increase due to a rise in product prices. When a specific event occurs, such as a significant increase in rubber prices, it is categorized under the event of a price increase. As per the causal knowledge, a price increase in a product leads to two event types: a decrease in company profits and an increase in company costs. Consequently, new events are generated:"三角\*\*轮胎公司成本上涨事件" and "三角\*\*轮胎公司利润下跌".
 

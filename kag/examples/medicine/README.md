@@ -5,7 +5,7 @@
 
 This example aims to demonstrate how to extract and construct entities and relations in a knowledge graph based on the SPG-Schema using LLMs.
 
-![KAG Medicine Diagram](./images/kag-medicine-diag.png)
+![KAG Medicine Diagram](/_static/images/examples/medicine/kag-medicine-diag.png)
 
 ## 1. Precondition
 
