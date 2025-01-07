@@ -12,8 +12,11 @@ chat_llm: &chat_llm
   type: maas
 
 vectorize_model: &vectorize_model
-  type: mock
-  vector_dimensions: 768
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
 vectorizer: *vectorize_model
 
 log:
@@ -22,7 +25,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '5'
+  id: '1'
   language: zh
   namespace: RiskMining
   checkpoint_path: ./extract-runner-ckpt
