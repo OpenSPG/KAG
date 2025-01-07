@@ -104,7 +104,7 @@ def load_config(prod: bool = False):
     if prod:
         project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
         host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-        project_client = ProjectClient(host_addr=host_addr)
+        project_client = ProjectClient(host_addr=host_addr, project_id=project_id)
         project = project_client.get_by_id(project_id)
         config = json.loads(project.config)
         if "project" not in config:
