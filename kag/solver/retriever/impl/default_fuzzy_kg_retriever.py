@@ -43,13 +43,13 @@ class FuzzyMatchRetrieval:
             un_std_p = ""
         start_value_type = n.s.get_entity_first_type_or_un_std()
         if start_value_type is None or start_value_type == "Others":
-            logger.warning(
+            logger.debug(
                 f"get_unstd_p_text get start_value_type {start_value_type} {n}"
             )
             start_value_type = "Entity"
         target_value_type = n.o.get_entity_first_type_or_un_std()
         if target_value_type is None or target_value_type == "Others":
-            logger.warning(
+            logger.debug(
                 f"get_unstd_p_text get target_value_type {target_value_type} {n}"
             )
             target_value_type = "Entity"
@@ -268,7 +268,7 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                     ]
                     for r in results:
                         if r is None:
-                            logger.warning(f"{n} recall chunk data")
+                            logger.debug(f"{n} recall chunk data")
                             continue
                         r.s_alias_name = k
                         one_hop_graph_list.append(r)

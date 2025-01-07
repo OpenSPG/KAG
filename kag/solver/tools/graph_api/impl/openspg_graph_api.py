@@ -185,7 +185,7 @@ class OpenSPGGraphApi(GraphApiABC):
                 logger.debug(f"get_entity_one_hop failed! {e}", exc_info=True)
 
         if one_hop is None:
-            logger.warning(f"get_entity_one_hop failed! {dsl_query}")
+            logger.debug(f"get_entity_one_hop failed! {dsl_query}")
             return None
         return copy_one_hop_graph_data(one_hop, "s")
 
