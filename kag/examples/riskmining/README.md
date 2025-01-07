@@ -7,7 +7,7 @@
 
 **Keywords**: semantic properties, dynamic multi-classification of entities, knowledge application in the context of hierarchical business knowledge and factual data.
 
-![KAG RiskMining Diagram](./images/kag-riskmining-diag.png)
+![KAG RiskMining Diagram](/_static/images/examples/riskmining/kag-riskmining-diag.png)
 
 ## 1. Precondition
 
@@ -69,7 +69,7 @@ knext reasoner execute --dsl "${ql}"
 
 #### Scenario 1: Semantic attributes vs text attributes
 
-![KAG RiskMining Data Demo](./images/kag-riskmining-data-demo.png)
+![KAG RiskMining Data Demo](/_static/images/examples/riskmining/kag-riskmining-data-demo.png)
 
 MobilePhone: "standard attribute" vs "text attribute".
 

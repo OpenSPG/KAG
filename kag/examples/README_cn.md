@@ -316,7 +316,7 @@ KAG 框架基于 checkpoint 文件提供了断点续跑的功能。如果由于�
 
 当前，OpenSPG-KAG 在产品端已提供 [知识探查](https://openspg.yuque.com/ndx6g9/0.6/fw4ge5c18tyfl2yq) 能力，以及对应的 API 文档 [HTTP API Reference](https://openspg.yuque.com/ndx6g9/0.6/zde1yunbb8sncxtv)。
 
-![KAG Knowledge Inspection Diagram](./images/kag-knowledge-inspection-diag.png)
+![KAG Knowledge Inspection Diagram](/_static/images/examples/kag-knowledge-inspection-diag.png)
 
 ## 4. 推理问答
 
