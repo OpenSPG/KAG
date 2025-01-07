@@ -36,7 +36,7 @@ def import_modules_from_path(path: str) -> None:
     """
     path = os.path.abspath(os.path.normpath(path))
     importlib.invalidate_caches()
-    tmp = path.rsplit("/", 1)
+    tmp = path.rsplit(os.sep, 1)
     if len(tmp) == 1:
         module_path = "."
         package_name = tmp[0]
