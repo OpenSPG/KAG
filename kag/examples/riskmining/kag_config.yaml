@@ -1,12 +1,12 @@
 #------------project configuration start----------------#
 openie_llm:
-  api_key: sk-4323e7aaab36449fab52b0ed86e29696
+  api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   type: maas
 
 chat_llm: &chat_llm
-  api_key: sk-4323e7aaab36449fab52b0ed86e29696
+  api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   type: maas
