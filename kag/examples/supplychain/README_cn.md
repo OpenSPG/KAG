@@ -13,11 +13,11 @@
 
 建模参考 [基于 SPG 建模的产业链企业图谱](./schema/README_cn.md)，如下图示意。
 
-![KAG SupplyChain Schema Diagram](./images/kag-supplychain-schema-diag.gif)
+![KAG SupplyChain Schema Diagram](/_static/images/examples/supplychain/kag-supplychain-schema-diag.gif)
 
 概念知识维护着产业链相关数据，包括上下位层级、供应关系；实体实例仅有法人代表、转账信息，公司实例通过生产的产品属性和概念中的产品节点挂载，实现了公司实例之间的深度信息挖掘，例如供应商、同行业、同法人代表等关系。基于深度上下文信息，可提供更多的信用评估因子。
 
-![KAG SupplyChain Event Diagram](./images/kag-supplychain-event-diag.gif)
+![KAG SupplyChain Event Diagram](/_static/images/examples/supplychain/kag-supplychain-event-diag.gif)
 
 产业链中建立了产品和公司事件类别，该类别属于指标和趋势的一种组合，例如价格上涨，是由指标：价格，趋势：上涨两部分构成。
 
