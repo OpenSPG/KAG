@@ -217,28 +217,30 @@ class SchemaFreeExtractor(ExtractorABC):
 
         """
 
-        def get_category(entities_data, entity_name):
+        def get_category_and_name(entities_data, entity_name):
             for entity in entities_data:
-                if entity["name"] == entity_name:
-                    return entity["category"]
-            return None
+                if processing_phrases(entity["name"]) == processing_phrases(entity_name):
+                    return entity["category"], entity['name']
+            return None, None
 
         for tri in triples:
             if len(tri) != 3:
                 continue
-            s_category = get_category(entities, tri[0])
+            s_category, s_name = get_category_and_name(entities, tri[0])
             tri[0] = processing_phrases(tri[0])
             if s_category is None:
                 s_category = OTHER_TYPE
-                sub_graph.add_node(tri[0], tri[0], s_category)
-            o_category = get_category(entities, tri[2])
-            tri[2] = processing_phrases(tri[2])
+                s_name = processing_phrases(tri[0])
+                sub_graph.add_node(s_name, s_name, s_category)
+            o_category, o_name = get_category_and_name(entities, tri[2])
+
             if o_category is None:
+                o_name = processing_phrases(tri[2])
                 o_category = OTHER_TYPE
-                sub_graph.add_node(tri[2], tri[2], o_category)
+                sub_graph.add_node(o_name, o_name, o_category)
             edge_type = to_camel_case(tri[1])
             if edge_type:
-                sub_graph.add_edge(tri[0], s_category, edge_type, tri[2], o_category)
+                sub_graph.add_edge(s_name, s_category, edge_type, o_name, o_category)
 
         return sub_graph
 
