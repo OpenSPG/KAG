@@ -263,7 +263,7 @@ knext builder execute ProductChainEvent
 
 The transmission linkages are as follows:
 
-![KAG SupplyChain Product Chain Demo](../images/kag-supplychain-product-chain-demo-en.gif)
+![KAG SupplyChain Product Chain Demo](/_static/images/examples/supplychain/kag-supplychain-product-chain-demo-en.gif)
 
 Butadiene rubber costs rise, classified as an event of price increase in the supply chain.
 
