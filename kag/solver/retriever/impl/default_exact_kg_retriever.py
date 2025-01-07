@@ -243,7 +243,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
                     return res
             except Exception as e:
                 # Log the error or handle it appropriately
-                logger.warning(f"An error occurred: {e}", exc_info=True)
+                logger.debug(f"An error occurred: {e}", exc_info=True)
         return res
 
     def retrieval_relation(
