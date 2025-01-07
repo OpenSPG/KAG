@@ -170,7 +170,7 @@ Products are defined as concepts, while companies are defined as entities, evolv
 
 The representation of events with multiple elements is indeed a type of lossless representation using a hypergraph structure. It expresses the spatio-temporal relations of multiple elements. Events are temporary associations of various elements caused by certain actions. Once the action is completed, the association disappears. In traditional property graphs, events can only be replaced by entities, and the event content is expressed using textual attributes. An example of such an event is shown below:
 
-![KAG SupplyChain Event Demo](../images/kag-supplychain-event-demo.png)
+![KAG SupplyChain Event Demo](/_static/images/examples/supplychain/kag-supplychain-event-demo.png)
 
 ```text
 Event(事件):
