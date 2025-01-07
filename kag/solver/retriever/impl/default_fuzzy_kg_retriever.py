@@ -250,7 +250,7 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
                     if len(one_graph_map) > 0:
                         return list(one_graph_map.values())
                 except Exception as e:
-                    logger.warning(
+                    logger.debug(
                         f"An error occurred: {e}, so we will call head and tail same time",
                         exc_info=True,
                     )
