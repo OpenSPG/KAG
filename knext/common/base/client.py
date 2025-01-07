@@ -13,6 +13,7 @@ import os
 from abc import ABC
 
 from knext.common import rest
+from knext.common.env import env
 
 
 class Client(ABC):
@@ -39,8 +40,9 @@ class Client(ABC):
             host_addr (str): The address of the component server. If not provided, the value from the environment variable `KAG_PROJECT_HOST_ADDR` is used.
             project_id (int): The ID of the user's project. If not provided, the value from the environment variable `KAG_PROJECT_ID` is used.
         """
-        self._host_addr = host_addr
-        self._project_id = project_id
+
+        self._host_addr = host_addr or env.host_addr
+        self._project_id = project_id or env.id
 
     @staticmethod
     def serialize(obj):
