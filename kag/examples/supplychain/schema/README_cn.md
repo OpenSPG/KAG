@@ -164,7 +164,7 @@ Company(企业): EntityType
 
 事件多要素结构表示也是一类超图（HyperGrpah）无损表示的问题，它表达的是时空多元要素的时空关联性，事件是各要素因某种行为而产生的临时关联，一旦行为结束，这种关联也随即消失。在以往的属性图中，事件只能使用实体进行替代，由文本属性表达事件内容，如下类似事件：
 
-![KAG SupplyChain Event Demo](../images/kag-supplychain-event-demo.png)
+![KAG SupplyChain Event Demo](/_static/images/examples/supplychain/kag-supplychain-event-demo.png)
 
 ```text
 Event(事件):
