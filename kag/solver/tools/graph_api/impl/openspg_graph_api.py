@@ -226,7 +226,7 @@ class OpenSPGGraphApi(GraphApiABC):
         res = self.rc.syn_execute(dsl_content=dsl, **kwargs)
         task_resp: ReasonTask = res.task
         if task_resp is None or task_resp.status != "FINISH":
-            logger.warning(f"execute dsl failed! {res}")
+            logger.debug(f"execute dsl failed! {res}")
             return TableData()
         detail = task_resp.result_table_result
         return TableData.from_dict({"header": detail.header, "data": detail.rows})
