@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 from collections import OrderedDict
+import logging
 import re
 import json
 import os
@@ -35,6 +36,8 @@ from shutil import copy2
 yaml = YAML()
 yaml.default_flow_style = False 
 yaml.indent(mapping=2, sequence=4, offset=2)
+
+logger = logging.getLogger(__name__)
 
 
 def _render_template(namespace: str, tmpl: str, **kwargs):
@@ -97,7 +100,7 @@ def _recover_project(prj_path: str):
 
     client = ProjectClient()
     project = client.get(namespace=namespace) or client.create(
-        name=project_name, desc=desc, namespace=namespace, config=json.dumps(env.config)
+        name=project_name, desc=desc, namespace=namespace, config=json.dumps(env._config)
     )
 
     env._config["project"]["id"] = project.id
@@ -212,7 +215,7 @@ def restore_project(host_addr, proj_path):
     if not project_wanted:
         if host_addr:
             client = ProjectClient(host_addr=host_addr)
-            project = client.create(name=env.name, namespace=env.namespace, config=json.dumps(env.config))
+            project = client.create(name=env.name, namespace=env.namespace, config=json.dumps(env._config))
             project_id = project.id
     else:
         project_id = project_wanted.id
@@ -243,7 +246,8 @@ def update_project(proj_path):
         click.secho(f"Error: {e}", fg="bright_red")
         sys.exit()
 
-    client.update(id=env.id, config=json.dumps(env.config))
+    logger.info(f"project id: {env.id}")
+    client.update(id=env.id, config=json.dumps(env._config))
     click.secho(
         f"Project [{env.name}] with namespace [{env.namespace}] was successfully updated from [{proj_path}].",
         fg="bright_green",
