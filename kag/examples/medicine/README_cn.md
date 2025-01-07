@@ -5,7 +5,7 @@
 
 本示例旨在展示如何基于 schema 的定义，利用大模型实现对图谱实体和关系的抽取和构建到图谱。
 
-![KAG Medicine Diagram](./images/kag-medicine-diag.png)
+![KAG Medicine Diagram](/_static/images/examples/medicine/kag-medicine-diag.png)
 
 ## 1. 前置条件
 

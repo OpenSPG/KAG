@@ -5,7 +5,7 @@
 
 **关键词**：语义属性，实体动态多分类，面向业务知识和事实数据分层下的知识应用
 
-![KAG RiskMining Diagram](./images/kag-riskmining-diag.png)
+![KAG RiskMining Diagram](/_static/images/examples/riskmining/kag-riskmining-diag.png)
 
 ## 1. 前置条件
 
@@ -67,7 +67,7 @@ knext reasoner execute --dsl "${ql}"
 
 #### 场景 1：语义属性对比文本属性
 
-![KAG RiskMining Data Demo](./images/kag-riskmining-data-demo.png)
+![KAG RiskMining Data Demo](/_static/images/examples/riskmining/kag-riskmining-data-demo.png)
 
 电话号码：标准属性 vs 文本属性。
 

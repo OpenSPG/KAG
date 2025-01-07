@@ -316,7 +316,7 @@ The KAG framework provides checkpoint-based resumption functionality. If the tas
 
 Currently, OpenSPG-KAG provides the [Knowledge Exploration](https://openspg.yuque.com/ndx6g9/cwh47i/mzq74eaynm4rqx4b) capability in product mode, along with the corresponding API documentation [HTTP API Reference](https://openspg.yuque.com/ndx6g9/cwh47i/qvbgge62p7argtd2).
 
-![KAG Knowledge Inspection Diagram](./images/kag-knowledge-inspection-diag.png)
+![KAG Knowledge Inspection Diagram](/_static/images/examples/kag-knowledge-inspection-diag.png)
 
 ## 4. Reasoning-based question answering
 
