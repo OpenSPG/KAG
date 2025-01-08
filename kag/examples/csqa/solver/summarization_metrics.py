@@ -125,7 +125,9 @@ class SummarizationMetricsEvaluator(object):
     def _save_evaluation_responses(self, metrics, reverse_metrics):
         responses = metrics["responses"]
         reverse_responses = reverse_metrics["responses"]
-        for item, response, reverse_response in zip(self._questions_and_answers, responses, reverse_responses):
+        for item, response, reverse_response in zip(
+            self._questions_and_answers, responses, reverse_responses
+        ):
             item["response"] = response
             item["reverse_response"] = reverse_response
 
@@ -154,10 +156,20 @@ class SummarizationMetricsEvaluator(object):
             if index > 0:
                 string += "\n\n"
             string += "**%s**" % key
-            string += "\n\n%s Score: %d" % ("KAG" if not is_reversed else "LightRAG", r[key]["Score 1"])
-            string += "\n\n%s Score: %d" % ("LightRAG" if not is_reversed else "KAG", r[key]["Score 2"])
-            string += "\n\nWinner: %s" % self._format_winner(r[key]["Score 1"], r[key]["Score 2"], is_reversed=is_reversed)
-            string += "\n\nExplanation: %s" % self._format_description(r[key]["Explanation"], is_reversed=is_reversed)
+            string += "\n\n%s Score: %d" % (
+                "KAG" if not is_reversed else "LightRAG",
+                r[key]["Score 1"],
+            )
+            string += "\n\n%s Score: %d" % (
+                "LightRAG" if not is_reversed else "KAG",
+                r[key]["Score 2"],
+            )
+            string += "\n\nWinner: %s" % self._format_winner(
+                r[key]["Score 1"], r[key]["Score 2"], is_reversed=is_reversed
+            )
+            string += "\n\nExplanation: %s" % self._format_description(
+                r[key]["Explanation"], is_reversed=is_reversed
+            )
         return string
 
     def _format_question(self, item):
@@ -175,11 +187,15 @@ class SummarizationMetricsEvaluator(object):
         string += "\n\n%s evaluation" % self._evaluator_kwargs["model"]
         string += ": KAG vs LightRAG"
         string += "\n" + "-" * 80
-        string += "\n" + self._format_evaluation_response(item["response"], is_reversed=False)
+        string += "\n" + self._format_evaluation_response(
+            item["response"], is_reversed=False
+        )
         string += "\n\n%s evaluation" % self._evaluator_kwargs["model"]
         string += ": LightRAG vs KAG"
         string += "\n" + "-" * 80
-        string += "\n" + self._format_evaluation_response(item["reverse_response"], is_reversed=True)
+        string += "\n" + self._format_evaluation_response(
+            item["reverse_response"], is_reversed=True
+        )
         return string
 
     def _format_questions(self):
