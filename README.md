@@ -109,7 +109,10 @@ docker compose -f docker-compose-west.yml up -d
 ### 4.1.2 Use the product
 
 Navigate to the default url of the KAG product with your browser: <http://127.0.0.1:8887>
-
+```text
+Default Username: openspg
+Default password: openspg@kag
+```
 See [KAG usage (product mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#rtOlA) for detailed introduction.
 
 ## 4.2 toolkit-based (for developers)
