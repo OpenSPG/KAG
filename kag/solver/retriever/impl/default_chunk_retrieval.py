@@ -94,7 +94,7 @@ class KAGRetriever(ChunkRetriever):
         else:
             self.reranker = None
 
-        self.with_semantic = True
+        self.with_semantic = False
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, query: str):

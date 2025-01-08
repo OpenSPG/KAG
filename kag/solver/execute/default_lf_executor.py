@@ -30,10 +30,10 @@ logger = logging.getLogger()
 class DefaultLFExecutor(LFExecutorABC):
     def __init__(
         self,
-        exact_kg_retriever: ExactKgRetriever,
-        fuzzy_kg_retriever: FuzzyKgRetriever,
-        chunk_retriever: ChunkRetriever,
         merger: LFSubQueryResMerger,
+        exact_kg_retriever: ExactKgRetriever = None,
+        fuzzy_kg_retriever: FuzzyKgRetriever = None,
+        chunk_retriever: ChunkRetriever = None,
         force_chunk_retriever: bool = False,
         llm_client: LLMClient = None,
         **kwargs,
@@ -150,9 +150,9 @@ class DefaultLFExecutor(LFExecutorABC):
             # chunk retriever
             all_related_entities = kg_graph.get_all_spo()
             all_related_entities = list(set(all_related_entities))
-            sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
+            # sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
             doc_retrieved = self.chunk_retriever.recall_docs(
-                queries=[query, sub_query],
+                queries=[query, lf.query],
                 retrieved_spo=all_related_entities,
                 kwargs=self.params,
             )
@@ -161,9 +161,7 @@ class DefaultLFExecutor(LFExecutorABC):
             process_info[lf.query]["match_type"] = "chunk"
             # generate sub answer by chunk ans spo
             docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
-            res.sub_answer = self.generator.generate_sub_answer(
-                lf.query, res.spo_retrieved, docs, history
-            )
+            res.sub_answer = "I don't know"
         return res
 
     def _execute_lf(
