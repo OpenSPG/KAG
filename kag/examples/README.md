@@ -152,7 +152,7 @@ kag_solver_pipeline:
 #------------kag-solver configuration end----------------#
 ```
 
-Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representive model configuration ``vectorize_model`` in the configuration file.
+Update the generative model configurations ``openie_llm`` and ``chat_llm`` and the representational model configuration ``vectorize_model`` in the configuration file.
 
 You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
