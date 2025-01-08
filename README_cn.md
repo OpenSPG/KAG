@@ -105,7 +105,10 @@ docker compose -f docker-compose.yml up -d
 ### 4.1.2 使用
 
 浏览器打开 KAG 产品默认链接：<http://127.0.0.1:8887> 。
-
+```text
+Default Username: openspg
+Default password: openspg@kag
+```
 具体使用请参考 [KAG使用(产品模式)](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17#JQH6Y)。
 
 ## 4.2 基于工具包（面向开发者）
