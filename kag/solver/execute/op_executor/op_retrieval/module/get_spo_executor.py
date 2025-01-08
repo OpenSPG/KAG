@@ -105,7 +105,7 @@ class GetSPOExecutor(OpExecutor):
         process_info: dict,
         param: dict,
     ) -> Tuple[bool, KgGraph]:
-        if not isinstance(logic_node, GetSPONode):
+        if not isinstance(logic_node, GetSPONode) or kg_retriever is None:
             return False, KgGraph()
 
         n: GetSPONode = logic_node
