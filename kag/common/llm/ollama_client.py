@@ -23,6 +23,7 @@ from tenacity import retry, stop_after_attempt
 logger = logging.getLogger(__name__)
 
 
+@LLMClient.register("Ollama")
 @LLMClient.register("ollama")
 class OllamaClient(LLMClient):
     """
