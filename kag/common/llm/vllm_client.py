@@ -30,16 +30,23 @@ class VLLMClient(LLMClient):
     This class provides methods to make synchronous requests to the VLLM server, handle model calls, and parse responses.
     """
 
-    def __init__(self, model: str, base_url: str):
+    def __init__(
+        self,
+        model: str,
+        base_url: str,
+        timeout: float = None,
+    ):
         """
         Initializes the VLLMClient instance.
 
         Args:
             model (str): The model to use for requests.
             base_url (str): The base URL for the VLLM API.
+            timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
         self.model = model
         self.base_url = base_url
+        self.timeout = timeout
         self.param = {}
         self.check()
 
@@ -60,6 +67,7 @@ class VLLMClient(LLMClient):
             self.base_url,
             data=json.dumps(self.param),
             headers={"Content-Type": "application/json"},
+            timeout=self.timeout,
         )
 
         data = response.json()
