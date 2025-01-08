@@ -239,50 +239,54 @@ class LawSchemaConstraintExtractor(ExtractorABC):
         Returns:
             List[Output]: The list of output results.
         """
-        law_name = input["name"]
-        print(f"procees {law_name}")
-        law_contents = input['law_content']
         """
-        LegalItem-relatedChargeName->ChargeName
-        LegalItem-belongToLaw->LegalName
-        LegalItem-belongToItem->ItemIndex
+         "law_name": law_name,
+                "item_name": item_name,
+                "item_content": item_content,
+                "index": i+1,
         """
+        law_name = input["law_name"]
         entities = [{
             "name": law_name,
             "category": "LegalName"
         }]
         relations = []
-        for i in range(len(law_contents)):
-            item_name = processing_phrases(law_contents[i]["name"])
-            item_content = law_contents[i]["content"]
-            entities.append({
+        """
+        LegalItem-relatedChargeName->ChargeName
+        LegalItem-belongToLaw->LegalName
+        LegalItem-belongToItem->ItemIndex
+        """
+
+        item_name = input['item_name']
+        item_content = input['item_content']
+        entities.append({
+            "name": item_name,
+            "category": "LegalItem",
+            "properties": {
                 "name": item_name,
-                "category": "LegalItem",
-                "properties": {
-                    "name": item_name,
-                    "content": item_content
-                }
-            })
-            relations.append([
-                item_name, "LegalItem", "belongToLaw", law_name, "LegalName"
-            ])
-            entities.append({
-                "name": item_name.replace(law_name, ''),
-                "category": "ItemIndex"
-            })
-            relations.append([
-                item_name, "LegalItem", "belongToItem", item_name.replace(law_name, ''), "ItemIndex"
-            ])
-            entities.append({
-                "name": f"第{str(i + 1)}条",
-                "category": "ItemIndex"
-            })
-            relations.append([
-                item_name, "LegalItem", "belongToItem", f"第{str(i + 1)}条", "ItemIndex"
-            ])
-            if "刑法" not in item_name:
-                continue
-            charge_name_set = self.text_similarity.text_sim_result(item_name, list(self.item_2_charge.keys()), topk=1, low_score=0.96, is_cached=False)
+                "content": item_content
+            }
+        })
+        relations.append([
+            item_name, "LegalItem", "belongToLaw", law_name, "LegalName"
+        ])
+        entities.append({
+            "name": item_name.replace(law_name, ''),
+            "category": "ItemIndex"
+        })
+        relations.append([
+            item_name, "LegalItem", "belongToItem", item_name.replace(law_name, ''), "ItemIndex"
+        ])
+        entities.append({
+            "name": f"第{str(input['index'])}条",
+            "category": "ItemIndex"
+        })
+        relations.append([
+            item_name, "LegalItem", "belongToItem", f"第{str(input['index'])}条", "ItemIndex"
+        ])
+        if "刑法" in item_name:
+            charge_name_set = self.text_similarity.text_sim_result(item_name, list(self.item_2_charge.keys()), topk=1,
+                                                                   low_score=0.96, is_cached=False)
             if len(charge_name_set):
                 print(f"charge name {item_name} sim {charge_name_set}")
                 charge_item = charge_name_set[0][0]
@@ -290,7 +294,7 @@ class LawSchemaConstraintExtractor(ExtractorABC):
                 for c in charges:
                     entities.append({
                         "name": processing_phrases(c),
-                        "category":"ChargeName"
+                        "category": "ChargeName"
                     })
                     relations.append([
                         item_name, "LegalItem", "relatedChargeName", processing_phrases(c), "ChargeName"
