@@ -34,7 +34,7 @@ class SolverPipelineRecall(SolverPipeline):
         :param generator: Generator instance for generating actions.
         :param memory: Assign memory store type
         """
-        super().__init__(**kwargs)
+        super().__init__(reflector, reasoner, generator, memory, max_iterations,**kwargs)
         self.max_iterations = max_iterations
 
         self.reflector = reflector
