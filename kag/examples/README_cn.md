@@ -152,7 +152,7 @@ kag_solver_pipeline:
 #------------kag-solver configuration end----------------#
 ```
 
-您需要更新其中的生成模型配置 ``openie_llm`` 和 ``chat_llm`` 和表示模型配置 ``vectorizer_model``。
+您需要更新其中的生成模型配置 ``openie_llm`` 和 ``chat_llm`` 和表示模型配置 ``vectorize_model``。
 
 您需要设置正确的 ``api_key``。如果使用的模型供应商和模型名与默认值不同，您还需要更新 ``base_url`` 和 ``model``。
 
@@ -203,7 +203,7 @@ cd kag/examples/TwoWikiTest
 
 #### Step 2：编辑项目配置
 
-**注意**：由不同表示模型生成的 embedding 向量差异较大，``vectorizer_model`` 配置在项目创建后建议不再更新；如有更新 ``vectorizer_model`` 配置的需求，请创建一个新项目。
+**注意**：由不同表示模型生成的 embedding 向量差异较大，``vectorize_model`` 配置在项目创建后建议不再更新；如有更新 ``vectorize_model`` 配置的需求，请创建一个新项目。
 
 ```bash
 vim ./kag_config.yaml
