@@ -1,6 +1,7 @@
 import json
 from typing import Type, Dict, List
 
+from kag.common.utils import processing_phrases
 from knext.common.base.runnable import Input, Output
 
 from kag.interface import ReaderABC
@@ -32,4 +33,22 @@ class LawLoader(ReaderABC):
                 - If `output_types` is `Chunk`, returns a list of Chunk objects.
                 - If `output_types` is `Dict`, returns a list of dictionaries.
         """
-        return [input]
+        law_name = input["name"]
+        print(f"procees {law_name}")
+        law_contents = input['law_content']
+        """
+        LegalItem-relatedChargeName->ChargeName
+        LegalItem-belongToLaw->LegalName
+        LegalItem-belongToItem->ItemIndex
+        """
+        output = []
+        for i in range(len(law_contents)):
+            item_name = processing_phrases(law_contents[i]["name"])
+            item_content = law_contents[i]["content"]
+            output.append({
+                "law_name": law_name,
+                "item_name": item_name,
+                "item_content": item_content,
+                "index": i+1,
+            })
+        return output
