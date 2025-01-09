@@ -20,7 +20,9 @@ from kag.interface import (
     PostProcessorABC,
     SinkWriterABC,
     KAGBuilderChain,
+    ExternalGraphLoaderABC,
 )
+
 from kag.common.utils import generate_hash_id
 
 logger = logging.getLogger(__name__)
@@ -188,3 +190,41 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 ret = inner_future.result()
                 result.append(ret)
         return result
+
+
+@KAGBuilderChain.register("domain_kg_inject_chain")
+class DomainKnowledgeInjectChain(KAGBuilderChain):
+    def __init__(
+        self,
+        external_graph: ExternalGraphLoaderABC,
+        writer: SinkWriterABC,
+        vectorizer: VectorizerABC = None,
+    ):
+        """
+        Initializes the DefaultStructuredBuilderChain instance.
+
+        Args:
+            external_graph (ExternalGraphLoaderABC): The ExternalGraphLoader component to be used.
+            writer (SinkWriterABC): The writer component to be used.
+            vectorizer (VectorizerABC, optional): The vectorizer component to be used. Defaults to None.
+        """
+        self.external_graph = external_graph
+        self.writer = writer
+        self.vectorizer = vectorizer
+
+    def build(self, **kwargs):
+        """
+        Construct the builder chain by connecting the external_graph, vectorizer (if available), and writer components.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            KAGBuilderChain: The constructed builder chain.
+        """
+        if self.vectorizer:
+            chain = self.external_graph >> self.vectorizer >> self.writer
+        else:
+            chain = self.external_graph >> self.writer
+
+        return chain
