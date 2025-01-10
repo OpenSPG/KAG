@@ -65,7 +65,7 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.1 Latest Updates
 
-* 2025.01.07 : Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, offers a mechanism for resuming knowledge base tasks from breakpoints, enables schema-constraint mode for extraction, etc.
+* 2025.01.07 : Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, enables schema-constraint mode for extraction, etc.
 * 2024.11.21 : Support Word docs upload, model invoke concurrency setting, User experience optimization, etc.
 * 2024.10.25 : KAG initial release
 
