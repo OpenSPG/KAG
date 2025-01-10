@@ -71,7 +71,6 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.2 Future Plans
 
-* domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, etc.
 * Logical reasoning optimization, conversational tasks support
 * kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
 * kag front-end open source, distributed build support, mathematical reasoning optimization
