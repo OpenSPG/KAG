@@ -192,41 +192,45 @@ class LawSchemaConstraintExtractor(ExtractorABC):
         return graph
 
     def link_entity(self, entity_type, entity_name):
-        res = self._search_client.search_vector(self.schema.get_label_within_prefix(entity_type), property_key="name",
-                                                query_vector=self.vectorize_model.vectorize(entity_name), topk=1)
-        if len(res) == 0 or res[0]['score'] < 0.95:
-            if len(res) and res[0]['score'] > 0.9:
-                print(f"{res[0]['node']['name']} not same with {entity_name}")
-            return {
-                "name": entity_type,
-                "category": entity_type
-            }
-        def extra_label(node):
-            labels = node['__labels__']
-            for label in labels:
-                if label != "Entity":
-                    return self.schema.get_label_without_prefix(label)
-            return None
-
-        def extra_properties(node):
-            prop = {}
-            for k,v in node.items():
-                if k.startswith("_"):
-                    continue
-                prop[k]=v
-            return prop
-        label = extra_label(res[0]['node'])
-        prop = extra_properties(res[0]['node'])
-        if label is None:
-            return {
-                "name": entity_type,
-                "category": entity_type
-            }
         return {
-            "name": res[0]['node']['name'],
-            "category": label,
-            "properties": prop
+            "name": entity_name,
+            "category": entity_type
         }
+        # res = self._search_client.search_vector(self.schema.get_label_within_prefix(entity_type), property_key="name",
+        #                                         query_vector=self.vectorize_model.vectorize(entity_name), topk=1)
+        # if len(res) == 0 or res[0]['score'] < 0.95:
+        #     if len(res) and res[0]['score'] > 0.9:
+        #         print(f"{res[0]['node']['name']} not same with {entity_name}")
+        #     return {
+        #         "name": entity_type,
+        #         "category": entity_type
+        #     }
+        # def extra_label(node):
+        #     labels = node['__labels__']
+        #     for label in labels:
+        #         if label != "Entity":
+        #             return self.schema.get_label_without_prefix(label)
+        #     return None
+        #
+        # def extra_properties(node):
+        #     prop = {}
+        #     for k,v in node.items():
+        #         if k.startswith("_"):
+        #             continue
+        #         prop[k]=v
+        #     return prop
+        # label = extra_label(res[0]['node'])
+        # prop = extra_properties(res[0]['node'])
+        # if label is None:
+        #     return {
+        #         "name": entity_type,
+        #         "category": entity_type
+        #     }
+        # return {
+        #     "name": res[0]['node']['name'],
+        #     "category": label,
+        #     "properties": prop
+        # }
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
