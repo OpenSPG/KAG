@@ -27,6 +27,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         api_key: str = "",
         base_url: str = "",
         vector_dimensions: int = None,
+        timeout: float = None,
     ):
         """
         Initializes the OpenAIVectorizeModel instance.
@@ -38,6 +39,8 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
         super().__init__(vector_dimensions)
+        self.model = model
+        self.timeout = timeout
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
     def vectorize(
@@ -52,7 +55,9 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
-        results = self.client.embeddings.create(input=texts, model=self.model)
+        results = self.client.embeddings.create(
+            input=texts, model=self.model, timeout=self.timeout
+        )
         results = [item.embedding for item in results.data]
         if isinstance(texts, str):
             assert len(results) == 1

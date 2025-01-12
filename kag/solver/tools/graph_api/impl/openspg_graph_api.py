@@ -36,7 +36,7 @@ def convert_edge_to_json(p_str):
 
         p = json.loads(p_str)
     except Exception as e:
-        logger.warning(f"_convert_edge_to_json failed {p_str}, {e}", exc_info=True)
+        logger.debug(f"_convert_edge_to_json failed {p_str}, {e}", exc_info=True)
         return {}
     prop = dict(p)
     return {"type": p["__label__"], "propertyValues": prop}
@@ -48,7 +48,7 @@ def convert_node_to_json(node_str):
 
         node = json.loads(node_str)
     except Exception as e:
-        logger.warning(f"_convert_node_to_json failed {node_str}, {e}", exc_info=True)
+        logger.debug(f"_convert_node_to_json failed {node_str}, {e}", exc_info=True)
         return {}
     return {
         "id": node["id"],
@@ -174,14 +174,18 @@ class OpenSPGGraphApi(GraphApiABC):
             entity.biz_id, entity.type, self.cache_one_hop_graph
         )
         if not one_hop:
-            table: TableData = self.execute_dsl(dsl_query, sid=s_id_param)
-            cached_map = self.convert_spo_to_one_graph(table)
-            self.cache_one_hop_graph.update(cached_map)
-            one_hop = self._get_cached_one_hop_graph(
-                entity.biz_id, entity.type, self.cache_one_hop_graph
-            )
+            try:
+                table: TableData = self.execute_dsl(dsl_query, sid=s_id_param)
+                cached_map = self.convert_spo_to_one_graph(table)
+                self.cache_one_hop_graph.update(cached_map)
+                one_hop = self._get_cached_one_hop_graph(
+                    entity.biz_id, entity.type, self.cache_one_hop_graph
+                )
+            except Exception as e:
+                logger.debug(f"get_entity_one_hop failed! {e}", exc_info=True)
+
         if one_hop is None:
-            logger.warning(f"get_entity_one_hop failed! {dsl_query}")
+            logger.debug(f"get_entity_one_hop failed! {dsl_query}")
             return None
         return copy_one_hop_graph_data(one_hop, "s")
 
@@ -222,7 +226,7 @@ class OpenSPGGraphApi(GraphApiABC):
         res = self.rc.syn_execute(dsl_content=dsl, **kwargs)
         task_resp: ReasonTask = res.task
         if task_resp is None or task_resp.status != "FINISH":
-            logger.warning(f"execute dsl failed! {res}")
+            logger.debug(f"execute dsl failed! {res}")
             return TableData()
         detail = task_resp.result_table_result
         return TableData.from_dict({"header": detail.header, "data": detail.rows})

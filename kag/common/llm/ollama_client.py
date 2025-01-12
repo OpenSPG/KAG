@@ -23,6 +23,7 @@ from tenacity import retry, stop_after_attempt
 logger = logging.getLogger(__name__)
 
 
+@LLMClient.register("Ollama")
 @LLMClient.register("ollama")
 class OllamaClient(LLMClient):
     """
@@ -31,18 +32,25 @@ class OllamaClient(LLMClient):
     This class provides methods to make synchronous requests to the Ollama API, handle model calls, and parse responses.
     """
 
-    def __init__(self, model: str, base_url: str):
+    def __init__(
+        self,
+        model: str,
+        base_url: str,
+        timeout: float = None,
+    ):
         """
         Initializes the OllamaClient instance.
 
         Args:
             model (str): The model to use for requests.
             base_url (str): The base URL for the Ollama API.
+            timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
         self.model = model
         self.base_url = base_url
+        self.timeout = timeout
         self.param = {}
-        self.client = Client(host=self.base_url)
+        self.client = Client(host=self.base_url, timeout=self.timeout)
         self.check()
 
     def sync_request(self, prompt, image=None):

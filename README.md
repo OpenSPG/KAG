@@ -65,12 +65,12 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.1 Latest Updates
 
+* 2025.01.07 : Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, enables schema-constraint mode for extraction, etc.
 * 2024.11.21 : Support Word docs upload, model invoke concurrency setting, User experience optimization, etc.
 * 2024.10.25 : KAG initial release
 
 ## 3.2 Future Plans
 
-* domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, etc.
 * Logical reasoning optimization, conversational tasks support
 * kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
 * kag front-end open source, distributed build support, mathematical reasoning optimization
@@ -109,7 +109,10 @@ docker compose -f docker-compose-west.yml up -d
 ### 4.1.2 Use the product
 
 Navigate to the default url of the KAG product with your browser: <http://127.0.0.1:8887>
-
+```text
+Default Username: openspg
+Default password: openspg@kag
+```
 See [KAG usage (product mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#rtOlA) for detailed introduction.
 
 ## 4.2 toolkit-based (for developers)

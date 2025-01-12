@@ -809,7 +809,7 @@ class Registrable:
                     params.clear()
                     setattr(instant, "__from_config_kwargs__", remaining_kwargs)
         except Exception as e:
-            logger.warn(f"Failed to initialize class {cls}, info: {e}")
+            logger.debug(f"Failed to initialize class {cls}, info: {e}")
             raise e
         if len(params) > 0:
             logger.warn(f"These params are not used for constructing {cls}:\n{params}")

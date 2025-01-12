@@ -40,6 +40,7 @@ class OpenAIClient(LLMClient):
         model: str,
         stream: bool = False,
         temperature: float = 0.7,
+        timeout: float = None,
     ):
         """
         Initializes the OpenAIClient instance.
@@ -50,6 +51,7 @@ class OpenAIClient(LLMClient):
             model (str): The default model to use for requests.
             stream (bool, optional): Whether to stream the response. Defaults to False.
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
+            timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
 
         self.api_key = api_key
@@ -57,6 +59,7 @@ class OpenAIClient(LLMClient):
         self.model = model
         self.stream = stream
         self.temperature = temperature
+        self.timeout = timeout
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.check()
 
@@ -87,6 +90,7 @@ class OpenAIClient(LLMClient):
                 messages=message,
                 stream=self.stream,
                 temperature=self.temperature,
+                timeout=self.timeout,
             )
             rsp = response.choices[0].message.content
             return rsp
@@ -101,6 +105,7 @@ class OpenAIClient(LLMClient):
                 messages=message,
                 stream=self.stream,
                 temperature=self.temperature,
+                timeout=self.timeout,
             )
             rsp = response.choices[0].message.content
             return rsp
