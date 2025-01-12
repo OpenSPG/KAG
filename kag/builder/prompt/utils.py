@@ -9,15 +9,17 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import logging
 from kag.interface import PromptABC
+
+logger = logging.getLogger(__name__)
 
 
 def init_prompt_with_fallback(prompt_name, biz_scene):
     try:
         return PromptABC.from_config({"type": f"{biz_scene}_{prompt_name}"})
     except Exception as e:
-        print(
+        logger.debug(
             f"fail to initialize prompts with biz scene {biz_scene}, fallback to default biz scene, info: {e}"
         )
 

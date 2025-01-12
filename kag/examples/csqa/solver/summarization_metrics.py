@@ -48,6 +48,10 @@ class SummarizationMetricsEvaluator(object):
                 "groundtruth_answer": " ".join(x["answers"]),
                 "kag_answer": x["kag_answer"],
                 "lightrag_answer": y["lightrag_answer"],
+                "context": x.get("context", ""),
+                "meta": x.get("meta"),
+                "kag_trace_log": x.get("kag_trace_log", ""),
+                "lightrag_context": y.get("lightrag_context", ""),
             }
             result.append(item)
         return result
@@ -118,12 +122,116 @@ class SummarizationMetricsEvaluator(object):
                 ) / 2
         return average_metrics
 
-    def run(self):
-        metrics = self._compute_summarization_metrics()
-        reverse_metrics = self._compute_reverse_summarization_metrics()
-        average_metrics = self._compute_average_summarization_metrics(
-            metrics, reverse_metrics
+    def _save_evaluation_responses(self, metrics, reverse_metrics):
+        responses = metrics["responses"]
+        reverse_responses = reverse_metrics["responses"]
+        for item, response, reverse_response in zip(
+            self._questions_and_answers, responses, reverse_responses
+        ):
+            item["response"] = response
+            item["reverse_response"] = reverse_response
+
+    def _format_winner(self, score1, score2, *, is_reversed):
+        if score1 > score2:
+            return "KAG" if not is_reversed else "LightRAG"
+        if score1 < score2:
+            return "LightRAG" if not is_reversed else "KAG"
+        return "None"
+
+    def _format_description(self, description, *, is_reversed):
+        if not is_reversed:
+            description = description.replace("Answer 1", "KAG")
+            description = description.replace("Answer 2", "LightRAG")
+        else:
+            description = description.replace("Answer 1", "LightRAG")
+            description = description.replace("Answer 2", "KAG")
+        return description
+
+    def _format_evaluation_response(self, r, *, is_reversed):
+        if r is None:
+            return "None"
+        all_keys = "Comprehensiveness", "Diversity", "Empowerment", "Overall"
+        string = ""
+        for index, key in enumerate(all_keys):
+            if index > 0:
+                string += "\n\n"
+            string += "**%s**" % key
+            string += "\n\n%s Score: %d" % (
+                "KAG" if not is_reversed else "LightRAG",
+                r[key]["Score 1"],
+            )
+            string += "\n\n%s Score: %d" % (
+                "LightRAG" if not is_reversed else "KAG",
+                r[key]["Score 2"],
+            )
+            string += "\n\nWinner: %s" % self._format_winner(
+                r[key]["Score 1"], r[key]["Score 2"], is_reversed=is_reversed
+            )
+            string += "\n\nExplanation: %s" % self._format_description(
+                r[key]["Explanation"], is_reversed=is_reversed
+            )
+        return string
+
+    def _format_question(self, item):
+        string = item["question"]
+        string += "\n" + "=" * 80
+        string += "\n\nground truth"
+        string += "\n" + "-" * 80
+        string += "\n" + item["groundtruth_answer"]
+        string += "\n\nKAG"
+        string += "\n" + "-" * 80
+        string += "\n" + item["kag_answer"]
+        string += "\n\nLightRAG"
+        string += "\n" + "-" * 80
+        string += "\n" + item["lightrag_answer"]
+        string += "\n\n%s evaluation" % self._evaluator_kwargs["model"]
+        string += ": KAG vs LightRAG"
+        string += "\n" + "-" * 80
+        string += "\n" + self._format_evaluation_response(
+            item["response"], is_reversed=False
         )
+        string += "\n\n%s evaluation" % self._evaluator_kwargs["model"]
+        string += ": LightRAG vs KAG"
+        string += "\n" + "-" * 80
+        string += "\n" + self._format_evaluation_response(
+            item["reverse_response"], is_reversed=True
+        )
+        return string
+
+    def _format_questions(self):
+        string = ""
+        for index, item in enumerate(self._questions_and_answers):
+            if index > 0:
+                string += "\n\n"
+            string += self._format_question(item)
+        return string
+
+    def _save_evaluation_results(self, metrics, reverse_metrics, average_metrics):
+        import io
+        import os
+        import json
+        import time
+
+        data = {
+            "metricses": {
+                "Metrics: KAG vs LightRAG": metrics["average_metrics"],
+                "Metrics: LightRAG vs KAG": reverse_metrics["average_metrics"],
+                "Average: KAG vs LightRAG": average_metrics["average_metrics"],
+            },
+            "questions": self._questions_and_answers,
+        }
+        start_time = time.time()
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(dir_path, f"csqa_qfs_res_{start_time}.json")
+        with io.open(file_path, "w", encoding="utf-8", newline="\n") as fout:
+            json.dump(data, fout, separators=(",", ": "), indent=4, ensure_ascii=False)
+            print(file=fout)
+        file_path = os.path.join(dir_path, f"csqa_qfs_res_{start_time}.md")
+        with io.open(file_path, "w", encoding="utf-8", newline="\n") as fout:
+            string = self._format_questions()
+            print(string, file=fout)
+
+    def _print_evaluation_results(self, metrics, reverse_metrics, average_metrics):
         all_keys = "Comprehensiveness", "Diversity", "Empowerment", "Overall"
         all_items = "Score 1", "Score 2"
         titles = (
@@ -149,6 +257,16 @@ class SummarizationMetricsEvaluator(object):
                         string += " vs"
                     string += " %.2f" % metrics["average_metrics"][key][item]
         print(string)
+
+    def run(self):
+        metrics = self._compute_summarization_metrics()
+        reverse_metrics = self._compute_reverse_summarization_metrics()
+        self._save_evaluation_responses(metrics, reverse_metrics)
+        average_metrics = self._compute_average_summarization_metrics(
+            metrics, reverse_metrics
+        )
+        self._save_evaluation_results(metrics, reverse_metrics, average_metrics)
+        self._print_evaluation_results(metrics, reverse_metrics, average_metrics)
 
 
 def main():
