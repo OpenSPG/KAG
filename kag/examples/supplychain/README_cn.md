@@ -43,7 +43,7 @@ cd kag/examples/supplychain
 
 您需要设置正确的 ``api_key``。如果使用的模型供应商和模型名与默认值不同，您还需要更新 ``base_url`` 和 ``model``。
 
-在本示例中未使用表示模型，可保持表示模型配置 ``vectorizer_model`` 的默认配置。
+在本示例中未使用表示模型，可保持表示模型配置 ``vectorize_model`` 的默认配置。
 
 #### Step 3：初始化项目
 

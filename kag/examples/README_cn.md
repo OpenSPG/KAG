@@ -152,7 +152,7 @@ kag_solver_pipeline:
 #------------kag-solver configuration end----------------#
 ```
 
-您需要更新其中的生成模型配置 ``openie_llm`` 和 ``chat_llm`` 和表示模型配置 ``vectorizer_model``。
+您需要更新其中的生成模型配置 ``openie_llm`` 和 ``chat_llm`` 和表示模型配置 ``vectorize_model``。
 
 您需要设置正确的 ``api_key``。如果使用的模型供应商和模型名与默认值不同，您还需要更新 ``base_url`` 和 ``model``。
 
@@ -203,7 +203,7 @@ cd kag/examples/TwoWikiTest
 
 #### Step 2：编辑项目配置
 
-**注意**：由不同表示模型生成的 embedding 向量差异较大，``vectorizer_model`` 配置在项目创建后建议不再更新；如有更新 ``vectorizer_model`` 配置的需求，请创建一个新项目。
+**注意**：由不同表示模型生成的 embedding 向量差异较大，``vectorize_model`` 配置在项目创建后建议不再更新；如有更新 ``vectorize_model`` 配置的需求，请创建一个新项目。
 
 ```bash
 vim ./kag_config.yaml
@@ -227,7 +227,7 @@ cd kag/examples/TwoWikiTest
 
 ### Step 2：获取语料数据
 
-2wiki 数据集的测试语料数据为 ``kag/examples/2wiki/builder/data/2wiki_corpus.json``，有 6119 篇文档，和 1000 个问答对。为了迅速跑通整个流程，目录下还有一个 ``2wiki_corpus_sub.json`` 文件，只有 7 篇文档，我们以该小规模数据集为例进行试验。
+2wiki 数据集的测试语料数据为 ``kag/examples/2wiki/builder/data/2wiki_corpus.json``，有 6119 篇文档，和 1000 个问答对。为了迅速跑通整个流程，目录下还有一个 ``2wiki_corpus_sub.json`` 文件，只有 3 篇文档，我们以该小规模数据集为例进行试验。
 
 将其复制到 ``TwoWikiTest`` 项目的同名目录下：
 
@@ -326,21 +326,13 @@ KAG 框架基于 checkpoint 文件提供了断点续跑的功能。如果由于�
 cd kag/examples/TwoWikiTest
 ```
 
-### Step 2：获取问答数据
-
-与 ``2wiki_sub_corpus.json`` 数据集对应的问答数据为 ``kag/examples/2wiki/solver/data/2wiki_qa_sub.json``，有两个问答对。将其复制到 ``TwoWikiTest`` 项目的同名目录下。
-
-```bash
-cp ../2wiki/solver/data/2wiki_qa_sub.json solver/data
-```
-
-### Step 3：编写问答脚本
+### Step 2：编写问答脚本
 
 ```bash
 vim ./solver/qa.py
 ```
 
-将以下内容粘贴到 ``qa.py`` 中（也可直接复制内置的 2wiki 项目的问答脚本）。
+将以下内容粘贴到 ``qa.py`` 中。
 
 ```python
 import json
@@ -370,7 +362,7 @@ class EvaFor2wiki:
         pass
 
     """
-        qa from knowledge base, 
+        qa from knowledge base,
     """
 
     def qa(self, query):
@@ -380,130 +372,19 @@ class EvaFor2wiki:
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, traceLog
 
-    """
-        parallel qa from knowledge base
-        and getBenchmarks(em, f1, answer_similarity)
-    """
-
-    def parallelQaAndEvaluate(
-        self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
-    ):
-        ckpt = CheckpointerManager.get_checkpointer(
-            {"type": "zodb", "ckpt_dir": "ckpt"}
-        )
-
-        def process_sample(data):
-            try:
-                sample_idx, sample = data
-                sample_id = sample["_id"]
-                question = sample["question"]
-                gold = sample["answer"]
-                if question in ckpt:
-                    print(f"found existing answer to question: {question}")
-                    prediction, traceLog = ckpt.read_from_ckpt(question)
-                else:
-                    prediction, traceLog = self.qa(question)
-                    ckpt.write_to_ckpt(question, (prediction, traceLog))
-
-                evalObj = Evaluate()
-                metrics = evalObj.getBenchMark([prediction], [gold])
-                return sample_idx, sample_id, prediction, metrics, traceLog
-            except Exception as e:
-                import traceback
-
-                logger.warning(
-                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data}"
-                )
-                return None
-
-        qaList = json.load(open(qaFilePath, "r"))
-        total_metrics = {
-            "em": 0.0,
-            "f1": 0.0,
-            "answer_similarity": 0.0,
-            "processNum": 0,
-        }
-        with ThreadPoolExecutor(max_workers=threadNum) as executor:
-            futures = [
-                executor.submit(process_sample, (sample_idx, sample))
-                for sample_idx, sample in enumerate(qaList[:upperLimit])
-            ]
-            for future in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc="parallelQaAndEvaluate completing: ",
-            ):
-                result = future.result()
-                if result is not None:
-                    sample_idx, sample_id, prediction, metrics, traceLog = result
-                    sample = qaList[sample_idx]
-
-                    sample["prediction"] = prediction
-                    sample["traceLog"] = traceLog
-                    sample["em"] = str(metrics["em"])
-                    sample["f1"] = str(metrics["f1"])
-
-                    total_metrics["em"] += metrics["em"]
-                    total_metrics["f1"] += metrics["f1"]
-                    total_metrics["answer_similarity"] += metrics["answer_similarity"]
-                    total_metrics["processNum"] += 1
-
-                    if sample_idx % 50 == 0:
-                        with open(resFilePath, "w") as f:
-                            json.dump(qaList, f)
-
-        with open(resFilePath, "w") as f:
-            json.dump(qaList, f)
-
-        res_metrics = {}
-        for item_key, item_value in total_metrics.items():
-            if item_key != "processNum":
-                res_metrics[item_key] = item_value / total_metrics["processNum"]
-            else:
-                res_metrics[item_key] = total_metrics["processNum"]
-        CheckpointerManager.close()
-        return res_metrics
-
-
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
     evalObj = EvaFor2wiki()
 
-    start_time = time.time()
-    filePath = "./data/2wiki_qa_sub.json"
-
-    evalObj.qa("When did Lothair Ii's mother die?")
-
-    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
-    resFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), f"2wikitest_res_{start_time}.json"
-    )
-    total_metrics = evalObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=20, upperLimit=10000
-    )
-
-    total_metrics["cost"] = time.time() - start_time
-    with open(f"./2wikitest_metrics_{start_time}.json", "w") as f:
-        json.dump(total_metrics, f)
-    print(total_metrics)
+    evalObj.qa("Which Stanford University professor works on Alzheimer's?")
 ```
 
-### Step 4：复制答案生成 prompt
-
-复制 2wiki 项目的答案生成 prompt。
-
-```bash
-cp ../2wiki/solver/prompt/resp_generator.py solver/prompt
-```
-
-### Step 5：运行命令
+### Step 3：运行命令
 
 ```bash
 cd solver
 python qa.py
 ```
-
-执行结束后，会打印 QA 的效果指标。
 
 ## 5. 其他内置案例
 

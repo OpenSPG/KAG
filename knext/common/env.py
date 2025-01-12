@@ -47,15 +47,10 @@ class Environment:
         closest_config = self._closest_config()
         if not hasattr(self, '_config_path') or self._config_path != closest_config:
             self._config_path = closest_config
+            self._config = self.get_config()
             
         if self._config is None:
             self._config = self.get_config()
-            
-        current_config = self.get_config()
-        if self._config != current_config:
-            self._config = current_config
-            with open(self._config_path, "w") as f:
-                yaml.dump(self._config, f)
                 
         return self._config
 

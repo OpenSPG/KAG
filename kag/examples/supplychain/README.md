@@ -41,7 +41,7 @@ Update the generative model configurations ``openie_llm`` and ``chat_llm`` in [k
 
 You need to fill in correct ``api_key``s. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
-Since the representive model is not used in this example, you can retain the default configuration for the representative model ``vectorizer_model``.
+Since the representational model is not used in this example, you can retain the default configuration for the representative model ``vectorize_model``.
 
 #### Step 3: Project initialization
 
