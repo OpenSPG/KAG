@@ -65,12 +65,12 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.1 Latest Updates
 
+* 2025.01.07 : Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, enables schema-constraint mode for extraction, etc.
 * 2024.11.21 : Support Word docs upload, model invoke concurrency setting, User experience optimization, etc.
 * 2024.10.25 : KAG initial release
 
 ## 3.2 Future Plans
 
-* domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, etc.
 * Logical reasoning optimization, conversational tasks support
 * kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
 * kag front-end open source, distributed build support, mathematical reasoning optimization
@@ -102,15 +102,18 @@ Use the following commands to download the docker-compose.yml file and launch th
 # set the HOME environment variable (only Windows users need to execute this command)
 # set HOME=%USERPROFILE%
 
-curl -sSL https://raw.githubusercontent.com/OpenSPG/openspg/refs/heads/master/dev/release/docker-compose.yml -o docker-compose.yml
-docker compose -f docker-compose.yml up -d
+curl -sSL https://raw.githubusercontent.com/OpenSPG/openspg/refs/heads/master/dev/release/docker-compose-west.yml -o docker-compose-west.yml
+docker compose -f docker-compose-west.yml up -d
 ```
 
 ### 4.1.2 Use the product
 
 Navigate to the default url of the KAG product with your browser: <http://127.0.0.1:8887>
-
-See the [Quick Start for Product Mode](https://openspg.yuque.com/ndx6g9/wc9oyq/yexegklu44bqqicm) for detailed introduction.
+```text
+Default Username: openspg
+Default password: openspg@kag
+```
+See [KAG usage (product mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#rtOlA) for detailed introduction.
 
 ## 4.2 toolkit-based (for developers)
 
@@ -145,7 +148,7 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 
 ### 4.2.3 Use the toolkit
 
-Please refer to the [Quick Start for Developer Mode](https://openspg.yuque.com/ndx6g9/wc9oyq/yexegklu44bqqicm#cikso) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new busineness scenarios.
+Please refer to [KAG usage (developer mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#cikso) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new busineness scenarios.
 
 # 5. Technical Architecture
 

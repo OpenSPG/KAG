@@ -10,41 +10,56 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
-import os
 import re
 from typing import List, Type
 
-from kag.interface.builder import SplitterABC
+from kag.interface import SplitterABC
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.model.chunk import Chunk
+from kag.interface import LLMClient
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
-from kag.common.llm.client.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 
 
+@SplitterABC.register("semantic")
+@SplitterABC.register("semantic_splitter")
 class SemanticSplitter(SplitterABC):
     """
     A class for semantically splitting text into smaller chunks based on the content's structure and meaning.
-    Inherits from the Splitter class.
+    Inherits from the SplitterABC class.
 
-    Attributes:
-        kept_char_pattern (re.Pattern): Regex pattern to match Chinese/ASCII characters.
-        split_length (int): The maximum length of each chunk after splitting.
-        llm_client (LLMClient): Instance of LLMClient initialized with `model` config.
-        semantic_seg_op (SemanticSegPrompt): Instance of SemanticSegPrompt for semantic segmentation.
     """
 
-    def __init__(self, split_length: int = 1000, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        llm: LLMClient,
+        kept_char_pattern: str = None,
+        split_length: int = 1000,
+    ):
+        """
+        Initializes the SemanticSplitter with the given LLMClient, kept character pattern, and split length.
+
+        Args:
+            llm (LLMClient): Instance of LLMClient initialized with `model` config.
+            kept_char_pattern (str, optional): Regex pattern to match Chinese/ASCII characters.
+                Defaults to a predefined pattern if not provided.
+            split_length (int, optional): The maximum length of each chunk after splitting. Defaults to 1000.
+            **kwargs: Additional keyword arguments to be passed to the superclass.
+        """
+        super().__init__()
         # Chinese/ASCII characters
-        self.kept_char_pattern = re.compile(
-            r"[^\u4e00-\u9fa5\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\x00-\x7F]+"
-        )
-        self.split_length = int(split_length)
-        self.llm = self._init_llm()
-        language = os.getenv("KAG_PROMPT_LANGUAGE", "zh")
-        self.semantic_seg_op = SemanticSegPrompt(language)
+        if kept_char_pattern is None:
+            self.kept_char_pattern = re.compile(
+                r"[^\u4e00-\u9fa5\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\x00-\x7F]+"
+            )
+        else:
+            self.kept_char_pattern = re.compile(kept_char_pattern)
+        self.split_length = split_length
+        self.llm = llm
+        self.semantic_seg_op = SemanticSegPrompt(KAG_PROJECT_CONF.language)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -103,6 +118,8 @@ class SemanticSplitter(SplitterABC):
         """
         result = self.llm.invoke({"input": org_chunk.content}, self.semantic_seg_op)
         splitted = self.parse_llm_output(org_chunk.content, result)
+        if len(splitted) == 0:
+            return [org_chunk]
         logger.debug(f"splitted = {splitted}")
         chunks = []
         for idx, item in enumerate(splitted):
@@ -113,30 +130,26 @@ class SemanticSplitter(SplitterABC):
                     name=f"{org_chunk.name}#{split_name}",
                     content=item["content"],
                     abstract=item["name"],
-                    **org_chunk.kwargs
+                    **org_chunk.kwargs,
                 )
                 chunks.append(chunk)
             else:
                 print("chunk over size")
                 innerChunk = Chunk(
-                    id=Chunk.generate_hash_id(item["content"]),
+                    id=generate_hash_id(item["content"]),
                     name=f"{org_chunk.name}#{split_name}",
                     content=item["content"],
                 )
-                chunks.extend(
-                    self.semantic_chunk(
-                        innerChunk, chunk_size
-                    )
-                )
+                chunks.extend(self.semantic_chunk(innerChunk, chunk_size))
         return chunks
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the splitting process on the provided input.
 
         Args:
             input (Input): The input to be processed.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
 
         Returns:
             List[Output]: A list of outputs generated from the input.

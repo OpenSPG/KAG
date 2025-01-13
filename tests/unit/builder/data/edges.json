@@ -1,0 +1,154 @@
+[
+    {
+        "id": "(缩)肾上腺皮质激素-促肾上腺皮质激素",
+        "from": "(缩)肾上腺皮质激素",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促肾皮素-促肾上腺皮质激素",
+        "from": "促肾皮素",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促皮质素-促肾上腺皮质激素",
+        "from": "促皮质素",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促肾上腺皮质[激]素-促肾上腺皮质激素",
+        "from": "促肾上腺皮质[激]素",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "ACTH-促肾上腺皮质激素",
+        "from": "ACTH",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促皮质激素-促肾上腺皮质激素",
+        "from": "促皮质激素",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促肾上腺皮质素-促肾上腺皮质激素",
+        "from": "促肾上腺皮质素",
+        "fromType": "Concept",
+        "to": "促肾上腺皮质激素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "人生长激素-促生长素",
+        "from": "人生长激素",
+        "fromType": "Concept",
+        "to": "促生长素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "生长激素-促生长素",
+        "from": "生长激素",
+        "fromType": "Concept",
+        "to": "促生长素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "生长激素释放抑制激素-生长抑素",
+        "from": "生长激素释放抑制激素",
+        "fromType": "Concept",
+        "to": "生长抑素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促生长素抑制素-生长抑素",
+        "from": "促生长素抑制素",
+        "fromType": "Concept",
+        "to": "生长抑素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "生长抑素醋酸盐-生长抑素",
+        "from": "生长抑素醋酸盐",
+        "fromType": "Concept",
+        "to": "生长抑素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "胃泌激素-促胃液素",
+        "from": "胃泌激素",
+        "fromType": "Concept",
+        "to": "促胃液素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "胃泌素-促胃液素",
+        "from": "胃泌素",
+        "fromType": "Concept",
+        "to": "促胃液素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "促乳素-催乳素",
+        "from": "促乳素",
+        "fromType": "Concept",
+        "to": "催乳素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "泌乳素-催乳素",
+        "from": "泌乳素",
+        "fromType": "Concept",
+        "to": "催乳素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "催乳激素-催乳素",
+        "from": "催乳激素",
+        "fromType": "Concept",
+        "to": "催乳素",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "蛋白水解酶-内肽酶",
+        "from": "蛋白水解酶",
+        "fromType": "Concept",
+        "to": "内肽酶",
+        "toType": "Concept",
+        "label": "isA"
+    },
+    {
+        "id": "蛋白酶-内肽酶",
+        "from": "蛋白酶",
+        "fromType": "Concept",
+        "to": "内肽酶",
+        "toType": "Concept",
+        "label": "isA"
+    }
+]

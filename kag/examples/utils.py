@@ -1,13 +1,6 @@
 import time
-import hashlib
 import numpy as np
 
-def generate_hash_id(value):
-    m = hashlib.md5()
-    m.update(value.encode("utf-8"))
-    md5_hex = m.hexdigest()
-    decimal_value = int(md5_hex, 16)
-    return str(decimal_value)
 
 def delay_run(hours: int):
     start_time = time.time()
@@ -31,16 +24,16 @@ def compute_sub_query(trace_log: dict):
     round_max_sub_query = 0
     kg_direct_num = 0
     sub_query_num = 0
-    round_max_sub_query += 0 if len(trace_log) == 0 else len(trace_log[0]['history'])
+    round_max_sub_query += 0 if len(trace_log) == 0 else len(trace_log[0]["history"])
     for log in trace_log:
-        if 'history' not in log:
+        if "history" not in log:
             continue
-        history = log['history']
+        history = log["history"]
 
         for h in history:
             sub_query_num += 1
-            source_type = h.get('answer_source', 'chunk')
-            if source_type == 'spo':
+            source_type = h.get("answer_source", "chunk")
+            if source_type == "spo":
                 kg_direct_num += 1
     return kg_direct_num, sub_query_num, round_max_sub_query
 
@@ -58,7 +51,7 @@ def run_rerank_by_score(recall_docs: list):
         tmp_dict = {}
         for doc in iter_recall_docs:
             score = doc.split("#")[-1]
-            header = doc.replace(f"#{score}", '')
+            header = doc.replace(f"#{score}", "")
             tmp_dict[header] = score
         normalized_iter_doc_scores = min_max_normalize(
             np.array(list(tmp_dict.values())).astype(float)
@@ -83,7 +76,9 @@ def compute_recall_metrics(recall_docs: list, supporting_facts: list, extract_co
         if header is None:
             raise Exception(f"doc header extra failed {doc}")
         recall_docs_header.append(header)
-    return compute_hit_in_recalls(recall_docs_header, supporting_facts, 2), compute_hit_in_recalls(recall_docs_header,
-                                                                                                   supporting_facts,
-                                                                                                   5), compute_hit_in_recalls(
-        recall_docs_header, supporting_facts, 10), compute_hit_in_recalls(recall_docs_header, supporting_facts, 10000)
+    return (
+        compute_hit_in_recalls(recall_docs_header, supporting_facts, 2),
+        compute_hit_in_recalls(recall_docs_header, supporting_facts, 5),
+        compute_hit_in_recalls(recall_docs_header, supporting_facts, 10),
+        compute_hit_in_recalls(recall_docs_header, supporting_facts, 10000),
+    )

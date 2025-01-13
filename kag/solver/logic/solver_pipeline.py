@@ -1,70 +1,91 @@
+import copy
 import logging
+from kag.common.registry import Registrable
 
+# from kag.solver.implementation.default_generator import DefaultGenerator
+# from kag.solver.implementation.default_reasoner import DefaultReasoner
+# from kag.solver.implementation.default_reflector import DefaultReflector
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.kag_reflector_abc import KagReflectorABC
-from kag.solver.implementation.default_generator import DefaultGenerator
-from kag.solver.implementation.default_memory import DefaultMemory
-from kag.solver.implementation.default_reasoner import DefaultReasoner
-from kag.solver.implementation.default_reflector import DefaultReflector
+from kag.interface.solver.base_model import LFExecuteResult
 
 logger = logging.getLogger(__name__)
 
 
-class SolverPipeline:
-    def __init__(self, max_run=3, reflector: KagReflectorABC = None, reasoner: KagReasonerABC = None,
-                 generator: KAGGeneratorABC = None, **kwargs):
+class SolverPipeline(Registrable):
+    def __init__(
+        self,
+        reflector: KagReflectorABC,
+        reasoner: KagReasonerABC,
+        generator: KAGGeneratorABC,
+        memory: KagMemoryABC,
+        max_iterations=3,
+        **kwargs
+    ):
         """
         Initializes the think-and-act loop class.
 
-        :param max_run: Maximum number of runs to limit the thinking and acting loop, defaults to 3.
+        :param max_iterations: Maximum number of iteration to limit the thinking and acting loop, defaults to 3.
         :param reflector: Reflector instance for reflect tasks.
         :param reasoner: Reasoner instance for reasoning about tasks.
         :param generator: Generator instance for generating actions.
+        :param memory: Assign memory store type
         """
-        self.max_run = max_run
-        self.memory = DefaultMemory(**kwargs)
+        super().__init__(**kwargs)
+        self.max_iterations = max_iterations
 
-        self.reflector = reflector or DefaultReflector(**kwargs)
-        self.reasoner = reasoner or DefaultReasoner(**kwargs)
-        self.generator = generator or DefaultGenerator(**kwargs)
+        self.reflector = reflector
+        self.reasoner = reasoner
+        self.generator = generator
+        self.memory = memory
+        self.param = kwargs
 
-        self.trace_log = []
-
-    def run(self, question):
+    def run(self, question, **kwargs):
         """
-       Executes the core logic of the problem-solving system.
+        Executes the core logic of the problem-solving system.
 
-       Parameters:
-       - question (str): The question to be answered.
+        Parameters:
+        - question (str): The question to be answered.
 
-       Returns:
-       - tuple: answer, trace log
-       """
+        Returns:
+        - tuple: answer, trace log
+        """
         instruction = question
         if_finished = False
-        logger.debug('input instruction:{}'.format(instruction))
+        logger.debug("input instruction:{}".format(instruction))
+        trace_log = []
         present_instruction = instruction
         run_cnt = 0
+        memory = copy.copy(self.memory)
 
-        while not if_finished and run_cnt < self.max_run:
+        while not if_finished and run_cnt < self.max_iterations:
             run_cnt += 1
-            logger.debug('present_instruction is:{}'.format(present_instruction))
+            logger.debug("present_instruction is:{}".format(present_instruction))
             # Attempt to solve the current instruction and get the answer, supporting facts, and history log
-            solved_answer, supporting_fact, history_log = self.reasoner.reason(present_instruction)
+            reason_res: LFExecuteResult = self.reasoner.reason(
+                present_instruction, **kwargs
+            )
 
             # Extract evidence from supporting facts
-            self.memory.save_memory(solved_answer, supporting_fact, instruction)
-
-            history_log['present_instruction'] = present_instruction
-            history_log['present_memory'] = self.memory.serialize_memory()
-            self.trace_log.append(history_log)
+            memory.save_memory(
+                reason_res.kg_exact_solved_answer,
+                reason_res.get_support_facts(),
+                instruction,
+            )
+            history_log = reason_res.get_trace_log()
+            history_log["present_instruction"] = present_instruction
+            history_log["present_memory"] = memory.serialize_memory()
+            trace_log.append(history_log)
 
             # Reflect the current instruction based on the current memory and instruction
-            if_finished, present_instruction = self.reflector.reflect_query(self.memory, present_instruction)
+            if_finished, present_instruction = self.reflector.reflect_query(
+                memory, present_instruction
+            )
 
-        response = self.generator.generate(instruction, self.memory)
-        return response, self.trace_log
+        response = self.generator.generate(instruction, memory)
+        return response, trace_log
 
     def get_kg_answer_num(self):
         """

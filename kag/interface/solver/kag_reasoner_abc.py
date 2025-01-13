@@ -1,9 +1,18 @@
-from abc import abstractmethod
-from typing import Tuple
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
 
-from kag.interface.solver.lf_planner_abc import LFPlannerABC
-from kag.solver.common.base import KagBaseModule
-from kag.solver.logic.core_modules.lf_solver import LFSolver
+from abc import abstractmethod
+
+from kag.interface.solver.base import KagBaseModule
+from kag.interface.solver.base_model import LFExecuteResult
 
 
 class KagReasonerABC(KagBaseModule):
@@ -24,11 +33,9 @@ class KagReasonerABC(KagBaseModule):
     - kg_direct: Number of direct knowledge graph queries.
     - trace_log: List to log trace information.
     """
-    def __init__(self, lf_planner: LFPlannerABC = None, lf_solver: LFSolver = None, **kwargs):
-        super().__init__(**kwargs)
 
     @abstractmethod
-    def reason(self, question: str) -> Tuple[str, str, dict]:
+    def reason(self, question: str, **kwargs) -> LFExecuteResult:
         """
         Processes a given question by planning and executing logical forms to derive an answer.
 
@@ -36,7 +43,7 @@ class KagReasonerABC(KagBaseModule):
         - question (str): The input question to be processed.
 
         Returns:
-        Tuple
+        LFExecuteResult
         - solved_answer: The final answer derived from solving the logical forms.
         - supporting_fact: Supporting facts gathered during the reasoning process.
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.

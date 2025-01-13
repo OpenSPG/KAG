@@ -10,28 +10,52 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from abc import ABC
-from typing import Type, List, Union
-
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SplitterABC
+from kag.interface import SplitterABC
 
 
 class BaseTableSplitter(SplitterABC):
     """
-    A base class for splitting table, inheriting from Splitter.
+    A base class for splitting table data into smaller chunks.
+
+    This class inherits from SplitterABC and provides the functionality to split table data
+    represented in markdown format into smaller chunks.
     """
+
+    def __init__(self):
+        super().__init__()
 
     def split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
         """
-        split markdown format table into smaller markdown table
+        Splits a markdown format table into smaller markdown tables.
+
+        Args:
+            org_chunk (Chunk): The original chunk containing the table data.
+            chunk_size (int): The maximum size of each smaller chunk. Defaults to 2000.
+            sep (str): The separator used to join the table rows. Defaults to "\n".
+
+        Returns:
+            List[Chunk]: A list of smaller chunks resulting from the split operation.
         """
         try:
-            return self._split_table(org_chunk=org_chunk, chunk_size=chunk_size, sep=sep)
+            return self._split_table(
+                org_chunk=org_chunk, chunk_size=chunk_size, sep=sep
+            )
         except Exception:
             return None
 
     def _split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
+        """
+        Internal method to split a markdown format table into smaller markdown tables.
+
+        Args:
+            org_chunk (Chunk): The original chunk containing the table data.
+            chunk_size (int): The maximum size of each smaller chunk. Defaults to 2000.
+            sep (str): The separator used to join the table rows. Defaults to "\n".
+
+        Returns:
+            List[Chunk]: A list of smaller chunks resulting from the split operation.
+        """
         output = []
         content = org_chunk.content
         table_start = content.find("|")
@@ -56,6 +80,7 @@ class BaseTableSplitter(SplitterABC):
             cur.append(row)
             cur_len += len(row)
 
+        cur.append(content[table_end:])
         if len(cur) > 0:
             splitted.append(cur)
 
@@ -66,7 +91,7 @@ class BaseTableSplitter(SplitterABC):
                 name=f"{org_chunk.name}#{idx}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
-                **org_chunk.kwargs
+                **org_chunk.kwargs,
             )
             output.append(chunk)
         return output
