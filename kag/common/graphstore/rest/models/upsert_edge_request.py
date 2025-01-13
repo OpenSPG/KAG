@@ -33,18 +33,24 @@ class UpsertEdgeRequest(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'project_id': 'int',
-        'upsert_adjacent_vertices': 'bool',
-        'edges': 'list[EdgeRecordInstance]'
+        "project_id": "int",
+        "upsert_adjacent_vertices": "bool",
+        "edges": "list[EdgeRecordInstance]",
     }
 
     attribute_map = {
-        'project_id': 'projectId',
-        'upsert_adjacent_vertices': 'upsertAdjacentVertices',
-        'edges': 'edges'
+        "project_id": "projectId",
+        "upsert_adjacent_vertices": "upsertAdjacentVertices",
+        "edges": "edges",
     }
 
-    def __init__(self, project_id=None, upsert_adjacent_vertices=None, edges=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        project_id=None,
+        upsert_adjacent_vertices=None,
+        edges=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """UpsertEdgeRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -77,8 +83,12 @@ class UpsertEdgeRequest(object):
         :param project_id: The project_id of this UpsertEdgeRequest.  # noqa: E501
         :type: int
         """
-        if self.local_vars_configuration.client_side_validation and project_id is None:  # noqa: E501
-            raise ValueError("Invalid value for `project_id`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and project_id is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `project_id`, must not be `None`"
+            )  # noqa: E501
 
         self._project_id = project_id
 
@@ -100,8 +110,13 @@ class UpsertEdgeRequest(object):
         :param upsert_adjacent_vertices: The upsert_adjacent_vertices of this UpsertEdgeRequest.  # noqa: E501
         :type: bool
         """
-        if self.local_vars_configuration.client_side_validation and upsert_adjacent_vertices is None:  # noqa: E501
-            raise ValueError("Invalid value for `upsert_adjacent_vertices`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation
+            and upsert_adjacent_vertices is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `upsert_adjacent_vertices`, must not be `None`"
+            )  # noqa: E501
 
         self._upsert_adjacent_vertices = upsert_adjacent_vertices
 
@@ -123,8 +138,12 @@ class UpsertEdgeRequest(object):
         :param edges: The edges of this UpsertEdgeRequest.  # noqa: E501
         :type: list[EdgeRecordInstance]
         """
-        if self.local_vars_configuration.client_side_validation and edges is None:  # noqa: E501
-            raise ValueError("Invalid value for `edges`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and edges is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `edges`, must not be `None`"
+            )  # noqa: E501
 
         self._edges = edges
 
@@ -135,18 +154,20 @@ class UpsertEdgeRequest(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

@@ -33,19 +33,6 @@ with open(os.path.join(cwd, "LICENSE"), "r") as rf:
             license += "#\n"
         line = rf.readline()
 
-# Generate kag.__init__.py
-with open(os.path.join(cwd, "kag/__init__.py"), "w") as wf:
-    content = f"""{license}
-
-__package_name__ = "{package_name}"
-__version__ = "{version}"
-
-from kag.common.env import init_env
-
-init_env()
-"""
-    wf.write(content)
-
 setup(
     name=package_name,
     version=version,
@@ -67,6 +54,8 @@ setup(
             "*.tests",
             "*.tests.*",
             "*.pyc",
+            "__pycache__",
+            "*/__pycache__/*",
         ],
     ),
     python_requires=">=3.8",
@@ -79,4 +68,11 @@ setup(
     package_data={
         "bin": ["*"],
     },
+    entry_points={
+        "console_scripts": [
+            "kag = kag.bin.kag_cmds:main",
+            "knext=knext.command.knext_cli:_main",
+        ]
+    },
 )
+

@@ -1,0 +1,27 @@
+global: &global_config
+  host_addr: http://127.0.0.1:8887
+  project_id: 666
+  biz_scene: default
+  language: en
+project: *global_config
+vectorize_model:
+  type: bge
+  path: ~/.cache/vectorizer/BAAI/bge-base-zh-v1.5
+  url: https://alps-common.oss-cn-hangzhou-zmf.aliyuncs.com/alps/huaidong.xhd/Documents/models/BAAI-bge-base-zh-v1.5.tar.gz
+  vector_dimensions: 768
+llm:
+  type: maas
+  base_url: https://api.deepseek.com
+  api_key: key
+  model: deepseek-chat
+indexer:
+  with_semantic: False
+  similarity_threshold: 0.8
+retriever:
+  with_semantic: False
+  pagerank_threshold: 0.9
+  match_threshold: 0.8
+  top_k: 10
+log:
+  level: INFO
+

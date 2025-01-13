@@ -1,10 +1,17 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 24.8.0 
+    rev: 22.3.0
     hooks:
       - id: black
-        name: Format code with Black
-        language: python
-        entry: black
-        types: [python]
-        require_serial: true
+        files: ^kag/.*\.py$
+        exclude: |
+          (?x)^(
+            kag/solver/logic/core_modules/rule_runner/rule_runner.py |
+            kag/solver/logic/core_modules/parser/logic_node_parser.py
+          )$
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        files: ^kag/.*\.py$

@@ -33,24 +33,33 @@ class EdgeRecordInstance(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'src_type': 'str',
-        'src_id': 'str',
-        'dst_type': 'str',
-        'dst_id': 'str',
-        'label': 'str',
-        'properties': 'object'
+        "src_type": "str",
+        "src_id": "str",
+        "dst_type": "str",
+        "dst_id": "str",
+        "label": "str",
+        "properties": "object",
     }
 
     attribute_map = {
-        'src_type': 'srcType',
-        'src_id': 'srcId',
-        'dst_type': 'dstType',
-        'dst_id': 'dstId',
-        'label': 'label',
-        'properties': 'properties'
+        "src_type": "srcType",
+        "src_id": "srcId",
+        "dst_type": "dstType",
+        "dst_id": "dstId",
+        "label": "label",
+        "properties": "properties",
     }
 
-    def __init__(self, src_type=None, src_id=None, dst_type=None, dst_id=None, label=None, properties=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        src_type=None,
+        src_id=None,
+        dst_type=None,
+        dst_id=None,
+        label=None,
+        properties=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """EdgeRecordInstance - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -89,8 +98,12 @@ class EdgeRecordInstance(object):
         :param src_type: The src_type of this EdgeRecordInstance.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and src_type is None:  # noqa: E501
-            raise ValueError("Invalid value for `src_type`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and src_type is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `src_type`, must not be `None`"
+            )  # noqa: E501
 
         self._src_type = src_type
 
@@ -112,8 +125,12 @@ class EdgeRecordInstance(object):
         :param src_id: The src_id of this EdgeRecordInstance.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and src_id is None:  # noqa: E501
-            raise ValueError("Invalid value for `src_id`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and src_id is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `src_id`, must not be `None`"
+            )  # noqa: E501
 
         self._src_id = src_id
 
@@ -135,8 +152,12 @@ class EdgeRecordInstance(object):
         :param dst_type: The dst_type of this EdgeRecordInstance.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and dst_type is None:  # noqa: E501
-            raise ValueError("Invalid value for `dst_type`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and dst_type is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `dst_type`, must not be `None`"
+            )  # noqa: E501
 
         self._dst_type = dst_type
 
@@ -158,8 +179,12 @@ class EdgeRecordInstance(object):
         :param dst_id: The dst_id of this EdgeRecordInstance.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and dst_id is None:  # noqa: E501
-            raise ValueError("Invalid value for `dst_id`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and dst_id is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `dst_id`, must not be `None`"
+            )  # noqa: E501
 
         self._dst_id = dst_id
 
@@ -181,8 +206,12 @@ class EdgeRecordInstance(object):
         :param label: The label of this EdgeRecordInstance.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and label is None:  # noqa: E501
-            raise ValueError("Invalid value for `label`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and label is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `label`, must not be `None`"
+            )  # noqa: E501
 
         self._label = label
 
@@ -204,8 +233,12 @@ class EdgeRecordInstance(object):
         :param properties: The properties of this EdgeRecordInstance.  # noqa: E501
         :type: object
         """
-        if self.local_vars_configuration.client_side_validation and properties is None:  # noqa: E501
-            raise ValueError("Invalid value for `properties`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and properties is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `properties`, must not be `None`"
+            )  # noqa: E501
 
         self._properties = properties
 
@@ -216,18 +249,20 @@ class EdgeRecordInstance(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

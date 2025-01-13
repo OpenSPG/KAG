@@ -8,74 +8,29 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import json
-import logging
 import os
-from typing import Type, List
+import logging
+from kag.common.registry import import_modules_from_path
 
-from kag.builder.component import KGWriter
-from kag.builder.component.extractor import KAGExtractor
-from kag.builder.component.splitter import LengthSplitter
-from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
-from kag.builder.model.chunk import Chunk
-from kag.examples.utils import generate_hash_id
-from kag.interface.builder.reader_abc import SourceReaderABC
-from knext.common.base.runnable import Input, Output
-from knext.builder.builder_chain_abc import BuilderChainABC
+from kag.builder.runner import BuilderChainRunner
 
 logger = logging.getLogger(__name__)
 
 
-class TwowikiCorpusReader(SourceReaderABC):
-    @property
-    def input_types(self) -> Type[Input]:
-        """The type of input this Runnable object accepts specified as a type annotation."""
-        return str
+def buildKB(file_path):
+    from kag.common.conf import KAG_CONFIG
 
-    @property
-    def output_types(self) -> Type[Output]:
-        """The type of output this Runnable object produces specified as a type annotation."""
-        return Chunk
-
-    def invoke(self, input: str, **kwargs) -> List[Output]:
-        if os.path.exists(str(input)):
-            with open(input, "r") as f:
-                corpus = json.load(f)
-        else:
-            corpus = json.loads(input)
-        chunks = []
-
-        for idx, item in enumerate(corpus):
-            chunk = Chunk(
-                id=generate_hash_id(item['text']),
-                name=item['title'],
-                content=item['text'],
-            )
-            chunks.append(chunk)
-        return chunks
-
-
-class TwowikiBuilderChain(BuilderChainABC):
-    def build(self, **kwargs):
-        source = TwowikiCorpusReader()
-        splitter = LengthSplitter(split_length=2000)
-        extractor = KAGExtractor()
-        vectorizer = BatchVectorizer()
-        sink = KGWriter()
-
-        return source >> splitter >> extractor >> vectorizer >> sink
-
-
-def buildKB(corpusFilePath):
-    TwowikiBuilderChain().invoke(file_path=corpusFilePath, max_workers=20)
-
-    logger.info(f"\n\nbuildKB successfully for {corpusFilePath}\n\n")
-
-
-if __name__ == '__main__':
-    filePath = "./data/2wiki_sub_corpus.json"
-    # filePath = "./data/2wiki_corpus.json"
-    corpusFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), filePath
+    runner = BuilderChainRunner.from_config(
+        KAG_CONFIG.all_config["kag_builder_pipeline"]
     )
-    buildKB(corpusFilePath)
+    runner.invoke(file_path)
+
+    logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
+
+
+if __name__ == "__main__":
+    import_modules_from_path(".")
+    dir_path = os.path.dirname(__file__)
+    file_path = os.path.join(dir_path, "data/2wiki_sub_corpus.json")
+
+    buildKB(file_path)
