@@ -1,0 +1,10 @@
+database:
+  host: localhost
+  port: 3306
+  user: root
+  password: secret
+  name: my_database
+
+server:
+  host: 0.0.0.0
+  port: 8080

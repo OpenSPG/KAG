@@ -11,29 +11,27 @@
 # or implied.
 
 import os
-from typing import List, Type
+from typing import List
 
 from kag.builder.model.chunk import Chunk
-from kag.interface.builder import SourceReaderABC
+from kag.interface import ReaderABC
+from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
-class TXTReader(SourceReaderABC):
+@ReaderABC.register("txt")
+@ReaderABC.register("txt_reader")
+class TXTReader(ReaderABC):
     """
-    A PDF reader class that inherits from SourceReader.
+    A class for parsing text files or text content into Chunk objects.
+
+    This class inherits from ReaderABC and provides the functionality to read text content,
+    whether it is from a file or directly provided as a string, and convert it into a list of Chunk objects.
     """
 
-    @property
-    def input_types(self) -> Type[Input]:
-        return str
-
-    @property
-    def output_types(self) -> Type[Output]:
-        return Chunk
-
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
-        The main method for processing text reading. This method reads the content of the input (which can be a file path or text content) and converts it into a Chunk object.
+        The main method for processing text reading. This method reads the content of the input (which can be a file path or text content) and converts it into chunks.
 
         Args:
             input (Input): The input string, which can be the path to a text file or direct text content.
@@ -51,7 +49,7 @@ class TXTReader(SourceReaderABC):
 
         try:
             if os.path.exists(input):
-                with open(input, "r", encoding='utf-8') as f:
+                with open(input, "r", encoding="utf-8") as f:
                     content = f.read()
             else:
                 content = input
@@ -60,7 +58,7 @@ class TXTReader(SourceReaderABC):
 
         basename, _ = os.path.splitext(os.path.basename(input))
         chunk = Chunk(
-            id=Chunk.generate_hash_id(input),
+            id=generate_hash_id(input),
             name=basename,
             content=content,
         )
