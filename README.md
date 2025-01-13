@@ -17,6 +17,9 @@
     <a href="https://github.com/OpenSPG/KAG/releases/latest">
         <img src="https://img.shields.io/github/v/release/OpenSPG/KAG?color=blue&label=Latest%20Release" alt="Latest Release">
     </a>
+    <a href="https://openspg.yuque.com/ndx6g9/docs_en">
+        <img src="https://img.shields.io/badge/User%20Guide-29c0cb?logo=readthedocs&logoColor=f5f5f5" alt="User Guide">
+    </a>
     <a href="https://github.com/OpenSPG/KAG/blob/main/LICENSE">
         <img height="21" src="https://img.shields.io/badge/License-Apache--2.0-ffffff?labelColor=d4eaf7&color=2e6cc4" alt="license">
     </a>
