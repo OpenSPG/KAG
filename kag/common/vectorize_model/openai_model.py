@@ -74,10 +74,10 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
 
     def __init__(
         self,
+        base_url: str,
+        api_key: str,
         model: str = "text-embedding-ada-002",
-        api_key: str = "",
-        base_url: str = "",
-        api_version: str = "",
+        api_version: str = "2024-12-01-preview",
         vector_dimensions: int = None,
         timeout: float = None,
         azure_deployment: str = None,
@@ -90,6 +90,7 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
         Args:
             model (str, optional): The model to use for embedding. Defaults to "text-embedding-3-small".
             api_key (str, optional): The API key for accessing the Azure OpenAI service. Defaults to "".
+            api_version (str): The API version for the Azure OpenAI API (eg. "2024-12-01-preview, 2024-10-01-preview,2024-05-01-preview").
             base_url (str, optional): The base URL for the Azure OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
             azure_deployment (str, optional): The deployment name for the Azure OpenAI model. Defaults to None.
