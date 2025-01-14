@@ -52,7 +52,7 @@ class MixReader(ReaderABC):
             dict_reader (DictReader, optional): Reader for dictionary inputs. Defaults to None.
         """
         super().__init__()
-        self.parse_map = {
+        self.reader_map = {
             "txt": txt_reader,
             "pdf": pdf_reader,
             "docx": docx_reader,
@@ -83,11 +83,11 @@ class MixReader(ReaderABC):
             reader_type = "dict"
 
         else:
-            if os.path.exists(input):
+            if not os.path.exists(input):
                 raise FileNotFoundError(f"File {input} not found.")
 
             file_suffix = input.split(".")[-1]
-            if file_suffix not in self.parse_map:
+            if file_suffix not in self.reader_map:
                 raise NotImplementedError(
                     f"File suffix {file_suffix} not supported yet."
                 )
@@ -96,4 +96,4 @@ class MixReader(ReaderABC):
         reader = self.reader_map[reader_type]
         if reader is None:
             raise KeyError(f"{reader_type} reader not correctly configured.")
-        return self.parse_map[file_suffix]._invoke(input)
+        return reader._invoke(input)
