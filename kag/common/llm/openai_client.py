@@ -142,10 +142,10 @@ class AzureOpenAIClient (LLMClient):
     def __init__(
         self,
         api_key: str,
-        api_version: str,
         base_url: str,
         model: str,
         stream: bool = False,
+        api_version: str = "2024-12-01-preview",
         temperature: float = 0.7,
         azure_deployment: str = None,
         timeout: float = None,
@@ -157,15 +157,17 @@ class AzureOpenAIClient (LLMClient):
 
         Args:
             api_key (str): The API key for accessing the Azure OpenAI API.
-            api_version (str): The API version for the Azure OpenAI API.
+            api_version (str): The API version for the Azure OpenAI API (eg. "2024-12-01-preview, 2024-10-01-preview,2024-05-01-preview").
             base_url (str): The base URL for the Azure OpenAI API.
             azure_deployment (str): The deployment name for the Azure OpenAI model
             model (str): The default model to use for requests.
             stream (bool, optional): Whether to stream the response. Defaults to False.
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
-            azure_ad_token (str): The Azure AD token for accessing the Azure OpenAI API.
-            azure_ad_token_provider (AzureADTokenProvider): The Azure AD token provider for accessing the Azure OpenAI API.
+            azure_ad_token: Your Azure Active Directory token, https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id
+            azure_ad_token_provider: A function that returns an Azure Active Directory token, will be invoked on every request.
+            azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
+                Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
 
         self.api_key = api_key
