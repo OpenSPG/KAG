@@ -93,9 +93,10 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
             api_version (str): The API version for the Azure OpenAI API (eg. "2024-12-01-preview, 2024-10-01-preview,2024-05-01-preview").
             base_url (str, optional): The base URL for the Azure OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
-            azure_deployment (str, optional): The deployment name for the Azure OpenAI model. Defaults to None.
-            azure_ad_token (str, optional): The Azure AD token for accessing the Azure OpenAI service. Defaults to None.
-            azure_ad_token_provider (Callable, optional): The Azure AD token provider for accessing the Azure OpenAI service. Defaults to None.
+            azure_ad_token: Your Azure Active Directory token, https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id
+            azure_ad_token_provider: A function that returns an Azure Active Directory token, will be invoked on every request.
+            azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
+                Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
         super().__init__(vector_dimensions)
         self.model = model
