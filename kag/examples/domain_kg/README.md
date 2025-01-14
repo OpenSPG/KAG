@@ -60,7 +60,7 @@ cd builder && python indexer.py && cd ..
 
 ### Step 6: Execute the QA tasks
 
-Execute [evaFor2wiki.py](./solver/evaFor2wiki.py) in the [solver](./solver) directory to generate the answer to the question.
+Execute [qa.py](./solver/qa.py) in the [solver](./solver) directory to generate the answer to the question.
 
 ```bash
 cd solver && python qa.py && cd ..
