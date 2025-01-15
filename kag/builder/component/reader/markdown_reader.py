@@ -11,6 +11,7 @@
 # or implied.
 
 import os
+import io
 
 import markdown
 from bs4 import BeautifulSoup, Tag
@@ -18,12 +19,13 @@ from bs4 import BeautifulSoup, Tag
 import logging
 import re
 import requests
+import pandas as pd
 from typing import List, Dict
 
 
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
-from kag.builder.model.chunk import Chunk
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
@@ -181,25 +183,62 @@ class MarkDownReader(ReaderABC):
                         current_content.append(f"* {text}")
 
             elif element.name == "table":
-                # Process table
-                table_data = []
-                headers = []
+                # Process table directly using pandas
+                table_html = str(element)
+                try:
+                    # Add converters parameter to handle escaped strings
+                    df = pd.read_html(
+                        io.StringIO(table_html), 
+                        header=0,
+                        converters={i: str for i in range(20)}  # Convert all columns to string
+                    )[0]
+                    
+                    # Clean up the data by removing escaped quotes
+                    df = df.applymap(lambda x: str(x).strip('"\\"') if isinstance(x, str) else x)
+                    
+                    # Replace 'Unnamed' headers with empty string
+                    df.columns = ['' if 'Unnamed' in str(col) else str(col).strip('"\\"') for col in df.columns]
+                    headers = df.columns.tolist()
 
-                if element.find("thead"):
-                    for th in element.find("thead").find_all("th"):
-                        headers.append(th.get_text().strip())
+                    # Capture table context (text before and after the table)
+                    table_context = {
+                        "before_text": "",
+                        "after_text": ""
+                    }
+                    
+                    # Get text before table
+                    prev_texts = []
+                    prev_element = element.find_previous_sibling()
+                    while prev_element:
+                        if prev_element.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                            break
+                        if prev_element.name == "p":
+                            prev_texts.insert(0, process_text_with_links(prev_element))
+                        prev_element = prev_element.find_previous_sibling()
+                    table_context["before_text"] = "\n".join(prev_texts) if prev_texts else ""
 
-                if element.find("tbody"):
-                    for row in element.find("tbody").find_all("tr"):
-                        row_data = {}
-                        for i, td in enumerate(row.find_all("td")):
-                            if i < len(headers):
-                                row_data[headers[i]] = td.get_text().strip()
-                        table_data.append(row_data)
+                    # Get text after table
+                    next_texts = []
+                    next_element = element.find_next_sibling()
+                    while next_element:
+                        if next_element.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                            break
+                        if next_element.name == "p":
+                            next_texts.append(process_text_with_links(next_element))
+                        next_element = next_element.find_next_sibling()
+                    table_context["after_text"] = "\n".join(next_texts) if next_texts else ""
 
-                # Add table to current node
-                if stack[-1].title != "root":
-                    stack[-1].tables.append({"headers": headers, "data": table_data})
+                    # Add table to current node with context
+                    if stack[-1].title != "root":
+                        stack[-1].tables.append({
+                            "headers": headers, 
+                            "data": df,
+                            "context": table_context
+                        })
+
+                except Exception as e:
+                    logger.warning(f"Failed to parse table: {e}")
+                    continue
 
             elif element.name == "p":
                 text = process_text_with_links(element)  # Process links in paragraphs
@@ -224,23 +263,12 @@ class MarkDownReader(ReaderABC):
     ) -> List[Output]:
         def convert_table_to_markdown(headers, data):
             """Convert table data to markdown format"""
-            if not headers or not data:
+            if not headers or data.empty:
                 return ""
-
-            # Build header row
-            header_row = " | ".join(headers)
-            # Build separator row
-            separator = " | ".join(["---"] * len(headers))
-            # Build data rows
-            data_rows = []
-            for row in data:
-                row_values = [str(row.get(header, "")) for header in headers]
-                data_rows.append(" | ".join(row_values))
-
-            # Combine all rows
-            table_md = f"\n| {header_row} |\n| {separator} |\n"
-            table_md += "\n".join(f"| {row} |" for row in data_rows)
-            return table_md + "\n"
+            data:pd.DataFrame = data
+            data = data.fillna("")
+            data = data.astype(str)
+            return "\n" + data.to_markdown(index=False) + "\n"
 
         def collect_tables(n: MarkdownNode):
             """Collect tables from node and its children"""
@@ -263,11 +291,6 @@ class MarkDownReader(ReaderABC):
             content = []
             if n.content:
                 content.append(n.content)
-            # Add current node's table content
-            for table in n.tables:
-                content.append(
-                    convert_table_to_markdown(table["headers"], table["data"])
-                )
             # Process child nodes recursively
             for child in n.children:
                 content.extend(collect_children_content(child))
@@ -288,18 +311,8 @@ class MarkDownReader(ReaderABC):
             # Store parent content separately
             parent_content = "\n".join(filter(None, parent_contents)) if parent_contents else None
 
-            # Current node's own content
-            current_content = []
-            if node.content:
-                current_content.append(node.content)
-
-            # Add current node's table content
-            for table in node.tables:
-                current_content.append(
-                    convert_table_to_markdown(table["headers"], table["data"])
-                )
-
-            # Add all child node content (including tables)
+            # Current node's own content and child content
+            current_content = [node.content] if node.content else []
             for child in node.children:
                 child_content = collect_children_content(child)
                 current_content.extend(child_content)
@@ -311,43 +324,52 @@ class MarkDownReader(ReaderABC):
                 content="\n".join(filter(None, current_content)),
                 parent_content=parent_content,
             )
+            outputs.append(current_output)
 
-            # Collect table data and convert to markdown format
+            # Create separate chunks for tables
             all_tables = []
-            table_contents = []
             if node.tables:
-                for table in node.tables:
-                    all_tables.append(table)
-                    table_contents.append(
-                        convert_table_to_markdown(table["headers"], table["data"])
+                for i, table in enumerate(node.tables):
+                    table_content = convert_table_to_markdown(table["headers"], table["data"])
+                    table_chunk = Chunk(
+                        id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                        parent_id=current_output.id,
+                        name=f"{full_title} / Table {i+1}",
+                        content=table_content,
+                        type=ChunkTypeEnum.Table,
+                        metadata={
+                            "table_data": table,
+                            "before_text": table.get("context", {}).get("before_text", ""),
+                            "after_text": table.get("context", {}).get("after_text", "")
+                        }
                     )
+                    outputs.append(table_chunk)
+                    all_tables.append(table)
 
             for child in node.children:
-                child_tables, child_table_md = collect_tables(child)
-                all_tables.extend(child_tables)
-                table_contents.extend(child_table_md)
-
-            if all_tables:
-                current_output.metadata = {"tables": all_tables}
-                current_output.table = "\n".join(
-                    table_contents
-                )  # Save all tables in markdown format
-
-            outputs.append(current_output)
+                child_tables, _ = collect_tables(child)
+                for i, table in enumerate(child_tables, start=len(all_tables)):
+                    table_content = convert_table_to_markdown(table["headers"], table["data"])
+                    table_chunk = Chunk(
+                        id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                        parent_id=current_output.id,
+                        name=f"{full_title} / Table {i+1}",
+                        content=table_content,
+                        type=ChunkTypeEnum.Table,
+                        metadata={
+                            "table_data": table,
+                            "before_text": table.get("context", {}).get("before_text", ""),
+                            "after_text": table.get("context", {}).get("after_text", "")
+                        }
+                    )
+                    outputs.append(table_chunk)
+                    all_tables.append(table)
 
         # If current node level is less than target level, continue traversing
         elif node.level < self.cut_depth:
             # Check if any subtree contains target level nodes
             has_target_level = False
-            current_contents = parent_contents + (
-                [node.content] if node.content else []
-            )
-
-            # Add current node's tables to content
-            for table in node.tables:
-                current_contents.append(
-                    convert_table_to_markdown(table["headers"], table["data"])
-                )
+            current_contents = parent_contents + ([node.content] if node.content else [])
 
             for child in node.children:
                 child_outputs = self._convert_to_outputs(
@@ -364,18 +386,8 @@ class MarkDownReader(ReaderABC):
                 # Store parent content separately
                 parent_content = "\n".join(filter(None, parent_contents)) if parent_contents else None
 
-                # Current node's own content
-                current_content = []
-                if node.content:
-                    current_content.append(node.content)
-
-                # Add current node's table content
-                for table in node.tables:
-                    current_content.append(
-                        convert_table_to_markdown(table["headers"], table["data"])
-                    )
-
-                # Add all child node content (including tables)
+                # Current node's own content and child content
+                current_content = [node.content] if node.content else []
                 for child in node.children:
                     child_content = collect_children_content(child)
                     current_content.extend(child_content)
@@ -387,29 +399,46 @@ class MarkDownReader(ReaderABC):
                     content="\n".join(filter(None, current_content)),
                     parent_content=parent_content,
                 )
+                outputs.append(current_output)
 
-                # Collect table data and convert to markdown format
+                # Create separate chunks for tables
                 all_tables = []
-                table_contents = []
                 if node.tables:
-                    for table in node.tables:
-                        all_tables.append(table)
-                        table_contents.append(
-                            convert_table_to_markdown(table["headers"], table["data"])
+                    for i, table in enumerate(node.tables):
+                        table_content = convert_table_to_markdown(table["headers"], table["data"])
+                        table_chunk = Chunk(
+                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                            parent_id=current_output.id,
+                            name=f"{full_title} / Table {i+1}",
+                            content=table_content,
+                            type=ChunkTypeEnum.Table,
+                            metadata={
+                                "table_data": table,
+                                "before_text": table.get("context", {}).get("before_text", ""),
+                                "after_text": table.get("context", {}).get("after_text", "")
+                            }
                         )
+                        outputs.append(table_chunk)
+                        all_tables.append(table)
 
                 for child in node.children:
-                    child_tables, child_table_md = collect_tables(child)
-                    all_tables.extend(child_tables)
-                    table_contents.extend(child_table_md)
-
-                if all_tables:
-                    current_output.metadata = {"tables": all_tables}
-                    current_output.table = "\n".join(
-                        table_contents
-                    )  # Save all tables in markdown format
-
-                outputs.append(current_output)
+                    child_tables, _ = collect_tables(child)
+                    for i, table in enumerate(child_tables, start=len(all_tables)):
+                        table_content = convert_table_to_markdown(table["headers"], table["data"])
+                        table_chunk = Chunk(
+                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                            parent_id=current_output.id,
+                            name=f"{full_title} / Table {i+1}",
+                            content=table_content,
+                            type=ChunkTypeEnum.Table,
+                            metadata={
+                                "table_data": table,
+                                "before_text": table.get("context", {}).get("before_text", ""),
+                                "after_text": table.get("context", {}).get("after_text", "")
+                            }
+                        )
+                        outputs.append(table_chunk)
+                        all_tables.append(table)
 
         return outputs
 
@@ -490,7 +519,6 @@ class YuequeReader(MarkDownReader):
 
         chunks = self.solve_content(id, title, content)
         return chunks
-
 
 if __name__ == "__main__":
 
