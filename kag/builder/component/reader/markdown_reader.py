@@ -20,8 +20,7 @@ import logging
 import re
 import requests
 import pandas as pd
-from typing import List, Dict
-
+from typing import List, Dict, Tuple
 
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
@@ -70,11 +69,11 @@ class MarkDownReader(ReaderABC):
 
     @property
     def output_types(self):
-        return Chunk
+        return Tuple[List[Chunk], Dict[MarkdownNode, Chunk], MarkdownNode]
 
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
-    ) -> List[Output]:
+    ) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]:
         # Convert Markdown to HTML with additional extensions for lists
         html = markdown.markdown(
             content, extensions=["tables", "nl2br", "sane_lists", "fenced_code"]
@@ -250,8 +249,9 @@ class MarkDownReader(ReaderABC):
         if current_content and stack[-1].title != "root":
             stack[-1].content = "\n".join(current_content)
 
-        outputs = self._convert_to_outputs(root, id)
-        return outputs
+        outputs, node_chunk_map = self._convert_to_outputs(root, id)
+        
+        return outputs, node_chunk_map, root
 
     def _convert_to_outputs(
         self,
@@ -260,7 +260,7 @@ class MarkDownReader(ReaderABC):
         parent_id: str = None,
         parent_titles: List[str] = None,
         parent_contents: List[str] = None,
-    ) -> List[Output]:
+    ) -> Tuple[List[Output], Dict[MarkdownNode, Output]]:
         def convert_table_to_markdown(headers, data):
             """Convert table data to markdown format"""
             if not headers or data.empty:
@@ -297,6 +297,7 @@ class MarkDownReader(ReaderABC):
             return content
 
         outputs = []
+        node_chunk_map = {}  # Track mapping between nodes and their chunks
         if parent_titles is None:
             parent_titles = []
         if parent_contents is None:
@@ -325,6 +326,7 @@ class MarkDownReader(ReaderABC):
                 parent_content=parent_content,
             )
             outputs.append(current_output)
+            node_chunk_map[node] = current_output  # Add mapping
 
             # Create separate chunks for tables
             all_tables = []
@@ -372,12 +374,13 @@ class MarkDownReader(ReaderABC):
             current_contents = parent_contents + ([node.content] if node.content else [])
 
             for child in node.children:
-                child_outputs = self._convert_to_outputs(
+                child_outputs, child_map = self._convert_to_outputs(
                     child, id, parent_id, current_titles, current_contents
                 )
                 if child_outputs:
                     has_target_level = True
                     outputs.extend(child_outputs)
+                    node_chunk_map.update(child_map)  # Merge child mappings
 
             # If no target level nodes found and current node is not root, output current node
             if not has_target_level and node.title != "root":
@@ -400,6 +403,7 @@ class MarkDownReader(ReaderABC):
                     parent_content=parent_content,
                 )
                 outputs.append(current_output)
+                node_chunk_map[node] = current_output  # Add mapping
 
                 # Create separate chunks for tables
                 all_tables = []
@@ -440,9 +444,9 @@ class MarkDownReader(ReaderABC):
                         outputs.append(table_chunk)
                         all_tables.append(table)
 
-        return outputs
+        return outputs, node_chunk_map
 
-    def _invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]:
         """
         Processes a Markdown file and returns its content as structured chunks.
 
@@ -451,7 +455,10 @@ class MarkDownReader(ReaderABC):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List[Output]: A list of processed content chunks.
+            tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]: A tuple containing:
+                - A list of processed content chunks
+                - A dictionary mapping MarkdownNode objects to their corresponding Chunk objects
+                - The root MarkdownNode of the document tree
         """
         file_path: str = input
 
@@ -466,7 +473,7 @@ class MarkDownReader(ReaderABC):
 
         basename, _ = os.path.splitext(os.path.basename(file_path))
 
-        chunks = self.solve_content(input, basename, content)
+        chunks, node_chunk_map, root = self.solve_content(input, basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
@@ -481,7 +488,7 @@ class MarkDownReader(ReaderABC):
                     length_500_list.append(chunk)
                 elif len(chunk.content) <= 500:
                     length_smal_list.append(chunk)
-        return chunks
+        return chunks, node_chunk_map, root
 
 
 @ReaderABC.register("yuque")
@@ -494,7 +501,7 @@ class YuequeReader(MarkDownReader):
     extract their content, and convert it into a list of Chunk objects.
     """
 
-    def _invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]:
         """
         Processes the input Yueque document and converts it into a list of Chunk objects.
 
@@ -503,7 +510,10 @@ class YuequeReader(MarkDownReader):
             **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
 
         Returns:
-            List[Output]: A list of Chunk objects representing the parsed content.
+            tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]: A tuple containing:
+                - A list of Chunk objects representing the parsed content
+                - A dictionary mapping MarkdownNode objects to their corresponding Chunk objects
+                - The root MarkdownNode of the document tree
 
         Raises:
             HTTPError: If the request to the Yueque URL fails.
@@ -517,8 +527,8 @@ class YuequeReader(MarkDownReader):
         title = data.get("title", "")
         content = data.get("body", "")
 
-        chunks = self.solve_content(id, title, content)
-        return chunks
+        chunks, node_chunk_map, root = self.solve_content(id, title, content)
+        return chunks, node_chunk_map, root
 
 if __name__ == "__main__":
 
