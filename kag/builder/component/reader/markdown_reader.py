@@ -285,25 +285,31 @@ class MarkDownReader(ReaderABC):
         if node.level >= self.cut_depth:
             full_title = " / ".join(current_titles)
 
-            # Merge content: parent content + current content
-            all_content = parent_contents + ([node.content] if node.content else [])
+            # Store parent content separately
+            parent_content = "\n".join(filter(None, parent_contents)) if parent_contents else None
+
+            # Current node's own content
+            current_content = []
+            if node.content:
+                current_content.append(node.content)
 
             # Add current node's table content
             for table in node.tables:
-                all_content.append(
+                current_content.append(
                     convert_table_to_markdown(table["headers"], table["data"])
                 )
 
             # Add all child node content (including tables)
             for child in node.children:
                 child_content = collect_children_content(child)
-                all_content.extend(child_content)
+                current_content.extend(child_content)
 
             current_output = Chunk(
                 id=f"{generate_hash_id(full_title)}",
                 parent_id=parent_id,
                 name=full_title,
-                content="\n".join(filter(None, all_content)),
+                content="\n".join(filter(None, current_content)),
+                parent_content=parent_content,
             )
 
             # Collect table data and convert to markdown format
@@ -354,17 +360,32 @@ class MarkDownReader(ReaderABC):
             # If no target level nodes found and current node is not root, output current node
             if not has_target_level and node.title != "root":
                 full_title = " / ".join(current_titles)
-                all_content = current_contents
+                
+                # Store parent content separately
+                parent_content = "\n".join(filter(None, parent_contents)) if parent_contents else None
 
+                # Current node's own content
+                current_content = []
+                if node.content:
+                    current_content.append(node.content)
+
+                # Add current node's table content
+                for table in node.tables:
+                    current_content.append(
+                        convert_table_to_markdown(table["headers"], table["data"])
+                    )
+
+                # Add all child node content (including tables)
                 for child in node.children:
                     child_content = collect_children_content(child)
-                    all_content.extend(child_content)
+                    current_content.extend(child_content)
 
                 current_output = Chunk(
                     id=f"{generate_hash_id(full_title)}",
                     parent_id=parent_id,
                     name=full_title,
-                    content="\n".join(filter(None, all_content)),
+                    content="\n".join(filter(None, current_content)),
+                    parent_content=parent_content,
                 )
 
                 # Collect table data and convert to markdown format
@@ -469,3 +490,11 @@ class YuequeReader(MarkDownReader):
 
         chunks = self.solve_content(id, title, content)
         return chunks
+
+
+if __name__ == "__main__":
+
+    reader = ReaderABC.from_config({"type": "md", "cut_depth": 2})
+    file_path = "/Users/zhangxinhong.zxh/Downloads/人卫书籍-15本/20240820_02.外科学（第8版）_4020.md"
+    chunks = reader.invoke(file_path)
+    assert len(chunks) > 0
