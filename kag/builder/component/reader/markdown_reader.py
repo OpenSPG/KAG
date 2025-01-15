@@ -22,12 +22,14 @@ import requests
 import pandas as pd
 from typing import List, Dict, Tuple
 
+from kag.builder.component.writer.kg_writer import KGWriter
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
+from kag.builder.model.sub_graph import SubGraph, Node, Edge
 
 
 logger = logging.getLogger(__name__)
@@ -56,10 +58,11 @@ class MarkDownReader(ReaderABC):
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 3, llm: LLMClient = None, **kwargs):
+    def __init__(self, cut_depth: int = 3, llm: LLMClient = None, kg_writer: KGWriter = None, **kwargs):
         super().__init__(**kwargs)
         self.cut_depth = int(cut_depth)
         self.llm = llm
+        self.kg_writer = kg_writer
         self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
         self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
 
@@ -69,11 +72,11 @@ class MarkDownReader(ReaderABC):
 
     @property
     def output_types(self):
-        return Tuple[List[Chunk], Dict[MarkdownNode, Chunk], MarkdownNode]
+        return Tuple[List[Chunk], Dict[MarkdownNode, Chunk], MarkdownNode, Tuple[SubGraph, dict]]
 
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
-    ) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]:
+    ) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]:
         # Convert Markdown to HTML with additional extensions for lists
         html = markdown.markdown(
             content, extensions=["tables", "nl2br", "sane_lists", "fenced_code"]
@@ -251,7 +254,14 @@ class MarkDownReader(ReaderABC):
 
         outputs, node_chunk_map = self._convert_to_outputs(root, id)
         
-        return outputs, node_chunk_map, root
+        # Convert to SubGraph using the function from markdown_to_graph
+        from kag.builder.component.reader.markdown_to_graph import convert_to_subgraph
+        subgraph_and_stats = convert_to_subgraph(root, outputs, node_chunk_map)
+
+        if self.kg_writer:
+            self.kg_writer.invoke(subgraph_and_stats[0])
+        
+        return outputs
 
     def _convert_to_outputs(
         self,
@@ -446,7 +456,7 @@ class MarkDownReader(ReaderABC):
 
         return outputs, node_chunk_map
 
-    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]:
+    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]:
         """
         Processes a Markdown file and returns its content as structured chunks.
 
@@ -455,10 +465,11 @@ class MarkDownReader(ReaderABC):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]: A tuple containing:
+            tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]: A tuple containing:
                 - A list of processed content chunks
                 - A dictionary mapping MarkdownNode objects to their corresponding Chunk objects
                 - The root MarkdownNode of the document tree
+                - A SubGraph representation of the document structure
         """
         file_path: str = input
 
@@ -473,7 +484,7 @@ class MarkDownReader(ReaderABC):
 
         basename, _ = os.path.splitext(os.path.basename(file_path))
 
-        chunks, node_chunk_map, root = self.solve_content(input, basename, content)
+        chunks, node_chunk_map, root, (subgraph, stats) = self.solve_content(input, basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
@@ -488,7 +499,7 @@ class MarkDownReader(ReaderABC):
                     length_500_list.append(chunk)
                 elif len(chunk.content) <= 500:
                     length_smal_list.append(chunk)
-        return chunks, node_chunk_map, root
+        return chunks
 
 
 @ReaderABC.register("yuque")
@@ -501,7 +512,7 @@ class YuequeReader(MarkDownReader):
     extract their content, and convert it into a list of Chunk objects.
     """
 
-    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]:
+    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]:
         """
         Processes the input Yueque document and converts it into a list of Chunk objects.
 
@@ -510,10 +521,11 @@ class YuequeReader(MarkDownReader):
             **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
 
         Returns:
-            tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode]: A tuple containing:
+            tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]: A tuple containing:
                 - A list of Chunk objects representing the parsed content
                 - A dictionary mapping MarkdownNode objects to their corresponding Chunk objects
                 - The root MarkdownNode of the document tree
+                - A SubGraph representation of the document structure
 
         Raises:
             HTTPError: If the request to the Yueque URL fails.
@@ -527,12 +539,14 @@ class YuequeReader(MarkDownReader):
         title = data.get("title", "")
         content = data.get("body", "")
 
-        chunks, node_chunk_map, root = self.solve_content(id, title, content)
-        return chunks, node_chunk_map, root
+        chunks, node_chunk_map, root, (subgraph, stats) = self.solve_content(id, title, content)
+        return chunks
 
 if __name__ == "__main__":
+    from kag.builder.component.reader.markdown_to_graph import visualize_graph
 
-    reader = ReaderABC.from_config({"type": "md", "cut_depth": 2})
+    reader = ReaderABC.from_config({"type": "md", "cut_depth": 2, "kg_writer": {"type": "kg", "project_id": 1}})
     file_path = "/Users/zhangxinhong.zxh/Downloads/人卫书籍-15本/20240820_02.外科学（第8版）_4020.md"
     chunks = reader.invoke(file_path)
     assert len(chunks) > 0
+    print(chunks)
