@@ -293,9 +293,9 @@ def convert_to_subgraph(root: MarkdownNode, chunks: List[Chunk], node_chunk_map:
         
         # Backward edge
         reverse_label = {
-            "has_child": "has_parent",
-            "has_content": "belongs_to_title",
-            "has_table": "belongs_to_title"
+            "hasChild": "hasParent",
+            "hasContent": "belongsToTitle",
+            "hasTable": "belongsToTitle"
         }.get(label, f"reverse_{label}")
         
         edges.append(Edge(
@@ -328,7 +328,7 @@ def convert_to_subgraph(root: MarkdownNode, chunks: List[Chunk], node_chunk_map:
             add_bidirectional_edge(
                 parent_node,
                 title_node,
-                "has_child",
+                "hasChild",
                 {"level": str(node.level)}
             )
         
@@ -342,7 +342,7 @@ def convert_to_subgraph(root: MarkdownNode, chunks: List[Chunk], node_chunk_map:
                 label="Chunk",
                 properties={
                     "content": chunk.content,
-                    "parent_content": chunk.parent_content,
+                    "parentContent": chunk.parent_content,
                     "type": str(chunk.type)
                 }
             )
@@ -350,7 +350,7 @@ def convert_to_subgraph(root: MarkdownNode, chunks: List[Chunk], node_chunk_map:
             chunk_nodes[chunk.id] = chunk_node
             
             # Create bidirectional edges between title and chunk
-            add_bidirectional_edge(title_node, chunk_node, "has_content")
+            add_bidirectional_edge(title_node, chunk_node, "hasContent")
         
         # Process tables if any
         for i, table in enumerate(node.tables):
@@ -368,7 +368,7 @@ def convert_to_subgraph(root: MarkdownNode, chunks: List[Chunk], node_chunk_map:
             nodes.append(table_node)
             
             # Create bidirectional edges between title and table
-            add_bidirectional_edge(title_node, table_node, "has_table")
+            add_bidirectional_edge(title_node, table_node, "hasTable")
         
         # Process children recursively
         for child in node.children:
