@@ -116,12 +116,32 @@ def visualize_graph(subgraph: SubGraph, output_path: str = "document_graph", for
                 "enabled": true,
                 "direction": "UD",
                 "sortMethod": "directed",
-                "nodeSpacing": 150,
-                "treeSpacing": 200,
-                "levelSeparation": 200,
+                "nodeSpacing": 200,
+                "treeSpacing": 300,
+                "levelSeparation": 250,
                 "blockShifting": true,
                 "edgeMinimization": true,
-                "parentCentralization": true
+                "parentCentralization": false,
+                "shakeTowards": "roots"
+            }
+        },
+        "nodes": {
+            "font": {
+                "size": 12,
+                "face": "Microsoft YaHei"
+            },
+            "shape": "box",
+            "margin": 10,
+            "widthConstraint": {
+                "minimum": 100,
+                "maximum": 300
+            }
+        },
+        "edges": {
+            "smooth": {
+                "type": "cubicBezier",
+                "forceDirection": "vertical",
+                "roundness": 0.5
             }
         }
     }
