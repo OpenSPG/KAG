@@ -22,6 +22,7 @@ import requests
 import pandas as pd
 from typing import List, Dict, Tuple
 
+from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.writer.kg_writer import KGWriter
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
@@ -58,13 +59,15 @@ class MarkDownReader(ReaderABC):
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 3, llm: LLMClient = None, kg_writer: KGWriter = None, **kwargs):
+    def __init__(self, cut_depth: int = 3, llm: LLMClient = None, kg_writer: KGWriter = None, reserve_meta: bool = False, length_splitter: LengthSplitter = None, **kwargs):
         super().__init__(**kwargs)
         self.cut_depth = int(cut_depth)
         self.llm = llm
         self.kg_writer = kg_writer
         self.analyze_table_prompt = AnalyzeTablePrompt(language="zh")
         self.analyze_img_prompt = AnalyzeTablePrompt(language="zh")
+        self.length_splitter = length_splitter
+        self.reserve_meta = reserve_meta
 
     @property
     def input_types(self):
@@ -253,15 +256,50 @@ class MarkDownReader(ReaderABC):
             stack[-1].content = "\n".join(current_content)
 
         outputs, node_chunk_map = self._convert_to_outputs(root, id)
-        
+
+        if self.length_splitter:
+            # Split long outputs using LengthSplitter
+            new_outputs = []
+            new_node_chunk_map = {}
+            
+            for output in outputs:
+                if len(output.content) > 5000:
+                    # Split long chunks while maintaining parent-child relationships
+                    split_chunks = self.length_splitter.slide_window_chunk(output)
+                    for chunk in split_chunks:
+                        chunk.parent_id = output.parent_id
+                    new_outputs.extend(split_chunks)
+                    
+                    # Update node_chunk_map for split chunks
+                    # Find all nodes that were mapped to this output
+                    related_nodes = [node for node, chunk in node_chunk_map.items() if chunk.id == output.id]
+                    for node in related_nodes:
+                        # Map each node to all split chunks
+                        if node not in new_node_chunk_map:
+                            new_node_chunk_map[node] = []
+                        new_node_chunk_map[node].extend(split_chunks)
+                else:
+                    new_outputs.append(output)
+                    # Keep original mapping for unsplit chunks
+                    for node, chunk in node_chunk_map.items():
+                        if chunk.id == output.id:
+                            if node not in new_node_chunk_map:
+                                new_node_chunk_map[node] = []
+                            new_node_chunk_map[node].append(chunk)
+            
         # Convert to SubGraph using the function from markdown_to_graph
         from kag.builder.component.reader.markdown_to_graph import convert_to_subgraph
-        subgraph_and_stats = convert_to_subgraph(root, outputs, node_chunk_map)
+        # Flatten the node_chunk_map to use first chunk for each node when converting to subgraph
+        if self.length_splitter:
+            flat_node_chunk_map = {node: chunks[0] for node, chunks in new_node_chunk_map.items()}
+        else:
+            flat_node_chunk_map = node_chunk_map
+        subgraph_and_stats = convert_to_subgraph(root, new_outputs, flat_node_chunk_map)
 
         if self.kg_writer:
             self.kg_writer.invoke(subgraph_and_stats[0])
         
-        return outputs
+        return (new_outputs, subgraph_and_stats[0])
 
     def _convert_to_outputs(
         self,
@@ -333,7 +371,7 @@ class MarkDownReader(ReaderABC):
                 parent_id=parent_id,
                 name=full_title,
                 content="\n".join(filter(None, current_content)),
-                parent_content=parent_content,
+                parent_content=parent_content if self.reserve_meta else None,
             )
             outputs.append(current_output)
             node_chunk_map[node] = current_output  # Add mapping
@@ -350,7 +388,7 @@ class MarkDownReader(ReaderABC):
                         content=table_content,
                         type=ChunkTypeEnum.Table,
                         metadata={
-                            "table_data": table,
+                            # "table_data": table,
                             "before_text": table.get("context", {}).get("before_text", ""),
                             "after_text": table.get("context", {}).get("after_text", "")
                         }
@@ -369,7 +407,7 @@ class MarkDownReader(ReaderABC):
                         content=table_content,
                         type=ChunkTypeEnum.Table,
                         metadata={
-                            "table_data": table,
+                            # "table_data": table,
                             "before_text": table.get("context", {}).get("before_text", ""),
                             "after_text": table.get("context", {}).get("after_text", "")
                         }
@@ -410,7 +448,7 @@ class MarkDownReader(ReaderABC):
                     parent_id=parent_id,
                     name=full_title,
                     content="\n".join(filter(None, current_content)),
-                    parent_content=parent_content,
+                    parent_content=parent_content if self.reserve_meta else "",
                 )
                 outputs.append(current_output)
                 node_chunk_map[node] = current_output  # Add mapping
@@ -427,7 +465,7 @@ class MarkDownReader(ReaderABC):
                             content=table_content,
                             type=ChunkTypeEnum.Table,
                             metadata={
-                                "table_data": table,
+                                # "table_data": table, 
                                 "before_text": table.get("context", {}).get("before_text", ""),
                                 "after_text": table.get("context", {}).get("after_text", "")
                             }
@@ -446,7 +484,7 @@ class MarkDownReader(ReaderABC):
                             content=table_content,
                             type=ChunkTypeEnum.Table,
                             metadata={
-                                "table_data": table,
+                                # "table_data": table,
                                 "before_text": table.get("context", {}).get("before_text", ""),
                                 "after_text": table.get("context", {}).get("after_text", "")
                             }
@@ -484,7 +522,7 @@ class MarkDownReader(ReaderABC):
 
         basename, _ = os.path.splitext(os.path.basename(file_path))
 
-        chunks, node_chunk_map, root, (subgraph, stats) = self.solve_content(input, basename, content)
+        chunks, subgraph = self.solve_content(input, basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
@@ -499,7 +537,7 @@ class MarkDownReader(ReaderABC):
                     length_500_list.append(chunk)
                 elif len(chunk.content) <= 500:
                     length_smal_list.append(chunk)
-        return chunks
+        return chunks, subgraph
 
 
 @ReaderABC.register("yuque")
@@ -539,14 +577,14 @@ class YuequeReader(MarkDownReader):
         title = data.get("title", "")
         content = data.get("body", "")
 
-        chunks, node_chunk_map, root, (subgraph, stats) = self.solve_content(id, title, content)
+        chunks, subgraph = self.solve_content(id, title, content)
         return chunks
 
 if __name__ == "__main__":
     from kag.builder.component.reader.markdown_to_graph import visualize_graph
 
-    reader = ReaderABC.from_config({"type": "md", "cut_depth": 2, "kg_writer": {"type": "kg", "project_id": 1}})
+    reader = ReaderABC.from_config({"type": "md", "cut_depth": 2, "kg_writer": {"type": "kg", "project_id": 1}, "length_splitter": {"type": "length_splitter", "split_length": 5000, "window_length": 500}})
     file_path = "/Users/zhangxinhong.zxh/Downloads/人卫书籍-15本/20240820_02.外科学（第8版）_4020.md"
-    chunks = reader.invoke(file_path)
+    chunks, subgraph = reader.invoke(file_path)
     assert len(chunks) > 0
     print(chunks)
