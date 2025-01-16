@@ -1,121 +1,140 @@
 from typing import Dict, List, Tuple
-import graphviz
+from pyvis.network import Network
+import textwrap
 
 from kag.builder.model.sub_graph import SubGraph, Node, Edge
 from kag.builder.component.reader.markdown_reader import MarkdownNode
 from kag.builder.model.chunk import Chunk
 
-def visualize_graph(subgraph: SubGraph, output_path: str = "document_graph", format: str = "svg"):
+def visualize_graph(subgraph: SubGraph, output_path: str = "document_graph", format: str = "html"):
     """
-    Visualize the SubGraph using Graphviz and save it as a vector or raster image file.
+    Visualize the SubGraph using Pyvis and save it as an interactive HTML file.
     
     Args:
         subgraph: The SubGraph to visualize
-        output_path: Path where to save the output image (without extension)
-        format: Output format, either 'svg' for vector graphics or 'png' for raster graphics
+        output_path: Path where to save the output file (without extension)
+        format: Output format, currently only supports 'html'
     """
-    dot = graphviz.Digraph(comment='Document Structure', format=format)
-    # 设置图形属性以提高清晰度
-    dot.attr(rankdir='TB',  # Top to bottom layout
-            size='100,100',  # 增加图的尺寸
-            ratio='expand',  # 自动扩展以适应尺寸
-            margin='0.5',
-            nodesep='0.8',  # 增加节点间距
-            ranksep='2.0')  # 增加层级间距
+    # 创建网络图
+    net = Network(notebook=True, height="900px", width="100%", bgcolor="#ffffff", font_color="black")
+    net.force_atlas_2based()  # 使用力导向布局
     
-    # SVG特定的属性
-    if format == 'svg':
-        dot.attr(bgcolor='transparent')  # 透明背景
-    else:
-        dot.attr(dpi='600')  # 仅在PNG格式时设置DPI
+    def wrap_text(text: str, width: int = 30) -> str:
+        """将文本按指定宽度换行"""
+        if not text:
+            return ""
+        return '<br>'.join(textwrap.wrap(text, width=width))
     
-    # 创建子图，每个层级一个子图
-    clusters = {}
-    
-    # 设置全局节点样式
-    dot.attr('node', 
-            shape='box', 
-            style='rounded,filled',
-            fontsize='16',  # 增加字体大小
-            height='0.8',
-            width='2.5',
-            margin='0.3')
-    
-    # 添加节点，按标签类型使用不同的颜色
-    for node in subgraph.nodes:
-        if node.label == "Title":
-            # 蓝色标题节点
-            level = node.properties.get('level', 'N/A')
-            if level not in clusters:
-                clusters[level] = graphviz.Digraph(name=f'cluster_{level}')
-                clusters[level].attr(label=f'Level {level}',
-                                   style='rounded',
-                                   color='blue',
-                                   fontsize='18',
-                                   margin='30')
-            
-            clusters[level].node(node.id, 
-                               f"{node.name}", 
-                               color='#2B60DE',  # 深蓝色边框
-                               fillcolor='#B0E0E6',  # 浅蓝色填充
-                               penwidth='2.5')  # 加粗边框
-        
-        elif node.label == "Chunk":
-            # 绿色内容节点
-            content = node.properties.get('content', '')
-            if content:
-                content = content[:40] + '...' if len(content) > 40 else content
-            dot.node(node.id, 
-                    f"Content:\\n{content}", 
-                    color='#228B22',  # 深绿色边框
-                    fillcolor='#E0FFE0',  # 浅绿色填充
-                    penwidth='2.5')
-        
-        elif node.label == "Table":
-            # 橙色表格节点
-            headers = node.properties.get('headers', '')
-            headers = headers[:40] + '...' if len(headers) > 40 else headers
-            dot.node(node.id, 
-                    f"{node.name}\\n{headers}", 
-                    color='#FF8C00',  # 深橙色边框
-                    fillcolor='#FFEFD5',  # 浅橙色填充
-                    penwidth='2.5')
-    
-    # 将子图添加到主图
-    for cluster in clusters.values():
-        dot.subgraph(cluster)
-    
-    # 添加边，使用不同的颜色和样式
-    edge_styles = {
-        'has_child': ('#2B60DE', 'solid', '2.0'),     # 蓝色实线
-        'has_parent': ('#2B60DE', 'dashed', '1.5'),   # 蓝色虚线
-        'has_content': ('#228B22', 'solid', '2.0'),   # 绿色实线
-        'belongs_to': ('#228B22', 'dashed', '1.5'),   # 绿色虚线
-        'has_table': ('#FF8C00', 'solid', '2.0'),     # 橙色实线
-        'describes': ('#9370DB', 'solid', '2.0'),     # 紫色实线
-        'described_by': ('#9370DB', 'dashed', '1.5'), # 紫色虚线
-        'contains': ('#4169E1', 'solid', '2.0'),      # 皇家蓝实线
-        'reverse_contains': ('#4169E1', 'dashed', '1.5')  # 皇家蓝虚线
+    # 节点颜色映射
+    node_colors = {
+        "Title": "#B0E0E6",  # 浅蓝色
+        "Chunk": "#E0FFE0",  # 浅绿色
+        "Table": "#FFEFD5"   # 浅橙色
     }
     
-    # 设置边的属性
-    dot.attr('edge', 
-            fontsize='14',  # 边标签字体大小
-            fontcolor='#444444',  # 边标签颜色
-            arrowsize='1.0')  # 箭头大小
+    # 边的样式映射
+    edge_styles = {
+        'has_child': ('#2B60DE', 2),      # 蓝色
+        'has_parent': ('#2B60DE', 1),     # 蓝色
+        'has_content': ('#228B22', 2),    # 绿色
+        'belongs_to': ('#228B22', 1),     # 绿色
+        'has_table': ('#FF8C00', 2),      # 橙色
+        'describes': ('#9370DB', 2),      # 紫色
+        'described_by': ('#9370DB', 1),   # 紫色
+        'contains': ('#4169E1', 2),       # 皇家蓝
+        'reverse_contains': ('#4169E1', 1) # 皇家蓝
+    }
     
+    # 添加节点
+    for node in subgraph.nodes:
+        # 准备节点标签
+        if node.label == "Title":
+            content = node.properties.get('content', '')
+            if content:
+                content_preview = content[:100] + '...' if len(content) > 100 else content
+                label = f"{node.name}<br><br>{wrap_text(content_preview)}"
+            else:
+                label = node.name
+            size = 30  # 标题节点大一些
+        elif node.label == "Chunk":
+            content = node.properties.get('content', '')
+            if content:
+                content_preview = content[:100] + '...' if len(content) > 100 else content
+                label = f"{node.name}<br><br>{wrap_text(content_preview)}"
+            else:
+                label = f"{node.name}<br>(empty content)"
+            size = 25
+        else:  # Table
+            headers = node.properties.get('headers', '')
+            if isinstance(headers, list):
+                headers = ', '.join(str(h) for h in headers)
+            content = node.properties.get('content', '')
+            if content:
+                content_preview = content[:100] + '...' if len(content) > 100 else content
+                label = f"{node.name}<br><br>{wrap_text(content_preview)}"
+            else:
+                label = f"{node.name}<br>{wrap_text(headers)}"
+            size = 25
+        
+        # 添加节点
+        net.add_node(node.id, 
+                    label=label, 
+                    color=node_colors.get(node.label, "#FFFFFF"),
+                    size=size,
+                    font={'size': 12, 'face': 'Microsoft YaHei'},
+                    shape='box',
+                    margin=10,
+                    mass=2 if node.label == "Title" else 1)  # 标题节点质量大些，更稳定
+    
+    # 添加边
     for edge in subgraph.edges:
-        style = edge_styles.get(edge.label, ('black', 'solid', '1.0'))
-        dot.edge(edge.from_id, 
-                edge.to_id, 
-                edge.label,
-                color=style[0],  # 边的颜色
-                style=style[1],  # 边的样式
-                penwidth=style[2],  # 边的宽度
-                dir='both' if style[1] == 'solid' else 'forward')
+        style = edge_styles.get(edge.label, ('#000000', 1))
+        net.add_edge(edge.from_id, 
+                    edge.to_id,
+                    label=edge.label,
+                    color=style[0],
+                    width=style[1],
+                    arrows={'to': {'enabled': True, 'type': 'arrow'}},
+                    font={'size': 10, 'face': 'Microsoft YaHei'})
     
-    # 保存图形，使用高质量设置
-    dot.render(output_path, format=format, cleanup=True)
+    # 设置物理布局参数
+    net.set_options("""
+    var options = {
+        "physics": {
+            "enabled": false
+        },
+        "interaction": {
+            "hover": true,
+            "navigationButtons": true,
+            "keyboard": true,
+            "dragNodes": true,
+            "dragView": true,
+            "zoomView": true
+        },
+        "layout": {
+            "hierarchical": {
+                "enabled": true,
+                "direction": "UD",
+                "sortMethod": "directed",
+                "nodeSpacing": 150,
+                "treeSpacing": 200,
+                "levelSeparation": 200,
+                "blockShifting": true,
+                "edgeMinimization": true,
+                "parentCentralization": true
+            }
+        }
+    }
+    """)
+    
+    # 保存为HTML文件
+    try:
+        net.save_graph(f"{output_path}.html")
+    except:
+        try:
+            net.write_html(f"{output_path}.html")
+        except:
+            net.show(f"{output_path}.html")
 
 def get_graph_statistics(subgraph: SubGraph) -> dict:
     """

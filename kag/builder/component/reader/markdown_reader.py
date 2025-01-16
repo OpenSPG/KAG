@@ -584,7 +584,8 @@ if __name__ == "__main__":
     from kag.builder.component.reader.markdown_to_graph import visualize_graph
 
     reader = ReaderABC.from_config({"type": "md", "cut_depth": 2, "kg_writer": {"type": "kg", "project_id": 1}, "length_splitter": {"type": "length_splitter", "split_length": 5000, "window_length": 500}})
-    file_path = "/Users/zhangxinhong.zxh/Downloads/人卫书籍-15本/20240820_02.外科学（第8版）_4020.md"
+    file_path = "/Users/zhangxinhong.zxh/Downloads/技术中心财务报销规定.md"
     chunks, subgraph = reader.invoke(file_path)
+    visualize_graph(subgraph)
     assert len(chunks) > 0
     print(chunks)
