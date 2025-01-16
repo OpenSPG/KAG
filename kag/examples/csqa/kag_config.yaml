@@ -61,6 +61,7 @@ kag_builder_pipeline:
   num_chains: 16
   scanner:
     type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
+    file_suffix: md
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
