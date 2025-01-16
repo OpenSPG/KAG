@@ -286,7 +286,10 @@ class MarkDownReader(ReaderABC):
                             if node not in new_node_chunk_map:
                                 new_node_chunk_map[node] = []
                             new_node_chunk_map[node].append(chunk)
-            
+
+            # use `outputs` to refer the split new chunks from now on
+            outputs = new_outputs
+
         # Convert to SubGraph using the function from markdown_to_graph
         from kag.builder.component.reader.markdown_to_graph import convert_to_subgraph
         # Flatten the node_chunk_map to use first chunk for each node when converting to subgraph
@@ -294,12 +297,12 @@ class MarkDownReader(ReaderABC):
             flat_node_chunk_map = {node: chunks[0] for node, chunks in new_node_chunk_map.items()}
         else:
             flat_node_chunk_map = node_chunk_map
-        subgraph_and_stats = convert_to_subgraph(root, new_outputs, flat_node_chunk_map)
+        subgraph_and_stats = convert_to_subgraph(root, outputs, flat_node_chunk_map)
 
         if self.kg_writer:
             self.kg_writer.invoke(subgraph_and_stats[0])
-        
-        return (new_outputs, subgraph_and_stats[0])
+
+        return (outputs, subgraph_and_stats[0])
 
     def _convert_to_outputs(
         self,
