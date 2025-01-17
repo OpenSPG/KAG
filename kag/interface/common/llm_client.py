@@ -109,11 +109,12 @@ class LLMClient(Registrable):
         except Exception as e:
             import traceback
 
-            logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
                     f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
+
         return result
 
     def batch(
