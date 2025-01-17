@@ -108,7 +108,6 @@ class LLMClient(Registrable):
             logger.debug(f"Result: {result}")
         except Exception as e:
             import traceback
-
             logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
