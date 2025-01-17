@@ -357,6 +357,8 @@ class SubQueryResult:
         self.spo_retrieved: list = []
         self.match_type: str = "fuzzy"
         self.execute_cost: float = 0.0
+        self.is_executed = False,
+        self.debug_info = {}
 
     def to_json(self):
         return {
@@ -366,19 +368,25 @@ class SubQueryResult:
             "spo_retrieved": [str(spo) for spo in self.spo_retrieved],
             "match_type": self.match_type,
             "execute_cost": self.execute_cost,
+            "debug_info": self.debug_info
         }
-
+    def get_qa_pair(self):
+        if self.if_answered:
+            return f"{self.sub_query}\n {self.sub_answer}"
+        return None
 
 class LFPlan:
-    def __init__(self, query: str, lf_nodes: List[LogicNode], sub_query_type: str):
+    def __init__(self, query: str, lf_node: LogicNode, sub_query_type: str):
         self.query: str = query
-        self.lf_nodes: List[LogicNode] = lf_nodes
+        self.rewrite_query: List = [query]
+        self.lf_node: LogicNode = lf_node
         self.sub_query_type: str = sub_query_type
         self.res: Optional[SubQueryResult] = None
 
     def to_json(self):
         res = {} if self.res is None else self.res.to_json()
-        res["lf_expr"] = [str(n) for n in self.lf_nodes]
+        res["lf_expr"] = str(self.lf_node)
+        res["rewrite_query"] = self.rewrite_query
         return res
 
 

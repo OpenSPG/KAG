@@ -607,6 +607,21 @@ class KgGraph:
         self.entity_map = {}
         self.edge_map = {}
 
+        self.answered_alias = {}
+        self.alias_set = []
+
+    def add_answered_alias(self, alias, value):
+        if alias in self.answered_alias:
+            self.answered_alias[alias].append(value)
+        else:
+            self.answered_alias[alias] = [value]
+    def get_answered_alias(self, alias):
+        if alias not in self.alias_set:
+            return None
+        if alias in self.answered_alias.keys():
+            return self.answered_alias[alias]
+        else:
+            return ""
     def add_mock_entity(self, alias, value):
         if alias not in self.nodes_alias:
             self.nodes_alias.append(alias)
@@ -623,6 +638,8 @@ class KgGraph:
         data_values.append(mock_entity)
         self.entity_map[alias] = data_values
     def merge_kg_graph(self, other, wo_intersect=True):
+        self.answered_alias = other.answered_alias
+        self.alias_set = list(set(other.alias_set))
         self.nodes_alias = list(set(self.nodes_alias + other.nodes_alias))
         self.edge_alias = list(set(self.edge_alias + other.edge_alias))
         for n_alias in other.entity_map.keys():

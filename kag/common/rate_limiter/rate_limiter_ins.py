@@ -1,8 +1,10 @@
 import time
 import threading
+import logging
 
 from kag.interface.common.rate_limiter import RateLimiter
 
+logger = logging.getLogger()
 
 class RateLimiterInstance:
     def __init__(self, max_calls: int, period: float):
@@ -36,10 +38,12 @@ class RateLimiterInstance:
 
                 if self._tokens > 0:
                     self._tokens -= 1
+                    logger.debug(f"Rate Limiter get token {self._tokens}")
                     return  # 成功获取令牌
 
                 # 计算需要等待的时间
                 wait_time = self._period - elapsed
+                logger.debug(f"Rate Limiter need wait {wait_time}")
             time.sleep(wait_time if wait_time > 0 else self._period)
 
 
@@ -61,13 +65,13 @@ class RateLimitContainer:
                 # 创建新的实例并存储在字典中
                 cls._instances[name] = RateLimiterInstance(max_calls=max_calls, period=period)
             else:
-                print(f"Returning existing instance for '{name}'")
+                logger.info(f"Returning existing instance for '{name}'")
 
         # 返回对应名字的实例
         return cls._instances[name]
 
 
-@RateLimiter.register("rate_limiter")
+@RateLimiter.register("peroid_rate_limiter", as_default=True)
 class PeriodRateLimiter(RateLimiter):
     def __init__(self, name, max_calls: int = None, period: float = None, **kwargs):
         super().__init__(name, max_calls, period, **kwargs)
