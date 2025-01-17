@@ -77,7 +77,7 @@ class LLMClient(Registrable):
         variables: Dict[str, Any],
         prompt_op: PromptABC,
         with_json_parse: bool = True,
-        with_except: bool = False,
+        with_except: bool = True,
     ):
         """
         Call the model and process the result.
@@ -108,12 +108,12 @@ class LLMClient(Registrable):
             logger.debug(f"Result: {result}")
         except Exception as e:
             import traceback
-
-            logger.debug(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
                     f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
+
         return result
 
     def batch(
