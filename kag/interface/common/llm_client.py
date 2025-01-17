@@ -77,7 +77,7 @@ class LLMClient(Registrable):
         variables: Dict[str, Any],
         prompt_op: PromptABC,
         with_json_parse: bool = True,
-        with_except: bool = False,
+        with_except: bool = True,
     ):
         """
         Call the model and process the result.
