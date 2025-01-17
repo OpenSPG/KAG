@@ -22,6 +22,7 @@ from kag.solver.prompt.default.resp_generator import RespGenerator
 from kag.solver.prompt.default.resp_judge import RespJudge
 from kag.solver.prompt.default.resp_reflector import RespReflector
 from kag.solver.prompt.default.resp_verifier import RespVerifier
+from kag.solver.prompt.default.rewrite_sub_query import DefaultRewriteSubQuery
 from kag.solver.prompt.default.solve_question import SolveQuestion
 from kag.solver.prompt.default.solve_question_without_docs import (
     SolveQuestionWithOutDocs,
@@ -46,4 +47,5 @@ __all__ = [
     "SolveQuestionWithOutSPO",
     "SpoRetrieval",
     "ExpressionBuildr",
+    "DefaultRewriteSubQuery",
 ]

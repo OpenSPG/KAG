@@ -24,7 +24,6 @@ class GetSPONode(LogicNode):
         self.o: SPOBase = args.get('o', None)
         self.op: str = args.get('op', '=')
         self.sub_query = args.get("sub_query", None)
-        self.query = args.get("query", None)
 
     def get_ele_name(self, alias):
         ele = self.args.get(alias, None)
