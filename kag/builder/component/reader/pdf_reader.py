@@ -12,19 +12,20 @@
 
 import os
 import re
-from typing import List, Sequence, Union
+from typing import List, Sequence, Union, Dict, Tuple
 
 import pdfminer.layout  # noqa
 
 
 from kag.builder.model.chunk import Chunk
+from kag.builder.model.sub_graph import Edge, Node, SubGraph
 from kag.interface import ReaderABC
 
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Output
+from knext.common.base.runnable import Input, Output
 from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTPage
@@ -208,7 +209,7 @@ class PDFReader(ReaderABC):
                 final_content.append((outline[0], outline[1], start, -1, content))
         return final_content
 
-    def convert_finel_content_to_chunks(self, final_content):
+    def convert_finel_content_to_chunks(self, final_content) -> Tuple[List[Chunk], SubGraph]:
         def create_chunk(title, content, basename):
             return Chunk(
                 id=generate_hash_id(f"{basename}#{title}"),
@@ -219,12 +220,73 @@ class PDFReader(ReaderABC):
 
         level_map = {}
         chunks = []
+        nodes = []
+        edges = []
+        node_map = {}  # Track created nodes by ID
+        chunk_nodes = {}  # Track chunk nodes by their IDs
+
+        def add_bidirectional_edge(from_node: Node, to_node: Node, label: str, properties: Dict = None):
+            """Helper function to add bidirectional edges"""
+            if properties is None:
+                properties = {}
+                
+            # Forward edge
+            edges.append(Edge(
+                _id="",
+                from_node=from_node,
+                to_node=to_node,
+                label=label,
+                properties=properties.copy()
+            ))
+            
+            # Backward edge
+            reverse_label = {
+                "hasChild": "hasParent",
+                "hasContent": "belongsToTitle",
+            }.get(label, f"reverse_{label}")
+            
+            edges.append(Edge(
+                _id="",
+                from_node=to_node,
+                to_node=from_node,
+                label=reverse_label,
+                properties=properties.copy()
+            ))
 
         for title, level, start, end, content in final_content:
             chunk = create_chunk(
                 title, content, os.path.splitext(os.path.basename(self.fd.name))[0]
             )
             chunks.append(chunk)
+
+            # Create title node
+            title_node_id = f"node_{hash(title)}"
+            if title_node_id not in node_map:
+                title_node = Node(
+                    _id=title_node_id,
+                    name=title,
+                    label="Title",
+                    properties={"level": str(level)}
+                )
+                nodes.append(title_node)
+                node_map[title_node_id] = title_node
+            else:
+                title_node = node_map[title_node_id]
+
+            # Create chunk node
+            chunk_node = Node(
+                _id=chunk.id,
+                name=chunk.name,
+                label="Chunk",
+                properties={
+                    "content": chunk.content,
+                }
+            )
+            nodes.append(chunk_node)
+            chunk_nodes[chunk.id] = chunk_node
+
+            # Create bidirectional edges between title and chunk
+            add_bidirectional_edge(title_node, chunk_node, "hasContent")
 
             if level == 0:
                 level_map[0] = chunk
@@ -233,11 +295,21 @@ class PDFReader(ReaderABC):
                 while parent_level >= 0:
                     if parent_level in level_map:
                         level_map[parent_level].sub_chunks.append(chunk)
+                        # Add title hierarchy relationship
+                        parent_chunk = level_map[parent_level]
+                        parent_title_node = node_map[f"node_{hash(parent_chunk.name.split('#')[1])}"]
+                        add_bidirectional_edge(
+                            parent_title_node,
+                            title_node,
+                            "hasChild",
+                            {"level": str(level)}
+                        )
                         break
                     parent_level -= 1
                 level_map[level] = chunk
 
-        return chunks
+        subgraph = SubGraph(nodes=nodes, edges=edges)
+        return chunks, subgraph
 
     def outline_chunk(self, chunk: Union[Chunk, List[Chunk]], basename) -> List[Chunk]:
         if isinstance(chunk, Chunk):
@@ -324,20 +396,18 @@ class PDFReader(ReaderABC):
                 text += element.get_text()
         return text
 
-    def _invoke(self, input: str, **kwargs) -> Sequence[Output]:
+    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], SubGraph]:
         """
-        Processes a PDF file, splitting or extracting content based on configuration.
+        Processes a PDF file and returns its content as structured chunks and a graph representation.
 
         Args:
-            input (str): The path to the PDF file.
-            **kwargs: Additional keyword arguments, such as `clean_list`.
+            input (Input): The path to the PDF file.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            Sequence[Output]: A sequence of processed outputs.
-
-        Raises:
-            ValueError: If the file is not a PDF file or the content is empty/unreadable.
-            FileNotFoundError: If the file does not exist.
+            Tuple[List[Output], SubGraph]: A tuple containing:
+                - A list of processed content chunks
+                - A SubGraph representation of the document structure
         """
         if not input.endswith(".pdf"):
             raise ValueError(f"Please provide a pdf file, got {input}")
@@ -363,7 +433,6 @@ class PDFReader(ReaderABC):
                 self.outline_flag = False
 
             if not self.outline_flag:
-
                 with open(input, "rb") as file:
                     for idx, page_layout in enumerate(extract_pages(file)):
                         content = ""
@@ -376,12 +445,6 @@ class PDFReader(ReaderABC):
                             content=content,
                         )
                         chunks.append(chunk)
-                # try:
-                #     outline_chunks = self.outline_chunk(chunks, basename)
-                # except Exception as e:
-                #     raise RuntimeError(f"Error loading PDF file: {e}")
-                # if len(outline_chunks) > 0:
-                #     chunks = outline_chunks
 
             elif True:
                 split_words = []
@@ -410,7 +473,7 @@ class PDFReader(ReaderABC):
                 final_content = self.extract_content_from_outline(
                     page_contents, self.level_outlines
                 )
-                chunks = self.convert_finel_content_to_chunks(final_content)
+                chunks, subgraph = self.convert_finel_content_to_chunks(final_content)
 
             else:
                 for item in outlines:
@@ -455,16 +518,7 @@ class PDFReader(ReaderABC):
                     )
                     chunks.append(chunk)
 
-            # # 保存中间结果到文件
-            # import pickle
-
-            # with open("debug_data.pkl", "wb") as f:
-            #     pickle.dump(
-            #         {"page_contents": page_contents, "level_outlines": self.level_outlines},
-            #         f,
-            #     )
-
-            return chunks
+            return chunks, subgraph if 'subgraph' in locals() else SubGraph(nodes=[], edges=[])
 
         except Exception as e:
             raise RuntimeError(f"Error loading PDF file: {e}")
