@@ -58,7 +58,7 @@ class LogicFormPlanPrompt(PromptABC):
       {
           "functionName": "Deduce",
           "function_declaration": "Deduce(op=judgement|entailment|extract|choice|multiChoice, content=[`XXX` or `o_alias/s_alias`], target=`XXX`)->deduce_alias",
-          "description": "Inference refers to the process of inferring search or calculation results to answer questions. op=judgment | entailment | rule | choice | multiChoice respectively represents true or false questions, implication reasoning (such as sentencing), fragment extraction, multiple choice questions, and multiple-choice questions. Content refers to questions, historical conversations, or search results, which can be text fragments or referred to by variable names. The target is the inference objective."
+          "description": "Inference refers to the process of inferring search or calculation results to answer questions. op=judgement | entailment | rule | choice | multiChoice respectively represents true or false questions, implication reasoning (such as sentencing), fragment extraction, multiple choice questions, and multiple-choice questions. Content refers to questions, historical conversations, or search results, which can be text fragments or referred to by variable names. The target is the inference objective."
       },
       {
           "functionName": "Output",
@@ -96,7 +96,7 @@ class LogicFormPlanPrompt(PromptABC):
         {{
             {self.instruct_zh}
             {self.default_case_zh}
-            "output_format": "only output `Step`, `Action` and `Output` content",
+            "output_format": "only output `Step`, `Action` and `Output` content. One `Step` with only one `Action` or `Output`",
             "query": "$question"
         }}   
             """
@@ -104,7 +104,7 @@ class LogicFormPlanPrompt(PromptABC):
         {{
             {self.instruct_en}
             {self.default_case_en}
-            "output_format": "Only output words in answer, for examples: `Step`, `Action` content",
+            "output_format": "Only output words in answer, for examples: `Step`, `Action`, `Output` content. One `Step` with only one `Action` or `Output`",
             "query": "$question"
         }}   
             """

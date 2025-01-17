@@ -16,6 +16,7 @@ from openai import OpenAI, AzureOpenAI
 import logging
 
 from kag.interface import LLMClient
+from kag.interface.common.rate_limiter import RateLimiter
 from tenacity import retry, stop_after_attempt
 from typing import Callable
 
@@ -44,7 +45,8 @@ class OpenAIClient(LLMClient):
         stream: bool = False,
         temperature: float = 0.7,
         timeout: float = None,
-            **kwargs
+        rate_limiter: RateLimiter = None,
+        **kwargs
     ):
         """
         Initializes the OpenAIClient instance.
@@ -56,9 +58,11 @@ class OpenAIClient(LLMClient):
             stream (bool, optional): Whether to stream the response. Defaults to False.
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(rate_limiter, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -153,6 +157,8 @@ class AzureOpenAIClient (LLMClient):
         timeout: float = None,
         azure_ad_token: str = None,
         azure_ad_token_provider: AzureADTokenProvider = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -170,8 +176,11 @@ class AzureOpenAIClient (LLMClient):
             azure_ad_token_provider: A function that returns an Azure Active Directory token, will be invoked on every request.
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
 
+        super().__init__(rate_limiter, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.azure_deployment = azure_deployment
