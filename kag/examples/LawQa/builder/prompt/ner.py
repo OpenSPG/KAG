@@ -97,57 +97,21 @@ class OpenIENERPrompt(PromptABC):
                 "output": [
                         {
                             "name": "最高人民法院",
-                            "type": "LegalName",
+                            "type": "LegalSubject",
                             "category": "LegalSubject",
                             "description": "中华人民共和国的最高审判机关。"
                         },
                         {
                             "name": "最高人民检察院",
-                            "type": "LegalName",
+                            "type": "LegalSubject",
                             "category": "LegalSubject",
                             "description": "中华人民共和国的最高检察机关。"
                         },
                         {
                             "name": "寻衅滋事",
                             "type": "Keyword",
-                            "category": "LegalItem",
+                            "category": "Keyword",
                             "description": "指行为人为了寻求刺激、发泄情绪、逞强耍横等，无事生非或者借故生非的行为。"
-                        },
-                        {
-                            "name": "最高人民法院、最高人民检察院关于办理寻衅滋事刑事案件适用法律若干问题的解释第一条",
-                            "type": "LegalItem",
-                            "category": "LegalItem",
-                            "description": "最高人民法院、最高人民检察院关于办理寻衅滋事刑事案件适用法律若干问题的解释 第一条 司法解释。"
-                        },
-                        {
-                            "name": "第一条",
-                            "type": "ItemIndex",
-                            "category": "ItemIndex",
-                            "description": "条目法条索引编号"
-                        },
-                        {
-                            "name": "最高人民法院、最高人民检察院关于办理寻衅滋事刑事案件适用法律若干问题的解释",
-                            "type": "LegalName",
-                            "category": "LegalName",
-                            "description": "最高人民法院、最高人民检察院关于办理寻衅滋事刑事案件适用法律若干问题的解释"
-                        },
-                        {
-                            "name": "刑法第二百九十三条",
-                            "type": "LegalItem",
-                            "category": "LegalItem",
-                            "description": "《中华人民共和国刑法》中关于寻衅滋事罪的规定。"
-                        },
-                        {
-                            "name": "第二百九十三条",
-                            "type": "ItemIndex",
-                            "category": "ItemIndex",
-                            "description": "条目法条索引编号"
-                        },
-                        {
-                            "name": "中华人民共和国刑法",
-                            "type": "LegalName",
-                            "category": "LegalName",
-                            "description": "中华人民共和国刑法"
                         },
                         {
                             "name": "认定为“寻衅滋事”",
