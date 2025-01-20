@@ -26,11 +26,10 @@ class EntailmentOp(OpExecutor):
         param: dict,
     ) -> Dict:
         history_qa_pair = process_info.get("sub_qa_pair", [])
-        qa_pair = "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
-        spo_info = kg_graph.to_evidence()
-        information = str(spo_info) + "\n" + qa_pair
+        input_contents = process_info[logic_node.sub_query].get("input_contents", '')
+        content = input_contents if input_contents else "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
         if_answered, answer = self.llm_module.invoke(
-            {"instruction": logic_node.sub_query, "memory": information},
+            {"instruction": logic_node.sub_query, "memory": content},
             self.prompt,
             with_json_parse=False,
             with_except=True,

@@ -10,6 +10,7 @@ from kag.interface.solver.base_model import (
     LogicNode,
 )
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.common.utils import extract_content_target
 
 logger = logging.getLogger(__name__)
 
@@ -166,124 +167,54 @@ class CountNode(LogicNode):
         return CountNode("count", args)
 
 
-# sum(alias)->sum_alias
-class SumNode(LogicNode):
-    def __init__(self, operator, args):
-        super(SumNode, self).__init__(operator, args)
-        self.alias_name = args.get("alias_name", None)
-        self.set = args.get("set", None)
-
-    def to_dsl(self):
-        raise NotImplementedError("Subclasses should implement this method.")
-
-    @staticmethod
-    def parse_node(input_str):
-        # count_alias=count(alias)
-        match = re.match(r"(\w+)[\(\（](.*)[\)\）](->)?(.*)?", input_str)
-        if not match:
-            raise RuntimeError(f"parse logic form error {input_str}")
-        # print('match:',match.groups())
-        if len(match.groups()) == 4:
-            operator, params, _, alias_name = match.groups()
-        else:
-            operator, params = match.groups()
-            alias_name = "sum1"
-        params = params.replace("，", ",").split(",")
-        args = {"alias_name": alias_name, "set": params}
-        return SumNode("sum", args)
-
-
-class SortNode(LogicNode):
+class MathNode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
-        self.alias_name = args.get("alias_name", None)
-        self.set = args.get("set", None)
-        self.orderby = args.get("orderby", None)
-        self.direction = args.get("direction", None)
-        self.limit = args.get("limit", None)
-
-    def to_dsl(self):
-        raise NotImplementedError("Subclasses should implement this method.")
+        self.content = args.get("content", [])
+        self.target = args.get("target", [])
+        self.alias_name = args.get("alias_name", '')
 
     def __str__(self):
-        return f"sort：{self.set} {self.orderby} {self.direction} top{self.limit}"
-
-    def get_set(self):
-        if isinstance(self.set, list):
-            return set(self.set)
-        return {self.set}
+        return f"math(content={self.content}, target={self.target})"
 
     @staticmethod
-    def parse_node(input_str):
-        equality_list = re.findall(r"([\w.]+=[^=]+)(,|，|$)", input_str)
-        if len(equality_list) < 4:
-            raise RuntimeError(
-                f"parse {input_str} error not found set,orderby,direction,limit"
-            )
-        params = [e[0] for e in equality_list[:4]]
-        params_dict = {}
-        for param in params:
-            key, value = param.split("=")
-            params_dict[key] = value
-        return SortNode("sort", params_dict)
-
-
-class CompareNode(LogicNode):
-    def __init__(self, operator, args):
-        super().__init__(operator, args)
-        self.alias_name = args.get("alias_name", None)
-        self.set = args.get("set", None)
-        self.op = args.get("op", None)
-
-    def to_dsl(self):
-        raise NotImplementedError("Subclasses should implement this method.")
-
-    def __str__(self):
-        return f"compare：{self.set} {self.op} "
-
-    def get_set(self):
-        if isinstance(self.set, list):
-            return set(self.set)
-        return {self.set}
-
-    @staticmethod
-    def parse_node(input_str):
-        equality_list = re.findall(r"([\w.]+=[^=]+)(,|，|$)", input_str)
-        if len(equality_list) < 2:
-            raise RuntimeError(
-                f"parse {input_str} error not found set,orderby,direction,limit"
-            )
-        params = [e[0] for e in equality_list[:2]]
-        params_dict = {}
-        for param in params:
-            key, value = param.split("=")
-            if key == "set":
-                value = (
-                    value.strip()
-                    .replace("，", ",")
-                    .replace(" ", "")
-                    .strip("[")
-                    .strip("]")
-                    .split(",")
-                )
-            params_dict[key] = value
-        return CompareNode("compare", params_dict)
+    def parse_node(input_str, output_name):
+        content, target = extract_content_target(input_str)
+        if content is None and target is None:
+            raise RuntimeError(f"parse {input_str} error not found content/target")
+        params_dict = {
+            'alias_name': output_name,
+            'content': content,
+            'target': target
+        }
+        return MathNode("math", params_dict)
 
 
 class DeduceNode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
-        self.deduce_ops = args.get("deduce_ops", [])
+        self.ops = args.get("op", [])
+        self.content = args.get("content", [])
+        self.target = args.get("target", [])
+        self.alias_name = args.get("alias_name", '')
 
     def __str__(self):
-        return f"deduce(op={','.join(self.deduce_ops)})"
+        return f"deduce(op={','.join(self.ops)}, content={self.content}, target={self.target})"
 
     @staticmethod
-    def parse_node(input_str):
-        ops = input_str.replace("op=", "")
-        input_ops = ops.split(",")
-        return DeduceNode("deduce", {"deduce_ops": input_ops})
-
+    def parse_node(input_str, output_name):
+        equality_list = re.findall(r'([\w.]+=[^=]+)(,|，|$)', input_str)
+        if len(equality_list) < 3:
+            raise RuntimeError(f"parse {input_str} error not found op/content/target")
+        params = [e[0] for e in equality_list[:3]]
+        params_dict = {'alias_name': output_name}
+        for param in params:
+            key, value = param.split('=')
+            if key == 'op':
+                value = re.sub('\'"`', '', value)
+                value = value.strip().replace('，', ',').replace(' ', '').replace(' ', '').strip('[').strip(']').split(',')
+            params_dict[key] = value
+        return DeduceNode("deduce", params_dict)
 
 # verity(left_expr=alias, right_expr=other_alias or const_data, op=equal|gt|lt|ge|le|in|contains)
 class VerifyNode(LogicNode):
@@ -552,7 +483,7 @@ class ParseLogicForm:
             operator, args_str = match.groups()
             output_name = None
         low_operator = operator.lower()
-        if low_operator == "get":
+        if low_operator in ["get", 'output']:
             node: GetNode = GetNode.parse_node(args_str)
             if node.alias_name in parsed_entity_set.keys():
                 s = parsed_entity_set[node.alias_name]
@@ -575,19 +506,11 @@ class ParseLogicForm:
         elif low_operator in ["filter"]:
             node: FilterNode = FilterNode.parse_node(args_str)
         elif low_operator in ["deduce"]:
-            node: DeduceNode = DeduceNode.parse_node(args_str)
-        elif low_operator in ["verify"]:
-            node: VerifyNode = VerifyNode.parse_node(args_str)
+            node: DeduceNode = DeduceNode.parse_node(args_str, output_name)
         elif low_operator in ["count"]:
             node: CountNode = CountNode.parse_node(args_str, output_name)
-        elif low_operator in ["sum"]:
-            node: SumNode = SumNode.parse_node(args_str)
-        elif low_operator in ["sort"]:
-            node: SortNode = SortNode.parse_node(args_str)
-        elif low_operator in ["compare"]:
-            node: SortNode = CompareNode.parse_node(args_str)
-        elif low_operator in ["extractor"]:
-            node: ExtractorNode = ExtractorNode.parse_node(args_str)
+        elif low_operator in ["math"]:
+            node: MathNode = MathNode.parse_node(args_str, output_name)
         elif low_operator in ["search_s"]:
             node: SearchNode = SearchNode.parse_node(args_str)
             self.std_parse_node(node.s, parsed_entity_set)

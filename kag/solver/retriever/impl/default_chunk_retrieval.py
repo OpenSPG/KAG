@@ -424,6 +424,8 @@ class KAGRetriever(ChunkRetriever):
             assert isinstance(query, str), "Query must be a string"
             ner_list = self._parse_ner_list(query)
             for item in ner_list:
+                if not isinstance(item, dict):
+                    continue
                 entity = item.get("name", "")
                 category = item.get("category", "")
                 official_name = item.get("official_name", "")
