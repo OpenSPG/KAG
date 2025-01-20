@@ -34,6 +34,7 @@ from pdfminer.pdfdocument import PDFDocument
 import pdfminer  # noqa
 import PyPDF2
 
+from kag.builder.component.splitter.length_splitter import LengthSplitter
 
 import logging
 
@@ -56,6 +57,7 @@ class PDFReader(ReaderABC):
         outline_flag: bool = True,
         is_ocr: bool = False,
         llm: LLMClient = None,
+        length_splitter: LengthSplitter = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -63,6 +65,7 @@ class PDFReader(ReaderABC):
         self.outline_flag = outline_flag
         self.is_ocr = is_ocr
         self.llm = llm
+        self.length_splitter = length_splitter
         language = KAG_PROJECT_CONF.language
         self.prompt = OutlinePrompt(language)
 
@@ -211,12 +214,19 @@ class PDFReader(ReaderABC):
 
     def convert_finel_content_to_chunks(self, final_content) -> Tuple[List[Chunk], SubGraph]:
         def create_chunk(title, content, basename):
-            return Chunk(
+            chunk = Chunk(
                 id=generate_hash_id(f"{basename}#{title}"),
                 name=f"{basename}#{title}",
                 content=content,
                 sub_chunks=[],
             )
+            # Apply length splitter if configured and content is too long
+            if self.length_splitter:
+                split_chunks = self.length_splitter.slide_window_chunk(chunk,self.length_splitter.split_length,self.length_splitter.window_length)
+                for split_chunk in split_chunks:
+                    split_chunk.parent_id = chunk.id
+                return split_chunks
+            return [chunk]
 
         level_map = {}
         chunks = []
@@ -266,10 +276,8 @@ class PDFReader(ReaderABC):
         node_map[root_node_id] = root_node
 
         for title, level, start, end, content in final_content:
-            chunk = create_chunk(
-                title, content, basename
-            )
-            chunks.append(chunk)
+            created_chunks = create_chunk(title, content, basename)
+            chunks.extend(created_chunks)
 
             # Create title node
             title_node_id = f"node_{hash(title)}"
@@ -285,24 +293,25 @@ class PDFReader(ReaderABC):
             else:
                 title_node = node_map[title_node_id]
 
-            # Create chunk node
-            chunk_node = Node(
-                _id=chunk.id,
-                name=chunk.name,
-                label="Chunk",
-                properties={
-                    "content": chunk.content,
-                }
-            )
-            nodes.append(chunk_node)
-            chunk_nodes[chunk.id] = chunk_node
+            # Create chunk nodes and connect them to title
+            for chunk in created_chunks:
+                chunk_node = Node(
+                    _id=chunk.id,
+                    name=chunk.name,
+                    label="Chunk",
+                    properties={
+                        "content": chunk.content,
+                    }
+                )
+                nodes.append(chunk_node)
+                chunk_nodes[chunk.id] = chunk_node
 
-            # Create bidirectional edges between title and chunk
-            add_bidirectional_edge(title_node, chunk_node, "hasContent")
+                # Create bidirectional edges between title and chunk
+                add_bidirectional_edge(title_node, chunk_node, "hasContent")
 
             # Connect to parent based on level
             if level == 0:
-                level_map[0] = chunk
+                level_map[0] = chunks[-1]  # Use last chunk as level marker
                 # Connect level 0 titles to root
                 add_bidirectional_edge(root_node, title_node, "hasChild", {"level": "1"})
             else:
@@ -311,7 +320,8 @@ class PDFReader(ReaderABC):
                 parent_level = level - 1
                 while parent_level >= 0:
                     if parent_level in level_map:
-                        level_map[parent_level].sub_chunks.append(chunk)
+                        for chunk in created_chunks:
+                            level_map[parent_level].sub_chunks.append(chunk)
                         # Add title hierarchy relationship
                         parent_chunk = level_map[parent_level]
                         parent_title_node = node_map[f"node_{hash(parent_chunk.name.split('#')[1])}"]
@@ -329,7 +339,7 @@ class PDFReader(ReaderABC):
                 if not parent_found:
                     add_bidirectional_edge(root_node, title_node, "hasChild", {"level": str(level)})
                 
-                level_map[level] = chunk
+                level_map[level] = chunks[-1]  # Use last chunk as level marker
 
         subgraph = SubGraph(nodes=nodes, edges=edges)
         return chunks, subgraph
@@ -508,7 +518,7 @@ class PDFReader(ReaderABC):
 
 
 if __name__ == "__main__":
-    pdf_reader = PDFReader()
+    pdf_reader = ReaderABC.from_config({"type": "pdf_reader", "length_splitter": {"type": "length_splitter", "split_length": 50,"window_length": 10,"language": "zh"}})
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/unit/builder/data/aiwen.pdf"
     )
