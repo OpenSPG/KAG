@@ -227,11 +227,12 @@ class DefaultLFExecutor(LFExecutorABC):
     def _generate_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):
         # Generate a sub-query with history qa pair
         if history:
-            history_sub_answer = [
-                h.res.sub_answer
-                for h in history[:3]
-                if "i don't know" not in h.res.sub_answer.lower()
-            ]
+            sub_answer_set = []
+            for h in history:
+                if h.res.if_answered:
+                    first_answer_summary = h.res.sub_answer.split("\n")[0]
+                    sub_answer_set.append(f"{h.query} {first_answer_summary}")
+            history_sub_answer = sub_answer_set[-3:]
             sub_query_with_history_qa = "\n".join(history_sub_answer) + "\n" + sub_query
         else:
             sub_query_with_history_qa = sub_query
