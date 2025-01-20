@@ -98,7 +98,9 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             The result of the named entity recognition operation.
         """
-        ner_result = self.llm.invoke({"input": passage}, self.ner_prompt)
+        ner_result = self.llm.invoke(
+            {"input": passage}, self.ner_prompt, with_except=False
+        )
         if self.external_graph:
             extra_ner_result = self.external_graph.ner(passage)
         else:
@@ -140,7 +142,9 @@ class SchemaFreeExtractor(ExtractorABC):
             Standardized entity information.
         """
         return self.llm.invoke(
-            {"input": passage, "named_entities": entities}, self.std_prompt
+            {"input": passage, "named_entities": entities},
+            self.std_prompt,
+            with_except=False,
         )
 
     @retry(stop=stop_after_attempt(3))
@@ -154,7 +158,9 @@ class SchemaFreeExtractor(ExtractorABC):
             The result of the triples extraction operation.
         """
         return self.llm.invoke(
-            {"input": passage, "entity_list": entities}, self.triple_prompt
+            {"input": passage, "entity_list": entities},
+            self.triple_prompt,
+            with_except=False,
         )
 
     def assemble_sub_graph_with_spg_records(self, entities: List[Dict]):

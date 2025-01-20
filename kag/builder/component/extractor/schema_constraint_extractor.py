@@ -90,7 +90,9 @@ class SchemaConstraintExtractor(ExtractorABC):
         Returns:
             The result of the named entity recognition operation.
         """
-        ner_result = self.llm.invoke({"input": passage}, self.ner_prompt)
+        ner_result = self.llm.invoke(
+            {"input": passage}, self.ner_prompt, with_except=False
+        )
         if self.external_graph:
             extra_ner_result = self.external_graph.ner(passage)
         else:
@@ -133,7 +135,9 @@ class SchemaConstraintExtractor(ExtractorABC):
             The result of the named entity standardization operation.
         """
         return self.llm.invoke(
-            {"input": passage, "named_entities": entities}, self.std_prompt
+            {"input": passage, "named_entities": entities},
+            self.std_prompt,
+            with_except=False,
         )
 
     @retry(stop=stop_after_attempt(3))
@@ -153,7 +157,9 @@ class SchemaConstraintExtractor(ExtractorABC):
 
             return []
         return self.llm.invoke(
-            {"input": passage, "entity_list": entities}, self.relation_prompt
+            {"input": passage, "entity_list": entities},
+            self.relation_prompt,
+            with_except=False,
         )
 
     @retry(stop=stop_after_attempt(3))
@@ -170,7 +176,7 @@ class SchemaConstraintExtractor(ExtractorABC):
         if self.event_prompt is None:
             logger.debug("Event extraction prompt not configured, skip.")
             return []
-        return self.llm.invoke({"input": passage}, self.event_prompt)
+        return self.llm.invoke({"input": passage}, self.event_prompt, with_except=False)
 
     def parse_nodes_and_edges(self, entities: List[Dict], category: str = None):
         """
