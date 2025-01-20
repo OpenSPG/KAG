@@ -11,13 +11,13 @@ from kag.solver.execute.op_executor.op_output.output_executor import OutputExecu
 from kag.solver.execute.op_executor.op_retrieval.retrieval_executor import (
     RetrievalExecutor,
 )
-from kag.solver.execute.op_executor.op_sort.sort_executor import SortExecutor
 from kag.solver.execute.sub_query_generator import LFSubGenerator
 from kag.interface.solver.base_model import LFExecuteResult, LFPlan, SubQueryResult
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.utils import generate_random_string
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
@@ -70,7 +70,6 @@ class DefaultLFExecutor(LFExecutorABC):
         # Initialize executors for different operations.
         self.retrieval_executor = RetrievalExecutor(schema=self.schema, **self.params)
         self.deduce_executor = DeduceExecutor(schema=self.schema, **self.params)
-        self.sort_executor = SortExecutor(schema=self.schema, **self.params)
         self.math_executor = MathExecutor(schema=self.schema, **self.params)
         self.output_executor = OutputExecutor(schema=self.schema, **self.params)
 
@@ -91,6 +90,7 @@ class DefaultLFExecutor(LFExecutorABC):
         process_info[lf.query] = {
             "spo_retrieved": [],
             "doc_retrieved": [],
+            "if_answered": False,
             "match_type": "chunk",
             "kg_answer": "",
         }
@@ -108,29 +108,12 @@ class DefaultLFExecutor(LFExecutorABC):
                 self.math_executor.executor(
                     query, n, req_id, kg_graph, process_info, self.params
                 )
-            elif self.sort_executor.is_this_op(n):
-                self.sort_executor.executor(
-                    query, n, req_id, kg_graph, process_info, self.params
-                )
             elif self.output_executor.is_this_op(n):
                 self.output_executor.executor(
                     query, n, req_id, kg_graph, process_info, self.params
                 )
             else:
                 logger.warning(f"unknown operator: {n.operator}")
-
-        res.spo_retrieved = process_info[lf.query].get("spo_retrieved", [])
-        res.sub_answer = process_info[lf.query]["kg_answer"]
-        res.doc_retrieved = []
-        res.match_type = process_info[lf.query]["match_type"]
-        # generate sub answer
-        if not self._judge_sub_answered(res.sub_answer) and (
-            len(res.spo_retrieved) and not self.force_chunk_retriever
-        ):
-            # try to use spo to generate answer
-            res.sub_answer = self.generator.generate_sub_answer(
-                lf.query, res.spo_retrieved, [], history
-            )
         return res
 
     def _execute_chunk_answer(
@@ -150,9 +133,9 @@ class DefaultLFExecutor(LFExecutorABC):
             # chunk retriever
             all_related_entities = kg_graph.get_all_spo()
             all_related_entities = list(set(all_related_entities))
-            # sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
+            sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
             doc_retrieved = self.chunk_retriever.recall_docs(
-                queries=[query, lf.query],
+                queries=[query, sub_query],
                 retrieved_spo=all_related_entities,
                 kwargs=self.params,
             )
@@ -161,7 +144,9 @@ class DefaultLFExecutor(LFExecutorABC):
             process_info[lf.query]["match_type"] = "chunk"
             # generate sub answer by chunk ans spo
             docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
-            res.sub_answer = "I don't know"
+            res.sub_answer = self.generator.generate_sub_answer(
+                lf.query, res.spo_retrieved, docs, history
+            )
         return res
 
     def _execute_lf(
@@ -176,6 +161,7 @@ class DefaultLFExecutor(LFExecutorABC):
         **kwargs,
     ) -> SubQueryResult:
         # change node state from WAITING to RUNNING
+        is_break = False
         self._update_sub_question_status(
             report_tool=kwargs.get("report_tool", None),
             req_id=req_id,
@@ -197,11 +183,36 @@ class DefaultLFExecutor(LFExecutorABC):
             plan=lf,
             kg_graph=kg_graph,
         )
-        if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
-            # if not found answer in kg, we retrieved chunk to answer.
-            res = self._execute_chunk_answer(
-                req_id, query, lf, process_info, kg_graph, history, res
-            )
+
+
+        if lf.sub_query_type == "retrieval":
+            res.spo_retrieved = process_info[lf.query].get("spo_retrieved", [])
+            res.sub_answer = process_info[lf.query]["kg_answer"]
+            res.doc_retrieved = []
+            res.match_type = process_info[lf.query]["match_type"]
+            # generate sub answer
+            if not self._judge_sub_answered(res.sub_answer) and (
+                    len(res.spo_retrieved) and not self.force_chunk_retriever
+            ):
+                # try to use spo to generate answer
+                res.sub_answer = self.generator.generate_sub_answer(
+                    lf.query, res.spo_retrieved, [], history
+                )
+            if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
+                # if not found answer in kg, we retrieved chunk to answer.
+                res = self._execute_chunk_answer(
+                    req_id, query, lf, process_info, kg_graph, history, res
+                )
+            res.if_answered = self._judge_sub_answered(res.sub_answer)
+            if res.if_answered and isinstance(lf.lf_nodes[-1], GetSPONode):
+                kg_graph.add_mock_entity(lf.lf_nodes[-1].o.alias_name.alias_name, res.sub_answer)
+        elif lf.sub_query_type == "deduce" or lf.sub_query_type == "math":
+            res.sub_answer = process_info[lf.query]["kg_answer"]
+            res.if_answered = process_info[lf.query]["if_answered"]
+            if not process_info[lf.query]["if_answered"]:
+                is_break = True
+            res.match_type = lf.sub_query_type
+
         # change node state from RUNNING to FINISH
         self._update_sub_question_status(
             report_tool=kwargs.get("report_tool", None),
@@ -211,7 +222,7 @@ class DefaultLFExecutor(LFExecutorABC):
             plan=lf,
             kg_graph=kg_graph,
         )
-        return res
+        return res, is_break
 
     def _generate_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):
         # Generate a sub-query with history qa pair
@@ -230,11 +241,13 @@ class DefaultLFExecutor(LFExecutorABC):
         self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
 
         process_info = {"kg_solved_answer": []}
+        process_info['sub_qa_pair'] = []
+        # TODO add extra info，such as logs
         kg_graph = KgGraph()
         history = []
         # Process each sub-query.
         for idx, lf in enumerate(lf_nodes):
-            sub_result = self._execute_lf(
+            sub_result, is_break = self._execute_lf(
                 req_id=generate_random_string(10),
                 index=idx + 1,
                 query=query,
@@ -245,7 +258,13 @@ class DefaultLFExecutor(LFExecutorABC):
                 **kwargs,
             )
             lf.res = sub_result
+            process_info['sub_qa_pair'].append([
+                lf.query,
+                sub_result.sub_answer
+            ])
             history.append(lf)
+            if is_break:
+                break
         # merge all results
         res = self.merger.merge(query, history)
         res.retrieved_kg_graph = kg_graph

@@ -46,3 +46,33 @@ def node_2_doc(node: dict):
             prop = f"{key}:{value}"
         prop_set.append(prop)
     return "\n".join(prop_set)
+
+def extract_content_target(input_string):
+    """
+    Extract the content and target parts from the input string.
+
+    Args:
+        input_string (str): A string containing content and target.
+
+    Returns:
+        dict: A dictionary containing 'content' and 'target'. If not found, the corresponding value is None.
+    """
+    # Define regex patterns
+    # Content may contain newlines and special characters, so use non-greedy mode
+    content_pattern = r'content=\[(.*?)\]'
+    target_pattern = r'target=([^,\]]+)'  # Assume target does not contain commas or closing brackets
+
+    # Search for content
+    content_match = re.search(content_pattern, input_string, re.DOTALL)
+    if content_match:
+        content = content_match.group(1).strip()
+    else:
+        content = None
+
+    # Search for target
+    target_match = re.search(target_pattern, input_string)
+    if target_match:
+        target = target_match.group(1).strip().rstrip("'")  # Remove trailing single quote if present
+    else:
+        target = None
+    return content, target
