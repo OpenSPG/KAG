@@ -97,7 +97,15 @@ def _closest_cfg(
     return _closest_cfg(path.parent, path)
 
 
-def load_config(prod: bool = False):
+def validate_config_file(config_file: str):
+    if not config_file:
+        return False
+    if not os.path.exists(config_file):
+        return False
+    return True
+
+
+def load_config(prod: bool = False, config_file: str = None):
     """
     Get kag config file as a ConfigParser.
     """
@@ -121,7 +129,8 @@ def load_config(prod: bool = False):
             config["vectorize_model"] = config["vectorizer"]
         return config
     else:
-        config_file = _closest_cfg()
+        if not validate_config_file(config_file):
+            config_file = _closest_cfg()
         if os.path.exists(config_file) and os.path.isfile(config_file):
             print(f"found config file: {config_file}")
             with open(config_file, "r") as reader:
@@ -148,13 +157,11 @@ class KAGConfigMgr:
         logging.getLogger("neo4j.io").setLevel(logging.INFO)
         logging.getLogger("neo4j.pool").setLevel(logging.INFO)
 
-    def initialize(self, prod: bool = True):
-        config = load_config(prod)
+    def initialize(self, prod: bool = True, config_file: str = None):
+        config = load_config(prod, config_file)
         if self._is_initialized:
-            print(
-                "Reinitialize the KAG configuration, an operation that should exclusively be triggered within the Java invocation context."
-            )
-            print(f"original config: {self.config}")
+            print("WARN: Reinitialize the KAG configuration.")
+            print(f"original config: {self.config}\n\n")
             print(f"new config: {config}")
         self.prod = prod
         self.config = config
@@ -173,15 +180,15 @@ KAG_CONFIG = KAGConfigMgr()
 KAG_PROJECT_CONF = KAG_CONFIG.global_config
 
 
-def init_env():
+def init_env(config_file: str = None):
     project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
     host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-    if project_id and host_addr:
+    if project_id and host_addr and not validate_config_file(config_file):
         prod = True
     else:
         prod = False
     global KAG_CONFIG
-    KAG_CONFIG.initialize(prod)
+    KAG_CONFIG.initialize(prod, config_file)
 
     if prod:
         msg = "Done init config from server"
