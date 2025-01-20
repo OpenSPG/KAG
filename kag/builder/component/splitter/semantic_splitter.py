@@ -87,11 +87,11 @@ class SemanticSplitter(SplitterABC):
         locs = [x[0] for x in seg_info]
         abstracts = [x[1] for x in seg_info]
         locs.append(len(content))
-        splitted = []
+        split = []
         for idx in range(len(abstracts)):
             start = locs[idx]
             end = locs[idx + 1]
-            splitted.append(
+            split.append(
                 {
                     "name": abstracts[idx],
                     "content": content[start:end],
@@ -99,7 +99,7 @@ class SemanticSplitter(SplitterABC):
                 }
             )
 
-        return splitted
+        return split
 
     def semantic_chunk(
         self,
@@ -117,12 +117,12 @@ class SemanticSplitter(SplitterABC):
             List[Chunk]: A list of Chunk objects representing the split content.
         """
         result = self.llm.invoke({"input": org_chunk.content}, self.semantic_seg_op)
-        splitted = self.parse_llm_output(org_chunk.content, result)
-        if len(splitted) == 0:
+        split = self.parse_llm_output(org_chunk.content, result)
+        if len(split) == 0:
             return [org_chunk]
-        logger.debug(f"splitted = {splitted}")
+        logger.debug(f"split = {split}")
         chunks = []
-        for idx, item in enumerate(splitted):
+        for idx, item in enumerate(split):
             split_name = item["name"]
             if len(item["content"]) < chunk_size:
                 chunk = Chunk(

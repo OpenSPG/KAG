@@ -159,7 +159,7 @@ class DefaultLFExecutor(LFExecutorABC):
             res.doc_retrieved = doc_retrieved
             process_info[lf.query]["doc_retrieved"] = doc_retrieved
             process_info[lf.query]["match_type"] = "chunk"
-            # generate sub answer by chunk ans spo
+            # generate sub answer by chunk and spo
             docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
             res.sub_answer = self.generator.generate_sub_answer(
                 lf.query, res.spo_retrieved, docs, history

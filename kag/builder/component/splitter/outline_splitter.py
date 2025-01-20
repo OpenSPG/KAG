@@ -756,13 +756,13 @@ class OutlineSplitter(SplitterABC):
             if table_chunks is not None:
                 return table_chunks
         content = self.split_sentence(org_chunk.content)
-        splitted = []
+        split = []
         cur = []
         cur_len = 0
         for sentence in content:
             if cur_len + len(sentence) > chunk_size:
                 if cur:
-                    splitted.append(cur)
+                    split.append(cur)
                 tmp = []
                 cur_len = 0
                 for item in cur[::-1]:
@@ -775,10 +775,10 @@ class OutlineSplitter(SplitterABC):
             cur.append(sentence)
             cur_len += len(sentence)
         if len(cur) > 0:
-            splitted.append(cur)
+            split.append(cur)
 
         output = []
-        for idx, sentences in enumerate(splitted):
+        for idx, sentences in enumerate(split):
             chunk = Chunk(
                 id=generate_hash_id(f"{org_chunk.id}#{idx}"),
                 name=f"{org_chunk.name}#{idx}",

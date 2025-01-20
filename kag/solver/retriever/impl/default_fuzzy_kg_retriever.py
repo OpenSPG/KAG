@@ -39,7 +39,7 @@ class FuzzyMatchRetrieval:
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_un_std()
         if un_std_p is None:
-            logger.warning(f"get_unstd_p_text get p emtpy {n}")
+            logger.warning(f"get_unstd_p_text get p empty {n}")
             un_std_p = ""
         start_value_type = n.s.get_entity_first_type_or_un_std()
         if start_value_type is None or start_value_type == "Others":

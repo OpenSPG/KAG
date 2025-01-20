@@ -126,9 +126,9 @@ def sync_hosts():
     print("Done init process group, get all hosts...")
     host_tensors = [torch.tensor([0, 0, 0, 0, 0]) for x in range(world_size)]
     dist.all_gather(host_tensors, host2tensor(master_port))
-    # we need to destory torch process group to release MASTER_PORT, otherwise the server
+    # we need to destroy torch process group to release MASTER_PORT, otherwise the server
     # can't serving on it .
-    print("Done get all hosts, destory process group...")
+    print("Done get all hosts, destroy process group...")
     dist.destroy_process_group()
     time.sleep(10)
     return [tensor2host(x) for x in host_tensors]

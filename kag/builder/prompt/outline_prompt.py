@@ -56,7 +56,7 @@ class OutlinePrompt(PromptABC):
         {
             "input": "Article 8 Principles
 
-1. In formulating or amending their laws and regulations, Members may take necessary measures to protect public health and nutrition, and to promote the public interest in sectors of vital importance to their socio-economic and technological development, provided that such measures are consistent with the provisions of this Agreement.
+1. In formulating or amending their laws and regulations, Members may take necessary measures to protect public health and nutrition, and to promote the public interest in sectors of vital importance to their socioeconomic and technological development, provided that such measures are consistent with the provisions of this Agreement.
 
 2. Appropriate measures may be needed to prevent the abuse of intellectual property rights by owners, or to prevent practices that restrict trade unjustifiably or adversely affect the international transfer of technology, in conformity with the provisions of this Agreement.
 

@@ -802,7 +802,7 @@ class Registrable:
                     functools.partial(constructor_to_call, **kwargs),
                 )
                 setattr(instant, "__original_parameters__", original_params)
-                # if constructor takes kwargs, they can't be infered from constructor. Therefore we should record
+                # if constructor takes kwargs, they can't be inferred from constructor. Therefore we should record
                 # which attrs are created by kwargs to correctly restore the configs by `to_config`.
                 if accepts_kwargs:
                     remaining_kwargs = set(params)
