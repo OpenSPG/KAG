@@ -607,6 +607,21 @@ class KgGraph:
         self.entity_map = {}
         self.edge_map = {}
 
+    def add_mock_entity(self, alias, value):
+        if alias not in self.nodes_alias:
+            self.nodes_alias.append(alias)
+        mock_entity = EntityData()
+        mock_entity.type = "Text"
+        mock_entity.type_zh = "文本"
+        mock_entity.biz_id = value
+        mock_entity.name = value
+
+        if alias in self.entity_map.keys():
+            data_values = self.entity_map[alias]
+        else:
+            data_values = []
+        data_values.append(mock_entity)
+        self.entity_map[alias] = data_values
     def merge_kg_graph(self, other, wo_intersect=True):
         self.nodes_alias = list(set(self.nodes_alias + other.nodes_alias))
         self.edge_alias = list(set(self.edge_alias + other.edge_alias))

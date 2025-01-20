@@ -10,7 +10,9 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import copy
+import os
 
+from kag.common.registry import import_modules_from_path
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
@@ -23,6 +25,7 @@ class SolverMain:
         project_id: int,
         task_id: int,
         query: str,
+        session_id: str = "0",
         is_report=True,
         host_addr="http://127.0.0.1:8887",
     ):
@@ -88,10 +91,10 @@ class SolverMain:
             "reflector": {"type": "default_reflector", "llm_client": llm_client},
         }
         conf = copy.deepcopy(
-            KAG_CONFIG.all_config.get("lf_solver_pipeline", default_pipeline_config)
+            KAG_CONFIG.all_config.get("kag_solver_pipeline", default_pipeline_config)
         )
         resp = SolverPipeline.from_config(conf)
-        answer, trace_log = resp.run(query, report_tool=report_tool)
+        answer, trace_log = resp.run(query, report_tool=report_tool, session_id=session_id)
         print(trace_log)
         report_tool.report_final_answer(
             query, answer, ReporterIntermediateProcessTool.STATE.FINISH
@@ -100,6 +103,9 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    res = SolverMain().invoke(300027, 2800106, "who is Jay Zhou", True)
+    from kag.bridge.spg_server_bridge import init_kag_config
+
+    init_kag_config("2", "http://127.0.0.1:8887")
+    res = SolverMain().invoke(2, 19, "我上班的时候受伤了，能认定工伤吗？", "6", True)
     print("*" * 80)
     print("The Answer is: ", res)

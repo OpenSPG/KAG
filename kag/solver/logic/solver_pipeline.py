@@ -73,6 +73,7 @@ class SolverPipeline(Registrable):
                 reason_res.kg_exact_solved_answer,
                 reason_res.get_support_facts(),
                 instruction,
+                reason_res
             )
             history_log = reason_res.get_trace_log()
             history_log["present_instruction"] = present_instruction
