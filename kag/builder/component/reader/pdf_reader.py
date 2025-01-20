@@ -253,9 +253,21 @@ class PDFReader(ReaderABC):
                 properties=properties.copy()
             ))
 
+        # Create root node using filename
+        basename = os.path.splitext(os.path.basename(self.fd.name))[0]
+        root_node_id = f"node_root_{basename}"
+        root_node = Node(
+            _id=root_node_id,
+            name=basename,
+            label="Title",
+            properties={"level": "0"}
+        )
+        nodes.append(root_node)
+        node_map[root_node_id] = root_node
+
         for title, level, start, end, content in final_content:
             chunk = create_chunk(
-                title, content, os.path.splitext(os.path.basename(self.fd.name))[0]
+                title, content, basename
             )
             chunks.append(chunk)
 
@@ -288,9 +300,14 @@ class PDFReader(ReaderABC):
             # Create bidirectional edges between title and chunk
             add_bidirectional_edge(title_node, chunk_node, "hasContent")
 
+            # Connect to parent based on level
             if level == 0:
                 level_map[0] = chunk
+                # Connect level 0 titles to root
+                add_bidirectional_edge(root_node, title_node, "hasChild", {"level": "1"})
             else:
+                # Try to find parent in previous levels
+                parent_found = False
                 parent_level = level - 1
                 while parent_level >= 0:
                     if parent_level in level_map:
@@ -304,8 +321,14 @@ class PDFReader(ReaderABC):
                             "hasChild",
                             {"level": str(level)}
                         )
+                        parent_found = True
                         break
                     parent_level -= 1
+                
+                # If no parent found, connect to root
+                if not parent_found:
+                    add_bidirectional_edge(root_node, title_node, "hasChild", {"level": str(level)})
+                
                 level_map[level] = chunk
 
         subgraph = SubGraph(nodes=nodes, edges=edges)
@@ -446,7 +469,7 @@ class PDFReader(ReaderABC):
                         )
                         chunks.append(chunk)
 
-            elif True:
+            else:
                 split_words = []
 
                 page_contents = []
@@ -474,49 +497,6 @@ class PDFReader(ReaderABC):
                     page_contents, self.level_outlines
                 )
                 chunks, subgraph = self.convert_finel_content_to_chunks(final_content)
-
-            else:
-                for item in outlines:
-                    level, title, dest, a, se = item
-                    split_words.append(title.strip().replace(" ", ""))
-                # save the outline position in content
-                try:
-                    text = extract_text(input)
-
-                except Exception as e:
-                    raise RuntimeError(f"Error loading PDF file: {e}")
-
-                cleaned_pages = [
-                    self._process_single_page(x, "", False, False) for x in text
-                ]
-                sentences = []
-                for cleaned_page in cleaned_pages:
-                    sentences += cleaned_page
-
-                content = "".join(sentences)
-                positions = [(input, 0)]
-                for split_word in split_words:
-                    pattern = re.compile(split_word)
-                    start = 0
-                    for i, match in enumerate(re.finditer(pattern, content)):
-                        if i <= 1:
-                            start, end = match.span()
-                    if start > 0:
-                        positions.append((split_word, start))
-
-                for idx, position in enumerate(positions):
-                    chunk = Chunk(
-                        id=generate_hash_id(f"{basename}#{position[0]}"),
-                        name=f"{basename}#{position[0]}",
-                        content=content[
-                            position[1] : (
-                                positions[idx + 1][1]
-                                if idx + 1 < len(positions)
-                                else None
-                            )
-                        ],
-                    )
-                    chunks.append(chunk)
 
             return chunks, subgraph if 'subgraph' in locals() else SubGraph(nodes=[], edges=[])
 
