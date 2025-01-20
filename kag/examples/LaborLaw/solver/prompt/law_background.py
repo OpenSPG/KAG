@@ -17,15 +17,15 @@ from kag.interface import PromptABC
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("labor_law_target_judge")
+@PromptABC.register("labor_law_background_extra")
 class TargetJudge(PromptABC):
     template_zh = (
-        "你是一个法律专家，根据用户的对话记录，确认用户的意图"
-        "只输出意图，不要做解释或者回答"
+        "你是一个法律专家，根据用户的对话记录，抽取出其中的法律事实"
+        "只输出事实，不要做解释或者回答，如果存在多个，则使用;分割"
         "示例:"
-        "User:我上下班图中受伤了，能认定工伤吗？"
-        "output: 用户期望确定是否可以认定工伤"
-        "对话记录:$history_qa"
+        "User:我上班途中受伤了，交警认定对方全责，能认定工伤吗？"
+        "output: 咨询者在上班途中遇到车祸; 对方全责"
+        "对话记录:\n$history_qa"
     )
     template_en = (
         "Judging based solely on the current known information and without allowing for inference, "
