@@ -530,9 +530,8 @@ class PDFReader(ReaderABC):
 if __name__ == "__main__":
     pdf_reader = PDFReader()
     pdf_path = os.path.join(
-        os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
+        os.path.dirname(__file__), "../../../../tests/unit/builder/data/aiwen.pdf"
     )
-    pdf_path = "/Users/zhangxinhong.zxh/Downloads/labor-law-v5.pdf"
     # pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
     chunk = pdf_reader.invoke(pdf_path)
     a = 1
