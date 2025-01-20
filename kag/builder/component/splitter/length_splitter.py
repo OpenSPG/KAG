@@ -166,14 +166,14 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[Output]: A list of Chunk objects resulting from the split operation.
         """
-        cutted = []
+        cut = []
         if isinstance(input, list):
             for item in input:
-                cutted.extend(
+                cut.extend(
                     self.slide_window_chunk(item, self.split_length, self.window_length)
                 )
         else:
-            cutted.extend(
+            cut.extend(
                 self.slide_window_chunk(input, self.split_length, self.window_length)
             )
-        return cutted
+        return cut

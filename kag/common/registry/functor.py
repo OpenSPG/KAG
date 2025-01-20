@@ -128,7 +128,7 @@ class Functor(Registrable):
         if choice not in choices:
             message = (
                 f"{choice} not in acceptable choices for type: {choices}. "
-                "You should make sure the class is correctly registerd. "
+                "You should make sure the class is correctly registered. "
             )
             raise ConfigurationError(message)
 

@@ -806,11 +806,11 @@ class OutlineSplitter(SplitterABC):
         """
 
         if not outlines or len(outlines) == 0:
-            cutted = []
+            cut = []
             if isinstance(org_chunk, list):
                 for item in org_chunk:
-                    cutted.extend(self.slide_window_chunk(item))
-            return cutted
+                    cut.extend(self.slide_window_chunk(item))
+            return cut
 
         position_check = []
         seen_titles = set()
@@ -914,11 +914,11 @@ class OutlineSplitter(SplitterABC):
         """
 
         if not outlines or len(outlines) == 0:
-            cutted = []
+            cut = []
             if isinstance(org_chunk, list):
                 for item in org_chunk:
-                    cutted.extend(self.slide_window_chunk(item))
-            return cutted
+                    cut.extend(self.slide_window_chunk(item))
+            return cut
 
         position_check = []
         seen_titles = set()
@@ -1071,14 +1071,14 @@ class OutlineSplitter(SplitterABC):
         plt.savefig("chunk_length_distribution.png")
 
     def splitter_chunk(self, input: Input, **kwargs) -> List[Chunk]:
-        cutted = []
+        cut = []
         chunk_size = kwargs.get("chunk_size")
         if isinstance(input, list):
             for item in input:
-                cutted.extend(self.slide_window_chunk(item, chunk_size=chunk_size))
+                cut.extend(self.slide_window_chunk(item, chunk_size=chunk_size))
         else:
-            cutted.extend(self.slide_window_chunk(input, chunk_size=chunk_size))
-        return cutted
+            cut.extend(self.slide_window_chunk(input, chunk_size=chunk_size))
+        return cut
 
     def invoke(self, input: Input, **kwargs) -> List[Chunk]:
         chunks = self.splitter_chunk(input, chunk_size=self.llm_max_tokens // 2)
