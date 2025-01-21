@@ -11,12 +11,10 @@
 # or implied.
 
 
-import json
 from openai import OpenAI, AzureOpenAI
 import logging
 
 from kag.interface import LLMClient
-from tenacity import retry, stop_after_attempt
 from typing import Callable
 
 logging.getLogger("openai").setLevel(logging.ERROR)
@@ -25,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 AzureADTokenProvider = Callable[[], str]
 
+
 @LLMClient.register("maas")
 @LLMClient.register("openai")
-
 class OpenAIClient(LLMClient):
     """
     A client class for interacting with the OpenAI API.
@@ -113,32 +111,9 @@ class OpenAIClient(LLMClient):
             rsp = response.choices[0].message.content
             return rsp
 
-    @retry(stop=stop_after_attempt(3))
-    def call_with_json_parse(self, prompt):
-        """
-        Calls the model and attempts to parse the response into JSON format.
 
-        Parameters:
-            prompt (str): The prompt provided to the model.
-
-        Returns:
-            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
-        """
-        # Call the model and attempt to parse the response into JSON format
-        rsp = self(prompt)
-        _end = rsp.rfind("```")
-        _start = rsp.find("```json")
-        if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json") : _end].strip()
-        else:
-            json_str = rsp
-        try:
-            json_result = json.loads(json_str)
-        except:
-            return rsp
-        return json_result
 @LLMClient.register("azure_openai")
-class AzureOpenAIClient (LLMClient):
+class AzureOpenAIClient(LLMClient):
     def __init__(
         self,
         api_key: str,
@@ -180,7 +155,15 @@ class AzureOpenAIClient (LLMClient):
         self.api_version = api_version
         self.azure_ad_token = azure_ad_token
         self.azure_ad_token_provider = azure_ad_token_provider
-        self.client = AzureOpenAI(api_key=self.api_key, base_url=self.base_url,azure_deployment=self.azure_deployment ,model=self.model,api_version=self.api_version, azure_ad_token=self.azure_ad_token, azure_ad_token_provider=self.azure_ad_token_provider)
+        self.client = AzureOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            azure_deployment=self.azure_deployment,
+            model=self.model,
+            api_version=self.api_version,
+            azure_ad_token=self.azure_ad_token,
+            azure_ad_token_provider=self.azure_ad_token_provider,
+        )
         self.check()
 
     def __call__(self, prompt: str, image_url: str = None):
@@ -229,27 +212,3 @@ class AzureOpenAIClient (LLMClient):
             )
             rsp = response.choices[0].message.content
             return rsp
-    @retry(stop=stop_after_attempt(3))
-    def call_with_json_parse(self, prompt):
-        """
-        Calls the model and attempts to parse the response into JSON format.
-
-        Parameters:
-            prompt (str): The prompt provided to the model.
-
-        Returns:
-            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
-        """
-        # Call the model and attempt to parse the response into JSON format
-        rsp = self(prompt)
-        _end = rsp.rfind("```")
-        _start = rsp.find("```json")
-        if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json") : _end].strip()
-        else:
-            json_str = rsp
-        try:
-            json_result = json.loads(json_str)
-        except:
-            return rsp
-        return json_result
