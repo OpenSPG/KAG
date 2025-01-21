@@ -10,7 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import json
+try:
+    from json_repair import loads
+except:
+    from json import loads
 from typing import Union, Dict, List, Any
 import logging
 import traceback
@@ -67,7 +70,7 @@ class LLMClient(Registrable):
         else:
             json_str = res
         try:
-            json_result = json.loads(json_str)
+            json_result = loads(json_str)
         except:
             return res
         return json_result
@@ -109,11 +112,12 @@ class LLMClient(Registrable):
         except Exception as e:
             import traceback
 
-            logger.error(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
-                    f"LLM invoke exception, info: {e}\nllm input: {input}\nllm output: {response}"
+                    f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
+
         return result
 
     def batch(

@@ -2,6 +2,8 @@ import re
 import logging
 from typing import List
 
+from tenacity import retry, stop_after_attempt
+
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import LLMClient, VectorizeModelABC
 from kag.interface import PromptABC
@@ -108,6 +110,7 @@ class DefaultLFPlanner(LFPlannerABC):
         )
         return self._split_sub_query(parsed_logic_nodes)
 
+    @retry(stop=stop_after_attempt(3))
     def generate_logic_form(self, question: str):
         return self.llm_module.invoke(
             {"question": question},
