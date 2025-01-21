@@ -10,13 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import json
-
 import logging
 from ollama import Client
 
 from kag.interface import LLMClient
-from tenacity import retry, stop_after_attempt
 
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -83,28 +80,3 @@ class OllamaClient(LLMClient):
         """
 
         return self.sync_request(prompt, image)
-
-    @retry(stop=stop_after_attempt(3))
-    def call_with_json_parse(self, prompt):
-        """
-        Calls the model and attempts to parse the response into JSON format.
-
-        Parameters:
-            prompt (str): The prompt provided to the model.
-
-        Returns:
-            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
-        """
-
-        rsp = self.sync_request(prompt)
-        _end = rsp.rfind("```")
-        _start = rsp.find("```json")
-        if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json") : _end].strip()
-        else:
-            json_str = rsp
-        try:
-            json_result = json.loads(json_str)
-        except:
-            return rsp
-        return json_result

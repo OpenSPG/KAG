@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import copy
+import logging
 import os
 
 from kag.common.registry import import_modules_from_path
@@ -18,6 +19,7 @@ from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 
+logger = logging.getLogger()
 
 class SolverMain:
     def invoke(
@@ -91,13 +93,22 @@ class SolverMain:
             "reflector": {"type": "default_reflector", "llm_client": llm_client},
         }
         conf = copy.deepcopy(
-            KAG_CONFIG.all_config.get("kag_solver_pipeline", default_pipeline_config)
+            KAG_CONFIG.all_config.get("lf_solver_pipeline", default_pipeline_config)
         )
         resp = SolverPipeline.from_config(conf)
-        answer, trace_log = resp.run(query, report_tool=report_tool, session_id=session_id)
-        print(trace_log)
+        try:
+            answer, trace_log = resp.run(query, report_tool=report_tool)
+            state = ReporterIntermediateProcessTool.STATE.FINISH
+            logger.info(f"{query} answer={answer} tracelog={trace_log}")
+        except Exception as e:
+            if KAG_PROJECT_CONF.language == 'en':
+                answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
+            else:
+                answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+            state = ReporterIntermediateProcessTool.STATE.ERROR
+            logger.warning(f"An exception occurred while processing query: {query}. Error: {str(e)}", exc_info=True)
         report_tool.report_final_answer(
-            query, answer, ReporterIntermediateProcessTool.STATE.FINISH
+            query, answer, state
         )
         return answer
 
