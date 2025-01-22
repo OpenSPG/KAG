@@ -35,7 +35,7 @@ class KAGPostProcessor(PostProcessorABC):
 
     def __init__(
         self,
-        similarity_threshold: float = 0.9,
+        similarity_threshold: float = None,
         external_graph: ExternalGraphLoaderABC = None,
     ):
         """
@@ -180,8 +180,9 @@ class KAGPostProcessor(PostProcessorABC):
         origin_num_nodes = len(input.nodes)
         origin_num_edges = len(input.edges)
         new_graph = self.filter_invalid_data(input)
-        self.similarity_based_link(new_graph)
-        self.external_graph_based_link(new_graph)
+        if self.similarity_threshold is not None:
+            self.similarity_based_link(new_graph)
+            self.external_graph_based_link(new_graph)
         new_num_nodes = len(new_graph.nodes)
         new_num_edges = len(new_graph.edges)
         logger.debug(
