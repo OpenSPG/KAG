@@ -86,8 +86,6 @@ class OpenIENERPrompt(PromptABC):
     template_zh = """
     {
         "instruction": "你是命名实体识别的专家。请从输入中提取与模式定义匹配的实体。如果不存在该类型的实体，请返回一个空列表。请以JSON字符串格式回应。你可以参照example进行抽取。",
-        "schema": $schema,
-        "schema名中文映射": $schema_zh
         "example": [
             {
                 "input": "最高人民法院、最高人民检察院关于办理寻衅滋事刑事案件适用法律若干问题的解释  第一条
