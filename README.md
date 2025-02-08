@@ -24,6 +24,11 @@
         <img height="21" src="https://img.shields.io/badge/License-Apache--2.0-ffffff?labelColor=d4eaf7&color=2e6cc4" alt="license">
     </a>
 </p>
+<p align="center">
+   <a href="https://discord.gg/PURG77zhQ7">
+        <img src="https://img.shields.io/discord/1329648479709958236?style=for-the-badge&logo=discord&label=Discord" alt="Discord">
+   </a>
+</p>
 
 # 1. What is KAG?
 
@@ -163,13 +168,26 @@ kg-builder implements a knowledge representation that is friendly to large-scale
 
 kg-solver uses a logical symbol-guided hybrid solving and reasoning engine that includes three types of operators: planning, reasoning, and retrieval, to transform natural language problems into a problem-solving process that combines language and symbols. In this process, each step can use different operators, such as exact match retrieval, text retrieval, numerical calculation or semantic reasoning, so as to realize the integration of four different problem solving processes: Retrieval, Knowledge Graph reasoning, language reasoning and numerical calculation.
 
-# 6. Contact us
+# 6. Community & Support
 
 **GitHub**: <https://github.com/OpenSPG/KAG>
 
-**OpenSPG**: <https://spg.openkg.cn/>
+**Website**: <https://spg.openkg.cn/>
+
+## Discord <a href="https://discord.gg/PURG77zhQ7"> <img src="https://img.shields.io/discord/1329648479709958236?style=for-the-badge&logo=discord&label=Discord" alt="Discord"></a>
+
+Join our [Discord](https://discord.gg/PURG77zhQ7) community.
+
+## WeChat
+
+Follow OpenSPG Official Account to get technical articles and product updates about OpenSPG and KAG.
 
 <img src="./_static/images/openspg-qr.png" alt="Contact Us: OpenSPG QR-code" width="200">
+
+Scan the QR code below to join our WeChat group. 
+
+<img src="./_static/images/robot-qr.JPG" alt="Join WeChat group" width="200">
+
 
 # 7. Differences between KAG, RAG, and GraphRAG
 
