@@ -87,7 +87,7 @@ fuzzy_kg_retriever: &fuzzy_kg_retriever
   graph_api: *graph_api
 
 chunk_retriever: &chunk_retriever
-  type: default_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
+  type: default_chunk_retriever # kag.solver.retriever.impl.default_chunk_retrieval.DefaultChunkRetriever
   llm_client: *chat_llm
   recall_num: 10
   rerank_topk: 10
