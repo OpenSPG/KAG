@@ -1,0 +1,268 @@
+namespace AffairQA2
+
+Chunk(文本块): EntityType
+     desc: A chunk refers to a segment of text.
+     properties:
+        content(内容): Text
+          index: TextAndVector
+
+Person(人物): EntityType
+     properties:
+        story(传记): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        birthAndDeath(生卒年): Text
+        hometown(籍贯): Text
+        zi(字): Text
+        hao(号): Text
+        nation(民族): Text
+        sex(性别): Text
+        
+
+Park(公园): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        buildTime(建造时间): Text
+        province(所在省): Text
+        city(所在城市): Text
+        county(所在县区): Text
+        area(面积): Text
+
+        
+
+GasStation(加油站): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        address(地址): Text
+        county(所在县区): Text
+        buildTime(成立日期): Text
+        industry(所属行业): Text
+        latitude(纬度): Text
+        longitude(经度): Text
+        manager(负责人): Text
+        gasCanCount(压缩天然气罐个数): Text
+        gasCanVolume(压缩天然气罐总容积): Text
+        gasCanDesignStorage(压缩天然气罐设计储量): Text
+        businessLicenseNumber(工商营业执照编号): Text
+        totalDesignStorage(总设计储量): Text
+        isMajorDangerSource(是否构成重大危险源): Text
+        legalRepresentative(法定代表人): Text
+        liquidGasCanCount(液化天然气罐个数): Text
+        liquidGasCanVolume(液化天然气罐总容积): Text
+        liquidGasCanDesignStorage(液化天然气罐设计储量): Text
+        level(级别): Text
+        organizationCode(组织机构代码): Text
+        businessLicense(经营许可证): Text
+        unifiedSocialCreditCode(统一社会信用代码): Text
+        employeeCount(职工人数): Text
+        operationSubject(运营主体): Text
+
+MedicalInstitution(医疗机构): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        category(类别): Text
+        level(级别): Text
+        address(地址): Text
+        phoneNumber(电话号码): Text
+        servicePopulation(服务人群): Text
+
+Association(协会): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        mainDepartment(主管部门): Text
+        county(所在区县): Text
+        province(所在省): Text
+        religion(所属宗教): Text
+        registrationTime(登记时间): Text
+        registrationAuthority(登记机关): Text   
+        registrationCertificateNumber(登记证号): Text
+        category(类别): Text
+        unifiedSocialCreditCode(统一社会信用代码): Text
+        address(地址): Text
+        city(所在城市): Text
+        phoneNumber(电话号码): Text 
+        manager(负责人): Text
+        postalCode(邮政编码): Text
+        website(网址): Text
+
+Library(图书馆): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        bookLiteratureBorrowCount(书刊文献外借册次): Text
+        bookShelfSingleLayerTotalLength(书架单层总长度): Text
+        libraryLevel(图书馆级别): Text
+        libraryWebsiteAccess(图书馆网站访问量): Text
+        actualPropertyArea(实际拥有产权面积): Text
+        buildingArea(建筑面积): Text
+        totalCirculationPersonTimes(总流通人次): Text
+        totalCollection(总藏量): Text
+        county(所在区县): Text
+        isChildrenLibrary(是否少儿图书馆): Text
+        isNormalOpen(是否正常开放): Text
+        validBorrowCardCount(有效借书证数量): Text
+        newElectronicBookCount(本年新增电子图书): Text
+        newCollectionCount(本年新增藏量): Text
+        electronicBook(电子图书): Text  
+        organizationCode(组织机构代码): Text
+        computerCount(计算机台数): Text
+        readingRoomSeatCount(阅览室坐席数): Text
+        address(地址): Text
+        city(所在城市): Text
+        phoneNumber(电话号码): Text 
+        latitude(纬度): Text
+        longitude(经度): Text
+        postalCode(邮政编码): Text  
+    
+School(学校): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text 
+        professorCount(专职教师人数): Text
+        mainUnit(主办单位): Text
+        studentCount(在校生数量): Text
+        schoolSystem(学制): Text
+        county(所在区县): Text
+        province(所在省): Text
+        religion(所属宗教): Text
+        approvalLevel(批准办学层次): Text
+        approvalScale(批准办学规模): Text
+        approvalUnit(批准单位): Text
+        teacherCount(教师人数): Text
+        unifiedSocialCreditCode(统一社会信用代码): Text
+        employeeCount(职工人数): Text
+        principal(院长): Text
+        address(地址): Text
+        establishmentDate(成立日期): Text
+        city(所在城市): Text
+        phoneNumber(电话号码): Text
+
+ReligiousPlace(宗教场所): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        mainDepartment(主管部门): Text
+        county(所在区县): Text
+        province(所在省): Text
+        religion(所属宗教): Text
+        approvalUnit(批准单位): Text
+        approvalDate(批准日期): Text
+        registrationTime(登记时间): Text
+        registrationAuthority(登记机关): Text
+        category(类别): Text
+        unifiedSocialCreditCode(统一社会信用代码): Text
+        area(占地面积): Text
+        address(地址): Text
+        buildingArea(建筑面积): Text
+        city(所在城市): Text
+        phoneNumber(电话号码): Text
+        manager(负责人): Text
+        postalCode(邮政编码): Text
+        religiousType(宗教派别): Text
+        
+GovernmentAgency(政府机构): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+            
+TouristAttraction(旅游景点): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        province(所在省): Text
+        level(级别): Text
+        address(地址): Text
+        city(所在城市): Text
+        phoneNumber(电话号码): Text 
+    
+TravelAgency(旅行社): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        businessScope(业务范围): Text
+        investor(出资人): Text
+        county(所在区县): Text
+        province(所在省): Text
+        legalRepresentative(法定代表人): Text
+        businessStatus(经营状态): Text
+        unifiedSocialCreditCode(统一社会信用代码): Text 
+        licenseNumber(许可证号): Text
+        faxNumber(传真号): Text
+        address(地址): Text
+        city(所在城市): Text
+        phoneNumber(电话号码): Text
+        englishName(英文名): Text
+
+NatureReserve(自然保护区): EntityType   
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        approvalAgency(保护区始建批准机构): Text
+        approvalCurrentAgency(保护区现级别批准机构): Text
+        approvalTime(始建时间): Text
+        approvalNumber(始建级别批准文号): Text
+        experimentalArea(实验区): Text
+        totalArea(总面积): Text
+        province(所在省): Text
+        coreArea(核心区): Text
+        seaArea(海域面积): Text
+        approvalCurrentNumber(现级别批准文号): Text
+        approvalCurrentTime(现级别批准时间): Text
+        managementAgency(管理机构): Text
+        level(级别): Text
+        bufferArea(缓冲区): Text
+        landArea(陆地面积): Text
+        department(隶属部门): Text
+        address(地址): Text
+        county(所在区县): Text
+        city(所在城市): Text
+
+License(许可证): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+        invalidDate(失效日期): Text
+        effectiveDate(生效日期): Text
+        issuingAuthority(发证机关): Text
+
+Others(其他): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): Text
+            index: Text
+
+
+SemanticConcept(语义概念): EntityType
+     properties:
+        desc(内容): Text
+          index: Text
