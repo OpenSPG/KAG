@@ -122,6 +122,10 @@ class PDFReader(ReaderABC):
                 text = re.sub(r"］", "]", text)
                 text = re.sub(r"（", "(", text)
                 text = re.sub(r"）", ")", text)
+                # 移除特殊字符和控制字符
+                text = re.sub(
+                    r"[\u200b\u200c\u200d\ufeff\u3000\x00-\x1f\x7f-\x9f]+", "", text
+                )
                 return text
 
             outline = (normalize_text(outline[0]), outline[1], outline[2], outline[3])
@@ -478,7 +482,7 @@ if __name__ == "__main__":
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
     )
-    pdf_path = "/Users/zhangxinhong.zxh/Downloads/labor-law-v5.pdf"
+    pdf_path = "/Users/zhangxinhong.zxh/Downloads/05. 医学生物学.pdf"
     # pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
     chunk = pdf_reader.invoke(pdf_path)
     a = 1
