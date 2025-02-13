@@ -1,19 +1,19 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
   api_key:
-  base_url: https://antchat.alipay.com/v1/
-  model: Bailing-4.0-80B-16K-Chat
+  base_url:
+  model:
   type: maas
 
 chat_llm: &chat_llm
   api_key:
-  base_url: https://antchat.alipay.com/v1/
-  model: Bailing-4.0-80B-16K-Chat
+  base_url:
+  model: 
   type: maas
 
 vectorize_model: &vectorize_model
   api_key:
-  base_url: https://antchat.alipay.com/v1/
+  base_url:
   model: bge_m3
   type: openai
   vector_dimensions: 1024
