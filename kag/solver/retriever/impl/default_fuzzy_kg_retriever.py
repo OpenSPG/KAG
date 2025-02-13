@@ -143,7 +143,7 @@ class FuzzyMatchRetrieval:
                     revert_graph_map[attr_txt] = one_hop_graph
         start_time = time.time()
         tok5_res = self.text_similarity.text_sim_result(
-            n.sub_query, all_spo_text, 5, low_score=0.3
+            n.sub_query, all_spo_text, 15, low_score=0.3
         )
         logger.debug(
             f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}"
