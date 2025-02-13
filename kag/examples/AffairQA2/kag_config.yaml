@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: 
+  api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
   type: maas
 
 chat_llm: &chat_llm
-  api_key: 
+  api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: 
+  api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
