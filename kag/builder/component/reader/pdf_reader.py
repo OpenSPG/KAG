@@ -113,16 +113,16 @@ class PDFReader(ReaderABC):
                 page_contents[page_start : page_end + 1 if page_end != -1 else None]
             )
 
-            # 标准化标题中的特殊字符
+            # Normalize special characters in the title
             def normalize_text(text):
-                # 将破折号"—"转换为中文数字"一"
+                # Convert dash "—" to Chinese number "一"
                 text = text.replace("—", "一")
-                # 可以添加其他中英文标点的统一转换
+                # Can add other unified conversions for Chinese and English punctuation
                 text = re.sub(r"［", "[", text)
                 text = re.sub(r"］", "]", text)
                 text = re.sub(r"（", "(", text)
                 text = re.sub(r"）", ")", text)
-                # 移除特殊字符和控制字符
+                # Remove special characters and control characters
                 text = re.sub(
                     r"[\u200b\u200c\u200d\ufeff\u3000\x00-\x1f\x7f-\x9f]+", "", text
                 )
@@ -401,7 +401,7 @@ class PDFReader(ReaderABC):
                         content = content.replace("\n", "")
                         page_contents.append(content)
 
-                # 使用正则表达式移除所有空白字符（包括空格、制表符、换行符等）
+                # Using regular expressions to remove all whitespace (including spaces, tabs, newlines, etc.)
                 page_contents = [
                     re.sub(r"\s+", "", content) for content in page_contents
                 ]
@@ -459,7 +459,7 @@ class PDFReader(ReaderABC):
                     )
                     chunks.append(chunk)
 
-            # # 保存中间结果到文件
+            # # Save intermediate results to file
             # import pickle
 
             # with open("debug_data.pkl", "wb") as f:
