@@ -398,18 +398,19 @@ class PDFReader(ReaderABC):
                         for element in page_layout:
                             if hasattr(element, "get_text"):
                                 content = content + element.get_text()
-                        content = content.replace("\n", "")
+                        # content = content.replace("\n", "")
                         page_contents.append(content)
 
-                # Using regular expressions to remove all whitespace (including spaces, tabs, newlines, etc.)
+                # Preserve newlines while removing other whitespace
                 page_contents = [
-                    re.sub(r"\s+", "", content) for content in page_contents
+                    re.sub(r"[^\S\n]+", "", content) for content in page_contents
                 ]
                 page_contents = [
-                    re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", content)
+                    re.sub(r"[\u200b\u200c\u200d\ufeff]+", "", content)
                     for content in page_contents
                 ]
-                page_contents = ["".join(content.split()) for content in page_contents]
+                # Remove the line that joins all content since we want to preserve newlines
+                # page_contents = ["".join(content.split()) for content in page_contents]
 
                 final_content = self.extract_content_from_outline(
                     page_contents, self.level_outlines
@@ -482,7 +483,7 @@ if __name__ == "__main__":
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
     )
-    pdf_path = "/Users/zhangxinhong.zxh/Downloads/05. 医学生物学.pdf"
+    pdf_path = "/Users/zhangxinhong.zxh/Downloads/知识图谱：方法、实践与应用（王昊奋、漆桂林、陈华钧）.pdf"
     # pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
     chunk = pdf_reader.invoke(pdf_path)
     a = 1
