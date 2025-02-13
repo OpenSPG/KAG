@@ -8,7 +8,7 @@ openie_llm: &openie_llm
 chat_llm: &chat_llm
   api_key:
   base_url:
-  model: 
+  model:
   type: maas
 
 vectorize_model: &vectorize_model
