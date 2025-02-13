@@ -1,34 +1,19 @@
 import logging
+import kag_ant
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
 
 from kag.solver.logic.solver_pipeline import SolverPipeline
 import json
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
 
 class AffairQaDemo:
-
-    """
-    init for kag client
-    """
-
-    def qa(self, query):
-        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
-        answer, trace_log = resp.run(query)
-
-        return answer, trace_log
-
-    """
-        parallel qa from knowledge base
-        and getBenchmarks(em, f1, answer_similarity)
-    """
-
-
-class EvaQA:
     """
     init for kag client
     """
@@ -41,7 +26,7 @@ class EvaQA:
         return answer, trace_log
 
     def parallelQaAndEvaluate(
-        self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
+        self, qFilePath, aFilePath, resFilePath, threadNum=1, upperLimit=10
     ):
         def process_sample(data):
             try:
@@ -62,7 +47,13 @@ class EvaQA:
                 )
                 return None
 
-        qaList = json.load(open(qaFilePath, "r"))
+        qList = json.load(open(qFilePath, "r"))
+        aList = json.load(open(aFilePath, "r"))
+        qaList = []
+        for q, a in zip(qList, aList):
+            qaList.append(
+                {"id": q["id"], "question": q["question"], "answer": a["answer"]}
+            )
         total_metrics = {
             "em": 0.0,
             "f1": 0.0,
@@ -96,10 +87,10 @@ class EvaQA:
 
                     if sample_idx % 50 == 0:
                         with open(resFilePath, "w") as f:
-                            json.dump(qaList, f)
+                            json.dump(qaList, f, ensure_ascii=False)
 
         with open(resFilePath, "w") as f:
-            json.dump(qaList, f)
+            json.dump(qaList, f, ensure_ascii=False)
 
         res_metrics = {}
         for item_key, item_value in total_metrics.items():
@@ -114,8 +105,19 @@ if __name__ == "__main__":
     import_modules_from_path("./prompt")
 
     demo = AffairQaDemo()
-    query = "胡廷晖是哪里人？"
-    answer, trace_log = demo.qa(query)
-    print(f"Question: {query}")
-    print(f"Answer: {answer}")
-    print(f"TraceLog: {trace_log}")
+
+    # query = "胡廷晖是哪里人？"
+    # answer, trace_log = demo.qa(query)
+    # print(f"Question: {query}")
+    # print(f"Answer: {answer}")
+    # print(f"TraceLog: {trace_log}")
+
+    dir = os.path.dirname(os.path.abspath(__file__))
+    res_metrics = demo.parallelQaAndEvaluate(
+        qFilePath=os.path.join(dir, "data/test.json"),
+        aFilePath=os.path.join(dir, "data/AffairQA.json"),
+        resFilePath=os.path.join(dir, "data/res.json"),
+        threadNum=10,
+        upperLimit=-1,
+    )
+    print(res_metrics)
