@@ -1,41 +1,23 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: yerVkcSl95O19JG7n2dP6q2iNhSmdVmN
+  api_key:
   base_url: https://antchat.alipay.com/v1/
   model: Bailing-4.0-80B-16K-Chat
   type: maas
 
 chat_llm: &chat_llm
-  api_key: yerVkcSl95O19JG7n2dP6q2iNhSmdVmN
+  api_key:
   base_url: https://antchat.alipay.com/v1/
   model: Bailing-4.0-80B-16K-Chat
   type: maas
-#openie_llm: &openie_llm
-#  api_key: sk-onqkotkxcfzqmkdsjierxixyiocabfemlktehcclaizbmllw
-#  base_url: https://api.siliconflow.cn/v1/
-#  model: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
-#  type: maas
-#chat_llm: &chat_llm
-#  api_key: sk-onqkotkxcfzqmkdsjierxixyiocabfemlktehcclaizbmllw
-#  base_url: https://api.siliconflow.cn/v1/
-#  model: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
-#  type: maas
 
 vectorize_model: &vectorize_model
-  api_key: yerVkcSl95O19JG7n2dP6q2iNhSmdVmN
+  api_key:
   base_url: https://antchat.alipay.com/v1/
   model: bge_m3
   type: openai
   vector_dimensions: 1024
 vectorizer: *vectorize_model
-#vectorizer: &vectorize_model
-#  api_key: sk-onqkotkxcfzqmkdsjierxixyiocabfemlktehcclaizbmllw
-#  base_url: https://api.siliconflow.cn/v1/
-#  model: BAAI/bge-m3
-#  type: openai
-#  vector_dimensions: 1024
-#vectorize_model: *vectorize_model
-
 log:
   level: INFO
 
