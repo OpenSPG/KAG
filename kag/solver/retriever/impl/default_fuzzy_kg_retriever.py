@@ -122,7 +122,7 @@ class FuzzyMatchRetrieval:
             spo_retrieved.append([spo, spo_p_name])
         return spo_retrieved
 
-    def match_spo(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData]):
+    def match_spo(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData], topk):
         one_kg_graph = KgGraph()
         # sort graph
         unstd_p_text = self.get_unstd_p_text(n)
@@ -142,17 +142,17 @@ class FuzzyMatchRetrieval:
                     revert_value_p_map[attr_txt] = k
                     revert_graph_map[attr_txt] = one_hop_graph
         start_time = time.time()
-        tok5_res = self.text_similarity.text_sim_result(
-            n.sub_query, all_spo_text, 5, low_score=0.3
+        topk_res = self.text_similarity.text_sim_result(
+            n.sub_query, all_spo_text, topk, low_score=0.3
         )
         logger.debug(
             f" _get_spo_value_in_one_hop_graph_set text similarity cost={time.time() - start_time}"
         )
 
-        if len(tok5_res) == 0:
+        if len(topk_res) == 0:
             return one_kg_graph
         candi_name_set = {}
-        for res in tok5_res:
+        for res in topk_res:
             k = revert_value_p_map[res[0]]
             if k in candi_name_set.keys():
                 candi_name_set[k].append(res[0])
@@ -291,7 +291,7 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
             Returns KgGraph
         """
         start_time = time.time()
-        total_one_kg_graph = self.match.match_spo(n, one_hop_graph_list)
+        total_one_kg_graph = self.match.match_spo(n, one_hop_graph_list, self.el_num)
         logger.debug(f"_exact_match_spo cost={time.time() - start_time}")
         return total_one_kg_graph
 

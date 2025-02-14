@@ -50,15 +50,15 @@ class LogicFormPlanPrompt(PromptABC):
         },
         {
             "query": "《利箭纵横》的主要演员的哪位搭档与陈道明搭档过？",
-            "answer": "Step1:查询《利箭纵横》的主要演员\nAction1:get_spo(s=s1:[利箭纵横], p=主要演员, o=o1) \nStep2:查询《利箭纵横》的主要演员的搭档是谁？\nAction2: get_spo(s=o1, p=搭档, o=o2) \nStep3:陈道明搭档是谁？Action3:get_spo(s=s3:[陈道明],p=p2:搭档,o=o3) \nStep4:《利箭纵横》的主要演员的搭档结果o2与陈道明搭档的结果o3进行匹配，查看是否相同\nStep5:相同输出结果o2，不相同则输出没有找到"
+            "answer": "Step1:查询《利箭纵横》的主要演员\nAction1:get_spo(s=s1:[利箭纵横], p=主要演员, o=o1) \nStep2:查询《利箭纵横》的主要演员的搭档是谁？（如果有多个，分别进行查询）\nAction2: get_spo(s=o1, p=搭档, o=o2) \nStep3:陈道明搭档是谁？Action3:get_spo(s=s3:[陈道明],p=p2:搭档,o=o3) \nStep4:《利箭纵横》的主要演员的搭档结果o2与陈道明搭档的结果o3进行匹配，查看是否相同\nStep5:相同输出结果o2，不相同则输出没有找到"
         },
         {
             "query": "如梦令这首歌的歌曲，它的原唱的前男友有哪些代表作品？",
-            "answer": "Step1:查询如梦令的原唱\nAction1:get_spo(s=s1:[如梦令], p=歌曲原唱, o=o1)\nStep2:原唱的前男友是谁？Action2:get_spo(s=o1,p=p2:前男友,o=o2) \nStep3:o2有哪些代表作品？ \nAction3:get_spo(s=o2,p=p3:音乐作品,o=o3)\nStep6:输出结果\nAction6:get(o3)"
+            "answer": "Step1:查询如梦令的原唱\nAction1:get_spo(s=s1:[如梦令], p=歌曲原唱, o=o1)\nStep2:原唱的前男友是谁？(如果有多个原唱，分别进行查询)\nAction2:get_spo(s=o1,p=p2:前男友,o=o2) \nStep3:o2有哪些代表作品？(如果有多个o2，分别进行查询) \nAction3:get_spo(s=o2,p=p3:音乐作品,o=o3)\nStep6:输出结果\nAction6:get(o3)"
         },
         {
             "query": "《酬韦相公见寄》的作者的某一个好友的好友张蠙除外, 请问他的好友还有谁?",
-            "answer": "Step1:查询《酬韦相公见寄》的作者\nAction1:get_spo(s=s1:[酬韦相公见寄], p=作者, o=o1)\nStep2:查询作者的好友是谁？Action2:get_spo(s=o1,p=p2:好友,o=o2) \nStep3:查询谁的好友包括张蠙？ \nAction3:get_spo(s=o2,p=p3:好友,o=张蠙) \nStep4:查出o2的所有好友并去除张蠙 \nAction4:get_spo(s=o2,p=p2:好友,o=o3)\nStep6:输出o3\nAction6:get(o3)"
+            "answer": "Step1:查询《酬韦相公见寄》的作者\nAction1:get_spo(s=s1:[酬韦相公见寄], p=作者, o=o1)\nStep2:查询作者的所有好友 \nAction2:get_spo(s=o1,p=p2:好友,o=o2) \nStep3:查询上一步Step2结果的好友（如果有多个，分别进行查询） \nAction3:get_spo(s=o2,p=p3:好友,o=o3),get(o3) \nStep4:根据上一步Step3的查询结果,输出结果\nAction6:get(o3)"
         }
     ],"""
 
