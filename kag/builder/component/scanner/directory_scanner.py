@@ -47,7 +47,7 @@ class DirectoryScanner(ScannerABC):
             world_size (int, optional): The total number of workers. Defaults to 1.
         """
         super().__init__(rank=rank, world_size=world_size)
-        if file_pattern is None:
+        if not file_pattern:
             if file_suffix:
                 file_pattern = f".*{file_suffix}$"
             else:

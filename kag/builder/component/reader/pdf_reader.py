@@ -145,7 +145,7 @@ class PDFReader(ReaderABC):
             title_with_spaces = outline[0].strip()
             fuzzy_match_pos = fuzzy_search(title_with_spaces, find_content)
             if fuzzy_match_pos != -1:
-                return previous_pages_length + fuzzy_match_pos
+                return previous_pages_length + fuzzy_match_pos, page_start
 
             # 如果没找到，尝试使用去除所有空格的标题
             title_no_spaces = title_with_spaces.replace(" ", "")
@@ -160,7 +160,7 @@ class PDFReader(ReaderABC):
                     if find_content[original_pos] != " ":
                         no_spaces_pos += 1
                     original_pos += 1
-                return previous_pages_length + original_pos
+                return previous_pages_length + original_pos, page_start
 
             # 在扩展范围内进行模糊匹配
             extended_content = "".join(
@@ -174,7 +174,7 @@ class PDFReader(ReaderABC):
                 extended_previous_length = sum(
                     len(content) for content in page_contents[: max(0, page_start - 1)]
                 )
-                return extended_previous_length + fuzzy_match_pos
+                return extended_previous_length + fuzzy_match_pos, page_start
 
             # 最后尝试不带空格的扩展内容
             extended_content_no_spaces = extended_content.replace(" ", "")
@@ -190,43 +190,66 @@ class PDFReader(ReaderABC):
                 extended_previous_length = sum(
                     len(content) for content in page_contents[: max(0, page_start - 1)]
                 )
-                return extended_previous_length + original_pos
+                return extended_previous_length + original_pos, page_start
 
-            return -1
+            return -1, -1
 
         final_content = []
         for idx, outline in enumerate(level_outlines):
-            start = get_content_start(outline, page_contents)
-            next_start = (
+            start, start_page = get_content_start(outline, page_contents)
+            next_start, next_page = (
                 get_content_start(level_outlines[idx + 1], page_contents)
                 if idx + 1 < len(level_outlines)
-                else -1
+                else (-1, -1)
             )
             if start >= 0 and next_start >= 0:
                 content = total_content[start:next_start]
                 final_content.append(
-                    (outline[0], outline[1], start, next_start, content)
+                    (
+                        outline[0],
+                        outline[1],
+                        start,
+                        next_start,
+                        content,
+                        start_page,
+                        next_page,
+                    )
                 )
             elif start >= 0 and next_start < 0 and idx + 1 == len(level_outlines):
                 content = total_content[start:]
-                final_content.append((outline[0], outline[1], start, -1, content))
+                final_content.append(
+                    (
+                        outline[0],
+                        outline[1],
+                        start,
+                        -1,
+                        content,
+                        start_page,
+                        len(page_contents),
+                    )
+                )
         return final_content
 
     def convert_finel_content_to_chunks(self, final_content):
-        def create_chunk(title, content, basename):
+        def create_chunk(title, content, basename, start_page, end_page):
             return Chunk(
                 id=generate_hash_id(f"{basename}#{title}"),
                 name=f"{basename}#{title}",
                 content=content,
                 sub_chunks=[],
+                pages=(start_page + 1, end_page),
             )
 
         level_map = {}
         chunks = []
 
-        for title, level, start, end, content in final_content:
+        for title, level, start, end, content, start_page, end_page in final_content:
             chunk = create_chunk(
-                title, content, os.path.splitext(os.path.basename(self.fd.name))[0]
+                title,
+                content,
+                os.path.splitext(os.path.basename(self.fd.name))[0],
+                start_page,
+                end_page,
             )
             chunks.append(chunk)
 

@@ -517,7 +517,7 @@ class KAGRetriever(ChunkRetriever):
                 )
                 node_dict = dict(node.items())
                 matched_docs.append(
-                    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}#{node_dict['pages'] if 'pages' in node_dict else None}"
                 )
                 hits_docs.add(node_dict["name"])
             except Exception as e:
