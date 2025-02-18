@@ -237,7 +237,7 @@ class PDFReader(ReaderABC):
                 name=f"{basename}#{title}",
                 content=content,
                 sub_chunks=[],
-                pages=(start_page + 1, end_page),
+                pages=(start_page, end_page),
             )
 
         level_map = {}
