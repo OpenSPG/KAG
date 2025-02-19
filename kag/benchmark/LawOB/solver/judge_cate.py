@@ -45,7 +45,7 @@ from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.retriever.impl.default_chunk_retrieval import DefaultChunkRetriever
 from kag.solver.utils import init_prompt_with_fallback
 
-import_modules_from_path("./")
+import_modules_from_path("/")
 
 class ExtraKeyWord(KagBaseModule):
     """
