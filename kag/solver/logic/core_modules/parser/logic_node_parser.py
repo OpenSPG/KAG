@@ -239,8 +239,8 @@ class GetNode(LogicNode):
     def parse_node(input_str):
         input_args = input_str.split(",")
         return GetNode("get", {
-            "alias_name": Identifer(input_args[0]),
-            "alias_name_set": [Identifer(e) for e in input_args]
+            "alias_name": Identifier(input_args[0]),
+            "alias_name_set": [Identifier(e) for e in input_args]
         })
 
 
