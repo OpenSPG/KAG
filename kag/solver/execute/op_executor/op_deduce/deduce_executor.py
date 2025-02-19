@@ -11,10 +11,7 @@ from kag.interface.solver.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import (
-    DeduceNode,
-    VerifyNode,
-    FilterNode,
-    ExtractorNode,
+    DeduceNode
 )
 
 
@@ -97,7 +94,7 @@ class DeduceExecutor(OpExecutor):
 
     def is_this_op(self, logic_node: LogicNode) -> bool:
         return isinstance(
-            logic_node, (DeduceNode, FilterNode, VerifyNode, ExtractorNode)
+            logic_node, (DeduceNode)
         )
 
     def executor(
