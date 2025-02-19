@@ -15,7 +15,6 @@ from ollama import Client
 
 from kag.interface import LLMClient
 
-
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -29,12 +28,10 @@ class OllamaClient(LLMClient):
     This class provides methods to make synchronous requests to the Ollama API, handle model calls, and parse responses.
     """
 
-    def __init__(
-        self,
-        model: str,
-        base_url: str,
-        timeout: float = None,
-    ):
+    def __init__(self, model: str,
+                 base_url: str,
+                 timeout: float = None,
+                 **kwargs):
         """
         Initializes the OllamaClient instance.
 
@@ -43,6 +40,8 @@ class OllamaClient(LLMClient):
             base_url (str): The base URL for the Ollama API.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
+
+        super().__init__(**kwargs)
         self.model = model
         self.base_url = base_url
         self.timeout = timeout

@@ -34,15 +34,14 @@ class OpenAIClient(LLMClient):
 
     """
 
-    def __init__(
-        self,
-        api_key: str,
-        base_url: str,
-        model: str,
-        stream: bool = False,
-        temperature: float = 0.7,
-        timeout: float = None,
-    ):
+    def __init__(self,
+                 api_key: str,
+                 base_url: str,
+                 model: str,
+                 stream: bool = False,
+                 temperature: float = 0.7,
+                 timeout: float = None,
+                 **kwargs):
         """
         Initializes the OpenAIClient instance.
 
@@ -55,6 +54,7 @@ class OpenAIClient(LLMClient):
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
 
+        super().__init__(**kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -126,6 +126,7 @@ class AzureOpenAIClient(LLMClient):
         timeout: float = None,
         azure_ad_token: str = None,
         azure_ad_token_provider: AzureADTokenProvider = None,
+        **kwargs
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -145,6 +146,7 @@ class AzureOpenAIClient(LLMClient):
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
 
+        super().__init__(**kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.azure_deployment = azure_deployment
