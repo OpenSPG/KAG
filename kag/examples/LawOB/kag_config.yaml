@@ -24,7 +24,7 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://101.37.68.241:8887
+  host_addr: http://127.0.0.1:8887
   language: zh
   namespace: LawQa
 #------------project configuration end----------------#
@@ -45,18 +45,10 @@ kag_builder_pipeline:
         type: law_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
     reader:
       type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
-    post_processor:
-      type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
-      similarity_threshold: 0.96
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
       split_length: 100000
       window_length: 0
-    vectorizer:
-      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
-      vectorize_model: *vectorize_model
-    writer:
-      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 20
   num_chains: 1
   scanner:
@@ -107,7 +99,7 @@ chunk_retriever: &chunk_retriever
   recall_num: 10
   rerank_topk: 10
 
-kag_solver_pipeline:
+lf_solver_pipeline:
   type: recall_pipeline
   memory:
     type: default_memory # kag.solver.implementation.default_memory.DefaultMemory
