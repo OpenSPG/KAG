@@ -23,11 +23,11 @@ class MockLLMClient(LLMClient):
     This class provides a method to simulate the behavior of a language model client by matching input prompts.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Initializes the MockLLMClient instance.
         """
-        pass
+        super().__init__(**kwargs)
 
     def match_input(self, prompt):
         """
