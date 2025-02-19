@@ -1,10 +1,6 @@
 import copy
 import logging
-from kag.common.registry import Registrable
 
-# from kag.solver.implementation.default_generator import DefaultGenerator
-# from kag.solver.implementation.default_reasoner import DefaultReasoner
-# from kag.solver.implementation.default_reflector import DefaultReflector
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
