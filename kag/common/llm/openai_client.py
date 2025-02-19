@@ -44,7 +44,7 @@ class OpenAIClient(LLMClient):
         stream: bool = False,
         temperature: float = 0.7,
         timeout: float = None,
-        **kwargs
+            **kwargs
     ):
         """
         Initializes the OpenAIClient instance.
