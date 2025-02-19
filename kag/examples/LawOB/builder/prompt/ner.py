@@ -157,16 +157,8 @@ class OpenIENERPrompt(PromptABC):
 
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
-        schema = SchemaClient(
-            project_id=KAG_PROJECT_CONF.project_id
-        )
-        self.schema = SchemaClient(
-            project_id=KAG_PROJECT_CONF.project_id
-        ).extract_types()
-        self.schema_zh = schema.extract_types_zh_mapping()
         self.template = Template(self.template).safe_substitute(
-            schema=json.dumps(self.schema),
-            schema_zh = json.dumps(self.schema_zh, ensure_ascii=False)
+            schema="",
         )
 
     @property
