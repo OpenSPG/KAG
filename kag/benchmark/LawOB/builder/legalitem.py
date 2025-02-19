@@ -28,7 +28,7 @@ def buildKB(file_path):
 
 
 if __name__ == "__main__":
-    import_modules_from_path(".")
+    import_modules_from_path("")
     file_path = "/Users/peilong/Downloads/law_corpus_chunk.json"
 
     buildKB(file_path)
