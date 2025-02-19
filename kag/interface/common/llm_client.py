@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+from kag.interface.common.rate_limiter import RateLimiter
 
 try:
     from json_repair import loads
@@ -26,6 +27,18 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient(Registrable):
+    """
+    A client for interacting with a Language Model (LLM). It optionally utilizes a rate limiter to control the rate of requests.
+
+    Args:
+        rate_limiter (RateLimiter, optional): An instance of a rate limiter to manage the rate of requests to the LLM. Defaults to None.
+        **kwargs: Additional keyword arguments passed to the superclass constructor.
+    """
+
+    def __init__(self, rate_limiter: RateLimiter = None, **kwargs):
+        super().__init__(**kwargs)
+        self.rate_limiter = rate_limiter
+
     """
     A class that provides methods for performing inference using large language model.
 
@@ -94,6 +107,8 @@ class LLMClient(Registrable):
         Returns:
             List: Processed result list.
         """
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
         result = []
         prompt = prompt_op.build_prompt(variables)
         logger.debug(f"Prompt: {prompt}")
