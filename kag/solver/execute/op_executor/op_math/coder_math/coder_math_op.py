@@ -6,7 +6,6 @@ import tempfile
 from typing import Dict
 
 from kag.interface import LLMClient
-from kag.interface.solver.base_model import LogicNode
 from kag.solver.execute.op_executor.op_executor import OpExecutor
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
