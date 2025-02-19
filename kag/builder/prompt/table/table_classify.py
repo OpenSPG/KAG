@@ -27,6 +27,9 @@ class TableClassifyPrompt(PromptABC):
 # Task
 针对给出的表格上下文，总结输出表格名称，表格描述信息，表格关键字，最后为表格分类。
 
+# Requirements
+表格名称要求易于理解，具有代表性。
+
 ## 表格分类
 将表格分为两类，矩阵型表格和其他类型表格。
 
@@ -34,6 +37,7 @@ class TableClassifyPrompt(PromptABC):
 表格中的数据，需要结合表格行和列索引才能理解。例如财务报表。
 例子:
 ```
+主营业务收入分析
 | 以地区分类 | 2024 年第三季度（7-9 月） | 2024 年第二季度（4-6 月） | 2023 年第三季度（7-9 月） |
 | :--------: | :-----------------------: | :-----------------------: | :-----------------------: |
 |   中国区   |          86.4%            |          80.3%            |          84.0%            |
@@ -45,11 +49,11 @@ class TableClassifyPrompt(PromptABC):
 json格式，例子:
 ```json
 {
-  "table_desc": "表格描述信息",
+  "table_desc": "2024第二，三季度以及2023第三季度，中国区，美国区以及欧洲区主营业务收入占比分析",
   "keywords": [
-    "表格关键字"
+    "主营业务收入"
   ],
-  "table_name": "表格名称",
+  "table_name": "主营业务按照地区分类表",
   "table_type": "矩阵型表格"
 }
 ```
@@ -62,12 +66,17 @@ $input
 # Task
 Based on the given table context, summarize and output the table name, table description, table keywords, and finally the table classification.
 
+# Requirements
+The table name should be easy to understand and representative.
+
 ## Table Classification
-Classify the table into two categories: matrix table and other types of tables.
+Classify the table into two categories: MatrixTable and OtherTable.
 
 ### MatrixTable
 The data in the table requires both row and column indices for comprehension, such as financial statements.
 Example:
+Revenue Analysis from Main Businesses
+
 | By Region  | Q3 2024 (July-September) | Q2 2024 (April-June) | Q3 2023 (July-September) |
 | :--------: | :-----------------------: | :-------------------: | :----------------------: |
 |   China    |          86.4%            |         80.3%         |         84.0%            |
@@ -79,11 +88,11 @@ JSON format, example:
 
 ```json
 {
-  "table_desc": "Table description",
+  "table_desc": "Analysis of the revenue share from main businesses in China, USA, and Europe for Q2 and Q3 of 2024 and Q3 of 2023",
   "keywords": [
-    "Table keywords"
+    "Main Business Revenue"
   ],
-  "table_name": "Table name",
+  "table_name": "Revenue Share by Region Table",
   "table_type": "MatrixTable"
 }
 ```

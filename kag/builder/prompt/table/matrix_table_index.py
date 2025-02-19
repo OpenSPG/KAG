@@ -45,11 +45,37 @@ json格式，例子:
   ]
 }
 ```
+
 # 输入表格
 $input
 """
 
-    template_en = template_zh
+    template_en = """
+# Task
+Summarize the full information conveyed by the row headers and column headers of a matrix-style table, such that each data point in the table can be understood in combination with its respective row and column headers.
+
+# Instruction
+1. For each row of the table, output the information represented by its row header.
+2. For each column of the table, output the information represented by its column header.
+
+# Output Format
+JSON format, example:
+```json
+{
+  "rows": [
+    "Operating revenue of Company X",
+    "Profit of Company X"
+  ],
+  "columns": [
+    "Full-year 2013 in USD",
+    "Year-on-year growth percentage for Q4 2012"
+  ]
+}
+```
+
+# Input Table
+$input
+"""
 
     def __init__(self, language: Optional[str] = "en", **kwargs):
         super().__init__(language, **kwargs)

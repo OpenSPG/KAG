@@ -324,7 +324,8 @@ class MarkDownReader(ReaderABC):
                         metadata={
                             "before_text": table.get("context", {}).get("before_text", ""),
                             "after_text": table.get("context", {}).get("after_text", "")
-                        }
+                        },
+                        file_name=os.path.basename(id),
                     )
                     outputs.append(table_chunk)
                     all_tables.append(table)
@@ -342,7 +343,8 @@ class MarkDownReader(ReaderABC):
                         metadata={
                             "before_text": table.get("context", {}).get("before_text", ""),
                             "after_text": table.get("context", {}).get("after_text", "")
-                        }
+                        },
+                        file_name=os.path.basename(id),
                     )
                     outputs.append(table_chunk)
                     all_tables.append(table)
@@ -394,7 +396,8 @@ class MarkDownReader(ReaderABC):
                             metadata={
                                 "before_text": table.get("context", {}).get("before_text", ""),
                                 "after_text": table.get("context", {}).get("after_text", "")
-                            }
+                            },
+                            file_name=os.path.basename(id),
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)
@@ -412,7 +415,8 @@ class MarkDownReader(ReaderABC):
                             metadata={
                                 "before_text": table.get("context", {}).get("before_text", ""),
                                 "after_text": table.get("context", {}).get("after_text", "")
-                            }
+                            },
+                            file_name=os.path.basename(id),
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)

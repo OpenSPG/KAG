@@ -11,24 +11,20 @@
 # or implied.
 
 import logging
-import pandas as pd
-import markdown
 from io import StringIO
 from typing import Type, List
 
-from kag.interface import LLMClient
+import markdown
+import pandas as pd
 from tenacity import stop_after_attempt, retry
 
+from kag.interface import LLMClient
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.common.utils import generate_hash_id
-
-from kag.builder.model.chunk import Chunk
-from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtractor
-from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtractor
 from kag.builder.model.sub_graph import SubGraph, Node, Edge
-
 from kag.builder.component.table.table_model import (
     TableCellValue,
     TableCellDesc,
@@ -38,6 +34,8 @@ from kag.builder.component.table.table_model import (
 
 from kag.builder.prompt.table.table_classify import TableClassifyPrompt
 from kag.builder.prompt.table.matrix_table_index import MatrixTableIndexPrompt
+
+__all__ = ["TableClassifyPrompt", "MatrixTableIndexPrompt"]
 
 logger = logging.getLogger(__name__)
 
@@ -122,9 +120,12 @@ class TableAndTextExtractor(ExtractorABC):
         return []
 
     def _table_extractor(self, input_table: Chunk, table_type: str):
-        if table_type in ["矩阵型表格", "MatrixTable"]:
+        if (
+            table_type.lower() in ["矩阵型表格", "matrixtable"]
+            or "matrix" in table_type.lower()
+        ):
             return self._extract_metric_table(input_table)
-        elif table_type in ["简单表格", "Simple_Table"]:
+        elif table_type.lower() in ["简单表格", "simpletable"]:
             return self._extract_simple_table(input_table)
         return self._extract_other_table(input_table)
 
@@ -153,10 +154,14 @@ class TableAndTextExtractor(ExtractorABC):
         return table_type
 
     def _get_table_context_str(self, table_chunk: Chunk):
+        file_name = table_chunk.kwargs.get("file_name", "")
+        section = table_chunk.name
         before_text = table_chunk.kwargs["metadata"].get("before_text", "")
         after_text = table_chunk.kwargs["metadata"].get("after_text", "")
         return (
-            table_chunk.name
+            file_name
+            + "\n"
+            + section
             + "\n"
             + before_text
             + "\n"

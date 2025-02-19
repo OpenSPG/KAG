@@ -67,10 +67,14 @@ def build_finqa_graph(item):
     if os.path.exists(ckpt_path):
         shutil.rmtree(ckpt_path)
     file_name = convert_finqa_to_md_file(item)
+    build_md_file(file_name)
+
+
+def build_md_file(md_file: str):
     runner = BuilderChainRunner.from_config(
         KAG_CONFIG.all_config["finqa_builder_pipeline"]
     )
-    runner.invoke(file_name)
+    runner.invoke(md_file)
 
 
 if __name__ == "__main__":
