@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: sk-4323e7aaab36449fab52b0ed86e29696
+  api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   type: maas
 
 chat_llm: &chat_llm
-  api_key: sk-4323e7aaab36449fab52b0ed86e29696
+  api_key: key
   base_url: https://api.deepseek.com
   model: deepseek-chat
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
+  api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -26,7 +26,7 @@ project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
   language: zh
-  namespace: LawQa
+  namespace: LawOB
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#

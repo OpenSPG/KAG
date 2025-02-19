@@ -1,4 +1,4 @@
-namespace LawQa
+namespace LawOB
 
 Chunk(文本块): EntityType
      properties:

@@ -152,7 +152,7 @@ def run():
     }
     law_name_item = {}
     # load graph
-    with open("./data/item_law_with_name.jsonl", "r") as f:
+    with open("data/item_law_with_name.jsonl", "r") as f:
         for line in f.readlines():
             law_items = json.loads(line)
             law_name= ""
@@ -232,7 +232,7 @@ def run():
 }
             """
 
-    import_modules_from_path("./")
+    import_modules_from_path("/")
 
     class ExtraItemWord(KagBaseModule):
         """
@@ -313,7 +313,7 @@ def run():
                 updated_ele.append(value)
 
 
-    with open("/Users/peilong/Downloads/zero_shot/3-8_case_test_mark_with_item_res.json", "w") as f:
+    with open("./3-8_case_test_mark_with_item_res.json", "w") as f:
         json.dump(updated_ele, f, indent=2, ensure_ascii=False)
 
 run()

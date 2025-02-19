@@ -28,7 +28,7 @@ def buildKB(file_path):
 
 
 if __name__ == "__main__":
-    import_modules_from_path(".")
-    file_path = "./data/final_chunk.json"
+    import_modules_from_path("")
+    file_path = "data/final_chunk.json"
 
     buildKB(file_path)
