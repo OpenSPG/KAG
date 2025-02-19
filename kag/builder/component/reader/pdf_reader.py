@@ -368,24 +368,22 @@ class PDFReader(ReaderABC):
 
             if not self.outline_flag:
 
+                all_content = ""
                 with open(input, "rb") as file:
-                    for idx, page_layout in enumerate(extract_pages(file)):
+                    for page_layout in extract_pages(file):
                         content = ""
                         for element in page_layout:
                             if hasattr(element, "get_text"):
-                                content = content + element.get_text()
-                        chunk = Chunk(
-                            id=generate_hash_id(f"{basename}#{idx}"),
-                            name=f"{basename}#{idx}",
-                            content=content,
-                        )
-                        chunks.append(chunk)
-                # try:
-                #     outline_chunks = self.outline_chunk(chunks, basename)
-                # except Exception as e:
-                #     raise RuntimeError(f"Error loading PDF file: {e}")
-                # if len(outline_chunks) > 0:
-                #     chunks = outline_chunks
+                                content += element.get_text()
+                        all_content += content
+
+                chunk = Chunk(
+                    id=generate_hash_id(f"{basename}"),
+                    name=f"{basename}",
+                    content=all_content,
+                    source=input,
+                )
+                chunks.append(chunk)
 
             elif True:
                 split_words = []
