@@ -68,7 +68,7 @@ KAGは、論理形式に基づくハイブリッド推論エンジンを提案�
 
 * 「App開発者」識別ルールの定義
 
-  **define app developper rule**
+  **define app developer rule**
 
   ```text
   Define (s:Person)-[p:developed]->(o:App) {

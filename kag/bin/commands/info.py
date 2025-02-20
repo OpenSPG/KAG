@@ -102,7 +102,7 @@ class ListRegisterInfo(Command):
             else:
                 optional_arguments = "\n".join(optional_arguments)
             print(f"{bold}{green}Optional Arguments:{reset}\n{optional_arguments}\n")
-            print(f"{bold}{green}Sample Useage:{reset}\n  {cls_info['sample_useage']}")
+            print(f"{bold}{green}Sample Usage:{reset}\n  {cls_info['sample_useage']}")
             # for k, v in cls_info.items():
             #     print(f"{k}: {v}")
             print("\n")

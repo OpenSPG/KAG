@@ -45,5 +45,5 @@ class Command(Registrable):
 
     @staticmethod
     def handler(args: argparse.Namespace):
-        """function to proces the request."""
+        """function to process the request."""
         raise NotImplementedError("handler not implemented yet.")

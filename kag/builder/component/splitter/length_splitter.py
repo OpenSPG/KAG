@@ -120,13 +120,13 @@ class LengthSplitter(BaseTableSplitter):
             if table_chunks is not None:
                 return table_chunks
         content = self.split_sentence(org_chunk.content)
-        splitted = []
+        split = []
         cur = []
         cur_len = 0
         for sentence in content:
             if cur_len + len(sentence) > chunk_size:
                 if cur:
-                    splitted.append(cur)
+                    split.append(cur)
                 tmp = []
                 cur_len = 0
                 for item in cur[::-1]:
@@ -139,10 +139,10 @@ class LengthSplitter(BaseTableSplitter):
             cur.append(sentence)
             cur_len += len(sentence)
         if len(cur) > 0:
-            splitted.append(cur)
+            split.append(cur)
 
         output = []
-        for idx, sentences in enumerate(splitted):
+        for idx, sentences in enumerate(split):
             chunk = Chunk(
                 id=generate_hash_id(f"{org_chunk.id}#{idx}"),
                 name=f"{org_chunk.name}",
@@ -166,14 +166,14 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[Output]: A list of Chunk objects resulting from the split operation.
         """
-        cutted = []
+        cut = []
         if isinstance(input, list):
             for item in input:
-                cutted.extend(
+                cut.extend(
                     self.slide_window_chunk(item, self.split_length, self.window_length)
                 )
         else:
-            cutted.extend(
+            cut.extend(
                 self.slide_window_chunk(input, self.split_length, self.window_length)
             )
-        return cutted
+        return cut

@@ -66,7 +66,7 @@ class Question(object):
         for ind, dep in enumerate(self.dependencies):
             repr_str += f"  dep_question {ind}: {dep.question}\n"
 
-        # chilren
+        # children
         repr_str += "children:\n"
         for ind, child in enumerate(self.children):
             repr_str += f"  childe_question {ind}: {child.question}\n"
