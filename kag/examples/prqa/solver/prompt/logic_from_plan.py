@@ -59,6 +59,10 @@ class LogicFormPlanPrompt(PromptABC):
         {
             "query": "《酬韦相公见寄》的作者的某一个好友的好友张蠙除外, 请问他的好友还有谁?",
             "answer": "Step1:查询《酬韦相公见寄》的作者\nAction1:get_spo(s=s1:[酬韦相公见寄], p=作者, o=o1)\nStep2:查询作者的所有好友 \nAction2:get_spo(s=o1,p=p2:好友,o=o2) \nStep3:查询上一步Step2结果的好友（如果有多个，分别进行查询） \nAction3:get_spo(s=o2,p=p3:好友,o=o3),get(o3) \nStep4:根据上一步Step3的查询结果,输出结果\nAction6:get(o3)"
+        },
+        {
+            "query": "刘华杰的毕业院校的历任领导是谁, 他的文学作品有《尝试集》?",
+            "answer": "Step1:查询刘华杰的毕业院校\nAction1:get_spo(s=s1:[刘华杰], p=毕业院校, o=o1)\nStep2:查询o1历任领导是谁？(如果有多个，分别进行查询) \nAction2:get_spo(s=o1,p=p2:历任领导,o=o2) \nStep3:查询《尝试集》是谁的文学作品？ \nAction3:get_spo(s=s3,p=p3:文学作品,o=尝试集) \nStep4:将Step3的结果s3和Step2的结果o2进行匹配，查看是否相同 \nStep5:相同输出结果s3，不相同则输出没有找到"
         }
     ],"""
 
