@@ -15,6 +15,7 @@ import hashlib
 import shutil
 
 import pandas as pd
+from neo4j import GraphDatabase
 
 from kag.builder.runner import BuilderChainRunner
 from kag.common.conf import KAG_CONFIG
@@ -62,6 +63,7 @@ def build_finqa_graph(item):
     """
     build graph
     """
+    clear_neo4j_data("finqa")
     current_working_directory = os.getcwd()
     ckpt_path = os.path.join(current_working_directory, "ckpt")
     if os.path.exists(ckpt_path):
@@ -77,12 +79,33 @@ def build_md_file(md_file: str):
     runner.invoke(md_file)
 
 
+def clear_neo4j_data(db_name):
+    """
+    清空neo4j数据
+    """
+
+    # 定义数据库连接信息
+    uri = "neo4j://localhost:7687"
+    username = "neo4j"
+    password = "neo4j@openspg"
+    # 创建数据库驱动
+    driver = GraphDatabase.driver(uri, auth=(username, password))
+
+    def delete_all_nodes_and_relationships(tx):
+        # 删除所有节点
+        tx.run("MATCH (n) DETACH DELETE n")
+
+    with driver.session(database=db_name) as session:
+        session.execute_write(delete_all_nodes_and_relationships)
+
+
 if __name__ == "__main__":
     _data_list = load_finqa_data()
-    test_i = 1
+    test_i = 0
     for i, _item in enumerate(_data_list):
         if test_i is not None and i != test_i:
             continue
         _question = _item["qa"]["question"]
         _gold = _item["qa"]["answer"]
         build_finqa_graph(_item)
+        break

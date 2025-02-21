@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: key
-  base_url: https://api.siliconflow.cn/v1/
-  model: Qwen/Qwen2.5-72B-Instruct
+  api_key: sk-6643173170664d048de0e3915a504a09
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: deepseek-v3
   type: maas
 
 chat_llm: &chat_llm
-  api_key: key
-  base_url: https://api.siliconflow.cn/v1/
-  model: Qwen/Qwen2.5-72B-Instruct
+  api_key: sk-6643173170664d048de0e3915a504a09
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: deepseek-v3
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -43,8 +43,8 @@ finqa_builder_pipeline:
         type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
       triple_prompt:
         type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
-      table_classify_prompt:
-        type: table_classify
+      table_context_prompt:
+        type: table_context
       matrix_table_index_prompt:
         type: matrix_table_index
     reader:
@@ -92,12 +92,10 @@ fuzzy_kg_retriever: &fuzzy_kg_retriever
 chunk_retriever: &chunk_retriever
   type: default_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
   llm_client: *chat_llm
-  ner_prompt:
-    type: table_question_ner
   recall_num: 10
   rerank_topk: 10
 
-kag_solver_pipeline:
+finqa_solver_pipeline:
   memory:
     type: default_memory # kag.solver.implementation.default_memory.DefaultMemory
     llm_client: *chat_llm
@@ -109,8 +107,6 @@ kag_solver_pipeline:
       type: default_lf_planner # kag.solver.plan.default_lf_planner.DefaultLFPlanner
       llm_client: *chat_llm
       vectorize_model: *vectorize_model
-      logic_form_plan_prompt:
-        type: only_retriever_plan
     lf_executor:
       type: default_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
       llm_client: *chat_llm

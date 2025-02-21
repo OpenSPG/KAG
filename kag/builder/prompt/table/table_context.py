@@ -17,64 +17,61 @@ from typing import List, Optional
 from kag.interface import PromptABC
 
 
-@PromptABC.register("matrix_table_index")
-class MatrixTableIndexPrompt(PromptABC):
+@PromptABC.register("table_context")
+class TableContextPrompt(PromptABC):
     """
-    矩阵型表格索引信息提取
+    extract table context
     """
 
     template_zh = """
-# Task
-总结矩阵型表格行头和列头表达的完整信息，使得表格中每个数据结合行头和列头就能理解其意义。
+# Your Task
+针对给出的表格及其上下文，总结输出表格名称，表格描述信息，表格关键字。
 
-# Instruction
-1. 对表格的每一行，输出该行头所表达的信息。
-2. 对表格的每一列，输出这一列头表达的信息。
+# Requirements
+表格名称要求易于理解，信息完整。
 
 # 输出格式
 json格式，例子:
 ```json
 {
-  "rows": [
-    "X公司营业收入",
-    "X公司利润",
+  "table_desc": "针对表格内容的描述信息",
+  "keywords": [
+    "关键字列表"
   ],
-  "columns": [
-    "2013年全年美元计价",
-    "2012年四季度同比增长百分比"
-  ]
+  "table_name": "表格名称"
 }
 ```
 
-# 输入表格
+# 表格及其上下文信息
 $input
-"""
+
+# Your Answer
+""".strip()
 
     template_en = """
-# Task
-Summarize the full information conveyed by the row headers and column headers of a matrix-style table, such that each data point in the table can be understood in combination with its respective row and column headers.
+# Your Task
+Based on the provided table and its context, summarize the table name, table description, and table keywords.
 
-# Instruction
-1. For each row of the table, output the information represented by its row header.
-2. For each column of the table, output the information represented by its column header.
+# Requirements
+The table name should be easy to understand and provide complete information.
 
 # Output Format
-JSON format, example:
+In JSON format, for example:
+
 ```json
 {
-  "rows": [
-    "Operating revenue of Company X",
-    "Profit of Company X"
+  "table_desc": "Description of the table content",
+  "keywords": [
+    "List of keywords"
   ],
-  "columns": [
-    "Full-year 2013 in USD",
-    "Year-on-year growth percentage for Q4 2012"
-  ]
+  "table_name": "Table name"
 }
 ```
 
-# Input Table
+# Table and it's Context Information
 $input
+
+# Your Answer
 """
 
     def __init__(self, language: Optional[str] = "en", **kwargs):
@@ -90,8 +87,8 @@ $input
             try:
                 rsp = json.loads(rsp)
             except json.decoder.JSONDecodeError as e:
-                  logging.exception("json_str=%s", rsp)
-                  raise e
+                logging.exception("json_str=%s", rsp)
+                raise e
         if isinstance(rsp, dict) and "output" in rsp:
             rsp = rsp["output"]
         return rsp
