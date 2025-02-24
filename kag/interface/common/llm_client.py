@@ -159,6 +159,7 @@ class LLMClient(Registrable):
             return self.invoke(variables, prompt_op, with_json_parse=with_json_parse)
 
         for idx, prompt in enumerate(prompts, start=0):
+            response = ""
             logger.debug(f"Prompt_{idx}: {prompt}")
             try:
                 response = (
@@ -173,7 +174,7 @@ class LLMClient(Registrable):
                 logger.debug(f"Result_{idx}: {result}")
                 results.extend(result)
             except Exception as e:
-                logger.error(f"Error processing prompt {idx}: {e}")
+                logger.error(f"Error processing prompt {idx}: {e}. response={response}")
                 logger.debug(traceback.format_exc())
                 continue
         return results
