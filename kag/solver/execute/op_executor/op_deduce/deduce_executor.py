@@ -4,6 +4,7 @@ from typing import Dict, List
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.solver.execute.op_executor.op_deduce.module.choice import ChoiceOp
 from kag.solver.execute.op_executor.op_deduce.module.entailment import EntailmentOp
+from kag.solver.execute.op_executor.op_deduce.module.extract import ExtractOp
 from kag.solver.execute.op_executor.op_deduce.module.judgement import JudgementOp
 from kag.solver.execute.op_executor.op_deduce.module.multi_choice import MultiChoiceOp
 from kag.solver.execute.op_executor.op_executor import OpExecutor
@@ -51,6 +52,11 @@ class DeduceExecutor(OpExecutor):
                 KAG_PROJECT_ID=self.KAG_PROJECT_ID,
                 **param
             ),
+            "extract": ExtractOp(
+                self.schema,
+                KAG_PROJECT_ID=self.KAG_PROJECT_ID,
+                **param
+            )
         }
         node: DeduceNode = lf_plan.lf_node
         kg_graph.alias_set.append(node.alias_name)
