@@ -55,7 +55,7 @@ class SPOBase:
         return f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}"
 
     def get_value_list_str(self):
-        return [f"{self.alias_name}.{k}={v}" for k, v in self.value_list]
+        return [f"{self.alias_name}.{v[0]} {v[2]} {v[1]}" for v in self.value_list]
 
     def get_mention_name(self):
         return ""
