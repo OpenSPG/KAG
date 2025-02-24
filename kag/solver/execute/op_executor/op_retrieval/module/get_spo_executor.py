@@ -182,6 +182,7 @@ class GetSPOExecutor(OpExecutor):
     def _rewrite_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):
         if history:
             history_qa = []
+            sub_query_rewrite = []
             for idx, plan in enumerate(history):
                 if plan.res and plan.res.if_answered:
                     history_qa.append(f"step{idx}:{plan.rewrite_query}\nanswer:{plan.res.sub_answer}")
@@ -198,9 +199,14 @@ class GetSPOExecutor(OpExecutor):
             elif isinstance(sub_query_rewrite_l, str):
                 sub_query_rewrite = [sub_query_rewrite_l if sub_query_rewrite_l and sub_query_rewrite_l.lower() not in [
                     '[]', "i don't know"] else sub_query]
-            else:
-                sub_query_rewrite = [sub_query]
-            return sub_query_rewrite
+            return_query = []
+            for q in sub_query_rewrite:
+                if q == "" or q is None:
+                    continue
+                return_query.append(q)
+            if len(return_query) == 0:
+                return_query = [sub_query]
+            return return_query
         else:
             return [sub_query]
 
@@ -220,7 +226,7 @@ class GetSPOExecutor(OpExecutor):
             # chunk retriever
             all_related_entities = kg_graph.get_all_spo()
             all_related_entities = list(set(all_related_entities))
-            sub_queries = self._rewrite_sub_query_with_history_qa(history, lf.query)
+            sub_queries = self._rewrite_sub_query_with_history_qa(history, lf.lf_node.sub_query)
             lf.rewrite_query = sub_queries
             doc_retrieved = self.chunk_retriever.recall_docs(
                 queries=[query] + sub_queries,
