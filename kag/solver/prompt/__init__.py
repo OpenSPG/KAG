@@ -12,6 +12,7 @@
 
 from kag.solver.prompt.default.deduce_choice import DeduceChoice
 from kag.solver.prompt.default.deduce_entail import DeduceEntail
+from kag.solver.prompt.default.deduce_extractor import DeduceExtractor
 from kag.solver.prompt.default.deduce_judge import DeduceJudge
 from kag.solver.prompt.default.deduce_multi_choice import DeduceMutiChoice
 from kag.solver.prompt.default.expression_builder import ExpressionBuildr
@@ -32,6 +33,7 @@ from kag.solver.prompt.default.spo_retrieval import SpoRetrieval
 
 __all__ = [
     "DeduceChoice",
+    "DeduceExtractor",
     "DeduceEntail",
     "DeduceJudge",
     "DeduceMutiChoice",

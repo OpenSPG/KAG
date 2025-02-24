@@ -186,7 +186,7 @@ class KAGRetriever(ChunkRetriever):
             query_sim_doc_cache.put(query, scores)
         except Exception as e:
             scores = dict()
-            logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
+            logger.error(f"run calculate_sim_scores failed query={query}, info: {e}", exc_info=True)
         return scores
 
     def calculate_pagerank_scores(self, start_nodes: List[Dict]):
