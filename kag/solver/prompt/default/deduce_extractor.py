@@ -18,10 +18,6 @@ class DeduceExtractor(PromptABC):
                   "\n[Information]: '$memory'" \
                   "\nEnsure that the information provided comes directly and accurately from the retrieved document, " \
                   "without any speculation."
-
-    def __init__(self, language: str):
-        super().__init__(language)
-
     @property
     def template_variables(self) -> List[str]:
         return ["memory", "instruction"]
