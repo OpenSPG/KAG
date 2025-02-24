@@ -34,6 +34,8 @@ class DefaultMemory(KagMemoryABC):
         self.exact_answer = []
         self.instruction_set = []
 
+        self.lf_res: LFExecuteResult = None
+
     @retry(stop=stop_after_attempt(3))
     def _verifier(self, supporting_fact, sub_instruction):
         res = self.llm_module.invoke(
@@ -60,7 +62,18 @@ class DefaultMemory(KagMemoryABC):
         if evidence not in self.evidence_memory:
             self.evidence_memory.append(evidence)
 
+    def has_break(self):
+        if not self.lf_res:
+            return True
+        for lf in self.lf_res.sub_plans:
+            if not lf.res:
+                return True
+            if not lf.res.if_answered:
+                return True
+        return False
+
     def save_memory(self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult):
+        self.lf_res = lf_res
         if solved_answer:
             self.exact_answer.append(solved_answer)
             return

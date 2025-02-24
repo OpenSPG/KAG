@@ -53,7 +53,7 @@ class DefaultLFPlanner(LFPlannerABC):
             )
         self.logic_form_plan_prompt = logic_form_plan_prompt
 
-    # 需要把大模型生成结果记录下来
+    @retry(stop=stop_after_attempt(3))
     def lf_planing(
         self, question: str, memory: KagMemoryABC = None, llm_output=None
     ) -> List[LFPlan]:
