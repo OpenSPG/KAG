@@ -65,7 +65,7 @@ class RateLimitContainer:
                 # 创建新的实例并存储在字典中
                 cls._instances[name] = RateLimiterInstance(max_calls=max_calls, period=period)
             else:
-                logger.info(f"Returning existing instance for '{name}'")
+                logger.debug(f"Returning existing instance for '{name}'")
 
         # 返回对应名字的实例
         return cls._instances[name]
