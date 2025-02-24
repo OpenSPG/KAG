@@ -96,7 +96,12 @@ class LogicFormPlanPrompt(PromptABC):
         {{
             {self.instruct_zh}
             {self.default_case_zh}
-            "output_format": "only output `Step`, `Action` and `Output` content. One `Step` with only one `Action` or `Output`",
+            "output_format": "only output `Step`, `Action` and `Output` content.",
+            "tips": [
+                " Each `Step` must contain exactly one `Action` or `Output`",
+                "Each step is an indivisible atomic question, please re-split accordingly.",
+                "Output also needs to be a separate step."
+            ],
             "query": "$question"
         }}   
             """
@@ -104,7 +109,12 @@ class LogicFormPlanPrompt(PromptABC):
         {{
             {self.instruct_en}
             {self.default_case_en}
-            "output_format": "Only output words in answer, for examples: `Step`, `Action`, `Output` content. One `Step` with only one `Action` or `Output`",
+            "output_format": "Only start with output words in answer, for examples: `Step`, `Action`, `Output` content. Do not output json format",
+            "tips": [
+                " Each `Step` must contain exactly one `Action` or `Output`",
+                "Each step is an indivisible atomic question, please re-split accordingly.",
+                "Output also needs to be a separate step."
+            ],
             "query": "$question"
         }}   
             """
@@ -129,6 +139,8 @@ class LogicFormPlanPrompt(PromptABC):
                     if sub_querys_regex is not None:
                         sub_querys.append(sub_querys_regex.group(1))
                         current_sub_query = sub_querys_regex.group(1)
+                        if current_sub_query == '':
+                            raise RuntimeError(f"{line} is not step query")
                 elif line.startswith("Output"):
                     sub_querys.append("output")
                 elif line.startswith("Action"):

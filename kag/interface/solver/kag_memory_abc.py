@@ -18,6 +18,15 @@ class KagMemoryABC(KagBaseModule, ABC):
         pass
 
     @abstractmethod
+    def has_break(self) -> bool:
+        """
+        Determines whether there is a break condition in the execution result.
+
+        Returns:
+            bool: True if there is a break condition, False otherwise.
+        """
+
+    @abstractmethod
     def get_solved_answer(self) -> str:
         """
         Retrieves the solved answer.

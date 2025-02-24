@@ -484,7 +484,7 @@ class KAGRetriever(ChunkRetriever):
         sorted_scores = sorted(
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
-        logger.debug(f"sorted_scores: {sorted_scores}")
+        logger.debug(f"sorted_scores: {sorted_scores[:self.recall_num+1]}")
 
         return self.get_all_docs_by_id(queries, sorted_scores, self.recall_num)
 
