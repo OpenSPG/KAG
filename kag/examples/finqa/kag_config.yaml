@@ -45,13 +45,13 @@ finqa_builder_pipeline:
         type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
       table_context_prompt:
         type: table_context
-      matrix_table_index_prompt:
-        type: matrix_table_index
+      table_row_col_summary_prompt:
+        type: table_row_col_summary
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
-      similarity_threshold: 0.9
+      similarity_threshold: 0.99
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
       split_length: 1000
@@ -101,14 +101,14 @@ finqa_solver_pipeline:
     llm_client: *chat_llm
   max_iterations: 3
   reasoner:
-    type: default_reasoner # kag.solver.implementation.default_reasoner.DefaultReasoner
+    type: finqa_reasoner # kag.solver.implementation.default_reasoner.DefaultReasoner
     llm_client: *chat_llm
     lf_planner:
-      type: default_lf_planner # kag.solver.plan.default_lf_planner.DefaultLFPlanner
+      type: step_lf_planner # kag.solver.plan.default_lf_planner.DefaultLFPlanner
       llm_client: *chat_llm
       vectorize_model: *vectorize_model
     lf_executor:
-      type: default_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
+      type: step_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
       llm_client: *chat_llm
       force_chunk_retriever: true
       exact_kg_retriever: *exact_kg_retriever

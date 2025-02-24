@@ -26,9 +26,9 @@ from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtractor
 from kag.builder.model.sub_graph import SubGraph, Node, Edge
 from kag.builder.component.table.table_model import (
-    TableCellValue,
-    TableCellDesc,
     TableDefaultInfo,
+    TableRowSummary,
+    TableColSummary,
 )
 
 
@@ -61,7 +61,7 @@ class TableAndTextExtractor(ExtractorABC):
         std_prompt: PromptABC = None,
         triple_prompt: PromptABC = None,
         table_context_prompt: PromptABC = None,
-        matrix_table_index_prompt: PromptABC = None,
+        table_row_col_summary_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
     ):
         """
@@ -80,7 +80,8 @@ class TableAndTextExtractor(ExtractorABC):
         )
         self.llm = llm
         self.table_context_prompt = table_context_prompt
-        self.matrix_table_index_prompt = matrix_table_index_prompt
+        self.table_row_col_summary_prompt = table_row_col_summary_prompt
+        self.split_table_to_chunk = False
 
     @property
     def input_types(self) -> Type[Input]:
@@ -104,31 +105,77 @@ class TableAndTextExtractor(ExtractorABC):
         table_chunk: Chunk = input
         if table_chunk.type == ChunkTypeEnum.Table:
             return self._invoke_table(input, **kwargs)
-        return []
         return self.schema_free_extractor._invoke(input, **kwargs)
 
     @retry(stop=stop_after_attempt(3))
     def _invoke_table(self, input: Chunk, **kwargs) -> List[Output]:
         try:
             input.id = generate_hash_id(input.content)
-            table_context_info = self._table_context(input)
-            return self._table_extractor(input, table_type)
+            self._table_context(input)
+            return self._table_extractor(input)
         except:
-            logger.warning(f"_invoke_table failed for chunk:{input}")
+            logger.exception(f"_invoke_table failed for chunk:{input}")
             raise RuntimeError(f"table extract failed for chunk:{input}")
 
-        logger.error(f"_invoke_table failed for chunk, return None:{input}")
-        return []
+    def _table_extractor(self, input_table: Chunk):
+        html_content = markdown.markdown(
+            input_table.content, extensions=["markdown.extensions.tables"]
+        )
+        table_df = pd.read_html(StringIO(html_content))[0]
+        row_summary_list, col_summary_list = self._get_row_col_summary_by_llm(
+            input_table=input_table, table_df=table_df
+        )
 
-    def _table_extractor(self, input_table: Chunk, table_context_info: TableDefaultInfo):
-        if (
-            table_type.lower() in ["矩阵型表格", "matrixtable"]
-            or "matrix" in table_type.lower()
-        ):
-            return self._extract_metric_table(input_table)
-        elif table_type.lower() in ["简单表格", "simpletable"]:
-            return self._extract_simple_table(input_table)
-        return self._extract_other_table(input_table)
+        if self.split_table_to_chunk:
+            rst_list = []
+            chunks = self._do_split_table_to_chunk(
+                input_table=input_table,
+                row_summary_list=row_summary_list,
+                col_summary_list=col_summary_list,
+            )
+            for chunk in chunks:
+                subgraphs = self.schema_free_extractor._invoke(chunk)
+            rst_list.extend(subgraphs)
+            return rst_list
+        subgraph = self._gen_subgraph(
+            input_table=input_table,
+            table_df=table_df,
+            row_summary_list=row_summary_list,
+            col_summary_list=col_summary_list,
+        )
+        return [subgraph]
+
+    def _do_split_table_to_chunk(
+        self,
+        input_table: Chunk,
+        row_summary_list: list[TableRowSummary],
+        col_summary_list: list[TableColSummary],
+    ):
+        doc_name = input_table.kwargs.get("file_name", "unknow doc name")
+        table_id = input_table.id
+        table_info: TableDefaultInfo = input_table.kwargs.pop("table_info")
+        table_name = table_info.name
+        rst_chunk_list = []
+        for i, row_summary in enumerate(row_summary_list):
+            content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {row_summary.summary}\n{row_summary.content}"
+            chunk = Chunk(
+                id=f"table_{table_id}_row_{i}",
+                name=f"{doc_name} / {table_name} / {row_summary.summary}",
+                content=content,
+                type=ChunkTypeEnum.Text,
+            )
+            rst_chunk_list.append(chunk)
+        # TableColumn nodes
+        for i, col_summary in enumerate(col_summary_list):
+            content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
+            chunk = Chunk(
+                id=f"table_{table_id}_col_{i}",
+                name=f"{doc_name} / {table_name} / {col_summary.summary}",
+                content=content,
+                type=ChunkTypeEnum.Text,
+            )
+            rst_chunk_list.append(chunk)
+        return rst_chunk_list
 
     def _table_context(self, input_table: Chunk):
         # 提取全局信息
@@ -169,77 +216,101 @@ class TableAndTextExtractor(ExtractorABC):
             + after_text
         )
 
-    def _get_row_column_desc_by_llm(self, input_table: Chunk, table_df: pd.DataFrame):
+    def _get_row_col_summary_by_llm(self, input_table: Chunk, table_df: pd.DataFrame):
         table_info: TableDefaultInfo = input_table.kwargs["table_info"]
         table_desc = table_info.desc
-        input_str = table_desc + "\n\n" + table_df.to_markdown(index=False)
-        matrix_table_info = self.llm.invoke(
+        input_str = (
+            "table summary: " + table_desc + "\n" + table_df.to_markdown(index=False)
+        )
+        row_col_summary_info = self.llm.invoke(
             variables={"input": input_str},
-            prompt_op=self.matrix_table_index_prompt,
+            prompt_op=self.table_row_col_summary_prompt,
             with_json_parse=True,
             with_except=True,
         )
-        return matrix_table_info
-
-    def _gen_table_row_and_col_desc(self, input_table: Chunk):
-        """
-        generate table row and column description
-        """
-
-
-    def _extract_metric_table(self, input_table: Chunk):
-        html_content = markdown.markdown(
-            input_table.content, extensions=["markdown.extensions.tables"]
-        )
-        table_df = pd.read_html(StringIO(html_content))[0]
-        table_cell_desc = self._get_table_cell_desc(
-            input_table=input_table, table_df=table_df
-        )
-        subgraph = self._generate_subgraph(
-            input_table=input_table, table_df=table_df, table_cell_desc=table_cell_desc
-        )
-        return [subgraph]
-
-    def _get_table_cell_desc(self, input_table: Chunk, table_df: pd.DataFrame):
-        table_cell_desc = TableCellDesc()
-        matrix_table_info = self._get_row_column_desc_by_llm(
-            input_table=input_table, table_df=table_df
-        )
-        row_desc_list = matrix_table_info["rows"]
-        column_desc_list = matrix_table_info["columns"]
-        table_cell_desc.row_desc_list = row_desc_list
-        table_cell_desc.column_desc_list = column_desc_list
+        row_summary_list = row_col_summary_info["rows"]
+        col_summary_list = row_col_summary_info["columns"]
         row_num, column_num = table_df.shape
-        skip_row = row_num - len(row_desc_list)
-        table_cell_desc.df_skip_row = skip_row
-        skip_column = column_num - len(column_desc_list)
-        table_cell_desc.df_skip_column = skip_column
-        for row_index, row in table_df.iterrows():
-            if row_index < skip_row:
-                continue
-            column_index = 0
-            for _, value in row.items():
-                if column_index < skip_column:
-                    column_index += 1
-                    continue
-                row_desc = row_desc_list[row_index - skip_row]
-                column_desc = column_desc_list[column_index - skip_column]
-                key = str(row_index - skip_row) + "_" + str(column_index - skip_column)
-                desc = row_desc + " of " + column_desc + " is " + str(value)
-                table_cell = TableCellValue(
-                    value=value, desc=desc, row_name=row_desc, column_name=column_desc
-                )
-                table_cell_desc.desc_dict[key] = table_cell
-                column_index += 1
-        return table_cell_desc
+        if len(row_summary_list) > row_num + 1 or len(row_summary_list) < row_num:
+            raise RuntimeError(
+                f"len(row_summary_list)={len(row_col_summary_info)} error,row_num={row_num},table={input_table.content}"
+            )
+        if len(col_summary_list) != column_num:
+            raise RuntimeError(
+                f"len(col_summary_list)={len(col_summary_list)} error,col_num={column_num},table={input_table.content}"
+            )
+        # 获取head_rows和index_cols
+        with_head_summary = False
+        if len(row_summary_list) == row_num + 1:
+            with_head_summary = True
 
-    def _generate_subgraph(
+        header_list = None
+        for row_summary in row_summary_list:
+            if row_summary["type"] != "header":
+                continue
+            row_index = row_summary["index"]
+            new_header_list = None
+            if with_head_summary:
+                if 0 == row_index:
+                    new_header_list = list(table_df.columns)
+                else:
+                    new_header_list = table_df.iloc[row_index - 1].tolist()
+            else:
+                new_header_list = table_df.iloc[row_index].tolist()
+            if header_list is None:
+                header_list = new_header_list
+            else:
+                header_list = zip(header_list, new_header_list)
+        index_list = None
+        for col_summary in col_summary_list:
+            if col_summary["type"] != "index":
+                continue
+            col_index = col_summary["index"]
+            col_name = table_df.columns[col_index]
+            col_data = [col_name] + table_df.iloc[:, col_index].tolist()
+            if index_list is None:
+                index_list = col_data
+            else:
+                index_list = zip(index_list, col_data)
+        # get data
+        rst_row_summary_list = []
+        for row_summary in row_summary_list:
+            if row_summary["type"] != "data":
+                continue
+            row_index = row_summary["index"]
+            if with_head_summary:
+                row_index -= 1
+            data = table_df.iloc[row_index].tolist()
+            df = pd.DataFrame([data], columns=header_list)
+            content = df.to_markdown(index=False)
+            rst_row_summary_list.append(
+                TableRowSummary(summary=row_summary["summary"], content=content)
+            )
+        rst_col_summary_list = []
+        for col_summary in col_summary_list:
+            if col_summary["type"] != "data":
+                continue
+            col_index = col_summary["index"]
+            col_name = table_df.columns[col_index]
+            col_data = [col_name] + table_df.iloc[:, col_index].tolist()
+            df = pd.DataFrame(col_data[1:], index=index_list[1:], columns=[col_data[0]])
+            df.index.name = str(index_list[0])
+            content = df.to_markdown(index=True)
+            rst_col_summary_list.append(
+                TableColSummary(summary=col_summary["summary"], content=content)
+            )
+        return rst_row_summary_list, rst_col_summary_list
+
+    def _gen_subgraph(
         self,
         input_table: Chunk,
         table_df: pd.DataFrame,
-        table_cell_desc: TableCellDesc = None,
-        with_cell_node: bool = False,
+        row_summary_list: list[TableRowSummary],
+        col_summary_list: list[TableColSummary],
     ):
+        """
+        generate subgraph
+        """
         nodes = []
         edges = []
 
@@ -283,237 +354,76 @@ class TableAndTextExtractor(ExtractorABC):
             )
             edges.append(edge)
 
-        if table_cell_desc is not None:
-            # TableRow nodes
-            row_desc_list = table_cell_desc.row_desc_list
-            skip_row = table_cell_desc.df_skip_row
-            for row_index, row in table_df.iterrows():
-                if row_index < skip_row:
-                    continue
-                row_desc = row_desc_list[row_index - skip_row]
-                node = Node(
-                    _id=f"{table_id}-row-{row_index}",
-                    name=f"{table_name}-{row_desc}",
-                    label="TableRow",
-                    properties={
-                        "raw_name": row_desc,
-                        "content": row.to_csv(),
-                    },
-                )
-                nodes.append(node)
-            # TableColumn nodes
-            column_desc_list = table_cell_desc.column_desc_list
-            skip_column = table_cell_desc.df_skip_column
-            col_index = -1
-            for col_name, col_data in table_df.iteritems():
-                col_index += 1
-                if col_index < skip_column:
-                    continue
-                column_desc = column_desc_list[col_index - skip_column]
-                node = Node(
-                    _id=f"{table_id}-column-{col_index}",
-                    name=f"{table_name}-{column_desc}",
-                    label="TableColumn",
-                    properties={
-                        "raw_name": column_desc,
-                        "content":col_data.to_csv(),
-                    },
-                )
-                nodes.append(node)
-            # TableCell nodes
-            if with_cell_node:
-                for cell_key, table_cell in table_cell_desc.desc_dict.items():
-                    table_cell: TableCellValue = table_cell
-                    node = Node(
-                        _id=f"{table_id}-cell-{cell_key}",
-                        name=f"{table_name} shows {table_cell.desc}",
-                        label="TableCell",
-                        properties={
-                            "raw_name": table_cell.desc,
-                            "row_name": table_cell.row_name,
-                            "col_name": table_cell.column_name,
-                            "desc": table_cell.desc,
-                            "value": table_cell.value,
-                            "scale": table_cell.scale,
-                            "unit": table_cell.unit,
-                        },
-                    )
-                    nodes.append(node)
+        # TableRow nodes
+        for i, row_summary in enumerate(row_summary_list):
+            node = Node(
+                _id=f"{table_id}-row-{i}",
+                name=f"{table_name}-{row_summary.summary}",
+                label="TableRow",
+                properties={
+                    "raw_name": row_summary.summary,
+                    "content": row_summary.content,
+                },
+            )
+            nodes.append(node)
+        # TableColumn nodes
+        for i, col_summary in enumerate(col_summary_list):
+            node = Node(
+                _id=f"{table_id}-column-{i}",
+                name=f"{table_name}-{col_summary.summary}",
+                label="TableColumn",
+                properties={
+                    "raw_name": col_summary.summary,
+                    "content": col_summary.content,
+                },
+            )
+            nodes.append(node)
 
         node_map = {}
         for node in nodes:
             node_map[node.id] = node
 
-        if table_cell_desc is not None:
-            # table <-> row
-            row_desc_list = table_cell_desc.row_desc_list
-            for idx, row_desc in enumerate(row_desc_list):
-                row_id = f"{table_id}-row-{idx}"
-                edge = Edge(
-                    _id=f"table-{table_id}-row-{idx}",
-                    from_node=node_map[table_id],
-                    to_node=node_map[row_id],
-                    label="containRow",
-                    properties={},
-                )
+        # table <-> row
+        for i, row_summary in enumerate(row_summary_list):
+            row_id = f"{table_id}-row-{i}"
+            edge = Edge(
+                _id=f"table-{table_id}-row-{i}",
+                from_node=node_map[table_id],
+                to_node=node_map[row_id],
+                label="containRow",
+                properties={},
+            )
 
-                edges.append(edge)
+            edges.append(edge)
 
-                edge = Edge(
-                    _id=f"row-{idx}-table-{table_id}",
-                    from_node=node_map[row_id],
-                    to_node=node_map[table_id],
-                    label="partOf",
-                    properties={},
-                )
-                edges.append(edge)
+            edge = Edge(
+                _id=f"row-{i}-table-{table_id}",
+                from_node=node_map[row_id],
+                to_node=node_map[table_id],
+                label="partOf",
+                properties={},
+            )
+            edges.append(edge)
 
-            # table <-> column
-            column_desc_list = table_cell_desc.column_desc_list
-            for idx, column_desc in enumerate(column_desc_list):
-                col_id = f"{table_id}-column-{idx}"
-                edge = Edge(
-                    _id=f"table-{table_id}-col-{idx}",
-                    from_node=node_map[table_id],
-                    to_node=node_map[col_id],
-                    label="containColumn",
-                    properties={},
-                )
-                edges.append(edge)
+        # table <-> column
+        for i, col_summary in enumerate(col_summary_list):
+            col_id = f"{table_id}-column-{i}"
+            edge = Edge(
+                _id=f"table-{table_id}-col-{i}",
+                from_node=node_map[table_id],
+                to_node=node_map[col_id],
+                label="containColumn",
+                properties={},
+            )
+            edges.append(edge)
 
-                edge = Edge(
-                    _id=f"col-{idx}-table-{table_id}",
-                    from_node=node_map[col_id],
-                    to_node=node_map[table_id],
-                    label="partOf",
-                    properties={},
-                )
-                edges.append(edge)
-
-            # table/row/col <-> table cell
-            if with_cell_node:
-                for cell_key, table_cell in table_cell_desc.desc_dict.items():
-                    table_cell: TableCellValue = table_cell
-                    cell_id = f"{table_id}-cell-{cell_key}"
-                    row_index = cell_key.split("_")
-                    column_index = row_index[1]
-                    row_index = row_index[0]
-
-                    row_id = f"{table_id}-row-{row_index}"
-                    col_id = f"{table_id}-column-{column_index}"
-                    edge = Edge(
-                        _id=f"row-{row_id}-contain-cell-{cell_id}",
-                        from_node=node_map[row_id],
-                        to_node=node_map[cell_id],
-                        label="containCell",
-                        properties={},
-                    )
-                    edges.append(edge)
-
-                    edge = Edge(
-                        _id=f"cell-{cell_id}-part-of-row-{row_id}",
-                        from_node=node_map[cell_id],
-                        to_node=node_map[row_id],
-                        label="partOfTableRow",
-                        properties={},
-                    )
-                    edges.append(edge)
-
-                    edge = Edge(
-                        _id=f"col-{col_id}-contain_cell-{cell_id}",
-                        from_node=node_map[col_id],
-                        to_node=node_map[cell_id],
-                        label="containCell",
-                        properties={},
-                    )
-                    edges.append(edge)
-
-                    edge = Edge(
-                        _id=f"cell-{cell_id}-part-of-col-{col_id}",
-                        from_node=node_map[cell_id],
-                        to_node=node_map[col_id],
-                        label="partOfTableColumn",
-                        properties={},
-                    )
-                    edges.append(edge)
-
-                    edge = Edge(
-                        _id=f"cell-{cell_id}-part-of-table-{table_id}",
-                        from_node=node_map[cell_id],
-                        to_node=node_map[table_id],
-                        label="partOfTable",
-                        properties={},
-                    )
-                    edges.append(edge)
-
+            edge = Edge(
+                _id=f"col-{i}-table-{table_id}",
+                from_node=node_map[col_id],
+                to_node=node_map[table_id],
+                label="partOf",
+                properties={},
+            )
+            edges.append(edge)
         subgraph = SubGraph(nodes=nodes, edges=edges)
         return subgraph
-
-    def _extract_simple_table(self, input_table: Chunk):
-        rst = []
-        subgraph = self._generate_subgraph(
-            input_table=input_table, table_df=None, table_cell_desc=None
-        )
-        rst.append(subgraph)
-
-        # 调用ner进行实体识别
-        table_chunks = self.split_table(input_table, 500)
-        for c in table_chunks:
-            subgraph_list = self.schema_free_extractor._invoke(input=c)
-            rst.extend(subgraph_list)
-        return rst
-
-    def _extract_other_table(self, input_table: Chunk):
-        return self._extract_simple_table(input_table=input_table)
-
-    def split_table(self, org_chunk: Chunk, chunk_size: int = 2000, sep: str = "\n"):
-        """
-        Internal method to split a markdown format table into smaller markdown tables.
-
-        Args:
-            org_chunk (Chunk): The original chunk containing the table data.
-            chunk_size (int): The maximum size of each smaller chunk. Defaults to 2000.
-            sep (str): The separator used to join the table rows. Defaults to "\n".
-
-        Returns:
-            List[Chunk]: A list of smaller chunks resulting from the split operation.
-        """
-        output = []
-        content = org_chunk.content
-        table_start = content.find("|")
-        table_end = content.rfind("|") + 1
-        if table_start is None or table_end is None or table_start == table_end:
-            return None
-        prefix = content[0:table_start].strip("\n ")
-        table_rows = content[table_start:table_end].split("\n")
-        table_header = table_rows[0]
-        table_header_segmentation = table_rows[1]
-        suffix = content[table_end:].strip("\n ")
-
-        splitted = []
-        cur = [prefix, table_header, table_header_segmentation]
-        cur_len = len(prefix)
-        for idx, row in enumerate(table_rows[2:]):
-            if cur_len > chunk_size:
-                cur.append(suffix)
-                splitted.append(cur)
-                cur_len = 0
-                cur = [prefix, table_header, table_header_segmentation]
-            cur.append(row)
-            cur_len += len(row)
-
-        cur.append(content[table_end:])
-        if len(cur) > 0:
-            splitted.append(cur)
-
-        output = []
-        for idx, sentences in enumerate(splitted):
-            chunk = Chunk(
-                id=f"{org_chunk.id}#{chunk_size}#table#{idx}#LEN",
-                name=f"{org_chunk.name}#{idx}",
-                content=sep.join(sentences),
-                type=org_chunk.type,
-                **org_chunk.kwargs,
-            )
-            output.append(chunk)
-        return output
