@@ -357,7 +357,7 @@ class SubQueryResult:
         self.spo_retrieved: list = []
         self.match_type: str = "fuzzy"
         self.execute_cost: float = 0.0
-        self.is_executed = False,
+        self.is_executed = False
         self.debug_info = {}
 
     def to_json(self):
