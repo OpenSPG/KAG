@@ -31,7 +31,25 @@ $chunks
 
 """.strip()
 
-    template_en = template_zh
+    template_en = """
+# Task
+Your task is to select the most relevant chunk based on the given question and context information.
+
+# Output format
+Give your reason, and return `The final answer is: <number>` in the last line.
+
+# Input
+## Question
+$question
+
+## context
+$context
+
+## Chunks
+$chunks
+
+# Your Answer
+""".strip()
 
     @property
     def template_variables(self) -> List[str]:
