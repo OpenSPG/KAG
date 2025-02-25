@@ -65,10 +65,10 @@ class FinQAReasoner(KagReasonerABC):
         - supporting_fact: Supporting facts gathered during the reasoning process.
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
-        plan_and_result_list = []
         step_index = -1
         process_info = {"kg_solved_answer": [], "sub_qa_pair": []}
         while True:
+            plan_and_result_list = []
             step_index += 1
             # logic form planing
             lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
@@ -90,6 +90,8 @@ class FinQAReasoner(KagReasonerABC):
             best_chunk, lf_node = self._rerank_docs(
                 question, plan_and_result_list, process_info
             )
+            if best_chunk is None:
+                break
             lf_node: LFPlan = lf_node
             process_info["sub_qa_pair"].append((lf_node, best_chunk))
 
@@ -102,10 +104,12 @@ class FinQAReasoner(KagReasonerABC):
     def _rerank_docs(
         self, question: str, plan_and_result_list: List, process_info: Dict
     ):
-        docs_map = {}
+        chunk_set = set()
+        chunk_list = []
         selected_docs = [p[1] for p in process_info["sub_qa_pair"]]
         for lf_node, res in plan_and_result_list:
             lf_node: LFPlan = lf_node
+            lf_node.res = res
             res: LFExecuteResult = res
             if "retrieval" == lf_node.sub_query_type:
                 for doc_str in res.doc_retrieved:
@@ -116,21 +120,52 @@ class FinQAReasoner(KagReasonerABC):
                     if cuted_doc_str in selected_docs:
                         continue
                     score = float(doc_str[content_end + 1 :])
-                    docs_map[cuted_doc_str] = (lf_node, score)
+                    if cuted_doc_str in chunk_set:
+                        continue
+                    chunk_set.add(cuted_doc_str)
+                    chunk_list.append((lf_node, cuted_doc_str, score))
             elif "math" == lf_node.sub_query_type:
-                doc_str = f"{res.sub_query}\nCalculated through a program return:\n{res.sub_answer}"
-                docs_map[doc_str] = (lf_node, 0.0)
+                doc_str = (
+                    f"SubQuestion: {lf_node.query} by: math\nAnswer: {res.sub_answer}\n"
+                )
+                if doc_str in chunk_set:
+                    continue
+                chunk_set.add(doc_str)
+                chunk_list.append((lf_node, doc_str, 0.0))
         input_chunk_str = ""
-        chunks_str_list = sorted(
-            docs_map.keys(), key=lambda x: docs_map[x][1], reverse=True
-        )
-        index = 0
-        for chunk_str in chunks_str_list:
-            input_chunk_str += f"\n### {index}\n{chunk_str}\n"
-            index += 1
-        input_dict = {"question": question, "chunks": input_chunk_str, "context": ""}
+        for i, doc in enumerate(chunk_list):
+            input_chunk_str += f"\n### {i}\n{doc[1]}\n"
+        input_dict = {
+            "question": question,
+            "chunks": input_chunk_str,
+            "context": self.get_context_str(process_info),
+        }
         best_chunk_index = self.llm_module.invoke(
             input_dict, self.rerank_docs_prompt, False, True
         )
-        best_chunk = chunks_str_list[best_chunk_index]
-        return best_chunk, docs_map[best_chunk][0]
+        if best_chunk_index is None:
+            return None, None
+        best_chunk = chunk_list[best_chunk_index]
+        exists = self.check_best_chunk_exists(best_chunk[0], process_info)
+        if exists:
+            return None, None
+        if best_chunk[0].sub_query_type == "math":
+            return best_chunk[0].res.sub_answer, best_chunk[0]
+        return best_chunk[1], best_chunk[0]
+
+    def get_context_str(self, process_info: Dict):
+        context_list = [
+            (p[0].query, p[0].sub_query_type, p[1]) for p in process_info["sub_qa_pair"]
+        ]
+        context_str = ""
+        for i, c in enumerate(context_list):
+            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer: {c[2]}\n"
+        if len(context_str) == 0:
+            return "No selected chunks"
+        return context_str
+
+    def check_best_chunk_exists(self, best_chunk_lf_plan: LFPlan, process_info: Dict):
+        for p in process_info["sub_qa_pair"]:
+            if p[0].query == best_chunk_lf_plan.query:
+                return True
+        return False

@@ -106,9 +106,10 @@ class StepLFPlanner(LFPlannerABC):
         return self._convert_node_to_plan(parsed_logic_nodes)
 
     def generate_logic_form(self, question: str, process_info: Dict = None):
-        context_list = [p[1] for p in process_info["sub_qa_pair"]]
-        context = "\n".join(context_list)
-        input_dict = {"question": question, "context": context}
+        input_dict = {
+            "question": question,
+            "context": self.get_context_str(process_info),
+        }
         return self.llm_module.invoke(
             {
                 "input": json.dumps(
@@ -119,3 +120,13 @@ class StepLFPlanner(LFPlannerABC):
             with_json_parse=True,
             with_except=True,
         )
+
+    def get_context_str(self, process_info: Dict):
+        context_list = [
+            (p[0].query, p[0].sub_query_type, p[1]) for p in process_info["sub_qa_pair"]
+        ]
+        context_str = ""
+        for i, c in enumerate(context_list):
+            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer: {c[2]}\n"
+        print(context_str)
+        return context_str
