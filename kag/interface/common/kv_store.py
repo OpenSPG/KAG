@@ -59,7 +59,7 @@ class KVStore:
 
     def get_value(self, key):
         if self.disable:
-            return None
+            return None, None
         with self.read_lock:
             with self.rlock:
                 self.c.execute("SELECT value FROM kv_store WHERE key=?", (key,))
@@ -70,11 +70,11 @@ class KVStore:
                     original_data = pickle.loads(decoded_data)
                     return original_data
                 else:
-                    return None
+                    return None, None
 
     def delete(self ,key):
         if self.disable:
-            return None
+            return False
         with self.write_lock:
             with self.rlock:
                 self.c.execute("DELETE FROM kv_store WHERE key=?", (key,))

@@ -12,10 +12,10 @@ class TableRerankChunksPrompt(PromptABC):
 
     template_zh = """
 # Task
-你的任务是根据给出的问题和上下文信息，选择最相关的chunk。
+你的任务是选择与问题最相关的chunk，返回chunk的编号。
 
 # Output format
-给出你的理由，最后一行返回`The final answer is: <number>`
+给出你的理由，最后一行返回`The final answer is: <chunk编号>`。
 
 # Input
 ## Question
@@ -33,10 +33,10 @@ $chunks
 
     template_en = """
 # Task
-Your task is to select the most relevant chunk based on the given question and context information.
+Your task is to select the most relevant chunk to the question and return the number of the chunk.
 
 # Output format
-Give your reason, and return `The final answer is: <number>` in the last line.
+Give your reason, and return `The final answer is: <chunk_number>` in the last line.
 
 # Input
 ## Question

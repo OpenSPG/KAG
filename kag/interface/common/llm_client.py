@@ -122,9 +122,9 @@ class LLMClient(Registrable):
         response = ""
         try:
             msg_key = self._get_message_key(prompt=dumps(prompt,sort_keys=True), image_url="")
-            cache_data = self.kv_store.get_value(msg_key)
-            if cache_data is not None:
-                return cache_data
+            cache_rst, cache_llm_res = self.kv_store.get_value(msg_key)
+            if cache_rst is not None:
+                return cache_rst
             response = (
                 self.call_with_json_parse(prompt=prompt)
                 if with_json_parse
@@ -142,7 +142,7 @@ class LLMClient(Registrable):
                 raise RuntimeError(
                     f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
-        self.kv_store.set_value(msg_key, result)
+        self.kv_store.set_value(key=msg_key, value=(result, response))
 
         return result
 
