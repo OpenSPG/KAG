@@ -17,16 +17,16 @@ class LogicFormPlanPrompt(PromptABC):
     "子问题要求尽量多样，避免重复和类似。",
     "确保子问题包含完整的信息，避免使用代词。",
     "将子问题归类到function中的一项上，并按照格式要求输出。",
-    "如果给定的上下文已经足够回答问题，输出'The context is sufficient to answer the question.'"
+    "如果给出的信息可以直接得到答案，输出'The context is sufficient to answer the question.'"
   ],
   "function": [
     {
-      "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`], p.prop=`value`, s.prop=`value`, o.prop=`value`)",
-      "description": "根据spo检索信息，s、p、o不能在同一表达式中反复多次出现，可对s、p、o进行带约束查询；多跳则进行多次检索。当前变量引用前文变量时，变量名必须和指代的变量名一致，且只需给出变量名，实体类型及名称仅在首次引用时给定。prop为被约束的属性名,属性约束的值`value`可以是文本、常数，也可以引用前面函数中的变量名"
+      "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])",
+      "description": "根据spo检索信息，s、p、o不能在同一表达式中反复多次出现。"
     },
     {
-      "function_declaration": "Math(content=[`XXX` or `o_alias/s_alias`], target=`XXX`)->math_alias",
-      "description": "执行计算，该算子包含数值计算或排序计数等集合操作。content给出输入信息，可以为文本或引用的变量名。target为计算的目标，通常是当前子问题。math_alias为变量名，表示其计算结果，可在后续动作中被引用。"
+      "function_declaration": "Math(content=[], target=`XXX`)->math_alias",
+      "description": "执行计算，该算子包含数值计算或排序计数等集合操作。content为空。target为计算的目标，通常是当前子问题。math_alias为变量名，表示其计算结果，可在后续动作中被引用。"
     }
   ],
   "examples": [
@@ -86,6 +86,10 @@ class LogicFormPlanPrompt(PromptABC):
     def parse_response(self, response, **kwargs):
         try:
             logger.debug(f"logic form:{response}")
+            if isinstance(response, str):
+                flag = "The context is sufficient to answer the question.".lower()
+                if flag in response.lower():
+                    return [], []
             sub_querys = []
             logic_forms = []
             if isinstance(response, list):

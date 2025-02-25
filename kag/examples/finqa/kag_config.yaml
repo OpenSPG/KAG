@@ -1,18 +1,22 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: sk-6643173170664d048de0e3915a504a09
+  #zzapi_key: 
+  api_key: 
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   model: deepseek-v3
+  #model: qwen2.5-32b-instruct
   type: maas
 
 chat_llm: &chat_llm
-  api_key: sk-6643173170664d048de0e3915a504a09
+  #zzapi_key: 
+  api_key: 
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  model: deepseek-v3
+  #model: deepseek-v3
+  model: qwen2.5-72b-instruct
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
+  api_key: 
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -36,7 +40,7 @@ finqa_builder_pipeline:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
       type: table_and_text_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-      llm: *openie_llm
+      llm: *chat_llm
       ner_prompt:
         type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
       std_prompt:
@@ -54,7 +58,7 @@ finqa_builder_pipeline:
       similarity_threshold: 0.99
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 1000
+      split_length: 300
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer

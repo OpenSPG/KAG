@@ -13,8 +13,10 @@ from kag.examples.finqa.builder.indexer import build_finqa_graph, load_finqa_dat
 
 from kag.examples.finqa.reasoner.finqa_reasoner import FinQAReasoner
 from kag.examples.finqa.reasoner.step_lf_planner import StepLFPlanner
-from kag.examples.finqa.reasoner.step_lf_executor import SortExecutor
+from kag.examples.finqa.reasoner.step_lf_executor import StepLFExecutor
 from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
+from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
+from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator
 
 
 def qa(question, **kwargs):
@@ -37,7 +39,10 @@ class MultiHerttEvaluate(Evaluate):
             try:
                 if "%" in gold:
                     gold = gold.strip("%")
-                    _prediction = _prediction.strip("%")
+                    if "%" in _prediction:
+                        _prediction = _prediction.strip("%")
+                    else:
+                        _prediction = str(float(_prediction) * 100)
                 # 结果是纯数值
                 gold = float(gold)
                 match = re.search(r"([-+]?[0-9,.]+)(%)?", _prediction)
@@ -72,7 +77,7 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = 1
+    debug_index = None
     start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for i, _item in enumerate(_data_list):

@@ -71,3 +71,12 @@ class KVStore:
                     return original_data
                 else:
                     return None
+
+    def delete(self ,key):
+        if self.disable:
+            return None
+        with self.write_lock:
+            with self.rlock:
+                self.c.execute("DELETE FROM kv_store WHERE key=?", (key,))
+                self.conn.commit()
+                return True

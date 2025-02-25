@@ -39,16 +39,8 @@ class LLMClient(Registrable):
 
     def __init__(self, rate_limiter: RateLimiter = None, **kwargs):
         super().__init__(**kwargs)
-        self.rate_limiter = rate_limiter
-
-    """
-    A class that provides methods for performing inference using large language model.
-
-    This class includes methods to call the model with a prompt, parse the response, and handle batch processing of prompts.
-    """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
         self.kv_store = KVStore()
+        self.rate_limiter = rate_limiter
 
     @retry(stop=stop_after_attempt(3))
     def __call__(self, prompt: Union[str, dict, list]) -> str:

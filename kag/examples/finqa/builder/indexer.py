@@ -26,7 +26,7 @@ def load_finqa_data() -> list:
     load data
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = os.path.join(current_dir, "data", "dev.json")
+    file_name = os.path.join(current_dir, "data", "test.json")
     with open(file_name, "r", encoding="utf-8") as f:
         data_list = json.load(f)
     print("finqa data list len " + str(len(data_list)))

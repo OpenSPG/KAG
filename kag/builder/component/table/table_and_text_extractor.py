@@ -81,7 +81,7 @@ class TableAndTextExtractor(ExtractorABC):
         self.llm = llm
         self.table_context_prompt = table_context_prompt
         self.table_row_col_summary_prompt = table_row_col_summary_prompt
-        self.split_table_to_chunk = False
+        self.split_table_to_chunk = True
 
     @property
     def input_types(self) -> Type[Input]:
@@ -135,7 +135,7 @@ class TableAndTextExtractor(ExtractorABC):
             )
             for chunk in chunks:
                 subgraphs = self.schema_free_extractor._invoke(chunk)
-            rst_list.extend(subgraphs)
+                rst_list.extend(subgraphs)
             return rst_list
         subgraph = self._gen_subgraph(
             input_table=input_table,
@@ -157,7 +157,8 @@ class TableAndTextExtractor(ExtractorABC):
         table_name = table_info.name
         rst_chunk_list = []
         for i, row_summary in enumerate(row_summary_list):
-            content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {row_summary.summary}\n{row_summary.content}"
+            #content = f"doc: {doc_name}\ntable: {table_name}\ntable_row_summary: {row_summary.summary}\n{row_summary.content}"
+            content = row_summary.content
             chunk = Chunk(
                 id=f"table_{table_id}_row_{i}",
                 name=f"{doc_name} / {table_name} / {row_summary.summary}",
@@ -167,7 +168,8 @@ class TableAndTextExtractor(ExtractorABC):
             rst_chunk_list.append(chunk)
         # TableColumn nodes
         for i, col_summary in enumerate(col_summary_list):
-            content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
+            #content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
+            content = col_summary.content
             chunk = Chunk(
                 id=f"table_{table_id}_col_{i}",
                 name=f"{doc_name} / {table_name} / {col_summary.summary}",

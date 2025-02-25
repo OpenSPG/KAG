@@ -55,7 +55,7 @@ class DefaultLFPlanner(LFPlannerABC):
 
     # 需要把大模型生成结果记录下来
     def lf_planing(
-        self, question: str, memory: KagMemoryABC = None, llm_output=None
+        self, question: str, memory: KagMemoryABC = None, llm_output=None, **kwargs
     ) -> List[LFPlan]:
         """
         Generates sub-queries and logic forms based on the input question or provided LLM output.
