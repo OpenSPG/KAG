@@ -16,8 +16,9 @@ class FinQARespGenerator(PromptABC):
 先输出理由，最终给出数值答案，以`Finanl Answer: <number>`作为结束。
 
 # 注意事项
-如果问百分比，给出带有百分号的数值，如`Final Answer: 0.5%`。
-数值精度要求越高越好。
+答案不应包含单位，只给出数值。
+如果问题涉及百分比，请提供数值，不包含百分号，例如`0.01代表1%`。
+数值应精确到小数点后5位。
 
 # 给定的信息
 问题：'$instruction'
@@ -33,8 +34,9 @@ Based on the given information, answer the question.
 First, provide the reasoning, and then give the final numerical answer, ending with `Final Answer: <number>`.
 
 # Notes
-If the question asks for a percentage, provide the value with a `%` sign, such as `Final Answer: 0.5%`.
-Ensure the numerical precision is as high as possible.
+The answer should not include units, only the numerical value.
+If the question is about a percentage, provide the numerical value without the percentage sign, e.g., `0.01 for 1%`.
+The numerical value should be accurate to 5 decimal places.
 
 # Given Information
 Question: '$instruction'

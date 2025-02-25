@@ -66,10 +66,12 @@ class FinQAReasoner(KagReasonerABC):
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
         step_index = -1
-        process_info = {"kg_solved_answer": [], "sub_qa_pair": []}
+        process_info = {"kg_solved_answer": [], "sub_qa_pair": [], "lf_plan": []}
         while True:
             plan_and_result_list = []
             step_index += 1
+            if step_index >= 10:
+                break
             # logic form planing
             lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
                 question, process_info=process_info
@@ -93,12 +95,13 @@ class FinQAReasoner(KagReasonerABC):
             if best_chunk is None:
                 break
             lf_node: LFPlan = lf_node
-            process_info["sub_qa_pair"].append((lf_node, best_chunk))
+            process_info["sub_qa_pair"].append((lf_node.query, best_chunk))
+            process_info["lf_plan"].append(lf_node)
 
         reason_res: LFExecuteResult = LFExecuteResult()
         reason_res.recall_docs = [p[1] for p in process_info["sub_qa_pair"]]
         reason_res.rerank_docs = [p[1] for p in process_info["sub_qa_pair"]]
-        reason_res.sub_plans = [p[0] for p in process_info["sub_qa_pair"]]
+        reason_res.sub_plans = [p for p in process_info["lf_plan"]]
         return reason_res
 
     def _rerank_docs(
@@ -154,9 +157,11 @@ class FinQAReasoner(KagReasonerABC):
         return best_chunk[1], best_chunk[0]
 
     def get_context_str(self, process_info: Dict):
-        context_list = [
-            (p[0].query, p[0].sub_query_type, p[1]) for p in process_info["sub_qa_pair"]
-        ]
+        context_list = []
+        for i, qa in enumerate(process_info["sub_qa_pair"]):
+            a = qa[1]
+            lf_plan = process_info["lf_plan"][i]
+            context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):
             context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer: {c[2]}\n"
@@ -165,7 +170,7 @@ class FinQAReasoner(KagReasonerABC):
         return context_str
 
     def check_best_chunk_exists(self, best_chunk_lf_plan: LFPlan, process_info: Dict):
-        for p in process_info["sub_qa_pair"]:
-            if p[0].query == best_chunk_lf_plan.query:
+        for p in process_info["lf_plan"]:
+            if p.query == best_chunk_lf_plan.query:
                 return True
         return False

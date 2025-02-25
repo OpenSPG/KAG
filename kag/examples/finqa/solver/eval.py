@@ -17,6 +17,7 @@ from kag.examples.finqa.reasoner.step_lf_executor import StepLFExecutor
 from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator
+from kag.examples.finqa.solver.prompt.expression_builder import TableExpressionBuildr
 
 
 def qa(question, **kwargs):

@@ -59,9 +59,12 @@ $chunks
             ans_flag = "The final answer is:"
             index = response.rfind(ans_flag)
             response = response[index + len(ans_flag) :]
-            response = response.strip(" .<>")
+            response = response.strip(" .<>'")
             if "none" in response.lower():
                 return None
+            if "," in response:
+                response = response.split(",")[0].strip()
+            response = response.strip(" .<>'")
             return int(response)
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)

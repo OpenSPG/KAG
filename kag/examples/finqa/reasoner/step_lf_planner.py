@@ -122,9 +122,11 @@ class StepLFPlanner(LFPlannerABC):
         )
 
     def get_context_str(self, process_info: Dict):
-        context_list = [
-            (p[0].query, p[0].sub_query_type, p[1]) for p in process_info["sub_qa_pair"]
-        ]
+        context_list = []
+        for i, qa in enumerate(process_info["sub_qa_pair"]):
+            a = qa[1]
+            lf_plan = process_info["lf_plan"][i]
+            context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):
             context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer: {c[2]}\n"
