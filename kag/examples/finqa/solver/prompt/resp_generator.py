@@ -19,6 +19,7 @@ class FinQARespGenerator(PromptABC):
 答案不应包含单位，只给出数值。
 如果问题涉及百分比，请返回数值，不包含百分号，例如`0.01代表1%，返回0.01。`
 数值应精确到小数点后5位。
+是否类问题，返回yes或no。
 
 # 给定的信息
 问题：'$instruction'
@@ -37,6 +38,7 @@ First, provide the reasoning, and then give the final numerical answer, ending w
 The answer should not include units, only the numerical value.
 If the question involves percentages, return the numerical value without the percentage sign, e.g., `0.01 represents 1%, return 0.01.`
 The numerical value should be accurate to 5 decimal places.
+For yes/no type questions, return yes or no.
 
 # Given Information
 Question: '$instruction'
