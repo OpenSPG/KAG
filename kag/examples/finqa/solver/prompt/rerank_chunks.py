@@ -64,6 +64,8 @@ $chunks
                 return None
             if "," in response:
                 response = response.split(",")[0].strip()
+            if "and" in response:
+                response = response.split("and")[0].strip()
             response = response.strip(" .<>'")
             return int(response)
         except Exception as e:
