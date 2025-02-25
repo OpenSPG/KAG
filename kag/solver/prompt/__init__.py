@@ -14,6 +14,7 @@ from kag.solver.prompt.default.deduce_choice import DeduceChoice
 from kag.solver.prompt.default.deduce_entail import DeduceEntail
 from kag.solver.prompt.default.deduce_judge import DeduceJudge
 from kag.solver.prompt.default.deduce_multi_choice import DeduceMutiChoice
+from kag.solver.prompt.default.expression_builder import ExpressionBuildr
 from kag.solver.prompt.default.logic_form_plan import LogicFormPlanPrompt
 from kag.solver.prompt.default.question_ner import QuestionNER
 from kag.solver.prompt.default.resp_extractor import RespExtractor
@@ -21,6 +22,7 @@ from kag.solver.prompt.default.resp_generator import RespGenerator
 from kag.solver.prompt.default.resp_judge import RespJudge
 from kag.solver.prompt.default.resp_reflector import RespReflector
 from kag.solver.prompt.default.resp_verifier import RespVerifier
+from kag.solver.prompt.default.rewrite_sub_query import DefaultRewriteSubQuery
 from kag.solver.prompt.default.solve_question import SolveQuestion
 from kag.solver.prompt.default.solve_question_without_docs import (
     SolveQuestionWithOutDocs,
@@ -44,4 +46,6 @@ __all__ = [
     "SolveQuestionWithOutDocs",
     "SolveQuestionWithOutSPO",
     "SpoRetrieval",
+    "ExpressionBuildr",
+    "DefaultRewriteSubQuery",
 ]
