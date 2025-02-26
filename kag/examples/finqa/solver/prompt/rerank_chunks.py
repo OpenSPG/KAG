@@ -61,14 +61,12 @@ $chunks
             ans_flag = "The final answer is:"
             index = response.rfind(ans_flag)
             response = response[index + len(ans_flag) :]
-            response = response.strip(" .<>'")
             if "none" in response.lower():
+                logger.error(f"{response}")
                 return None
-            if "," in response:
-                response = response.split(",")[0].strip()
-            if "and" in response:
-                response = response.split("and")[0].strip()
-            response = response.strip(" .<>'*")
+            match = re.match(r'^\s*[^\d]*?(\d+)', response)
+            if match:
+                return int(match.group(1))
             return int(response)
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)

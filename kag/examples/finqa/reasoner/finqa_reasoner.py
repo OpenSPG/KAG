@@ -98,7 +98,8 @@ class FinQAReasoner(KagReasonerABC):
                 break
             lf_node: LFPlan = lf_node
             #process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer, best_chunk))
-            process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer))
+            #process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer))
+            process_info["sub_qa_pair"].append((lf_node.query, best_chunk))
             process_info["lf_plan"].append(lf_node)
 
         reason_res: LFExecuteResult = LFExecuteResult()
@@ -128,7 +129,7 @@ class FinQAReasoner(KagReasonerABC):
         for lf_node, res in plan_and_result_list:
             lf_node: LFPlan = lf_node
             res: LFExecuteResult = res
-            if not lf_node.res.if_answered:
+            if lf_node.sub_query_type == 'math' and not lf_node.res.if_answered:
                 continue
             if "retrieval" == lf_node.sub_query_type:
                 for doc_str in res.doc_retrieved:
@@ -147,6 +148,8 @@ class FinQAReasoner(KagReasonerABC):
                     continue
                 chunk_set.add(doc_str)
                 for_select_qa_list.append((lf_node, doc_str, 0.0))
+        if len(for_select_qa_list) == 0:
+            return None, None
         input_chunk_str = ""
         for i, doc in enumerate(for_select_qa_list):
             select_doc_str = f"SubQuestion: {doc[0].query} by: {doc[0].sub_query_type}\nAnswer: {doc[1]}\n"
