@@ -78,6 +78,7 @@ class FinQAReasoner(KagReasonerABC):
             )
             lf_nodes = self._filter_lf_nodes(process_info, lf_nodes)
             if lf_nodes is None or len(lf_nodes) <= 0:
+                logger.error(f"lf_nodes is None or len(lf_nodes) <= 0")
                 break
             for lf_node in lf_nodes:
                 rst: LFExecuteResult = self.lf_executor.execute(
@@ -159,6 +160,7 @@ class FinQAReasoner(KagReasonerABC):
             input_dict, self.rerank_docs_prompt, False, True
         )
         if best_chunk_index is None:
+            logger.error(f"best_chunk_index is None")
             return None, None
         if best_chunk_index < 0 or best_chunk_index >= len(for_select_qa_list):
             logger.error(f"best_chunk_index: {best_chunk_index} is out of range")
@@ -166,6 +168,7 @@ class FinQAReasoner(KagReasonerABC):
         best_chunk = for_select_qa_list[best_chunk_index]
         exists = self.check_best_chunk_exists(best_chunk[0], process_info)
         if exists:
+            logger.error(f"best_chunk: {best_chunk[0].query} exists in process_info")
             return None, None
         if best_chunk[0].sub_query_type == "math":
             return best_chunk[0].res.sub_answer, best_chunk[0]
