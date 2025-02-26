@@ -1,4 +1,5 @@
 import logging
+import json
 import re
 from typing import List
 
@@ -24,8 +25,7 @@ def qa(question, **kwargs):
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
     answer, traceLog = resp.run(question)
 
-    print(f"\n\nso the answer for '{question}' is: {answer}\n\n")  #
-    print(traceLog)
+    print(json.dumps(traceLog, ensure_ascii=False))
     return str(answer)
 
 
@@ -38,26 +38,16 @@ class MultiHerttEvaluate(Evaluate):
             _prediction = str(_prediction)
             gold = str(goldlist[_i])
             try:
-                if "%" in gold:
-                    gold = gold.strip("%")
-                    if "%" in _prediction:
-                        _prediction = _prediction.strip("%")
-                    else:
-                        _prediction = str(float(_prediction) * 100)
                 # 结果是纯数值
-                gold = float(gold)
-                match = re.search(r"([-+]?[0-9,.]+)(%)?", _prediction)
-                if match:
-                    number = match.group(1)  # 数值部分
-                    percent_sign = match.group(2)  # 有百分号
-                    if percent_sign:
-                        number = float(number) / 100.0
-                    else:
-                        number = float(number)
-                    if self.is_close_rel(gold, number):
-                        new_predictionlist.append("em")
-                        new_goldlist.append("em")
-                        continue
+                gold = str(float(gold))
+                if "%" in _prediction:
+                    _prediction = _prediction.strip("%")
+                    _prediction = str(float(_prediction) / 100)
+                gold, _prediction = self.round_to_smaller_precision(gold, _prediction)
+                if self.is_close_rel(float(gold), float(_prediction)):
+                    new_predictionlist.append("em")
+                    new_goldlist.append("em")
+                    continue
                 new_predictionlist.append(_prediction)
                 new_goldlist.append(gold)
             except Exception:
@@ -67,6 +57,26 @@ class MultiHerttEvaluate(Evaluate):
 
     def is_close_rel(self, a, b, rel_tol=1e-9):
         return abs(a - b) < rel_tol * max(abs(a), abs(b))
+
+    def round_to_smaller_precision(self, num1: str, num2: str) -> (str, str):
+        """
+        四舍五入两个数字到较小的精度。
+        """
+
+        def get_precision(num: str) -> int:
+            if "." in num:
+                return len(num.split(".")[1])
+            return 0
+
+        precision1 = get_precision(num1)
+        precision2 = get_precision(num2)
+        smaller_precision = min(precision1, precision2)
+        rounded_num1 = round(float(num1), smaller_precision)
+        rounded_num2 = round(float(num2), smaller_precision)
+        return (
+            f"{rounded_num1:.{smaller_precision}f}",
+            f"{rounded_num2:.{smaller_precision}f}",
+        )
 
 
 if __name__ == "__main__":

@@ -11,113 +11,136 @@ logger = logging.getLogger(__name__)
 class LogicFormPlanPrompt(PromptABC):
 
     template_zh = """
-{
-  "task": "根据问题及上下文信息，生成尽可能多样且无重复的子问题，帮助解答原问题。",
-  "instruction": [
-    "子问题应尽量多样，避免重复或类似。",
-    "每个子问题需归类到functions中的一项，并按指定格式输出function。",
-    "如果上下文已能直接回答问题，输出：'The context is sufficient to answer the question.'"
-  ],
-  "functions": [
-    {
-      "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])",
-      "description": "根据spo检索信息，s、p、o不能在同一表达式中反复多次出现。"
-    },
-    {
-      "function_declaration": "Math(content=[], target=`XXX`)->math_alias",
-      "description": "执行计算，该算子包含数值计算或排序计数等集合操作。content为空。target为计算的目标，通常是当前子问题。math_alias为变量名，表示其计算结果。"
-    }
-  ],
-  "examples": [
-    {
-      "input": {
-        "question": "美国运通的平均每笔交易支付金额是多少？",
-        "context": [
-          "| company          | payments volume ( billions )   | total volume ( billions )   |   total transactions ( billions ) |   cards ( millions ) |\n| american express | 637                            | 647                         |                               5   |                   86 |"
-        ]
-      },
-      "output": [
-        {
-          "subquestion": "支付总金额是637十亿美元，支付总笔数是5十亿笔。计算平均每笔交易的支付金额？",
-          "function": "Math(content=[], target=`计算平均每笔交易支付金额`)"
-        },
-        {
-          "subquestion": "美国运通的交易总数量是多少？",
-          "function": "Retrieval(s=s1:Company[`american express`], p=p1:numberOfTransactions, o=o1)"
-        },
-        "more subquestions"
-      ]
-    }
-  ],
-  "output_format": "json格式，输出子问题列表，每个子问题给出对应的function表示",
-  "real_input": "$input"
-}
+# Task
+根据问题及上下文信息，生成尽可能多样且无重复的子问题，帮助解答原问题。
+
+# Instruction
+1. 子问题应尽量多样，避免重复或类似。
+2. 每个子问题需归类到 `functions` 中的一项，并按指定格式输出 `function`。
+3. 数值计算或排序计数等集合操作，使用 `Math` 函数。
+4. 如果上下文已能直接回答问题，输出：`The context is sufficient to answer the question.`
+
+# Functions
+## 1. **Retrieval**
+格式: Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])
+注释: 检索信息，基于 SPO（主谓宾）结构。不要在同一表达式中多次重复 `s`、`p` 或 `o`。
+
+## 2. **Math**
+格式: Math(content=[], target=`XXX`)->math_alias
+注释: 执行数值计算，content为上下文信息，target为计算目标。
+
+# Output Format
+输出纯文本，先输出你的思考过程，最后给出Subquestion和Function的配对，一行一个，配对之间使用|||分割。
+格式如下：```
+Subquestion: example_subquestion1|||Function: example_function1
+Subquestion: example_subquestion2|||Function: example_function2
+```
+
+# Examples
+## Example Input
+Question: 美国运通的平均每笔交易支付金额是多少？
+Context:
+SubQuestion1: 美国运通的交易总数量是多少？ by:retrival
+Answer1:
+| company          | payments volume ( billions )   | total volume ( billions )   |   total transactions ( billions ) |   cards ( millions ) |
+| american express | 637                            | 647                         |                               5   |                   86 |
+
+## Example Output
+求解的问题是：美国运通的平均每笔交易支付金额是多少？
+通过问题1的答案，我们可以得到美国运通的交易总数量是5十亿笔。同时可以获得美国运通的支付总金额是637十亿美元。
+因此已经具有足够的信息计算平均每笔交易支付金额。
+子问题列表如下:
+Subquestion: 支付总金额是637十亿美元，支付总笔数是5十亿笔。计算平均每笔交易的支付金额？|||Function: Math(content=[], target=`计算平均每笔交易支付金额`)
+
+# Real Input
+Question: $question
+Context:
+$context
 """.strip()
 
     template_en = """
-{
-  "task": "Based on the given question and its context, generate as many diverse and non-repetitive sub-questions as possible to help address the original question.",
-  "instruction": [
-    "Sub-questions should be as diverse as possible, avoiding repetition or similarity.",
-    "Each sub-question must be categorized under one of the items in "functions" and output according to the specified format.",
-    "If the context is sufficient to answer the question, output: 'The context is sufficient to answer the question.'"
-  ],
-  "functions": [
-    {
-      "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])",
-      "description": "Retrieve information based on an SPO (subject-predicate-object) structure. Do not repeat s, p, or o multiple times within the same expression."
-    },
-    {
-      "function_declaration": "Math(content=[], target=`XXX`)->math_alias",
-      "description": "Perform calculations, including numeric computations or operations like sorting, counting, etc. 'content' is left empty, while 'target' specifies the goal of the calculation, typically the current sub-question. The result is stored in 'math_alias'."
-    }
-  ],
-  "examples": [
-    {
-      "input": {
-        "question": "What is the average payment amount per transaction for American Express?",
-        "context": [
-          "| company          | payments volume ( billions )   | total volume ( billions )   |   total transactions ( billions ) |   cards ( millions ) |\n| american express | 637                            | 647                         |                               5   |                   86 |"
-        ]
-      },
-      "output": [
-        {
-          "subquestion": "The payment volume is $637 billion, and the total number of transactions is 5 billion. Calculate the average payment amount per transaction.",
-          "function": "Math(content=[], target=`Calculate the average payment amount per transaction`)"
-        },
-        {
-          "subquestion": "What is the total transaction count for American Express?",
-          "function": "Retrieval(s=s1:Company[`american express`], p=p1:numberOfTransactions, o=o1)"
-        },
-        "more subquestions"
-      ]
-    }
-  ],
-  "output_format": "Output a list of sub-questions in JSON format, with each sub-question paired with its corresponding function representation.",
-  "real_input": "$input"
-}
+# Task
+Generate as many diverse and non-redundant subquestions as possible to help answer the main question based on the given question and context.
+
+# Instruction
+1. The subquestions should be as diverse as possible and avoid repetition or being overly similar.
+2. Each subquestion should be categorized under one of the `functions` and formatted accordingly.
+3. Use the `Math` function for numerical calculations, sorting, counting, or other set operations.
+4. If the context already provides sufficient information to directly answer the question, output: `The context is sufficient to answer the question.`
+
+# Functions
+## 1. **Retrieval**
+Format: Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])
+Note: Retrieve information based on SPO (subject-predicate-object) structure. Do not repeat `s`, `p`, or `o` in the same expression.
+
+## 2. **Math**
+Format: Math(content=[], target=`XXX`)->math_alias
+Note: Perform numerical calculations. `content` refers to contextual information, and `target` specifies the calculation goal.
+
+# Output Format
+Output plain text. Start by explaining your reasoning, then provide subquestions paired with their respective functions. List one per line, separating each pair with `|||`.
+Format as follows:
+```
+Subquestion: example_subquestion1|||Function: example_function1
+Subquestion: example_subquestion2|||Function: example_function2
+```
+
+# Examples
+## Example Input
+Question: What is the average amount paid per American Express transaction?
+Context:
+SubQuestion1: What is the total number of American Express transactions? by:retrieval
+Answer1:
+| company          | payments volume ( billions )   | total volume ( billions )   |   total transactions ( billions ) |   cards ( millions ) |
+| american express | 637                            | 647                         |                               5   |                   86 |
+
+## Example Output
+The problem to solve is: What is the average amount paid per American Express transaction?
+Based on the answer to Subquestion1, we know the total number of American Express transactions is 5 billion. Additionally, we can see that the total payment amount is $637 billion.
+Thus, we have sufficient information to calculate the average amount paid per transaction.
+The subquestions and functions are as follows:
+Subquestion: The total payment amount is $637 billion, and the total transaction count is 5 billion. What is the average payment amount per transaction?|||Function: Math(content=[], target=`Calculate the average payment amount per transaction`)
+
+# Real Input
+Question: $question
+Context:
+$context
 """.strip()
 
     @property
     def template_variables(self) -> List[str]:
-        return ["input"]
+        return ["question", "context"]
 
     def parse_response(self, response, **kwargs):
         try:
             logger.debug(f"logic form:{response}")
-            if isinstance(response, str):
-                flag = "The context is sufficient to answer the question.".lower()
-                if flag in response.lower():
-                    return [], []
+            response_str = str(response)
+            flag = "The context is sufficient to answer the question.".lower()
+            if flag in response_str.lower():
+                return [], []
+            q_lsit = self._extract_subquestions_and_functions(response_str)
             sub_querys = []
             logic_forms = []
-            if isinstance(response, list):
-                for subq in response:
-                    sub_querys.append(subq["subquestion"])
-                    logic_forms.append(subq["function"])
-            elif isinstance(response, str):
-                return sub_querys, logic_forms
+            for q, f in q_lsit:
+                sub_querys.append(q)
+                logic_forms.append(f)
             return sub_querys, logic_forms
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
-            return [], []
+            return sub_querys, logic_forms
+
+    def _extract_subquestions_and_functions(self, text: str):
+        lines = text.splitlines()
+        results = []
+        for line in lines:
+            try:
+                line = line.strip()
+                if line.startswith("Subquestion:") and "|||Function:" in line:
+                    subq_start = len("Subquestion: ")
+                    func_start = line.index("|||Function: ") + len("|||Function: ")
+                    subq = line[subq_start : line.index("|||Function: ")].strip()
+                    func = line[func_start:].strip()
+                    results.append((subq, func))
+            except:
+                continue
+        return results

@@ -76,6 +76,7 @@ class FinQAReasoner(KagReasonerABC):
             lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
                 question, process_info=process_info
             )
+            lf_nodes = self._filter_lf_nodes(process_info, lf_nodes)
             if lf_nodes is None or len(lf_nodes) <= 0:
                 break
             for lf_node in lf_nodes:
@@ -103,6 +104,18 @@ class FinQAReasoner(KagReasonerABC):
         reason_res.rerank_docs = [p[1] for p in process_info["sub_qa_pair"]]
         reason_res.sub_plans = [p for p in process_info["lf_plan"]]
         return reason_res
+
+    def _filter_lf_nodes(self, process_info, lf_nodes: List[LFPlan]):
+        if lf_nodes is None or len(lf_nodes) <= 0:
+            return None
+        sub_q_set = set()
+        for qa in process_info["sub_qa_pair"]:
+            sub_q_set.add(qa[0])
+        new_lf_nodes = []
+        for lf in lf_nodes:
+            if lf.query not in sub_q_set:
+                new_lf_nodes.append(lf)
+        return new_lf_nodes
 
     def _rerank_docs(
         self, question: str, plan_and_result_list: List, process_info: Dict
@@ -164,7 +177,7 @@ class FinQAReasoner(KagReasonerABC):
             context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):
-            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer: {c[2]}\n"
+            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
         if len(context_str) == 0:
             return "No selected chunks"
         return context_str

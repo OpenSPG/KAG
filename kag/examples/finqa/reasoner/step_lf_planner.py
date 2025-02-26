@@ -111,11 +111,7 @@ class StepLFPlanner(LFPlannerABC):
             "context": self.get_context_str(process_info),
         }
         return self.llm_module.invoke(
-            {
-                "input": json.dumps(
-                    input_dict, ensure_ascii=False, sort_keys=True, indent=2
-                )
-            },
+            input_dict,
             self.logic_form_plan_prompt,
             with_json_parse=True,
             with_except=True,
@@ -129,6 +125,6 @@ class StepLFPlanner(LFPlannerABC):
             context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):
-            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer: {c[2]}\n"
+            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
         print(context_str)
         return context_str

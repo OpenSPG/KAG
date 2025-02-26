@@ -17,7 +17,7 @@ class FinQARespGenerator(PromptABC):
 
 # 注意事项
 答案不应包含单位，只给出数值。
-如果问题涉及百分比，请返回数值，不包含百分号，例如`0.01代表1%，返回0.01。`
+涉及百分比的问题，返回结果带上百分号。
 数值应精确到小数点后5位。
 是否类问题，返回yes或no。
 
@@ -36,7 +36,7 @@ First, provide the reasoning, and then give the final numerical answer, ending w
 
 # Notes
 The answer should not include units, only the numerical value.
-If the question involves percentages, return the numerical value without the percentage sign, e.g., `0.01 represents 1%, return 0.01.`
+For questions involving percentages, return the result with the percentage sign.
 The numerical value should be accurate to 5 decimal places.
 For yes/no type questions, return yes or no.
 
@@ -57,5 +57,5 @@ $memory
         logger.debug("推理器判别:{}".format(response))
         answer_flag = "Final Answer:"
         index = response.rfind(answer_flag)
-        response = response[index + len(answer_flag) :].strip()
+        response = response[index + len(answer_flag) :].strip(" *\n")
         return response

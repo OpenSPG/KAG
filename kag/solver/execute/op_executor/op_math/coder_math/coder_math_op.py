@@ -62,13 +62,13 @@ class CoderMathOp(OpExecutor):
             # breakpoint()
             content_l = []
         contents = []
-        for c in content_l:
-            values = kg_graph.get_answered_alias(c)
-            if values is not None:
-                c = str(values)
-            elif values == "":
-                continue
-            contents.append(c)
+        # for c in content_l:
+        #     values = kg_graph.get_answered_alias(c)
+        #     if values is not None:
+        #         c = str(values)
+        #     elif values == "":
+        #         continue
+        #     contents.append(c)
         history_qa_pair = process_info.get("sub_qa_pair", [])
         contents = '\n'.join(contents) if contents else history_qa_pair
         target = logic_node.target if logic_node.target else logic_node.sub_query
