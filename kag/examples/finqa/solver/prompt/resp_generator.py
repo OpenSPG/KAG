@@ -17,7 +17,6 @@ class FinQARespGenerator(PromptABC):
 
 # 注意事项
 答案不应包含单位，只给出数值。
-涉及百分比的问题，返回结果带上百分号。
 数值应精确到小数点后5位。
 是否类问题，返回yes或no。
 
@@ -36,7 +35,6 @@ First, provide the reasoning, and then give the final numerical answer, ending w
 
 # Notes
 The answer should not include units, only the numerical value.
-For questions involving percentages, return the result with the percentage sign.
 The numerical value should be accurate to 5 decimal places.
 For yes/no type questions, return yes or no.
 

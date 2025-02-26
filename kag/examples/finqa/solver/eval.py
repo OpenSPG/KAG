@@ -44,7 +44,9 @@ class MultiHerttEvaluate(Evaluate):
                     _prediction = _prediction.strip("%")
                     _prediction = str(float(_prediction) / 100)
                 gold, _prediction = self.round_to_smaller_precision(gold, _prediction)
-                if self.is_close_rel(float(gold), float(_prediction)):
+                if self.is_close_rel(
+                    float(gold), float(_prediction)
+                ) or self.is_percentage_close(float(gold), float(_prediction)):
                     new_predictionlist.append("em")
                     new_goldlist.append("em")
                     continue
@@ -56,6 +58,13 @@ class MultiHerttEvaluate(Evaluate):
         return super().getBenchMark(new_predictionlist, new_goldlist)
 
     def is_close_rel(self, a, b, rel_tol=1e-9):
+        return abs(a - b) < rel_tol * max(abs(a), abs(b))
+
+    def is_percentage_close(self, a, b, rel_tol=1e-9):
+        b = b / 100
+        a, b = self.round_to_smaller_precision(str(a), str(b))
+        a = float(a)
+        b = float(b)
         return abs(a - b) < rel_tol * max(abs(a), abs(b))
 
     def round_to_smaller_precision(self, num1: str, num2: str) -> (str, str):
