@@ -18,7 +18,7 @@ class LogicFormPlanPrompt(PromptABC):
 1. 子问题应尽量多样，避免重复或类似。
 2. 每个子问题需归类到 `functions` 中的一项，并按指定格式输出 `function`。
 3. 你的数学计算能力很差，必须使用 `Math` 进行数值计算、排序、计数或其他集合操作。
-4. 如果上下文已能直接回答问题，输出：`The context is sufficient to answer the question.`
+4. 如果上下文中已有明确的答案(Math计算的结果)，输出：`An explicit answer already exists.`
 
 # Functions
 ## 1. **Retrieval**
@@ -66,7 +66,7 @@ Generate as many diverse and non-redundant subquestions as possible to help answ
 1. The subquestions should be as diverse as possible and avoid repetition or being overly similar.
 2. Each subquestion should be categorized under one of the `functions` and formatted accordingly.
 3. You have poor math skills and must use `Math` for numerical calculations, sorting, counting, or other set operations.
-4. If the context already provides sufficient information to directly answer the question, output: `The context is sufficient to answer the question.`
+4. If there is already a clear answer in the context (the result of a Math calculation), output: `An explicit answer already exists.`
 
 # Functions
 ## 1. **Retrieval**
@@ -115,7 +115,7 @@ $context
         try:
             logger.debug(f"logic form:{response}")
             response_str = str(response)
-            flag = "The context is sufficient to answer the question.".lower()
+            flag = "An explicit answer already exists".lower()
             if flag in response_str.lower():
                 return [], []
             q_lsit = self._extract_subquestions_and_functions(response_str)

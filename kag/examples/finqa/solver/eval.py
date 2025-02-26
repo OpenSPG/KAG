@@ -15,6 +15,7 @@ from kag.examples.finqa.builder.indexer import build_finqa_graph, load_finqa_dat
 from kag.examples.finqa.reasoner.finqa_reasoner import FinQAReasoner
 from kag.examples.finqa.reasoner.step_lf_planner import StepLFPlanner
 from kag.examples.finqa.reasoner.step_lf_executor import StepLFExecutor
+from kag.examples.finqa.reasoner.length_splitter import LineLengthSplitter
 from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator

@@ -296,6 +296,9 @@ class TableAndTextExtractor(ExtractorABC):
                 index_list = col_data
             else:
                 index_list = zip(index_list, col_data)
+        if header_list is None or index_list is None:
+            # 缺乏header和index
+            raise RuntimeError("table no header or index")
         # get data
         rst_row_summary_list = []
         for row_summary in row_summary_list:

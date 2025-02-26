@@ -39,8 +39,10 @@ def convert_finqa_to_md_file(item: dict) -> str:
     """
     _id = item["id"]
     prev_text_list = item["pre_text"]
+    prev_text_list = [s for s in prev_text_list if s != "."]
     prev_text = "\n".join(prev_text_list)
     post_text_list = item["post_text"]
+    post_text_list = [s for s in post_text_list if s != "."]
     post_text = "\n".join(post_text_list)
     table_row_list = item["table"]
     columns = table_row_list[0]

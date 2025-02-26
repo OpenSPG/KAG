@@ -57,15 +57,15 @@ finqa_builder_pipeline:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
       similarity_threshold: 0.99
     splitter:
-      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 300
-      window_length: 0
+      type: line_length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 600
+      window_length: 300
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
       vectorize_model: *vectorize_model
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
-  num_threads_per_chain: 1
+  num_threads_per_chain: 10
   num_chains: 1
   scanner:
     type: file_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
