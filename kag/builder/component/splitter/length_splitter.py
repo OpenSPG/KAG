@@ -34,7 +34,7 @@ class LengthSplitter(BaseTableSplitter):
         window_length (int): The length of the overlap between chunks.
     """
 
-    def __init__(self, split_length: int = 500, window_length: int = 100):
+    def __init__(self, split_length: int = 500, window_length: int = 100, is_split_table: bool = False):
         """
         Initializes the LengthSplitter with the specified split length and window length.
 
@@ -45,6 +45,7 @@ class LengthSplitter(BaseTableSplitter):
         super().__init__()
         self.split_length = split_length
         self.window_length = window_length
+        self.is_split_table = is_split_table
 
     @property
     def input_types(self) -> Type[Input]:
@@ -114,6 +115,8 @@ class LengthSplitter(BaseTableSplitter):
             List[Chunk]: A list of Chunk objects.
         """
         if org_chunk.type == ChunkTypeEnum.Table:
+            if not self.is_split_table:
+                return [org_chunk]
             table_chunks = self.split_table(
                 org_chunk=org_chunk, chunk_size=chunk_size, sep=sep
             )

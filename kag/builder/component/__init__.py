@@ -17,6 +17,7 @@ from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtr
 from kag.builder.component.extractor.schema_constraint_extractor import (
     SchemaConstraintExtractor,
 )
+from kag.builder.component.table.table_and_text_extractor import TableAndTextExtractor
 from kag.builder.component.aligner.kag_aligner import KAGAligner
 from kag.builder.component.aligner.spg_aligner import SPGAligner
 from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcessor
@@ -56,6 +57,7 @@ __all__ = [
     "DefaultExternalGraphLoader",
     "SchemaFreeExtractor",
     "SchemaConstraintExtractor",
+    "TableAndTextExtractor",
     "KAGAligner",
     "SPGAligner",
     "KAGPostProcessor",
