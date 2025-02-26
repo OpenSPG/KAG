@@ -31,6 +31,9 @@ class CoderMathOp(OpExecutor):
         if not python_code:
             raise RuntimeError("python code generate failed")
 
+        if "I don't know".lower() in python_code.lower():
+            return "I don't know", None, python_code
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
             temp_file.write(python_code.encode("utf-8"))
             temp_file_path = temp_file.name

@@ -96,7 +96,8 @@ class FinQAReasoner(KagReasonerABC):
             if best_chunk is None:
                 break
             lf_node: LFPlan = lf_node
-            process_info["sub_qa_pair"].append((lf_node.query, best_chunk))
+            #process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer, best_chunk))
+            process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer))
             process_info["lf_plan"].append(lf_node)
 
         reason_res: LFExecuteResult = LFExecuteResult()
@@ -125,8 +126,9 @@ class FinQAReasoner(KagReasonerABC):
         selected_docs = [p[1] for p in process_info["sub_qa_pair"]]
         for lf_node, res in plan_and_result_list:
             lf_node: LFPlan = lf_node
-            lf_node.res = res
             res: LFExecuteResult = res
+            if not lf_node.res.if_answered:
+                continue
             if "retrieval" == lf_node.sub_query_type:
                 for doc_str in res.doc_retrieved:
                     doc_str: str = doc_str.strip()
@@ -157,6 +159,9 @@ class FinQAReasoner(KagReasonerABC):
             input_dict, self.rerank_docs_prompt, False, True
         )
         if best_chunk_index is None:
+            return None, None
+        if best_chunk_index < 0 or best_chunk_index >= len(for_select_qa_list):
+            logger.error(f"best_chunk_index: {best_chunk_index} is out of range")
             return None, None
         best_chunk = for_select_qa_list[best_chunk_index]
         exists = self.check_best_chunk_exists(best_chunk[0], process_info)

@@ -114,8 +114,12 @@ class TableAndTextExtractor(ExtractorABC):
             self._table_context(input)
             return self._table_extractor(input)
         except:
-            logger.exception(f"_invoke_table failed for chunk:{input}")
-            raise RuntimeError(f"table extract failed for chunk:{input}")
+            logger.debug(f"_invoke_table failed for chunk:{input}")
+            try:
+                return self._raw_table_extractor(input)
+            except:
+                logger.exception(f"_invoke_table failed for chunk:{input}")
+                raise RuntimeError(f"table extract failed for chunk:{input}")
 
     def _table_extractor(self, input_table: Chunk):
         html_content = markdown.markdown(
@@ -145,6 +149,24 @@ class TableAndTextExtractor(ExtractorABC):
         )
         return [subgraph]
 
+    def _raw_table_extractor(self, input_table: Chunk):
+        table_id = input_table.id
+        table_info: TableDefaultInfo = input_table.kwargs.get("table_info", None)
+        table_desc = ""
+        table_name = f"table_{table_id}"
+        if table_info is not None:
+            table_desc = table_info.desc
+            table_name = table_info.name
+        content = table_desc + "\n" + input_table.content
+        chunk = Chunk(
+            id=f"table_{table_id}",
+            name=table_name,
+            content=content,
+            type=ChunkTypeEnum.Text,
+        )
+        subgraphs = self.schema_free_extractor._invoke(chunk)
+        return subgraphs
+
     def _do_split_table_to_chunk(
         self,
         input_table: Chunk,
@@ -153,11 +175,11 @@ class TableAndTextExtractor(ExtractorABC):
     ):
         doc_name = input_table.kwargs.get("file_name", "unknow doc name")
         table_id = input_table.id
-        table_info: TableDefaultInfo = input_table.kwargs.pop("table_info")
+        table_info: TableDefaultInfo = input_table.kwargs.get("table_info", None)
         table_name = table_info.name
         rst_chunk_list = []
         for i, row_summary in enumerate(row_summary_list):
-            #content = f"doc: {doc_name}\ntable: {table_name}\ntable_row_summary: {row_summary.summary}\n{row_summary.content}"
+            # content = f"doc: {doc_name}\ntable: {table_name}\ntable_row_summary: {row_summary.summary}\n{row_summary.content}"
             content = row_summary.content
             chunk = Chunk(
                 id=f"table_{table_id}_row_{i}",
@@ -168,7 +190,7 @@ class TableAndTextExtractor(ExtractorABC):
             rst_chunk_list.append(chunk)
         # TableColumn nodes
         for i, col_summary in enumerate(col_summary_list):
-            #content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
+            # content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
             content = col_summary.content
             chunk = Chunk(
                 id=f"table_{table_id}_col_{i}",
@@ -318,7 +340,7 @@ class TableAndTextExtractor(ExtractorABC):
 
         table_id = input_table.id
 
-        table_info: TableDefaultInfo = input_table.kwargs.pop("table_info")
+        table_info: TableDefaultInfo = input_table.kwargs.get("table_info", None)
 
         # Table node
         table_desc = table_info.desc
