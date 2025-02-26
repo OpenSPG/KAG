@@ -113,15 +113,19 @@ class PDFReader(ReaderABC):
                 page_contents[page_start : page_end + 1 if page_end != -1 else None]
             )
 
-            # 标准化标题中的特殊字符
+            # Normalize special characters in the title
             def normalize_text(text):
-                # 将破折号"—"转换为中文数字"一"
+                # Convert dash "—" to Chinese number "一"
                 text = text.replace("—", "一")
-                # 可以添加其他中英文标点的统一转换
+                # Can add other unified conversions for Chinese and English punctuation
                 text = re.sub(r"［", "[", text)
                 text = re.sub(r"］", "]", text)
                 text = re.sub(r"（", "(", text)
                 text = re.sub(r"）", ")", text)
+                # Remove special characters and control characters
+                text = re.sub(
+                    r"[\u200b\u200c\u200d\ufeff\u3000\x00-\x1f\x7f-\x9f]+", "", text
+                )
                 return text
 
             outline = (normalize_text(outline[0]), outline[1], outline[2], outline[3])
@@ -394,18 +398,19 @@ class PDFReader(ReaderABC):
                         for element in page_layout:
                             if hasattr(element, "get_text"):
                                 content = content + element.get_text()
-                        content = content.replace("\n", "")
+                        # content = content.replace("\n", "")
                         page_contents.append(content)
 
-                # 使用正则表达式移除所有空白字符（包括空格、制表符、换行符等）
+                # Preserve newlines while removing other whitespace
                 page_contents = [
-                    re.sub(r"\s+", "", content) for content in page_contents
+                    re.sub(r"[^\S\n]+", "", content) for content in page_contents
                 ]
                 page_contents = [
-                    re.sub(r"[\s\u200b\u200c\u200d\ufeff]+", "", content)
+                    re.sub(r"[\u200b\u200c\u200d\ufeff]+", "", content)
                     for content in page_contents
                 ]
-                page_contents = ["".join(content.split()) for content in page_contents]
+                # Remove the line that joins all content since we want to preserve newlines
+                # page_contents = ["".join(content.split()) for content in page_contents]
 
                 final_content = self.extract_content_from_outline(
                     page_contents, self.level_outlines
@@ -455,7 +460,7 @@ class PDFReader(ReaderABC):
                     )
                     chunks.append(chunk)
 
-            # # 保存中间结果到文件
+            # # Save intermediate results to file
             # import pickle
 
             # with open("debug_data.pkl", "wb") as f:
@@ -478,7 +483,7 @@ if __name__ == "__main__":
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/aiwen.pdf"
     )
-    pdf_path = "/Users/zhangxinhong.zxh/Downloads/labor-law-v5.pdf"
+    pdf_path = "/Users/zhangxinhong.zxh/Downloads/知识图谱：方法、实践与应用（王昊奋、漆桂林、陈华钧）.pdf"
     # pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
     chunk = pdf_reader.invoke(pdf_path)
     a = 1
