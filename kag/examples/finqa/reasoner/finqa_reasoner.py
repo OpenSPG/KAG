@@ -121,7 +121,7 @@ class FinQAReasoner(KagReasonerABC):
         self, question: str, plan_and_result_list: List, process_info: Dict
     ):
         chunk_set = set()
-        chunk_list = []
+        for_select_qa_list = []
         selected_docs = [p[1] for p in process_info["sub_qa_pair"]]
         for lf_node, res in plan_and_result_list:
             lf_node: LFPlan = lf_node
@@ -133,24 +133,21 @@ class FinQAReasoner(KagReasonerABC):
                     content_start = doc_str.find("#", 1)
                     content_end = doc_str.rfind("#")
                     cuted_doc_str = doc_str[content_start + 1 : content_end]
-                    if cuted_doc_str in selected_docs:
+                    if cuted_doc_str in chunk_set or cuted_doc_str in selected_docs:
                         continue
                     score = float(doc_str[content_end + 1 :])
-                    if cuted_doc_str in chunk_set:
-                        continue
                     chunk_set.add(cuted_doc_str)
-                    chunk_list.append((lf_node, cuted_doc_str, score))
+                    for_select_qa_list.append((lf_node, cuted_doc_str, score))
             elif "math" == lf_node.sub_query_type:
-                doc_str = (
-                    f"SubQuestion: {lf_node.query} by: math\nAnswer: {res.sub_answer}\n"
-                )
-                if doc_str in chunk_set:
+                doc_str = res.sub_answer
+                if doc_str in chunk_set or doc_str in selected_docs:
                     continue
                 chunk_set.add(doc_str)
-                chunk_list.append((lf_node, doc_str, 0.0))
+                for_select_qa_list.append((lf_node, doc_str, 0.0))
         input_chunk_str = ""
-        for i, doc in enumerate(chunk_list):
-            input_chunk_str += f"\n### {i}\n{doc[1]}\n"
+        for i, doc in enumerate(for_select_qa_list):
+            select_doc_str = f"SubQuestion: {doc[0].query} by: {doc[0].sub_query_type}\nAnswer: {doc[1]}\n"
+            input_chunk_str += f"\n### {i}\n{select_doc_str}\n"
         input_dict = {
             "question": question,
             "chunks": input_chunk_str,
@@ -161,7 +158,7 @@ class FinQAReasoner(KagReasonerABC):
         )
         if best_chunk_index is None:
             return None, None
-        best_chunk = chunk_list[best_chunk_index]
+        best_chunk = for_select_qa_list[best_chunk_index]
         exists = self.check_best_chunk_exists(best_chunk[0], process_info)
         if exists:
             return None, None
@@ -177,7 +174,9 @@ class FinQAReasoner(KagReasonerABC):
             context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):
-            context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
+            context_str += (
+                f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
+            )
         if len(context_str) == 0:
             return "No selected chunks"
         return context_str
