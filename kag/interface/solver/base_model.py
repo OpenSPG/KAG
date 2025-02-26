@@ -435,7 +435,7 @@ class LFExecuteResult:
                 )
                 i += 1
         if len(failed_sub_query) == len(self.sub_plans) and len(self.rerank_docs) == 0:
-            return ""
+            return []
         return facts
 
     def get_support_facts(self):
