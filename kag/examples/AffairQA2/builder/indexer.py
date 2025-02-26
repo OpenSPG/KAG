@@ -16,6 +16,9 @@ from kag.builder.default_chain import DefaultStructuredBuilderChain
 from kag.builder.component import KGWriter, RelationMapping, SPGTypeMapping
 from kag.builder.component.scanner.csv_scanner import CSVScanner
 from kag.common.conf import KAG_CONFIG
+from kag.examples.AffairQA2.builder.affair_batch_vectorizer import AffairBatchVectorizer
+from kag.examples.AffairQA2.builder.mapping import AffairTypeMapping
+
 from kag.interface import KAGBuilderChain as BuilderChainABC
 from kag.builder.runner import BuilderChainRunner
 
@@ -23,7 +26,7 @@ zh_to_en_mapping = {
     "人物": "Person",
     "公园": "Park",
     "加油站": "GasStation",
-    "医疗机构": "Hospital",
+    "医疗机构": "MedicalInstitution",
     "协会": "Association",
     "图书馆": "Library",
     "学校": "School",
@@ -36,14 +39,14 @@ zh_to_en_mapping = {
 }
 
 
-class RiskMiningEntityChain(BuilderChainABC):
+class AffairEntityChain(BuilderChainABC):
     def __init__(self, spg_type_name: str):
         super().__init__()
         self.spg_type_name = spg_type_name
 
     def build(self, **kwargs):
-        mapping = SPGTypeMapping(spg_type_name=self.spg_type_name)
-        vectorizer = BatchVectorizer.from_config(
+        mapping = AffairTypeMapping(spg_type_name=self.spg_type_name)
+        vectorizer = AffairBatchVectorizer.from_config(
             KAG_CONFIG.all_config["chain_vectorizer"]
         )
         sink = KGWriter()
@@ -55,22 +58,22 @@ class RiskMiningEntityChain(BuilderChainABC):
 def import_data():
     file_path = os.path.dirname(__file__)
     for spg_type_name in [
-        "人物",
-        "公园",
-        "加油站",
-        "医疗机构",
-        "协会",
-        "图书馆",
-        "学校",
-        "宗教场所",
-        "政府机构",
-        "旅游景点",
-        "旅行社",
-        "自然保护区",
-        "许可证",
+        "医疗机构",  # 只重建医疗机构数据
+        # "人物",
+        # "公园",
+        # "加油站",
+        # "协会",
+        # "图书馆",
+        # "学校",
+        # "宗教场所",
+        # "政府机构",
+        # "旅游景点",
+        # "旅行社",
+        # "自然保护区",
+        # "许可证",
     ]:
         file_name = os.path.join(file_path, f"data/{spg_type_name}.csv")
-        chain = RiskMiningEntityChain(spg_type_name=zh_to_en_mapping[spg_type_name])
+        chain = AffairEntityChain(spg_type_name=zh_to_en_mapping[spg_type_name])
         runner = BuilderChainRunner(
             scanner=CSVScanner(),
             chain=chain,
