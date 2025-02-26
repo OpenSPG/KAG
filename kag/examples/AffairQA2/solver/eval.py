@@ -116,8 +116,8 @@ if __name__ == "__main__":
     res_metrics = demo.parallelQaAndEvaluate(
         qFilePath=os.path.join(dir, "data/test.json"),
         aFilePath=os.path.join(dir, "data/AffairQA.json"),
-        resFilePath=os.path.join(dir, "data/res.json"),
-        threadNum=10,
+        resFilePath=os.path.join(dir, "data/res4.json"),
+        threadNum=30,
         upperLimit=-1,
     )
     print(res_metrics)

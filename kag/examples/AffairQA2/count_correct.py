@@ -13,7 +13,7 @@ def count_correct(file_path):
         evaluation_list = data
 
     total = len(evaluation_list)
-    correct = sum(1 for item in evaluation_list if "正确" in item["evaluation"])
+    correct = sum(1 for item in evaluation_list if "正确" in item["evaluation"][:10])
 
     print(f"总样本数: {total}")
     print(f"正确数量: {correct}")
@@ -22,5 +22,5 @@ def count_correct(file_path):
 
 # 使用文件路径
 count_correct(
-    "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AffairQA2/evaluation_results.json"
+    "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AffairQA2/evaluation_results_4.json"
 )

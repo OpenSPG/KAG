@@ -1,9 +1,12 @@
 import json
+import os
 import requests
 from typing import List, Dict
 import yaml
 import jieba
 from collections import Counter
+import concurrent.futures
+from tqdm import tqdm
 
 
 def load_config(config_path: str) -> Dict:
@@ -56,9 +59,9 @@ def extract_answer_from_prediction(prediction: str) -> str:
 
 def evaluate_qa(qa_file: str):
     # 固定配置
-    api_key = "sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv"
-    base_url = "https://api.siliconflow.cn/v1/"
-    model = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
+    api_key = os.getenv("BAILIAN_API_KEY")
+    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/"
+    model = "qwen-max-latest"
 
     # 读取QA数据
     with open(qa_file, "r", encoding="utf-8") as f:
@@ -68,7 +71,8 @@ def evaluate_qa(qa_file: str):
     total_f1 = 0
     results = []
 
-    for item in qa_data:
+    # 定义处理单个QA项的函数
+    def process_qa_item(item):
         # 处理标准答案（可能是列表）
         if isinstance(item["answer"], list):
             standard_answer = item["answer"][0]  # 取第一个答案
@@ -78,7 +82,7 @@ def evaluate_qa(qa_file: str):
         # 检查是否存在prediction字段
         if "prediction" not in item:
             print(f"警告: ID为{item.get('id', '未知')}的数据缺少prediction字段")
-            continue
+            return None
 
         # 从预测中提取答案部分
         predicted_answer = extract_answer_from_prediction(item["prediction"])
@@ -90,9 +94,6 @@ def evaluate_qa(qa_file: str):
         # 计算EM和F1分数
         em_score = compute_exact_match(predicted_tokens, standard_tokens)
         f1_score = compute_f1(predicted_tokens, standard_tokens)
-
-        total_em += em_score
-        total_f1 += f1_score
 
         # 构建提示词进行正确性评估
         prompt = f"""请评估以下问答对的正确性：
@@ -109,18 +110,35 @@ def evaluate_qa(qa_file: str):
         except Exception as e:
             evaluation = f"API调用失败: {str(e)}"
 
-        # 保存结果
-        results.append(
-            {
-                "id": item["id"],
-                "question": item["question"],
-                "standard_answer": standard_answer,
-                "prediction": predicted_answer,
-                "evaluation": evaluation,
-                "em_score": em_score,
-                "f1_score": f1_score,
-            }
-        )
+        # 返回结果
+        return {
+            "id": item["id"],
+            "question": item["question"],
+            "standard_answer": standard_answer,
+            "prediction": predicted_answer,
+            "evaluation": evaluation,
+            "em_score": em_score,
+            "f1_score": f1_score,
+        }
+
+    # 使用线程池并发处理
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有任务并显示进度条
+        future_to_item = {
+            executor.submit(process_qa_item, item): item for item in qa_data
+        }
+
+        # 使用tqdm显示进度
+        for future in tqdm(
+            concurrent.futures.as_completed(future_to_item),
+            total=len(qa_data),
+            desc="评估进度",
+        ):
+            result = future.result()
+            if result:
+                results.append(result)
+                total_em += result["em_score"]
+                total_f1 += result["f1_score"]
 
     # 计算平均分数
     avg_em = total_em / len(qa_data)
@@ -130,10 +148,11 @@ def evaluate_qa(qa_file: str):
     final_results = {"average_em": avg_em, "average_f1": avg_f1, "details": results}
 
     # 保存评估结果
-    with open("evaluation_results.json", "w", encoding="utf-8") as f:
+    output_file = f"evaluation_results_{qa_file.split('/')[-1].split('.')[0][-1]}.json"
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(final_results, f, ensure_ascii=False, indent=2)
 
-    print(f"评估完成！")
+    print(f"评估完成！结果已保存至 {output_file}")
     print(f"平均EM分数: {avg_em:.4f}")
     print(f"平均F1分数: {avg_f1:.4f}")
 
@@ -152,5 +171,5 @@ def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
 
 
 if __name__ == "__main__":
-    qa_file = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AffairQA2/solver/data/res.json"
+    qa_file = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AffairQA2/solver/data/res4.json"
     evaluate_qa(qa_file)
