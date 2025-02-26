@@ -40,7 +40,7 @@ finqa_builder_pipeline:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
       type: table_and_text_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-      llm: *chat_llm
+      llm: *openie_llm
       ner_prompt:
         type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
       std_prompt:
@@ -96,8 +96,8 @@ fuzzy_kg_retriever: &fuzzy_kg_retriever
 chunk_retriever: &chunk_retriever
   type: default_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
   llm_client: *chat_llm
-  recall_num: 10
-  rerank_topk: 10
+  recall_num: 20
+  rerank_topk: 20
 
 finqa_solver_pipeline:
   memory:

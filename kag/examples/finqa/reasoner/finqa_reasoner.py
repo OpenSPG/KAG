@@ -1,6 +1,7 @@
 import logging
 import copy
-from typing import List, Dict
+from typing import List, Dict, Tuple
+from multiprocessing import Pool
 
 from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
@@ -97,8 +98,8 @@ class FinQAReasoner(KagReasonerABC):
             if best_chunk is None:
                 break
             lf_node: LFPlan = lf_node
-            #process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer, best_chunk))
-            #process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer))
+            # process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer, best_chunk))
+            # process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer))
             process_info["sub_qa_pair"].append((lf_node.query, best_chunk))
             process_info["lf_plan"].append(lf_node)
 
@@ -106,7 +107,13 @@ class FinQAReasoner(KagReasonerABC):
         reason_res.recall_docs = [p[1] for p in process_info["sub_qa_pair"]]
         reason_res.rerank_docs = [p[1] for p in process_info["sub_qa_pair"]]
         reason_res.sub_plans = [p for p in process_info["lf_plan"]]
+        self._print_proceed_info(question, process_info)
         return reason_res
+
+    def _print_proceed_info(self, question, process_info):
+        logger.info(f"question: {question}")
+        for i, qa in enumerate(process_info["sub_qa_pair"]):
+            logger.info(f"sub_qa_pair_{i}: {qa[0]}: {qa[1]}")
 
     def _filter_lf_nodes(self, process_info, lf_nodes: List[LFPlan]):
         if lf_nodes is None or len(lf_nodes) <= 0:
@@ -129,7 +136,7 @@ class FinQAReasoner(KagReasonerABC):
         for lf_node, res in plan_and_result_list:
             lf_node: LFPlan = lf_node
             res: LFExecuteResult = res
-            if lf_node.sub_query_type == 'math' and not lf_node.res.if_answered:
+            if lf_node.sub_query_type == "math" and not lf_node.res.if_answered:
                 continue
             if "retrieval" == lf_node.sub_query_type:
                 for doc_str in res.doc_retrieved:

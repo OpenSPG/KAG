@@ -126,5 +126,5 @@ class StepLFPlanner(LFPlannerABC):
         context_str = ""
         for i, c in enumerate(context_list):
             context_str += f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
-        print(context_str)
+        #print(context_str)
         return context_str
