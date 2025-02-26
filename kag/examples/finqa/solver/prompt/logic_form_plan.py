@@ -17,7 +17,7 @@ class LogicFormPlanPrompt(PromptABC):
 # Instruction
 1. 子问题应尽量多样，避免重复或类似。
 2. 每个子问题需归类到 `functions` 中的一项，并按指定格式输出 `function`。
-3. 数值计算或排序计数等集合操作，使用 `Math` 函数。
+3. 你的数学计算能力很差，必须使用 `Math` 进行数值计算、排序、计数或其他集合操作。
 4. 如果上下文已能直接回答问题，输出：`The context is sufficient to answer the question.`
 
 # Functions
@@ -65,7 +65,7 @@ Generate as many diverse and non-redundant subquestions as possible to help answ
 # Instruction
 1. The subquestions should be as diverse as possible and avoid repetition or being overly similar.
 2. Each subquestion should be categorized under one of the `functions` and formatted accordingly.
-3. Use the `Math` function for numerical calculations, sorting, counting, or other set operations.
+3. You have poor math skills and must use `Math` for numerical calculations, sorting, counting, or other set operations.
 4. If the context already provides sufficient information to directly answer the question, output: `The context is sufficient to answer the question.`
 
 # Functions
