@@ -423,14 +423,19 @@ class LFExecuteResult:
 
     def get_all_sub_query_and_answer(self):
         facts = []
+        failed_sub_query = []
         if len(self.sub_plans) != 0:
             i = 0
             for sub_plan in self.sub_plans:
                 sub_res = sub_plan.res
+                if sub_res.sub_answer is None or "i don't know" in sub_res.sub_answer.lower() or sub_res.sub_answer == "":
+                    failed_sub_query.append(sub_res)
                 facts.append(
                     f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}"
                 )
                 i += 1
+        if len(failed_sub_query) == len(self.sub_plans) and len(self.rerank_docs) == 0:
+            return ""
         return facts
 
     def get_support_facts(self):

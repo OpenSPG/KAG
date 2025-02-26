@@ -101,8 +101,6 @@ class OpenAIClient(LLMClient):
                 temperature=self.temperature,
                 timeout=self.timeout,
             )
-            rsp = response.choices[0].message.content
-            return rsp
 
         else:
             message = [
@@ -116,8 +114,14 @@ class OpenAIClient(LLMClient):
                 temperature=self.temperature,
                 timeout=self.timeout,
             )
+        if not self.stream:
             rsp = response.choices[0].message.content
-            return rsp
+        else:
+            rsp = ""
+            for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                    rsp += chunk.choices[0].delta.content
+        return rsp
 
     @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt):
