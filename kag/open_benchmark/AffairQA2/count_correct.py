@@ -22,5 +22,5 @@ def count_correct(file_path):
 
 # 使用文件路径
 count_correct(
-    "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AffairQA2/evaluation_results_4.json"
+    "./evaluation_results.json"
 )
