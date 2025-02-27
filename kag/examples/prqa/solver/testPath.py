@@ -44,13 +44,13 @@ messages = [
 def send_messages_qwen(messages):
     # client1 = OpenAI(
     #     api_key="",
-    #     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+    #     base_url=""
     # )
     # model_name = "qwen-max-latest"
 
     client1 = OpenAI(
         api_key="",
-        base_url="https://api.deepseek.com",
+        base_url="",
     )
     model_name = "deepseek-chat"
 
@@ -65,7 +65,7 @@ def send_messages_qwen(messages):
 def send_messages_deepseek(messages):
     client2 = OpenAI(
         api_key="",
-        base_url="https://api.deepseek.com",
+        base_url="",
     )
     model_name = "deepseek-chat"
 
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     )
     llm_config = {
         "api_key": '',
-        "base_url": 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        "base_url": '',
         'model': 'qwen-max-latest',
         'type': 'maas'
     }
