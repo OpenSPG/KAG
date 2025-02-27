@@ -1,17 +1,17 @@
 openie_llm: &openie_llm
-  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
+  api_key: api-key
   base_url: https://api.siliconflow.cn/v1/
   model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
   type: maas
 
 chat_llm: &chat_llm
-  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
+  api_key: api-key
   base_url: https://api.siliconflow.cn/v1/
   model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
+  api_key: api-key
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai

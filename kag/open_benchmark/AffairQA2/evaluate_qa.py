@@ -171,5 +171,5 @@ def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
 
 
 if __name__ == "__main__":
-    qa_file = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AffairQA2/solver/data/res4.json"
+    qa_file = "./solver/data/res4.json"
     evaluate_qa(qa_file)
