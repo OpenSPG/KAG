@@ -113,7 +113,7 @@ class SpoRetrieval(PromptABC):
             f"candis:{self.template_variables_value.get('candis', '')}"
         )
         if not isinstance(response, dict):
-            return []
+            return response
         if "output" in response:
             return response["output"]
         if "Output" in response:

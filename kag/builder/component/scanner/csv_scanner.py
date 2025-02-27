@@ -53,10 +53,24 @@ class CSVScanner(ScannerABC):
             List[Output]: A list of dictionaries containing the processed data.
         """
         input = self.download_data(input)
+
         if self.header:
             data = pd.read_csv(input, dtype=str)
         else:
             data = pd.read_csv(input, dtype=str, header=None)
+
+        # 如果有多个分片，根据rank和world_size进行数据分片
+        if self.sharding_info.shard_count > 1:
+            total_rows = len(data)
+            shard_size = total_rows // self.sharding_info.shard_count
+            start_idx = self.sharding_info.shard_id * shard_size
+            end_idx = (
+                start_idx + shard_size
+                if self.sharding_info.shard_id < self.sharding_info.shard_count - 1
+                else total_rows
+            )
+            data = data.iloc[start_idx:end_idx]
+
         col_keys = self.col_names if self.col_names else self.col_ids
         if col_keys is None:
             return data.to_dict(orient="records")
