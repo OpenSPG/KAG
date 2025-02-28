@@ -107,7 +107,6 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
             api_key=api_key,
             base_url=base_url,
             azure_deployment=azure_deployment,
-            model=model,
             api_version=api_version,
             azure_ad_token=azure_ad_token,
             azure_ad_token_provider=azure_ad_token_provider,
