@@ -10,13 +10,15 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import os
+import json
 import argparse
 import tempfile
-
+import requests
 from git import Repo
 from kag.bin.base import Command
 from kag.common.registry import Registrable
-
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import bold, green, reset
 from openai import NotFoundError
 
 
@@ -26,6 +28,12 @@ class BuilderJobSubmit(Command):
 
         parser = subparsers.add_parser(
             "builder", help="Submit distributed builder jobs to cluster"
+        )
+
+        parser.add_argument(
+            "--user_number",
+            type=str,
+            help="Git repository URL containing project source code (supports SSH/HTTP)",
         )
 
         parser.add_argument(
@@ -55,6 +63,9 @@ class BuilderJobSubmit(Command):
             help="Python entry script path. \n"
             "Will be executed as: python <entry_script>",
         )
+
+        parser.add_argument("--image", type=str, help="Worker image.")
+        parser.add_argument("--pool", type=str, help="Worker resource pool.")
 
         parser.add_argument(
             "--num_workers",
@@ -87,6 +98,13 @@ class BuilderJobSubmit(Command):
             type=int,
             default=50,
             help="Ephemeral disk space per worker (GB).",
+        )
+
+        parser.add_argument(
+            "--env",
+            type=str,
+            default="",
+            help="Environment variables, with each variable formatted as key=value and separated by commas: k1=v1, k2=v2",
         )
 
         parser.add_argument(
@@ -137,4 +155,35 @@ class BuilderJobSubmit(Command):
         cmds.append(entry_cmd)
 
         command = " && ".join(cmds)
-        print(f"command = {command}")
+
+        envs = {}
+        if args.env:
+
+            kvs = args.env.split(",")
+            for kv in kvs:
+                key, value = kv.split("=")
+                envs[key.strip()] = value.strip()
+
+        req = {
+            "projectId": int(KAG_PROJECT_CONF.project_id),
+            "command": command,
+            "workerNum": args.num_workers,
+            "workerCpu": args.num_cpus,
+            "workerGpu": args.num_gpus,
+            "workerMemory": args.memory * 1024,
+            "workerStorage": args.storage * 1024,
+            "envs": envs,
+        }
+        if args.image:
+            req["image"] = args.image
+        if args.pool:
+            req["workerPool"] = args.pool
+
+        if args.user_number:
+            req["userNumber"] = args.user_number
+
+        url = KAG_PROJECT_CONF.host_addr.rstrip("/") + "/public/v1/builder/kag/submit"
+        rsp = requests.post(url, json=req)
+        rsp.raise_for_status()
+        print(f"{bold}{green}Success submit job to server, info:{reset}")
+        print(json.dumps(rsp.json(), indent=4))
