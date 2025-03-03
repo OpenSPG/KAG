@@ -204,7 +204,7 @@ If you use this software, please cite it as below:
 ```bibtex
 @article{liang2024kag,
   title={KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation},
-  author={Liang, Lei and Sun, Mengshu and Gui, Zhengke and Zhu, Zhongshu and Jiang, Zhouyu and Zhong, Ling and Qu, Yuan and Zhao, Peilong and Bo, Zhongpu and Yang, Jin and others},
+  author={Liang, Lei and Sun, Mengshu and Gui, Zhengke and Zhu, Zhongshu and Jiang, Zhouyu and Zhong, Ling and Zhao, Peilong and Bo, Zhongpu and Yang, Jin and others},
   journal={arXiv preprint arXiv:2409.13731},
   year={2024}
 }
@@ -218,3 +218,6 @@ If you use this software, please cite it as below:
 # License
 
 [Apache License 2.0](LICENSE)
+
+# KAG Core Team
+Lei Liang, Mengshu Sun, Zhengke Gui, Zhongshu Zhu, Zhouyu Jiang, Ling Zhong, Peilong Zhao, Zhongpu Bo, Jin Yang, Huaidong Xiong, Lin Yuan, Jun Xu, Zaoyang Wang, Zhiqiang Zhang, Wen Zhang, Huajun Chen, Wenguang Chen, Jun Zhou, Haofen Wang
