@@ -121,7 +121,7 @@ class LLMClient(Registrable):
                 if with_json_parse
                 else self(prompt)
             )
-            logger.debug(f"Response: {response}")
+            # logger.debug(f"Response: {response}")
             result = prompt_op.parse_response(response, model=self.model, **variables)
             logger.debug(f"Result: {result}")
         except Exception as e:
