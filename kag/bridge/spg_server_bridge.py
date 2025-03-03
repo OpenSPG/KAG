@@ -25,6 +25,16 @@ class SPGServerBridge:
     def __init__(self):
         pass
 
+    def run_scanner(self, config, input_data):
+        if isinstance(config, str):
+            config = json.loads(config)
+        scanner_config = config["scanner"]
+        scanner = interface.ScannerABC.from_config(scanner_config)
+        output = []
+        for data in scanner.generate(input_data):
+            output.append(data)
+        return output
+
     def run_reader(self, config, input_data):
         if isinstance(config, str):
             config = json.loads(config)
