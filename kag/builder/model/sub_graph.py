@@ -159,11 +159,22 @@ class SubGraph(object):
     def __init__(self, nodes: List[Node], edges: List[Edge]):
         self.nodes = nodes
         self.edges = edges
-
+    def get_node_by_id(self, id):
+        for n in self.nodes:
+            if n.id == id:
+                return n
+        return None
     def add_node(self, id: str, name: str, label: str, properties=None):
         if not properties:
             properties = dict()
-        self.nodes.append(Node(_id=id, name=name, label=label, properties=properties))
+        store_node = self.get_node_by_id(id)
+        if not store_node:
+            self.nodes.append(Node(_id=id, name=name, label=label, properties=properties))
+            return self
+        if store_node and properties is not None:
+            update_prop = dict(properties)
+            update_prop.update(store_node.properties if store_node.properties else {})
+            store_node.properties = update_prop
         return self
 
     def add_edge(

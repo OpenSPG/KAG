@@ -289,7 +289,7 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             list of EntityData
         """
 
-        return default_search_entity_by_name_algorithm(
+        el_entities: List[EntityData] = default_search_entity_by_name_algorithm(
             mention_entity=mention_entity,
             schema=self.schema,
             vectorize_model=self.vectorize_model,
@@ -300,3 +300,18 @@ class DefaultExactKgRetriever(ExactKgRetriever, ABC):
             use_query_type=True,
             kwargs=kwargs,
         )
+        matched_entity_list = el_entities
+        for p,o,op in mention_entity.value_list:
+            tmp_spo = GetSPONode.parse_node(
+                f"s=s1:{mention_entity.get_entity_first_type_or_un_std()}[{mention_entity.entity_name}],p=p1:{p},o=o1:Entity[{o}]")
+            tmp_spo.sub_query = f"{mention_entity.entity_name} {p} {op} {o}"
+            recalled_datas: List[OneHopGraphData] = self.recall_one_hop_graph(tmp_spo, matched_entity_list, [])
+            s_kg_graph = self.retrieval_relation(tmp_spo, recalled_datas)
+            s_kg_graph.nodes_alias.append(tmp_spo.s.alias_name)
+            s_kg_graph.nodes_alias.append(tmp_spo.o.alias_name)
+            s_kg_graph.edge_alias.append(tmp_spo.p.alias_name)
+            matched_entity_list = s_kg_graph.get_entity_by_alias("s1")
+            if matched_entity_list is None:
+                return []
+
+        return matched_entity_list
