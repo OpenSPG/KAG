@@ -48,13 +48,19 @@ class FileScanner(ScannerABC):
         Returns:
             List[Output]: A list containing the input file path.
         """
+
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
             local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
-            local_file = os.path.join(local_file_path, os.path.basename(input))
+            from urllib.parse import urlparse
+
+            parsed_url = urlparse(input)
+            local_file = os.path.join(
+                local_file_path, os.path.basename(parsed_url.path)
+            )
             local_file = download_from_http(input, local_file)
             return [local_file]
         return [input]
