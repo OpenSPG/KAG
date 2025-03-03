@@ -21,6 +21,7 @@ from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 
 logger = logging.getLogger()
 
+
 class SolverMain:
     def invoke(
         self,
@@ -101,15 +102,16 @@ class SolverMain:
             state = ReporterIntermediateProcessTool.STATE.FINISH
             logger.info(f"{query} answer={answer} tracelog={trace_log}")
         except Exception as e:
-            if KAG_PROJECT_CONF.language == 'en':
+            if KAG_PROJECT_CONF.language == "en":
                 answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
             else:
                 answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
             state = ReporterIntermediateProcessTool.STATE.ERROR
-            logger.warning(f"An exception occurred while processing query: {query}. Error: {str(e)}", exc_info=True)
-        report_tool.report_final_answer(
-            query, answer, state
-        )
+            logger.warning(
+                f"An exception occurred while processing query: {query}. Error: {str(e)}",
+                exc_info=True,
+            )
+        report_tool.report_final_answer(query, answer, state)
         return answer
 
 

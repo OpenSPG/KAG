@@ -14,6 +14,7 @@ from openai import OpenAI, AzureOpenAI
 from kag.interface import VectorizeModelABC, EmbeddingVector
 from typing import Callable
 
+
 @VectorizeModelABC.register("openai")
 class OpenAIVectorizeModel(VectorizeModelABC):
     """
@@ -66,11 +67,12 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             assert len(results) == len(texts)
             return results
 
+
 @VectorizeModelABC.register("azure_openai")
 class AzureOpenAIVectorizeModel(VectorizeModelABC):
-    ''' A class that extends the VectorizeModelABC base class.
+    """A class that extends the VectorizeModelABC base class.
     It invokes Azure OpenAI or Azure OpenAI-compatible embedding services to convert texts into embedding vectors.
-    '''
+    """
 
     def __init__(
         self,

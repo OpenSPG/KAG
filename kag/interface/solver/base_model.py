@@ -232,10 +232,12 @@ class SPOEntity(SPOBase):
             {
                 "alias": self.alias_name.alias_name,
                 "id": info[0],
-                "type": info[1].std_entity_type
-                if "." in info[1].std_entity_type
-                else (prefix + "." if prefix is not None else "")
-                     + info[1].std_entity_type,
+                "type": (
+                    info[1].std_entity_type
+                    if "." in info[1].std_entity_type
+                    else (prefix + "." if prefix is not None else "")
+                    + info[1].std_entity_type
+                ),
             }
             for info in id_type_info
         ]
