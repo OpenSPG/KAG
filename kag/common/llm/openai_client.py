@@ -163,7 +163,6 @@ class AzureOpenAIClient(LLMClient):
             api_key=self.api_key,
             base_url=self.base_url,
             azure_deployment=self.azure_deployment,
-            model=self.model,
             api_version=self.api_version,
             azure_ad_token=self.azure_ad_token,
             azure_ad_token_provider=self.azure_ad_token_provider,
