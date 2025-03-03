@@ -545,7 +545,7 @@ class OneHopGraphData:
                     else:
                         relation_value_set.append(rel)
         prop = self.s.prop.get_properties_map_list_value()
-        if p in prop.keys():
+        if p in prop.keys() and len(relation_value_set) == 0:
             v_set = prop[p]
             for rel in v_set:
                 relation_value_set.append(self._prase_attribute_relation(p, str(rel)))

@@ -34,7 +34,8 @@ class GetExecutor(OpExecutor):
                     kg_qa_result.append(s_data.name)
             if isinstance(s_data, RelationData):
                 kg_qa_result.append(str(s_data))
-        process_info[n.sub_query]["kg_answer"] += f"\n{';'.join(kg_qa_result)}"
-        process_info["kg_solved_answer"].append(f"\n{';'.join(kg_qa_result)}")
+        process_info[n.sub_query]["kg_answer"] += f"{';'.join(kg_qa_result)}"
+        process_info["kg_solved_answer"].append(f"{';'.join(kg_qa_result)}")
         lf_plan.res.match_type = lf_plan.sub_query_type
+        lf_plan.res.if_answered = True
         return process_info[n.sub_query]
