@@ -129,8 +129,9 @@ class FuzzyMatchRetrieval:
         all_spo_text = []
         revert_value_p_map = {}
         revert_graph_map = {}
+
         for one_hop_graph in one_hop_graph_list:
-            for k, v_set in one_hop_graph.get_s_all_relation_spo().items():
+            for k, v_set in one_hop_graph.get_s_all_relation_spo(len(n.p.value_list) != 0, self.language).items():
                 for v in v_set:
                     all_spo_text.append(v)
                     revert_value_p_map[v] = k
@@ -175,7 +176,7 @@ class FuzzyMatchRetrieval:
             if std_p is None or std_p == "":
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
-            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text)
+            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text, len(n.p.value_list) != 0, self.language)
             one_kg_graph_ = KgGraph()
             recall_alias_name = (
                 n.s.alias_name if one_hop_graph.s_alias_name == "s" else n.o.alias_name
