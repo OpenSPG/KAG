@@ -281,8 +281,9 @@ class GetSPOExecutor(OpExecutor):
                 lf_plan.res.sub_answer = self.generator.generate_sub_answer(
                     lf_plan.query, lf_plan.res.spo_retrieved, [], history
                 )
-            # chunk retriever
-            self._execute_chunk_answer(nl_query, lf_plan, process_info, kg_graph, history, param)
+            if not judge_is_answered(lf_plan.res.sub_answer):
+                # chunk retriever
+                self._execute_chunk_answer(nl_query, lf_plan, process_info, kg_graph, history, param)
             lf_plan.res.if_answered = judge_is_answered(lf_plan.res.sub_answer)
             lf_plan.res.match_type = process_info[lf_plan.query]["match_type"]
             answer_pair = lf_plan.res.get_qa_pair()
