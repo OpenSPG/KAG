@@ -12,98 +12,91 @@ class LogicFormPlanPrompt(PromptABC):
 
     template_zh = """
 # Task
-根据问题及上下文信息，生成尽可能多样且无重复的子问题，帮助解答原问题。
+你是一个财务专家，针对给出的问题和信息，规划下一步操作。
 
 # Instruction
-1. 子问题应尽量多样，避免重复或类似。
-2. 每个子问题需归类到 `functions` 中的一项，并按指定格式输出 `function`。
-3. 上下文信息不足时生成Retrieval类子问题，上下文信息充足时生成Math子问题以解决最终的问题。
-4. 如果子问题中已有明确的答案回答最终问题(Math计算的结果)，输出：`An explicit answer already exists.`
+1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题；Retrieval类子问题尽可能切中主题。
+2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math子问题通过计算模块得到精确答案。
+3. 如果Math子问题已经计算得到问题答案，输出：`An explicit answer already exists.`
+4. 如果子问题答案存在矛盾，分析原文信息，以原文为准。
 
-# Functions
-## 1. **Retrieval**
-格式: Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])
-注释: 检索信息，基于 SPO（主谓宾）结构。不要在同一表达式中多次重复 `s`、`p` 或 `o`。
-
-## 2. **Math**
-格式: Math(content=[], target=`XXX`)->math_alias
-注释: 执行数值计算，content为上下文信息，target为计算目标。
-
-# Output Format
-输出纯文本，先输出你的思考过程，最后给出Subquestion和Function的配对，一行一个，配对之间使用|||分割。
-格式如下：```
-Subquestion: example_subquestion1|||Function: example_function1
-Subquestion: example_subquestion2|||Function: example_function2
+# 输出格式
+先输出你的思考过程，最后输出下一步操作的类型Retrieval或Math，然后给出子问题列表。
+格式例子如下：
+```
+Retrieval: 
+example_retrieval_subquestion_1
+example_retrieval_subquestion_2
 ```
 
-# Examples
-## Example Input
-Question: 美国运通的平均每笔交易支付金额是多少？
-Context:
-SubQuestion1: 美国运通的交易总数量是多少？ by:retrival
-Answer1:
+# 例子
+## 案例输入
+** 你需要回答的问题 **: 美国运通平均每笔交易支付金额是多少？
+** 已知信息**:
+SubQuestion1: 美国运通的支付总金额是多少？ by:retrival
+Answer1: 美国运通的支付总金额是637十亿美元。
+SupportingFacts1:
 | company          | payments volume ( billions )   | total volume ( billions )   |   total transactions ( billions ) |   cards ( millions ) |
 | american express | 637                            | 647                         |                               5   |                   86 |
 
-## Example Output
-求解的问题是：美国运通的平均每笔交易支付金额是多少？
-通过问题1的答案，我们可以得到美国运通的交易总数量是5十亿笔。同时可以获得美国运通的支付总金额是637十亿美元。
+## 案例输出
+求解的问题是：美国运通平均每笔交易支付金额是多少？
+通过问题1的答案，我们可以得到美国运通的支付总金额是637十亿美元。同时从SupportingFacts1可以获得美国运通总支付次数是5十亿次。
 因此已经具有足够的信息计算平均每笔交易支付金额。
-子问题列表如下:
-Subquestion: 支付总金额是637十亿美元，支付总笔数是5十亿笔。计算平均每笔交易的支付金额？|||Function: Math(content=[], target=`计算平均每笔交易支付金额`)
+下一步操作为Math类子问题，子问题列表如下:
+```
+Math:
+支付总金额是637十亿美元，支付总笔数是5十亿笔。计算平均每笔交易的支付金额。
+```
 
-# Real Input
-Question: $question
-Context:
+# 真正的输入
+** 你需要回答的问题 **: $question
+** 已知信息**:
 $context
 """.strip()
 
     template_en = """
 # Task
-Generate as many diverse and non-redundant subquestions as possible to help answer the main question based on the given question and context.
+You are a financial expert. Based on the provided question and information, plan the next steps.
 
 # Instruction
-1. The subquestions should be as diverse as possible and avoid repetition or being overly similar.
-2. Each subquestion should be categorized under one of the `functions` and formatted accordingly.
-3. When contextual information is insufficient, generate sub-questions of the Retrieval type; when contextual information is sufficient, generate sub-questions of the Math type to solve the final problem.
-4. If the sub-problem list already contains a clear answer to the final question (the result of the math calculation), output: `An explicit answer already exists.`
-
-# Functions
-## 1. **Retrieval**
-Format: Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`])
-Note: Retrieve information based on SPO (subject-predicate-object) structure. Do not repeat `s`, `p`, or `o` in the same expression.
-
-## 2. **Math**
-Format: Math(content=[], target=`XXX`)->math_alias
-Note: Perform numerical calculations. `content` refers to contextual information, and `target` specifies the calculation goal.
+1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type sub-question. Retrieval-type sub-questions should be as focused and relevant to the topic as possible.
+2. If the information is sufficient to answer the question, plan the next step as a Math-type sub-question. Math sub-questions are solved using a computation module to obtain precise answers.
+3. If the Math sub-question has already been computed to find the problem's answer, output: `An explicit answer already exists.`
+4. If contradictions exist in the sub-question answers, analyze the original text, and prioritize the original text as the basis for resolution.
 
 # Output Format
-Output plain text. Start by explaining your reasoning, then provide subquestions paired with their respective functions. List one per line, separating each pair with `|||`.
-Format as follows:
+First, explain your thought process. Then output the next step's operation type, either Retrieval or Math, followed by the sub-question list.
+The format example is as follows:
 ```
-Subquestion: example_subquestion1|||Function: example_function1
-Subquestion: example_subquestion2|||Function: example_function2
+Retrieval: 
+example_retrieval_subquestion_1
+example_retrieval_subquestion_2
 ```
 
-# Examples
-## Example Input
-Question: What is the average amount paid per American Express transaction?
-Context:
-SubQuestion1: What is the total number of American Express transactions? by:retrieval
-Answer1:
+# Example
+## Case Input
+** The question you need to answer **: What is the average payment amount per transaction for American Express?
+** Known information **:
+SubQuestion1: What is the total payment volume for American Express? by:retrieval
+Answer1: The total payment volume for American Express is $637 billion.
+SupportingFacts1:
 | company          | payments volume ( billions )   | total volume ( billions )   |   total transactions ( billions ) |   cards ( millions ) |
 | american express | 637                            | 647                         |                               5   |                   86 |
 
-## Example Output
-The problem to solve is: What is the average amount paid per American Express transaction?
-Based on the answer to Subquestion1, we know the total number of American Express transactions is 5 billion. Additionally, we can see that the total payment amount is $637 billion.
-Thus, we have sufficient information to calculate the average amount paid per transaction.
-The subquestions and functions are as follows:
-Subquestion: The total payment amount is $637 billion, and the total transaction count is 5 billion. What is the average payment amount per transaction?|||Function: Math(content=[], target=`Calculate the average payment amount per transaction`)
+## Case Output
+The problem to solve is: What is the average payment amount per transaction for American Express?
+From the answer to SubQuestion1, we know that the total payment volume for American Express is $637 billion. Additionally, SupportingFacts1 provides the total number of transactions, which is 5 billion.
+Therefore, we already have sufficient information to calculate the average payment amount per transaction.
+The next step is a Math-type sub-question, and the sub-question list is as follows:
+```
+Math:
+The total payment volume is $637 billion, and the total number of transactions is 5 billion. Calculate the average payment amount per transaction.
+```
 
-# Real Input
-Question: $question
-Context:
+# Actual Input
+** The question you need to answer **: $question
+** Known information **:
 $context
 """.strip()
 
@@ -130,17 +123,31 @@ $context
             return sub_querys, logic_forms
 
     def _extract_subquestions_and_functions(self, text: str):
-        lines = text.splitlines()
+        flag_str = "```"
+        start_i = text.find(flag_str)
+        end_i = text.rfind(flag_str)
+        if start_i == -1 or end_i == -1 or start_i >= end_i:
+            return []
+        text = text[start_i + len(flag_str) : end_i].strip()
+        type_start = 0
+        type_end = text.index(":")
+        type_str = text[type_start:type_end].strip()
+        if type_str.lower() not in ["math", "retrieval"]:
+            return []
+        if type_str.lower() == "retrieval":
+            type_str = "Retrieval(s=s1:EntityType[`s1`],p=p1:p,o=o1)"
+        elif type_str.lower() == "math":
+            type_str = "Math(content=[], target='')->m"
+        subquestions = text[type_end + 1 :].strip()
+        subquestions = self.remove_line_numbers(subquestions)
+        subquestions = subquestions.splitlines()
         results = []
-        for line in lines:
-            try:
-                line = line.strip()
-                if line.startswith("Subquestion:") and "|||Function:" in line:
-                    subq_start = len("Subquestion: ")
-                    func_start = line.index("|||Function: ") + len("|||Function: ")
-                    subq = line[subq_start : line.index("|||Function: ")].strip()
-                    func = line[func_start:].strip()
-                    results.append((subq, func))
-            except:
-                continue
+        for subq in subquestions:
+            if type_str.lower() == "math":
+                type_str = f"Math(content=[], target='{subq}')->m"
+            results.append((subq, type_str))
         return results
+
+    def remove_line_numbers(self, text):
+        # 使用正则表达式匹配每行开头的序号
+        return re.sub(r"^\d+\.\s*", "", text, flags=re.MULTILINE)

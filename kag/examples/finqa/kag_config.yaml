@@ -1,22 +1,22 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
   #zzapi_key: 
-  api_key: 
+  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  model: deepseek-v3
-  #model: qwen2.5-32b-instruct
+  #model: deepseek-v3
+  model: qwen2.5-32b-instruct
   type: maas
 
 chat_llm: &chat_llm
   #zzapi_key: 
-  api_key: 
+  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  #model: deepseek-v3
-  model: qwen2.5-72b-instruct
+  model: deepseek-v3
+  #model: qwen2.5-72b-instruct
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: 
+  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai

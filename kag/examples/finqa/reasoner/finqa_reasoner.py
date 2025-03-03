@@ -92,16 +92,15 @@ class FinQAReasoner(KagReasonerABC):
                 plan_and_result_list.append((lf_node, rst))
 
             # rerank docs
-            best_chunk, lf_node = self._rerank_docs(
+            best_chunks = self._rerank_docs(
                 question, plan_and_result_list, process_info
             )
-            if best_chunk is None:
+            if best_chunks is None:
                 break
-            lf_node: LFPlan = lf_node
-            # process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer, best_chunk))
-            # process_info["sub_qa_pair"].append((lf_node.query, lf_node.res.sub_answer))
-            process_info["sub_qa_pair"].append((lf_node.query, best_chunk))
-            process_info["lf_plan"].append(lf_node)
+            for best_chunk in best_chunks:
+                lf_node: LFPlan = best_chunk[0]
+                process_info["sub_qa_pair"].append((lf_node.query, best_chunk[1]))
+                process_info["lf_plan"].append(lf_node)
 
         reason_res: LFExecuteResult = LFExecuteResult()
         reason_res.recall_docs = [p[1] for p in process_info["sub_qa_pair"]]
@@ -113,7 +112,7 @@ class FinQAReasoner(KagReasonerABC):
     def _print_proceed_info(self, question, process_info):
         logger.info(f"question: {question}")
         for i, qa in enumerate(process_info["sub_qa_pair"]):
-            logger.info(f"sub_qa_pair_{i}: {qa[0]}: {qa[1]}")
+            logger.info(f"sub_qa_pair_{i}: {qa[0]}\n{qa[1]}")
 
     def _filter_lf_nodes(self, process_info, lf_nodes: List[LFPlan]):
         if lf_nodes is None or len(lf_nodes) <= 0:
@@ -136,27 +135,15 @@ class FinQAReasoner(KagReasonerABC):
         for lf_node, res in plan_and_result_list:
             lf_node: LFPlan = lf_node
             res: LFExecuteResult = res
-            if lf_node.sub_query_type == "math" and not lf_node.res.if_answered:
+            if not lf_node.res.if_answered:
                 continue
-            if "retrieval" == lf_node.sub_query_type:
-                for doc_str in res.doc_retrieved:
-                    doc_str: str = doc_str.strip()
-                    content_start = doc_str.find("#", 1)
-                    content_end = doc_str.rfind("#")
-                    cuted_doc_str = doc_str[content_start + 1 : content_end]
-                    if cuted_doc_str in chunk_set or cuted_doc_str in selected_docs:
-                        continue
-                    score = float(doc_str[content_end + 1 :])
-                    chunk_set.add(cuted_doc_str)
-                    for_select_qa_list.append((lf_node, cuted_doc_str, score))
-            elif "math" == lf_node.sub_query_type:
-                doc_str = res.sub_answer
-                if doc_str in chunk_set or doc_str in selected_docs:
-                    continue
-                chunk_set.add(doc_str)
-                for_select_qa_list.append((lf_node, doc_str, 0.0))
+            doc_str = res.sub_answer
+            if doc_str in chunk_set or doc_str in selected_docs:
+                continue
+            chunk_set.add(doc_str)
+            for_select_qa_list.append((lf_node, doc_str))
         if len(for_select_qa_list) == 0:
-            return None, None
+            return None
         input_chunk_str = ""
         for i, doc in enumerate(for_select_qa_list):
             select_doc_str = f"SubQuestion: {doc[0].query} by: {doc[0].sub_query_type}\nAnswer: {doc[1]}\n"
@@ -166,23 +153,24 @@ class FinQAReasoner(KagReasonerABC):
             "chunks": input_chunk_str,
             "context": self.get_context_str(process_info),
         }
-        best_chunk_index = self.llm_module.invoke(
+        best_chunk_index_list = self.llm_module.invoke(
             input_dict, self.rerank_docs_prompt, False, True
         )
-        if best_chunk_index is None:
+        if best_chunk_index_list is None:
             logger.error(f"best_chunk_index is None")
-            return None, None
-        if best_chunk_index < 0 or best_chunk_index >= len(for_select_qa_list):
-            logger.error(f"best_chunk_index: {best_chunk_index} is out of range")
-            return None, None
-        best_chunk = for_select_qa_list[best_chunk_index]
-        exists = self.check_best_chunk_exists(best_chunk[0], process_info)
-        if exists:
-            logger.error(f"best_chunk: {best_chunk[0].query} exists in process_info")
-            return None, None
-        if best_chunk[0].sub_query_type == "math":
-            return best_chunk[0].res.sub_answer, best_chunk[0]
-        return best_chunk[1], best_chunk[0]
+            return None
+        best_chunks = []
+        for index in best_chunk_index_list:
+            best_chunks.append(for_select_qa_list[index])
+            exists = self.check_best_chunk_exists(
+                for_select_qa_list[index][0], process_info
+            )
+            if exists:
+                logger.error(
+                    f"best_chunk: {for_select_qa_list[index][0].query} exists in process_info"
+                )
+                continue
+        return best_chunks
 
     def get_context_str(self, process_info: Dict):
         context_list = []

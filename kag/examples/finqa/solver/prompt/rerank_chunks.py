@@ -12,10 +12,10 @@ class TableRerankChunksPrompt(PromptABC):
 
     template_zh = """
 # Task
-选择对问题最有帮助的一个chunk，返回chunk编号。
+选择对问题最有帮助的chunk，返回chunk编号。
 
 # Output format
-给出你的理由，最后一行返回`The final answer is: <chunk编号>`。
+给出你的理由，最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
 chunk编号不要包含任何其他字符。
 
 # Input
@@ -36,7 +36,7 @@ $chunks
 Select the most helpful chunk for the question and return the chunk number.
 
 # Output format
-Give your reason, and return `The final answer is: <chunk_number>` in the last line.
+Give your reason, and return `The final answer is: <chunk_number1>, <chunk_number2>` in the last line.
 The chunk number should not contain any other characters.
 
 # Input
@@ -64,10 +64,10 @@ $chunks
             if "none" in response.lower():
                 logger.error(f"{response}")
                 return None
-            match = re.match(r'^\s*[^\d]*?(\d+)', response)
-            if match:
-                return int(match.group(1))
-            return int(response)
+            pattern = r"\d+\.?\d*"
+            matches = re.findall(pattern, response)
+            numbers = [int(num) if "." not in num else float(num) for num in matches]
+            return numbers
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
             return None

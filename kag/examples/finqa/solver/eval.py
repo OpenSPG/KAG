@@ -20,13 +20,14 @@ from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator
 from kag.examples.finqa.solver.prompt.expression_builder import TableExpressionBuildr
+from kag.examples.finqa.solver.prompt.solve_question_without_spo import SolveQuestionWithOutSPO
 
 
 def qa(question, **kwargs):
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
     answer, traceLog = resp.run(question)
 
-    print(json.dumps(traceLog, ensure_ascii=False))
+    #print(json.dumps(traceLog, ensure_ascii=False))
     return str(answer)
 
 
@@ -98,14 +99,14 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = None
+    debug_index = [4, 5, 12, 17, 18, 19, 20, 21, 22, 28, 29, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 95, 98, 99, 103, 108, 109, 114, 118, 120, 124, 126, 129, 135, 139, 144, 150, 151, 156, 157, 159, 160, 166, 169, 170, 174, 183, 185, 186, 187, 190, 194]
     start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for i, _item in enumerate(_data_list):
         if i < start_index:
             continue
         if debug_index is not None:
-            if i != debug_index:
+            if i not in debug_index:
                 continue
         _question = _item["qa"]["question"]
         _gold = str(_item["qa"]["exe_ans"])
@@ -144,7 +145,5 @@ if __name__ == "__main__":
         print(total_metrics)
         print("error index list=" + str(error_question_map))
         print("#" * 100)
-        if debug_index is not None:
-            break
         if i >= 200:
             break
