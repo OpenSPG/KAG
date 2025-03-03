@@ -102,10 +102,7 @@ class RelationMapping(MappingABC):
             self
         """
 
-        if target_name in self.property_mapping:
-            self.property_mapping[target_name].append(source_name)
-        else:
-            self.property_mapping[target_name] = [source_name]
+        self.property_mapping[target_name] = source_name
         return self
 
     @property
@@ -131,10 +128,9 @@ class RelationMapping(MappingABC):
             s_id = record.get(self.src_id_field or "srcId")
             o_id = record.get(self.dst_id_field or "dstId")
             sub_properties = {}
-            for target_name, source_names in self.property_mapping.items():
-                for source_name in source_names:
-                    value = record.get(source_name)
-                    sub_properties[target_name] = value
+            for target_name, source_name in self.property_mapping.items():
+                value = record.get(source_name)
+                sub_properties[target_name] = value
         else:
             s_id = record.pop(self.src_id_field or "srcId")
             o_id = record.pop(self.dst_id_field or "dstId")
