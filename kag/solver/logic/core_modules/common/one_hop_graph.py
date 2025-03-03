@@ -133,6 +133,9 @@ class EntityData:
         self.type_zh: str = None
         self.score = 1.0
 
+    def get_name(self):
+        return self.name
+
     def get_short_name(self):
         if self.name:
             return self.name
@@ -247,6 +250,8 @@ class RelationData:
         self.type: str = None
         self.type_zh: str = None
 
+    def get_name(self):
+        return self.to_show_id()
     def _get_type_name(self, language="en"):
         if language == "zh":
             return self.type_zh
@@ -326,14 +331,10 @@ class RelationData:
                 )
         return spo_list
 
-    def rel_to_detail_prop(self):
-        spo = str(self)
-        if self.end_type != "Text":
-            prop_map = self.prop.get_properties_map_list_value() if self.prop else {}
-            if prop_map:
-                prop_str = ",".join([f"{k}={';'.join(v)}" for k, v in prop_map.items()])
-                return f"{spo} with prop: {prop_str}"
-        return spo
+    def get_str(self, with_prop=False, language="en"):
+        if not with_prop:
+            return f"({self.from_entity.get_name()} {self._get_type_name(language)} {self.end_entity.get_name()})"
+        return f"({self.from_entity.get_name()} {self._get_type_name(language)} {self.end_entity.get_name()}) has prop: {self.prop.get_properties_map()}"
 
     def __repr__(self):
         from_entity_desc = self._get_entity_description(self.from_entity)
@@ -528,18 +529,18 @@ class OneHopGraphData:
                         spo_list.append(self._prase_attribute_relation(p, spo_text))
         return spo_list
 
-    def get_std_p_value_by_spo_text(self, p, spo_text):
+    def get_std_p_value_by_spo_text(self, p, spo_text, with_prop, language):
         relation_value_set = []
         if p in self.in_relations.keys():
             for rel in self.in_relations[p]:
-                if spo_text == str(rel).strip("(").strip(")"):
+                if spo_text == rel.get_str(with_prop, language).strip("(").strip(")"):
                     if "s" == self.s_alias_name:
                         relation_value_set.append(rel.revert_spo())
                     else:
                         relation_value_set.append(rel)
         if p in self.out_relations.keys():
             for rel in self.out_relations[p]:
-                if spo_text == str(rel).strip("(").strip(")"):
+                if spo_text == rel.get_str(with_prop, language).strip("(").strip(")"):
                     if "o" == self.s_alias_name:
                         relation_value_set.append(rel.revert_spo())
                     else:
@@ -556,7 +557,7 @@ class OneHopGraphData:
             return k
         return self.schema.edge_en_zh.get(k, k)
 
-    def get_s_all_relation_spo(self):
+    def get_s_all_relation_spo(self, with_prop, language):
         # spo_list = []
         relation_name_set_map = {}
         if len(self.in_relations) > 0:
@@ -565,7 +566,7 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.in_relations[k]:
-                    spo_list.append(v.rel_to_detail_prop().strip("(").strip(")"))
+                    spo_list.append(v.get_str(with_prop, language).strip("(").strip(")"))
                 relation_name_set_map[k] = spo_list
         if len(self.out_relations) > 0:
             for k in self.out_relations.keys():
@@ -573,7 +574,7 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.out_relations[k]:
-                    spo_list.append(v.rel_to_detail_prop().strip("(").strip(")"))
+                    spo_list.append(v.get_str(with_prop, language).strip("(").strip(")"))
                 relation_name_set_map[k] = spo_list
         return relation_name_set_map
 
