@@ -107,7 +107,14 @@ class OpenAIClient(LLMClient):
                 timeout=self.timeout,
             )
         if not self.stream:
-            rsp = response.choices[0].message.content
+            reasoning_content = getattr(
+                response.choices[0].message, "reasoning_content", None
+            )
+            content = response.choices[0].message.content
+            if reasoning_content:
+                rsp = f"{reasoning_content}\n{content}"
+            else:
+                rsp = content
         else:
             rsp = ""
             for chunk in response:

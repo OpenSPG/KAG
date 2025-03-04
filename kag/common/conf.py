@@ -15,6 +15,7 @@ import logging
 import yaml
 import json
 import pprint
+from jinja2 import Template
 from pathlib import Path
 from typing import Union, Optional
 
@@ -135,6 +136,7 @@ def load_config(prod: bool = False, config_file: str = None):
             print(f"found config file: {config_file}")
             with open(config_file, "r") as reader:
                 config = reader.read()
+                config = Template(config).render(**dict(os.environ))
             return yaml.safe_load(config)
         else:
             return {}
