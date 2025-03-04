@@ -1,10 +1,13 @@
-from typing import List, Dict
 import json
 import logging
+import re
+from typing import List, Dict
+
+from neo4j.graph import Path, Node, Relationship
 from openai import OpenAI
+
 from kag.common.graphstore.neo4j_graph_store import Neo4jClient
 from kag.interface import LLMClient
-from neo4j.graph import Path, Node, Relationship
 
 logger = logging.getLogger()
 
@@ -52,8 +55,8 @@ type_messages = [
                     第二类问题是过滤类问题，需要起始节点和终点节点两点确定路径后，找到相应的答案，然后去除掉某个选项，典型关键词：除了、除外、不包括、排除；
                     第三类问题是多跳类问题，只需要起始节点，然后加上相应的关系，找到最终的答案，典型：存在使用连续'的'连接关系。
                     按以下步骤操作，步骤1：检测问题是否包含排除词汇（例如“除了”“不包括”）→ 如果是，归类为 过滤类问题（编号2）；
-                    步骤2：检测问题是否仅有起始节点，并包含多级关系描述（例如“的...的...”） → 如果是，归类为 多跳类问题（编号3）。
-                    步骤3：检测问题是否同时指定起始和终点节点，且无排除条件 → 如果是，归类为 路径类问题（编号1）。，
+                    步骤2：检测问题是否同时指定起始和终点节点，且无排除条件(典型:存在“且”、存在“谁”、“是谁”) → 如果是，归类为 路径类问题（编号1）。
+                    步骤3：检测问题是否仅有起始节点，并包含多级关系描述（例如“的...的...”） → 如果是，归类为 多跳类问题（编号3）。
                     请你确定给出的问题属于三类问题的哪一类问题，根据输入问题严格遵循规则，直接返回最终分类编号（仅限'1'、'2'、'3'）"
                 }
                 "example": [{
@@ -66,15 +69,31 @@ type_messages = [
                         "query": "谁是黄迪扬代表作品中的主要演员, 且有合作伙伴黄秋生？",
                         "response": "1"
                     },{
-                        "query": "黄良玉学生的老师中，谁的前妻是王静？",
+                        "query": "担任了金太郎的代表作品的主演的同时又是《少年们》的主要演员的人是谁？",
                         "response": "1"
                     },{
-                    },
-                    {
+                        "query": "谁既是吴莉婕搭档的搭档，还是李乐祺的父亲？",
+                        "response": "1"
+                    },{
+                        "query": "《山海惊奇》的作者有什么代表作品, 且出版社是中国致公出版社？"
+                        "response": "1"
+                    },{
+                        "query": "是宜宁翁主的侄子的孙子的同时又是李芳远的曾孙的人是谁？"
+                        "response": "1"
+                    },{
+                        "query": "谁是郑伟铭的毕业院校的知名校友，还是钟少珍的学生？",
+                        "response": "1"
+                    },{
                         "query": "高珊的代表作品的一位主要配音演员的的搭档除了许文广, 请问他的搭档还有谁？",
                         "response": "2"
                     },{
+                        "query": "刘梦娜的毕业院校，它的哪位知名校友的搭档是安?",
+                        "response": "1"
+                    },{
                         "query": "《Godzilla》的歌曲原唱的某一个好友的音乐作品除了《Still Love》, 请问它的音乐作品还有哪些？",
+                        "response": "2"
+                    },{
+                        "query": "请问《零号嫌疑犯》的主要演员参演的另一部作品中，哈利·基纳是该作品的主要角色之一，请问另外的主要角色是哪些人？"
                         "response": "2"
                     },{
                         "query": "《酬韦相公见寄》的作者的某一个好友的好友张蠙除外, 请问他的好友还有谁?",
@@ -103,6 +122,12 @@ path_messages = [
                     },{
                         "query":"《春兰花开》作者的姐姐中，谁是刘梦溪的妻子？",
                         "response":"MATCH p=(startNode)-[*1..3]-(endNode) WHERE startNode.name =~ '春兰花开' AND endNode.name =~ '刘梦溪' RETURN p"
+                    },{
+                        "query":"《山海惊奇》的作者有什么代表作品, 且出版社是中国致公出版社？",
+                        "response":"MATCH p=(startNode)-[*1..3]-(endNode) WHERE startNode.name =~ '山海惊奇' AND endNode.name =~ '中国致公出版社' RETURN p"
+                    }，{
+                        "query":"谁是郑伟铭的毕业院校的知名校友，还是钟少珍的学生？",
+                        "response":"MATCH p=(startNode)-[*1..3]-(endNode) WHERE startNode.name =~ '郑伟铭' AND endNode.name =~ '钟少珍' RETURN p"
                     }]}"""
     }
 ]
@@ -186,8 +211,8 @@ def send_messages_qwen(messages):
         api_key="",
         base_url="",
     )
-    model_name = ""
-
+    model_name = "deepseek-chat"
+    # model_name = "qwen-max-latest"
     response = client1.chat.completions.create(
         model=model_name,
         messages=messages,
@@ -201,13 +226,13 @@ def send_messages_deepseek(messages):
         api_key="",
         base_url="",
     )
-    model_name = ""
+    model_name = "deepseek-chat"
 
     response = client2.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        tools=cypher_tools
-    )
+            model=model_name,
+            messages=messages,
+            tools=cypher_tools
+        )
     return response.choices[0].message
 
 
@@ -236,6 +261,7 @@ class EnhancedQuestionProcessor:
             'type2': self.handle_type2_filter,
             'type3': self.handle_type3_list
         }
+        self.max_retries = 3
 
     @staticmethod
     def analyze_question(question: str) -> str:
@@ -302,15 +328,41 @@ class EnhancedQuestionProcessor:
             logger.error(f"生成 Cypher 查询失败: {str(e)}", exc_info=True)
             return ""
 
-    def process_question(self, question: str) -> str:
+    def process_question(self, question: str, retry_count: int = 0) -> str:
         """主处理流程"""
         try:
             q_type = self.analyze_question(question)
             raw_result = self.handlers[q_type](question)
-            return self.post_process(raw_result, question)
-        except Exception as exc:
-            logger.error(f"处理问题失败: {question} - {str(exc)}")
-            return " "
+            result = self.post_process(raw_result, question)
+            # 验证响应有效性
+            if self.is_invalid_response(result):
+                if retry_count < self.max_retries:
+                    logger.info(f"触发重试机制 [{retry_count+1}/{self.max_retries}] 问题：{question}")
+                    return self.process_question(question, retry_count+1)
+                return "未找到相关信息"  # 达到最大重试次数
+            return result
+
+        except Exception as e:
+            logger.error(f"处理异常: {str(e)}")
+            if retry_count < self.max_retries:
+                return self.process_question(question, retry_count+1)
+            return "系统繁忙，请稍后再试"  # 最终错误提示
+
+    @staticmethod
+    def is_invalid_response(response: str) -> bool:
+        """判断响应是否无效的规则"""
+        invalid_patterns = [
+            "未找到相关信息",
+            ".*没有数据.*",
+            ".*无法找到.*",
+            ".*查询失败.*",
+            "^$"  # 空
+        ]
+        # 匹配任意无效模式即为无效
+        return any(
+            re.search(pattern, response)
+            for pattern in invalid_patterns
+        )
 
     # ---------- 第一类处理：路径查询 ----------
     def handle_type1_path(self, question: str) -> List:
@@ -319,7 +371,7 @@ class EnhancedQuestionProcessor:
             cypher = self.generate_cypher(question, query_type=1)
             raw_result = self.execute_cypher(cypher)
 
-            return self._process_path_result(raw_result)
+            return self.process_path_result(raw_result)
         except Exception as e:
             logger.error(f"路径查询失败: {str(e)}")
             return []
@@ -330,7 +382,7 @@ class EnhancedQuestionProcessor:
         try:
             cypher = self.generate_cypher(question, query_type=2)
             raw_result = self.execute_cypher(cypher)
-            return self._process_path_result(raw_result)
+            return self.process_path_result(raw_result)
         except Exception as e:
             logger.error(f"列表查询失败: {str(e)}")
             return []
@@ -345,7 +397,7 @@ class EnhancedQuestionProcessor:
             # 执行主查询
             cypher = self.generate_cypher(question, query_type=3)
             raw_result = self.execute_cypher(cypher)
-            return self._process_path_result(raw_result)
+            return self.process_path_result(raw_result)
         except Exception as e:
             logger.error(f"列表查询失败: {str(e)}")
             return []
@@ -416,7 +468,7 @@ class EnhancedQuestionProcessor:
                 logger.error(f"记录处理异常: {str(e)}")
         return processed
 
-    def _process_path_result(self, path_data: List[Dict]) -> List[str]:
+    def process_path_result(self, path_data: List[Dict]) -> List[str]:
         """安全处理包含多层结构的路径数据"""
         all_sentences = []
         try:
@@ -517,6 +569,35 @@ class EnhancedQuestionProcessor:
         return formatted
 
 
+# # 主函数，使用线程池处理问题
+# def process_questions_multithreaded(test_data, processor, output_file='./cypher_result_0304.txt', max_workers=5):
+#     llm_client = LLMClient.from_config(llm_config)
+#     processor = EnhancedQuestionProcessor(llm_client)
+#
+#     """
+#     多线程处理问题
+#
+#     参数:
+#         test_data (list): 包含问题的列表
+#         processor: 提供 process_question 方法的对象
+#         output_file (str): 输出结果文件路径
+#         max_workers (int): 最大线程数量
+#     """
+#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
+#         # 提交任务到线程池
+#         futures = [
+#             executor.submit(process_question, item, processor, output_file)
+#             for item in test_data
+#         ]
+#         # 确保所有任务完成
+#         for future in concurrent.futures.as_completed(futures):
+#             try:
+#                 # 如果需要，可以获取返回结果（当前不需要）
+#                 future.result()
+#             except Exception as e:
+#                 logger.error(f"处理任务过程中出现异常: {str(e)}")
+
+
 if __name__ == "__main__":
     neo4j_client = Neo4jClient(
         uri="neo4j://localhost:7687",
@@ -550,7 +631,7 @@ if __name__ == "__main__":
             write_response_to_txt(
                 question=question,
                 response=response,
-                output_file='./cypher_result_new.txt'
+                output_file='./cypher_result_0304.txt'
             )
 
         except Exception as e:
@@ -558,5 +639,5 @@ if __name__ == "__main__":
             write_response_to_txt(
                 question=question,
                 response=f"处理失败: {str(e)}",
-                output_file='./cypher_result_new.txt'
+                output_file='./cypher_result_0304.txt'
             )
