@@ -109,6 +109,16 @@ class Prop:
                 )
         return prop
 
+    @staticmethod
+    def from_dict_directly(json_dict: dict):
+        prop = Prop()
+        black_attr = ["biz_node_id", "gdb_timestamp"]
+        for k in json_dict.keys():
+            if k.startswith("_") or json_dict[k] == "" or k in black_attr:
+                continue
+            prop.origin_prop_map[k] = json_dict[k]
+        return prop
+
     def to_json(self):
         return {
             "origin_prop_map": self.origin_prop_map,

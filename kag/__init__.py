@@ -203,7 +203,7 @@
 
 
 __package_name__ = "openspg-kag"
-__version__ = "0.6"
+__version__ = "0.6+medqa2025"
 
 # Register Built-in Components
 from kag.common.conf import init_env

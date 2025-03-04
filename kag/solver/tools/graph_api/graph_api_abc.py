@@ -44,6 +44,10 @@ class GraphApiABC(Registrable):
         pass
 
     @abstractmethod
+    def match_path(self, type_name: str, biz_ids: List[str], src_vertex_rule: Dict=None, hops: List[Dict]=None):
+        pass
+
+    @abstractmethod
     def calculate_pagerank_scores(
         self, target_vertex_type, start_nodes: List[Dict]
     ) -> Dict:
