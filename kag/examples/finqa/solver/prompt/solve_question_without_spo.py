@@ -5,7 +5,7 @@ from typing import List
 from kag.interface import PromptABC
 
 
-@PromptABC.register("tablexx_solve_question_without_spo")
+@PromptABC.register("table_solve_question_without_spo")
 class SolveQuestionWithOutSPO(PromptABC):
 
     template_zh = """
@@ -17,7 +17,7 @@ class SolveQuestionWithOutSPO(PromptABC):
 2.不要重复问题的内容。
 3.根据提供的信息生成答案。如果可能有多个答案，请生成所有答案。
 4.如果没有合适的答案，请回答“I don't know”。
-5.给出答案的同时，也给出最相关的引用原文。
+5.给出答案的同时，也给出理由和引用的原文。
 
 # 历史
 $history
@@ -37,7 +37,7 @@ Please answer the question `$question` based on the retrieved relevant documents
 2. Do not repeat the content of the question.
 3. Generate answers based on the provided information. If multiple answers are possible, generate all of them.
 4. If there is no suitable answer, answer 'I don't know'.
-5. Provide the answer and also provide the most relevant original text.
+5. Provide the answer and also provide the reasoning and the original text referenced.
 
 # History
 $history

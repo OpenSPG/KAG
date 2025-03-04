@@ -99,7 +99,7 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = [4, 5, 12, 17, 18, 19, 20, 21, 22, 28, 29, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 95, 98, 99, 103, 108, 109, 114, 118, 120, 124, 126, 129, 135, 139, 144, 150, 151, 156, 157, 159, 160, 166, 169, 170, 174, 183, 185, 186, 187, 190, 194]
+    debug_index = [18]
     start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for i, _item in enumerate(_data_list):

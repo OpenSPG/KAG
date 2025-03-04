@@ -121,7 +121,7 @@ class StepLFPlanner(LFPlannerABC):
         context_list = []
         for i, qa in enumerate(process_info["sub_qa_pair"]):
             a = qa[1]
-            lf_plan = process_info["lf_plan"][i]
+            lf_plan = process_info["lf_plan"][i][0]
             context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):
