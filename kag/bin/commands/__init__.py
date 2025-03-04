@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 from kag.bin.commands.info import ListRegisterInfo
+from kag.bin.commands.builder import BuilderJobSubmit
 
 
-__all__ = ["ListRegisterInfo"]
+__all__ = ["ListRegisterInfo", "BuilderJobSubmit"]

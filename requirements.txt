@@ -46,3 +46,4 @@ matplotlib
 PyPDF2
 ruamel.yaml
 json_repair
+gitpython
