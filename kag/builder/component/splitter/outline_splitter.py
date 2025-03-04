@@ -19,7 +19,7 @@ from typing import List, Type, Union, Tuple
 import matplotlib.pyplot as plt
 from kag.interface.common.prompt import PromptABC
 from knext.common.base.runnable import Input, Output
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
@@ -1099,14 +1099,20 @@ if __name__ == "__main__":
     txt_reader = TXTReader()
     length_splitter = LengthSplitter(split_length=5000)
 
-    llm = LLMClient.from_config(KAG_CONFIG.all_config["llm"])
+    llm_config = {
+        "api_key": "",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "model": "qwen-max-latest",
+        "type": "maas",
+    }
+    llm = LLMClient.from_config(llm_config)
     outline_splitter = OutlineSplitter(llm=llm)
     txt_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/builder/data/儿科学_short.txt"
     )
     docx_path = "/Users/zhangxinhong.zxh/Downloads/waikexue_short.docx"
     test_dir = "/Users/zhangxinhong.zxh/Downloads/1127_medkag_book"
-    pdf_path = "/Users/zhangxinhong.zxh/Downloads/toaz.info-5dsm-5-pr_56e68a629dc4fe62699960dd5afbe362.pdf"
+    pdf_path = "/Users/zhangxinhong.zxh/Downloads/default.pdf"
     files = [
         os.path.join(test_dir, file)
         for file in os.listdir(test_dir)
@@ -1147,7 +1153,7 @@ if __name__ == "__main__":
     # for future in as_completed(futures):
     #     print(future.result())
 
-    process_file_without_chain(docx_path)
+    process_pdf_without_chain(pdf_path)
     a = 1
     # chunk = docx_reader.invoke(docx_path)
     # chunk = txt_reader.invoke(txt_path)
