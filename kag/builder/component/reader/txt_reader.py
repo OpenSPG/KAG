@@ -61,5 +61,6 @@ class TXTReader(ReaderABC):
             id=generate_hash_id(input),
             name=basename,
             content=content,
+            **{"documentId": basename, "documentName": basename},
         )
         return [chunk]
