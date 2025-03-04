@@ -51,7 +51,7 @@ class DeomSolverPipeline:
 
 if __name__ == "__main__":
     import_modules_from_path("./src")
-    pipeline_config = KAG_CONFIG.all_config["pipeline"]
+    pipeline_config = KAG_CONFIG.all_config["kg_retrieval_pipeline"]
     pipeline = PipelineABC.from_config(pipeline_config)
 
     query = "张学友和刘德华共同出演过哪些电影"
