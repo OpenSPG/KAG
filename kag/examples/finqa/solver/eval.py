@@ -99,7 +99,7 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = [18]
+    debug_index = None
     start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for i, _item in enumerate(_data_list):
@@ -108,6 +108,7 @@ if __name__ == "__main__":
         if debug_index is not None:
             if i not in debug_index:
                 continue
+        _id = _item["id"]
         _question = _item["qa"]["question"]
         _gold = str(_item["qa"]["exe_ans"])
         try:
@@ -131,11 +132,11 @@ if __name__ == "__main__":
 
         if metrics["em"] < 0.9:
             if "None" == _prediction:
-                error_question_map["system_error"].append(i)
+                error_question_map["system_error"].append(_id)
             elif "i don't know" in _prediction.lower():
-                error_question_map["no_answer"].append(i)
+                error_question_map["no_answer"].append(_id)
             else:
-                error_question_map["error"].append(i)
+                error_question_map["error"].append(_id)
 
         total_metrics["em"] += metrics["em"]
         total_metrics["f1"] += metrics["f1"]
@@ -145,5 +146,5 @@ if __name__ == "__main__":
         print(total_metrics)
         print("error index list=" + str(error_question_map))
         print("#" * 100)
-        if i >= 200:
+        if i >= 100:
             break

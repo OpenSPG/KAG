@@ -13,13 +13,11 @@ class SolveQuestionWithOutSPO(PromptABC):
 请根据检索到的相关文档回答问题“$question”，并结合历史信息进行综合分析。
 
 # 要求
-1.尽可能直接回答问题，不包括任何其他信息。
-2.不要重复问题的内容。
-3.根据提供的信息生成答案。如果可能有多个答案，请生成所有答案。
-4.如果没有合适的答案，请回答“I don't know”。
-5.给出答案的同时，也给出理由和引用的原文。
+1. 给出理由，并回答问题。
+2. 不要尝试进行数学计算，而是给出计算公式。
+3. 如果没有合适的答案，请回答“I don't know”。
 
-# 历史
+# 历史信息
 $history
 
 # 文档
@@ -33,11 +31,9 @@ $docs
 Please answer the question `$question` based on the retrieved relevant documents, and combine historical information for comprehensive analysis.
 
 # Requirement
-1. Answer the question as directly as possible, without including any other information.
-2. Do not repeat the content of the question.
-3. Generate answers based on the provided information. If multiple answers are possible, generate all of them.
-4. If there is no suitable answer, answer 'I don't know'.
-5. Provide the answer and also provide the reasoning and the original text referenced.
+1. Provide reasoning and answer the question.
+2. Do not attempt mathematical calculations; instead, provide the calculation formula.
+3. If there is no suitable answer, respond with "I don't know".
 
 # History
 $history
@@ -47,6 +43,9 @@ $docs
 
 answer:
 """
+
+    def build_prompt(self, variables) -> str:
+        return super().build_prompt(variables)
 
     @property
     def template_variables(self) -> List[str]:
