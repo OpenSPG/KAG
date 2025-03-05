@@ -7,16 +7,15 @@ from kag.interface import PromptABC
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("table_rerank_chunks")
-class TableRerankChunksPrompt(PromptABC):
+@PromptABC.register("table_rerank_subquery")
+class TableRerankSubqueryPrompt(PromptABC):
 
     template_zh = """
 # Task
-选择对回答子问题最有帮助的chunks，返回chunk编号列表。
-如果没有合适的chunk，返回none。
+选择对回答子问题最有帮助的一个chunk，返回chunk编号。
 
 # Output format
-给出你的理由，最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
+给出你的理由，最后一行返回`The final answer is: <chunk编号>`。
 chunk编号不要包含任何其他字符。
 
 # Input
@@ -33,11 +32,10 @@ $chunks
 
     template_en = """
 # Task
-Select the most helpful chunks for the question and return the chunk numbers.
-If no suitable chunk is found, return None.
+Select the most helpful chunk for the question and return the chunk number.
 
 # Output format
-Give your reason, and return `The final answer is: <chunk_number1>, <chunk_number2>` in the last line.
+Give your reason, and return `The final answer is: <chunk_number>` in the last line.
 The chunk number should not contain any other characters.
 
 # Input
@@ -64,9 +62,10 @@ $chunks
             if "none" in response.lower():
                 logger.error(f"{response}")
                 return None
-            numbers = re.findall(r"\d+", response)
-            int_list = [int(num) for num in numbers]
-            return int_list
+            match = re.match(r'^\s*[^\d]*?(\d+)', response)
+            if match:
+                return int(match.group(1))
+            return int(response)
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
             return None

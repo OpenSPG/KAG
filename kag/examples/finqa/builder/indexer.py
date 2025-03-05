@@ -13,6 +13,7 @@ import os
 import json
 import hashlib
 import shutil
+import random
 
 import pandas as pd
 from neo4j import GraphDatabase
@@ -30,6 +31,7 @@ def load_finqa_data() -> list:
     with open(file_name, "r", encoding="utf-8") as f:
         data_list = json.load(f)
     print("finqa data list len " + str(len(data_list)))
+    #random.shuffle(data_list)
     return data_list
 
 

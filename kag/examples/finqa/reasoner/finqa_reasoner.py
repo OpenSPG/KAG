@@ -51,7 +51,7 @@ class FinQAReasoner(KagReasonerABC):
         self.trace_log = []
 
         self.rerank_docs_prompt = init_prompt_with_fallback(
-            "rerank_chunks", self.biz_scene
+            "rerank_subquery", self.biz_scene
         )
 
     def reason(self, question: str, memory: KagMemoryABC = None, **kwargs):

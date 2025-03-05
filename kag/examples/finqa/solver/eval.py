@@ -1,6 +1,4 @@
 import logging
-import json
-import re
 from typing import List
 
 from kag.common.benchmarks.evaluate import Evaluate
@@ -16,17 +14,21 @@ from kag.examples.finqa.reasoner.finqa_reasoner import FinQAReasoner
 from kag.examples.finqa.reasoner.step_lf_planner import StepLFPlanner
 from kag.examples.finqa.reasoner.step_lf_executor import StepLFExecutor
 from kag.examples.finqa.reasoner.length_splitter import LineLengthSplitter
+from kag.examples.finqa.reasoner.finqa_reflector import FinQAReflector
+from kag.examples.finqa.reasoner.finqa_chunk_retriever import FinQAChunkRetriever
 from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
+from kag.examples.finqa.solver.prompt.rerank_subquery import TableRerankSubqueryPrompt
 from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator
 from kag.examples.finqa.solver.prompt.expression_builder import TableExpressionBuildr
+from kag.examples.finqa.solver.prompt.solve_question_without_spo import SolveQuestionWithOutSPO
 
 
 def qa(question, **kwargs):
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
     answer, traceLog = resp.run(question)
 
-    print(json.dumps(traceLog, ensure_ascii=False))
+    # print(json.dumps(traceLog, ensure_ascii=False))
     return str(answer)
 
 
@@ -98,19 +100,20 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = None
+    debug_index = [0]
     start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for i, _item in enumerate(_data_list):
         if i < start_index:
             continue
         if debug_index is not None:
-            if i != debug_index:
+            if i not in debug_index:
                 continue
+        _id = _item["id"]
         _question = _item["qa"]["question"]
         _gold = str(_item["qa"]["exe_ans"])
         try:
-            build_finqa_graph(_item)
+            #build_finqa_graph(_item)
             _prediction = qa(question=_question)
         except KeyboardInterrupt:
             break
@@ -130,11 +133,11 @@ if __name__ == "__main__":
 
         if metrics["em"] < 0.9:
             if "None" == _prediction:
-                error_question_map["system_error"].append(i)
+                error_question_map["system_error"].append(_id)
             elif "i don't know" in _prediction.lower():
-                error_question_map["no_answer"].append(i)
+                error_question_map["no_answer"].append(_id)
             else:
-                error_question_map["error"].append(i)
+                error_question_map["error"].append(_id)
 
         total_metrics["em"] += metrics["em"]
         total_metrics["f1"] += metrics["f1"]
@@ -144,7 +147,5 @@ if __name__ == "__main__":
         print(total_metrics)
         print("error index list=" + str(error_question_map))
         print("#" * 100)
-        if debug_index is not None:
-            break
-        if i >= 200:
+        if i >= (200 - 1):
             break
