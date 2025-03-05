@@ -376,12 +376,13 @@ class SubQueryResult:
         return None
 
 class LFPlan:
-    def __init__(self, query: str, lf_node: LogicNode, sub_query_type: str):
+    def __init__(self, query: str, lf_node: LogicNode, sub_query_type: str, parent_query:str = None):
         self.query: str = query
         self.rewrite_query: List = [query]
         self.lf_node: LogicNode = lf_node
         self.sub_query_type: str = sub_query_type
         self.res: Optional[SubQueryResult] = None
+        self.parent_query: str = parent_query
 
     def to_json(self):
         res = {} if self.res is None else self.res.to_json()

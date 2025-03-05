@@ -8,11 +8,10 @@ from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.common.registry import import_modules_from_path
 from kag.common.conf import KAG_CONFIG
 
-from kag.examples.finqa.builder.indexer import build_finqa_graph, load_finqa_data
+from kag.examples.finqa.builder.indexer import build_finqa_graph, load_finqa_data, convert_finqa_to_md_file
 
 from kag.examples.finqa.reasoner.finqa_reasoner import FinQAReasoner
 from kag.examples.finqa.reasoner.step_lf_planner import StepLFPlanner
-from kag.examples.finqa.reasoner.step_lf_executor import StepLFExecutor
 from kag.examples.finqa.reasoner.length_splitter import LineLengthSplitter
 from kag.examples.finqa.reasoner.finqa_reflector import FinQAReflector
 from kag.examples.finqa.reasoner.finqa_chunk_retriever import FinQAChunkRetriever
@@ -113,6 +112,7 @@ if __name__ == "__main__":
         _question = _item["qa"]["question"]
         _gold = str(_item["qa"]["exe_ans"])
         try:
+            convert_finqa_to_md_file(_item)
             #build_finqa_graph(_item)
             _prediction = qa(question=_question)
         except KeyboardInterrupt:

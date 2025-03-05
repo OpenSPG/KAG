@@ -233,7 +233,7 @@ class GetSPOExecutor(OpExecutor):
             # generate sub answer by chunk ans spo
             docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
             lf.res.sub_answer = self.generator.generate_sub_answer(
-                lf.query, lf.res.spo_retrieved, docs, history
+                lf.query, lf.res.spo_retrieved, docs, history, parent_question=lf.parent_query
             )
         return lf.res
 

@@ -12,18 +12,18 @@ class TableRerankSubqueryPrompt(PromptABC):
 
     template_zh = """
 # Task
-选择对回答子问题最有帮助的一个chunk，返回chunk编号。
+你是一个财务专家，针对给出的问题，选择对解答问题最有帮助的子问题，返回子问题编号。
+根据原文仔细判断子问题答案是否正确，不要选择你认为错误的子问题。
 
 # Output format
-给出你的理由，最后一行返回`The final answer is: <chunk编号>`。
+给出你的思考过程，最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
 chunk编号不要包含任何其他字符。
 
 # Input
-## Question and context
+## Question
 Question: $question
-Context: $context
 
-## Waiting for selected chunks
+## Waiting for selected sub-question
 $chunks
 
 # Your Selection
@@ -32,18 +32,18 @@ $chunks
 
     template_en = """
 # Task
-Select the most helpful chunk for the question and return the chunk number.
+You are a financial expert. For the given question, select the sub-questions (chunks) that are most helpful in solving the question, and return their chunk numbers.
+Carefully evaluate the answers to the sub-questions based on the original content, and do not select chunks that you believe are incorrect.
 
 # Output format
-Give your reason, and return `The final answer is: <chunk_number>` in the last line.
-The chunk number should not contain any other characters.
+Provide your reasoning process, and in the last line, return `The final answer is: <chunk number 1>, <chunk number 2>`.
+Chunk numbers should not contain any additional characters.
 
 # Input
-## Question and context
+## Question
 Question: $question
-Context: $context
 
-## Waiting for selected chunks
+## Waiting for selected sub-question
 $chunks
 
 # Your Selection
@@ -51,7 +51,7 @@ $chunks
 
     @property
     def template_variables(self) -> List[str]:
-        return ["question", "chunks", "context"]
+        return ["question", "chunks"]
 
     def parse_response(self, response: str, **kwargs):
         try:
@@ -62,10 +62,10 @@ $chunks
             if "none" in response.lower():
                 logger.error(f"{response}")
                 return None
-            match = re.match(r'^\s*[^\d]*?(\d+)', response)
-            if match:
-                return int(match.group(1))
-            return int(response)
+            pattern = r"\d+\.?\d*"
+            matches = re.findall(pattern, response)
+            numbers = [int(num) for num in matches]
+            return numbers
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
             return None

@@ -10,46 +10,56 @@ class SolveQuestionWithOutSPO(PromptABC):
 
     template_zh = """
 # 任务
-请根据检索到的相关文档回答问题“$question”，并结合历史信息进行综合分析。
+回答子问题“$question”。
 
 # 要求
-1. 给出理由，并回答问题。
+1. 充分分析给你的信息，包括父问题，历史问答信息，以及检索到的文档。
 2. 不要尝试进行数学计算，而是给出计算公式。
 3. 如果没有合适的答案，请回答“I don't know”。
 
-# 历史信息
-$history
+# 输出格式
+** 理由: ** <输出你的理由>
+** 答案: ** <子问题的答案>
+
+# 父问题以及历史信息
+父问题：$parent_question
+历史问答：$history
 
 # 文档
 $docs
 
-答案：
+你的答案：
 """.strip()
 
     template_en = """
 # Task
-Please answer the question `$question` based on the retrieved relevant documents, and combine historical information for comprehensive analysis.
+Answer the sub-question "$question".
 
-# Requirement
-1. Provide reasoning and answer the question.
-2. Do not attempt mathematical calculations; instead, provide the calculation formula.
-3. If there is no suitable answer, respond with "I don't know".
+# Requirements
+1. Fully analyze the information provided to you, including the parent question, historical Q&A information, and retrieved documents.
+2. Do not attempt mathematical calculations; instead, provide a calculation formula.
+3. If no suitable answer can be found, reply with "I don't know."
 
-# History
-$history
+# Output Format
+** Reason: ** <Provide your reasoning>
+** Answer: ** <Answer to the sub-question>
 
-# Docs
+# Parent Question and Historical Information
+Parent Question: $parent_question
+Historical Q&A: $history
+
+# Documents
 $docs
 
-answer:
-"""
+Your Answer:
+""".strip()
 
     def build_prompt(self, variables) -> str:
         return super().build_prompt(variables)
 
     @property
     def template_variables(self) -> List[str]:
-        return ["history", "question", "docs"]
+        return ["history", "question", "docs", "parent_question"]
 
     def parse_response(self, response: str, **kwargs):
         return response

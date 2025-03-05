@@ -73,7 +73,7 @@ class StepLFPlanner(LFPlannerABC):
         )
         return self._parse_lf(question, sub_querys, logic_forms)
 
-    def _convert_node_to_plan(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
+    def _convert_node_to_plan(self, question, logic_nodes: List[LogicNode]) -> List[LFPlan]:
         plan_result = []
         for n in logic_nodes:
             lf_type = "retrieval"
@@ -84,7 +84,7 @@ class StepLFPlanner(LFPlannerABC):
             elif n.operator == "get":
                 lf_type = "output"
             plan_result.append(
-                LFPlan(query=n.sub_query, lf_node=n, sub_query_type=lf_type)
+                LFPlan(query=n.sub_query, lf_node=n, sub_query_type=lf_type, parent_query=question)
             )
         return plan_result
 
@@ -103,7 +103,7 @@ class StepLFPlanner(LFPlannerABC):
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )
-        return self._convert_node_to_plan(parsed_logic_nodes)
+        return self._convert_node_to_plan(question, parsed_logic_nodes)
 
     def generate_logic_form(self, question: str, process_info: Dict = None):
         input_dict = {
@@ -121,7 +121,7 @@ class StepLFPlanner(LFPlannerABC):
         context_list = []
         for i, qa in enumerate(process_info["sub_qa_pair"]):
             a = qa[1]
-            lf_plan = process_info["lf_plan"][i]
+            lf_plan = process_info["lf_plan"][i][0]
             context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
         context_str = ""
         for i, c in enumerate(context_list):

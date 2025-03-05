@@ -112,7 +112,7 @@ finqa_solver_pipeline:
       llm_client: *chat_llm
       vectorize_model: *vectorize_model
     lf_executor:
-      type: step_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
+      type: default_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
       llm_client: *chat_llm
       force_chunk_retriever: true
       exact_kg_retriever: *exact_kg_retriever

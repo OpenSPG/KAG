@@ -60,6 +60,7 @@ def convert_finqa_to_md_file(item: dict) -> str:
     os.makedirs(os.path.dirname(md_file_tmp_path), exist_ok=True)
     with open(md_file_tmp_path, "w", encoding="utf-8") as f:
         f.write(f"# {_id}\n\n" + prev_text + "\n\n" + table_md_str + "\n\n" + post_text)
+    print(md_file_tmp_path)
     return md_file_tmp_path
 
 

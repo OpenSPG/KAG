@@ -30,7 +30,7 @@ class LFSubGenerator(KagBaseModule):
 
     @retry(stop=stop_after_attempt(3))
     def generate_sub_answer(
-        self, question: str, knowledge_graph: [], docs: [], history=[]
+        self, question: str, knowledge_graph: [], docs: [], history=[], parent_question:str = None
     ):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
@@ -76,6 +76,8 @@ class LFSubGenerator(KagBaseModule):
                 "docs": str(docs),
                 "history": "\n".join(history_qa),
             }
+        if parent_question:
+            params["parent_question"] = parent_question
         llm_output = self.llm_module.invoke(
             params, prompt, with_json_parse=False, with_except=True
         )
