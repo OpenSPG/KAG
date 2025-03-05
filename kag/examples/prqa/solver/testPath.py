@@ -5,7 +5,7 @@ from typing import List, Dict
 
 from neo4j.graph import Path, Node, Relationship
 from openai import OpenAI
-
+import concurrent.futures
 from kag.common.graphstore.neo4j_graph_store import Neo4jClient
 from kag.interface import LLMClient
 
@@ -96,7 +96,10 @@ type_messages = [
                         "query": "请问《零号嫌疑犯》的主要演员参演的另一部作品中，哈利·基纳是该作品的主要角色之一，请问另外的主要角色是哪些人？"
                         "response": "2"
                     },{
-                        "query": "《酬韦相公见寄》的作者的某一个好友的好友张蠙除外, 请问他的好友还有谁?",
+                        "query": "《大国手之秦淮风月》的主要演员的搭档与李元伯有过合作，请问他还有哪些其他搭档？",
+                        "response": "2"
+                    },{
+                        "query": "泳娜的丈夫参演了某部以姚嘉妮作为主要演员的电影，请问该电影的其他主要演员还有谁？",
                         "response": "2"
                     },{
                         "query": "赵超的毕业院校，它的知名人物的儿子有哪些?",
@@ -136,7 +139,7 @@ multi_hop_messages = [
     {
         "role": "system",
         "content": """{ 
-            "instruct": "你是一个图数据专家，请参考example将用户请求转成cypher语句, 需要的关系类型从如下关系中挑选： "PersonWithPerson": ["学姐", "未婚夫", "外祖父", "妾", 
+            "instruct": "你是一个图数据专家，请参考example将用户请求转成cypher语句,请仔细分析问题是几跳问题，需要的关系类型从如下关系中挑选： "PersonWithPerson": ["学姐", "未婚夫", "外祖父", "妾", 
             "姨夫", "堂伯父", "第三任妻子", "堂弟", "堂妹", "前男友", "外孙", "连襟", "义母", "叔父", "徒弟","妻姐", "堂哥", "前妻", "养女", "孙女", "外孙子", "曾外祖母", "第二任丈夫", "丈夫", 
             "师弟", "大姨子", "岳母", "侄子", "妻子","小姑子", "好友", "表哥", "曾外孙子", "义父", "学妹", "亲家公", "第四任妻子", "生母", "老师", "队友", "姑姑", "姑父", "义妹", "同门", 
             "兄弟", "合作人", "表兄", "第一任妻子", "继母", "堂兄", "外甥", "女婿", "表侄", "师傅", "师姐", "堂小舅子", "庶子", "老板", "前公公", "侄孙子", "侄孙媳妇", "弟子", "前儿媳", 
@@ -150,7 +153,7 @@ multi_hop_messages = [
             "代表作品", "音乐作品", "制作", "主要演员", "配音", "文学作品", "登场作品", "主持", "主要角色", "音乐视频", "参演", "为他人创作音乐", "执导", "发行专辑"], 
             "OrganizationWithOrganization": ["代表", "创办", "设立单位", "办学团体", "专职院士数", "相关国内联盟", "院系设置", "所属机构", "合作院校", "设立单位"], 
             "PersonWithOrganization": ["领导", "现任领导", "历任领导", "成员", "毕业院校", "创始人", "法人", "知名人物", "现任领导"], "WorkWithOrganization": ["出版社", 
-            "连载平台"], "Others": ["类别", "经纪公司", "其他关系", "简称", "学校类别", "学校身份", "类型", "学校特色", "办学性质"]", 
+            "连载平台"], "Others": ["类别", "经纪公司", "其他关系", "简称", "学校类别", "学校身份", "类型", "学校特色", "办学性质"]，需要注意的是除了“合作人”，一般情况下关系“合作”可以理解为“搭档”", 
             "example":[{ 
                 "query":"赵超的毕业院校，它的知名人物的儿子有哪些?", 
                 "response":"MATCH p=(startNode)-[:毕业院校]->()-[:知名人物]->()-[:儿子]->() WHERE startNode.name = '赵超' RETURN p" 
@@ -160,6 +163,9 @@ multi_hop_messages = [
             },{ 
                 "query":"如梦令这首歌的歌曲，它的原唱的前男友有哪些代表作品？", 
                 "response":"MATCH p=(startNode)-[:歌曲原唱]->()-[:前男友]->()-[:代表作品]->() WHERE startNode.name = '如梦令' RETURN p" 
+            }，{
+                "query":"泳娜的丈夫的搭档有哪些搭档?",
+                "response":"MATCH p=(startNode)-[:丈夫]->()-[:搭档]->()-[:搭档]->() WHERE startNode.name = '泳娜' RETURN p" 
             }]}"""
     }
 ]
@@ -182,7 +188,7 @@ filter_messages = [
             "代表作品", "音乐作品", "制作", "主要演员", "配音", "文学作品", "登场作品", "主持", "主要角色", "音乐视频", "参演", "为他人创作音乐", "执导", "发行专辑"], 
             "OrganizationWithOrganization": ["代表", "创办", "设立单位", "办学团体", "专职院士数", "相关国内联盟", "院系设置", "所属机构", "合作院校", "设立单位"], 
             "PersonWithOrganization": ["领导", "现任领导", "历任领导", "成员", "毕业院校", "创始人", "法人", "知名人物", "现任领导"], "WorkWithOrganization": ["出版社", 
-            "连载平台"], "Others": ["类别", "经纪公司", "其他关系", "简称", "学校类别", "学校身份", "类型", "学校特色", "办学性质"]", 
+            "连载平台"], "Others": ["类别", "经纪公司", "其他关系", "简称", "学校类别", "学校身份", "类型", "学校特色", "办学性质"]，需要注意的是除了“合作人”，一般情况下关系“合作”可以理解为“搭档”", 
             "example":[{ 
                 "query":"高珊的代表作品的一位主要配音演员的的搭档除了许文广, 请问他的搭档还有谁？", 
                 "response":"MATCH p=(startNode)-[:代表作品]->()-[:主要配音]->(actor)-[:搭档]->() WHERE startNode.name = '高珊' AND '许文广' IN [(actor)-[:搭档]->(endNode) | endNode.name] RETURN p" 
@@ -192,6 +198,9 @@ filter_messages = [
             },{ 
                 "query":"《酬韦相公见寄》的作者的某一个好友的好友张蠙除外, 请问他的好友还有谁?", 
                 "response":"MATCH p=(startNode)-[:作者]->()-[:好友]->(actor)-[:好友]->() WHERE startNode.name = '酬韦相公见寄' AND '张蠙' IN [(actor)-[:好友]->(endNode) | endNode.name] RETURN p" 
+            },{
+                "query":"《感化院》中某位主要演员的搭档和杰克·汤普森有合作过，那么这位搭档的其他搭档还有哪些人？", 
+                "response":"MATCH p=(startNode)-[:主要演员]->()-[:搭档]->(actor)-[:搭档]->() WHERE startNode.name = '感化院' AND '杰克·汤普森' IN [(actor)-[:搭档]->(endNode) | endNode.name] RETURN p" 
             }]}"""
     }
 ]
@@ -229,10 +238,10 @@ def send_messages_deepseek(messages):
     model_name = "deepseek-chat"
 
     response = client2.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            tools=cypher_tools
-        )
+        model=model_name,
+        messages=messages,
+        tools=cypher_tools
+    )
     return response.choices[0].message
 
 
@@ -356,6 +365,7 @@ class EnhancedQuestionProcessor:
             ".*没有数据.*",
             ".*无法找到.*",
             ".*查询失败.*",
+            ".*无法根据现有数据回答问题.*",
             "^$"  # 空
         ]
         # 匹配任意无效模式即为无效
@@ -383,9 +393,6 @@ class EnhancedQuestionProcessor:
             cypher = self.generate_cypher(question, query_type=2)
             raw_result = self.execute_cypher(cypher)
             return self.process_path_result(raw_result)
-        except Exception as e:
-            logger.error(f"列表查询失败: {str(e)}")
-            return []
         except Exception as e:
             logger.error(f"过滤查询失败: {str(e)}")
             return []
@@ -553,7 +560,7 @@ class EnhancedQuestionProcessor:
             "请按照以下步骤完成：",
             "1. **提取逻辑链条**：逐步分析路径数据中与问题相关的关键信息",
             "2. **确定问题目标**：明确问题需要获取的核心信息",
-            "3. **组织答案**：用简洁自然的中文回答，包含必要细节"
+            "3. **组织答案**：用简洁自然的中文回答，包含必要细节(如果有多个答案，请全部回答出来)"
         ]
         return '\n'.join(prompt_lines)
 
@@ -568,34 +575,76 @@ class EnhancedQuestionProcessor:
                 formatted.append(json.dumps(item, ensure_ascii=False))
         return formatted
 
+    def process_all_items_parallel(self, test_data, output_file, max_workers=5):
+        """
+        并行处理问题列表
 
-# # 主函数，使用线程池处理问题
-# def process_questions_multithreaded(test_data, processor, output_file='./cypher_result_0304.txt', max_workers=5):
-#     llm_client = LLMClient.from_config(llm_config)
-#     processor = EnhancedQuestionProcessor(llm_client)
-#
-#     """
-#     多线程处理问题
-#
-#     参数:
-#         test_data (list): 包含问题的列表
-#         processor: 提供 process_question 方法的对象
-#         output_file (str): 输出结果文件路径
-#         max_workers (int): 最大线程数量
-#     """
-#     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-#         # 提交任务到线程池
-#         futures = [
-#             executor.submit(process_question, item, processor, output_file)
-#             for item in test_data
-#         ]
-#         # 确保所有任务完成
-#         for future in concurrent.futures.as_completed(futures):
-#             try:
-#                 # 如果需要，可以获取返回结果（当前不需要）
-#                 future.result()
-#             except Exception as e:
-#                 logger.error(f"处理任务过程中出现异常: {str(e)}")
+        参数:
+            test_data: 问题列表，格式为 [{ "question": "问题1" }, { "question": "问题2" }, ...]
+            processor: 提供 process_question 方法的对象
+            output_file: 输出结果文件路径
+            max_workers: 最大并行线程数
+        """
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 提交任务到线程池
+            futures = [
+                executor.submit(self.handle_item, item, output_file)
+                for item in test_data
+            ]
+
+            # 等待所有任务完成，并捕获可能的异常
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()  # 确保捕获线程中的异常
+                except Exception as e:
+                    logger.error(f"任务执行过程中出现异常: {str(e)}")
+
+    def handle_item(self, item, output_file):
+        """
+        并行处理单个问题的完整逻辑
+        """
+        question = item.get("question")
+        try:
+            # 核心处理流程
+            response = self.process_question(question)
+            # 写入结果
+            write_response_to_txt(
+                question=question,
+                response=response,
+                output_file=output_file
+            )
+
+        except Exception as e:
+            # 如果处理失败，记录失败日志并写入失败结果
+            logger.error(f"处理问题失败: {question} - {str(e)}")
+            write_response_to_txt(
+                question=question,
+                response=f"处理失败: {str(e)}",
+                output_file=output_file
+            )
+
+    def process_all_items_single(self, test_data, output_file):
+        # 处理每个问题
+        for item in test_data:
+            question = item.get("question")
+            try:
+                # 核心处理流程
+                response = self.process_question(question)
+
+                # 写入结果
+                write_response_to_txt(
+                    question=question,
+                    response=response,
+                    output_file='./cypher_result_0304.txt'
+                )
+
+            except Exception as e:
+                logger.error(f"处理问题失败: {question} - {str(e)}")
+                write_response_to_txt(
+                    question=question,
+                    response=f"处理失败: {str(e)}",
+                    output_file='./cypher_result_0304.txt'
+                )
 
 
 if __name__ == "__main__":
@@ -620,24 +669,7 @@ if __name__ == "__main__":
     with open("./data/test.json", 'r', encoding='utf-8') as f:
         test_data = json.load(f)
 
-    # 处理每个问题
-    for item in test_data:
-        question = item.get("question")
-        try:
-            # 核心处理流程
-            response = processor.process_question(question)
+    processor.process_all_items_parallel(test_data, output_file='./cypher_result_0305.txt', max_workers=5)
+    # processor.process_all_items_single(test_data, output_file='./cypher_result_0305.txt')
 
-            # 写入结果
-            write_response_to_txt(
-                question=question,
-                response=response,
-                output_file='./cypher_result_0304.txt'
-            )
 
-        except Exception as e:
-            logger.error(f"处理问题失败: {question} - {str(e)}")
-            write_response_to_txt(
-                question=question,
-                response=f"处理失败: {str(e)}",
-                output_file='./cypher_result_0304.txt'
-            )
