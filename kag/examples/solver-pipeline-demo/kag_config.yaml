@@ -29,13 +29,31 @@ project:
   namespace: SupplyChain
   checkpoint_path: ./ckpt
 
-pipeline:
-  type: demo_pipeline
+static_retrieval_pipeline:
+  type: static_plan_pipeline
   planner:
-    type: mock_planner
+    type: static_planner
     llm_client: *chat_llm
   executors:
     - type: kg_retriever
     - type: py_code_generator
     - type: deepseek
       llm_client: *chat_llm
+
+iterative_retrieval_pipeline:
+  type: iterative_plan_pipeline
+  planner:
+    type: iterative_planner
+    llm_client: *chat_llm
+  executors:
+    - type: kg_retriever
+    - type: py_code_generator
+    - type: deepseek
+      llm_client: *chat_llm
+
+      
+naive_rag_pipeline:
+  type: naive_rag_pipeline
+  vector_retriever: bge_m3
+  text_retriever: bm25
+  generator: abstraction
