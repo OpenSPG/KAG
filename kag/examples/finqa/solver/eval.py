@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import List
 
 from kag.common.benchmarks.evaluate import Evaluate
@@ -27,7 +28,7 @@ def qa(question, **kwargs):
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
     answer, traceLog = resp.run(question)
 
-    # print(json.dumps(traceLog, ensure_ascii=False))
+    print(json.dumps(traceLog, ensure_ascii=False))
     return str(answer)
 
 
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = [0]
+    debug_index = None
     start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for i, _item in enumerate(_data_list):
@@ -113,7 +114,7 @@ if __name__ == "__main__":
         _gold = str(_item["qa"]["exe_ans"])
         try:
             convert_finqa_to_md_file(_item)
-            #build_finqa_graph(_item)
+            build_finqa_graph(_item)
             _prediction = qa(question=_question)
         except KeyboardInterrupt:
             break

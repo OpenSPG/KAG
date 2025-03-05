@@ -182,7 +182,7 @@ class TableAndTextExtractor(ExtractorABC):
         # table chunk
         chunk = Chunk(
             id=f"table_{table_id}",
-            name=f"{doc_name} / {table_name}",
+            name=f"{doc_name} / {table_name} / {table_info.desc}",
             content=input_table.content,
             type=ChunkTypeEnum.Text,
         )

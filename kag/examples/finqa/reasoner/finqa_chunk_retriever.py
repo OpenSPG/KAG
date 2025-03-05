@@ -93,7 +93,7 @@ class FinQAChunkRetriever(KAGRetriever):
             input_chunk_str += f"\n### {i}\n{doc}\n"
         context = f"Parent Question:{queries[0]}"
         input_dict = {
-            "question": queries[-1],
+            "question": str(queries[1:]),
             "chunks": input_chunk_str,
             "context": context,
         }
@@ -102,7 +102,7 @@ class FinQAChunkRetriever(KAGRetriever):
         )
         if best_chunk_index_list is None:
             logger.error(f"best_chunk_index is None")
-            return []
+            return passages
         best_chunk_index_list = [
             b for b in best_chunk_index_list if b >= 0 and b < len(for_select_doc_list)
         ]

@@ -31,7 +31,7 @@ def load_finqa_data() -> list:
     with open(file_name, "r", encoding="utf-8") as f:
         data_list = json.load(f)
     print("finqa data list len " + str(len(data_list)))
-    #random.shuffle(data_list)
+    random.shuffle(data_list)
     return data_list
 
 
@@ -61,6 +61,7 @@ def convert_finqa_to_md_file(item: dict) -> str:
     with open(md_file_tmp_path, "w", encoding="utf-8") as f:
         f.write(f"# {_id}\n\n" + prev_text + "\n\n" + table_md_str + "\n\n" + post_text)
     print(md_file_tmp_path)
+    print(_id)
     return md_file_tmp_path
 
 
