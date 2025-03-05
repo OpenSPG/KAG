@@ -635,7 +635,7 @@ class EnhancedQuestionProcessor:
                 write_response_to_txt(
                     question=question,
                     response=response,
-                    output_file='./cypher_result_0304.txt'
+                    output_file=output_file
                 )
 
             except Exception as e:
@@ -643,7 +643,7 @@ class EnhancedQuestionProcessor:
                 write_response_to_txt(
                     question=question,
                     response=f"处理失败: {str(e)}",
-                    output_file='./cypher_result_0304.txt'
+                    output_file=output_file
                 )
 
 
@@ -669,7 +669,7 @@ if __name__ == "__main__":
     with open("./data/test.json", 'r', encoding='utf-8') as f:
         test_data = json.load(f)
 
-    processor.process_all_items_parallel(test_data, output_file='./cypher_result_0305.txt', max_workers=5)
-    # processor.process_all_items_single(test_data, output_file='./cypher_result_0305.txt')
+    # processor.process_all_items_parallel(test_data, output_file='./cypher_result_0305.txt', max_workers=5)
+    processor.process_all_items_single(test_data, output_file='./cypher_result_0305_single.txt')
 
 
