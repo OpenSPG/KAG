@@ -22,7 +22,7 @@ from kag.builder.runner import BuilderChainRunner
 from kag.common.conf import KAG_CONFIG
 
 
-def load_finqa_data() -> list:
+def load_finqa_data(shuffle: bool = False) -> list:
     """
     load data
     """
@@ -31,7 +31,10 @@ def load_finqa_data() -> list:
     with open(file_name, "r", encoding="utf-8") as f:
         data_list = json.load(f)
     print("finqa data list len " + str(len(data_list)))
-    random.shuffle(data_list)
+    for _idx, data in enumerate(data_list):
+        data["index"] = _idx
+    if shuffle:
+        random.shuffle(data_list)
     return data_list
 
 
@@ -102,6 +105,13 @@ def clear_neo4j_data(db_name):
     with driver.session(database=db_name) as session:
         session.execute_write(delete_all_nodes_and_relationships)
 
+
+from kag.examples.finqa.builder.table_and_text_extractor import TableAndTextExtractor
+from kag.examples.finqa.builder.length_splitter import LineLengthSplitter
+from kag.examples.finqa.builder.prompt.table_context import TableContextPrompt
+from kag.examples.finqa.builder.prompt.table_row_col_summary import (
+    TableRowColSummaryPrompt,
+)
 
 if __name__ == "__main__":
     _data_list = load_finqa_data()

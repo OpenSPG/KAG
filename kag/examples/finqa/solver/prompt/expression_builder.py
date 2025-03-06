@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 @PromptABC.register("table_expression_builder")
-class TableExpressionBuildr(PromptABC):
+class FinQAExpressionBuildr(PromptABC):
     template_zh = """
 # Instruction
 根据给出的问题和数据，编写python代码，输出问题结果。

@@ -13,18 +13,18 @@ class LogicFormPlanPrompt(PromptABC):
     template_zh = """
 # Task
 你是一个财务专家，针对给出的问题和信息，规划下一步操作。
+问题的最终答案是一个数字或者yes/no。
 
 # Instruction
-1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题；Retrieval类子问题尽可能切中主题。
+1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题；Retrieval类子问题尽可能多样，不重复，从不同角度获取数据。
 2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math子问题通过计算模块得到精确答案。
-3. 如果Math子问题已经计算得到问题答案，输出：`An explicit answer already exists.`
-4. 如果子问题答案存在矛盾，分析原文信息，以原文为准。
+3. 必须使用Math计算最终答案，如果已有Math类子问题给出来明确的最终答案，输出：`An explicit answer already exists.`
 
 # 输出格式
 先输出你的思考过程，最后输出下一步操作的类型Retrieval或Math，然后给出子问题列表。
 格式例子如下：
 ```
-Retrieval: 
+Retrieval:
 example_retrieval_subquestion_1
 example_retrieval_subquestion_2
 ```
@@ -57,13 +57,13 @@ $context
 
     template_en = """
 # Task
-You are a financial expert. Based on the provided question and information, plan the next steps.
+You are a financial expert tasked with planning the next steps based on the given questions and information.
+The final answer to the question is either a number or yes/no.
 
 # Instruction
-1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type sub-question. Retrieval-type sub-questions should be as focused and relevant to the topic as possible.
-2. If the information is sufficient to answer the question, plan the next step as a Math-type sub-question. Math sub-questions are solved using a computation module to obtain precise answers.
-3. If the Math sub-question has already been computed to find the problem's answer, output: `An explicit answer already exists.`
-4. If contradictions exist in the sub-question answers, analyze the original text, and prioritize the original text as the basis for resolution.
+1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type subproblem. Retrieval-type subproblems should be as diverse as possible, avoiding repetition, and should aim to gather data from different angles.
+2. If the information is sufficient to answer the question, plan the next step as a Math-type subproblem. Math-type subproblems will yield precise answers through computational modules.
+3. The final answer must be calculated using Math. If a Math-type subproblem has already provided an explicit final answer, output: `An explicit answer already exists.`
 
 # Output Format
 First, explain your thought process. Then output the next step's operation type, either Retrieval or Math, followed by the sub-question list.

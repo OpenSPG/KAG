@@ -15,6 +15,36 @@ from kag.solver.utils import init_prompt_with_fallback
 logger = logging.getLogger()
 
 
+class FinQALFExecuteResult(LFExecuteResult):
+
+    def __init__(self):
+        super().__init__()
+
+    def get_support_facts(self):
+        context_list = []
+        for i, lf_plan in enumerate(self.sub_plans):
+            if lf_plan.sub_query_type == "math":
+                answer = f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
+            else:
+                answer = "\n".join(self._norm_doc_retrieved(lf_plan.res.doc_retrieved))
+            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer))
+        context_str = ""
+        for i, c in enumerate(context_list):
+            context_str += (
+                f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
+            )
+        return context_str
+
+    def _norm_doc_retrieved(self, docs):
+        rst_list = []
+        for doc in docs:
+            doc = doc.strip("#")
+            x = doc.rfind("#")
+            doc = doc[:x]
+            rst_list.append(doc)
+        return rst_list
+
+
 @KagReasonerABC.register("finqa_reasoner", as_default=True)
 class FinQAReasoner(KagReasonerABC):
     """
@@ -54,30 +84,28 @@ class FinQAReasoner(KagReasonerABC):
             "rerank_chunks", self.biz_scene
         )
 
-    def reason(self, question: str, memory: KagMemoryABC = None, **kwargs):
-        """
-        Processes a given question by planning and executing logical forms to derive an answer.
-
-        Parameters:
-        - question (str): The input question to be processed.
-
-        Returns:
-        - solved_answer: The final answer derived from solving the logical forms.
-        - supporting_fact: Supporting facts gathered during the reasoning process.
-        - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
-        """
+    def reason1(self, question: str, memory: KagMemoryABC = None, **kwargs):
         step_index = -1
         process_info = {"kg_solved_answer": [], "sub_qa_pair": [], "lf_plan": []}
+        history = []
         while True:
             plan_and_result_list = []
             step_index += 1
             if step_index >= 10:
                 break
-            # logic form planing
-            lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
-                question, process_info=process_info
-            )
-            lf_nodes = self._filter_lf_nodes(process_info, lf_nodes)
+            if 0 == step_index:
+                lf_nodes = self.lf_planner._parse_lf(
+                    question,
+                    [question],
+                    ["Retrieval(s=s1:EntityType[`s1`],p=p1:p,o=o1)"],
+                )
+            else:
+                # logic form planing
+                lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
+                    question,
+                    process_info=process_info,
+                    history=history,
+                )
             if lf_nodes is None or len(lf_nodes) <= 0:
                 break
             for lf_node in lf_nodes:
@@ -86,54 +114,94 @@ class FinQAReasoner(KagReasonerABC):
                     [lf_node],
                     step_index=step_index,
                     process_info=process_info,
+                    history=history,
                     **kwargs,
                 )
-                lf_node.res = rst
                 plan_and_result_list.append((lf_node, rst))
 
-            # rerank docs
-            best_chunks = self._rerank_docs(
-                question, plan_and_result_list, process_info
-            )
-            if best_chunks is None:
-                break
-            if len(best_chunks) <= 0:
-                continue
-            process_info["sub_qa_pair"] = []
-            process_info["lf_plan"] = []
-            for best_chunk in best_chunks:
-                lf_node: LFPlan = best_chunk[0]
-                rst: LFExecuteResult = best_chunk[1]
-                process_info["sub_qa_pair"].append((lf_node.query, rst.sub_answer))
-                process_info["lf_plan"].append((lf_node, rst))
+        pass
 
-        reason_res: LFExecuteResult = LFExecuteResult()
-        reason_res.recall_docs = [p[1] for p in process_info["sub_qa_pair"]]
-        reason_res.rerank_docs = [p[1] for p in process_info["sub_qa_pair"]]
-        reason_res.sub_plans = [p[0] for p in process_info["lf_plan"]]
+    def reason(
+        self,
+        question: str,
+        memory: KagMemoryABC = None,
+        use_raw_query: bool = True,
+        **kwargs,
+    ):
+        step_index = -1
+        process_info = {"kg_solved_answer": [], "sub_qa_pair": [], "goal": question}
+        history = []
+        while True:
+            step_index += 1
+            if step_index >= 10:
+                break
+            if 0 == step_index and use_raw_query:
+                lf_nodes = self.lf_planner._parse_lf(
+                    question,
+                    [question],
+                    ["Retrieval(s=s1:EntityType[`s1`],p=p1:p,o=o1)"],
+                )
+            else:
+                # logic form planing
+                lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
+                    question,
+                    process_info=process_info,
+                    history=history,
+                )
+            if lf_nodes is None or len(lf_nodes) <= 0:
+                # TODO reflect
+                break
+            for lf_node in lf_nodes:
+                rst: LFExecuteResult = self.lf_executor.execute(
+                    question,
+                    [lf_node],
+                    step_index=step_index,
+                    process_info=process_info,
+                    history=history,
+                    **kwargs,
+                )
+                self._use_doc_as_subanswer(history=history, process_info=process_info)
+
+        reason_res: LFExecuteResult = FinQALFExecuteResult()
+        all_recall_docs = set()
+        for h in history:
+            all_recall_docs.update(h.res.doc_retrieved)
+        all_recall_docs = list(all_recall_docs)
+        reason_res.recall_docs = all_recall_docs
+        reason_res.rerank_docs = all_recall_docs
+        reason_res.sub_plans = list(history)
         self._print_proceed_info(question, process_info)
         return reason_res
+
+    def _use_doc_as_subanswer(self, history, process_info):
+        context_list = []
+        process_info["sub_qa_pair"] = []
+        for _, lf_plan in enumerate(history):
+            if lf_plan.sub_query_type == "math":
+                answer = f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
+            else:
+                answer = "\n".join(self._norm_doc_retrieved(lf_plan.res.doc_retrieved))
+            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer))
+        for c in context_list:
+            process_info["sub_qa_pair"].append((c[0], c[2]))
+        return process_info
+
+    def _norm_doc_retrieved(self, docs):
+        rst_list = []
+        for doc in docs:
+            doc = doc.strip("#")
+            x = doc.rfind("#")
+            doc = doc[:x]
+            rst_list.append(doc)
+        return rst_list
 
     def _print_proceed_info(self, question, process_info):
         logger.info(f"question: {question}")
         for i, qa in enumerate(process_info["sub_qa_pair"]):
             logger.info(f"sub_qa_pair_{i}: {qa[0]}\n{qa[1]}")
-            lf_node = process_info["lf_plan"][i][0]
-            if lf_node.sub_query_type.lower() == "math":
-                debug = process_info[lf_node.query]["debug"]
-                logger.info(f"math_debug{debug}")
 
-    def _filter_lf_nodes(self, process_info, lf_nodes: List[LFPlan]):
-        if lf_nodes is None or len(lf_nodes) <= 0:
-            return None
-        sub_q_set = set()
-        for qa in process_info["sub_qa_pair"]:
-            sub_q_set.add(qa[0])
-        new_lf_nodes = []
-        for lf in lf_nodes:
-            if lf.query not in sub_q_set:
-                new_lf_nodes.append(lf)
-        return new_lf_nodes
+    def _reflect(self):
+        pass
 
     def _rerank_docs(
         self, question: str, plan_and_result_list: List, process_info: Dict

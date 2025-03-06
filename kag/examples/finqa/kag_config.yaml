@@ -58,8 +58,8 @@ finqa_builder_pipeline:
       similarity_threshold: 0.99
     splitter:
       type: line_length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 600
-      window_length: 300
+      split_length: 300
+      window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
       vectorize_model: *vectorize_model
@@ -94,25 +94,25 @@ fuzzy_kg_retriever: &fuzzy_kg_retriever
   graph_api: *graph_api
 
 chunk_retriever: &chunk_retriever
-  type: default_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
+  type: finqa_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
   llm_client: *chat_llm
   recall_num: 20
   rerank_topk: 20
 
 finqa_solver_pipeline:
   memory:
-    type: default_memory # kag.solver.implementation.default_memory.DefaultMemory
+    type: finqa_memory # kag.solver.implementation.default_memory.DefaultMemory
     llm_client: *chat_llm
   max_iterations: 3
   reasoner:
     type: finqa_reasoner # kag.solver.implementation.default_reasoner.DefaultReasoner
     llm_client: *chat_llm
     lf_planner:
-      type: step_lf_planner # kag.solver.plan.default_lf_planner.DefaultLFPlanner
+      type: finqa_lf_planner # kag.solver.plan.default_lf_planner.DefaultLFPlanner
       llm_client: *chat_llm
       vectorize_model: *vectorize_model
     lf_executor:
-      type: step_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
+      type: finqa_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
       llm_client: *chat_llm
       force_chunk_retriever: true
       exact_kg_retriever: *exact_kg_retriever

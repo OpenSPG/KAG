@@ -12,18 +12,17 @@ class TableRerankChunksPrompt(PromptABC):
 
     template_zh = """
 # Task
-你是一个财务专家，针对给出的问题，选择对解答问题最有帮助的chunk，返回chunk编号。
-如果子问题答案存在矛盾，分析引用的原文，以原文为准。
+选择对回答子问题最有帮助的chunks，返回chunk编号列表。
+如果没有合适的chunk，返回none。
 
 # Output format
-给出你的思考，最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
+给出你的理由，最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
 chunk编号不要包含任何其他字符。
 
 # Input
-## Question and Selected chunks
+## Question and context
 Question: $question
-Chunks:
-$context
+Context: $context
 
 ## Waiting for selected chunks
 $chunks
@@ -34,18 +33,17 @@ $chunks
 
     template_en = """
 # Task
-You are a financial expert. For the given question, select the chunk(s) that are most helpful in addressing and solving the problem and provide the corresponding chunk number(s). 
-If there are contradictions in the answers to sub-questions, analyze the referenced original text and rely on the original content for correctness.
+Select the most helpful chunks for the question and return the chunk numbers.
+If no suitable chunk is found, return None.
 
 # Output format
-Give your reasoning, and on the last line, return `The final answer is: <chunk_number1>, <chunk_number2>`.
+Give your reason, and return `The final answer is: <chunk_number1>, <chunk_number2>` in the last line.
 The chunk number should not contain any other characters.
 
 # Input
-## Question and Selected chunks
+## Question and context
 Question: $question
-Chunks:
-$context
+Context: $context
 
 ## Waiting for selected chunks
 $chunks
@@ -66,10 +64,9 @@ $chunks
             if "none" in response.lower():
                 logger.error(f"{response}")
                 return None
-            pattern = r"\d+\.?\d*"
-            matches = re.findall(pattern, response)
-            numbers = [int(num) if "." not in num else float(num) for num in matches]
-            return numbers
+            numbers = re.findall(r"\d+", response)
+            int_list = [int(num) for num in numbers]
+            return int_list
         except Exception as e:
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
             return None

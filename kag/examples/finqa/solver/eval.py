@@ -13,21 +13,23 @@ from kag.common.conf import KAG_CONFIG
 from kag.examples.finqa.builder.indexer import build_finqa_graph, load_finqa_data
 
 from kag.examples.finqa.reasoner.finqa_reasoner import FinQAReasoner
-from kag.examples.finqa.reasoner.step_lf_planner import StepLFPlanner
-from kag.examples.finqa.reasoner.step_lf_executor import StepLFExecutor
-from kag.examples.finqa.reasoner.length_splitter import LineLengthSplitter
+from kag.examples.finqa.reasoner.finqa_lf_planner import FinQALFPlanner
+from kag.examples.finqa.reasoner.finqa_lf_executor import FinQALFExecutor
+from kag.examples.finqa.reasoner.finqa_chunk_retriever import FinQAChunkRetriever
+from kag.examples.finqa.reasoner.finqa_memory import FinQAMemory
 from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
-from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator
-from kag.examples.finqa.solver.prompt.expression_builder import TableExpressionBuildr
-from kag.examples.finqa.solver.prompt.solve_question_without_spo import SolveQuestionWithOutSPO
+from kag.examples.finqa.solver.prompt.expression_builder import FinQAExpressionBuildr
+from kag.examples.finqa.solver.prompt.solve_question_without_spo import (
+    SolveQuestionWithOutSPO,
+)
+from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 
 
 def qa(question, **kwargs):
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
     answer, traceLog = resp.run(question)
-
-    #print(json.dumps(traceLog, ensure_ascii=False))
+    print(json.dumps(traceLog, ensure_ascii=False))
     return str(answer)
 
 
@@ -91,7 +93,7 @@ class MultiHerttEvaluate(Evaluate):
 
 
 if __name__ == "__main__":
-    _data_list = load_finqa_data()
+    _data_list = load_finqa_data(shuffle=True)
     evaObj = MultiHerttEvaluate()
     total_metrics = {
         "em": 0.0,
@@ -100,11 +102,9 @@ if __name__ == "__main__":
         "processNum": 0,
     }
     debug_index = None
-    start_index = 0
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
-    for i, _item in enumerate(_data_list):
-        if i < start_index:
-            continue
+    for _item in _data_list:
+        i = _item["index"]
         if debug_index is not None:
             if i not in debug_index:
                 continue
@@ -132,11 +132,11 @@ if __name__ == "__main__":
 
         if metrics["em"] < 0.9:
             if "None" == _prediction:
-                error_question_map["system_error"].append(_id)
+                error_question_map["system_error"].append((i, _id))
             elif "i don't know" in _prediction.lower():
-                error_question_map["no_answer"].append(_id)
+                error_question_map["no_answer"].append((i, _id))
             else:
-                error_question_map["error"].append(_id)
+                error_question_map["error"].append((i, _id))
 
         total_metrics["em"] += metrics["em"]
         total_metrics["f1"] += metrics["f1"]
@@ -146,5 +146,3 @@ if __name__ == "__main__":
         print(total_metrics)
         print("error index list=" + str(error_question_map))
         print("#" * 100)
-        if i >= 100:
-            break
