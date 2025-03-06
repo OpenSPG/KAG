@@ -35,10 +35,10 @@ class ExecutorABC(Registrable):
     def output_types(self):
         return ExecutorResponse
 
-    def invoke(self, query, **kwargs):
+    def invoke(self, query, task, context, **kwargs):
         raise NotImplementedError("invoke not implemented yet.")
 
-    async def ainvoke(self, query, **kwargs):
+    async def ainvoke(self, query, task, context, **kwargs):
         raise NotImplementedError("ainvoke not implemented yet.")
 
     def schema(self):
