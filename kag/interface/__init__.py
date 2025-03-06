@@ -29,6 +29,12 @@ from kag.interface.builder.builder_chain_abc import KAGBuilderChain
 from kag.interface.builder.postprocessor_abc import PostProcessorABC
 from kag.interface.solver.base import KagBaseModule, Question
 
+
+from kag.interface.solver.pipeline_abc import Context, SolverPipelineABC
+from kag.interface.solver.planner_abc import Task, PlannerABC
+from kag.interface.solver.executor_abc import ExecutorABC, ExecutorResponse
+from kag.interface.solver.tool_abc import ToolABC
+
 # from kag.interface.solver.kag_memory_abc import KagMemoryABC
 # from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 # from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
@@ -55,4 +61,11 @@ __all__ = [
     "PostProcessorABC",
     "KagBaseModule",
     "Question",
+    "ToolABC",
+    "ExecutorABC",
+    "ExecutorResponse",
+    "Task",
+    "PlannerABC",
+    "Context",
+    "SolverPipelineABC",
 ]
