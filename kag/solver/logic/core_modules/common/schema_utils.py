@@ -6,9 +6,9 @@ import json
 from collections import defaultdict
 from typing import List
 
+from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from knext.reasoner.client import ReasonerClient
 from knext.schema.model.property import Property
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
 
 
 class SchemaUtils:
@@ -136,6 +136,8 @@ class SchemaUtils:
         spg_schema = sc.get_reason_schema()
         node_attributes = {}
         for spg_type_name, spg_type in spg_schema.items():
+            if "." not in spg_type_name:
+                continue
             name_en = spg_type.name_en
             name_zh = spg_type.name_zh
             self.node_en_2_full_name[name_en] = spg_type.name
