@@ -19,7 +19,6 @@ from kag.common.registry import Registrable
 class Context:
     def __init__(self):
         self._tasks = OrderedDict()
-        self._memory = OrderedDict()
 
     def add_task(self, task: Task):
         self._tasks[task.id] = task
@@ -39,12 +38,6 @@ class Context:
 
     def get_task(self, task_id):
         return self._tasks.get(task_id)
-
-    def get_memory(self, task_id):
-        return self._memory.get(task_id)
-
-    def set_memory(self, task_id, memory: Any):
-        self._memory[task_id] = memory
 
     def topological_sort(self, dag: nx.Graph):
         return nx.topological_sort(dag)

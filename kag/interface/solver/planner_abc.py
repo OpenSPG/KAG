@@ -10,8 +10,19 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import uuid
+from enum import Enum
 from typing import List, Dict
 from kag.common.registry import Registrable
+
+
+class TaskStatus(Enum):
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+
+    @classmethod
+    def states(cls):
+        return [s.value for s in cls]
 
 
 class Task(Registrable):
@@ -24,7 +35,7 @@ class Task(Registrable):
     ):
         self.executor = executor
         self.arguments = arguments
-        self.status = None
+        self.status = TaskStatus.PENDING
         self.id = str(uuid.uuid4())
         if parents is None:
             self.parents = []
@@ -35,12 +46,21 @@ class Task(Registrable):
         else:
             self.children = children
 
+        self.memory = {}
+        self.result = None
+
     def add_parent(self, parent):
         print(f"add parent {parent.id} to {self.id}, total {len(self.parents)}")
         self.parents.append(parent)
 
     def add_child(self, child):
         self.children.append(child)
+
+    def update_memory(self, key, value):
+        self.memory[key] = value
+
+    def update_result(self, result):
+        self.result = result
 
     def __str__(self):
         msg = (
@@ -67,12 +87,37 @@ class PlannerABC(Registrable):
         return List[Task]
 
     def create_tasks_from_dag(self, task_dag: Dict[str, dict]):
-        """ """
+        """create tasks from a dag, e.g. :
+        {
+            0: {
+                "executor": "call_kg_retriever",
+                "dependent_task_ids": [],
+                "arguments": {"query": "张学友出演过的电影列表"},
+            },
+            1: {
+                "executor": "call_kg_retriever",
+                "dependent_task_ids": [],
+                "arguments": {"query": "刘德华出演过的电影列表"},
+            },
+            2: {
+                "executor": "call_py_code_generator",
+                "dependent_task_ids": [0, 1],
+                "arguments": {
+                    "query": "请编写Python代码，找出以下两个列表的共同元素：\n张学友电影列表：{{0.output}}\n刘德华电影列表：{{1.output}}"
+                },
+            },
+            3: {
+                "executor": "call_deepseek",
+                "dependent_task_ids": [2],
+                "arguments": {"query": "请根据上下文信息，生成问题“张学友和刘德华共同出演过哪些电影”的详细答案"},
+            },
+        }
+        """
         # create all Task objects
         task_map = {}
         for task_order, task_info in task_dag.items():
             print(f"task_info = {task_info}")
-            task = Task.from_config(task_info)
+            task = Task(task_info["executor"], task_info["arguments"])
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]
@@ -97,32 +142,3 @@ class PlannerABC(Registrable):
 
     def is_static(self):
         return True
-
-
-if __name__ == "__main__":
-    task_config = {
-        0: {
-            "executor": "call_kg_retriever",
-            "dependent_task_ids": [],
-            "arguments": {"query": "张学友出演过的电影列表"},
-        },
-        1: {
-            "executor": "call_kg_retriever",
-            "dependent_task_ids": [],
-            "arguments": {"query": "刘德华出演过的电影列表"},
-        },
-        2: {
-            "executor": "call_py_code_generator",
-            "dependent_task_ids": [0, 1],
-            "arguments": {
-                "query": "请编写Python代码，找出以下两个列表的共同元素：\n张学友电影列表：{{0.output}}\n刘德华电影列表：{{1.output}}"
-            },
-        },
-        3: {
-            "executor": "call_deepseek",
-            "dependent_task_ids": [2],
-            "arguments": {"query": "请根据上下文信息，生成问题“张学友和刘德华共同出演过哪些电影”的详细答案"},
-        },
-    }
-    a = PlannerABC()
-    res = a.create_tasks_from_dag(task_config)
