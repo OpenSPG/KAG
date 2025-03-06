@@ -12,7 +12,7 @@
 import networkx as nx
 from typing import Any
 from collections import OrderedDict
-from kag.interface.solver.planner import Task
+from kag.interface.solver.planner_abc import Task
 from kag.common.registry import Registrable
 
 
