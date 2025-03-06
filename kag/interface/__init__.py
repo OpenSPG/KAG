@@ -31,7 +31,7 @@ from kag.interface.solver.base import KagBaseModule, Question
 
 
 from kag.interface.solver.pipeline_abc import Context, SolverPipelineABC
-from kag.interface.solver.planner_abc import Task, PlannerABC
+from kag.interface.solver.planner_abc import TaskStatus, Task, PlannerABC
 from kag.interface.solver.executor_abc import ExecutorABC, ExecutorResponse
 from kag.interface.solver.tool_abc import ToolABC
 
@@ -64,6 +64,7 @@ __all__ = [
     "ToolABC",
     "ExecutorABC",
     "ExecutorResponse",
+    "TaskStatus",
     "Task",
     "PlannerABC",
     "Context",
