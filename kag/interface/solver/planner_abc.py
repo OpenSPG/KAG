@@ -20,10 +20,6 @@ class TaskStatus(Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
 
-    @classmethod
-    def states(cls):
-        return [s.value for s in cls]
-
 
 class Task(Registrable):
     def __init__(
