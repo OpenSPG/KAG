@@ -5,6 +5,33 @@ from kag.interface import SolverPipelineABC, PlannerABC, ExecutorABC, Context, T
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 
 
+"""
+示例yaml
+kag_pipeline:
+  type: kag_pipeline
+  planner:
+    type: kag_planner
+    llm_client: *chat_llm
+    plan_prompt:
+        type: static_plan_prompt
+    executors:
+        - type: kag_hybrid_executor
+                entity_linking:
+                    type: entity_linking
+                path_select:
+                    type: hybrid_one_hop_select
+                ppr_chunk_retriever:
+                    type: ppr_chunk_retriever
+                llm_client: *chat_llm
+        - type: deduce_executor
+        - type: math_executor
+  generator:
+    type: kag_generator
+  max_reflect_time: 5
+"""
+
+
+@SolverPipelineABC.register("kag_pipeline")
 class KAGPipeline(SolverPipelineABC):
     def __init__(self, planner: PlannerABC, generator: KAGGeneratorABC, max_reflect_time):
         super().__init__()

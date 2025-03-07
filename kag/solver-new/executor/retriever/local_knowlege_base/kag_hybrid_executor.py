@@ -66,7 +66,7 @@ class KAGRetrievedResponse(ExecutorResponse):
         """
         return f"task: f{self.retrieved_task}" + "\n".join([str(item) for item in self.sub_retrieved_set])
 
-
+@ExecutorABC.register("kag_hybrid_executor")
 class KagHybridExecutor(ExecutorABC):
     """Hybrid knowledge graph retrieval executor combining multiple strategies.
 

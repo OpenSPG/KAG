@@ -4,7 +4,32 @@ from typing import Dict
 from kag.interface import SolverPipelineABC, PlannerABC, ExecutorABC, Context, TaskStatus
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 
+"""
+示例yaml
+kag_thought_pipeline:
+  type: kag_thought_pipeline
+  planner:
+    type: kag_planner
+    llm_client: *chat_llm
+    plan_prompt:
+        type: thought_plan_prompt
+    executors:
+        - type: kag_hybrid_executor
+                entity_linking:
+                    type: entity_linking
+                path_select:
+                    type: hybrid_one_hop_select
+                ppr_chunk_retriever:
+                    type: ppr_chunk_retriever
+                llm_client: *chat_llm
+        - type: deduce_executor
+        - type: math_executor
+  generator:
+    type: kag_generator
+  max_thought_times: 5
+"""
 
+@SolverPipelineABC.register("kag_thought_pipeline")
 class KAGThoughtPipeline(SolverPipelineABC):
     def __init__(self, planner: PlannerABC, generator: KAGGeneratorABC, max_thought_times):
         super().__init__()

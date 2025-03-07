@@ -4,8 +4,8 @@ from kag.interface import PlannerABC, Task, LLMClient, PromptABC
 
 @PlannerABC.register("kag_planner")
 class KAGPlanner(PlannerABC):
-    def __init__(self, llm_module: LLMClient, plan_prompt: PromptABC):
-        super().__init__()
+    def __init__(self, executors, llm_module: LLMClient, plan_prompt: PromptABC):
+        super().__init__(executors)
         self.llm_module = llm_module
         self.plan_prompt = plan_prompt
 
