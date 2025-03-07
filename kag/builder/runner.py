@@ -14,16 +14,15 @@
 import os
 import traceback
 import logging
-import threading
+import asyncio
 from typing import Dict
-from tqdm import tqdm
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.registry import Registrable
 from kag.common.utils import reset, bold, red, generate_hash_id
 from kag.common.checkpointer import CheckpointerManager
 from kag.interface import KAGBuilderChain, ScannerABC
-
+from kag.interface.builder.base import BuilderComponentData
 from kag.builder.model.sub_graph import SubGraph
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -108,15 +107,6 @@ class BuilderChainRunner(Registrable):
                 "world_size": self.scanner.sharding_info.get_world_size(),
             }
         )
-        self.processed_chunks = CheckpointerManager.get_checkpointer(
-            {
-                "type": "zodb",
-                "ckpt_dir": os.path.join(self.ckpt_dir, "chain"),
-                "rank": self.scanner.sharding_info.get_rank(),
-                "world_size": self.scanner.sharding_info.get_world_size(),
-            }
-        )
-        self._local = threading.local()
 
     def invoke(self, input):
         """
@@ -126,27 +116,11 @@ class BuilderChainRunner(Registrable):
             input: The input data to be processed.
         """
 
-        # def process(thread_local, chain_conf, data, data_id, data_abstract):
-        #     try:
-        #         if not hasattr(thread_local, "chain"):
-        #             if chain_conf:
-        #                 thread_local.chain = KAGBuilderChain.from_config(chain_conf)
-        #             else:
-        #                 thread_local.chain = self.chain
-        #         result = thread_local.chain.invoke(
-        #             data, max_workers=self.num_threads_per_chain
-        #         )
-        #         return data, data_id, data_abstract, result
-        #     except Exception:
-        #         traceback.print_exc()
-        #         return None
-
         def process(data, data_id, data_abstract):
             try:
                 result = self.chain.invoke(
                     data,
                     max_workers=self.num_threads_per_chain,
-                    processed_chunk_keys=self.processed_chunks.keys(),
                 )
                 return data, data_id, data_abstract, result
             except Exception:
@@ -154,7 +128,6 @@ class BuilderChainRunner(Registrable):
                 return None
 
         futures = []
-        print(f"Processing {input}")
         success = 0
         try:
             with ThreadPoolExecutor(self.num_chains) as executor:
@@ -171,6 +144,8 @@ class BuilderChainRunner(Registrable):
                     futures.append(fut)
 
                 success = 0
+                from tqdm import tqdm
+
                 for future in tqdm(
                     as_completed(futures),
                     total=len(futures),
@@ -180,24 +155,21 @@ class BuilderChainRunner(Registrable):
                     result = future.result()
                     if result is not None:
                         item, item_id, item_abstract, chain_output = result
+                        print(f"item = {item}")
+                        print(f"item_id = {item_id}")
+                        print(f"chain_output = {chain_output}")
                         info = {}
                         num_nodes = 0
                         num_edges = 0
                         num_subgraphs = 0
+
                         for item in chain_output:
+                            if isinstance(item, BuilderComponentData):
+                                item = item.data
                             if isinstance(item, SubGraph):
                                 num_nodes += len(item.nodes)
                                 num_edges += len(item.edges)
                                 num_subgraphs += 1
-                            elif isinstance(item, dict):
-
-                                for k, v in item.items():
-                                    self.processed_chunks.write_to_ckpt(k, k)
-                                    if isinstance(v, SubGraph):
-                                        num_nodes += len(v.nodes)
-                                        num_edges += len(v.edges)
-                                        num_subgraphs += 1
-
                         info = {
                             "num_nodes": num_nodes,
                             "num_edges": num_edges,
@@ -212,6 +184,73 @@ class BuilderChainRunner(Registrable):
         CheckpointerManager.close()
         msg = (
             f"{bold}{red}Done process {len(futures)} records, with {success} successfully processed and {len(futures)-success} failures encountered.\n"
+            f"The log file is located at {self.checkpointer._ckpt_file_path}. "
+            f"Please access this file to obtain detailed task statistics.{reset}"
+        )
+        print(msg)
+
+    async def ainvoke(self, input):
+        """
+        Processes the input data using the builder chain in parallel and manages checkpoints.
+
+        Args:
+            input: The input data to be processed.
+        """
+
+        async def process(data, data_id, data_abstract):
+            try:
+                result = await self.chain.ainvoke(
+                    data,
+                    max_workers=self.num_threads_per_chain,
+                )
+                return data, data_id, data_abstract, result
+            except Exception:
+                traceback.print_exc()
+                return None
+
+        success = 0
+        total = 0
+        tasks = []
+        for item in self.scanner.generate(input):
+            item_id, item_abstract = generate_hash_id_and_abstract(item)
+            if self.checkpointer.exists(item_id):
+                continue
+
+            task = asyncio.create_task(process(item, item_id, item_abstract))
+            tasks.append(task)
+        from tqdm.asyncio import tqdm
+
+        async for task in tqdm(asyncio.as_completed(tasks), total=len(tasks)):
+            result = await task
+            if result is not None:
+                item, item_id, item_abstract, chain_output = result
+                info = {}
+                num_nodes = 0
+                num_edges = 0
+                num_subgraphs = 0
+                for item in chain_output:
+                    if isinstance(item, BuilderComponentData):
+                        item = item.data
+                    if isinstance(item, SubGraph):
+                        num_nodes += len(item.nodes)
+                        num_edges += len(item.edges)
+                        num_subgraphs += 1
+
+                info = {
+                    "num_nodes": num_nodes,
+                    "num_edges": num_edges,
+                    "num_subgraphs": num_subgraphs,
+                }
+                await asyncio.to_thread(
+                    lambda: self.checkpointer.write_to_ckpt(
+                        item_id, {"abstract": item_abstract, "graph_stat": info}
+                    )
+                )
+                success += 1
+            total += 1
+        CheckpointerManager.close()
+        msg = (
+            f"{bold}{red}Done process {total} records, with {success} successfully processed and {total-success} failures encountered.\n"
             f"The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"
         )

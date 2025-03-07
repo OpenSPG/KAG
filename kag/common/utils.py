@@ -120,6 +120,10 @@ def load_json(content):
         return json.loads(substr)
 
 
+def flatten_2d_list(nested_list):
+    return [item for sublist in nested_list for item in sublist]
+
+
 def split_module_class_name(name: str, text: str) -> Tuple[str, str]:
     """
     Split `name` as module name and class name pair.

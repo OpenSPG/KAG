@@ -9,11 +9,10 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
 
 
 class SinkWriterABC(BuilderComponent, ABC):
@@ -33,21 +32,10 @@ class SinkWriterABC(BuilderComponent, ABC):
     def output_types(self):
         return SubGraph
 
-    @abstractmethod
-    def invoke(self, input: Input, **kwargs) -> Output:
-        """
-        Abstract method to be implemented by subclasses for writing SubGraphs to storage.
+    @property
+    def ckpt_subdir(self):
+        return "writer"
 
-        Args:
-            input (Input): The SubGraph to be written to storage.
-            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
-
-        Returns:
-            Output: The SubGraph after it has been written to storage.
-
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def inherit_input_key(self):
+        return True

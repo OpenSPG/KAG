@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import copy
+import asyncio
 import logging
 from typing import Dict, Type, List
 
@@ -81,18 +82,19 @@ class SchemaConstraintExtractor(ExtractorABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
-    @retry(stop=stop_after_attempt(3))
-    def named_entity_recognition(self, passage: str):
-        """
-        Performs named entity recognition on a given text passage.
-        Args:
-            passage (str): The text to perform named entity recognition on.
-        Returns:
-            The result of the named entity recognition operation.
-        """
+    def _named_entity_recognition_llm(self, passage: str):
         ner_result = self.llm.invoke(
             {"input": passage}, self.ner_prompt, with_except=False
         )
+        return ner_result
+
+    async def _anamed_entity_recognition_llm(self, passage: str):
+        ner_result = await self.llm.ainvoke(
+            {"input": passage}, self.ner_prompt, with_except=False
+        )
+        return ner_result
+
+    def _named_entity_recognition_process(self, passage, ner_result):
         if self.external_graph:
             extra_ner_result = self.external_graph.ner(passage)
         else:
@@ -123,6 +125,30 @@ class SchemaConstraintExtractor(ExtractorABC):
         return output
 
     @retry(stop=stop_after_attempt(3))
+    def named_entity_recognition(self, passage: str):
+        """
+        Performs named entity recognition on a given text passage.
+        Args:
+            passage (str): The text to perform named entity recognition on.
+        Returns:
+            The result of the named entity recognition operation.
+        """
+        ner_result = self._named_entity_recognition_llm(passage)
+        return self._named_entity_recognition_process(passage, ner_result)
+
+    @retry(stop=stop_after_attempt(3))
+    async def anamed_entity_recognition(self, passage: str):
+        """
+        Performs named entity recognition on a given text passage.
+        Args:
+            passage (str): The text to perform named entity recognition on.
+        Returns:
+            The result of the named entity recognition operation.
+        """
+        ner_result = await self._anamed_entity_recognition_llm(passage)
+        return self._named_entity_recognition_process(passage, ner_result)
+
+    @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
         """
         Performs named entity standardization on a given text passage and entities.
@@ -135,6 +161,24 @@ class SchemaConstraintExtractor(ExtractorABC):
             The result of the named entity standardization operation.
         """
         return self.llm.invoke(
+            {"input": passage, "named_entities": entities},
+            self.std_prompt,
+            with_except=False,
+        )
+
+    @retry(stop=stop_after_attempt(3))
+    async def anamed_entity_standardization(self, passage: str, entities: List[Dict]):
+        """
+        Performs named entity standardization on a given text passage and entities.
+
+        Args:
+            passage (str): The text passage.
+            entities (List[Dict]): The list of entities to standardize.
+
+        Returns:
+            The result of the named entity standardization operation.
+        """
+        return await self.llm.ainvoke(
             {"input": passage, "named_entities": entities},
             self.std_prompt,
             with_except=False,
@@ -163,6 +207,28 @@ class SchemaConstraintExtractor(ExtractorABC):
         )
 
     @retry(stop=stop_after_attempt(3))
+    async def arelations_extraction(self, passage: str, entities: List[Dict]):
+        """
+        Performs relation extraction on a given text passage and entities.
+
+        Args:
+            passage (str): The text passage.
+            entities (List[Dict]): The list of entities.
+
+        Returns:
+            The result of the relation extraction operation.
+        """
+        if self.relation_prompt is None:
+            logger.debug("Relation extraction prompt not configured, skip.")
+
+            return []
+        return await self.llm.ainvoke(
+            {"input": passage, "entity_list": entities},
+            self.relation_prompt,
+            with_except=False,
+        )
+
+    @retry(stop=stop_after_attempt(3))
     def event_extraction(self, passage: str):
         """
         Performs event extraction on a given text passage.
@@ -177,6 +243,24 @@ class SchemaConstraintExtractor(ExtractorABC):
             logger.debug("Event extraction prompt not configured, skip.")
             return []
         return self.llm.invoke({"input": passage}, self.event_prompt, with_except=False)
+
+    @retry(stop=stop_after_attempt(3))
+    async def aevent_extraction(self, passage: str):
+        """
+        Performs event extraction on a given text passage.
+
+        Args:
+            passage (str): The text passage.
+
+        Returns:
+            The result of the event extraction operation.
+        """
+        if self.event_prompt is None:
+            logger.debug("Event extraction prompt not configured, skip.")
+            return []
+        return await self.llm.ainvoke(
+            {"input": passage}, self.event_prompt, with_except=False
+        )
 
     def parse_nodes_and_edges(self, entities: List[Dict], category: str = None):
         """
@@ -427,6 +511,41 @@ class SchemaConstraintExtractor(ExtractorABC):
             )
         relations = self.relations_extraction(passage, named_entities)
         std_entities = self.named_entity_standardization(passage, named_entities)
+        self.append_official_name(entities, std_entities)
+        subgraph = self.assemble_subgraph(input, entities, relations, events)
+        out.append(self.postprocess_graph(subgraph))
+        logger.debug(f"input passage:\n{passage}")
+        logger.debug(f"output graphs:\n{out}")
+        return out
+
+    async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the extractor on the given input.
+
+        Args:
+            input (Input): The input data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: The list of output results.
+        """
+        title = input.name
+        passage = title + "\n" + input.content
+
+        out = []
+        entities, events = asyncio.gather(
+            self.anamed_entity_recognition(passage), self.aevent_extraction(passage)
+        )
+        named_entities = []
+        for entity in entities:
+            named_entities.append(
+                {"name": entity["name"], "category": entity["category"]}
+            )
+        relations, std_entities = asyncio.gather(
+            self.arelations_extraction(passage, named_entities),
+            self.anamed_entity_standardization(passage, named_entities),
+        )
+
         self.append_official_name(entities, std_entities)
         subgraph = self.assemble_subgraph(input, entities, relations, events)
         out.append(self.postprocess_graph(subgraph))

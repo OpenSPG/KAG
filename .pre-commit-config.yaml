@@ -10,8 +10,8 @@ repos:
             kag/solver/logic/core_modules/parser/logic_node_parser.py
           )$
 
-#   - repo: https://github.com/pycqa/flake8
-#     rev: 4.0.1
-#     hooks:
-#       - id: flake8
-#         files: ^kag/.*\.py$
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        files: ^kag/.*\.py$

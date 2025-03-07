@@ -11,7 +11,7 @@
 # or implied.
 
 import logging
-from ollama import Client
+from ollama import Client, AsyncClient
 
 from kag.interface import LLMClient
 
@@ -34,6 +34,8 @@ class OllamaClient(LLMClient):
         model: str,
         base_url: str,
         timeout: float = None,
+        max_rate: float = 1000,
+        time_period: float = 1,
     ):
         """
         Initializes the OllamaClient instance.
@@ -43,12 +45,17 @@ class OllamaClient(LLMClient):
             base_url (str): The base URL for the Ollama API.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
+        super().__init__(max_rate, time_period)
         self.model = model
         self.base_url = base_url
         self.timeout = timeout
         self.param = {}
         self.client = Client(host=self.base_url, timeout=self.timeout)
+        self.aclient = AsyncClient(host=self.base_url, timeout=self.timeout)
         self.check()
+        logger.info(
+            f"Initialize OllamaClient with rate limit {max_rate} every {time_period}s"
+        )
 
     def sync_request(self, prompt, image=None):
         """
@@ -68,6 +75,26 @@ class OllamaClient(LLMClient):
 
         return content
 
+    async def async_request(self, prompt, image=None):
+        """
+        Makes a asynchronous request to the Ollama API with the given prompt.
+
+        Args:
+            prompt: The prompt to send to the Ollama API.
+            image: Optional image data to include in the request.
+
+        Returns:
+            str: The content of the response from the Ollama API.
+        """
+        response = await self.aclient.generate(
+            model=self.model, prompt=prompt, stream=False
+        )
+        content = response["response"]
+        content = content.replace("&rdquo;", "”").replace("&ldquo;", "“")
+        content = content.replace("&middot;", "")
+
+        return content
+
     def __call__(self, prompt, image=None):
         """
         Executes a model request when the object is called and returns the result.
@@ -80,3 +107,6 @@ class OllamaClient(LLMClient):
         """
 
         return self.sync_request(prompt, image)
+
+    async def acall(self, prompt, image=None):
+        return await self.async_request(prompt, image)

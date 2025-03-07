@@ -181,7 +181,7 @@ class SPGTypeMapping(MappingABC):
                 )
             father_id = concept_id
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the mapping process on the given input and returns the resulting sub-graphs.
 

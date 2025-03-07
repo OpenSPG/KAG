@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import asyncio
 from collections import defaultdict
 from typing import List
 from tenacity import stop_after_attempt, retry
@@ -87,6 +88,23 @@ class EmbeddingVectorManager(object):
             embeddings.extend(vectorizer.vectorize(texts[start:end]))
         return embeddings
 
+    async def _agenerate_vectors(self, vectorizer, text_batch, batch_size=32):
+        texts = list(text_batch)
+        if not texts:
+            return []
+
+        if len(texts) % batch_size == 0:
+            n_batchs = len(texts) // batch_size
+        else:
+            n_batchs = len(texts) // batch_size + 1
+        tasks = []
+        for idx in range(n_batchs):
+            start = idx * batch_size
+            end = min(start + batch_size, len(texts))
+            tasks.append(asyncio.create_task(vectorizer.avectorize(texts[start:end])))
+        results = await asyncio.gather(*tasks)
+        return [item for sublist in results for item in sublist]
+
     def _fill_vectors(self, vectors, text_batch):
         for vector, (_text, placeholders) in zip(vectors, text_batch.items()):
             for placeholder in placeholders:
@@ -95,6 +113,11 @@ class EmbeddingVectorManager(object):
     def batch_generate(self, vectorizer, batch_size=32):
         text_batch = self._get_text_batch()
         vectors = self._generate_vectors(vectorizer, text_batch, batch_size)
+        self._fill_vectors(vectors, text_batch)
+
+    async def abatch_generate(self, vectorizer, batch_size=32):
+        text_batch = self._get_text_batch()
+        vectors = await self._agenerate_vectors(vectorizer, text_batch, batch_size)
         self._fill_vectors(vectors, text_batch)
 
     def patch(self):
@@ -126,6 +149,26 @@ class EmbeddingVectorGenerator(object):
                     if placeholder is not None:
                         properties[vector_field] = placeholder
         manager.batch_generate(self._vectorizer, batch_size)
+        manager.patch()
+
+    async def abatch_generate(self, node_batch, batch_size=32):
+        manager = EmbeddingVectorManager()
+        vector_index_meta = self._vector_index_meta
+        for node_item in node_batch:
+            label, properties = node_item
+            labels = [label]
+            if self._extra_labels:
+                labels.extend(self._extra_labels)
+            for label in labels:
+                if label not in vector_index_meta:
+                    continue
+                for vector_field in vector_index_meta[label]:
+                    if vector_field in properties:
+                        continue
+                    placeholder = manager.get_placeholder(properties, vector_field)
+                    if placeholder is not None:
+                        properties[vector_field] = placeholder
+        await manager.abatch_generate(self._vectorizer, batch_size)
         manager.patch()
 
 
@@ -211,6 +254,37 @@ class BatchVectorizer(VectorizerABC):
             node.properties.update(new_properties)
         return input_subgraph
 
+    @retry(stop=stop_after_attempt(3))
+    async def _agenerate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
+        """
+        Generates embedding vectors for the nodes in the input SubGraph.
+
+        Args:
+            input_subgraph (SubGraph): The SubGraph for which to generate embedding vectors.
+
+        Returns:
+            SubGraph: The modified SubGraph with generated embedding vectors.
+        """
+        node_list = []
+        node_batch = []
+        for node in input_subgraph.nodes:
+            if not node.id or not node.name:
+                continue
+            properties = {"id": node.id, "name": node.name}
+            properties.update(node.properties)
+            node_list.append((node, properties))
+            node_batch.append((node.label, properties.copy()))
+        generator = EmbeddingVectorGenerator(self.vectorize_model, self.vec_meta)
+        await generator.abatch_generate(node_batch, self.batch_size)
+        for (node, properties), (_node_label, new_properties) in zip(
+            node_list, node_batch
+        ):
+            for key, value in properties.items():
+                if key in new_properties and new_properties[key] == value:
+                    del new_properties[key]
+            node.properties.update(new_properties)
+        return input_subgraph
+
     def _invoke(self, input_subgraph: Input, **kwargs) -> List[Output]:
         """
         Invokes the generation of embedding vectors for the input SubGraph.
@@ -223,4 +297,18 @@ class BatchVectorizer(VectorizerABC):
             List[Output]: A list containing the modified SubGraph with generated embedding vectors.
         """
         modified_input = self._generate_embedding_vectors(input_subgraph)
+        return [modified_input]
+
+    async def _ainvoke(self, input_subgraph: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the generation of embedding vectors for the input SubGraph.
+
+        Args:
+            input_subgraph (Input): The SubGraph for which to generate embedding vectors.
+            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+
+        Returns:
+            List[Output]: A list containing the modified SubGraph with generated embedding vectors.
+        """
+        modified_input = await self._agenerate_embedding_vectors(input_subgraph)
         return [modified_input]
