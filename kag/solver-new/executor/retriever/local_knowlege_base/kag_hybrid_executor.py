@@ -75,7 +75,6 @@ class KagHybridExecutor(ExecutorABC):
     """
 
     def __init__(self,
-                 ner: Ner,
                  entity_linking: EntityLinking,
                  path_select: PathSelect,
                  ppr_chunk_retriever: PprChunkRetriever,
@@ -83,14 +82,12 @@ class KagHybridExecutor(ExecutorABC):
         """Initialize hybrid retrieval executor with required components
 
         Args:
-            ner (Ner): Named Entity Recognition tool
             entity_linking (EntityLinking): Entity linking tool
             path_select (PathSelect): Path selection strategy
             ppr_chunk_retriever (PprChunkRetriever): PageRank-based chunk retriever
             llm_client (LLMClient): Language model interface
         """
         super().__init__()
-        self.ner = ner
         self.entity_linking = entity_linking
         self.path_select = path_select
         self.ppr_chunk_retriever = ppr_chunk_retriever
@@ -139,8 +136,9 @@ class KagHybridExecutor(ExecutorABC):
             8. Store final results
         """
         # 1. Initialize response container
-        kag_response = self._initialize_response(task)
 
+        kag_response = self._initialize_response(task)
+        # TODO 在拆解的时候应该需要本任务依赖的任务，此处需要从context中获取，还需要改下代码
         # 2. Convert query to logical form
         logic_nodes = self._convert_to_logical_form(query, task)
 
@@ -162,6 +160,7 @@ class KagHybridExecutor(ExecutorABC):
             self._save_step_result(kag_response, logic_node, chunks, summary, kg_graph)
 
         # 8. Final storage
+        # TODO 此处存储生成的响应值，在后续任务重需要序列化输入给大模型进行重思考或者生成代码
         self._store_results(task, kag_response)
         return kag_response
 
