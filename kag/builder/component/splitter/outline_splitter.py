@@ -1080,7 +1080,7 @@ class OutlineSplitter(SplitterABC):
             cutted.extend(self.slide_window_chunk(input, chunk_size=chunk_size))
         return cutted
 
-    def invoke(self, input: Input, **kwargs) -> List[Chunk]:
+    def _invoke(self, input: Input, **kwargs) -> List[Chunk]:
         chunks = self.splitter_chunk(input, chunk_size=self.llm_max_tokens // 2)
         chunks = self.outline_chunk_batch(chunks)
         # chunks = self.splitter_chunk(chunks, chunk_size=self.chunk_size)

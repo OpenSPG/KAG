@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import os
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
@@ -141,3 +142,22 @@ class ScannerABC(BuilderComponent, ABC):
             List[Output]: A list of processed results.
         """
         return list(self.generate(input, **kwargs))
+
+    async def ainvoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the component to process input data and return a list of processed results.
+
+        This method generates items from the input source and returns them as a list.
+        TODO: relpace sync read to async read
+        Args:
+            input (Input): The input source to load data from.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of processed results.
+        """
+        return await asyncio.to_thread(self.invoke(input, **kwargs))
+
+    @property
+    def inherit_input_key(self):
+        return False

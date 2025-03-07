@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
+import asyncio
 from kag.interface import LLMClient
 
 
@@ -35,6 +36,23 @@ def test_llm_client():
         client = LLMClient.from_config(conf)
         rsp = client("Who are you?")
         # assert rsp is not None
+
+
+async def call_llm_client_async():
+    tasks = []
+    for conf in [get_vllm_config(), get_openai_config(), get_ollama_config()]:
+        client = LLMClient.from_config(conf)
+        task = asyncio.create_task(client.acall("Who are you?"))
+        tasks.append(task)
+        result = await asyncio.gather(*tasks)
+        # assert rsp is not None
+        return result
+
+
+@pytest.mark.skip(reason="Missing API key")
+def test_llm_client_async():
+    res = asyncio.run(call_llm_client_async())
+    return res
 
 
 def test_mock_llm_client():

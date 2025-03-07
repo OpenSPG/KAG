@@ -12,11 +12,12 @@
 import json
 import logging
 from enum import Enum
-from typing import Type, Dict, List
+from typing import Type, Dict, List, Union
 
 from knext.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
+from kag.interface.builder.base import BuilderComponentData
 from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
@@ -98,7 +99,7 @@ class KGWriter(SinkWriterABC):
 
         return graph
 
-    def invoke(
+    def _invoke(
         self,
         input: Input,
         alter_operation: str = AlterOperationEnum.Upsert,
@@ -125,6 +126,35 @@ class KGWriter(SinkWriterABC):
             lead_to_builder=lead_to_builder,
         )
         return [input]
+
+    def invoke(
+        self, input: Input, **kwargs
+    ) -> List[Union[Output, BuilderComponentData]]:
+        if isinstance(input, BuilderComponentData):
+            input_data = input.data
+            input_key = input.hash_key
+        else:
+            input_data = input
+            input_key = None
+        if self.inherit_input_key:
+            output_key = input_key
+        else:
+            output_key = None
+
+        write_ckpt = kwargs.get("write_ckpt", True)
+        if write_ckpt and self.checkpointer:
+            # found existing data in checkpointer
+            if input_key and self.checkpointer.exists(input_key):
+                return []
+            # not found
+            output = self._invoke(input_data, **kwargs)
+            # We only record the data key to avoid embeddings from taking up too much disk space.
+            if input_key:
+                self.checkpointer.write_to_ckpt(input_key, input_key)
+            return [BuilderComponentData(x, output_key) for x in output]
+        else:
+            output = self._invoke(input_data, **kwargs)
+            return [BuilderComponentData(x, output_key) for x in output]
 
     def _handle(self, input: Dict, alter_operation: str, **kwargs):
         """
