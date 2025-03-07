@@ -150,10 +150,10 @@ class KagHybridExecutor(ExecutorABC):
         # 4-7 Process each logical node
         for logic_node in logic_nodes:
             # 4. Retrieve from kg
-            self._process_logic_node(kg_graph, logic_node)
+            self._retrieved_on_graph(kg_graph, logic_node)
 
             # 5. Retrieve text chunks
-            chunks = self._retrieve_text_chunks(kg_graph, logic_node)
+            chunks = self._retrieved_text_chunks(kg_graph, logic_node)
 
             # 6. Generate summary
             summary = self._generate_summary(logic_node, chunks, kg_graph)
@@ -194,7 +194,7 @@ class KagHybridExecutor(ExecutorABC):
         """Create new knowledge graph container for processing"""
         return KgGraph()
 
-    def _process_logic_node(self, kg_graph: KgGraph, logic_node: GetSPONode):
+    def _retrieved_on_graph(self, kg_graph: KgGraph, logic_node: GetSPONode):
         """Process single logical node's entities and relations
 
         Args:
@@ -271,7 +271,7 @@ class KagHybridExecutor(ExecutorABC):
         predicate = logic_node.p.alias_name
         kg_graph.edge_map[predicate] = selected_relations
 
-    def _retrieve_text_chunks(self, kg_graph: KgGraph, logic_node: GetSPONode) -> List[str]:
+    def _retrieved_text_chunks(self, kg_graph: KgGraph, logic_node: GetSPONode) -> List[str]:
         """Retrieve text chunks using PPR chunk retriever
 
         Args:
