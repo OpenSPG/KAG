@@ -140,7 +140,7 @@ class KagHybridExecutor(ExecutorABC):
         kag_response = self._initialize_response(task)
         # TODO 在拆解的时候应该需要本任务依赖的任务，此处需要从context中获取，还需要改下代码
         # 2. Convert query to logical form
-        logic_nodes = self._convert_to_logical_form(query, task)
+        logic_nodes = self._convert_to_logical_form(task.task_description, task)
 
         # 3. Initialize knowledge graph
         kg_graph = self._initialize_knowledge_graph()
