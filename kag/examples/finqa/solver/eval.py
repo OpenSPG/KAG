@@ -26,10 +26,22 @@ from kag.examples.finqa.solver.prompt.solve_question_without_spo import (
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 
 
-def qa(question, **kwargs):
+def qa(question, _i, _id):
     resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
     answer, traceLog = resp.run(question)
-    print(json.dumps(traceLog, ensure_ascii=False))
+    try:
+        print(json.dumps(traceLog, ensure_ascii=False))
+        code = ""
+        for sub_q in traceLog[-1]["sub question"]:
+            lf_expr = sub_q["lf_expr"]
+            if "math" not in lf_expr:
+                continue
+            code = sub_q["debug_info"]["code"]
+        print(
+            f"finqa_processing_log\ni={_i}\nid={_id}\n<|memory|>\n{traceLog[-1]['present_memory']}\n<|memory|>\n<|code|>\n{code}\n<|code|>"
+        )
+    except:
+        pass
     return str(answer)
 
 
@@ -113,7 +125,7 @@ if __name__ == "__main__":
         _gold = str(_item["qa"]["exe_ans"])
         try:
             build_finqa_graph(_item)
-            _prediction = qa(question=_question)
+            _prediction = qa(question=_question, _i=i, _id=_id)
         except KeyboardInterrupt:
             break
         except:
@@ -144,5 +156,6 @@ if __name__ == "__main__":
         total_metrics["processNum"] += 1
 
         print(total_metrics)
+        print(total_metrics["em"] / total_metrics["processNum"] * 100)
         print("error index list=" + str(error_question_map))
         print("#" * 100)

@@ -84,43 +84,6 @@ class FinQAReasoner(KagReasonerABC):
             "rerank_chunks", self.biz_scene
         )
 
-    def reason1(self, question: str, memory: KagMemoryABC = None, **kwargs):
-        step_index = -1
-        process_info = {"kg_solved_answer": [], "sub_qa_pair": [], "lf_plan": []}
-        history = []
-        while True:
-            plan_and_result_list = []
-            step_index += 1
-            if step_index >= 10:
-                break
-            if 0 == step_index:
-                lf_nodes = self.lf_planner._parse_lf(
-                    question,
-                    [question],
-                    ["Retrieval(s=s1:EntityType[`s1`],p=p1:p,o=o1)"],
-                )
-            else:
-                # logic form planing
-                lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
-                    question,
-                    process_info=process_info,
-                    history=history,
-                )
-            if lf_nodes is None or len(lf_nodes) <= 0:
-                break
-            for lf_node in lf_nodes:
-                rst: LFExecuteResult = self.lf_executor.execute(
-                    question,
-                    [lf_node],
-                    step_index=step_index,
-                    process_info=process_info,
-                    history=history,
-                    **kwargs,
-                )
-                plan_and_result_list.append((lf_node, rst))
-
-        pass
-
     def reason(
         self,
         question: str,
@@ -133,7 +96,7 @@ class FinQAReasoner(KagReasonerABC):
         history = []
         while True:
             step_index += 1
-            if step_index >= 10:
+            if step_index >= 10 or len(history) > 20:
                 break
             if 0 == step_index and use_raw_query:
                 lf_nodes = self.lf_planner._parse_lf(
@@ -148,6 +111,7 @@ class FinQAReasoner(KagReasonerABC):
                     process_info=process_info,
                     history=history,
                 )
+            self._remove_duplicate_lf(history=history, lf_nodes=lf_nodes)
             if lf_nodes is None or len(lf_nodes) <= 0:
                 # TODO reflect
                 break
@@ -160,6 +124,7 @@ class FinQAReasoner(KagReasonerABC):
                     history=history,
                     **kwargs,
                 )
+                history = self._remove_duplicate_history(history=history)
                 self._use_doc_as_subanswer(history=history, process_info=process_info)
 
         reason_res: LFExecuteResult = FinQALFExecuteResult()
@@ -173,10 +138,36 @@ class FinQAReasoner(KagReasonerABC):
         self._print_proceed_info(question, process_info)
         return reason_res
 
+    def _remove_duplicate_lf(self, history, lf_nodes):
+        query_set = set()
+        for lf in history:
+            lf: LFPlan = lf
+            query_set.add(lf.query)
+        return [lf for lf in lf_nodes if lf.query not in query_set]
+
+    def _remove_duplicate_history(self, history):
+        """
+        数据中存在少量问题与
+        优先新的lf
+        """
+        doc_set = set()
+        rst_history = []
+        for lf in history:
+            lf: LFPlan = lf
+            if lf.sub_query_type != "retrieval":
+                rst_history.append(lf)
+                continue
+            if set(lf.res.doc_retrieved).issubset(doc_set):
+                continue
+            rst_history.append(lf)
+            doc_set.update(lf.res.doc_retrieved)
+        return rst_history
+
     def _use_doc_as_subanswer(self, history, process_info):
         context_list = []
         process_info["sub_qa_pair"] = []
         for _, lf_plan in enumerate(history):
+            lf_plan: LFPlan = lf_plan
             if lf_plan.sub_query_type == "math":
                 answer = f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
             else:

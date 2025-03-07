@@ -259,7 +259,7 @@ class TableAndTextExtractor(ExtractorABC):
 
     def _table_to_markdown(self, df):
         new_df = df.copy()
-        new_df.insert(0, "row0", [f"row{i+1}" for i in range(len(new_df))])
+        new_df.insert(0, "row_index_0", [f"row_index_{i+1}" for i in range(len(new_df))])
         new_columns = []
         for i, c in enumerate(new_df.columns):
             if 0 == i:
