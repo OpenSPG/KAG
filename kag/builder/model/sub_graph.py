@@ -12,7 +12,7 @@
 import pprint
 import copy
 from typing import Dict, List, Any
-
+from kag.common.utils import generate_hash_id
 from kag.builder.model.spg_record import SPGRecord
 from knext.schema.client import BASIC_TYPES
 from knext.schema.model.base import BaseSpgType
@@ -30,6 +30,10 @@ class Node(object):
         self.label = label
         self.properties = properties
         self.id = _id
+
+    @property
+    def hash_key(self):
+        return generate_hash_id(f"{self.id}{self.name}{self.label}")
 
     @classmethod
     def from_spg_record(cls, idx, spg_record: SPGRecord):
@@ -95,6 +99,12 @@ class Edge(object):
         if not _id:
             _id = id(self)
         self.id = _id
+
+    @property
+    def hash_key(self):
+        return generate_hash_id(
+            f"{self.from_id}{self.from_type}{self.to_id}{self.to_type}{self.label}{self.id}"
+        )
 
     @classmethod
     def from_spg_record(
@@ -234,3 +244,9 @@ class SubGraph(object):
             nodes=[Node.from_dict(node) for node in input["resultNodes"]],
             edges=[Edge.from_dict(edge) for edge in input["resultEdges"]],
         )
+
+    @property
+    def hash_key(self):
+        keys = [x.hash_key for x in self.nodes] + [x.hash_key for x in self.edges]
+        keys.sort()
+        return generate_hash_id("".join(keys))

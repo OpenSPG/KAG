@@ -23,11 +23,15 @@ class MockLLMClient(LLMClient):
     This class provides a method to simulate the behavior of a language model client by matching input prompts.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        max_rate: float = 1000,
+        time_period: float = 1,
+    ):
         """
         Initializes the MockLLMClient instance.
         """
-        pass
+        super().__init__(max_rate, time_period)
 
     def match_input(self, prompt):
         """
@@ -81,4 +85,10 @@ class MockLLMClient(LLMClient):
         return json.dumps(self.match_input(prompt))
 
     def call_with_json_parse(self, prompt):
+        return self.match_input(prompt)
+
+    async def acall(self, prompt):
+        return json.dumps(self.match_input(prompt))
+
+    async def acall_with_json_parse(self, prompt):
         return self.match_input(prompt)

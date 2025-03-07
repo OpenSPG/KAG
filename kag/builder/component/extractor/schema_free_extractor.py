@@ -11,6 +11,7 @@
 # or implied.
 import copy
 import logging
+import asyncio
 from typing import Dict, Type, List
 
 from kag.interface import LLMClient
@@ -89,18 +90,19 @@ class SchemaFreeExtractor(ExtractorABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
-    @retry(stop=stop_after_attempt(3))
-    def named_entity_recognition(self, passage: str):
-        """
-        Performs named entity recognition on a given text passage.
-        Args:
-            passage (str): The text to perform named entity recognition on.
-        Returns:
-            The result of the named entity recognition operation.
-        """
+    def _named_entity_recognition_llm(self, passage: str):
         ner_result = self.llm.invoke(
             {"input": passage}, self.ner_prompt, with_except=False
         )
+        return ner_result
+
+    async def _anamed_entity_recognition_llm(self, passage: str):
+        ner_result = await self.llm.ainvoke(
+            {"input": passage}, self.ner_prompt, with_except=False
+        )
+        return ner_result
+
+    def _named_entity_recognition_process(self, passage, ner_result):
         if self.external_graph:
             extra_ner_result = self.external_graph.ner(passage)
         else:
@@ -130,6 +132,30 @@ class SchemaFreeExtractor(ExtractorABC):
         return output
 
     @retry(stop=stop_after_attempt(3))
+    def named_entity_recognition(self, passage: str):
+        """
+        Performs named entity recognition on a given text passage.
+        Args:
+            passage (str): The text to perform named entity recognition on.
+        Returns:
+            The result of the named entity recognition operation.
+        """
+        ner_result = self._named_entity_recognition_llm(passage)
+        return self._named_entity_recognition_process(passage, ner_result)
+
+    @retry(stop=stop_after_attempt(3))
+    async def anamed_entity_recognition(self, passage: str):
+        """
+        Performs named entity recognition on a given text passage.
+        Args:
+            passage (str): The text to perform named entity recognition on.
+        Returns:
+            The result of the named entity recognition operation.
+        """
+        ner_result = await self._anamed_entity_recognition_llm(passage)
+        return self._named_entity_recognition_process(passage, ner_result)
+
+    @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
         """
         Standardizes named entities.
@@ -148,6 +174,24 @@ class SchemaFreeExtractor(ExtractorABC):
         )
 
     @retry(stop=stop_after_attempt(3))
+    async def anamed_entity_standardization(self, passage: str, entities: List[Dict]):
+        """
+        Standardizes named entities.
+
+        Args:
+            passage (str): The input text passage.
+            entities (List[Dict]): A list of recognized named entities.
+
+        Returns:
+            Standardized entity information.
+        """
+        return await self.llm.ainvoke(
+            {"input": passage, "named_entities": entities},
+            self.std_prompt,
+            with_except=False,
+        )
+
+    @retry(stop=stop_after_attempt(3))
     def triples_extraction(self, passage: str, entities: List[Dict]):
         """
         Extracts triples (subject-predicate-object structures) from a given text passage based on identified entities.
@@ -158,6 +202,23 @@ class SchemaFreeExtractor(ExtractorABC):
             The result of the triples extraction operation.
         """
         return self.llm.invoke(
+            {"input": passage, "entity_list": entities},
+            self.triple_prompt,
+            with_except=False,
+        )
+
+    @retry(stop=stop_after_attempt(3))
+    async def atriples_extraction(self, passage: str, entities: List[Dict]):
+        """
+        Extracts triples (subject-predicate-object structures) from a given text passage based on identified entities.
+        Args:
+            passage (str): The text to extract triples from.
+            entities (List[Dict]): A list of entities identified in the text.
+        Returns:
+            The result of the triples extraction operation.
+        """
+
+        return await self.llm.ainvoke(
             {"input": passage, "entity_list": entities},
             self.triple_prompt,
             with_except=False,
@@ -396,8 +457,38 @@ class SchemaFreeExtractor(ExtractorABC):
             {k: v for k, v in ent.items() if k in ["name", "category"]}
             for ent in entities
         ]
-        triples = self.triples_extraction(passage, filtered_entities)
+        triples = (self.triples_extraction(passage, filtered_entities),)
         std_entities = self.named_entity_standardization(passage, filtered_entities)
+        self.append_official_name(entities, std_entities)
+        self.assemble_sub_graph(sub_graph, input, entities, triples)
+        out.append(sub_graph)
+        return out
+
+    async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the semantic extractor to process input data.
+
+        Args:
+            input (Input): Input data containing name and content.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of processed results, containing subgraph information.
+        """
+        title = input.name
+        passage = title + "\n" + input.content
+        out = []
+        entities = await self.anamed_entity_recognition(passage)
+        sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
+        filtered_entities = [
+            {k: v for k, v in ent.items() if k in ["name", "category"]}
+            for ent in entities
+        ]
+        triples, std_entities = await asyncio.gather(
+            self.atriples_extraction(passage, filtered_entities),
+            self.anamed_entity_standardization(passage, filtered_entities),
+        )
+
         self.append_official_name(entities, std_entities)
         self.assemble_sub_graph(sub_graph, input, entities, triples)
         out.append(sub_graph)

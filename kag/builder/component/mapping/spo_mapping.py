@@ -152,7 +152,7 @@ class SPOMapping(MappingABC):
         )
         return sub_graph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the mapping process on the given input and returns the resulting sub-graphs.
 

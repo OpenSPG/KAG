@@ -20,6 +20,7 @@ from kag.interface import MappingABC
 
 
 @MappingABC.register("relation")
+@MappingABC.register("relation_mapping")
 class RelationMapping(MappingABC):
     """
     A class that extends the MappingABC class.
@@ -147,7 +148,7 @@ class RelationMapping(MappingABC):
 
         return sub_graph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the assembly process to create a subgraph from the input data.
 
