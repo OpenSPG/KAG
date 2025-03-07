@@ -344,7 +344,7 @@ class KagHybridExecutor(ExecutorABC):
             dict: Schema definition in OpenAI Function format
         """
         return {
-            "name": "kg_retriever_executor",
+            "name": "kqg_retriever_executor",
             "description": "Retrieve knowledge graph paths based on query and context to answer questions",
             "parameters": {
                 "type": "object",
