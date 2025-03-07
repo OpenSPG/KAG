@@ -124,13 +124,13 @@ class Prop:
 
 
 class EntityData:
-    def __init__(self):
+    def __init__(self, entity_id=None, name="", node_type=None, node_type_zh=None):
         self.prop: Prop = None
-        self.biz_id: str = None
-        self.name: str = ""
+        self.biz_id: str = entity_id
+        self.name: str = name
         self.description: str = ""
-        self.type: str = None
-        self.type_zh: str = None
+        self.type: str = node_type
+        self.type_zh: str = node_type_zh
         self.score = 1.0
 
     def get_short_name(self):
