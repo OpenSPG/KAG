@@ -738,7 +738,7 @@ class Registrable:
                 elif choice not in choices:
                     message = (
                         f"{choice} not in acceptable choices for type: {choices}. "
-                        "You should make sure the class is correctly registerd. "
+                        "You should make sure the class is correctly registered. "
                     )
                     raise ConfigurationError(message)
 
@@ -802,7 +802,7 @@ class Registrable:
                     functools.partial(constructor_to_call, **kwargs),
                 )
                 setattr(instant, "__original_parameters__", original_params)
-                # if constructor takes kwargs, they can't be infered from constructor. Therefore we should record
+                # if constructor takes kwargs, they can't be inferred from constructor. Therefore we should record
                 # which attrs are created by kwargs to correctly restore the configs by `to_config`.
                 if accepts_kwargs:
                     remaining_kwargs = set(params)

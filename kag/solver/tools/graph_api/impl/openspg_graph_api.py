@@ -252,11 +252,11 @@ if __name__ == "__main__":
     entity = SPOEntity()
     entity.id_set.append("entity_test_id")
     entity.type_set.append(TypeInfo("Pillar"))
-    datas: List[EntityData] = graph_api.get_entity(entity)
-    assert len(datas) == 1
-    assert datas[0].biz_id == "entity_test_id"
-    one_hop = graph_api.get_entity_one_hop(datas[0])
+    data: List[EntityData] = graph_api.get_entity(entity)
+    assert len(data) == 1
+    assert data[0].biz_id == "entity_test_id"
+    one_hop = graph_api.get_entity_one_hop(data[0])
     assert one_hop is not None
     # cached
-    one_hop = graph_api.get_entity_one_hop(datas[0])
+    one_hop = graph_api.get_entity_one_hop(data[0])
     assert one_hop is not None

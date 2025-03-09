@@ -110,12 +110,12 @@ class PatternSplitter(SplitterABC):
         """
         if isinstance(content, str):
             content = self.split_sentence(content)
-        splitted = []
+        split = []
         cur = []
         cur_len = 0
         for sentence in content:
             if cur_len + len(sentence) > chunk_size:
-                splitted.append(cur)
+                split.append(cur)
                 tmp = []
                 cur_len = 0
                 for item in cur[::-1]:
@@ -128,10 +128,10 @@ class PatternSplitter(SplitterABC):
             cur.append(sentence)
             cur_len += len(sentence)
         if len(cur) > 0:
-            splitted.append(cur)
+            split.append(cur)
 
         output = []
-        for idx, sentences in enumerate(splitted):
+        for idx, sentences in enumerate(split):
             chunk_name = f"{prefix}#{idx}"
             chunk = Chunk(
                 id=generate_hash_id(chunk_name),
