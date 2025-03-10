@@ -149,19 +149,25 @@ class OutlineSplitter(SplitterABC):
         current_outlines = []
 
         for c in batch:
-            # 传入当前已提取的outlines作为上下文
-            outline = self.llm.invoke(
-                {"input": c.content, "current_outline": current_outlines}, self.prompt
-            )
+            try:
+                # 传入当前已提取的outlines作为上下文
+                outline = self.llm.invoke(
+                    {"input": c.content, "current_outline": current_outlines},
+                    self.prompt,
+                )
 
-            # 过滤无效的outlines
-            # paralle模式可以用量大的outline: 暂时没有好的方法:TODO
-            if self.align_parallel:
-                valid_outlines = self.filter_outlines_parallel(outline)
-            else:
-                valid_outlines = self.filter_outlines(outline)
-            outlines.extend(valid_outlines)
-            current_outlines.extend(valid_outlines)
+                # 过滤无效的outlines
+                # paralle模式可以用量大的outline: 暂时没有好的方法:TODO
+                if self.align_parallel:
+                    valid_outlines = self.filter_outlines_parallel(outline)
+                else:
+                    valid_outlines = self.filter_outlines(outline)
+                outlines.extend(valid_outlines)
+                current_outlines.extend(valid_outlines)
+            except Exception as e:
+                logger.error(f"Error extracting outlines with LLM: {str(e)}")
+                # Continue processing other chunks even if one fails
+                continue
 
         return outlines
 
