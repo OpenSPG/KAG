@@ -234,6 +234,8 @@ class KAGRetriever(ChunkRetriever):
         matched_entities = []
         for query, query_type in queries.items():
             query = processing_phrases(query)
+            if not query:
+                continue
             if query_type not in self.schema.node_en_zh.keys():
                 query_type = self.schema.get_label_within_prefix(OTHER_TYPE)
             else:
@@ -526,25 +528,21 @@ class KAGRetriever(ChunkRetriever):
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
-        query = "\n".join(queries)
-        try:
-            text_matched = self.search_api.search_text(
-                query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
-            )
-            if text_matched:
-                for item in text_matched:
-                    title = item["node"]["name"]
-                    if title not in hits_docs:
-                        if len(matched_docs) > 0:
-                            matched_docs.pop()
-                        else:
-                            logger.warning(f"{query} matched docs is empty")
-                        matched_docs.append(
-                            f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
-                        )
-                        break
-        except Exception as e:
-            logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
+        for query in queries:
+            try:
+                text_matched = self.search_api.search_text(
+                    query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
+                )
+                if text_matched:
+                    for item in text_matched:
+                        title = item["node"]["name"]
+                        if title not in hits_docs:
+                            matched_docs.append(
+                                f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
+                            )
+                            break
+            except Exception as e:
+                logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         logger.debug(f"matched_docs: {matched_docs}")
         return matched_docs
 

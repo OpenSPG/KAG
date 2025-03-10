@@ -110,6 +110,10 @@ class SchemaFreeExtractor(ExtractorABC):
         for item in extra_ner_result:
             name = item.name
             label = item.label
+            spg_type = self.schema.get(label)
+            if spg_type is None:
+                label = "Others"
+                item.label = label
             description = item.properties.get("desc", "")
             semantic_type = item.properties.get("semanticType", label)
             if name not in dedup:
@@ -180,6 +184,9 @@ class SchemaFreeExtractor(ExtractorABC):
             properties = record.get("properties", {})
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
+            if spg_type is None:
+                s_label = "Others"
+                spg_type = self.schema.get(s_label)
             for prop_name, prop_value in properties.items():
                 if prop_value == "NAN":
                     tmp_properties.pop(prop_name)
@@ -234,12 +241,15 @@ class SchemaFreeExtractor(ExtractorABC):
                 continue
             s_category, s_name = get_category_and_name(entities, tri[0])
             tri[0] = processing_phrases(tri[0])
+            if tri[0] == "":
+                continue
             if s_category is None:
                 s_category = OTHER_TYPE
-                s_name = processing_phrases(tri[0])
+                s_name = tri[0]
                 sub_graph.add_node(s_name, s_name, s_category)
             o_category, o_name = get_category_and_name(entities, tri[2])
-
+            if o_name == "":
+                continue
             if o_category is None:
                 o_name = processing_phrases(tri[2])
                 o_category = OTHER_TYPE
@@ -363,6 +373,8 @@ class SchemaFreeExtractor(ExtractorABC):
                 else:
                     continue
                 category = tmp_entity["category"]
+                if self.schema.get(category, None) is None:
+                    category = "Others"
                 official_name = tmp_entity["official_name"]
                 key = f"{category}{name}"
                 tmp_dict[key] = official_name
