@@ -17,15 +17,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Type, Union, Tuple
 
 import matplotlib.pyplot as plt
-from kag.interface.common.prompt import PromptABC
-from knext.common.base.runnable import Input, Output
-from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
 from kag.builder.prompt.outline_align_prompt import OutlineAlignPrompt
-from kag.interface import SplitterABC
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import generate_hash_id
 from kag.interface import LLMClient
+from kag.interface import SplitterABC
+from kag.interface.common.prompt import PromptABC
+from knext.common.base.runnable import Input, Output
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class OutlineSplitter(SplitterABC):
         self,
         llm: LLMClient,
         min_length: int = 100,
-        workers: int = 10,
+        workers: int = 1,
         chunk_size: int = 500,
         llm_max_tokens: int = 8000,
         align_parallel: bool = False,
@@ -148,7 +149,8 @@ class OutlineSplitter(SplitterABC):
         outlines = []
         current_outlines = []
 
-        for c in batch:
+        for i in tqdm(range(len(batch))):
+            c = batch[i]
             try:
                 # 传入当前已提取的outlines作为上下文
                 outline = self.llm.invoke(
@@ -419,13 +421,13 @@ class OutlineSplitter(SplitterABC):
 
         content = "\n".join([c.content for c in chunk])
 
-        if self.align_parallel:
-            aligned_outlines = self.align_outlines_parallel(outlines)
-        else:
-            aligned_outlines = self.align_outlines(outlines)
+        # if self.align_parallel:
+        #     aligned_outlines = self.align_outlines_parallel(outlines)
+        # else:
+        #     aligned_outlines = self.align_outlines(outlines)
         # 使用对齐后的outlines进行分块
         chunks = self.sep_by_outline_with_outline_tree(
-            content, aligned_outlines, org_chunk=chunk
+            content, outlines, org_chunk=chunk
         )
 
         return chunks

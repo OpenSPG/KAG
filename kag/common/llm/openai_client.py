@@ -11,11 +11,11 @@
 # or implied.
 
 
-from openai import OpenAI, AzureOpenAI
 import logging
+from typing import Callable
 
 from kag.interface import LLMClient
-from typing import Callable
+from openai import OpenAI, AzureOpenAI
 
 logging.getLogger("openai").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -39,6 +39,7 @@ class OpenAIClient(LLMClient):
         api_key: str,
         base_url: str,
         model: str,
+        max_tokens: int = 10240,
         stream: bool = False,
         temperature: float = 0.7,
         timeout: float = None,
@@ -61,6 +62,7 @@ class OpenAIClient(LLMClient):
         self.stream = stream
         self.temperature = temperature
         self.timeout = timeout
+        self.max_tokens = max_tokens or 10240
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.check()
 
@@ -92,6 +94,7 @@ class OpenAIClient(LLMClient):
                 stream=self.stream,
                 temperature=self.temperature,
                 timeout=self.timeout,
+                max_tokens=self.max_tokens,
             )
 
         else:
@@ -105,6 +108,7 @@ class OpenAIClient(LLMClient):
                 stream=self.stream,
                 temperature=self.temperature,
                 timeout=self.timeout,
+                max_tokens=self.max_tokens,
             )
         if not self.stream:
             rsp = response.choices[0].message.content

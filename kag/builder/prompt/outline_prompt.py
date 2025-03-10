@@ -10,21 +10,23 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+import ast
 from typing import Optional, List
+import logging
 
 from kag.interface import PromptABC
-import ast
 
+logger = logging.getLogger(__name__)
 
 @PromptABC.register("outline")
 class OutlinePrompt(PromptABC):
     template_zh = """
 {
-    "instruction": "\n给定一段纯文本内容，请提取其中的标题，并返回一个列表。每个标题应包含以下信息：\n- 标题文本\n- 标题级别（例如 1 表示一级标题，2 表示二级标题等）\n\n假设标题遵循以下规则：\n1. 标题通常带有数字，我们的文本可能是从一些图片OCR生成的，所以标题可能隐藏在段落中，尽可能找出这些隐藏在段落中带有数字的标题\n2. 标题的级别可以通过以下方式推断：\n   - 一级标题：通常是篇章级别的内容。\n   - 二级标题：通常是章节级别的内容，具有简洁的文字描述，有时以 \"第X部分\"、\"第X章\"、\"Part X\" 等类似形式开头。\n   - 三级标题及以下：通常是段落或细节级别的标题，可能包含数字编号（如\"1.\"或\"1.1\"），或者较长且具体的描述（如\"1.1 子标题\"或\"第1节 概述\"）。\n3. 标题的级别也可以通过上下文判断：\n   - 如果两个标题之间的文本内容非常短（例如少于一定字数），后面的标题可能是更高或相同级别的标题。\n   - 连续编号的标题（如"第1条""第2条"）通常属于同一级别。\n   - 标题层级通常由其数字层次决定，例如"1""1.1""1.1.1"依次为 1 级、2 级、3 级。\n   - 如果一个标题包含关键词如"部分""章""节""条"，且其长度适中（例如 5 至 20 个字符），该标题的级别往往比更长或更短的标题要高。\n4. 以下标题可以直接忽略：\n   - 含有纯数字或仅由数字和标点组成的标题（例如"1."、"2.1"等）。\n   - 重复出现的标题（例如页眉或页脚被误识别为标题的情况）。\n5. 如果某些内容无法明确判断为标题，或者不符合上述规则，请忽略。\n\n请根据上述规则，返回一个包含标题和对应级别的列表，格式如下：\n[\n    (\"标题文本1\", 1),\n    (\"标题文本2\", 2),\n    (\"标题文本3\", 3),\n    ...\n]，我还会给你提供之前内容抽取出的目录current_outlines，你需要根据当前已经抽取的目录，自行判断抽取标题的粒度以及对应的等级",
-    "requirements":"返回格式按照下面的要求返回，不要返回其他任何内容，格式为:
+    "instruction": "\n\t给定一段纯文本内容，请提取其中的标题，并返回一个列表。每个标题应包含以下信息：\n- 标题文本\n- 标题级别（例如 1 表示一级标题，2 表示二级标题等）\n\n假设标题遵循以下规则：\n1. 标题通常带有数字，我们的文本可能是从一些图片OCR生成的，所以标题可能隐藏在段落中，尽可能找出这些隐藏在段落中带有数字的标题\n2. 标题的级别可以通过以下方式推断：\n   - 一级标题：通常是篇章级别的内容。\n   - 二级标题：通常是章节级别的内容，具有简洁的文字描述，有时以 \"第X部分\"、\"第X章\"、\"Part X\" 等类似形式开头。\n   - 三级标题及以下：通常是段落或细节级别的标题，可能包含数字编号（如\"1.\"或\"1.1\"），或者较长且具体的描述（如\"1.1 子标题\"或\"第1节 概述\"）。\n3. 标题的级别也可以通过上下文判断：\n   - 如果两个标题之间的文本内容非常短（例如少于一定字数），后面的标题可能是更高或相同级别的标题。\n   - 连续编号的标题（如"第1条""第2条"）通常属于同一级别。\n   - 标题层级通常由其数字层次决定，例如"1""1.1""1.1.1"依次为 1 级、2 级、3 级。\n   - 如果一个标题包含关键词如"部分""章""节""条"，且其长度适中（例如 5 至 20 个字符），该标题的级别往往比更长或更短的标题要高。\n4. 以下标题可以直接忽略：\n   - 含有纯数字或仅由数字和标点组成的标题（例如"1."、"2.1"等）。\n   - 重复出现的标题（例如页眉或页脚被误识别为标题的情况）。\n5. 如果某些内容无法明确判断为标题，或者不符合上述规则，请忽略。\n\n请根据上述规则，返回一个包含标题和对应级别的列表，格式如下：\n[\n    (\"标题文本1\", 1),\n    (\"标题文本2\", 2),\n    (\"标题文本3\", 3),\n    ...\n]，我还会给你提供之前内容抽取出的目录current_outlines，你需要根据当前已经抽取的目录，自行判断抽取标题的粒度以及对应的等级",
+    "requirements":"返回格式按照下面的要求返回，即列表中包含元组，元组里包含标题和对应级别，不要返回其他任何内容，格式为:
         [(标题1, 层级1), (标题2, 层级2), ...] ",
-    "input": "$input",
-    "current_outline:": "$current_outline",
+    "input": $input,
+    "current_outline:": $current_outline,
     "example": [
         {
             "input": "第8条 则\n\n1.各成员方在制订或修正其法律和规章时，可采取必要措施以保护公众健康和营养，并促进对其社会经济和技术发展至关重要部门的公众利益，只要该措施符合本协议规定。\n\n2.可能需要采取与本协议的规定相一致的适当的措施，以防止知识产权所有者滥用知识产权或藉以对贸易进行不合理限制或实行对国际间的技术转让产生不利影响的作法。\n\n第二部分 关于知识产权的效力、范围及使用的标准\n\n第1节 版权及相关权利\n\n第9条 与《伯尔尼公约》的关系",
@@ -87,7 +89,21 @@ class OutlinePrompt(PromptABC):
     def template_variables(self) -> List[str]:
         return ["input", "current_outline"]
 
-    def parse_response(self, response: str, **kwargs):
+    def parse_response_tuple(self, response: list) -> List[tuple[str, int]]:
+        res = []
+        for i in range(0, len(response), 2):
+            try:
+                if i+1 < len(response) and isinstance(response[i], str) and isinstance(response[i + 1], int):
+                    title = response[i]
+                    raw_level = response[i + 1]
+                    res.append((title, raw_level))
+            except Exception as e:
+                logger.info(f"Error parsing response: {e}")
+        return res
+
+    def parse_response(self, response, **kwargs):
+        if isinstance(response, list):
+            response = self.parse_response_tuple(response)
         # 如果返回结果是字符串，先去除 Markdown 语法，再使用 ast.literal_eval 转换成列表
         if isinstance(response, str):
             cleaned_data = response.strip("`python\n[] \n")  # 去除 Markdown 语法和多余的空格

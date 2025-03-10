@@ -14,13 +14,14 @@ try:
     from json_repair import loads
 except:
     from json import loads
-from typing import Union, Dict, List, Any
+import json
 import logging
 import traceback
-from tenacity import retry, stop_after_attempt
-from kag.interface import PromptABC
-from kag.common.registry import Registrable
+from typing import Union, Dict, List, Any
 
+from kag.common.registry import Registrable
+from kag.interface import PromptABC
+from tenacity import retry, stop_after_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,23 @@ class LLMClient(Registrable):
                 )
 
         return result
+
+    def parse_response(self, response, **kwargs):
+        try:
+            if isinstance(response, list) and response[0].startswith("n"):
+                response[0] = response[0].replace("n ", "").replace("\n", "")
+                res = json.loads("["+response[0]+"]")
+                return res
+            elif isinstance(response, dict):
+                x = response["choices"][0]["message"]["content"]
+            else:
+                return response
+        except Exception as e:
+            error_msg = str(response)
+            # data_error = response['data']['errorMessage']
+            raise RuntimeError(f"Call error:{error_msg}")
+        res = x.split("</think>")
+        return res[1].strip()
 
     def batch(
         self,
