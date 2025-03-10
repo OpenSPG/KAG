@@ -65,8 +65,15 @@ class QuestionNER(PromptABC):
             rsp = json.loads(rsp)
         if isinstance(rsp, dict) and "output" in rsp:
             rsp = rsp["output"]
-        if isinstance(rsp, dict) and "named_entities" in rsp:
-            entities = rsp["named_entities"]
+        # - case1: {'named_entities': [...]}
+        # - case2: {'entities': [...]}
+        if isinstance(rsp, dict):
+            if "named_entities" in rsp:
+                entities = rsp["named_entities"]
+            elif "entities" in rsp:
+                entities = rsp["entities"]
+            else:
+                entities = rsp
         else:
             entities = rsp
 

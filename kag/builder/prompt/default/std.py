@@ -122,16 +122,36 @@ class OpenIEEntitystandardizationdPrompt(PromptABC):
             rsp = json.loads(rsp)
         if isinstance(rsp, dict) and "output" in rsp:
             rsp = rsp["output"]
-        if isinstance(rsp, dict) and "named_entities" in rsp:
-            standardized_entity = rsp["named_entities"]
+        # - case1: {'named_entities': [...]}
+        # - case2: {'entities': [...]}
+        if isinstance(rsp, dict):
+            if "named_entities" in rsp:
+                standardized_entity = rsp["named_entities"]
+            elif "entities" in rsp:
+                standardized_entity = rsp["entities"]
+            else:
+                standardized_entity = rsp
         else:
             standardized_entity = rsp
+
+        # In some cases LLM returns a JSON string
+        if type(standardized_entity) == str:
+            standardized_entity = json.loads(standardized_entity)
+
         entities_with_offical_name = set()
         merged = []
         entities = kwargs.get("named_entities", [])
         for entity in standardized_entity:
+            # LLM could also build result as a list of string
+            if type(entity) == str:
+                entity = json.loads(entity)
             merged.append(entity)
             entities_with_offical_name.add(entity["name"])
+
+        # Entities should be a list of dict, but LLM could return a dict {'entities': [...]}
+        if type(entities) != list:
+            entities = entities.get('entities', list())
+
         # in case llm ignores some entities
         for entity in entities:
             if entity["name"] not in entities_with_offical_name:

@@ -12,6 +12,7 @@
 from collections import defaultdict
 from typing import Dict, List, Callable
 
+import math
 import pandas
 
 from knext.schema.client import BASIC_TYPES
@@ -126,6 +127,10 @@ class SPGTypeMapping(MappingABC):
                 prop = self.spg_type.properties.get(prop_name)
                 o_label = prop.object_type_name_en
                 if o_label not in BASIC_TYPES:
+                    # If property key exists but value is empty (NaN), skip
+                    if not prop_value or (type(prop_value) is float and math.isnan(prop_value)):
+                        continue
+
                     prop_value_list = prop_value.split(",")
                     for o_id in prop_value_list:
                         if prop_name in self.link_funcs:
