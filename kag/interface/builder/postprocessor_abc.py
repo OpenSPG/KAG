@@ -28,3 +28,8 @@ class PostProcessorABC(BuilderComponent):
     @property
     def output_types(self):
         return SubGraph
+
+    @property
+    def ckpt_subdir(self):
+        return "post_processor"
+
