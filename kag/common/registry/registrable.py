@@ -172,12 +172,26 @@ def can_construct_from_config(type_: Type) -> bool:
 def remove_optional(annotation: type) -> type:
     """
     Remove Optional[X](alias of Union[T, None]) annotations by filtering out NoneType from Union[X, NoneType].
+    - Also supports both traditional Optional[X] syntax and Python 3.10+ pipe syntax (X | None)
     """
     origin = get_origin(annotation)
     args = get_args(annotation)
 
-    if origin == Union:
-        return Union[tuple([arg for arg in args if arg != type(None)])]  # noqa
+    if origin == Union or origin is types.UnionType:  # Support both Union and pipe syntax
+        filtered_args = tuple([arg for arg in args if arg != type(None)])  # noqa
+
+        # If only one type left after filtering None, return directly
+        if len(filtered_args) == 1:
+            return filtered_args[0]
+        # Otherwise return the Union of the remaining types
+        elif len(filtered_args) > 1:
+            if origin is types.UnionType:  # For pipe syntax
+                return types.UnionType[filtered_args]  # type: ignore
+            else:  # For traditional Union
+                return Union[filtered_args]
+        # If all types were None, just return the original annotation
+        else:
+            return annotation
     else:
         return annotation
 

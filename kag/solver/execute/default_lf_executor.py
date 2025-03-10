@@ -152,7 +152,8 @@ class DefaultLFExecutor(LFExecutorABC):
             all_related_entities = list(set(all_related_entities))
             sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
             doc_retrieved = self.chunk_retriever.recall_docs(
-                queries=[query, sub_query],
+                # sub_query could be the same as original query
+                queries=[query, sub_query] if sub_query != query else [query],
                 retrieved_spo=all_related_entities,
                 kwargs=self.params,
             )

@@ -56,11 +56,18 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
+        # Some models require a list of strings as input rather than a single string, otherwise the model will generate
+        # vector for each character in the input string. Convert single string to list of strings to unify the input format.
+        if isinstance(texts, str):
+            texts = [texts]
+
         results = self.client.embeddings.create(
             input=texts, model=self.model, timeout=self.timeout
         )
         results = [item.embedding for item in results.data]
-        if isinstance(texts, str):
+
+        # If the input is a single string or a list with only one element, return the first element of the results list.
+        if isinstance(texts, str) or len(texts) == 1:
             assert len(results) == 1
             return results[0]
         else:
@@ -125,11 +132,18 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
+        # Some models require a list of strings as input rather than a single string, otherwise the model will generate
+        # vector for each character in the input string. Convert single string to list of strings to unify the input format.
+        if isinstance(texts, str):
+            texts = [texts]
+
         results = self.client.embeddings.create(
             input=texts, model=self.model, timeout=self.timeout
         )
         results = [item.embedding for item in results.data]
-        if isinstance(texts, str):
+
+        # If the input is a single string or a list with only one element, return the first element of the results list.
+        if isinstance(texts, str) or len(texts) == 1:
             assert len(results) == 1
             return results[0]
         else:
