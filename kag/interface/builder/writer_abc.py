@@ -33,21 +33,6 @@ class SinkWriterABC(BuilderComponent, ABC):
     def output_types(self):
         return SubGraph
 
-    @abstractmethod
-    def invoke(self, input: Input, **kwargs) -> Output:
-        """
-        Abstract method to be implemented by subclasses for writing SubGraphs to storage.
-
-        Args:
-            input (Input): The SubGraph to be written to storage.
-            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
-
-        Returns:
-            Output: The SubGraph after it has been written to storage.
-
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def ckpt_subdir(self):
+        return "writer"

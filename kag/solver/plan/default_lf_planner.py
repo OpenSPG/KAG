@@ -76,6 +76,8 @@ class DefaultLFPlanner(LFPlannerABC):
     def _convert_node_to_plan(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
         plan_result = []
         for n in logic_nodes:
+            if not n.sub_query:
+                raise RuntimeError(f"sub query is None {n}")
             lf_type = "retrieval"
             if n.operator == "deduce":
                 lf_type = "deduce"
@@ -98,6 +100,8 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys = []
         # process sub query
         sub_querys = [self._process_output_query(question, q) for q in sub_querys]
+        if len(sub_querys) != len(logic_forms):
+            raise RuntimeError(f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}")
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )
