@@ -1,81 +1,99 @@
-# Copyright 2023 OpenSPG Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License. You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License
-# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-# or implied.
-
+import logging
 import os
 import json
-import hashlib
-import shutil
-import random
 
-import pandas as pd
-from neo4j import GraphDatabase
+import chromadb
 
-from kag.builder.runner import BuilderChainRunner
+
+from kag.interface import LLMClient
+
 from kag.common.conf import KAG_CONFIG
 
 
-def load_finqa_train_data(shuffle: bool = False) -> list:
-    """
-    load data
-    """
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = os.path.join(current_dir, "..", "builder", "data", "train.json")
-    with open(file_name, "r", encoding="utf-8") as f:
-        data_list = json.load(f)
-    print("finqa data list len " + str(len(data_list)))
-    for _idx, data in enumerate(data_list):
-        data["index"] = _idx
-    return data_list
+from kag.solver.utils import init_prompt_with_fallback
 
-prompt = """
-问题分类：
-yes or no问题。
-
-数值问题。
-1. percentage increase from A to B
-    percentage of 
-    percentage decrease
-2. ratio of X to Y
+from kag.examples.finqa.dyna_shot.example_prompt import FinQABuildExamplePrompt
 
 
-3. 时间序列分析（Time Series Analysis） 这类问题涉及对一段时间内的数据进行分析，包括趋势、平均值或累计值。
+class BuildExamplePipeline:
+    def __init__(self, **kwargs):
+        """
+        Initializes the think-and-act loop class.
 
-4. 预测与推断（Forecasting and Extrapolation） 这类问题基于现有数据预测未来趋势或结果。
+        :param max_iterations: Maximum number of iteration to limit the thinking and acting loop, defaults to 3.
+        :param reflector: Reflector instance for reflect tasks.
+        :param reasoner: Reasoner instance for reasoning about tasks.
+        :param generator: Generator instance for generating actions.
+        :param memory: Assign memory store type
+        """
+        super().__init__(**kwargs)
+        self.llm_client: LLMClient = LLMClient.from_config(
+            KAG_CONFIG.all_config["chat_llm"]
+        )
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        chromadb_path = os.path.join(current_dir, "chromadb")
+        os.makedirs(chromadb_path, exist_ok=True)
+        self.chroma_client = chromadb.PersistentClient(path=chromadb_path)
+        self.collection = self.chroma_client.create_collection(
+            name="finqa_example", get_or_create=True
+        )
 
-5. 最大最小
-- 最小损失，因为数值是负数，用max
+        self.build_example_prompt = init_prompt_with_fallback(
+            "build_example_prompt", "default"
+        )
 
-6. 差异
-difference between
-In comparison to A,  how much percentage
+    def build(self):
+        train_data_list = self.load_finqa_train_data() + self.load_finqa_train_data(
+            _type="test"
+        )
+        for i, item in enumerate(train_data_list):
+            _id = item["id"]
+            question = item["qa"]["question"]
+            info = str(item["qa"]["gold_inds"])
+            process = str(item["qa"]["program_re"])
+            params = {"question": question, "info": info, "process": process}
+            solution, tags, example = self.llm_client.invoke(
+                variables=params,
+                prompt_op=self.build_example_prompt,
+                with_json_parse=False,
+                with_except=True,
+            )
+            doc = question + " tags=" + str(tags)
+            logging.info("index=%d,id=%s,%s,doc=%s\n%s", i, _id, solution, doc, example)
+            if "correct" != solution.lower():
+                continue
+            self.collection.upsert(
+                documents=[
+                    doc,
+                ],
+                metadatas=[{"example": example}],
+                ids=[_id],
+            )
 
-7. What was the change，有何变化，减法，同6
+    def load_finqa_train_data(self, _type="train") -> list:
+        """
+        load data
+        """
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_name = os.path.join(current_dir, "..", "builder", "data", f"{_type}.json")
+        with open(file_name, "r", encoding="utf-8") as f:
+            data_list = json.load(f)
+        print("finqa data list len " + str(len(data_list)))
+        for _idx, data in enumerate(data_list):
+            data["index"] = _idx
+        return data_list
 
+    def search_example(self, query, topn=3):
+        rsts = self.collection.query(query_texts=[query], n_results=topn)
+        examples = []
+        for meta in rsts["metadatas"][0]:
+            examples.append(meta["example"])
+        return examples
 
-易错题：
-1. the computation of diluted earnings per common share excluded 8.0 million , 13.4 million , and 14.7 million stock options for the years ended december 31 , 2012 , 2011 , and 2010 
-for the years ended december 31，表示的是最后一天。
-问题问题2012，对应的值应该是 ended december 31, 2011
-
-2. from to时，有lower hightest干扰，导致计算方向错误。
-
-3. 
-"""
 
 if __name__ == "__main__":
-    _data_list = load_finqa_train_data()
-    q_list = []
-    for i, _item in enumerate(_data_list):
-        _question = _item["qa"]["question"]
-        q_list.append(_question)
-    random.shuffle(q_list)
-    q_list = q_list[:100]
-    print("\n".join(q_list))
+    resp = BuildExamplePipeline()
+    resp.build()
+    # examples = resp.search_example("what is the total of home equity lines of credit")
+    # for e in examples:
+    #     print(e)

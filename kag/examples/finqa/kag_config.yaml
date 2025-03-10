@@ -126,6 +126,6 @@ finqa_solver_pipeline:
     type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
   reflector:
-    type: default_reflector # kag.solver.implementation.default_reflector.DefaultReflector
+    type: finqa_reflector # kag.solver.implementation.default_reflector.DefaultReflector
     llm_client: *chat_llm
 #------------kag-solver configuration end----------------#

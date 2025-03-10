@@ -17,7 +17,7 @@ class LogicFormPlanPrompt(PromptABC):
 
 # Instruction
 1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题；Retrieval类子问题尽可能多样，不重复，从不同角度获取数据。
-2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math子问题通过计算模块得到精确答案。
+2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math子问题通过编写Python代码并执行得到结果，可解决复杂计算问题。
 3. 必须使用Math计算最终答案，如果已有Math类子问题给出来明确的最终答案，输出：`An explicit answer already exists.`
 
 # 输出格式
@@ -62,7 +62,7 @@ The final answer to the question is either a number or yes/no.
 
 # Instruction
 1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type subproblem. Retrieval-type subproblems should be as diverse as possible, avoiding repetition, and should aim to gather data from different angles.
-2. If the information is sufficient to answer the question, plan the next step as a Math-type subproblem. Math-type subproblems will yield precise answers through computational modules.
+2. If the information is sufficient to answer the question, plan the next step as a Math-type sub-question. Math-type sub-questions should involve writing and executing Python code to solve complex calculations and derive results.
 3. The final answer must be calculated using Math. If a Math-type subproblem has already provided an explicit final answer, output: `An explicit answer already exists.`
 
 # Output Format

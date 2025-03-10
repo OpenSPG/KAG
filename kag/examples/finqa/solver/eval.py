@@ -17,6 +17,7 @@ from kag.examples.finqa.reasoner.finqa_lf_planner import FinQALFPlanner
 from kag.examples.finqa.reasoner.finqa_lf_executor import FinQALFExecutor
 from kag.examples.finqa.reasoner.finqa_chunk_retriever import FinQAChunkRetriever
 from kag.examples.finqa.reasoner.finqa_memory import FinQAMemory
+from kag.examples.finqa.reasoner.finqa_reflector import FinQAReflector
 from kag.examples.finqa.solver.prompt.logic_form_plan import LogicFormPlanPrompt
 from kag.examples.finqa.solver.prompt.resp_generator import FinQARespGenerator
 from kag.examples.finqa.solver.prompt.expression_builder import FinQAExpressionBuildr

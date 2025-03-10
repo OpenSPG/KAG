@@ -83,7 +83,10 @@ class FinQAChunkRetriever(KAGRetriever):
         )
         return self._rerank_docs_by_llm(queries=queries, passages=docs)
 
+    @retry(stop=stop_after_attempt(3))
     def _rerank_docs_by_llm(self, queries: List[str], passages: List[str]):
+        if len(passages) <= 1:
+            return passages
         for_select_doc_list = list(passages)
         input_chunk_str = ""
         for i, doc in enumerate(for_select_doc_list):
@@ -104,7 +107,7 @@ class FinQAChunkRetriever(KAGRetriever):
             input_dict, self.rerank_docs_prompt, False, True
         )
         if best_chunk_index_list is None:
-            logger.error(f"best_chunk_index is None")
+            logger.error("best_chunk_index is None")
             return passages
         best_chunk_index_list = [
             b for b in best_chunk_index_list if b >= 0 and b < len(for_select_doc_list)

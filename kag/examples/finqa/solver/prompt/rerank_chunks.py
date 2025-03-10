@@ -12,11 +12,11 @@ class TableRerankChunksPrompt(PromptABC):
 
     template_zh = """
 # Task
-选择对回答子问题最有帮助的chunks，返回chunk编号列表。
-如果没有合适的chunk，返回none。
+你是一个财经专家，运用你的财经知识，选择对回答子问题最有帮助的chunks，返回chunk编号列表。
+深入分析后，如果没有合适的chunk，返回none。
 
 # Output format
-给出你的理由，最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
+给出你的分析过程，在最后一行返回`The final answer is: <chunk编号1>, <chunk编号2>`。
 chunk编号不要包含任何其他字符。
 
 # Input
@@ -33,11 +33,11 @@ $chunks
 
     template_en = """
 # Task
-Select the most helpful chunks for the question and return the chunk numbers.
-If no suitable chunk is found, return None.
+You are a financial expert. Using your financial knowledge, select the chunks that are most helpful for answering the sub-questions and return the list of chunk numbers.
+After thorough analysis, if there are no suitable chunks, return none.
 
 # Output format
-Give your reason, and return `The final answer is: <chunk_number1>, <chunk_number2>` in the last line.
+Provide your analysis process and return `The final answer is: <chunk number1>, <chunk number2>` on the last line.
 The chunk number should not contain any other characters.
 
 # Input
