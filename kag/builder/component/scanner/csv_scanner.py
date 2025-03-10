@@ -71,7 +71,17 @@ class CSVScanner(ScannerABC):
             )
             data = data.iloc[start_idx:end_idx]
 
-        col_keys = self.col_names if self.col_names else self.col_ids
+        if self.col_names:
+            col_keys = self.col_names
+        elif self.col_ids:
+            if self.header:
+                all_keys = data.keys().to_list()
+                col_keys = [all_keys[x] for x in self.col_ids]
+            else:
+                col_keys = self.col_ids
+        else:
+            col_keys = None
+
         if col_keys is None:
             return data.to_dict(orient="records")
 
