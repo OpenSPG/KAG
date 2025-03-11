@@ -7,9 +7,7 @@ from .evaUtils import compare_summarization_answers
 from .evaUtils import compute_rouge
 
 
-
 class Evaluate:
-
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """

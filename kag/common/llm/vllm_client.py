@@ -29,11 +29,14 @@ class VLLMClient(LLMClient):
     This class provides methods to make synchronous requests to the VLLM server, handle model calls, and parse responses.
     """
 
-    def __init__(self, model: str,
-                 base_url: str,
-                 timeout: float = None,
-                 rate_limiter: RateLimiter = None,
-                 **kwargs):
+    def __init__(
+        self,
+        model: str,
+        base_url: str,
+        timeout: float = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs
+    ):
         """
         Initializes the VLLMClient instance.
 

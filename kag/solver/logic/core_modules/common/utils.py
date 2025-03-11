@@ -47,6 +47,7 @@ def node_2_doc(node: dict):
         prop_set.append(prop)
     return "\n".join(prop_set)
 
+
 def extract_content_target(input_string):
     """
     Extract the content and target parts from the input string.
@@ -59,8 +60,10 @@ def extract_content_target(input_string):
     """
     # Define regex patterns
     # Content may contain newlines and special characters, so use non-greedy mode
-    content_pattern = r'content=\[(.*?)\]'
-    target_pattern = r'target=([^,\]]+)'  # Assume target does not contain commas or closing brackets
+    content_pattern = r"content=\[(.*?)\]"
+    target_pattern = (
+        r"target=([^,\]]+)"  # Assume target does not contain commas or closing brackets
+    )
 
     # Search for content
     content_match = re.search(content_pattern, input_string, re.DOTALL)
@@ -72,7 +75,9 @@ def extract_content_target(input_string):
     # Search for target
     target_match = re.search(target_pattern, input_string)
     if target_match:
-        target = target_match.group(1).strip().rstrip("'")  # Remove trailing single quote if present
+        target = (
+            target_match.group(1).strip().rstrip("'")
+        )  # Remove trailing single quote if present
     else:
         target = None
     return content, target

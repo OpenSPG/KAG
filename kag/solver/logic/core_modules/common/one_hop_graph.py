@@ -252,6 +252,7 @@ class RelationData:
 
     def get_name(self):
         return self.to_show_id()
+
     def _get_type_name(self, language="en"):
         if language == "zh":
             return self.type_zh
@@ -566,7 +567,9 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.in_relations[k]:
-                    spo_list.append(v.get_str(with_prop, language).strip("(").strip(")"))
+                    spo_list.append(
+                        v.get_str(with_prop, language).strip("(").strip(")")
+                    )
                 relation_name_set_map[k] = spo_list
         if len(self.out_relations) > 0:
             for k in self.out_relations.keys():
@@ -574,7 +577,9 @@ class OneHopGraphData:
                     continue
                 spo_list = []
                 for v in self.out_relations[k]:
-                    spo_list.append(v.get_str(with_prop, language).strip("(").strip(")"))
+                    spo_list.append(
+                        v.get_str(with_prop, language).strip("(").strip(")")
+                    )
                 relation_name_set_map[k] = spo_list
         return relation_name_set_map
 
@@ -616,6 +621,7 @@ class KgGraph:
             self.answered_alias[alias].append(value)
         else:
             self.answered_alias[alias] = [value]
+
     def get_answered_alias(self, alias):
         if alias not in self.alias_set:
             return None
@@ -623,6 +629,7 @@ class KgGraph:
             return self.answered_alias[alias]
         else:
             return ""
+
     def add_mock_entity(self, alias, value):
         if alias not in self.nodes_alias:
             self.nodes_alias.append(alias)
@@ -638,6 +645,7 @@ class KgGraph:
             data_values = []
         data_values.append(mock_entity)
         self.entity_map[alias] = data_values
+
     def merge_kg_graph(self, other, wo_intersect=True):
         self.answered_alias = other.answered_alias
         self.alias_set = list(set(other.alias_set))

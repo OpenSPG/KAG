@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("default_rewrite_sub_query")
 class DefaultRewriteSubQuery(PromptABC):
-    template_zh = (
-        """{
+    template_zh = """{
     "instruction":"请根据历史对话中的信息，替换当前问题中涉及的指代实体，进而改写当前问题。",
     "cases": [
         {
@@ -22,9 +21,7 @@ class DefaultRewriteSubQuery(PromptABC):
     "question": "$question",
     "notice": "请直接输出改写后的问题，不要输出推理过程等其他内容。"
 }"""
-    )
-    template_en = (
-        """"{
+    template_en = """"{
     instruction": "Please rewrite the current question based on historical Q&A information and complete the entities referred to in the question.",
     "cases": [
         {
@@ -43,11 +40,11 @@ class DefaultRewriteSubQuery(PromptABC):
     "question": "$question"
 }
 """
-    )
 
     @property
     def template_variables(self) -> List[str]:
         return ["history_qa", "question"]
+
     def parse_response(self, response: str, **kwargs):
         logger.debug(f"rewrite sub query:{response}")
         return response

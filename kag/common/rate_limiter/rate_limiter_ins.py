@@ -6,17 +6,18 @@ from kag.interface.common.rate_limiter import RateLimiter
 
 logger = logging.getLogger()
 
+
 class RateLimiterInstance:
     """Period-based rate limiter implementation"""
 
     def __init__(self, max_calls: int, period: float):
         """
-         Initialize period-based rate limiter.
+        Initialize period-based rate limiter.
 
-         :param name: Limiter instance name
-         :param max_calls: Maximum allowed calls per period
-         :param period: Time period in seconds
-         """
+        :param name: Limiter instance name
+        :param max_calls: Maximum allowed calls per period
+        :param period: Time period in seconds
+        """
         self._max_calls = max_calls
         self._period = period
         self._tokens = max_calls
@@ -64,7 +65,9 @@ class RateLimitContainer:
         with cls._lock:  # 加锁，确保线程安全
             if name not in cls._instances:
                 # 创建新的实例并存储在字典中
-                cls._instances[name] = RateLimiterInstance(max_calls=max_calls, period=period)
+                cls._instances[name] = RateLimiterInstance(
+                    max_calls=max_calls, period=period
+                )
             else:
                 logger.debug(f"Returning existing instance for '{name}'")
 
@@ -76,7 +79,9 @@ class RateLimitContainer:
 class PeriodRateLimiter(RateLimiter):
     def __init__(self, name, max_calls: int = None, period: float = None, **kwargs):
         super().__init__(name, max_calls, period, **kwargs)
-        self.instance: RateLimiterInstance = RateLimitContainer.get_instance(name, max_calls, period)
+        self.instance: RateLimiterInstance = RateLimitContainer.get_instance(
+            name, max_calls, period
+        )
 
     def acquire(self):
         self.instance.acquire()

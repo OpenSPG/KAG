@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("default_expression_builder")
 class ExpressionBuildr(PromptABC):
-    template_zh = (
-        """# instruction
+    template_zh = """# instruction
         根据给出的问题和数据，编写python代码，输出问题结果。
         为了便于理解，输出从context中提取的数据，输出中间计算过程和结果。
         注意严格根据输入内容进行编写代码,不允许进行假设
@@ -75,8 +74,7 @@ class ExpressionBuildr(PromptABC):
         $context
         ## error
         $error"""
-    )
-    template_en = ("""# instruction
+    template_en = """# instruction
 Generate Python code based on the given question and context data to output the result. 
 Show extracted data from context, intermediate calculations and final results for clarity.
 Strictly use input content without making assumptions (e.g., if disability grade isn't mentioned, assume no disability).
@@ -140,7 +138,7 @@ $question
 $context
 ## error
 $error
-    """)
+    """
 
     @property
     def template_variables(self) -> List[str]:

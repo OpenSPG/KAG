@@ -32,13 +32,25 @@ class RetrievalExecutor(OpExecutor):
     def is_this_op(self, logic_node: LogicNode) -> bool:
         return isinstance(logic_node, GetSPONode)
 
-    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
-                 history: List[LFPlan], param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        lf_plan: LFPlan,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        history: List[LFPlan],
+        param: dict,
+    ) -> Dict:
         op = self.op_register_map.get(lf_plan.lf_node.operator, None)
         if op is None:
             return {}
         try:
-            op.executor(nl_query, lf_plan, req_id, kg_graph, process_info, history, param)
+            op.executor(
+                nl_query, lf_plan, req_id, kg_graph, process_info, history, param
+            )
         except Exception as e:
-            logger.warning(f"op {lf_plan.lf_node.operator} run failed! {e}", exc_info=True)
+            logger.warning(
+                f"op {lf_plan.lf_node.operator} run failed! {e}", exc_info=True
+            )
         return process_info.get(lf_plan.lf_node.sub_query, {})
