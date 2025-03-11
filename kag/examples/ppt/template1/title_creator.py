@@ -3,17 +3,15 @@ from pptx.enum.text import PP_ALIGN
 from pptx.util import Pt
 
 
-class PPTCreator:
-    def __init__(self):
-        self.prs = Presentation()
+class TitlePPTCreator:
+    def __init__(self, prs):
+        """接收统一的 Presentation 对象"""
+        self.prs = prs
 
     def add_title_slide(self, title, subtitle=None):
         """添加标题页"""
         slide = self.prs.slides.add_slide(self.prs.slide_layouts[0])
-        # slide = self.prs.slides[1]  # 选择现有幻灯片
-        # slide = self.Slides(1)
-        # slide.Copy()
-        # title_shape = slide.shapes.title
+
         title_shape = slide.placeholders[0]
         subtitle_shape = slide.placeholders[1]
 
@@ -29,8 +27,7 @@ class PPTCreator:
         # 设置副标题
         if subtitle:
             subtitle_shape.text = subtitle
-            # subtitle_shape.text_frame.paragraphs[0].font.size = Pt(32)
-
+            subtitle_shape.text_frame.paragraphs[0].font.size = Pt(32)
         return slide
 
     def save(self, filename):

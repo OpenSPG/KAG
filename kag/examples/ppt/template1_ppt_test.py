@@ -1,22 +1,22 @@
-from template1.template_creator import TemplatePPTCreator
+import json
+
+from template1.batch_ppt_creator import BatchPPTCreator
 from template1.ppt_utils import PPTUtils
 
 
 def demo_test():
     # 创建PPT生成器
-    creator = TemplatePPTCreator()
+    creator = BatchPPTCreator()
     # 准备数据
     data_list = [
         {
             'title': '2024年度报告',
             'subtitle': '语言与机器智能部-知识引擎',
             'content': [
-                {
                     '1、项目完成情况',
                     '2、技术创新',
                     '3、团队建设',
                     '4、未来规划'
-                }
             ],
             'chart_data': {
                 'title': '项目情况',
@@ -35,15 +35,27 @@ def demo_test():
         }
     ]
     # 批量生成PPT
-    creator.batch_create(data_list, template_path='template1/中国风背景.pptx')
-    creator.save('2024年度报告.pptx')
+    creator.batch_create(data_list,template_path='template1/中国风背景.pptx')
+    # creator.save('2024年度报告.pptx')
 
 
 if __name__ == '__main__':
     # 验证ppt功能测试
-    # demo_test()
+    demo_test()
 
-    # 解析输入文本为 JSON 格式
-    parsed_json = PPTUtils.parse_text_to_json(text_file='doc.txt', output_file='output.json')
+    # # 解析输入文本为 JSON 格式
+    # parsed_json_data = PPTUtils.parse_text_to_json(text_file='doc.txt', output_file='output.json')
+    #
+    # from template1.content_creator import ContentPPTCreator
+    #
+    # # 创建内容生成器
+    # content_creator = ContentPPTCreator('template1/中国风背景.pptx')
+    # for page in parsed_json_data["pages"]:
+    #     title = page.get("title", "无标题")
+    #     content = page.get("content", [])
+    #     content_creator.add_multi_column_slide(title, content)
+    #
+    #
+    # content_creator.save('output——1.pptx')
 
-    print(f"JSON 文件已保存到 output.json")
+    # print(f"JSON 文件已保存到 output.json")

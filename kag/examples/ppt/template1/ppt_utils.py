@@ -94,10 +94,7 @@ class PPTUtils:
                 current_page = {"title": line[4:].strip(), "content": []}
             else:  # 内容部分（正文）
                 if current_page:
-                    if line.startswith("####"):
-                        current_page["content"].append(line[5:])
-                    else:
-                        current_page["content"].append(line)
+                    current_page["content"].append(line)
         # 把最后一个页面添加进 JSON
         if current_page:
             json_data["pages"].append(current_page)
@@ -105,3 +102,4 @@ class PPTUtils:
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(json_data, f, ensure_ascii=False, indent=4)
 
+        return json_data

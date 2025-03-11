@@ -1,16 +1,22 @@
 import os
 
+from pptx import Presentation
 from PIL import Image
 from pptx.util import Inches
 
 from .chart_creator import ChartPPTCreator
+from .ppt_creator_base import PPTCreatorBase
 from .ppt_utils import PPTUtils
 
 
-class ImagePPTCreator(ChartPPTCreator):
+class ImagePPTCreator:
+    def __init__(self, prs):
+        """接收统一的 Presentation 对象"""
+        self.prs = prs
+
     def add_image_slide(self, title, image_path, position=None):
         """添加图片页"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[8])
+        slide = self.prs.slides.add_slide(self.prs.slide_layouts[9])
 
         if slide.shapes.title:
             # 如果存在标题占位符，设置标题文本
@@ -55,3 +61,7 @@ class ImagePPTCreator(ChartPPTCreator):
             img.save(image_path)
 
         return image_path
+
+    def save(self, filename):
+        """保存PPT文件"""
+        self.prs.save(filename)

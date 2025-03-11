@@ -2,14 +2,17 @@ from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches, Pt
+from pptx import Presentation
 
-from .content_creator import ContentPPTCreator
 
+class ChartPPTCreator:
+    def __init__(self, prs):
+        """接收统一的 Presentation 对象"""
+        self.prs = prs
 
-class ChartPPTCreator(ContentPPTCreator):
     def add_chart_slide(self, title, chart_data, chart_type=None):
         """添加图表页"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[7])
+        slide = self.prs.slides.add_slide(self.prs.slide_layouts[8])
 
         if slide.shapes.title:
             # 如果存在标题占位符，设置标题文本
@@ -64,7 +67,7 @@ class ChartPPTCreator(ContentPPTCreator):
 
     def add_chart_slide_by_free(self, title, chart_data, chart_type=None):
         """添加图表页"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[7])
+        slide = self.prs.slides.add_slide(self.prs.slide_layouts[8])
 
         if slide.shapes.title:
             # 如果存在标题占位符，设置标题文本
@@ -126,7 +129,7 @@ class ChartPPTCreator(ContentPPTCreator):
 
     def add_multi_series_chart(self, title: str, content: str, data_dict):
         """添加多系列图表"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[7])
+        slide = self.prs.slides.add_slide(self.prs.slide_layouts[8])
 
         chart_data = CategoryChartData()
         chart_data.categories = data_dict['categories']
@@ -159,28 +162,9 @@ class ChartPPTCreator(ContentPPTCreator):
         slide.shapes._spTree.remove(placeholder._element)
         # 设置图表标题
         chart.has_title = True
-        chart.chart_title.text_frame.text = chart_name
 
-        # for shape in slide.shapes:
-        #     if shape.is_placeholder and shape.placeholder_format.idx == 2:
-        #         shape.text = content
-        #
-        #     if shape.is_placeholder and shape.placeholder_format.idx == 13:
-        #         placeholder = shape
-        #         chart_left, chart_top, chart_width, chart_height = (
-        #             placeholder.left,
-        #             placeholder.top,
-        #             placeholder.width,
-        #             placeholder.height,
-        #         )
-        #         chart = slide.shapes.add_chart(
-        #             XL_CHART_TYPE.LINE,  # 图表类型：柱状图
-        #             chart_left, chart_top, chart_width, chart_height, chart_data
-        #         ).chart
-        #         # 删除占位符
-        #         sp = shape
-        #         slide.shapes._spTree.remove(sp._element)
-        #         # 设置图表标题
-        #         chart.has_title = True
-        #         chart.chart_title.text_frame.text = "季度销售数据"
         return slide
+
+    def save(self, filename):
+        """保存PPT文件"""
+        self.prs.save(filename)

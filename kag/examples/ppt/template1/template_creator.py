@@ -1,9 +1,9 @@
 from pptx import Presentation
 
-from .batch_ppt_creator import BatchPPTCreator
+from kag.examples.ppt.template1.ppt_creator_base import PPTCreatorBase
 
 
-class TemplatePPTCreator(BatchPPTCreator):
+class TemplatePPTCreator(PPTCreatorBase):
     def apply_template(self, template_path, data):
         """应用模板"""
         self.prs = Presentation(template_path)
