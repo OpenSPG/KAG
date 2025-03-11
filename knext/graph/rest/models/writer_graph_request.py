@@ -44,27 +44,22 @@ class WriterGraphRequest(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "project_id": "int",
-        "operation": "str",
-        "sub_graph": "object",
-        "enable_lead_to": "bool",
+        'project_id': 'int',
+        'operation': 'str',
+        'sub_graph': 'object',
+        'enable_lead_to': 'bool',
+        'token': 'str'
     }
 
     attribute_map = {
-        "project_id": "projectId",
-        "operation": "operation",
-        "sub_graph": "subGraph",
-        "enable_lead_to": "enableLeadTo",
+        'project_id': 'projectId',
+        'operation': 'operation',
+        'sub_graph': 'subGraph',
+        'enable_lead_to': 'enableLeadTo',
+        'token': 'token'
     }
 
-    def __init__(
-        self,
-        project_id=None,
-        operation=None,
-        sub_graph=None,
-        enable_lead_to=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, project_id=None, operation=None, sub_graph=None, enable_lead_to=None, token=None, local_vars_configuration=None):  # noqa: E501
         """WriterGraphRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -74,6 +69,7 @@ class WriterGraphRequest(object):
         self._operation = None
         self._sub_graph = None
         self._enable_lead_to = None
+        self._token = None
         self.discriminator = None
 
         if project_id is not None:
@@ -84,6 +80,8 @@ class WriterGraphRequest(object):
             self.sub_graph = sub_graph
         if enable_lead_to is not None:
             self.enable_lead_to = enable_lead_to
+        if token is not None:
+            self.token = token
 
     @property
     def project_id(self):
@@ -169,6 +167,27 @@ class WriterGraphRequest(object):
 
         self._enable_lead_to = enable_lead_to
 
+    @property
+    def token(self):
+        """Gets the token of this WriterGraphRequest.  # noqa: E501
+
+
+        :return: The token of this WriterGraphRequest.  # noqa: E501
+        :rtype: str
+        """
+        return self._token
+
+    @token.setter
+    def token(self, token):
+        """Sets the token of this WriterGraphRequest.
+
+
+        :param token: The token of this WriterGraphRequest.  # noqa: E501
+        :type: str
+        """
+
+        self._token = token
+
     def to_dict(self):
         """Returns the model properties as a dict"""
         result = {}
@@ -176,20 +195,18 @@ class WriterGraphRequest(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = list(map(
+                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
+                    value
+                ))
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], item[1].to_dict())
+                    if hasattr(item[1], "to_dict") else item,
+                    value.items()
+                ))
             else:
                 result[attr] = value
 
