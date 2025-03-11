@@ -15,7 +15,7 @@ from kag.interface import VectorizeModelABC, EmbeddingVector
 from typing import Callable
 
 from kag.common.rate_limiter.rate_limiter_ins import PeriodRateLimiter
-vector_limit = PeriodRateLimiter("vector_limit", 10, 1)
+vector_limit = PeriodRateLimiter("vector_limit", 50, 1)
 
 @VectorizeModelABC.register("openai")
 class OpenAIVectorizeModel(VectorizeModelABC):
