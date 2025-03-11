@@ -21,4 +21,4 @@ def count_correct(file_path):
 
 
 # 使用文件路径
-count_correct("./evaluation_results_4.json")
+count_correct("./evaluation_results_7.json")
