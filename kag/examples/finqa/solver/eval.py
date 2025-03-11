@@ -107,7 +107,7 @@ class MultiHerttEvaluate(Evaluate):
 
 
 if __name__ == "__main__":
-    _data_list = load_finqa_data(shuffle=True)
+    _data_list = load_finqa_data(shuffle=False)
     evaObj = MultiHerttEvaluate()
     total_metrics = {
         "em": 0.0,

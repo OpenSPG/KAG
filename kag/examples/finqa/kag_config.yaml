@@ -9,9 +9,9 @@ openie_llm: &openie_llm
 
 chat_llm: &chat_llm
   #zzapi_key: 
-  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  model: deepseek-v3
+  api_key: sk-d45056e066844971a01f4d16c27c646a
+  base_url: https://api.deepseek.com/v1/
+  model: deepseek-chat
   #model: qwen2.5-72b-instruct
   type: maas
 

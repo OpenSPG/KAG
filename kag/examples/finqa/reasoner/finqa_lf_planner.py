@@ -17,6 +17,11 @@ from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicFor
 from kag.solver.logic.core_modules.parser.schema_std import SchemaRetrieval
 from kag.solver.utils import init_prompt_with_fallback
 
+from kag.examples.finqa.reasoner.common import (
+    get_history_context_info_list,
+    get_history_context_str,
+)
+
 logger = logging.getLogger()
 
 
@@ -125,25 +130,6 @@ class FinQALFPlanner(LFPlannerABC):
         )
 
     def get_context_str(self, history: List[LFPlan]):
-        context_list = []
-        for i, lf_plan in enumerate(history):
-            if lf_plan.sub_query_type == "math":
-                answer = f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
-            else:
-                answer = str(self._norm_doc_retrieved(lf_plan.res.doc_retrieved))
-            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer))
-        context_str = ""
-        for i, c in enumerate(context_list):
-            context_str += (
-                f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
-            )
+        context_list = get_history_context_info_list(history=history)
+        context_str = get_history_context_str(context_list=context_list)
         return context_str
-
-    def _norm_doc_retrieved(self, docs):
-        rst_str = ""
-        for doc in docs:
-            doc = doc.strip("#")
-            x = doc.rfind("#")
-            doc = doc[:x]
-            rst_str += "\n"+doc
-        return rst_str

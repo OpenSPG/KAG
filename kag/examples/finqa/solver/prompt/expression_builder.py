@@ -14,8 +14,10 @@ class FinQAExpressionBuildr(PromptABC):
 注意严格根据输入内容进行编写代码，不允许进行假设。
 如果无法回答问题，print输出：I don't know.
 
-# 一些解决问题的思路
+# 可参考的解题思路
+```
 $examples
+```
 
 # 输出格式
 直接输出python代码，python版本为3.10，不要包含任何其他信息。
@@ -46,8 +48,10 @@ You are an expert in the field of finance. Based on the provided questions and i
 Note that you must strictly follow the input content to write the code without making any assumptions.
 If the question cannot be answered, use print to output: I don't know.
 
-# Some problem-solving ideas
+# Possible problem-solving strategies for reference
+```
 $examples
+```
 
 # Output Format
 Output only the Python code directly, using Python version 3.10, without including any other information.

@@ -17,6 +17,11 @@ from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
+from kag.examples.finqa.reasoner.common import (
+    get_history_context_info_list,
+    get_history_context_str,
+)
+
 
 class FinQALFExecuteResult(LFExecuteResult):
 
@@ -24,28 +29,9 @@ class FinQALFExecuteResult(LFExecuteResult):
         super().__init__()
 
     def get_support_facts(self):
-        context_list = []
-        for i, lf_plan in enumerate(self.sub_plans):
-            if lf_plan.sub_query_type == "math":
-                answer = f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
-            else:
-                answer = "\n".join(self._norm_doc_retrieved(lf_plan.res.doc_retrieved))
-            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer))
-        context_str = ""
-        for i, c in enumerate(context_list):
-            context_str += (
-                f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
-            )
+        context_list = get_history_context_info_list(self.sub_plans)
+        context_str = get_history_context_str(context_list=context_list)
         return context_str
-
-    def _norm_doc_retrieved(self, docs):
-        rst_list = []
-        for doc in docs:
-            doc = doc.strip("#")
-            x = doc.rfind("#")
-            doc = doc[:x]
-            rst_list.append(doc)
-        return rst_list
 
 
 @KagReasonerABC.register("finqa_reasoner", as_default=True)
@@ -196,6 +182,9 @@ class FinQAReasoner(KagReasonerABC):
             if lf.sub_query_type != "retrieval":
                 rst_history.append(lf)
                 continue
+            if len(lf.res.doc_retrieved) <= 0:
+                rst_history.append(lf)
+                continue
             if set(lf.res.doc_retrieved).issubset(doc_set):
                 continue
             rst_history.append(lf)
@@ -203,27 +192,11 @@ class FinQAReasoner(KagReasonerABC):
         return rst_history
 
     def _use_doc_as_subanswer(self, history, process_info):
-        context_list = []
+        context_list = get_history_context_info_list(history=history)
         process_info["sub_qa_pair"] = []
-        for _, lf_plan in enumerate(history):
-            lf_plan: LFPlan = lf_plan
-            if lf_plan.sub_query_type == "math":
-                answer = f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
-            else:
-                answer = "\n".join(self._norm_doc_retrieved(lf_plan.res.doc_retrieved))
-            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer))
         for c in context_list:
             process_info["sub_qa_pair"].append((c[0], c[2]))
         return process_info
-
-    def _norm_doc_retrieved(self, docs):
-        rst_list = []
-        for doc in docs:
-            doc = doc.strip("#")
-            x = doc.rfind("#")
-            doc = doc[:x]
-            rst_list.append(doc)
-        return rst_list
 
     def _print_proceed_info(self, question, process_info):
         logger.info(f"question: {question}")

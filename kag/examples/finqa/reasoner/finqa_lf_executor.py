@@ -45,6 +45,12 @@ from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import MathNode
 
+from kag.examples.finqa.reasoner.common import (
+    get_history_context_info_list,
+    get_history_context_str,
+)
+
+
 logger = logging.getLogger()
 
 
@@ -101,15 +107,13 @@ class FinQACoderMathOp(OpExecutor):
         process_info: Dict,
         req_id: str,
         param: dict,
+        history: List[LFPlan],
     ):
-        history_qa_pair = process_info.get("sub_qa_pair", [])
-        content_str = f"ParentQuestion:{process_info['goal']}\n"
-        for q, a in history_qa_pair:
-            content_str += f"SubQuestion:{q}\nDocs:{str(a)}"
+        content_str = get_history_context_str(
+            get_history_context_info_list(history=history)
+        )
         example_list = process_info["examples"]
-        example_str = ""
-        for e in example_list:
-            example_str += f"{e}\n"
+        example_str = "\n".join(example_list)
         target = logic_node.target if logic_node.target else logic_node.sub_query
         try_times = 3
         error = None
@@ -145,7 +149,7 @@ class FinQACoderMathOp(OpExecutor):
         param: dict,
     ) -> Dict:
         result = self.execute_with_retry(
-            lf_plan.lf_node, kg_graph, process_info, req_id, param
+            lf_plan.lf_node, kg_graph, process_info, req_id, param, history
         )
         lf_plan.res.debug_info = process_info[lf_plan.lf_node.sub_query]["debug"]
         return {
@@ -236,14 +240,6 @@ class FinQALFExecutor(DefaultLFExecutor):
                 "match_type": "chunk",
                 "kg_answer": "",
             }
-        self.execute_kg_retrieval_first(
-            req_id=generate_random_string(10),
-            query=query,
-            lf_nodes=lf_nodes,
-            process_info=process_info,
-            kg_graph=kg_graph,
-            history=history,
-        )
         for idx, lf in enumerate(lf_nodes):
             sub_result, is_break = self._execute_lf(
                 req_id=generate_random_string(10),

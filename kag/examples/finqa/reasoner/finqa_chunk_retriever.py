@@ -108,7 +108,7 @@ class FinQAChunkRetriever(KAGRetriever):
         )
         if best_chunk_index_list is None:
             logger.error("best_chunk_index is None")
-            return passages
+            return []
         best_chunk_index_list = [
             b for b in best_chunk_index_list if b >= 0 and b < len(for_select_doc_list)
         ]

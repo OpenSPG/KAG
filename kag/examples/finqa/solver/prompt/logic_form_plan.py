@@ -23,15 +23,15 @@ class LogicFormPlanPrompt(PromptABC):
 # 输出格式
 先输出你的思考过程，最后输出下一步操作的类型Retrieval或Math，然后给出子问题列表。
 格式例子如下：
-```
+<plan>
 Retrieval:
 example_retrieval_subquestion_1
 example_retrieval_subquestion_2
-```
+</plan>
 
 # 例子
 ## 案例输入
-** 你需要回答的问题 **: 美国运通平均每笔交易支付金额是多少？
+** 你需要规划的问题 **: 美国运通平均每笔交易支付金额是多少？
 ** 已知信息**:
 SubQuestion1: 美国运通的支付总金额是多少？ by:retrival
 Answer1: 美国运通的支付总金额是637十亿美元。
@@ -44,13 +44,13 @@ SupportingFacts1:
 通过问题1的答案，我们可以得到美国运通的支付总金额是637十亿美元。同时从SupportingFacts1可以获得美国运通总支付次数是5十亿次。
 因此已经具有足够的信息计算平均每笔交易支付金额。
 下一步操作为Math类子问题，子问题列表如下:
-```
+<plan>
 Math:
 支付总金额是637十亿美元，支付总笔数是5十亿笔。计算平均每笔交易的支付金额。
-```
+</plan>
 
 # 真正的输入
-** 你需要回答的问题 **: $question
+** 你需要规划的问题 **: $question
 ** 已知信息**:
 $context
 """.strip()
@@ -68,15 +68,15 @@ The final answer to the question is either a number or yes/no.
 # Output Format
 First, explain your thought process. Then output the next step's operation type, either Retrieval or Math, followed by the sub-question list.
 The format example is as follows:
-```
+<plan>
 Retrieval: 
 example_retrieval_subquestion_1
 example_retrieval_subquestion_2
-```
+</plan>
 
 # Example
 ## Case Input
-** The question you need to answer **: What is the average payment amount per transaction for American Express?
+** The question you need to plan for **: What is the average payment amount per transaction for American Express?
 ** Known information **:
 SubQuestion1: What is the total payment volume for American Express? by:retrieval
 Answer1: The total payment volume for American Express is $637 billion.
@@ -89,13 +89,13 @@ The problem to solve is: What is the average payment amount per transaction for 
 From the answer to SubQuestion1, we know that the total payment volume for American Express is $637 billion. Additionally, SupportingFacts1 provides the total number of transactions, which is 5 billion.
 Therefore, we already have sufficient information to calculate the average payment amount per transaction.
 The next step is a Math-type sub-question, and the sub-question list is as follows:
-```
+<plan>
 Math:
 The total payment volume is $637 billion, and the total number of transactions is 5 billion. Calculate the average payment amount per transaction.
-```
+</plan>
 
 # Actual Input
-** The question you need to answer **: $question
+** The question you need to plan for **: $question
 ** Known information **:
 $context
 """.strip()
@@ -123,12 +123,12 @@ $context
             return sub_querys, logic_forms
 
     def _extract_subquestions_and_functions(self, text: str):
-        flag_str = "```"
-        start_i = text.find(flag_str)
-        end_i = text.rfind(flag_str)
-        if start_i == -1 or end_i == -1 or start_i >= end_i:
+        # 定义正则表达式，匹配 <plan> 和 </plan> 之间的内容
+        plan_pattern = r"<plan>(.*?)</plan>"
+        match = re.search(plan_pattern, text, re.DOTALL)  # re.DOTALL 允许匹配换行符
+        if not match:
             return []
-        text = text[start_i + len(flag_str) : end_i].strip()
+        text = match.group(1).strip()
         type_start = 0
         type_end = text.index(":")
         type_str = text[type_start:type_end].strip()
@@ -136,15 +136,14 @@ $context
             return []
         if type_str.lower() == "retrieval":
             type_str = "Retrieval(s=s1:EntityType[`s1`],p=p1:p,o=o1)"
+            subquestions = text[type_end + 1 :].strip()
+            subquestions = self.remove_line_numbers(subquestions)
+            subquestions = subquestions.splitlines()
         elif type_str.lower() == "math":
             type_str = "Math(content=[], target='')->m"
-        subquestions = text[type_end + 1 :].strip()
-        subquestions = self.remove_line_numbers(subquestions)
-        subquestions = subquestions.splitlines()
+            subquestions = [text[type_end + 1 :].strip()]
         results = []
         for subq in subquestions:
-            if type_str.lower() == "math":
-                type_str = f"Math(content=[], target='{subq}')->m"
             results.append((subq, type_str))
         return results
 
