@@ -79,7 +79,9 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[str]: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!" if KAG_PROJECT_CONF.language == "en" else "。？！"
+        sentence_delimiters = (
+            ".。？?！!" if KAG_PROJECT_CONF.language == "en" else "。？！"
+        )
         output = []
         start = 0
         for idx, char in enumerate(content):
