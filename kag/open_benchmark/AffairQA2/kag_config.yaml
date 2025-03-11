@@ -1,15 +1,27 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: key
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
-  type: maas
+  type: ant_bailian
+  model: bailian-deepseek-v3 # bailian-deepseek-r1 bailian-deepseek-v3 qwen-max-latest
+  url: https://zdfmng-pre.alipay.com/commonQuery/queryData
+  key: gs540iivzezmidi3
+  visitDomain: BU_atlas
+  visitBiz: BU_atlas_leiwa
+  visitBizLine: BU_atlas_leiwa_line
+  cacheInterval: -1
 
 chat_llm: &chat_llm
-  api_key: key
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
+  # type: ant_bailian
+  # model: bailian-deepseek-v3 # bailian-deepseek-r1 bailian-deepseek-v3 qwen-max-latest
+  # url: https://zdfmng-pre.alipay.com/commonQuery/queryData
+  # key: gs540iivzezmidi3
+  # visitDomain: BU_atlas
+  # visitBiz: BU_atlas_leiwa
+  # visitBizLine: BU_atlas_leiwa_line
+  # cacheInterval: -1
   type: maas
+  api_key: key
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
 
 vectorize_model: &vectorize_model
   api_key: key
@@ -34,7 +46,7 @@ project:
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
-  id: '1'
+  id: '2'
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain

@@ -320,7 +320,6 @@ AdministrativeRegion(行政区): EntityType
         type(类型): Text
         semanticType(语义类型): Text
             index: Text
-        id(编号): Text
 
 
 SemanticConcept(语义概念): EntityType
