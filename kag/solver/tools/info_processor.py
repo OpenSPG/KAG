@@ -214,7 +214,7 @@ class ReporterIntermediateProcessTool:
             node_plan (LFPlan): Logical form plan for the node.
             kg_graph (KgGraph): Knowledge graph associated with the node.
         """
-        sub_logic_nodes_str = "\n".join([str(ln) for ln in node_plan.lf_node])
+        sub_logic_nodes_str = str(node_plan.lf_node)
         # 为产品展示隐藏冗余信息
         sub_logic_nodes_str = re.sub(
             r"(\s,sub_query=[^)]+|get\([^)]+\))", "", sub_logic_nodes_str
