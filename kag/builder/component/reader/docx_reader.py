@@ -105,9 +105,11 @@ class DocxReader(ReaderABC):
                 id=generate_hash_id(f"{basename}#{pc[0]}"),
                 name=f"{basename}#{pc[0]}",
                 content=content[
-                    pc[1] : position_check[idx + 1][1]
-                    if idx + 1 < len(position_check)
-                    else len(position_check)
+                    pc[1] : (
+                        position_check[idx + 1][1]
+                        if idx + 1 < len(position_check)
+                        else len(position_check)
+                    )
                 ],
             )
             chunks.append(chunk)

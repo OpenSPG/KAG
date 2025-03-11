@@ -53,7 +53,7 @@ class DefaultLFPlanner(LFPlannerABC):
             )
         self.logic_form_plan_prompt = logic_form_plan_prompt
 
-    # 需要把大模型生成结果记录下来
+    @retry(stop=stop_after_attempt(3))
     def lf_planing(
         self, question: str, memory: KagMemoryABC = None, llm_output=None
     ) -> List[LFPlan]:
@@ -73,16 +73,21 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys, logic_forms = self.generate_logic_form(question)
         return self._parse_lf(question, sub_querys, logic_forms)
 
-    def _split_sub_query(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
-        query_lf_map = {}
-        for n in logic_nodes:
-            if n.sub_query in query_lf_map.keys():
-                query_lf_map[n.sub_query] = query_lf_map[n.sub_query] + [n]
-            else:
-                query_lf_map[n.sub_query] = [n]
+    def _convert_node_to_plan(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
         plan_result = []
-        for k, v in query_lf_map.items():
-            plan_result.append(LFPlan(query=k, lf_nodes=v))
+        for n in logic_nodes:
+            if not n.sub_query:
+                raise RuntimeError(f"sub query is None {n}")
+            lf_type = "retrieval"
+            if n.operator == "deduce":
+                lf_type = "deduce"
+            elif n.operator == "math":
+                lf_type = "math"
+            elif n.operator == "get":
+                lf_type = "output"
+            plan_result.append(
+                LFPlan(query=n.sub_query, lf_node=n, sub_query_type=lf_type)
+            )
         return plan_result
 
     def _process_output_query(self, question, sub_query: str):
@@ -97,10 +102,14 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys = []
         # process sub query
         sub_querys = [self._process_output_query(question, q) for q in sub_querys]
+        if len(sub_querys) != len(logic_forms):
+            raise RuntimeError(
+                f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}"
+            )
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )
-        return self._split_sub_query(parsed_logic_nodes)
+        return self._convert_node_to_plan(parsed_logic_nodes)
 
     @retry(stop=stop_after_attempt(3))
     def generate_logic_form(self, question: str):

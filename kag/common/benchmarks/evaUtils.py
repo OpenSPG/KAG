@@ -240,3 +240,14 @@ def compare_summarization_answers(
                 )
                 print(message)
                 return None
+
+
+def compute_rouge(hyps, refs):
+    import jieba
+    from rouge_chinese import Rouge
+
+    assert len(hyps) == len(refs)
+    hyps = [" ".join(jieba.cut(h)) for h in hyps]
+    hyps = [h if h.strip() != "" else "无内容" for h in hyps]
+    refs = [" ".join(jieba.cut(r)) for r in refs]
+    return Rouge().get_scores(hyps, refs)
