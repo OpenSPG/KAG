@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 @PromptABC.register("resp_simple")
 class RespGenerator(PromptABC):
     template_zh = (
-        "基于给定的引用信息回答问题。" "\n只输出答案，不需要输出额外的信息。" "\n给定的引用信息：'$memory'\n问题：'$instruction'"
+        "基于给定的引用信息回答问题。"
+        "\n只输出答案，不需要输出额外的信息。"
+        "\n给定的引用信息：'$memory'\n问题：'$instruction'"
     )
     template_en = (
         "Answer the question based on the given reference."

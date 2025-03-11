@@ -17,7 +17,7 @@ class DefaultLFSubQueryResMerger(LFSubQueryResMerger):
 
     def __init__(
         self,
-        chunk_retriever: ChunkRetriever,
+        chunk_retriever: ChunkRetriever = None,
         vectorize_model: VectorizeModelABC = None,
         **kwargs
     ):
@@ -40,6 +40,8 @@ class DefaultLFSubQueryResMerger(LFSubQueryResMerger):
         passages_set = [lf_res.res.doc_retrieved for lf_res in lf_res_list]
         recall_docs = self._flat_passages_set(passages_set)
         sub_queries = [lf_res.query for lf_res in lf_res_list]
+        if self.chunk_retriever is None:
+            return recall_docs, recall_docs
         rerank_docs = self.chunk_retriever.rerank_docs(
             [query] + sub_queries, recall_docs
         )

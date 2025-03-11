@@ -112,9 +112,11 @@ class PromptABC(Registrable, ABC):
         if self.example_input and self.example_output:
             tmpl["example"] = {
                 "input": self.example_input,
-                "output": json.loads(self.example_output)
-                if isinstance(self.example_output, str)
-                else self.example_output,
+                "output": (
+                    json.loads(self.example_output)
+                    if isinstance(self.example_output, str)
+                    else self.example_output
+                ),
             }
         return json.dumps(tmpl, ensure_ascii=False)
 
