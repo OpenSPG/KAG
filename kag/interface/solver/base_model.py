@@ -232,10 +232,12 @@ class SPOEntity(SPOBase):
             {
                 "alias": self.alias_name.alias_name,
                 "id": info[0],
-                "type": info[1].std_entity_type
-                if "." in info[1].std_entity_type
-                else (prefix + "." if prefix is not None else "")
-                + info[1].std_entity_type,
+                "type": (
+                    info[1].std_entity_type
+                    if "." in info[1].std_entity_type
+                    else (prefix + "." if prefix is not None else "")
+                    + info[1].std_entity_type
+                ),
             }
             for info in id_type_info
         ]
@@ -396,7 +398,11 @@ class LFExecuteResult:
             i = 0
             for sub_plan in self.sub_plans:
                 sub_res = sub_plan.res
-                if sub_res.sub_answer is None or "i don't know" in sub_res.sub_answer.lower() or sub_res.sub_answer == "":
+                if (
+                    sub_res.sub_answer is None
+                    or "i don't know" in sub_res.sub_answer.lower()
+                    or sub_res.sub_answer == ""
+                ):
                     failed_sub_query.append(sub_res)
                 facts.append(
                     f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}"
