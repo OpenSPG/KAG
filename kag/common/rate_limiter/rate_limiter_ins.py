@@ -7,13 +7,16 @@ from kag.interface.common.rate_limiter import RateLimiter
 logger = logging.getLogger()
 
 class RateLimiterInstance:
+    """Period-based rate limiter implementation"""
+
     def __init__(self, max_calls: int, period: float):
         """
-        初始化速率限制器。
+         Initialize period-based rate limiter.
 
-        :param max_calls: 每个时间段内允许的最大调用次数。
-        :param period: 时间段的长度（秒）。
-        """
+         :param name: Limiter instance name
+         :param max_calls: Maximum allowed calls per period
+         :param period: Time period in seconds
+         """
         self._max_calls = max_calls
         self._period = period
         self._tokens = max_calls
@@ -21,9 +24,7 @@ class RateLimiterInstance:
         self._last = time.monotonic()
 
     def acquire(self):
-        """
-        获取一个令牌，如果没有令牌则等待直到下一个时间段。
-        """
+        """Delegate token acquisition to underlying instance"""
         if self._max_calls is None or self._period is None:
             return
         while True:
