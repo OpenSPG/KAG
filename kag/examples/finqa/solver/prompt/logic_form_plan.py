@@ -16,7 +16,7 @@ class LogicFormPlanPrompt(PromptABC):
 
 # Instruction
 1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题。注意分析信息中失败的Retrieval子问题，不要重复提类似的问题，尝试从已有信息找答案。
-2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math类子问题给出你需要计算的目标即可，如果子问题计算目标是最终答案，引用问题原文。
+2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math类子问题通过计算模块得到答案。
 3. 必须使用Math计算最终答案，如果已有Math类子问题给出来明确的最终答案，输出：`An explicit answer already exists.`
 
 # 输出格式
@@ -42,10 +42,10 @@ SupportingFacts1:
 求解的问题是：美国运通平均每笔交易支付金额是多少？
 通过问题1的答案，我们可以得到美国运通的支付总金额是637十亿美元。同时从SupportingFacts1可以获得美国运通总支付次数是5十亿次。
 因此已经具有足够的信息计算平均每笔交易支付金额。
-规划下一步操作为Math类子问题，已经具备回答问题的信息，因此math子问题引用问题原文即可。
+规划下一步操作为Math类子问题，已经具备回答问题的信息，因此math子问题给出数据，然后引用问题原文即可。
 <plan>
 Math:
-美国运通平均每笔交易支付金额是多少？
+美国运通的支付总金额是637十亿美元，总交易次数是5十亿次；美国运通平均每笔交易支付金额是多少？
 </plan>
 
 # 真正的输入
@@ -60,7 +60,7 @@ You have extensive knowledge in the field of finance and economics. Based on the
 
 # Instruction
 1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type subproblem. Pay attention to analyzing failed Retrieval subproblems in the information to avoid repeating similar questions. Try to find answers from the available information.
-2. If there is sufficient information to answer the question, plan the next step as a Math sub-problem. The Math sub-problem should specify the target of the calculation. If the calculation target of the sub-problem is the final answer, quote the original question.
+2. If there is sufficient information to answer the question, the next step in the plan is a Math subproblem; the Math subproblem will obtain the answer through the calculation module.
 3. The final answer must be calculated using Math. If a Math-type subproblem has already provided an explicit final answer, output: `An explicit answer already exists.`
 
 # Output Format
@@ -86,10 +86,10 @@ SupportingFacts1:
 The problem to solve is: What is the average payment amount per transaction for American Express?
 From the answer to SubQuestion1, we know that the total payment volume for American Express is $637 billion. Additionally, SupportingFacts1 provides the total number of transactions, which is 5 billion.
 Therefore, we already have sufficient information to calculate the average payment amount per transaction.
-The next step is planned as a Math sub-problem. Since we already have enough information to answer the question, the Math sub-problem will directly reference the original question.
+The next step in the plan is a Math subproblem. Since we already have all the necessary information to answer the question, the math subproblem will provide the data, and then reference the original question.
 <plan>
 Math:
-What is the average payment amount per transaction for American Express?
+The total payment amount for American Express is $637 billion, and the total number of transactions is 5 billion. What is the average payment amount per transaction for American Express?
 </plan>
 
 # Actual Input
