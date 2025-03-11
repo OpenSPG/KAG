@@ -9,11 +9,10 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
 
 
 class SinkWriterABC(BuilderComponent, ABC):
