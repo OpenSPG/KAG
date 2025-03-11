@@ -12,12 +12,11 @@ class LogicFormPlanPrompt(PromptABC):
 
     template_zh = """
 # Task
-你是一个财务专家，针对给出的问题和信息，规划下一步操作。
-问题的最终答案是一个数字或者yes/no。
+你拥有丰富的财经领域知识，针对给出的问题和信息，规划下一步操作。
 
 # Instruction
-1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题；Retrieval类子问题尽可能多样，不重复，从不同角度获取数据。
-2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math子问题通过编写Python代码并执行得到结果，可解决复杂计算问题。
+1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题。注意分析信息中失败的Retrieval子问题，不要重复提类似的问题，尝试从已有信息找答案。
+2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math类子问题给出你需要计算的目标即可，如果子问题计算目标是最终答案，引用问题原文。
 3. 必须使用Math计算最终答案，如果已有Math类子问题给出来明确的最终答案，输出：`An explicit answer already exists.`
 
 # 输出格式
@@ -43,10 +42,10 @@ SupportingFacts1:
 求解的问题是：美国运通平均每笔交易支付金额是多少？
 通过问题1的答案，我们可以得到美国运通的支付总金额是637十亿美元。同时从SupportingFacts1可以获得美国运通总支付次数是5十亿次。
 因此已经具有足够的信息计算平均每笔交易支付金额。
-下一步操作为Math类子问题，子问题列表如下:
+规划下一步操作为Math类子问题，已经具备回答问题的信息，因此math子问题引用问题原文即可。
 <plan>
 Math:
-支付总金额是637十亿美元，支付总笔数是5十亿笔。计算平均每笔交易的支付金额。
+美国运通平均每笔交易支付金额是多少？
 </plan>
 
 # 真正的输入
@@ -57,12 +56,11 @@ $context
 
     template_en = """
 # Task
-You are a financial expert tasked with planning the next steps based on the given questions and information.
-The final answer to the question is either a number or yes/no.
+You have extensive knowledge in the field of finance and economics. Based on the given question and information, plan the next steps.
 
 # Instruction
-1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type subproblem. Retrieval-type subproblems should be as diverse as possible, avoiding repetition, and should aim to gather data from different angles.
-2. If the information is sufficient to answer the question, plan the next step as a Math-type sub-question. Math-type sub-questions should involve writing and executing Python code to solve complex calculations and derive results.
+1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type subproblem. Pay attention to analyzing failed Retrieval subproblems in the information to avoid repeating similar questions. Try to find answers from the available information.
+2. If there is sufficient information to answer the question, plan the next step as a Math sub-problem. The Math sub-problem should specify the target of the calculation. If the calculation target of the sub-problem is the final answer, quote the original question.
 3. The final answer must be calculated using Math. If a Math-type subproblem has already provided an explicit final answer, output: `An explicit answer already exists.`
 
 # Output Format
@@ -88,10 +86,10 @@ SupportingFacts1:
 The problem to solve is: What is the average payment amount per transaction for American Express?
 From the answer to SubQuestion1, we know that the total payment volume for American Express is $637 billion. Additionally, SupportingFacts1 provides the total number of transactions, which is 5 billion.
 Therefore, we already have sufficient information to calculate the average payment amount per transaction.
-The next step is a Math-type sub-question, and the sub-question list is as follows:
+The next step is planned as a Math sub-problem. Since we already have enough information to answer the question, the Math sub-problem will directly reference the original question.
 <plan>
 Math:
-The total payment volume is $637 billion, and the total number of transactions is 5 billion. Calculate the average payment amount per transaction.
+What is the average payment amount per transaction for American Express?
 </plan>
 
 # Actual Input
