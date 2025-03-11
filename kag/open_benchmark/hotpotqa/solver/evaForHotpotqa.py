@@ -64,7 +64,7 @@ class EvaForHotpotqa:
                 import traceback
 
                 logger.warning(
-                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data}"
+                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data} {e}"
                 )
                 return None
 
