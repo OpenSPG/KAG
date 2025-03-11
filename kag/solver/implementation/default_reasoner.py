@@ -2,6 +2,7 @@ import logging
 from typing import List
 
 from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
+from kag.interface.solver.kag_memory_abc import KagMemoryABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
 from kag.interface.solver.plan.lf_planner_abc import LFPlannerABC
 from kag.interface.solver.base_model import LFPlan
@@ -45,7 +46,7 @@ class DefaultReasoner(KagReasonerABC):
         self.kg_direct = 0
         self.trace_log = []
 
-    def reason(self, question: str, **kwargs):
+    def reason(self, question: str, memory: KagMemoryABC = None, **kwargs):
         """
         Processes a given question by planning and executing logical forms to derive an answer.
 
@@ -58,7 +59,7 @@ class DefaultReasoner(KagReasonerABC):
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
         # logic form planing
-        lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question)
+        lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question, memory)
 
         # logic form execution
         return self.lf_executor.execute(question, lf_nodes, **kwargs)

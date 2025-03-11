@@ -1,5 +1,4 @@
 import logging
-import kag_ant
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 from kag.common.conf import KAG_CONFIG
@@ -43,7 +42,7 @@ class AffairQaDemo:
                 import traceback
 
                 logger.warning(
-                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data}"
+                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data} {e}"
                 )
                 return None
 
