@@ -1,5 +1,4 @@
 import logging
-import kag_ant
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 from kag.common.conf import KAG_CONFIG
@@ -9,6 +8,7 @@ from kag.common.benchmarks.evaluate import Evaluate
 from kag.solver.logic.solver_pipeline import SolverPipeline
 import json
 from tqdm import tqdm
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class AffairQaDemo:
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
                 return sample_idx, sample_id, prediction, metrics, traceLog
-            except Exception as e:
+            except Exception:
                 import traceback
 
                 logger.warning(
@@ -101,6 +101,34 @@ class AffairQaDemo:
         return res_metrics
 
 
+def get_next_result_filename(base_path):
+    """
+    Check if result file exists and automatically increment the number.
+    Example: if res8.json exists, return res9.json
+    """
+    dir_path = os.path.dirname(base_path)
+    base_name = os.path.basename(base_path)
+
+    # Extract the number from filename (assuming format is res{number}.json)
+    match = re.match(r"res(\d+)\.json", base_name)
+    if not match:
+        return base_path
+
+    current_num = int(match.group(1))
+
+    # Check if file exists, if yes, increment until finding a non-existent filename
+    new_num = current_num
+    new_path = base_path
+    while os.path.exists(new_path):
+        new_num += 1
+        new_path = os.path.join(dir_path, f"res{new_num}.json")
+
+    logger.info(
+        f"Result file incremented from res{current_num}.json to res{new_num}.json"
+    )
+    return new_path
+
+
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
 
@@ -113,11 +141,14 @@ if __name__ == "__main__":
     # print(f"TraceLog: {trace_log}")
 
     dir = os.path.dirname(os.path.abspath(__file__))
+    result_file_path = os.path.join(dir, "data/res7.json")
+    result_file_path = get_next_result_filename(result_file_path)
+
     res_metrics = demo.parallelQaAndEvaluate(
         qFilePath=os.path.join(dir, "data/test.json"),
         aFilePath=os.path.join(dir, "data/AffairQA.json"),
-        resFilePath=os.path.join(dir, "data/res4.json"),
-        threadNum=30,
+        resFilePath=result_file_path,
+        threadNum=10,
         upperLimit=-1,
     )
     print(res_metrics)
