@@ -38,7 +38,11 @@ def extract_admin_types(input_file, output_file):
                 admin_id = admin_id_map.get(admin_name, "")  # 获取对应的ID，如果没有则为空字符串
 
                 admin_types.append(
-                    {"行政区名称": admin_name, "行政区类型": admin_type, "行政区ID": admin_id}
+                    {
+                        "行政区名称": admin_name,
+                        "行政区类型": admin_type,
+                        "行政区ID": admin_id,
+                    }
                 )
 
     # 写入CSV文件

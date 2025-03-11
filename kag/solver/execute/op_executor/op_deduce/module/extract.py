@@ -7,14 +7,14 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.utils import init_prompt_with_fallback
 
 
-class ChoiceOp(OpExecutor):
+class ExtractOp(OpExecutor):
     def __init__(
         self,
         schema: SchemaUtils,
         **kwargs,
     ):
         super().__init__(schema, **kwargs)
-        self.prompt = init_prompt_with_fallback("deduce_choice", self.biz_scene)
+        self.prompt = init_prompt_with_fallback("deduce_extractor", self.biz_scene)
 
     def executor(
         self,

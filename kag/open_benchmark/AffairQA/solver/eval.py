@@ -39,11 +39,11 @@ class AffairQaDemo:
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
                 return sample_idx, sample_id, prediction, metrics, traceLog
-            except Exception:
+            except Exception as e:
                 import traceback
 
                 logger.warning(
-                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data}"
+                    f"process sample failed with error:{traceback.print_exc()}\nfor: {data} {e}"
                 )
                 return None
 

@@ -11,10 +11,13 @@
 # or implied.
 
 
+import json
 from openai import OpenAI, AzureOpenAI
 import logging
 
 from kag.interface import LLMClient
+from kag.interface.common.rate_limiter import RateLimiter
+from tenacity import retry, stop_after_attempt
 from typing import Callable
 
 logging.getLogger("openai").setLevel(logging.ERROR)
@@ -42,6 +45,8 @@ class OpenAIClient(LLMClient):
         stream: bool = False,
         temperature: float = 0.7,
         timeout: float = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs,
     ):
         """
         Initializes the OpenAIClient instance.
@@ -53,8 +58,11 @@ class OpenAIClient(LLMClient):
             stream (bool, optional): Whether to stream the response. Defaults to False.
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
 
+        super().__init__(rate_limiter, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -122,6 +130,31 @@ class OpenAIClient(LLMClient):
                     rsp += chunk.choices[0].delta.content
         return rsp
 
+    @retry(stop=stop_after_attempt(3))
+    def call_with_json_parse(self, prompt):
+        """
+        Calls the model and attempts to parse the response into JSON format.
+
+        Parameters:
+            prompt (str): The prompt provided to the model.
+
+        Returns:
+            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
+        """
+        # Call the model and attempt to parse the response into JSON format
+        rsp = self(prompt)
+        _end = rsp.rfind("```")
+        _start = rsp.find("```json")
+        if _end != -1 and _start != -1:
+            json_str = rsp[_start + len("```json") : _end].strip()
+        else:
+            json_str = rsp
+        try:
+            json_result = json.loads(json_str)
+        except:
+            return rsp
+        return json_result
+
 
 @LLMClient.register("azure_openai")
 class AzureOpenAIClient(LLMClient):
@@ -137,6 +170,8 @@ class AzureOpenAIClient(LLMClient):
         timeout: float = None,
         azure_ad_token: str = None,
         azure_ad_token_provider: AzureADTokenProvider = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs,
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -154,8 +189,11 @@ class AzureOpenAIClient(LLMClient):
             azure_ad_token_provider: A function that returns an Azure Active Directory token, will be invoked on every request.
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
 
+        super().__init__(rate_limiter, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.azure_deployment = azure_deployment
@@ -223,3 +261,28 @@ class AzureOpenAIClient(LLMClient):
             )
             rsp = response.choices[0].message.content
             return rsp
+
+    @retry(stop=stop_after_attempt(3))
+    def call_with_json_parse(self, prompt):
+        """
+        Calls the model and attempts to parse the response into JSON format.
+
+        Parameters:
+            prompt (str): The prompt provided to the model.
+
+        Returns:
+            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
+        """
+        # Call the model and attempt to parse the response into JSON format
+        rsp = self(prompt)
+        _end = rsp.rfind("```")
+        _start = rsp.find("```json")
+        if _end != -1 and _start != -1:
+            json_str = rsp[_start + len("```json") : _end].strip()
+        else:
+            json_str = rsp
+        try:
+            json_result = json.loads(json_str)
+        except:
+            return rsp
+        return json_result

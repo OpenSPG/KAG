@@ -14,6 +14,11 @@ from openai import OpenAI, AzureOpenAI
 from kag.interface import VectorizeModelABC, EmbeddingVector
 from typing import Callable
 
+from kag.common.rate_limiter.rate_limiter_ins import PeriodRateLimiter
+
+vector_limit = PeriodRateLimiter("vector_limit", 50, 1)
+
+
 @VectorizeModelABC.register("openai")
 class OpenAIVectorizeModel(VectorizeModelABC):
     """
@@ -46,6 +51,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
     def vectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
+        vector_limit.acquire()
         """
         Vectorizes a text string into an embedding vector or multiple text strings into multiple embedding vectors.
 
@@ -66,11 +72,12 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             assert len(results) == len(texts)
             return results
 
+
 @VectorizeModelABC.register("azure_openai")
 class AzureOpenAIVectorizeModel(VectorizeModelABC):
-    ''' A class that extends the VectorizeModelABC base class.
+    """A class that extends the VectorizeModelABC base class.
     It invokes Azure OpenAI or Azure OpenAI-compatible embedding services to convert texts into embedding vectors.
-    '''
+    """
 
     def __init__(
         self,
