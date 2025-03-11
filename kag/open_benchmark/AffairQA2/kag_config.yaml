@@ -1,30 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  type: ant_bailian
-  model: bailian-deepseek-v3 # bailian-deepseek-r1 bailian-deepseek-v3 qwen-max-latest
-  url: https://zdfmng-pre.alipay.com/commonQuery/queryData
-  key: gs540iivzezmidi3
-  visitDomain: BU_atlas
-  visitBiz: BU_atlas_leiwa
-  visitBizLine: BU_atlas_leiwa_line
-  cacheInterval: -1
+  type: maas
+  api_key: 
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
 
 chat_llm: &chat_llm
-  # type: ant_bailian
-  # model: bailian-deepseek-v3 # bailian-deepseek-r1 bailian-deepseek-v3 qwen-max-latest
-  # url: https://zdfmng-pre.alipay.com/commonQuery/queryData
-  # key: gs540iivzezmidi3
-  # visitDomain: BU_atlas
-  # visitBiz: BU_atlas_leiwa
-  # visitBizLine: BU_atlas_leiwa_line
-  # cacheInterval: -1
   type: maas
-  api_key: key
+  api_key: 
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   model: qwen-max-latest
 
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key: 
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
