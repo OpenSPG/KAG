@@ -43,9 +43,7 @@ class BuildExamplePipeline:
         )
 
     def build(self):
-        train_data_list = self.load_finqa_train_data() + self.load_finqa_train_data(
-            _type="test"
-        )
+        train_data_list = self.load_finqa_train_data(_type="dev")
         for i, item in enumerate(train_data_list):
             _id = item["id"]
             question = item["qa"]["question"]
@@ -86,14 +84,22 @@ class BuildExamplePipeline:
     def search_example(self, query, topn=3):
         rsts = self.collection.query(query_texts=[query], n_results=topn)
         examples = []
+        docs = []
+        for doc in rsts["documents"][0]:
+            docs.append(doc)
         for meta in rsts["metadatas"][0]:
             examples.append(meta["example"])
-        return examples
+        return examples, docs
 
 
 if __name__ == "__main__":
     resp = BuildExamplePipeline()
+    # last train index 3584
     resp.build()
-    # examples = resp.search_example("what is the total of home equity lines of credit")
+    # examples, docs = resp.search_example(
+    #     "what is the total of home equity lines of credit, tags=['Total Sum']"
+    # )
+    # for doc in docs:
+    #     print(doc)
     # for e in examples:
     #     print(e)

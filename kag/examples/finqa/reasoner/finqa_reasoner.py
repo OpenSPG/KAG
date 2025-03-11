@@ -1,7 +1,10 @@
 import logging
+import os
 import copy
 from typing import List, Dict, Tuple
 from multiprocessing import Pool
+
+import chromadb
 
 from kag.interface.solver.execute.lf_executor_abc import LFExecutorABC
 from kag.interface.solver.kag_reasoner_abc import KagReasonerABC
@@ -84,6 +87,35 @@ class FinQAReasoner(KagReasonerABC):
             "rerank_chunks", self.biz_scene
         )
 
+        self.question_classify_prompt = init_prompt_with_fallback(
+            "question_classify", self.biz_scene
+        )
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        chromadb_path = os.path.join(current_dir, "..", "dyna_shot", "chromadb")
+        self.chroma_client = chromadb.PersistentClient(path=chromadb_path)
+        self.collection = self.chroma_client.create_collection(
+            name="finqa_example", get_or_create=True
+        )
+
+    def question_classify(self, question):
+        llm: LLMClient = self.llm_module
+        params = {"question": question}
+        tags = llm.invoke(
+            variables=params,
+            prompt_op=self.question_classify_prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
+        return tags
+
+    def retrieval_examples(self, question, tags, topn=3):
+        doc = question + " tags=" + str(tags)
+        rsts = self.collection.query(query_texts=[doc], n_results=topn)
+        examples = []
+        for meta in rsts["metadatas"][0]:
+            examples.append(meta["example"])
+        return examples
+
     def reason(
         self,
         question: str,
@@ -91,8 +123,15 @@ class FinQAReasoner(KagReasonerABC):
         use_raw_query: bool = True,
         **kwargs,
     ):
+        tags = self.question_classify(question=question)
+        examples = self.retrieval_examples(question=question, tags=tags)
         step_index = -1
-        process_info = {"kg_solved_answer": [], "sub_qa_pair": [], "goal": question}
+        process_info = {
+            "kg_solved_answer": [],
+            "sub_qa_pair": [],
+            "goal": question,
+            "examples": examples,
+        }
         history = []
         while True:
             step_index += 1

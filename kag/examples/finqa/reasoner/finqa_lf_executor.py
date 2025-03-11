@@ -55,13 +55,14 @@ class FinQACoderMathOp(OpExecutor):
             "expression_builder", self.biz_scene
         )
 
-    def _run_onetime(self, question, content, error: str):
+    def _run_onetime(self, question, content, error: str, examples):
         llm: LLMClient = self.llm_module
         python_code = llm.invoke(
             {
                 "question": question,
                 "context": str(content),
                 "error": error,
+                "examples": examples,
             },
             self.expression_builder,
         )
@@ -105,12 +106,18 @@ class FinQACoderMathOp(OpExecutor):
         content_str = f"ParentQuestion:{process_info['goal']}\n"
         for q, a in history_qa_pair:
             content_str += f"SubQuestion:{q}\nDocs:{str(a)}"
+        example_list = process_info["examples"]
+        example_str = ""
+        for e in example_list:
+            example_str += f"{e}\n"
         target = logic_node.target if logic_node.target else logic_node.sub_query
         try_times = 3
         error = None
         while try_times > 0:
             try_times -= 1
-            rst, run_error, code = self._run_onetime(target, content_str, error)
+            rst, run_error, code = self._run_onetime(
+                target, content_str, error, example_str
+            )
             if rst is not None:
                 process_info[logic_node.sub_query]["debug"] = {
                     "code": code,

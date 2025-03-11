@@ -25,6 +25,7 @@ from kag.examples.finqa.solver.prompt.solve_question_without_spo import (
     SolveQuestionWithOutSPO,
 )
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
+from kag.examples.finqa.solver.prompt.question_classify import FinQAQuestionClassify
 
 
 def qa(question, _i, _id):
