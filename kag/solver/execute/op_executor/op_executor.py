@@ -6,11 +6,13 @@ from kag.interface.solver.base_model import LogicNode, LFPlan
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
+
 def get_lf_pan_by_node(lf_plans: List[LFPlan], lf_node: LogicNode):
     for lf in lf_plans:
         if lf.lf_node == lf_node:
             return lf
     return None
+
 
 class OpExecutor(KagBaseModule, ABC):
     """
@@ -30,8 +32,16 @@ class OpExecutor(KagBaseModule, ABC):
         super().__init__(**kwargs)
         self.schema = schema
 
-    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
-                 history: List[LFPlan], param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        lf_plan: LFPlan,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        history: List[LFPlan],
+        param: dict,
+    ) -> Dict:
         """
         Executes the operation based on the given logic node.
 

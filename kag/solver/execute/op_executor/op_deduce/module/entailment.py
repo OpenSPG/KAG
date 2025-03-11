@@ -16,11 +16,25 @@ class EntailmentOp(OpExecutor):
         super().__init__(schema, **kwargs)
         self.prompt = init_prompt_with_fallback("deduce_entail", self.biz_scene)
 
-    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
-                 history: List[LFPlan], param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        lf_plan: LFPlan,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        history: List[LFPlan],
+        param: dict,
+    ) -> Dict:
         history_qa_pair = process_info.get("sub_qa_pair", [])
-        input_contents = process_info[lf_plan.lf_node.sub_query].get("input_contents", '')
-        content = input_contents if input_contents else "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
+        input_contents = process_info[lf_plan.lf_node.sub_query].get(
+            "input_contents", ""
+        )
+        content = (
+            input_contents
+            if input_contents
+            else "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
+        )
         if_answered, answer = self.llm_module.invoke(
             {"instruction": lf_plan.lf_node.sub_query, "memory": content},
             self.prompt,

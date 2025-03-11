@@ -85,7 +85,9 @@ class DefaultLFPlanner(LFPlannerABC):
                 lf_type = "math"
             elif n.operator == "get":
                 lf_type = "output"
-            plan_result.append(LFPlan(query=n.sub_query, lf_node=n, sub_query_type=lf_type))
+            plan_result.append(
+                LFPlan(query=n.sub_query, lf_node=n, sub_query_type=lf_type)
+            )
         return plan_result
 
     def _process_output_query(self, question, sub_query: str):
@@ -101,7 +103,9 @@ class DefaultLFPlanner(LFPlannerABC):
         # process sub query
         sub_querys = [self._process_output_query(question, q) for q in sub_querys]
         if len(sub_querys) != len(logic_forms):
-            raise RuntimeError(f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}")
+            raise RuntimeError(
+                f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}"
+            )
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )

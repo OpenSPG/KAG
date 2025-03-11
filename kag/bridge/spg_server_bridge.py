@@ -70,14 +70,14 @@ class SPGServerBridge:
         return VectorizeModelConfigChecker().check(vec_config)
 
     def run_solver(
-            self,
-            project_id,
-            session_id,
-            task_id,
-            query,
-            func_name="invoke",
-            is_report=True,
-            host_addr="http://127.0.0.1:8887",
+        self,
+        project_id,
+        session_id,
+        task_id,
+        query,
+        func_name="invoke",
+        is_report=True,
+        host_addr="http://127.0.0.1:8887",
     ):
         from kag.solver.main_solver import SolverMain
 

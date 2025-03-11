@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 AzureADTokenProvider = Callable[[], str]
 
+
 @LLMClient.register("maas")
 @LLMClient.register("openai")
-
 class OpenAIClient(LLMClient):
     """
     A client class for interacting with the OpenAI API.
@@ -46,7 +46,7 @@ class OpenAIClient(LLMClient):
         temperature: float = 0.7,
         timeout: float = None,
         rate_limiter: RateLimiter = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the OpenAIClient instance.
@@ -154,8 +154,10 @@ class OpenAIClient(LLMClient):
         except:
             return rsp
         return json_result
+
+
 @LLMClient.register("azure_openai")
-class AzureOpenAIClient (LLMClient):
+class AzureOpenAIClient(LLMClient):
     def __init__(
         self,
         api_key: str,
@@ -169,7 +171,7 @@ class AzureOpenAIClient (LLMClient):
         azure_ad_token: str = None,
         azure_ad_token_provider: AzureADTokenProvider = None,
         rate_limiter: RateLimiter = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -202,7 +204,15 @@ class AzureOpenAIClient (LLMClient):
         self.api_version = api_version
         self.azure_ad_token = azure_ad_token
         self.azure_ad_token_provider = azure_ad_token_provider
-        self.client = AzureOpenAI(api_key=self.api_key, base_url=self.base_url,azure_deployment=self.azure_deployment ,model=self.model,api_version=self.api_version, azure_ad_token=self.azure_ad_token, azure_ad_token_provider=self.azure_ad_token_provider)
+        self.client = AzureOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            azure_deployment=self.azure_deployment,
+            model=self.model,
+            api_version=self.api_version,
+            azure_ad_token=self.azure_ad_token,
+            azure_ad_token_provider=self.azure_ad_token_provider,
+        )
         self.check()
 
     def __call__(self, prompt: str, image_url: str = None):
@@ -251,6 +261,7 @@ class AzureOpenAIClient (LLMClient):
             )
             rsp = response.choices[0].message.content
             return rsp
+
     @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt):
         """
