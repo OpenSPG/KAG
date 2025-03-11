@@ -2,7 +2,7 @@ import pandas as pd
 from collections import defaultdict
 import os
 
-# 读取 txt 文件
+
 def parse_txt_file(file_path):
     data_dict = defaultdict(lambda: defaultdict(dict))
     current_name = None
