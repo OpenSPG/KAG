@@ -102,8 +102,6 @@ class Environment:
 
     @property
     def host_addr(self):
-        if os.getenv("KAG_PROJECT_HOST_ADDR"):
-            return os.getenv("KAG_PROJECT_HOST_ADDR")
         host_addr = self.project_config.get("host_addr", None)
         if host_addr is None:
             host_addr = DEFAULT_HOST_ADDR
