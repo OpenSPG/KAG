@@ -15,8 +15,16 @@ class GetExecutor(OpExecutor):
     def __init__(self, schema: SchemaUtils, **kwargs):
         super().__init__(schema, **kwargs)
 
-    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
-                 history: List[LFPlan], param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        lf_plan: LFPlan,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        history: List[LFPlan],
+        param: dict,
+    ) -> Dict:
         kg_qa_result = []
         if not isinstance(lf_plan.lf_node, GetNode):
             return process_info[lf_plan.lf_node.sub_query]

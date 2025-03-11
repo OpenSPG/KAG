@@ -8,6 +8,7 @@ from kag.interface import VectorizeModelABC as Vectorizer
 
 logger = logging.getLogger()
 
+
 def cosine_similarity(vector1, vector2):
     cosine = np.dot(vector1, vector2) / (
         np.linalg.norm(vector1) * np.linalg.norm(vector2)
@@ -66,10 +67,14 @@ class TextSimilarity:
                     ret.append(tmp_map[text])
             return ret
         except Exception as e:
-            logger.warning(f"sentence_encode failed sentences {sentences}, {e}", exc_info=True)
+            logger.warning(
+                f"sentence_encode failed sentences {sentences}, {e}", exc_info=True
+            )
             raise e
 
-    def text_sim_result(self, mention, candidates: List[str], topk=1, low_score=0.63, is_cached=False):
+    def text_sim_result(
+        self, mention, candidates: List[str], topk=1, low_score=0.63, is_cached=False
+    ):
         """
         output: [(candi_name, candi_score),...]
         """

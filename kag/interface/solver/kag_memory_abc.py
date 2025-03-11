@@ -6,7 +6,9 @@ from kag.interface.solver.base_model import LFExecuteResult
 
 class KagMemoryABC(KagBaseModule, ABC):
     @abstractmethod
-    def save_memory(self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult):
+    def save_memory(
+        self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult
+    ):
         """
         Saves the solved answer, supporting facts, and instruction.
 

@@ -232,8 +232,10 @@ class SchemaFreeExtractor(ExtractorABC):
 
         def get_category_and_name(entities_data, entity_name):
             for entity in entities_data:
-                if processing_phrases(entity["name"]) == processing_phrases(entity_name):
-                    return entity["category"], entity['name']
+                if processing_phrases(entity["name"]) == processing_phrases(
+                    entity_name
+                ):
+                    return entity["category"], entity["name"]
             return None, None
 
         for tri in triples:

@@ -131,7 +131,9 @@ class FuzzyMatchRetrieval:
         revert_graph_map = {}
 
         for one_hop_graph in one_hop_graph_list:
-            for k, v_set in one_hop_graph.get_s_all_relation_spo(len(n.p.value_list) != 0, self.language).items():
+            for k, v_set in one_hop_graph.get_s_all_relation_spo(
+                len(n.p.value_list) != 0, self.language
+            ).items():
                 for v in v_set:
                     all_spo_text.append(v)
                     revert_value_p_map[v] = k
@@ -176,7 +178,9 @@ class FuzzyMatchRetrieval:
             if std_p is None or std_p == "":
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
-            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text, len(n.p.value_list) != 0, self.language)
+            rel_set = one_hop_graph.get_std_p_value_by_spo_text(
+                std_p, std_spo_text, len(n.p.value_list) != 0, self.language
+            )
             one_kg_graph_ = KgGraph()
             recall_alias_name = (
                 n.s.alias_name if one_hop_graph.s_alias_name == "s" else n.o.alias_name
@@ -320,11 +324,14 @@ class DefaultFuzzyKgRetriever(FuzzyKgRetriever, ABC):
             kwargs=kwargs,
         )
         matched_entity_list = el_entities
-        for p,o,op in mention_entity.value_list:
+        for p, o, op in mention_entity.value_list:
             tmp_spo = GetSPONode.parse_node(
-                f"s=s1:{mention_entity.get_entity_first_type_or_un_std()}[{mention_entity.entity_name}],p=p1:{p},o=o1:Entity[{o}]")
+                f"s=s1:{mention_entity.get_entity_first_type_or_un_std()}[{mention_entity.entity_name}],p=p1:{p},o=o1:Entity[{o}]"
+            )
             tmp_spo.sub_query = f"{mention_entity.entity_name} {p} {op} {o}"
-            recalled_datas: List[OneHopGraphData] = self.recall_one_hop_graph(tmp_spo, matched_entity_list, [])
+            recalled_datas: List[OneHopGraphData] = self.recall_one_hop_graph(
+                tmp_spo, matched_entity_list, []
+            )
             s_kg_graph = self.retrieval_relation(tmp_spo, recalled_datas)
             s_kg_graph.nodes_alias.append(tmp_spo.s.alias_name)
             s_kg_graph.nodes_alias.append(tmp_spo.o.alias_name)

@@ -22,9 +22,19 @@ class OutputExecutor(OpExecutor):
     def is_this_op(self, logic_node: LogicNode) -> bool:
         return isinstance(logic_node, GetNode)
 
-    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
-                 history: List[LFPlan], param: dict) -> Dict:
+    def executor(
+        self,
+        nl_query: str,
+        lf_plan: LFPlan,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        history: List[LFPlan],
+        param: dict,
+    ) -> Dict:
         op = self.op_register_map.get(lf_plan.lf_node.operator, None)
         if op is None:
             return {}
-        return op.executor(nl_query, lf_plan, req_id, kg_graph, process_info, history, param)
+        return op.executor(
+            nl_query, lf_plan, req_id, kg_graph, process_info, history, param
+        )

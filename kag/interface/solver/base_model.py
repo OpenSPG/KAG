@@ -182,13 +182,13 @@ class SPORelation(SPOBase):
 
 class SPOEntity(SPOBase):
     def __init__(
-            self,
-            entity_id=None,
-            std_entity_type=None,
-            un_std_entity_type=None,
-            entity_name=None,
-            alias_name=None,
-            is_attribute=False,
+        self,
+        entity_id=None,
+        std_entity_type=None,
+        un_std_entity_type=None,
+        entity_name=None,
+        alias_name=None,
+        is_attribute=False,
     ):
         super().__init__()
         self.is_attribute = is_attribute
@@ -277,12 +277,12 @@ class SPOEntity(SPOBase):
 
 class Entity:
     def __init__(
-            self,
-            entity_id=None,
-            entity_type=None,
-            entity_type_zh=None,
-            entity_name=None,
-            alias_name=None,
+        self,
+        entity_id=None,
+        entity_type=None,
+        entity_type_zh=None,
+        entity_name=None,
+        alias_name=None,
     ):
         self.id = entity_id
         self.type = entity_type
@@ -294,7 +294,7 @@ class Entity:
         return f"{[self.entity_name, self.alias_name]}:{self.id}({self.type, self.entity_type_zh})"
 
     def save_args(
-            self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
+        self, id=None, type=None, entity_type_zh=None, entity_name=None, alias_name=None
     ):
         self.id = id if id else self.id
         self.type = type if type else self.type
@@ -370,12 +370,14 @@ class SubQueryResult:
             "spo_retrieved": [str(spo) for spo in self.spo_retrieved],
             "match_type": self.match_type,
             "execute_cost": self.execute_cost,
-            "debug_info": self.debug_info
+            "debug_info": self.debug_info,
         }
+
     def get_qa_pair(self):
         if self.if_answered:
             return f"{self.sub_query}\n {self.sub_answer}"
         return None
+
 
 class LFPlan:
     def __init__(self, query: str, lf_node: LogicNode, sub_query_type: str):
@@ -416,7 +418,10 @@ class LFExecuteResult:
     def get_deduce_failed_step_query(self):
         for sub_plan in self.sub_plans:
             sub_res = sub_plan.res
-            if not sub_res.if_answered  and sub_plan.sub_query_type in ['math', 'deduce']:
+            if not sub_res.if_answered and sub_plan.sub_query_type in [
+                "math",
+                "deduce",
+            ]:
                 return f"Q:{sub_res.sub_query} A:{sub_res.sub_answer}"
         return None
 
@@ -430,7 +435,11 @@ class LFExecuteResult:
             i = 0
             for sub_plan in self.sub_plans:
                 sub_res = sub_plan.res
-                if sub_res.sub_answer is None or "i don't know" in sub_res.sub_answer.lower() or sub_res.sub_answer == "":
+                if (
+                    sub_res.sub_answer is None
+                    or "i don't know" in sub_res.sub_answer.lower()
+                    or sub_res.sub_answer == ""
+                ):
                     failed_sub_query.append(sub_res)
                 facts.append(
                     f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}"

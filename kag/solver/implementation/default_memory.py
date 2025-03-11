@@ -72,7 +72,9 @@ class DefaultMemory(KagMemoryABC):
                 return True
         return False
 
-    def save_memory(self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult):
+    def save_memory(
+        self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult
+    ):
         self.lf_res = lf_res
         if solved_answer:
             self.exact_answer.append(solved_answer)

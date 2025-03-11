@@ -40,8 +40,6 @@ class LogicFormPlanPrompt(PromptABC):
         }
         ],"""
 
-
-
     instruct_en = """    "instruction": "",
     "function_description": "functionName is operator name;the function format is functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
     "function": [
@@ -90,7 +88,6 @@ class LogicFormPlanPrompt(PromptABC):
         }
     ],"""
 
-
     def __init__(self, **kwargs):
         self.template_zh = f"""
         {{
@@ -120,7 +117,6 @@ class LogicFormPlanPrompt(PromptABC):
             """
         super().__init__(**kwargs)
 
-
     @property
     def template_variables(self) -> List[str]:
         return ["question"]
@@ -139,7 +135,7 @@ class LogicFormPlanPrompt(PromptABC):
                     if sub_querys_regex is not None:
                         sub_querys.append(sub_querys_regex.group(1))
                         current_sub_query = sub_querys_regex.group(1)
-                        if current_sub_query == '':
+                        if current_sub_query == "":
                             raise RuntimeError(f"{line} is not step query")
                 elif line.startswith("Output"):
                     sub_querys.append("output")

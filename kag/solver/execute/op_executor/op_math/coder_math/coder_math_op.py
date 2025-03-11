@@ -15,9 +15,12 @@ from kag.solver.utils import init_prompt_with_fallback
 
 
 class CoderMathOp(OpExecutor):
-    def __init__(self, schema: SchemaUtils,**kwargs):
+    def __init__(self, schema: SchemaUtils, **kwargs):
         super().__init__(schema, **kwargs)
-        self.expression_builder =init_prompt_with_fallback("expression_builder", self.biz_scene)
+        self.expression_builder = init_prompt_with_fallback(
+            "expression_builder", self.biz_scene
+        )
+
     def _run_onetime(self, question, content, error: str):
         llm: LLMClient = self.llm_module
         python_code = llm.invoke(
@@ -53,11 +56,18 @@ class CoderMathOp(OpExecutor):
             return None, stderr_value, python_code
         return stdout_value, None, python_code
 
-    def execute_with_retry(self, logic_node: MathNode, kg_graph: KgGraph, process_info: Dict, req_id: str, param: dict):
+    def execute_with_retry(
+        self,
+        logic_node: MathNode,
+        kg_graph: KgGraph,
+        process_info: Dict,
+        req_id: str,
+        param: dict,
+    ):
         content = logic_node.content
         nodes_alias = kg_graph.nodes_alias
         try:
-            content_l = re.findall('`(.*?)`', content)
+            content_l = re.findall("`(.*?)`", content)
         except Exception as e:
             # breakpoint()
             content_l = []
@@ -70,7 +80,7 @@ class CoderMathOp(OpExecutor):
                 continue
             contents.append(c)
         history_qa_pair = process_info.get("sub_qa_pair", [])
-        contents = '\n'.join(contents) if contents else history_qa_pair
+        contents = "\n".join(contents) if contents else history_qa_pair
         target = logic_node.target if logic_node.target else logic_node.sub_query
         try_times = 3
         error = None
@@ -78,29 +88,36 @@ class CoderMathOp(OpExecutor):
             try_times -= 1
             rst, run_error, code = self._run_onetime(target, contents, error)
             if rst is not None:
-                process_info[logic_node.sub_query]['debug'] = {
-                    'code': code,
-                    'rst': rst,
-                    'error': run_error
+                process_info[logic_node.sub_query]["debug"] = {
+                    "code": code,
+                    "rst": rst,
+                    "error": run_error,
                 }
                 return rst
             error = f"code:\n{code}\nerror:\n{run_error}"
             print("code=" + str(code) + ",error=" + str(run_error))
-            if 'debug'  not in process_info[logic_node.sub_query]:
-                process_info[logic_node.sub_query]['debug'] = []
-            process_info[logic_node.sub_query]['debug'].append({
-                'code': code,
-                'rst': rst,
-                'error': run_error
-            })
+            if "debug" not in process_info[logic_node.sub_query]:
+                process_info[logic_node.sub_query]["debug"] = []
+            process_info[logic_node.sub_query]["debug"].append(
+                {"code": code, "rst": rst, "error": run_error}
+            )
         return "I don't know"
-    
-    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
-                 history: List[LFPlan], param: dict) -> Dict:
-        result = self.execute_with_retry(lf_plan.lf_node, kg_graph, process_info, req_id, param)
-        lf_plan.res.debug_info = process_info[lf_plan.lf_node.sub_query]['debug']
-        return  {
-            "if_answered": False if "i don't know" in result.lower() else True,
-            "answer": result
-        }
 
+    def executor(
+        self,
+        nl_query: str,
+        lf_plan: LFPlan,
+        req_id: str,
+        kg_graph: KgGraph,
+        process_info: dict,
+        history: List[LFPlan],
+        param: dict,
+    ) -> Dict:
+        result = self.execute_with_retry(
+            lf_plan.lf_node, kg_graph, process_info, req_id, param
+        )
+        lf_plan.res.debug_info = process_info[lf_plan.lf_node.sub_query]["debug"]
+        return {
+            "if_answered": False if "i don't know" in result.lower() else True,
+            "answer": result,
+        }

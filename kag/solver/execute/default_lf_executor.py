@@ -75,17 +75,25 @@ class DefaultLFExecutor(LFExecutorABC):
         lf: LFPlan,
         process_info: Dict,
         kg_graph: KgGraph,
-        history: List[LFPlan]
+        history: List[LFPlan],
     ) -> SubQueryResult:
         # Execute graph retrieval operations.
         if self.retrieval_executor.is_this_op(lf.lf_node):
-            self.retrieval_executor.executor(query, lf, req_id, kg_graph, process_info, history, self.params)
+            self.retrieval_executor.executor(
+                query, lf, req_id, kg_graph, process_info, history, self.params
+            )
         elif self.deduce_executor.is_this_op(lf.lf_node):
-            self.deduce_executor.executor(query, lf, req_id, kg_graph, process_info, history, self.params)
+            self.deduce_executor.executor(
+                query, lf, req_id, kg_graph, process_info, history, self.params
+            )
         elif self.math_executor.is_this_op(lf.lf_node):
-            self.math_executor.executor(query, lf, req_id, kg_graph, process_info, history, self.params)
+            self.math_executor.executor(
+                query, lf, req_id, kg_graph, process_info, history, self.params
+            )
         elif self.output_executor.is_this_op(lf.lf_node):
-            self.output_executor.executor(query, lf, req_id, kg_graph, process_info, history, self.params)
+            self.output_executor.executor(
+                query, lf, req_id, kg_graph, process_info, history, self.params
+            )
         else:
             logger.warning(f"unknown operator: {lf.lf_node.operator}")
         lf.res.is_executed = True
@@ -139,7 +147,9 @@ class DefaultLFExecutor(LFExecutorABC):
         )
         return res, is_break
 
-    def execute_kg_retrieval_first(self, req_id, query, lf_nodes: List[LFPlan],process_info, kg_graph, history) -> List[LFPlan]:
+    def execute_kg_retrieval_first(
+        self, req_id, query, lf_nodes: List[LFPlan], process_info, kg_graph, history
+    ) -> List[LFPlan]:
         # execute kg retriever first
         lf_set = []
         for lf in lf_nodes:
@@ -149,13 +159,9 @@ class DefaultLFExecutor(LFExecutorABC):
                 )
         return lf_set
 
-
     def execute(self, query, lf_nodes: List[LFPlan], **kwargs) -> LFExecuteResult:
         self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
-        process_info = {
-            "kg_solved_answer": [],
-            "sub_qa_pair": []
-        }
+        process_info = {"kg_solved_answer": [], "sub_qa_pair": []}
         kg_graph = KgGraph()
         history = []
         # Process each sub-query.
@@ -171,12 +177,13 @@ class DefaultLFExecutor(LFExecutorABC):
                 "kg_answer": "",
             }
         self.execute_kg_retrieval_first(
-                req_id=generate_random_string(10),
-                query=query,
-                lf_nodes=lf_nodes,
-                process_info=process_info,
-                kg_graph=kg_graph,
-                history=history)
+            req_id=generate_random_string(10),
+            query=query,
+            lf_nodes=lf_nodes,
+            process_info=process_info,
+            kg_graph=kg_graph,
+            history=history,
+        )
         for idx, lf in enumerate(lf_nodes):
             sub_result, is_break = self._execute_lf(
                 req_id=generate_random_string(10),
@@ -189,10 +196,7 @@ class DefaultLFExecutor(LFExecutorABC):
                 **kwargs,
             )
             lf.res = sub_result
-            process_info['sub_qa_pair'].append([
-                lf.query,
-                sub_result.sub_answer
-            ])
+            process_info["sub_qa_pair"].append([lf.query, sub_result.sub_answer])
             history.append(lf)
             if is_break:
                 break
