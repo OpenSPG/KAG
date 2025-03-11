@@ -14,7 +14,7 @@ import logging
 from ollama import Client
 
 from kag.interface import LLMClient
-
+from kag.interface.common.rate_limiter import RateLimiter
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -34,6 +34,8 @@ class OllamaClient(LLMClient):
         model: str,
         base_url: str,
         timeout: float = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs
     ):
         """
         Initializes the OllamaClient instance.
@@ -42,7 +44,11 @@ class OllamaClient(LLMClient):
             model (str): The model to use for requests.
             base_url (str): The base URL for the Ollama API.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
+
+        super().__init__(rate_limiter, **kwargs)
         self.model = model
         self.base_url = base_url
         self.timeout = timeout
