@@ -1,4 +1,4 @@
-namespace AffairQA2
+namespace AffairQA
 
 Chunk(文本块): EntityType
      desc: A chunk refers to a segment of text.

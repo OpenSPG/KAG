@@ -30,7 +30,7 @@ project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
   language: zh
-  namespace: AffairQA2
+  namespace: AffairQA
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
