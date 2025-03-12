@@ -1,14 +1,57 @@
-from typing import List
+import knext.common.cache
+import logging
+from typing import List, Dict
 
-from kag.interface import ToolABC
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import ToolABC, VectorizeModelABC
+from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+
+from knext.schema.client import CHUNK_TYPE
+
+logger = logging.getLogger()
+chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
+
 
 @ToolABC.register("vector_chunk_retriever")
 class VectorChunkRetriever(ToolABC):
-    def __init__(self):
+    def __init__(self, vectorize_model: VectorizeModelABC = None,
+                 search_api: SearchApiABC = None):
         super().__init__()
+        self.vectorize_model = vectorize_model
+        self.search_api = search_api
+        self.schema: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
 
-    def invoke(self, query, top_k:int, **kwargs)->List[str]:
-        raise NotImplementedError("invoke not implemented yet.")
+    def invoke(self, query, top_k: int, **kwargs) -> Dict[str, dict]:
+        try:
+            scores = chunk_cached_by_query_map.get(query)
+            if scores and len(scores) > top_k:
+                return scores
+            query_vector = self.vectorize_model.vectorize(query)
+            top_k_docs = self.search_api.search_vector(
+                label=self.schema.get_label_within_prefix(CHUNK_TYPE),
+                property_key="content",
+                query_vector=query_vector,
+                topk=top_k,
+            )
+            scores = {item["node"]["id"]: {
+                'score': item["score"],
+                'content': item["node"]["content"],
+                'name': item["node"]["name"],
+            } for item in top_k_docs}
+            chunk_cached_by_query_map.put(query, scores)
+        except Exception as e:
+            scores = dict()
+            logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
+        return scores
 
     def schema(self):
         return {

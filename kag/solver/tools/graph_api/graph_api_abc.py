@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Dict, List
 
 from kag.common.registry import Registrable
-from kag.interface.solver.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity, SPOBase
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     EntityData,
     OneHopGraphData,
@@ -13,6 +13,22 @@ from kag.solver.tools.graph_api.model.table_model import TableData
 def replace_qota(s: str):
     return s.replace('"', '\\"')
 
+def generate_label(s: SPOBase, heads: List[EntityData], schema):
+    if heads:
+        return list(set([f"{h.type}" for h in heads]))
+
+    if not isinstance(s, SPOEntity):
+        return ["Entity"]
+
+    std_types = s.get_entity_type_set()
+    std_types_with_prefix = []
+    for std_type in std_types:
+        std_type_with_prefix = schema.get_label_within_prefix(std_type)
+        if std_types_with_prefix != std_type:
+            std_types_with_prefix.append(f"`{std_type_with_prefix}`")
+    if len(std_types_with_prefix):
+        return list(set(std_types_with_prefix))
+    return ["Entity"]
 
 def generate_gql_id_params(ids: List[str]):
     s_biz_id_set = [f'"{replace_qota(biz_id)}"' for biz_id in ids]
