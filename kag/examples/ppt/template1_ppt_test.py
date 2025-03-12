@@ -41,21 +41,28 @@ def demo_test():
 
 if __name__ == '__main__':
     # 验证ppt功能测试
-    demo_test()
+    # demo_test()
 
-    # # 解析输入文本为 JSON 格式
-    # parsed_json_data = PPTUtils.parse_text_to_json(text_file='doc.txt', output_file='output.json')
-    #
-    # from template1.content_creator import ContentPPTCreator
-    #
-    # # 创建内容生成器
-    # content_creator = ContentPPTCreator('template1/中国风背景.pptx')
-    # for page in parsed_json_data["pages"]:
-    #     title = page.get("title", "无标题")
-    #     content = page.get("content", [])
-    #     content_creator.add_multi_column_slide(title, content)
-    #
-    #
-    # content_creator.save('output——1.pptx')
+    # 解析输入文本为 JSON 格式
+    parsed_json_data = PPTUtils.parse_text_to_json(text_file='doc.txt', output_file='output.json')
 
-    # print(f"JSON 文件已保存到 output.json")
+    # 创建内容生成器
+    from template1.ppt_manager import PPTManager
+    ppt_manager = PPTManager('template1/中国风背景.pptx')
+
+
+    with open("output.json", "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    title = data.get("title", "无标题")
+    ppt_manager.creators['title'].add_title_slide(title, '语言与机器智能部-知识引擎')
+    attributes = data.get("attributes", [])
+    ppt_manager.creators['content'].add_content_slide('目录', attributes)
+    pages = data.get("pages", [])
+    for page in pages:
+        page_title = page.get("title", "无标题")
+        content = page.get("content", [])
+        ppt_manager.creators['content'].add_multi_column_slide(page_title, content)
+
+    ppt_manager.save('服装制作.pptx')
+
