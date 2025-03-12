@@ -9,7 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import asyncio
 from abc import ABC, abstractmethod
 from kag.common.registry import Registrable
 
@@ -39,7 +39,19 @@ class ExecutorABC(Registrable):
         raise NotImplementedError("invoke not implemented yet.")
 
     async def ainvoke(self, query, task, context, **kwargs):
-        raise NotImplementedError("ainvoke not implemented yet.")
+        return await asyncio.to_thread(self.invoke(query, task, context, **kwargs))
 
     def schema(self):
-        return {}
+        return {
+            "name": "Dummy",
+            "description": "",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "User-provided query for retrieval.",
+                    },
+                },
+            },
+        }
