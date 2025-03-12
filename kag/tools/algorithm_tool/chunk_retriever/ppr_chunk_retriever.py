@@ -206,7 +206,6 @@ class PprChunkRetriever(ToolABC):
                         break
         except Exception as e:
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
-        logger.debug(f"matched_docs: {matched_docs}")
         return matched_docs
     def invoke(self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs)->List[str]:
         chunk_nums = top_k * 20

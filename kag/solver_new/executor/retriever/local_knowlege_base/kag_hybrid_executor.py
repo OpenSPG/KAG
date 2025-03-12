@@ -3,7 +3,7 @@ from typing import List, Any
 from kag.builder.prompt.utils import init_prompt_with_fallback
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import ExecutorABC, LLMClient, ExecutorResponse, PromptABC
-from kag.interface.solver.base_model import SPOEntity, SPORelation
+from kag.interface.solver.base_model import SPOEntity, SPORelation, LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
     EntityData,
@@ -131,6 +131,27 @@ class KagHybridExecutor(ExecutorABC):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
 
+    def _process_output_query(self, question, sub_query: str):
+        if sub_query is None:
+            return question
+        if "output" == sub_query.lower():
+            return f"output `{question}` answer:"
+        return sub_query
+
+    def _parse_lf(self, question, sub_querys, logic_forms) -> List[GetSPONode]:
+        if sub_querys is None:
+            sub_querys = []
+        # process sub query
+        sub_querys = [self._process_output_query(question, q) for q in sub_querys]
+        if len(sub_querys) != len(logic_forms):
+            raise RuntimeError(
+                f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}"
+            )
+        return self.logic_node_parser.parse_logic_form_set(
+            logic_forms, sub_querys, question
+        )
+
+
     def _trans_query_to_logic_form(self, query: str, context: str) -> List[GetSPONode]:
         """Convert user query to logical form (SPO nodes)
 
@@ -144,33 +165,13 @@ class KagHybridExecutor(ExecutorABC):
         Note:
             Method is currently unimplemented and returns empty list
         """
-        response = self.llm_client.invoke(
+        sub_queries, lf_nodes_str = self.llm_client.invoke(
             {"question": query, "context": context},
             self.lf_trans_prompt,
-            with_json_parse=True,
+            with_json_parse=False,
             with_except=True,
         )
-        sub_queries = []
-        lf_nodes_str = []
-        for res_lf in response:
-            def generate_node(node:dict):
-                ret = node["alias"]
-                if "type" not in node:
-                    return ret
-                ret = f"{ret}:{node['type']}"
-                if "name" not in node:
-                    return ret
-                return f"{ret}[{node['name']}]"
-
-            def generate_rel(rel: dict):
-                ret = rel["alias"]
-                if "type" not in rel:
-                    return ret
-                return f"{ret}:{rel['type']}"
-            lf_nodes_str.append(f"get_spo(s={generate_node(node=res_lf['s'])}, p={generate_rel(res_lf['p'])}, o={generate_node(node=res_lf['o'])})")
-            sub_queries.append(res_lf["sub_query"])
-        return self.logic_node_parser.parse_logic_form_set(input_str_set=lf_nodes_str, sub_querys=sub_queries, question=query)
-
+        return self._parse_lf(question=query, sub_querys=sub_queries, logic_forms=lf_nodes_str)
 
     def invoke(
         self, query: str, task: Any, context: dict, **kwargs
@@ -269,7 +270,8 @@ class KagHybridExecutor(ExecutorABC):
         self._store_lf_node_structure(kg_graph, logic_node)
         head_entities = self._find_head_entities(kg_graph, logic_node)
         tail_entities = self._find_tail_entities(kg_graph, logic_node)
-
+        if len(head_entities) == 0 or len(tail_entities) == 0:
+            return
         self._retrieve_relations(kg_graph=kg_graph, logic_node=logic_node, head_entities=head_entities, tail_entities=tail_entities)
 
     def _store_lf_node_structure(self, kg_graph: KgGraph, logic_node: GetSPONode):
