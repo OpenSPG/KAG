@@ -42,7 +42,7 @@ class RetrievalExecutor(OpExecutor):
         param: dict,
     ) -> Dict:
         op = self.op_register_map.get(logic_node.operator, None)
-        if op is None:
+        if not op:
             return {}
         try:
             op.executor(nl_query, logic_node, req_id, kg_graph, process_info, param)
