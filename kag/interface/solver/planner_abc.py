@@ -90,7 +90,9 @@ class PlannerABC(Registrable):
         return None
 
     def create_tasks_from_dag(self, task_dag: Dict[str, dict]):
-        """create tasks from a dag, e.g. :
+        """create tasks from a dag"""
+        """
+        An example task dag: 
         {
             0: {
                 "executor": "call_kg_retriever",
@@ -115,7 +117,10 @@ class PlannerABC(Registrable):
                 "arguments": {"query": "请根据上下文信息，生成问题“张学友和刘德华共同出演过哪些电影”的详细答案"},
             },
         }
+
+
         """
+
         # create all Task objects
         task_map = {}
         for task_order, task_info in task_dag.items():
