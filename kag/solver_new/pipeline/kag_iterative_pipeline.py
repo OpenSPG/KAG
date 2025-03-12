@@ -16,9 +16,9 @@ from kag.interface import (
     SolverPipelineABC,
     PlannerABC,
     ExecutorABC,
+    GeneratorABC,
     Context,
 )
-from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
 
 
 @SolverPipelineABC.register("kag_iterative_pipeline")
@@ -27,7 +27,7 @@ class KAGIterativePipeline(SolverPipelineABC):
         self,
         planner: PlannerABC,
         executors: List[ExecutorABC],
-        generator: KAGGeneratorABC,
+        generator: GeneratorABC,
         max_iteration: int = 10,
     ):
         super().__init__()
@@ -48,8 +48,14 @@ class KAGIterativePipeline(SolverPipelineABC):
 
     @retry(stop=stop_after_attempt(3))
     async def planning(self, query, context, **kwargs):
-        task = self.planner.invoke(query, context=context, **kwargs)[0]
-        context.append_task(task)
+        task = await self.planner.ainvoke(
+            query,
+            context=context,
+            executors=[x.schema() for x in self.executors],
+            **kwargs,
+        )
+        if isinstance(task, list):
+            task = task[0]
         executor = self.select_executor(task.executor)
         if not executor:
             raise ValueError(f"Executor {task.executor} not in acceptable executors.")
@@ -67,7 +73,6 @@ class KAGIterativePipeline(SolverPipelineABC):
                 break
             context.append_task(task)
             await executor.ainvoke(query, task, context, **kwargs)
-
         if success:
-            answer = self.generator.generate(query, context)
+            answer = await self.generator.ainvoke(query, context)
             return answer
