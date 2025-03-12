@@ -31,6 +31,7 @@ class BuilderClient(Client):
             sub_graph=sub_graph,
             operation=operation,
             enable_lead_to=lead_to_builder,
+            token="openspg@8380255d4e49_"
         )
         self._rest_client.builder_job_writer_graph_post(writer_graph_request=request)
 
