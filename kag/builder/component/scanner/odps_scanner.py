@@ -192,7 +192,22 @@ class ODPSScanner(ScannerABC):
                             # Otherwise, return all columns
                             row_dict = dict(zip(column_names, record.values))
 
-                        yield row_dict
+                        col_keys = self.col_names if self.col_names else self.col_ids
+                        if col_keys is None:
+                            print(
+                                "No columns specified, returning all rows as dictionaries"
+                            )
+                            yield row_dict
+                        else:
+                            for k, v in row_dict.items():
+                                if k in col_keys:
+                                    v = str(v)
+                                    name = v[:5] + "..." + v[-5:]
+                                    yield {
+                                        "id": generate_hash_id(v),
+                                        "name": name,
+                                        "content": v,
+                                    }
 
                     # Update remaining count
                     remaining -= batch_size
@@ -243,6 +258,7 @@ class ODPSScanner(ScannerABC):
         # Process the data based on column parameters
         col_keys = self.col_names if self.col_names else self.col_ids
         if col_keys is None:
+            print("No columns specified, returning all rows as dictionaries")
             return result.to_dict(orient="records")
 
         contents = []
@@ -260,20 +276,13 @@ class ODPSScanner(ScannerABC):
 
 if __name__ == "__main__":
     # 尝试多种分区格式
-    odps_config = {
-        "access_id": "",
-        "access_key": "",
-        "project": "",
-        "table": "",
-        "endpoint": "",
-        "col_names": ["description"],
-    }
-    scanner = ODPSScanner(**odps_config)
+    odps_config = {}
+    scanner = ScannerABC.from_config(odps_config)
 
     # 测试不同的分区格式
     print("\n\n==== 测试 1: 使用dt=20250225 格式 ====")
     try:
-        result = scanner.invoke(input="dt=20250226")
+        result = list(scanner.generate(input="dt=20250226"))
         print(f"Total rows: {len(result)}")
         if len(result) > 0:
             print("Data sample:")
