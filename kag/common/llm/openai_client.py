@@ -13,6 +13,8 @@
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 import logging
 
+from tenacity import retry, stop_after_attempt
+
 from kag.interface import LLMClient
 from typing import Callable
 
@@ -43,6 +45,7 @@ class OpenAIClient(LLMClient):
         timeout: float = None,
         max_rate: float = 1000,
         time_period: float = 1,
+        **kwargs,
     ):
         """
         Initializes the OpenAIClient instance.
@@ -55,7 +58,7 @@ class OpenAIClient(LLMClient):
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
-        super().__init__(max_rate, time_period)
+        super().__init__(max_rate, time_period, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -126,6 +129,31 @@ class OpenAIClient(LLMClient):
                 if chunk.choices[0].delta.content is not None:
                     rsp += chunk.choices[0].delta.content
         return rsp
+
+    @retry(stop=stop_after_attempt(3))
+    def call_with_json_parse(self, prompt):
+        """
+        Calls the model and attempts to parse the response into JSON format.
+
+        Parameters:
+            prompt (str): The prompt provided to the model.
+
+        Returns:
+            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
+        """
+        # Call the model and attempt to parse the response into JSON format
+        rsp = self(prompt)
+        _end = rsp.rfind("```")
+        _start = rsp.find("```json")
+        if _end != -1 and _start != -1:
+            json_str = rsp[_start + len("```json") : _end].strip()
+        else:
+            json_str = rsp
+        try:
+            json_result = json.loads(json_str)
+        except:
+            return rsp
+        return json_result
 
     async def acall(self, prompt: str, image_url: str = None):
         """
@@ -202,6 +230,7 @@ class AzureOpenAIClient(LLMClient):
         azure_ad_token_provider: AzureADTokenProvider = None,
         max_rate: float = 1000,
         time_period: float = 1,
+        **kwargs
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -220,7 +249,7 @@ class AzureOpenAIClient(LLMClient):
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
-        super().__init__(max_rate, time_period)
+        super().__init__(max_rate, time_period, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.azure_deployment = azure_deployment
@@ -301,6 +330,31 @@ class AzureOpenAIClient(LLMClient):
             )
             rsp = response.choices[0].message.content
             return rsp
+
+    @retry(stop=stop_after_attempt(3))
+    def call_with_json_parse(self, prompt):
+        """
+        Calls the model and attempts to parse the response into JSON format.
+
+        Parameters:
+            prompt (str): The prompt provided to the model.
+
+        Returns:
+            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
+        """
+        # Call the model and attempt to parse the response into JSON format
+        rsp = self(prompt)
+        _end = rsp.rfind("```")
+        _start = rsp.find("```json")
+        if _end != -1 and _start != -1:
+            json_str = rsp[_start + len("```json") : _end].strip()
+        else:
+            json_str = rsp
+        try:
+            json_result = json.loads(json_str)
+        except:
+            return rsp
+        return json_result
 
     async def acall(self, prompt: str, image_url: str = None):
         """

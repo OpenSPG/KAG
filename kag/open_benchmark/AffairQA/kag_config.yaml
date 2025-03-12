@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
   type: maas
+  api_key: 
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
 
 chat_llm: &chat_llm
-  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
   type: maas
+  api_key: 
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
 
 vectorize_model: &vectorize_model
-  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
+  api_key: 
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -30,11 +30,11 @@ project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
   language: zh
-  namespace: AffairQA2
+  namespace: AffairQA
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
-  id: '1'
+  id: '2'
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain

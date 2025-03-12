@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class MedicineDemo:
-
     """
     init for kag client
     """

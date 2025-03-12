@@ -48,13 +48,8 @@ def compute_f1(pred_tokens: List[str], answer_tokens: List[str]) -> float:
 
 def extract_answer_from_prediction(prediction: str) -> str:
     """从预测文本中提取答案部分"""
-    # 寻找"答案："后面的内容
-    if "答案：" in prediction:
-        answer = prediction.split("答案：")[1].split("\n")[0]
-    else:
-        # 如果找不到"答案："标记，返回整个预测文本
-        answer = prediction
-    return answer.strip()
+    # 直接返回整个预测文本
+    return prediction.strip()
 
 
 def evaluate_qa(qa_file: str):
@@ -172,5 +167,5 @@ def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
 
 if __name__ == "__main__":
     dir_path = os.path.dirname(__file__)
-    qa_file = os.path.join(dir_path, "solver/data/res4.json")
+    qa_file = os.path.join(dir_path, "solver/data/res7.json")
     evaluate_qa(qa_file)
