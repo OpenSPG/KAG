@@ -34,6 +34,7 @@ class KAGConstants(object):
     KAG_PROJECT_ID_KEY = "id"
     KAG_PROJECT_HOST_ADDR_KEY = "host_addr"
     KAG_LANGUAGE_KEY = "language"
+    KAG_USER_TOKEN_KEY = "user_token"
     KAG_CKPT_DIR_KEY = "checkpoint_path"
     KAG_BIZ_SCENE_KEY = "biz_scene"
     ENV_KAG_PROJECT_ID = "KAG_PROJECT_ID"
@@ -66,7 +67,7 @@ class KAGGlobalConf:
         self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
         self.namespace = kwargs.pop(KAGConstants.KAG_NAMESPACE_KEY, None)
         self.ckpt_dir = kwargs.pop(KAGConstants.KAG_CKPT_DIR_KEY, "ckpt")
-
+        self.user_token = kwargs.pop(KAGConstants.KAG_USER_TOKEN_KEY, None)
         # process configs set to class attr directly
         for k in self._extra.keys():
             if hasattr(self, k):
