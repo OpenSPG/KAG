@@ -13,6 +13,7 @@
 from kag.builder.component.external_graph.external_graph import (
     DefaultExternalGraphLoader,
 )
+from kag.builder.component.extractor.naive_rag_extractor import NaiveRagExtractor
 from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtractor
 from kag.builder.component.extractor.schema_constraint_extractor import (
     SchemaConstraintExtractor,

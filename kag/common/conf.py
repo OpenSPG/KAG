@@ -198,5 +198,3 @@ def init_env():
             print(
                 f"{msg}: set {KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG}=1 to dump config"
             )
-    else:
-        print("No config found.")
