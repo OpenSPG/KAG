@@ -1,14 +1,18 @@
-from typing import List
+from typing import List, Any
 
 from kag.builder.prompt.utils import init_prompt_with_fallback
 from kag.interface import ExecutorABC, LLMClient, ExecutorResponse
 from kag.interface.solver.base_model import SPOEntity
-from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData, RelationData
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    KgGraph,
+    EntityData,
+)
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import PprChunkRetriever
+from kag.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
+    PprChunkRetriever,
+)
 from kag.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
-from kag.tools.algorithm_tool.ner import Ner
 
 
 class SubRetrievedData:
@@ -64,7 +68,10 @@ class KAGRetrievedResponse(ExecutorResponse):
             Contains formatting error: "task: f{self.retrieved_task}"
             should be corrected to "task: {self.retrieved_task}"
         """
-        return f"task: f{self.retrieved_task}" + "\n".join([str(item) for item in self.sub_retrieved_set])
+        return f"task: f{self.retrieved_task}" + "\n".join(
+            [str(item) for item in self.sub_retrieved_set]
+        )
+
 
 @ExecutorABC.register("kag_hybrid_executor")
 class KagHybridExecutor(ExecutorABC):
@@ -74,11 +81,13 @@ class KagHybridExecutor(ExecutorABC):
     knowledge graph and LLM capabilities to answer complex queries.
     """
 
-    def __init__(self,
-                 entity_linking: EntityLinking,
-                 path_select: PathSelect,
-                 ppr_chunk_retriever: PprChunkRetriever,
-                 llm_client: LLMClient):
+    def __init__(
+        self,
+        entity_linking: EntityLinking,
+        path_select: PathSelect,
+        ppr_chunk_retriever: PprChunkRetriever,
+        llm_client: LLMClient,
+    ):
         """Initialize hybrid retrieval executor with required components
 
         Args:
@@ -113,7 +122,9 @@ class KagHybridExecutor(ExecutorABC):
         # TODO: Implement query parsing logic here
         return []
 
-    def invoke(self, query: str, task: Any, context: dict, **kwargs) -> KAGRetrievedResponse:
+    def invoke(
+        self, query: str, task: Any, context: dict, **kwargs
+    ) -> KAGRetrievedResponse:
         """Execute hybrid knowledge graph retrieval process
 
         Args:
@@ -221,7 +232,9 @@ class KagHybridExecutor(ExecutorABC):
             "o": logic_node.o.alias_name,
         }
 
-    def _find_start_entities(self, kg_graph: KgGraph, logic_node: GetSPONode) -> List[EntityData]:
+    def _find_start_entities(
+        self, kg_graph: KgGraph, logic_node: GetSPONode
+    ) -> List[EntityData]:
         """Find starting entities for path selection
 
         Args:
@@ -249,7 +262,12 @@ class KagHybridExecutor(ExecutorABC):
 
         return None
 
-    def _retrieve_relations(self, kg_graph: KgGraph, logic_node: GetSPONode, start_entities: List[EntityData]):
+    def _retrieve_relations(
+        self,
+        kg_graph: KgGraph,
+        logic_node: GetSPONode,
+        start_entities: List[EntityData],
+    ):
         """Retrieve relations based on start entities
 
         Args:
@@ -260,9 +278,7 @@ class KagHybridExecutor(ExecutorABC):
         selected_relations = []
         for entity in start_entities:
             new_relations = self.path_select.invoke(
-                logic_node.sub_query,
-                logic_node,
-                entity
+                logic_node.sub_query, logic_node, entity
             )
             if new_relations:
                 selected_relations.extend(new_relations)
@@ -270,7 +286,9 @@ class KagHybridExecutor(ExecutorABC):
         predicate = logic_node.p.alias_name
         kg_graph.edge_map[predicate] = selected_relations
 
-    def _retrieved_text_chunks(self, kg_graph: KgGraph, logic_node: GetSPONode) -> List[str]:
+    def _retrieved_text_chunks(
+        self, kg_graph: KgGraph, logic_node: GetSPONode
+    ) -> List[str]:
         """Retrieve text chunks using PPR chunk retriever
 
         Args:
@@ -282,12 +300,12 @@ class KagHybridExecutor(ExecutorABC):
         """
         all_entities = kg_graph.get_all_entity()
         return self.ppr_chunk_retriever.invoke(
-            query=logic_node.sub_query,
-            start_entities=all_entities,
-            top_k=5
+            query=logic_node.sub_query, start_entities=all_entities, top_k=5
         )
 
-    def _generate_summary(self, logic_node: GetSPONode, chunks: List[str], kg_graph: KgGraph):
+    def _generate_summary(
+        self, logic_node: GetSPONode, chunks: List[str], kg_graph: KgGraph
+    ):
         """Generate summary using LLM
 
         Args:
@@ -299,17 +317,19 @@ class KagHybridExecutor(ExecutorABC):
             str: Generated summary text
         """
         relations = kg_graph.edge_map.get(logic_node.p.alias_name, [])
-        return self.llm_client.invoke({
-            "query": logic_node.sub_query,
-            "chunks": chunks,
-            "spos": relations
-        }, init_prompt_with_fallback("sub_question_summary", "default"))
+        return self.llm_client.invoke(
+            {"query": logic_node.sub_query, "chunks": chunks, "spos": relations},
+            init_prompt_with_fallback("sub_question_summary", "default"),
+        )
 
-    def _save_step_result(self, response: KAGRetrievedResponse,
-                          logic_node: GetSPONode,
-                          chunks: List[str],
-                          summary: str,
-                          kg_graph: KgGraph):
+    def _save_step_result(
+        self,
+        response: KAGRetrievedResponse,
+        logic_node: GetSPONode,
+        chunks: List[str],
+        summary: str,
+        kg_graph: KgGraph,
+    ):
         """Save intermediate processing results
 
         Args:
@@ -350,9 +370,9 @@ class KagHybridExecutor(ExecutorABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "User input question or query text"
+                        "description": "User input question or query text",
                     }
                 },
-                "required": ["query"]
-            }
+                "required": ["query"],
+            },
         }
