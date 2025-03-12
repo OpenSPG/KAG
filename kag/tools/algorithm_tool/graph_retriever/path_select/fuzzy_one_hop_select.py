@@ -24,7 +24,7 @@ class FuzzyOneHopSelect(PathSelect):
                  search_api: SearchApiABC = None,
                  spo_retrieval_prompt: PromptABC = None,):
         super().__init__()
-        self.schema: SchemaUtils = SchemaUtils(
+        self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
                     "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
@@ -49,7 +49,7 @@ class FuzzyOneHopSelect(PathSelect):
     def recall_graph_data_from_knowledge_base(self, n: GetSPONode, heads: List[EntityData],
                                               tails: List[EntityData]) -> List[OneHopGraphData]:
         gql_header_labels, _, gql_tail_labels, where_gql, params = generate_gql_spo_element(n, heads,
-                                                                                            tails, self.schema)
+                                                                                            tails, self.schema_helper)
 
         spg_gql = f"""
         MATCH (s:{gql_header_labels})-[p:rdf_expand()]->(o:{gql_tail_labels})

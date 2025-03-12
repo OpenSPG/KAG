@@ -39,7 +39,7 @@ class ExecutorABC(Registrable):
         raise NotImplementedError("invoke not implemented yet.")
 
     async def ainvoke(self, query, task, context, **kwargs):
-        return await asyncio.to_thread(self.invoke(query, task, context, **kwargs))
+        return await asyncio.to_thread(lambda : self.invoke(query, task, context, **kwargs))
 
     def schema(self):
         return {

@@ -17,7 +17,7 @@ class TextChunkRetriever(ToolABC):
                  search_api: SearchApiABC = None):
         super().__init__()
         self.search_api = search_api
-        self.schema: SchemaUtils = SchemaUtils(
+        self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
                     "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
@@ -29,7 +29,7 @@ class TextChunkRetriever(ToolABC):
     def invoke(self, query, top_k: int, **kwargs) -> Dict[str, dict]:
         try:
             top_k_docs = self.search_api.search_text(
-                label_constraints=[self.schema.get_label_within_prefix(CHUNK_TYPE)],
+                label_constraints=[self.schema_helper.get_label_within_prefix(CHUNK_TYPE)],
                 query_string=query,
                 topk=top_k,
             )

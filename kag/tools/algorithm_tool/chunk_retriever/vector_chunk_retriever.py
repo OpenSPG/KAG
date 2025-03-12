@@ -21,7 +21,7 @@ class VectorChunkRetriever(ToolABC):
         super().__init__()
         self.vectorize_model = vectorize_model
         self.search_api = search_api
-        self.schema: SchemaUtils = SchemaUtils(
+        self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
                     "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
@@ -37,7 +37,7 @@ class VectorChunkRetriever(ToolABC):
                 return scores
             query_vector = self.vectorize_model.vectorize(query)
             top_k_docs = self.search_api.search_vector(
-                label=self.schema.get_label_within_prefix(CHUNK_TYPE),
+                label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
                 property_key="content",
                 query_vector=query_vector,
                 topk=top_k,

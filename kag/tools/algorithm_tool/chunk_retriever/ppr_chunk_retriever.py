@@ -34,7 +34,7 @@ class PprChunkRetriever(ToolABC):
                  text_chunk_retriever: TextChunkRetriever = None,
                  vector_chunk_retriever: VectorChunkRetriever = None):
         super().__init__()
-        self.schema: SchemaUtils = SchemaUtils(
+        self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
                     "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
@@ -81,7 +81,7 @@ class PprChunkRetriever(ToolABC):
         scores = dict()
         if len(start_nodes) != 0:
             try:
-                target_type = self.schema.get_label_within_prefix(CHUNK_TYPE)
+                target_type = self.schema_helper.get_label_within_prefix(CHUNK_TYPE)
                 start_node_set = []
                 for s in start_nodes:
                     if s.type == target_type or not s.name or not s.type:
@@ -91,7 +91,7 @@ class PprChunkRetriever(ToolABC):
                         "type": s.type,
                     })
                 scores = self.graph_api.calculate_pagerank_scores(
-                    self.schema.get_label_within_prefix(CHUNK_TYPE), start_node_set
+                    self.schema_helper.get_label_within_prefix(CHUNK_TYPE), start_node_set
                 )
             except Exception as e:
                 logger.error(
@@ -175,7 +175,7 @@ class PprChunkRetriever(ToolABC):
             counter += 1
             try:
                 node = self.graph_api.get_entity_prop_by_id(
-                    label=self.schema.get_label_within_prefix(CHUNK_TYPE),
+                    label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
                     biz_id=doc_id,
                 )
                 node_dict = dict(node.items())
@@ -190,7 +190,7 @@ class PprChunkRetriever(ToolABC):
         query = "\n".join(queries)
         try:
             text_matched = self.search_api.search_text(
-                query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
+                query, [self.schema_helper.get_label_within_prefix(CHUNK_TYPE)], topk=1
             )
             if text_matched:
                 for item in text_matched:

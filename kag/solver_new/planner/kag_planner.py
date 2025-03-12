@@ -15,7 +15,7 @@ class KAGPlanner(PlannerABC):
             {
                 "query": query,
                 "context": kwargs.get("context"),
-                "functions": [executor.schema() for executor in self.executors],
+                "functions": [executor.schema_helper() for executor in self.executors],
             },
             self.plan_prompt,
         )
