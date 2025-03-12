@@ -104,7 +104,7 @@ class CSVStructuredScanner(ScannerABC):
     def __init__(
         self,
         header: bool = True,
-        col_map: dict[int, str] = None,
+        col_map: Dict[int, str] = None,
         rank: int = 0,
         world_size: int = 1,
     ):
