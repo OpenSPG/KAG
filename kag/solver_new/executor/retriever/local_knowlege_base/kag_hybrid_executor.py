@@ -1,13 +1,17 @@
 from typing import List, Any
 
 from kag.builder.prompt.utils import init_prompt_with_fallback
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import ExecutorABC, LLMClient, ExecutorResponse, PromptABC
-from kag.interface.solver.base_model import SPOEntity
+from kag.interface.solver.base_model import SPOEntity, SPORelation
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
     EntityData,
 )
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode, ParseLogicForm
+from kag.solver.logic.core_modules.parser.schema_std import SchemaRetrieval
 from kag.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
     PprChunkRetriever,
 )
@@ -105,6 +109,21 @@ class KagHybridExecutor(ExecutorABC):
         self.llm_client = llm_client
         self.lf_trans_prompt = lf_trans_prompt
 
+        self.schema: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
+
+        self.std_schema = SchemaRetrieval(
+            vectorize_model=self.entity_linking.vectorize_model, llm_client=llm_client
+        )
+
+        self.logic_node_parser = ParseLogicForm(schema=self.schema,  schema_retrieval=self.std_schema)
+
     @property
     def output_types(self):
         """Output type specification for executor responses"""
@@ -123,13 +142,33 @@ class KagHybridExecutor(ExecutorABC):
         Note:
             Method is currently unimplemented and returns empty list
         """
-        # TODO: Implement query parsing logic here
-        return self.llm_client.invoke(
-            {"question": query},
+        response = self.llm_client.invoke(
+            {"question": query, "context": context},
             self.lf_trans_prompt,
             with_json_parse=False,
             with_except=True,
         )
+        sub_queries = []
+        lf_nodes_str = []
+        for res_lf in response:
+            def generate_node(node:dict):
+                ret = node["alias"]
+                if "type" not in node:
+                    return ret
+                ret = f"{ret}:{node['type']}"
+                if "name" not in node:
+                    return ret
+                return f"{ret}[{node['name']}]"
+
+            def generate_rel(rel: dict):
+                ret = rel["alias"]
+                if "type" not in rel:
+                    return ret
+                return f"{ret}:{rel['type']}"
+            lf_nodes_str.append(f"get_spo(s={generate_node(node=res_lf['s'])}, p={generate_rel(res_lf['p'])}, o={generate_node(node=res_lf['o'])})")
+            sub_queries.append(res_lf["sub_query"])
+        return self.logic_node_parser.parse_logic_form_set(input_str_set=lf_nodes_str, sub_querys=sub_queries, question=query)
+
 
     def invoke(
         self, query: str, task: Any, context: dict, **kwargs
@@ -156,10 +195,10 @@ class KagHybridExecutor(ExecutorABC):
             8. Store final results
         """
         # 1. Initialize response container
-
         kag_response = self._initialize_response(task)
         # 2. Convert query to logical form
-        logic_nodes = self._convert_to_logical_form(task.task_description, task)
+        task_query = task.arguments['query']
+        logic_nodes = self._convert_to_logical_form(task_query, task)
 
         # 3. Initialize knowledge graph
         kg_graph = self._initialize_knowledge_graph()
@@ -192,7 +231,7 @@ class KagHybridExecutor(ExecutorABC):
             KAGRetrievedResponse: Initialized response object
         """
         response = KAGRetrievedResponse()
-        response.retrieved_task = str(task.task_description)
+        response.retrieved_task = str(task)
         return response
 
     def _convert_to_logical_form(self, query: str, task) -> List[GetSPONode]:
@@ -206,8 +245,13 @@ class KagHybridExecutor(ExecutorABC):
             List[GetSPONode]: Logical nodes derived from task description
         """
         # TODO 在拆解的时候应该需要本任务依赖的任务，此处需要从context中获取，还需要改下代码
-
-        return self._trans_query_to_logic_form(task.task_description)
+        dep_tasks = task.parents
+        context = []
+        for dep_task in dep_tasks:
+            if not dep_task.result:
+                continue
+            context.append(dep_task.result)
+        return self._trans_query_to_logic_form(query, str(context))
 
     def _initialize_knowledge_graph(self) -> KgGraph:
         """Create new knowledge graph container for processing"""
