@@ -36,7 +36,7 @@ class OllamaClient(LLMClient):
         timeout: float = None,
         max_rate: float = 1000,
         time_period: float = 1,
-        **kwargs
+            **kwargs
     ):
         """
         Initializes the OllamaClient instance.
