@@ -11,7 +11,9 @@
 # or implied.
 import copy
 import logging
+import os
 
+from kag.common.registry import import_modules_from_path
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
@@ -26,6 +28,7 @@ class SolverMain:
         project_id: int,
         task_id: int,
         query: str,
+        session_id: str = "0",
         is_report=True,
         host_addr="http://127.0.0.1:8887",
     ):
@@ -95,7 +98,9 @@ class SolverMain:
         )
         resp = SolverPipeline.from_config(conf)
         try:
-            answer, trace_log = resp.run(query, report_tool=report_tool)
+            answer, trace_log = resp.run(
+                query, report_tool=report_tool, session_id=session_id
+            )
             state = ReporterIntermediateProcessTool.STATE.FINISH
             logger.info(f"{query} answer={answer} tracelog={trace_log}")
         except Exception as e:
@@ -113,6 +118,13 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    res = SolverMain().invoke(300027, 2800106, "who is Jay Zhou", True)
+    from kag.bridge.spg_server_bridge import init_kag_config
+
+    init_kag_config(
+        "3300003", "http://antspg-gz00b-006003007104.sa128-sqa.alipay.net:8887"
+    )
+    res = SolverMain().invoke(
+        3300003, 4100019, "我上班的时候受伤了，能认定工伤吗？", "2900007", True
+    )
     print("*" * 80)
     print("The Answer is: ", res)

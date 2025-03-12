@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
+from .evaUtils import compute_rouge
 
 
 class Evaluate:
-
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
@@ -31,6 +31,12 @@ class Evaluate:
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
         return 0.0
+
+    def compute_rouge(self, predictionlist: List[str], goldlist: List[str]):
+        rouge_scores = compute_rouge(predictionlist, goldlist)
+        rouge_ls = [score["rouge-l"]["f"] for score in rouge_scores]
+        average_rouge_l = sum(rouge_ls) / len(rouge_ls)
+        return {"rouge-L": average_rouge_l}
 
     def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
         """

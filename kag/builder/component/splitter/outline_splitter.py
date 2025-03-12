@@ -87,7 +87,9 @@ class OutlineSplitter(SplitterABC):
             # 如果栈为空，或者当前节点的级别高于栈顶节点的级别，说明当前节点是根节点或新的分支节点
             if not stack or stack[-1][1] >= level:
                 if stack:
-                    stack[-1][2]["children"].append(node)  # 将新节点添加到最近的父节点的 children 列表中
+                    stack[-1][2]["children"].append(
+                        node
+                    )  # 将新节点添加到最近的父节点的 children 列表中
                 else:
                     catalog_tree.append(node)  # 如果栈为空，说明这是一个根节点
             else:
@@ -989,7 +991,9 @@ class OutlineSplitter(SplitterABC):
 
             # 递归为子节点生成chunk
             for child in node.get("children", []):
-                generate_chunks(child, chunks, full_title)  # 将当前完整title传递给子节点
+                generate_chunks(
+                    child, chunks, full_title
+                )  # 将当前完整title传递给子节点
 
             return chunks
 

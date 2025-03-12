@@ -97,9 +97,9 @@ class OpenAIVectorizeModel(VectorizeModelABC):
 
 @VectorizeModelABC.register("azure_openai")
 class AzureOpenAIVectorizeModel(VectorizeModelABC):
-    """A class that extends the VectorizeModelABC base class.
+    ''' A class that extends the VectorizeModelABC base class.
     It invokes Azure OpenAI or Azure OpenAI-compatible embedding services to convert texts into embedding vectors.
-    """
+    '''
 
     def __init__(
         self,

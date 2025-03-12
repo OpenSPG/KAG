@@ -187,3 +187,10 @@ class SchemaClient(Client):
         schema = self.load()
         types = [t for t in schema.keys() if t not in [CHUNK_TYPE] + BASIC_TYPES]
         return types
+
+    def extract_types_zh_mapping(self):
+        schema = self.load()
+        schema_mapping = {
+            t: schema[t].name_zh for t in schema.keys() if t not in [CHUNK_TYPE] + BASIC_TYPES
+        }
+        return schema_mapping

@@ -114,7 +114,11 @@ class AffairTypeMapping(SPGTypeMapping):
         """
         sub_graph = SubGraph(nodes=[], edges=[])
         s_name = properties.get("name", "")
-        s_id = properties.get("id", s_name)
+        s_id = properties.get("id", "")
+        if s_id == "":
+            s_id = s_name
+        if s_name == "":
+            s_name = s_id
         s_label = self.spg_type.name_en
 
         for prop_name, prop_value in properties.items():
