@@ -10,7 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import networkx as nx
-from typing import Any
 from collections import OrderedDict
 from kag.interface.solver.planner_abc import Task
 from kag.common.registry import Registrable
@@ -33,7 +32,7 @@ class Context:
         # append a new task and set it's parent to last task
         # used for iterative planning
         if len(task.parents) == 0 and len(self._tasks) > 0:
-            task.parents = [self.last_task]
+            task.parents = [self.last_task()]
         self.add_task(task)
 
     def get_task(self, task_id):
@@ -46,7 +45,7 @@ class Context:
         return nx.topological_generations(dag)
 
     def get_dag(self):
-        dag = nx.Graph()
+        dag = nx.DiGraph()
         nodes = set()
         for task_id, task in self._tasks.items():
             nodes.add(task_id)
@@ -58,13 +57,13 @@ class Context:
         dag.add_nodes_from(nodes)
         for task_id, task in self._tasks.items():
             for dep in task.parents:
-                dag.add_edge(task_id, dep.id)
+                dag.add_edge(dep.id, task_id)
         self.topological_sort(dag)
         return dag
 
     def gen_task(self, group: bool = False):
         dag = self.get_dag()
-        if group:
+        if not group:
             nodes = self.topological_sort(dag)
             for node in nodes:
                 yield self._tasks[node]

@@ -31,6 +31,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         timeout: float = None,
         max_rate: float = 1000,
         time_period: float = 1,
+        **kwargs,
     ):
         """
         Initializes the OpenAIVectorizeModel instance.
@@ -41,7 +42,11 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             base_url (str, optional): The base URL for the OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        super().__init__(vector_dimensions, max_rate, time_period)
+        name = kwargs.get("name", None)
+        if not name:
+            name = f"{api_key}{base_url}{model}"
+
+        super().__init__(name, vector_dimensions, max_rate, time_period)
         self.model = model
         self.timeout = timeout
         self.client = OpenAI(api_key=api_key, base_url=base_url)
@@ -97,9 +102,9 @@ class OpenAIVectorizeModel(VectorizeModelABC):
 
 @VectorizeModelABC.register("azure_openai")
 class AzureOpenAIVectorizeModel(VectorizeModelABC):
-    ''' A class that extends the VectorizeModelABC base class.
+    """A class that extends the VectorizeModelABC base class.
     It invokes Azure OpenAI or Azure OpenAI-compatible embedding services to convert texts into embedding vectors.
-    '''
+    """
 
     def __init__(
         self,

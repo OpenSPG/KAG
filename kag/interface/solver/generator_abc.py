@@ -9,17 +9,15 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from kag.interface import ExecutorABC
+import asyncio
+from abc import ABC, abstractmethod
+from kag.common.registry import Registrable
 
 
-@ExecutorABC.register("finish_executor")
-class FinishExecutor(ExecutorABC):
-    def schema(self):
-        return {
-            "name": "Finish",
-            "description": "Performs no operation and is solely used to indicate that the task has been completed.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
-        }
+class GeneratorABC(Registrable, ABC):
+    @abstractmethod
+    def invoke(self, query, context, **kwargs):
+        raise NotImplementedError("invoke not implemented yet.")
+
+    async def ainvoke(self, query, context, **kwargs):
+        return await asyncio.to_thread(lambda: self.invoke(query, context, **kwargs))

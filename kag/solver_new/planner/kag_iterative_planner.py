@@ -17,8 +17,8 @@ from kag.interface import PlannerABC, Task, LLMClient, PromptABC, Context
 
 @PlannerABC.register("kag_iterative_planner")
 class KAGIterativePlanner(PlannerABC):
-    def __init__(self, executors, llm: LLMClient, plan_prompt: PromptABC):
-        super().__init__(executors)
+    def __init__(self, llm: LLMClient, plan_prompt: PromptABC):
+        super().__init__()
         self.llm = llm
         self.plan_prompt = plan_prompt
 
@@ -26,8 +26,8 @@ class KAGIterativePlanner(PlannerABC):
         formatted_context = []
         # get all prvious tasks from context.
         if context and isinstance(context, Context):
-            task_dag = context.get_dag()
-            for task in task_dag:
+
+            for task in context.gen_task():
                 formatted_context.append(
                     {
                         "action": {"name": task.executor, "argument": task.arguments},
@@ -41,7 +41,7 @@ class KAGIterativePlanner(PlannerABC):
             {
                 "query": query,
                 "context": self.format_context(kwargs.get("context")),
-                "executors": [executor.schema() for executor in self.executors],
+                "executors": kwargs.get("executors", []),
             },
             self.plan_prompt,
         )
@@ -51,7 +51,7 @@ class KAGIterativePlanner(PlannerABC):
             {
                 "query": query,
                 "context": self.format_context(kwargs.get("context")),
-                "executors": [executor.schema() for executor in self.executors],
+                "executors": kwargs.get("executors", []),
             },
             self.plan_prompt,
         )

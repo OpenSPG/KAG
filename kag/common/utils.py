@@ -25,6 +25,7 @@ from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
 from tenacity import retry, stop_after_attempt
+from aiolimiter import AsyncLimiter
 
 reset = "\033[0m"
 bold = "\033[1m"
@@ -279,3 +280,16 @@ def download_from_http(url: str, dest: str = None) -> str:
 
     # Return the path of the temporary file
     return temp_file.name
+
+
+class RateLimiterManger:
+    def __init__(self):
+        self.limiter_map = {}
+
+    def get_rate_limiter(
+        self, name: str, max_rate: float = 1000, time_period: float = 1
+    ):
+        if name not in self.limiter_map:
+            limiter = AsyncLimiter(max_rate, time_period)
+            self.limiter_map[name] = limiter
+        return self.limiter_map[name]

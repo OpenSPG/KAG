@@ -37,7 +37,7 @@ class VLLMClient(LLMClient):
         timeout: float = None,
         max_rate: float = 1000,
         time_period: float = 1,
-            **kwargs
+        **kwargs,
     ):
         """
         Initializes the VLLMClient instance.
@@ -47,7 +47,11 @@ class VLLMClient(LLMClient):
             base_url (str): The base URL for the VLLM API.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
-        super().__init__(max_rate, time_period,  **kwargs)
+        name = kwargs.get("name", None)
+        if not name:
+            name = f"{base_url}{model}"
+
+        super().__init__(name, max_rate, time_period, **kwargs)
         self.model = model
         self.base_url = base_url
         self.timeout = timeout
