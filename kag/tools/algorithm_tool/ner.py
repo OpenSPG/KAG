@@ -16,7 +16,7 @@ ner_tool_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 
 @ToolABC.register("ner")
 class Ner(ToolABC):
-    def __init__(self, llm_module, ner_prompt: PromptABC, std_prompt: PromptABC = None, with_semantic = False):
+    def __init__(self, llm_module, ner_prompt: PromptABC = None, std_prompt: PromptABC = None, with_semantic = False):
         super().__init__()
         self.ner_prompt = ner_prompt or init_prompt_with_fallback("question_ner", KAG_PROJECT_CONF.biz_scene)
         self.std_prompt = std_prompt or init_prompt_with_fallback("std", KAG_PROJECT_CONF.biz_scene)
