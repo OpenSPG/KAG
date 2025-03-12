@@ -25,11 +25,7 @@ class HybridOneHopSelect(PathSelect):
         self.exact_select = exact_select  # Precise path selection strategy
         self.fuzzy_select = fuzzy_select  # Approximate/fuzzy selection strategy
 
-    def invoke(self,
-               query: str,
-               spo: GetSPONode,
-               entity: EntityData,
-               **kwargs) -> List[RelationData]:
+    def invoke(self, query, spo: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[RelationData]:
         """Execute hybrid path selection strategy.
 
         First tries exact matching, then falls back to fuzzy matching if no results found.
@@ -46,8 +42,8 @@ class HybridOneHopSelect(PathSelect):
         Raises:
             RuntimeError: If both selectors fail to produce results
         """
-        exact_results = self.exact_select.invoke(query, spo, entity, **kwargs)
+        exact_results = self.exact_select.invoke(query, spo, heads, tails, **kwargs)
         if exact_results:
             return exact_results
         else:
-            return self.fuzzy_select.invoke(query, spo, entity, **kwargs)
+            return self.fuzzy_select.invoke(query, spo, heads, tails, **kwargs)

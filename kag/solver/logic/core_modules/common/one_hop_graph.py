@@ -394,7 +394,6 @@ class RelationData:
         rel.end_entity = o
         return rel
 
-
 class OneHopGraphData:
     def __init__(self, schema, alias_name):
         self.s_alias_name = alias_name
@@ -951,3 +950,21 @@ class KgGraph:
         if alias in self.edge_map.keys():
             return self.edge_map[alias]
         return None
+
+def parse_entity_relation(one_graph, std_p: str, o_value: EntityData):
+    s_entity = one_graph.s
+    o_entity = o_value
+    if o_value.description is None or o_value.description == "":
+        o_value.description = f"{s_entity.name} {std_p} {o_entity.name}"
+    return RelationData.from_prop_value(s_entity, std_p, o_entity)
+
+def parse_attribute_relation(one_graph, std_p: str, attr_value: str):
+    # new a RelationData
+    prop_entity = EntityData()
+    prop_entity.biz_id = attr_value
+    prop_entity.name = attr_value
+    prop_entity.type = "Text"
+    prop_entity.type_zh = "文本"
+
+    return parse_entity_relation(one_graph, std_p, prop_entity)
+
