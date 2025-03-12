@@ -90,7 +90,10 @@ class CSVScanner(ScannerABC):
             for k, v in row.items():
                 if k in col_keys:
                     v = str(v)
-                    name = v[:5] + "..." + v[-5:]
+                    if len(v) <= 10:
+                        name = v
+                    else:
+                        name = v[:5] + "..." + v[-5:]
                     contents.append(
                         {"id": generate_hash_id(v), "name": name, "content": v}
                     )
