@@ -103,17 +103,19 @@ class KagHybridExecutor(ExecutorABC):
         self.path_select = path_select
         self.ppr_chunk_retriever = ppr_chunk_retriever
         self.llm_client = llm_client
+        self.lf_trans_prompt = lf_trans_prompt
 
     @property
     def output_types(self):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
 
-    def _trans_query_to_logic_form(self, query: str) -> List[GetSPONode]:
+    def _trans_query_to_logic_form(self, query: str, context: str) -> List[GetSPONode]:
         """Convert user query to logical form (SPO nodes)
 
         Args:
             query (str): User input query text
+            context (str): Context for this question
 
         Returns:
             List[GetSPONode]: List of logical nodes representing SPO triples
@@ -122,7 +124,12 @@ class KagHybridExecutor(ExecutorABC):
             Method is currently unimplemented and returns empty list
         """
         # TODO: Implement query parsing logic here
-        return []
+        return self.llm_client.invoke(
+            {"question": query},
+            self.lf_trans_prompt,
+            with_json_parse=False,
+            with_except=True,
+        )
 
     def invoke(
         self, query: str, task: Any, context: dict, **kwargs
