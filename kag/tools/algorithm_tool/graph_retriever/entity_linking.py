@@ -27,7 +27,7 @@ class EntityLinking(ToolABC):
             top_k: Maximum number of results to return
         """
         super().__init__()
-        self.schema: SchemaUtils = SchemaUtils(
+        self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
                     "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
@@ -119,7 +119,7 @@ class EntityLinking(ToolABC):
             query_type = "Entity"
             with_prefix_type = query_type
         else:
-            with_prefix_type = self.schema.get_label_within_prefix(query_type)
+            with_prefix_type = self.schema_helper.get_label_within_prefix(query_type)
 
         recognition_threshold = kwargs.get("recognition_threshold", 0.8)
         recall_topk = topk_k or self.top_k

@@ -66,6 +66,8 @@ class KAGRetrievedResponse(ExecutorResponse):
             [str(item) for item in self.sub_retrieved_set]
         )
 
+    __repr__=__str__
+
     def to_string(self) -> str:
         """Convert response to human-readable string format
 
@@ -111,7 +113,7 @@ class KagHybridExecutor(ExecutorABC):
         self.llm_client = llm_client
         self.lf_trans_prompt = lf_trans_prompt
 
-        self.schema: SchemaUtils = SchemaUtils(
+        self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
                     "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
@@ -124,7 +126,7 @@ class KagHybridExecutor(ExecutorABC):
             vectorize_model=self.entity_linking.vectorize_model, llm_client=llm_client
         )
 
-        self.logic_node_parser = ParseLogicForm(schema=self.schema,  schema_retrieval=self.std_schema)
+        self.logic_node_parser = ParseLogicForm(schema=self.schema_helper, schema_retrieval=self.std_schema)
 
     @property
     def output_types(self):
@@ -222,7 +224,6 @@ class KagHybridExecutor(ExecutorABC):
 
         # 8. Final storage
         self._store_results(task, kag_response)
-        return kag_response
 
     def _initialize_response(self, task) -> KAGRetrievedResponse:
         """Create and initialize response container
