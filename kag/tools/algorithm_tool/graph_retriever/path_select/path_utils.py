@@ -1,10 +1,11 @@
+import logging
 from typing import List
 
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.tools.graph_api.graph_api_abc import generate_gql_id_params, generate_label
 
-
+logger = logging.getLogger()
 def extra_relation_candis_types(n: GetSPONode):
     p_type_set = n.p.type_set
     p_label_str_set = []

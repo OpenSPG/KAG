@@ -61,6 +61,10 @@ class KAGRetrievedResponse(ExecutorResponse):
         super().__init__()
         self.sub_retrieved_set = []  # Collection of processed sub-question results
         self.retrieved_task = ""  # Original task description
+    def __str__(self):
+        return f"task: f{self.retrieved_task}" + "\n".join(
+            [str(item) for item in self.sub_retrieved_set]
+        )
 
     def to_string(self) -> str:
         """Convert response to human-readable string format
@@ -72,9 +76,7 @@ class KAGRetrievedResponse(ExecutorResponse):
             Contains formatting error: "task: f{self.retrieved_task}"
             should be corrected to "task: {self.retrieved_task}"
         """
-        return f"task: f{self.retrieved_task}" + "\n".join(
-            [str(item) for item in self.sub_retrieved_set]
-        )
+        return str(self)
 
 
 @ExecutorABC.register("kag_hybrid_executor")
@@ -145,7 +147,7 @@ class KagHybridExecutor(ExecutorABC):
         response = self.llm_client.invoke(
             {"question": query, "context": context},
             self.lf_trans_prompt,
-            with_json_parse=False,
+            with_json_parse=True,
             with_except=True,
         )
         sub_queries = []
@@ -343,7 +345,6 @@ class KagHybridExecutor(ExecutorABC):
             head_entities (List[EntityData]): Head entities
             tail_entities (List[EntityData]): Tail entities
         """
-        selected_relations = []
         selected_relations = self.path_select.invoke(
             query=logic_node.sub_query, spo=logic_node, heads=head_entities, tails=tail_entities
         )
@@ -364,7 +365,7 @@ class KagHybridExecutor(ExecutorABC):
         """
         all_entities = kg_graph.get_all_entity()
         return self.ppr_chunk_retriever.invoke(
-            query=logic_node.sub_query, start_entities=all_entities, top_k=5
+            queries=[logic_node.sub_query], start_entities=all_entities, top_k=10
         )
 
     def _generate_summary(
@@ -382,8 +383,8 @@ class KagHybridExecutor(ExecutorABC):
         """
         relations = kg_graph.edge_map.get(logic_node.p.alias_name, [])
         return self.llm_client.invoke(
-            {"query": logic_node.sub_query, "chunks": chunks, "spos": relations},
-            init_prompt_with_fallback("sub_question_summary", "default"),
+            {"question": logic_node.sub_query, "docs": chunks, "knowledge_graph": relations, "history": ""},
+            init_prompt_with_fallback("sub_question_summary", KAG_PROJECT_CONF.biz_scene),
         )
 
     def _save_step_result(
@@ -417,8 +418,8 @@ class KagHybridExecutor(ExecutorABC):
             task: Task configuration object
             response (KAGRetrievedResponse): Processed results
         """
-        task.add_memory("response", response)
-        task.add_result(response)
+        task.update_memory("response", response)
+        task.update_result(response)
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling
