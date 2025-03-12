@@ -50,7 +50,6 @@ if __name__ == '__main__':
     from template1.ppt_manager import PPTManager
     ppt_manager = PPTManager('template1/中国风背景.pptx')
 
-
     with open("output.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 

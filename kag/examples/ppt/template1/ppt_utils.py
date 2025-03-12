@@ -6,6 +6,11 @@ from copy import deepcopy
 from PIL import Image
 from pptx import Presentation
 
+from bs4 import BeautifulSoup
+import re
+import re
+from pathlib import Path
+
 
 class PPTUtils:
     @staticmethod
@@ -103,3 +108,92 @@ class PPTUtils:
             json.dump(json_data, f, ensure_ascii=False, indent=4)
 
         return json_data
+
+    @staticmethod
+    def extract_md_images(md_file):
+        """
+        提取Markdown文件中的图片信息
+        :param md_file: Markdown文件路径
+        :return: 包含图片信息的字典列表
+        """
+        content = Path(md_file).read_text(encoding='utf-8')
+        lines = content.split('\n')
+
+        images = []
+
+        for i, line in enumerate(lines):
+            img_info = {}
+
+            # 匹配HTML格式图片
+            if '<img' in line:
+                # 提取src属性
+                src_match = re.search(r'src=["\'](.*?)["\']', line)
+                if src_match:
+                    img_info['url'] = src_match.group(1)
+
+                    # 向前搜索标题和figureText
+                    j = i - 1
+                    while j >= 0:
+                        prev_line = lines[j].strip()
+
+                        # 匹配figureText注释
+                        if not img_info.get('figure_text') and \
+                                '<!--' in prev_line and 'figureText:' in prev_line:
+                            ft_match = re.search(r'figureText:\s*(.*?)\s*-->', prev_line)
+                            if ft_match:
+                                img_info['figure_text'] = ft_match.group(1)
+                            j -= 1
+                            continue
+
+                        # 匹配标题（非空行）
+                        if prev_line and not prev_line.startswith(('<', '![', '|')):
+                            img_info['title'] = prev_line
+                            break
+                        j -= 1
+
+                    images.append(img_info)
+
+            # 匹配Markdown标准图片
+            elif line.startswith('!['):
+                md_match = re.match(r'!\[(.*?)\]\((.*?)\)', line)
+                if md_match:
+                    img_info = {
+                        'title': md_match.group(1),
+                        'url': md_match.group(2)
+                    }
+
+                    # 向前搜索figureText
+                    j = i - 1
+                    while j >= 0:
+                        prev_line = lines[j].strip()
+                        if '<!--' in prev_line and 'figureText:' in prev_line:
+                            ft_match = re.search(r'figureText:\s*(.*?)\s*-->', prev_line)
+                            if ft_match:
+                                img_info['figure_text'] = ft_match.group(1)
+                            break
+                        j -= 1
+
+                    images.append(img_info)
+
+        return images
+
+    @staticmethod
+    def extract_markdown_tables(md_file_path):
+        """ 从Markdown内容中提取所有HTML表格并转换为二维数组 """
+        # 读取 Markdown 文件内容
+        with open(md_file_path, "r", encoding="utf-8") as file:
+            markdown_text = file.read()
+
+        # 使用 BeautifulSoup 解析 Markdown 的 HTML 表格内容
+        soup = BeautifulSoup(markdown_text, 'html.parser')
+
+        tables = []
+        # 遍历所有 <table> 元素
+        for table in soup.find_all('table'):
+            rows = []
+            for tr in table.find_all('tr'):  # 遍历表格的每一行
+                row = [td.get_text(strip=True) for td in tr.find_all(['td', 'th'])]  # 获取每列的内容
+                rows.append(row)
+            tables.append(rows)  # 将当前表格添加到表格列表中
+
+        return tables

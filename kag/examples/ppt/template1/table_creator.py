@@ -1,6 +1,7 @@
-from pptx import Presentation
-from pptx.util import Inches
 from typing import List
+
+from bs4 import BeautifulSoup
+
 
 class TablePPTCreator:
     def __init__(self, prs):
@@ -39,6 +40,27 @@ class TablePPTCreator:
                 cell.text = table_content[i][j]
 
         return slide
+
+    @staticmethod
+    def extract_markdown_tables(md_content):
+        """
+        从Markdown内容中提取所有HTML表格并转换为二维数组
+        :param md_content: Markdown文本内容
+        :return: 包含所有表格的列表（每个表格是一个二维数组）
+        """
+        soup = BeautifulSoup(md_content, 'html.parser')
+        tables = []
+
+        for table in soup.find_all('table'):
+            table_data = []
+            for row in table.find_all('tr'):
+                # 处理包含td或th的情况
+                columns = [col.get_text(strip=True) for col in row.find_all(['td', 'th'])]
+                if columns:  # 忽略空行
+                    table_data.append(columns)
+            tables.append(table_data)
+
+        return tables
 
     def save(self, filename):
         """保存PPT文件"""
