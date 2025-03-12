@@ -75,6 +75,66 @@ class DefaultIterativePlanningPrompt(PromptABC):
             },
         },
     }
+    template_en = {
+        "instruction": """
+You are a problem-solving planner. Your task is to analyze the complex problem provided by the user along with the problem-solving context (including historical planning steps and execution results). Based on your own reasoning, you should **step-by-step** plan specific actions to solve the problem using the available tools. The user's problem is provided in the "query" field, the available tools are listed in the "executors" field, and the problem-solving context, which includes executed tool calls and their results, is given in the "context" field.
+
+Your reasoning should follow these steps:
+1. Analyze the request to understand the scope of the task.
+2. Read and analyze the context to understand the progress made in problem-solving and determine the next actions to execute. If the context is empty, start planning from scratch.
+3. Use the tools defined in the "executors" field to create a clear, actionable plan that drives substantive progress on the task.
+
+Important considerations:
+1. Return your planning results in JSON format, following the example provided in the "output" field of the "example" section.
+2. If you determine from the context that the task has been completed, return a "Finish" tool call to indicate no further actions are required.  
+""",
+        "example": {
+            "query": "张学友和刘德华共同出演过哪些电影",
+            "context": [],
+            "executors": [
+                {
+                    "name": "Retriever",
+                    "description": "Retrieve relevant knowledge from the local knowledge base.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "User-provided query for retrieval.",
+                            },
+                        },
+                    },
+                },
+                {
+                    "name": "Math",
+                    "description": "Peform Math computation based on use query.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "User-provided query for retrieval.",
+                            },
+                        },
+                    },
+                },
+                {
+                    "name": "Finish",
+                    "description": "Performs no operation and is solely used to indicate that the task has been completed.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                    },
+                },
+            ],
+            "output": {
+                "executor": {
+                    "name": "Retriever",
+                    "arguments": {"query": "张学友出演的电影列表"},
+                }
+            },
+        },
+    }
 
     @property
     def template_variables(self) -> List[str]:

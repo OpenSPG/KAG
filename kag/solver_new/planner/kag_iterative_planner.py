@@ -31,7 +31,7 @@ class KAGIterativePlanner(PlannerABC):
                 formatted_context.append(
                     {
                         "action": {"name": task.executor, "argument": task.arguments},
-                        "result": task.result,
+                        "result": task.result.to_string() if hasattr(task.result, "to_string") else task.result,
                     }
                 )
         return formatted_context

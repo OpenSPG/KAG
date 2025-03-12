@@ -46,7 +46,7 @@ class KAGIterativePipeline(SolverPipelineABC):
                 return executor
         return None
 
-    @retry(stop=stop_after_attempt(3))
+    #@retry(stop=stop_after_attempt(3))
     async def planning(self, query, context, **kwargs):
         task = await self.planner.ainvoke(
             query,
