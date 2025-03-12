@@ -9,17 +9,21 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from kag.interface import ExecutorABC
+
+from aiolimiter import AsyncLimiter
 
 
-@ExecutorABC.register("finish_executor")
-class FinishExecutor(ExecutorABC):
-    def schema(self):
-        return {
-            "name": "Finish",
-            "description": "Performs no operation and is solely used to indicate that the task has been completed.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
-        }
+class RateLimiterManger:
+    def __init__(self):
+        self.limiter_map = {}
+
+    def get_rate_limiter(
+        self, name: str, max_rate: float = 1000, time_period: float = 1
+    ):
+        if name not in self.limiter_map:
+            limiter = AsyncLimiter(max_rate, time_period)
+            self.limiter_map[name] = limiter
+        return self.limiter_map[name]
+
+
+RATE_LIMITER_MANGER = RateLimiterManger()

@@ -71,10 +71,6 @@ Task.register("base", as_default=True)(Task)
 
 
 class PlannerABC(Registrable):
-    def __init__(self, executors, **kwargs):
-        super().__init__(**kwargs)
-        self.executors = executors
-
     @property
     def input_types(self):
         return str
@@ -82,12 +78,6 @@ class PlannerABC(Registrable):
     @property
     def output_types(self):
         return List[Task]
-
-    def get_executor_by_name(self, name):
-        for executor in self.executors:
-            if executor.name == name:
-                return executor
-        return None
 
     def create_tasks_from_dag(self, task_dag: Dict[str, dict]):
         """create tasks from a dag"""

@@ -36,6 +36,7 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
         url: str = None,
         query_instruction_for_retrieval: str = None,
         vector_dimensions: int = None,
+        **kwargs,
     ):
         """
         Initializes the LocalBGEVectorizeModel instance.
@@ -46,7 +47,11 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
             query_instruction_for_retrieval (str, optional): The query instruction for retrieval. Defaults to None.
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        super().__init__(vector_dimensions)
+        name = kwargs.get("name", None)
+        if not name:
+            name = "local_bge_vectorize_model"
+
+        super().__init__(name, vector_dimensions)
         self.model_path = os.path.expanduser(path)
         self.url = url
         config_path = os.path.join(self.model_path, "config.json")
@@ -56,9 +61,7 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
                 raise RuntimeError(message)
             logger.info("Model file not found in path, start downloading...")
             self._download_model(self.model_path, self.url)
-        default_chinese_query_instruction_for_retrieval = (
-            "为这个句子生成表示以用于向量检索："
-        )
+        default_chinese_query_instruction_for_retrieval = "为这个句子生成表示以用于向量检索："
         default_english_query_instruction_for_retrieval = (
             "Represent this sentence for searching relevant passages:"
         )
