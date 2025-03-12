@@ -44,7 +44,7 @@ class OpenAIClient(LLMClient):
         temperature: float = 0.7,
         timeout: float = None,
         max_rate: float = 1000,
-        time_period: float = 1,
+            time_period: float = 1,
         **kwargs,
     ):
         """
@@ -230,7 +230,7 @@ class AzureOpenAIClient(LLMClient):
         azure_ad_token_provider: AzureADTokenProvider = None,
         max_rate: float = 1000,
         time_period: float = 1,
-        **kwargs
+            **kwargs
     ):
         """
         Initializes the AzureOpenAIClient instance.
