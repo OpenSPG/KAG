@@ -33,6 +33,7 @@ from kag.builder.component.scanner.dataset_scanner import (
 )
 from kag.builder.component.scanner.file_scanner import FileScanner
 from kag.builder.component.scanner.directory_scanner import DirectoryScanner
+from kag.builder.component.scanner.odps_scanner import ODPSScanner
 
 
 from kag.builder.component.reader.pdf_reader import PDFReader
@@ -77,6 +78,7 @@ __all__ = [
     "YuqueScanner",
     "CSVScanner",
     "CSVStructuredScanner",
+    "ODPSScanner",
     "LengthSplitter",
     "PatternSplitter",
     "OutlineSplitter",
