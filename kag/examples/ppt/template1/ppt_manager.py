@@ -3,6 +3,8 @@ from kag.examples.ppt.template1.content_creator import ContentPPTCreator
 from kag.examples.ppt.template1.title_creator import TitlePPTCreator
 from kag.examples.ppt.template1.chart_creator import ChartPPTCreator
 from kag.examples.ppt.template1.image_creator import ImagePPTCreator
+from kag.examples.ppt.template1.table_creator import TablePPTCreator
+
 
 class PPTManager:
     def __init__(self, template_path=None):
@@ -15,7 +17,8 @@ class PPTManager:
             'title': TitlePPTCreator(self.prs),
             'content': ContentPPTCreator(self.prs),
             'chart': ChartPPTCreator(self.prs),
-            'image': ImagePPTCreator(self.prs)
+            'image': ImagePPTCreator(self.prs),
+            'table': TablePPTCreator(self.prs)
         }
 
     def save(self, output_path):

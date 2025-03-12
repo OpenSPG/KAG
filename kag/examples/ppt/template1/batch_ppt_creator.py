@@ -1,5 +1,3 @@
-from pptx import Presentation
-
 from .ppt_manager import PPTManager
 
 

@@ -1,8 +1,4 @@
 from pptx.util import Inches
-from pptx import Presentation
-
-from .ppt_creator_base import PPTCreatorBase
-from .ppt_utils import PPTUtils
 
 
 class ContentPPTCreator:

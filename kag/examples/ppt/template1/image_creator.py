@@ -1,12 +1,6 @@
 import os
 
-from pptx import Presentation
 from PIL import Image
-from pptx.util import Inches
-
-from .chart_creator import ChartPPTCreator
-from .ppt_creator_base import PPTCreatorBase
-from .ppt_utils import PPTUtils
 
 
 class ImagePPTCreator:

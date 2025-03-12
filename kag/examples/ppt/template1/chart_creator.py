@@ -65,53 +65,6 @@ class ChartPPTCreator:
 
         return slide
 
-    def add_chart_slide_by_free(self, title, chart_data, chart_type=None):
-        """添加图表页"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[8])
-
-        if slide.shapes.title:
-            # 如果存在标题占位符，设置标题文本
-            title_shape = slide.shapes.title
-            title_shape.text = title
-        else:
-            # 如果不存在标题占位符，手动添加一个文本框作为标题
-            print("当前幻灯片没有标题占位符，正在手动添加文本框...")
-            left = Inches(1)
-            top = Inches(0.5)
-            width = Inches(8)
-            height = Inches(1)
-            textbox = slide.shapes.add_textbox(left, top, width, height)
-            text_frame = textbox.text_frame
-            text_frame.text = title
-
-        # 创建图表数据
-        chart_table = CategoryChartData()
-
-        # 添加类别
-        categories = chart_data['categories']
-        values = chart_data.get('series')
-        series_name = chart_data.get('series_name')
-
-        chart_table.categories = categories
-        chart_table.add_series(series_name, values)
-
-        # 设置图表类型
-        if chart_type is None:
-            chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
-
-        # 添加图表
-        x, y = Inches(2), Inches(2)
-        cx, cy = Inches(6), Inches(4.5)
-        chart = slide.shapes.add_chart(
-            chart_type, x, y, cx, cy, chart_table
-        ).chart
-
-        # 设置图表样式
-        self._style_chart(chart)
-
-
-        return slide
-
     @staticmethod
     def _style_chart(chart):
         """设置图表样式"""
