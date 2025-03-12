@@ -90,7 +90,10 @@ class CSVScanner(ScannerABC):
             for k, v in row.items():
                 if k in col_keys:
                     v = str(v)
-                    name = v[:5] + "..." + v[-5:]
+                    if len(v) <= 10:
+                        name = v
+                    else:
+                        name = v[:5] + "..." + v[-5:]
                     contents.append(
                         {"id": generate_hash_id(v), "name": name, "content": v}
                     )
@@ -104,13 +107,16 @@ class CSVStructuredScanner(ScannerABC):
     def __init__(
         self,
         header: bool = True,
-        col_map: dict[int, str] = None,
+        col_map: Dict[str, str] = None,
         rank: int = 0,
         world_size: int = 1,
     ):
         super().__init__(rank=rank, world_size=world_size)
         self.header = header
-        self.col_map = col_map
+        new_col_map = {}
+        for k, v in col_map.items():
+            new_col_map[int(k)] = v
+        self.col_map = new_col_map
 
     @property
     def input_types(self) -> Input:
@@ -153,10 +159,19 @@ class CSVStructuredScanner(ScannerABC):
         if self.col_map is None:
             return data.to_dict(orient="records")
 
+        col_key_map = {}
+        if self.header:
+            all_keys = data.keys().to_list()
+            for key_id, new_key in self.col_map.items():
+                old_key = all_keys[key_id]
+                col_key_map[old_key] = new_key
+        else:
+            col_key_map = self.col_map
+
         contents = []
         for _, row in data.iterrows():
             renamed_row = {}
-            for old_key, new_key in self.col_map.items():
+            for old_key, new_key in col_key_map.items():
                 renamed_row[new_key] = row[old_key]
             contents.append(renamed_row)
 
