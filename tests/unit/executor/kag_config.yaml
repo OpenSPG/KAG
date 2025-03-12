@@ -1,0 +1,57 @@
+openie_llm: &id002
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: key
+  model: qwen2.5-72b-instruct
+chat_llm: &id003
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: key
+  model: qwen2.5-72b-instruct
+vectorize_model: &id001
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+vectorizer: *id001
+log:
+  level: INFO
+project:
+  biz_scene: default
+  host_addr: http://101.37.68.241:8887
+  id: '2'
+  language: en
+  namespace: MuSiQue
+
+
+kag_hybrid_executor: &kag_hybrid_executor_conf
+  type: kag_hybrid_executor
+  path_select:
+    type: hybrid_one_hop_select
+    exact_select:
+      type: exact_one_hop_select
+    fuzzy_select:
+      type: fuzzy_one_hop_select
+      llm_client: *id003
+  ppr_chunk_retriever:
+    type: ppr_chunk_retriever
+    llm_module: *id003
+  entity_linking:
+    type: entity_linking
+  llm_client: *id003
+  lf_trans_prompt:
+    type: default_spo_retriever_decompose
+
+iterative_solver_pipeline:
+  type: kag_iterative_pipeline
+  planner:
+    type: kag_iterative_planner
+    llm: *id003
+    plan_prompt:
+      type: default_iterative_planning
+  executors:
+  - *kag_hybrid_executor_conf
+  - type: mock_math_executor
+  generator:
+    type: mock_generator
