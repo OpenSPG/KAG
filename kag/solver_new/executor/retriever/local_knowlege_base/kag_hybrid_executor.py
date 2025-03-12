@@ -1,7 +1,7 @@
 from typing import List, Any
 
 from kag.builder.prompt.utils import init_prompt_with_fallback
-from kag.interface import ExecutorABC, LLMClient, ExecutorResponse
+from kag.interface import ExecutorABC, LLMClient, ExecutorResponse, PromptABC
 from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     KgGraph,
@@ -87,6 +87,7 @@ class KagHybridExecutor(ExecutorABC):
         path_select: PathSelect,
         ppr_chunk_retriever: PprChunkRetriever,
         llm_client: LLMClient,
+        lf_trans_prompt: PromptABC = None
     ):
         """Initialize hybrid retrieval executor with required components
 
@@ -95,6 +96,7 @@ class KagHybridExecutor(ExecutorABC):
             path_select (PathSelect): Path selection strategy
             ppr_chunk_retriever (PprChunkRetriever): PageRank-based chunk retriever
             llm_client (LLMClient): Language model interface
+            lf_trans_prompt (PromptABC): prompt for logic form translator
         """
         super().__init__()
         self.entity_linking = entity_linking
@@ -149,7 +151,6 @@ class KagHybridExecutor(ExecutorABC):
         # 1. Initialize response container
 
         kag_response = self._initialize_response(task)
-        # TODO 在拆解的时候应该需要本任务依赖的任务，此处需要从context中获取，还需要改下代码
         # 2. Convert query to logical form
         logic_nodes = self._convert_to_logical_form(task.task_description, task)
 
@@ -171,7 +172,6 @@ class KagHybridExecutor(ExecutorABC):
             self._save_step_result(kag_response, logic_node, chunks, summary, kg_graph)
 
         # 8. Final storage
-        # TODO 此处存储生成的响应值，在后续任务重需要序列化输入给大模型进行重思考或者生成代码
         self._store_results(task, kag_response)
         return kag_response
 
@@ -198,6 +198,8 @@ class KagHybridExecutor(ExecutorABC):
         Returns:
             List[GetSPONode]: Logical nodes derived from task description
         """
+        # TODO 在拆解的时候应该需要本任务依赖的任务，此处需要从context中获取，还需要改下代码
+
         return self._trans_query_to_logic_form(task.task_description)
 
     def _initialize_knowledge_graph(self) -> KgGraph:
@@ -212,11 +214,10 @@ class KagHybridExecutor(ExecutorABC):
             logic_node (GetSPONode): Logical node to process
         """
         self._store_lf_node_structure(kg_graph, logic_node)
-        start_entities = self._find_start_entities(kg_graph, logic_node)
-        if not start_entities:
-            return  # Skip if no valid start entities found
+        head_entities = self._find_head_entities(kg_graph, logic_node)
+        tail_entities = self._find_tail_entities(kg_graph, logic_node)
 
-        self._retrieve_relations(kg_graph, logic_node, start_entities)
+        self._retrieve_relations(kg_graph=kg_graph, logic_node=logic_node, head_entities=head_entities, tail_entities=tail_entities)
 
     def _store_lf_node_structure(self, kg_graph: KgGraph, logic_node: GetSPONode):
         """Store logical node structure in knowledge graph
@@ -232,10 +233,24 @@ class KagHybridExecutor(ExecutorABC):
             "o": logic_node.o.alias_name,
         }
 
-    def _find_start_entities(
+    def _find_entities(self, kg_graph: KgGraph, symbol_entity: SPOEntity, query: str):
+        # Try existing entities in knowledge graph
+        entities = kg_graph.get_entity_by_alias(symbol_entity.alias_name)
+        if entities:
+            kg_graph.entity_map[symbol_entity.alias_name] = entities
+            return entities
+        # Perform entity linking if possible
+        if symbol_entity.entity_name:
+            entities = self.entity_linking.invoke(query, symbol_entity.get_mention_name(), symbol_entity.get_entity_first_type_or_un_std())
+            if entities:
+                kg_graph.entity_map[symbol_entity.alias_name] = entities
+                return entities
+        return []
+
+    def _find_tail_entities(
         self, kg_graph: KgGraph, logic_node: GetSPONode
     ) -> List[EntityData]:
-        """Find starting entities for path selection
+        """Find tails entities for path selection
 
         Args:
             kg_graph (KgGraph): Current knowledge graph
@@ -244,45 +259,43 @@ class KagHybridExecutor(ExecutorABC):
         Returns:
             List[EntityData]: List of found entities or None
         """
-        heads = [logic_node.s, logic_node.o]
-        for head in heads:
-            # Try existing entities in knowledge graph
-            entities = kg_graph.get_entity_by_alias(head.alias_name)
-            if entities:
-                kg_graph.entity_map[head.alias_name] = entities
-                return entities
-            if not isinstance(head, SPOEntity):
-                continue
-            # Perform entity linking if possible
-            if logic_node.s.entity_name:
-                entities = self.entity_linking.invoke(logic_node.sub_query, head)
-                if entities:
-                    kg_graph.entity_map[head.alias_name] = entities
-                    return entities
+        return self._find_entities(kg_graph, logic_node.o, logic_node.sub_query)
+    def _find_head_entities(
+        self, kg_graph: KgGraph, logic_node: GetSPONode
+    ) -> List[EntityData]:
+        """Find heads entities for path selection
 
-        return None
+        Args:
+            kg_graph (KgGraph): Current knowledge graph
+            logic_node (GetSPONode): Current logical node
+
+        Returns:
+            List[EntityData]: List of found entities or None
+        """
+        if isinstance(logic_node.s, SPOEntity):
+            return self._find_entities(kg_graph, logic_node.s, logic_node.sub_query)
+        return []
+
 
     def _retrieve_relations(
         self,
         kg_graph: KgGraph,
         logic_node: GetSPONode,
-        start_entities: List[EntityData],
+        head_entities: List[EntityData],
+        tail_entities: List[EntityData]
     ):
         """Retrieve relations based on start entities
 
         Args:
             kg_graph (KgGraph): Knowledge graph instance
             logic_node (GetSPONode): Current logical node
-            start_entities (List[EntityData]): Starting entities
+            head_entities (List[EntityData]): Head entities
+            tail_entities (List[EntityData]): Tail entities
         """
         selected_relations = []
-        for entity in start_entities:
-            new_relations = self.path_select.invoke(
-                logic_node.sub_query, logic_node, entity
-            )
-            if new_relations:
-                selected_relations.extend(new_relations)
-
+        selected_relations = self.path_select.invoke(
+            query=logic_node.sub_query, spo=logic_node, heads=head_entities, tails=tail_entities
+        )
         predicate = logic_node.p.alias_name
         kg_graph.edge_map[predicate] = selected_relations
 
