@@ -1,10 +1,17 @@
 from abc import ABC
-from typing import Dict
+from typing import Dict, List
 
 from kag.interface import KagBaseModule
-from kag.interface.solver.base_model import LogicNode
+from kag.interface.solver.base_model import LogicNode, LFPlan
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+
+
+def get_lf_pan_by_node(lf_plans: List[LFPlan], lf_node: LogicNode):
+    for lf in lf_plans:
+        if lf.lf_node == lf_node:
+            return lf
+    return None
 
 
 class OpExecutor(KagBaseModule, ABC):
@@ -28,10 +35,11 @@ class OpExecutor(KagBaseModule, ABC):
     def executor(
         self,
         nl_query: str,
-        logic_node: LogicNode,
+        lf_plan: LFPlan,
         req_id: str,
         kg_graph: KgGraph,
         process_info: dict,
+        history: List[LFPlan],
         param: dict,
     ) -> Dict:
         """
@@ -41,10 +49,11 @@ class OpExecutor(KagBaseModule, ABC):
 
         Parameters:
             nl_query (str): Natural language query string.
-            logic_node (LogicNode): The logic node that defines the operation to execute.
+            lf_plan (LFPlan): The logic node that defines the operation to execute.
             req_id (str): Request identifier.
             kg_graph (KgGraph): Knowledge graph object for subsequent queries and parsing.
             process_info (dict): Processing information dictionary to record logic node result information during executing.
+            history (List[LFPlan]): A list of previous LFPlan objects, used to maintain execution history.
             param (dict): Parameters needed for the execution.
 
         Returns:

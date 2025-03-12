@@ -1,8 +1,10 @@
 import logging
 from typing import List, Dict, Tuple
 
+from kag.solver.common.base import judge_is_answered
 from kag.solver.execute.op_executor.op_executor import OpExecutor
-from kag.interface.solver.base_model import LogicNode, SPOEntity, SPOBase
+from kag.interface.solver.base_model import SPOEntity, SPOBase, LFPlan, SubQueryResult
+from kag.solver.execute.sub_query_generator import LFSubGenerator
 from kag.solver.logic.core_modules.common.one_hop_graph import (
     EntityData,
     KgGraph,
@@ -11,8 +13,10 @@ from kag.solver.logic.core_modules.common.one_hop_graph import (
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.solver.retriever.base.kg_retriever import KGRetriever
+from kag.solver.retriever.chunk_retriever import ChunkRetriever
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
@@ -53,6 +57,15 @@ class GetSPOExecutor(OpExecutor):
 
         self.exact_kg_retriever: ExactKgRetriever = kwargs.get("exact_kg_retriever")
         self.fuzzy_kg_retriever: FuzzyKgRetriever = kwargs.get("fuzzy_kg_retriever")
+        self.chunk_retriever: ChunkRetriever = kwargs.get("chunk_retriever")
+        self.force_chunk_retriever = kwargs.get("force_chunk_retriever")
+
+        self.rewrite_sub_query_prompt = init_prompt_with_fallback(
+            "rewrite_sub_query", self.biz_scene
+        )
+
+        # Generate
+        self.generator = LFSubGenerator(llm_client=self.llm_module)
 
     def get_mentioned_entity(self, n: GetSPONode, kg_graph: KgGraph):
         entities_candis = []
@@ -105,7 +118,7 @@ class GetSPOExecutor(OpExecutor):
         process_info: dict,
         param: dict,
     ) -> Tuple[bool, KgGraph]:
-        if not isinstance(logic_node, GetSPONode):
+        if not isinstance(logic_node, GetSPONode) or kg_retriever is None:
             return False, KgGraph()
 
         n: GetSPONode = logic_node
@@ -168,32 +181,155 @@ class GetSPOExecutor(OpExecutor):
         )
         return True, copy_kg_graph
 
+    def _rewrite_sub_query_with_history_qa(self, history: List[LFPlan], sub_query):
+        if history:
+            history_qa = []
+            sub_query_rewrite = []
+            for idx, plan in enumerate(history):
+                if plan.res and plan.res.if_answered:
+                    history_qa.append(
+                        f"step{idx}:{plan.rewrite_query}\nanswer:{plan.res.sub_answer}"
+                    )
+            sub_query_rewrite_l = self.llm_module.invoke(
+                {
+                    "history_qa": "\n".join(history_qa),
+                    "question": sub_query,
+                },
+                self.rewrite_sub_query_prompt,
+                with_json_parse=False,
+            )
+            if isinstance(sub_query_rewrite_l, list):
+                sub_query_rewrite = []
+                for sub_query_rewrite_i in sub_query_rewrite_l:
+                    sub_query_rewrite.append(
+                        sub_query_rewrite_i
+                        if sub_query_rewrite_i
+                        and sub_query_rewrite_i.lower() not in ["[]", "i don't know"]
+                        else sub_query
+                    )
+            elif isinstance(sub_query_rewrite_l, str):
+                sub_query_rewrite = [
+                    (
+                        sub_query_rewrite_l
+                        if sub_query_rewrite_l
+                        and sub_query_rewrite_l.lower() not in ["[]", "i don't know"]
+                        else sub_query
+                    )
+                ]
+            return_query = []
+            for q in sub_query_rewrite:
+                if q == "" or q is None:
+                    continue
+                return_query.append(q)
+            if len(return_query) == 0:
+                return_query = [sub_query]
+            return return_query
+        else:
+            return [sub_query]
+
+    def _execute_chunk_answer(
+        self,
+        query: str,
+        lf: LFPlan,
+        process_info: Dict,
+        kg_graph: KgGraph,
+        history: List[LFPlan],
+        params: dict,
+    ) -> SubQueryResult:
+        if self.chunk_retriever and (
+            not judge_is_answered(lf.res.sub_answer) or self.force_chunk_retriever
+        ):
+            if self.force_chunk_retriever:
+                # force chunk retriever, so we clear kg solved answer
+                process_info["kg_solved_answer"] = []
+            # chunk retriever
+            all_related_entities = kg_graph.get_all_spo()
+            all_related_entities = list(set(all_related_entities))
+            sub_queries = self._rewrite_sub_query_with_history_qa(
+                history, lf.lf_node.sub_query
+            )
+            lf.rewrite_query = sub_queries
+            doc_retrieved = self.chunk_retriever.recall_docs(
+                queries=[query] + sub_queries,
+                retrieved_spo=all_related_entities,
+                kwargs=params,
+            )
+            lf.res.doc_retrieved = doc_retrieved
+            process_info[lf.query]["doc_retrieved"] = doc_retrieved
+            process_info[lf.query]["match_type"] = "chunk"
+            # generate sub answer by chunk ans spo
+            docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
+            lf.res.sub_answer = self.generator.generate_sub_answer(
+                lf.query, lf.res.spo_retrieved, docs, history
+            )
+        return lf.res
+
     def executor(
         self,
         nl_query: str,
-        logic_node: LogicNode,
+        lf_plan: LFPlan,
         req_id: str,
         kg_graph: KgGraph,
         process_info: dict,
+        history: List[LFPlan],
         param: dict,
     ) -> Dict:
-        if not isinstance(logic_node, GetSPONode):
+        if not isinstance(lf_plan.lf_node, GetSPONode):
             return {}
-        n = logic_node
+        n = lf_plan.lf_node
 
-        kg_graph.logic_form_base[n.s.alias_name] = n.s
-        kg_graph.logic_form_base[n.p.alias_name] = n.p
-        kg_graph.logic_form_base[n.o.alias_name] = n.o
+        kg_graph.alias_set.append(n.s.alias_name.alias_name)
+        kg_graph.alias_set.append(n.p.alias_name.alias_name)
+        kg_graph.alias_set.append(n.o.alias_name.alias_name)
 
-        is_success, exact_matched_graph = self._kg_match(
-            n, req_id, self.exact_kg_retriever, kg_graph, process_info, param
-        )
-        if is_success:
-            kg_graph.merge_kg_graph(exact_matched_graph)
-            return process_info[logic_node.sub_query]
+        if not lf_plan.res.is_executed:
+            kg_graph.logic_form_base[n.s.alias_name] = n.s
+            kg_graph.logic_form_base[n.p.alias_name] = n.p
+            kg_graph.logic_form_base[n.o.alias_name] = n.o
 
-        _, fuzzy_matched_graph = self._kg_match(
-            n, req_id, self.fuzzy_kg_retriever, kg_graph, process_info, param
-        )
-        kg_graph.merge_kg_graph(fuzzy_matched_graph)
-        return process_info[logic_node.sub_query]
+            is_success, exact_matched_graph = self._kg_match(
+                n, req_id, self.exact_kg_retriever, kg_graph, process_info, param
+            )
+            if is_success:
+                kg_graph.merge_kg_graph(exact_matched_graph)
+            else:
+                _, fuzzy_matched_graph = self._kg_match(
+                    n, req_id, self.fuzzy_kg_retriever, kg_graph, process_info, param
+                )
+                kg_graph.merge_kg_graph(fuzzy_matched_graph)
+            lf_plan.res.spo_retrieved = process_info[lf_plan.lf_node.sub_query].get(
+                "spo_retrieved", []
+            )
+            lf_plan.res.sub_answer = process_info[lf_plan.lf_node.sub_query][
+                "kg_answer"
+            ]
+            lf_plan.res.doc_retrieved = []
+            lf_plan.res.match_type = process_info[lf_plan.lf_node.sub_query][
+                "match_type"
+            ]
+        else:
+            # generate sub answer
+            if not judge_is_answered(lf_plan.res.sub_answer) and (
+                len(lf_plan.res.spo_retrieved) and not self.force_chunk_retriever
+            ):
+                # try to use spo to generate answer
+                lf_plan.res.sub_answer = self.generator.generate_sub_answer(
+                    lf_plan.query, lf_plan.res.spo_retrieved, [], history
+                )
+            if not judge_is_answered(lf_plan.res.sub_answer):
+                # chunk retriever
+                self._execute_chunk_answer(
+                    nl_query, lf_plan, process_info, kg_graph, history, param
+                )
+            lf_plan.res.if_answered = judge_is_answered(lf_plan.res.sub_answer)
+            lf_plan.res.match_type = process_info[lf_plan.query]["match_type"]
+            answer_pair = lf_plan.res.get_qa_pair()
+            if answer_pair and isinstance(lf_plan.lf_node, GetSPONode):
+                kg_graph.add_answered_alias(
+                    lf_plan.lf_node.s.alias_name.alias_name, answer_pair
+                )
+                kg_graph.add_answered_alias(
+                    lf_plan.lf_node.o.alias_name.alias_name, answer_pair
+                )
+
+        return process_info[lf_plan.lf_node.sub_query]

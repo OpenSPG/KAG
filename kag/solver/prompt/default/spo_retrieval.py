@@ -112,6 +112,8 @@ class SpoRetrieval(PromptABC):
             f"SpoRetrieval {response} mention:{self.template_variables_value.get('mention', '')} "
             f"candis:{self.template_variables_value.get('candis', '')}"
         )
+        if isinstance(response, list):
+            return response
         if not isinstance(response, dict):
             return response
         if "output" in response:

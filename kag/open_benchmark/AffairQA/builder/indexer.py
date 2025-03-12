@@ -36,6 +36,7 @@ zh_to_en_mapping = {
     "旅行社": "TravelAgency",
     "自然保护区": "NatureReserve",
     "许可证": "License",
+    "行政区": "AdministrativeRegion",
 }
 
 
@@ -63,7 +64,7 @@ def import_data():
         # "公园",
         # "加油站",
         # "协会",
-        "图书馆",
+        # "图书馆",
         # "学校",
         # "宗教场所",
         # "政府机构",
@@ -71,6 +72,7 @@ def import_data():
         # "旅行社",
         # "自然保护区",
         # "许可证",
+        "行政区",
     ]:
         file_name = os.path.join(file_path, f"data/{spg_type_name}.csv")
         chain = AffairEntityChain(spg_type_name=zh_to_en_mapping[spg_type_name])

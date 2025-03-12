@@ -334,7 +334,7 @@ class SchemaConstraintExtractor(ExtractorABC):
                         id=official_name,
                         name=official_name,
                         label=s_label,
-                        properties=properties,
+                        properties=dict(properties),
                     )
                     graph.add_edge(
                         s_id=s_name,
