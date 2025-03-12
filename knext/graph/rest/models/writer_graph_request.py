@@ -48,6 +48,7 @@ class WriterGraphRequest(object):
         "operation": "str",
         "sub_graph": "object",
         "enable_lead_to": "bool",
+        "token": "str"
     }
 
     attribute_map = {
@@ -55,15 +56,17 @@ class WriterGraphRequest(object):
         "operation": "operation",
         "sub_graph": "subGraph",
         "enable_lead_to": "enableLeadTo",
+        "token": "token"
     }
 
     def __init__(
-        self,
-        project_id=None,
-        operation=None,
-        sub_graph=None,
-        enable_lead_to=None,
-        local_vars_configuration=None,
+            self,
+            project_id=None,
+            operation=None,
+            sub_graph=None,
+            enable_lead_to=None,
+            token=None,
+            local_vars_configuration=None,
     ):  # noqa: E501
         """WriterGraphRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
@@ -74,6 +77,7 @@ class WriterGraphRequest(object):
         self._operation = None
         self._sub_graph = None
         self._enable_lead_to = None
+        self._token = None
         self.discriminator = None
 
         if project_id is not None:
@@ -84,6 +88,8 @@ class WriterGraphRequest(object):
             self.sub_graph = sub_graph
         if enable_lead_to is not None:
             self.enable_lead_to = enable_lead_to
+        if token is not None:
+            self.token = token
 
     @property
     def project_id(self):
@@ -168,6 +174,27 @@ class WriterGraphRequest(object):
         """
 
         self._enable_lead_to = enable_lead_to
+
+    @property
+    def token(self):
+        """Gets the token of this WriterGraphRequest.  # noqa: E501
+
+
+        :return: The token of this WriterGraphRequest.  # noqa: E501
+        :rtype: str
+        """
+        return self._token
+
+    @token.setter
+    def token(self, token):
+        """Sets the token of this WriterGraphRequest.
+
+
+        :param token: The token of this WriterGraphRequest.  # noqa: E501
+        :type: str
+        """
+
+        self._token = token
 
     def to_dict(self):
         """Returns the model properties as a dict"""
