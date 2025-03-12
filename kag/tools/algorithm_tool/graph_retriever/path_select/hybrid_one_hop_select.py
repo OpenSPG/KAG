@@ -1,6 +1,5 @@
 from typing import List
 
-from kag.interface import ToolABC
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
 from kag.tools.algorithm_tool.graph_retriever.path_select.exact_one_hop_select import ExactOneHopSelect
@@ -8,7 +7,7 @@ from kag.tools.algorithm_tool.graph_retriever.path_select.fuzzy_one_hop_select i
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
 
-@ToolABC.register("hybrid_one_hop_select")
+@PathSelect.register("hybrid_one_hop_select")
 class HybridOneHopSelect(PathSelect):
     """Hybrid path selection tool combining exact and fuzzy strategies.
 

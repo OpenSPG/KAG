@@ -66,7 +66,55 @@ class DefaultSPORetrieverDecomposePrompt(PromptABC):
             "context": "$context",
        },
     }
-    template_en = template_zh
+    template_en = {
+  "instruction": "You are a graph retrieval system that needs to generate some multi-hop query plans to match graph structures.",
+  "format": [
+    "Output as a list in JSON format",
+    "Each element must include a starting point s, relationship p, endpoint o, and a sub-query sub_query",
+    "s/p/o must contain alias information to represent the graph pattern name"
+  ],
+  "example": {
+    "query": "What movies have Jacky Cheung and Andy Lau co-starred in?",
+    "context": [],
+    "output": [
+      {
+        "sub_query": "What movies has Jacky Cheung starred in?",
+        "s": {
+          "alias": "s1",
+          "name": "Jacky Cheung",
+          "type": "Person"
+        },
+        "p": {
+          "alias": "p1",
+          "type": "Co-starring"
+        },
+        "o": {
+          "alias": "o1",
+          "type": "Movie"
+        }
+      },
+      {
+        "sub_query": "In the movies that Jacky Cheung starred in, Andy Lau also starred.",
+        "s": {
+          "alias": "s2",
+          "name": "Andy Lau",
+          "type": "Person"
+        },
+        "p": {
+          "alias": "p2",
+          "type": "Co-starring"
+        },
+        "o": {
+          "alias": "o1"
+        }
+      }
+    ]
+  },
+  "input": {
+    "query": "$query",
+    "context": "$context"
+  }
+}
 
     @property
     def template_variables(self) -> List[str]:
@@ -75,8 +123,11 @@ class DefaultSPORetrieverDecomposePrompt(PromptABC):
     def parse_response(self, response: str, **kwargs):
         if isinstance(response, str):
             response = json.loads(response)
-        if not isinstance(response, dict):
-            raise ValueError(f"response should be a dict, but got {type(response)}")
+        if isinstance(response, dict):
+            if "output" in response:
+                response = response["output"]
+            else:
+                raise ValueError(f"response is a dict, but not contains output")
         if "output" in response:
             response = response["output"]
         if not isinstance(response, list):

@@ -3,7 +3,7 @@ import time
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
-from kag.interface import ToolABC, VectorizeModelABC
+from kag.interface import VectorizeModelABC
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData, OneHopGraphData, KgGraph, \
     parse_entity_relation
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -18,7 +18,7 @@ from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import run_
 logger = logging.getLogger()
 
 
-@ToolABC.register("exact_one_hop_select")
+@PathSelect.register("exact_one_hop_select")
 class ExactOneHopSelect(PathSelect):
     def __init__(self, vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None,

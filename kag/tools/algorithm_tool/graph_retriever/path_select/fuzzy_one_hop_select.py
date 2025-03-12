@@ -3,7 +3,7 @@ import time
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
-from kag.interface import ToolABC, VectorizeModelABC, LLMClient, PromptABC
+from kag.interface import VectorizeModelABC, LLMClient, PromptABC
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData, OneHopGraphData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
@@ -17,12 +17,11 @@ from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import gene
 
 logger = logging.getLogger()
 
-@ToolABC.register("fuzzy_one_hop_select")
+@PathSelect.register("fuzzy_one_hop_select")
 class FuzzyOneHopSelect(PathSelect):
-    def __init__(self, vectorize_model: VectorizeModelABC = None,
+    def __init__(self, llm_client: LLMClient,vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None,
                  search_api: SearchApiABC = None,
-                 llm_client: LLMClient = None,
                  spo_retrieval_prompt: PromptABC = None,):
         super().__init__()
         self.schema: SchemaUtils = SchemaUtils(
@@ -142,7 +141,9 @@ class FuzzyOneHopSelect(PathSelect):
         revert_value_p_map = {}
         revert_graph_map = {}
         for one_hop_graph in one_hop_graph_list:
-            for k, v_set in one_hop_graph.get_s_all_relation_spo().items():
+            for k, v_set in one_hop_graph.get_s_all_relation_spo(
+                len(n.p.value_list) != 0, KAG_PROJECT_CONF.language
+            ).items():
                 for v in v_set:
                     all_spo_text.append(v)
                     revert_value_p_map[v] = k
@@ -182,7 +183,7 @@ class FuzzyOneHopSelect(PathSelect):
             if std_p is None or std_p == "":
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
-            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text)
+            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text, len(n.p.value_list) != 0, KAG_PROJECT_CONF.language)
             result += rel_set
         return result
 
