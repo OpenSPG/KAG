@@ -55,6 +55,12 @@ class TextSimilarity:
                     need_call_emb_text.append(text)
             if len(need_call_emb_text) > 0:
                 emb_res = self.vectorize_model.vectorize(need_call_emb_text)
+
+                # If need_call_emb_text has only one element and emb_res is not of type list[list], convert emb_res to a list of lists
+                if len(need_call_emb_text) == 1:
+                    if emb_res and type(emb_res[0]) != list:
+                        emb_res = [emb_res]
+
                 for text, text_emb in zip(need_call_emb_text, emb_res):
                     tmp_map[text] = text_emb
                     if is_cached:
