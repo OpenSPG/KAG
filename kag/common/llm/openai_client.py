@@ -9,9 +9,10 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
-from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+import json
 import logging
+from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+
 
 from tenacity import retry, stop_after_attempt
 
@@ -44,7 +45,7 @@ class OpenAIClient(LLMClient):
         temperature: float = 0.7,
         timeout: float = None,
         max_rate: float = 1000,
-            time_period: float = 1,
+        time_period: float = 1,
         **kwargs,
     ):
         """
@@ -58,7 +59,10 @@ class OpenAIClient(LLMClient):
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
-        super().__init__(max_rate, time_period, **kwargs)
+        name = kwargs.get("name", None)
+        if not name:
+            name = f"{api_key}{base_url}{model}"
+        super().__init__(name, max_rate, time_period, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -198,14 +202,14 @@ class OpenAIClient(LLMClient):
                 timeout=self.timeout,
             )
         if not self.stream:
-            reasoning_content = getattr(
-                response.choices[0].message, "reasoning_content", None
-            )
             content = response.choices[0].message.content
-            if reasoning_content:
-                rsp = f"{reasoning_content}\n{content}"
-            else:
-                rsp = content
+            # reasoning_content = getattr(
+            #     response.choices[0].message, "reasoning_content", None
+            # )
+            # if reasoning_content:
+            #     rsp = f"{reasoning_content}\n{content}"
+            # else:
+            rsp = content
         else:
             rsp = ""
             for chunk in response:
@@ -230,7 +234,7 @@ class AzureOpenAIClient(LLMClient):
         azure_ad_token_provider: AzureADTokenProvider = None,
         max_rate: float = 1000,
         time_period: float = 1,
-            **kwargs
+        **kwargs,
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -249,7 +253,11 @@ class AzureOpenAIClient(LLMClient):
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
-        super().__init__(max_rate, time_period, **kwargs)
+        name = kwargs.get("name", None)
+        if not name:
+            name = f"{api_key}{base_url}{model}"
+        super().__init__(name, max_rate, time_period, **kwargs)
+
         self.api_key = api_key
         self.base_url = base_url
         self.azure_deployment = azure_deployment

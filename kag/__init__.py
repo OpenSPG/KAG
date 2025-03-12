@@ -227,4 +227,5 @@ import kag.common.llm
 import kag.common.rate_limiter
 import kag.common.checkpointer
 import kag.solver
+import kag.solver_new
 import kag.bin.commands

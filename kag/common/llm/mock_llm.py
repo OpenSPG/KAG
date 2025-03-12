@@ -27,11 +27,16 @@ class MockLLMClient(LLMClient):
         self,
         max_rate: float = 1000,
         time_period: float = 1,
+        **kwargs,
     ):
         """
         Initializes the MockLLMClient instance.
         """
-        super().__init__(max_rate, time_period)
+        name = kwargs.get("name", None)
+        if not name:
+            name = "mock"
+
+        super().__init__(name, max_rate, time_period)
 
     def match_input(self, prompt):
         """
