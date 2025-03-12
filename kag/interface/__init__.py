@@ -34,6 +34,7 @@ from kag.interface.solver.pipeline_abc import Context, SolverPipelineABC
 from kag.interface.solver.planner_abc import TaskStatus, Task, PlannerABC
 from kag.interface.solver.executor_abc import ExecutorABC, ExecutorResponse
 from kag.interface.solver.tool_abc import ToolABC
+from kag.interface.solver.generator_abc import GeneratorABC
 
 # from kag.interface.solver.kag_memory_abc import KagMemoryABC
 # from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
@@ -62,6 +63,7 @@ __all__ = [
     "KagBaseModule",
     "Question",
     "ToolABC",
+    "GeneratorABC",
     "ExecutorABC",
     "ExecutorResponse",
     "TaskStatus",

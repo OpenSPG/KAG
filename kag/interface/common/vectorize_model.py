@@ -15,8 +15,9 @@ import tarfile
 import requests
 import logging
 import asyncio
-from aiolimiter import AsyncLimiter
+
 from tenacity import retry, stop_after_attempt
+from kag.common.rate_limiter import RATE_LIMITER_MANGER
 from kag.common.registry import Registrable
 from typing import Union, Iterable
 
@@ -32,6 +33,7 @@ class VectorizeModelABC(Registrable):
 
     def __init__(
         self,
+        name: str,
         vector_dimensions: int = None,
         max_rate: float = 1000,
         time_period: float = 1,
@@ -43,7 +45,7 @@ class VectorizeModelABC(Registrable):
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
         self._vector_dimensions = vector_dimensions
-        self.limiter = AsyncLimiter(max_rate, time_period)
+        self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
     def _download_model(self, path, url):
         """

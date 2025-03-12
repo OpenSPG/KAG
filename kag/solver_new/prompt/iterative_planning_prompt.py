@@ -17,7 +17,7 @@ from kag.interface import PromptABC, Task
 
 @PromptABC.register("default_iterative_planning")
 class DefaultIterativePlanningPrompt(PromptABC):
-    template = {
+    template_zh = {
         "instruction": """
 你是一个问题求解规划器，你的任务是分析用户提供的复杂问题以及问题求解上下文（包含了历史步骤规划和执行结果），基于你自身的推理，**逐步地**规划出基于可用工具来解决该问题的具体步骤。其中用户问题在query字段给出，可用工具在executors字段中给出，问题求解上下文在context字段中给出，包括执行的工具调用与调用结果。
 \n你的推理需遵循以下步骤：
@@ -68,7 +68,7 @@ class DefaultIterativePlanningPrompt(PromptABC):
                 },
             ],
             "output": {
-                "tool": {
+                "executor": {
                     "name": "Retriever",
                     "arguments": {"query": "张学友出演的电影列表"},
                 }
@@ -88,9 +88,13 @@ class DefaultIterativePlanningPrompt(PromptABC):
         if "output" in response:
             response = response["output"]
         assert (
-            isinstance(response, dict)
-            and "name" in response
-            and "arguments" in response
+            isinstance(response, dict) and "executor" in response
+        ), "repsonse must be a dict with `executor`"
+        executor = response["executor"]
+        assert (
+            isinstance(executor, dict)
+            and "name" in executor
+            and "arguments" in executor
         ), "repsonse must be a dict with `name` and `arguments`"
-        task = Task(executor=response["name"], arguments=response["arguments"])
+        task = Task(executor=executor["name"], arguments=executor["arguments"])
         return [task]

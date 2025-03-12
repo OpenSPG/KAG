@@ -9,8 +9,6 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from kag.interface.common.rate_limiter import RateLimiter
-
 try:
     from json_repair import loads
 except:
@@ -18,36 +16,25 @@ except:
 from typing import Union, Dict, List, Any
 import logging
 import traceback
-from aiolimiter import AsyncLimiter
+
 from tenacity import retry, stop_after_attempt
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
-
+from kag.common.rate_limiter import RATE_LIMITER_MANGER
 
 logger = logging.getLogger(__name__)
 
 
 class LLMClient(Registrable):
     """
-    A client for interacting with a Language Model (LLM). It optionally utilizes a rate limiter to control the rate of requests.
-
-    Args:
-        rate_limiter (RateLimiter, optional): An instance of a rate limiter to manage the rate of requests to the LLM. Defaults to None.
-        **kwargs: Additional keyword arguments passed to the superclass constructor.
-    """
-
-    def __init__(self, rate_limiter: RateLimiter = None, **kwargs):
-        super().__init__(**kwargs)
-        self.rate_limiter = rate_limiter
-
-    """
     A class that provides methods for performing inference using large language model.
 
     This class includes methods to call the model with a prompt, parse the response, and handle batch processing of prompts.
     """
 
-    def __init__(self, max_rate: float = 1000, time_period: float = 1):
-        self.limiter = AsyncLimiter(max_rate, time_period)
+    def __init__(self, name: str, max_rate: float = 1000, time_period: float = 1):
+
+        self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
     @retry(stop=stop_after_attempt(3))
     def __call__(self, prompt: Union[str, dict, list]) -> str:
@@ -154,10 +141,9 @@ class LLMClient(Registrable):
         Returns:
             List: Processed result list.
         """
-        if self.rate_limiter:
-            self.rate_limiter.acquire()
         result = []
         prompt = prompt_op.build_prompt(variables)
+
         logger.debug(f"Prompt: {prompt}")
         if not prompt:
             return result

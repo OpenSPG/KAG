@@ -9,17 +9,18 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from kag.interface import ExecutorABC
+from kag.interface import GeneratorABC
 
 
-@ExecutorABC.register("finish_executor")
-class FinishExecutor(ExecutorABC):
-    def schema(self):
-        return {
-            "name": "Finish",
-            "description": "Performs no operation and is solely used to indicate that the task has been completed.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
-        }
+@GeneratorABC.register("mock_generator")
+class MockGenerator(GeneratorABC):
+    def invoke(self, query, context):
+        results = []
+        for task in context.gen_task(False):
+            results.append(
+                {
+                    "action": {"name": task.executor, "arguments": task.arguments},
+                    "result": task.result,
+                }
+            )
+        return f"Query: {query}\nOutput: {results}"

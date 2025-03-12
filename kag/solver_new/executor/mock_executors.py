@@ -15,10 +15,12 @@ from kag.interface import ExecutorABC
 @ExecutorABC.register("mock_retriever_executor")
 class MockRetrieverExecutor(ExecutorABC):
     def invoke(self, query, task, context, **kwargs):
-        return [
+        result = [
             "截至2025年3月12日，余额宝的七日年化收益率为1.39%‌‌。这一收益率在过去几年中经历了显著下降。例如，2024年初时余额宝的7日年化收益率可能在2%左右，但随后逐步下降，到2025年1月12日首次跌破1.2%，创下成立以来的最低值‌。",
             "余额宝的收益率波动主要受市场利率环境的影响。货币基金的收益率通常与市场利率紧密相关，而市场利率的变化受多种经济因素影响，包括货币政策、市场流动性和经济周期等‌。因此，投资者在选择理财产品时，需要关注这些因素的变化，以判断收益率的未来趋势",
         ]
+        task.result = result
+        return result
 
     async def ainvoke(self, query, task, context, **kwargs):
         return self.invoke(query, task, context, **kwargs)
@@ -43,7 +45,9 @@ class MockRetrieverExecutor(ExecutorABC):
 class MockMathExecutor(ExecutorABC):
     def invoke(self, query, task, context, **kwargs):
         math_expr = task.arguments["query"]
-        return eval(math_expr)
+        result = eval(math_expr.replace("%", "/100"))
+        task.result = result
+        return result
 
     async def ainvoke(self, query, task, context, **kwargs):
         return self.invoke(query, task, context, **kwargs)
@@ -51,13 +55,13 @@ class MockMathExecutor(ExecutorABC):
     def schema(self):
         return {
             "name": "Math",
-            "description": "Peform Math computation based on use query.",
+            "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "User-provided query for retrieval.",
+                        "description": "The user's input expression needs to conform to Python syntax.",
                     },
                 },
             },
