@@ -127,7 +127,7 @@ if __name__ == "__main__":
         os.path.abspath(os.path.dirname(__file__)), f"medqa_res_{start_time}.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=5, upperLimit=20
+        qaFilePath, resFilePath, threadNum=5, upperLimit=1000
     )
 
     total_metrics["cost"] = time.time() - start_time
