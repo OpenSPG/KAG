@@ -91,7 +91,7 @@ class EntityLinking(ToolABC):
         )
         return sorted_people_dicts[:self.top_k]
 
-    def invoke(self, query, name, type_name, topk_k, **kwargs) -> List[EntityData]:
+    def invoke(self, query, name, type_name, topk_k = None, **kwargs) -> List[EntityData]:
         """Perform entity linking by combining vector and text search strategies
         Args:
             query: Original text context containing the entity
@@ -122,7 +122,7 @@ class EntityLinking(ToolABC):
             with_prefix_type = self.schema.get_label_within_prefix(query_type)
 
         recognition_threshold = kwargs.get("recognition_threshold", 0.8)
-        recall_topk = topk_k
+        recall_topk = topk_k or self.top_k
 
         # Adjust recall_topk if the query type is not an entity
         if "entity" not in query_type.lower():
