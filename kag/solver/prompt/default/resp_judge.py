@@ -44,7 +44,7 @@ class RespJudge(PromptABC):
         return if_finished
 
     def parse_response_zh(self, satisfied_info: str):
-        if satisfied_info.startswith("是"):
+        if satisfied_info.strip().startswith("是"):
             if_finished = True
         else:
             if_finished = False
