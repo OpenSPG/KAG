@@ -39,7 +39,7 @@ class SLSScanner(ScannerABC):
         )
         self.cols_name = cols_name
 
-    def load_data(self, time_range: Any, **kwargs) -> List[Any]:
+    def load_data(self, input: Any, **kwargs) -> List[Any]:
         """
         Load data from SLS service.
 
@@ -54,15 +54,15 @@ class SLSScanner(ScannerABC):
         if not all([self.project, self.logstore, self.client]):
             raise ValueError("Project, logstore and client must be provided")
 
-        from_time = time_range[0]
-        to_time = time_range[1]
+        from_time = input[0]
+        to_time = input[1]
 
         request = GetLogsRequest(self.project, self.logstore, from_time, to_time)
         response = self.client.get_logs(request)
 
         return response.get_logs()
 
-    def generate(self, time_range: Any, **kwargs) -> Generator[Any, Any, None]:
+    def generate(self, input: Any, **kwargs) -> Generator[Any, Any, None]:
         """
         Generate log entries from SLS service.
 
@@ -81,7 +81,7 @@ class SLSScanner(ScannerABC):
         Yields:
             Log entries from SLS
         """
-        data = self.load_data(time_range, **kwargs)
+        data = self.load_data(input, **kwargs)
         for log in data:
             content = log.get_contents()
             if self.cols_name:
