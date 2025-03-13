@@ -27,11 +27,13 @@ class CSVScanner(ScannerABC):
         col_ids: List[int] = None,
         rank: int = 0,
         world_size: int = 1,
+        delimiter: str = ",",
     ):
         super().__init__(rank=rank, world_size=world_size)
         self.header = header
         self.col_names = col_names
         self.col_ids = col_ids
+        self.delimiter = delimiter
 
     @property
     def input_types(self) -> Input:
@@ -54,7 +56,7 @@ class CSVScanner(ScannerABC):
         """
         input = self.download_data(input)
         if self.header:
-            data = pd.read_csv(input, dtype=str)
+            data = pd.read_csv(input, dtype=str, delimiter = self.delimiter)
         else:
             data = pd.read_csv(input, dtype=str, header=None)
         col_keys = self.col_names if self.col_names else self.col_ids
@@ -63,12 +65,6 @@ class CSVScanner(ScannerABC):
 
         contents = []
         for _, row in data.iterrows():
-            for k, v in row.items():
-                if k in col_keys:
-                    v = str(v)
-                    name = v[:5] + "..." + v[-5:]
-                    contents.append(
-                        {"id": generate_hash_id(v), "name": name, "content": v}
-                    )
+            contents.append(row.to_dict())
 
         return contents

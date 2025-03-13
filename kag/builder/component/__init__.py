@@ -40,6 +40,7 @@ from kag.builder.component.reader.pdf_reader import PDFReader
 from kag.builder.component.reader.markdown_reader import MarkDownReader
 from kag.builder.component.reader.docx_reader import DocxReader
 from kag.builder.component.reader.txt_reader import TXTReader
+from kag.builder.component.reader.aisearch_txt_reader import AisearchTXTReader
 from kag.builder.component.reader.mix_reader import MixReader
 
 from kag.builder.component.reader.dict_reader import DictReader
