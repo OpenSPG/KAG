@@ -22,6 +22,19 @@ class TaskStatus(Enum):
 
 
 class Task(Registrable):
+    """Represents an executable task that can be processed by an executor.
+
+    Attributes:
+        executor (str): Name of the executor responsible for running this task.
+        arguments (dict): Parameters required for task execution.
+        status (TaskStatus): Current execution status of the task (PENDING by default).
+        id (str): Unique identifier generated using UUID.
+        parents (List[Task]): List of predecessor tasks that must complete before execution.
+        children (List[Task]): List of successor tasks that depend on this task's completion.
+        memory (dict): Storage for intermediate execution data.
+        result (Any): Final output of the task execution.
+    """
+
     def __init__(
         self,
         executor: str,
@@ -29,6 +42,18 @@ class Task(Registrable):
         parents: List = None,
         children: List = None,
     ):
+        """Represents an executable task that can be processed by an executor.
+
+        Attributes:
+            executor (str): Name of the executor responsible for running this task.
+            arguments (dict): Parameters required for task execution.
+            status (TaskStatus): Current execution status of the task (PENDING by default).
+            id (str): Unique identifier generated using UUID.
+            parents (List[Task]): List of predecessor tasks that must complete before execution.
+            children (List[Task]): List of successor tasks that depend on this task's completion.
+            memory (dict): Storage for intermediate execution data.
+            result (Any): Final output of the task execution.
+        """
         self.executor = executor
         self.arguments = arguments
         self.status = TaskStatus.PENDING
@@ -46,31 +71,57 @@ class Task(Registrable):
         self.result = None
 
     def add_parent(self, parent):
-        print(f"add parent {parent.id} to {self.id}, total {len(self.parents)}")
+        """Adds a predecessor task to the dependency list.
+
+        Args:
+            parent: Task object that must complete before this task can execute.
+        """
         self.parents.append(parent)
 
     def add_child(self, child):
+        """Adds a successor task to the dependency list.
+
+        Args:
+            child: Task object that depends on this task's completion.
+        """
         self.children.append(child)
 
     def update_memory(self, key, value):
+        """Stores intermediate data during task execution.
+
+        Args:
+            key: Identifier for the stored data.
+            value: Data value to be stored in task memory.
+        """
         self.memory[key] = value
 
     def update_result(self, result):
+        """Sets the final result of the task execution.
+
+        Args:
+            result: Output value produced by the task.
+        """
         self.result = result
 
     def __str__(self):
-        msg = (
-            f"Task<{self.id}>\nexecutor: {self.executor}\narguments {self.arguments}\n"
-        )
+        """Generates a string representation of the task.
+
+        Returns:
+            Formatted string containing task ID, executor name, and arguments.
+        """
+        msg = f"Task<{self.id}>\n\texecutor: {self.executor}\n\targuments {self.arguments}\n"
         return msg
 
     __repr__ = __str__
 
 
-Task.register("base", as_default=True)(Task)
-
-
 class PlannerABC(Registrable):
+    """Abstract base class for task planners that generate execution workflows.
+
+    Planners are responsible for creating Directed Acyclic Graphs (DAGs) of tasks
+    based on user query.
+    """
+
     @property
     def input_types(self):
         return str
@@ -80,38 +131,32 @@ class PlannerABC(Registrable):
         return List[Task]
 
     def create_tasks_from_dag(self, task_dag: Dict[str, dict]):
-        """create tasks from a dag"""
-        """
-        An example task dag: 
+        """Constructs task objects from a task dependency graph definition.
+
+        Example DAG format:
         {
-            0: {
+            "0": {
                 "executor": "call_kg_retriever",
                 "dependent_task_ids": [],
                 "arguments": {"query": "张学友出演过的电影列表"},
             },
-            1: {
+            "1": {
                 "executor": "call_kg_retriever",
-                "dependent_task_ids": [],
+                "dependent_task_ids": [0],
                 "arguments": {"query": "刘德华出演过的电影列表"},
-            },
-            2: {
-                "executor": "call_py_code_generator",
-                "dependent_task_ids": [0, 1],
-                "arguments": {
-                    "query": "请编写Python代码，找出以下两个列表的共同元素：\n张学友电影列表：{{0.output}}\n刘德华电影列表：{{1.output}}"
-                },
-            },
-            3: {
-                "executor": "call_deepseek",
-                "dependent_task_ids": [2],
-                "arguments": {"query": "请根据上下文信息，生成问题“张学友和刘德华共同出演过哪些电影”的详细答案"},
             },
         }
 
+        Args:
+            task_dag: Dictionary where keys are task IDs and values contain:
+                - executor: Name of the task executor
+                - dependent_task_ids: List of prerequisite task IDs
+                - arguments: Execution parameters for the task
 
+        Returns:
+            List of Task objects with established parent/child relationships.
         """
 
-        # create all Task objects
         task_map = {}
         for task_order, task_info in task_dag.items():
             print(f"task_info = {task_info}")
@@ -127,16 +172,72 @@ class PlannerABC(Registrable):
         return list(task_map.values())
 
     def invoke(self, query, **kwargs) -> List[Task]:
+        """Synchronously creates an execution plan from the given query.
+
+        Args:
+            query: User input/query to generate the plan for
+            **kwargs: Additional execution parameters
+
+        Returns:
+            List of Tasks representing the execution plan
+
+        Raises:
+            NotImplementedError: If subclass doesn't implement this method
+        """
+
         raise NotImplementedError("invoke not implemented yet.")
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:
+        """Asynchronously creates an execution plan from the given query.
+
+        Args:
+            query: User input/query to generate the plan for
+            **kwargs: Additional execution parameters
+
+        Returns:
+            List of Tasks representing the execution plan
+
+        Raises:
+            NotImplementedError: If subclass doesn't implement this method
+        """
+
         raise NotImplementedError("ainvoke not implemented yet.")
 
     def decompose_task(self, task: Task, **kwargs) -> List[Task]:
+        """Breaks down a complex task into simpler sub-tasks.
+
+        Args:
+            task: Parent task to decompose
+            **kwargs: Additional decomposition parameters
+
+        Returns:
+            List of child tasks implementing the decomposition
+
+        Raises:
+            NotImplementedError: If subclass doesn't implement this method
+        """
+
         raise NotImplementedError("decompose_task not implemented yet.")
 
     def compose_task(self, task: Task, children_tasks: List[Task], **kwargs):
+        """Combines results from child tasks into the parent task.
+
+        Args:
+            task: Parent task to receive composed results
+            children_tasks: List of completed child tasks
+            **kwargs: Additional composition parameters
+
+        Raises:
+            NotImplementedError: If subclass doesn't implement this method
+        """
+
         raise NotImplementedError("compose_task not implemented yet.")
 
     def is_static(self):
+        """Indicates if the planner uses static or iterative task decomposition.
+
+        Returns:
+            True if the planner uses static task decomposition, False if iteratively.
+        """
+
         return True
