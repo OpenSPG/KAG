@@ -202,7 +202,7 @@ class ODPSScanner(ScannerABC):
                             for k, v in row_dict.items():
                                 if k in col_keys:
                                     v = str(v)
-                                    name = v[:5] + "..." + v[-5:]
+                                    name = v if len(v) < 10 else v[:5] + "..." + v[-5:]
                                     yield {
                                         "id": generate_hash_id(v),
                                         "name": name,
