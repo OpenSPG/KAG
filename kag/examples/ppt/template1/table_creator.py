@@ -2,7 +2,7 @@ from typing import List
 from pptx.util import Inches
 from typing import List, Tuple
 from bs4 import BeautifulSoup
-
+from pptx.util import Inches, Pt
 
 class TablePPTCreator:
     def __init__(self, prs):
@@ -91,6 +91,7 @@ class TablePPTCreator:
             for col_idx, text in enumerate(row):
                 cell = table.cell(row_idx, col_idx)
                 cell.text_frame.paragraphs[0].text = text
+                cell.text_frame.paragraphs[0].font.size = Pt(12)
 
         return slide
 
