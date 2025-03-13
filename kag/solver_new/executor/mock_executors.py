@@ -9,12 +9,28 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from kag.interface import ExecutorABC
+
+from kag.interface import ExecutorABC, Task, Context
 
 
 @ExecutorABC.register("mock_retriever_executor")
 class MockRetrieverExecutor(ExecutorABC):
-    def invoke(self, query, task, context, **kwargs):
+    @property
+    def category(self):
+        return "Retriever"
+
+    def invoke(self, query: str, task: Task, context: Context, **kwargs):
+        """Retrieval of user query from a knowledge base.
+
+        Args:
+            query: User query triggering the retrieval
+            task: Task instance containing execution parameters
+            context: Pipeline execution context with dependency tracking
+            **kwargs: Additional execution parameters
+
+        Returns:
+            List of strings containing mock financial data entries
+        """
         result = [
             "截至2025年3月12日，余额宝的七日年化收益率为1.39%‌‌。这一收益率在过去几年中经历了显著下降。例如，2024年初时余额宝的7日年化收益率可能在2%左右，但随后逐步下降，到2025年1月12日首次跌破1.2%，创下成立以来的最低值‌。",
             "余额宝的收益率波动主要受市场利率环境的影响。货币基金的收益率通常与市场利率紧密相关，而市场利率的变化受多种经济因素影响，包括货币政策、市场流动性和经济周期等‌。因此，投资者在选择理财产品时，需要关注这些因素的变化，以判断收益率的未来趋势",
@@ -22,7 +38,19 @@ class MockRetrieverExecutor(ExecutorABC):
         task.result = result
         return result
 
-    async def ainvoke(self, query, task, context, **kwargs):
+    async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
+        """Asynchronous retrieval of user query from a knowledge base.
+
+        Args:
+            query: User query triggering the retrieval
+            task: Task instance containing execution parameters
+            context: Pipeline execution context with dependency tracking
+            **kwargs: Additional execution parameters
+
+        Returns:
+            List of strings containing mock financial data entries
+        """
+
         return self.invoke(query, task, context, **kwargs)
 
     def schema(self):
@@ -30,12 +58,10 @@ class MockRetrieverExecutor(ExecutorABC):
             "name": "Retriever",
             "description": "Retrieve relevant knowledge from the local knowledge base.",
             "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "User-provided query for retrieval.",
-                    },
+                "query": {
+                    "type": "string",
+                    "description": "User-provided query for retrieval.",
+                    "optional": False,
                 },
             },
         }
@@ -43,13 +69,40 @@ class MockRetrieverExecutor(ExecutorABC):
 
 @ExecutorABC.register("mock_math_executor")
 class MockMathExecutor(ExecutorABC):
-    def invoke(self, query, task, context, **kwargs):
+    """Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation."""
+
+    @property
+    def category(self):
+        return "Math"
+
+    def invoke(self, query: str, task: Task, context: Context, **kwargs):
+        """Evaluates mathematical expressions with percentage conversion.
+        Args:
+            query: Original mathematical query (unused in current implementation)
+            task: Task containing the mathematical expression in task.arguments["query"]
+            context: Execution context (unused in current implementation)
+            **kwargs: Additional execution parameters
+
+        Returns:
+            Calculated numerical result of the mathematical expression
+        """
         math_expr = task.arguments["query"]
         result = eval(math_expr.replace("%", "/100"))
         task.result = result
         return result
 
-    async def ainvoke(self, query, task, context, **kwargs):
+    async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
+        """Asynchronous wrapper for synchronous invocation (runs in default threadpool).
+
+        Args:
+            query: Original mathematical query
+            task: Task containing the mathematical expression
+            context: Execution context
+            **kwargs: Additional execution parameters
+
+        Returns:
+            Result from synchronous invocation
+        """
         return self.invoke(query, task, context, **kwargs)
 
     def schema(self):
@@ -57,12 +110,10 @@ class MockMathExecutor(ExecutorABC):
             "name": "Math",
             "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
             "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The user's input expression needs to conform to Python syntax.",
-                    },
-                },
+                "query": {
+                    "type": "string",
+                    "description": "The user's input expression needs to conform to Python syntax.",
+                    "optional": False,
+                }
             },
         }
