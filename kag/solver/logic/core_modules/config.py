@@ -1,4 +1,3 @@
-import os
 from kag.common.conf import KAG_PROJECT_CONF
 
 

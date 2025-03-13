@@ -11,7 +11,7 @@
 # or implied.
 
 import json
-from typing import Optional, List
+from typing import List
 
 
 from kag.interface import PromptABC

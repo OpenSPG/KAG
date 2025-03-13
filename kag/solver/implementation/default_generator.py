@@ -1,4 +1,3 @@
-import logging
 from tenacity import stop_after_attempt, retry
 
 from kag.interface.solver.kag_generator_abc import KAGGeneratorABC
