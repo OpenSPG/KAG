@@ -107,7 +107,7 @@ class MultiHerttEvaluate(Evaluate):
 
 
 if __name__ == "__main__":
-    _data_list = load_finqa_data(shuffle=False)
+    _finqa_file_to_qa_map = load_finqa_data()
     evaObj = MultiHerttEvaluate()
     total_metrics = {
         "em": 0.0,
@@ -117,47 +117,49 @@ if __name__ == "__main__":
     }
     debug_index = None
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
-    for _item in _data_list:
-        i = _item["index"]
-        if debug_index is not None:
-            if i not in debug_index:
-                continue
-        _id = _item["id"]
-        _question = _item["qa"]["question"]
-        _gold = str(_item["qa"]["exe_ans"])
-        try:
-            build_finqa_graph(_item)
-            _prediction = qa(question=_question, _i=i, _id=_id)
-        except KeyboardInterrupt:
-            break
-        except:
-            logging.exception("qa error")
-            _prediction = str(None)
-        print("#" * 100)
-        print(
-            "index="
-            + str(i)
-            + ",gold="
-            + str(_gold)
-            + ",prediction="
-            + str(_prediction)
-        )
-        metrics = evaObj.getBenchMark([_prediction], [_gold])
+    for file_name, _item_list in _finqa_file_to_qa_map.items():
+        build_finqa_graph(_item_list[0])
 
-        if metrics["em"] < 0.9:
-            if "None" == _prediction:
-                error_question_map["system_error"].append((i, _id))
-            elif "i don't know" in _prediction.lower():
-                error_question_map["no_answer"].append((i, _id))
-            else:
-                error_question_map["error"].append((i, _id))
+        for _item in _item_list:
+            i = _item["index"]
+            if debug_index is not None:
+                if i not in debug_index:
+                    continue
+            _id = _item["id"]
+            _question = _item["qa"]["question"]
+            _gold = str(_item["qa"]["exe_ans"])
+            try:
+                _prediction = qa(question=_question, _i=i, _id=_id)
+            except KeyboardInterrupt:
+                break
+            except:
+                logging.exception("qa error")
+                _prediction = str(None)
+            print("#" * 100)
+            print(
+                "index="
+                + str(i)
+                + ",gold="
+                + str(_gold)
+                + ",prediction="
+                + str(_prediction)
+            )
+            metrics = evaObj.getBenchMark([_prediction], [_gold])
 
-        total_metrics["em"] += metrics["em"]
-        total_metrics["f1"] += metrics["f1"]
-        total_metrics["answer_similarity"] += metrics["answer_similarity"]
-        total_metrics["processNum"] += 1
+            if metrics["em"] < 0.9:
+                if "None" == _prediction:
+                    error_question_map["system_error"].append((i, _id))
+                elif "i don't know" in _prediction.lower():
+                    error_question_map["no_answer"].append((i, _id))
+                else:
+                    error_question_map["error"].append((i, _id))
 
-        print(total_metrics)
-        print(total_metrics["em"] / total_metrics["processNum"] * 100)
-        print("error index list=" + str(error_question_map))
-        print("#" * 100)
+            total_metrics["em"] += metrics["em"]
+            total_metrics["f1"] += metrics["f1"]
+            total_metrics["answer_similarity"] += metrics["answer_similarity"]
+            total_metrics["processNum"] += 1
+
+            print(total_metrics)
+            print(total_metrics["em"] / total_metrics["processNum"] * 100)
+            print("error index list=" + str(error_question_map))
+            print("#" * 100)

@@ -42,9 +42,13 @@ class BuildExamplePipeline:
             "build_example_prompt", "default"
         )
 
-    def build(self):
-        train_data_list = self.load_finqa_train_data(_type="dev")
+    def build(self, start_index=0):
+        train_data_list = self.load_finqa_train_data() + self.load_finqa_train_data(
+            _type="dev"
+        )
         for i, item in enumerate(train_data_list):
+            if i < start_index:
+                continue
             _id = item["id"]
             question = item["qa"]["question"]
             info = str(item["qa"]["gold_inds"])
@@ -79,6 +83,7 @@ class BuildExamplePipeline:
         print("finqa data list len " + str(len(data_list)))
         for _idx, data in enumerate(data_list):
             data["index"] = _idx
+        print(f"type={_type},len={len(data_list)}")
         return data_list
 
     def search_example(self, query, topn=3):
@@ -94,8 +99,8 @@ class BuildExamplePipeline:
 
 if __name__ == "__main__":
     resp = BuildExamplePipeline()
-    # last train index 3584
-    resp.build()
+    # last train index 6049
+    resp.build(6049)
     # examples, docs = resp.search_example(
     #     "what is the total of home equity lines of credit, tags=['Total Sum']"
     # )

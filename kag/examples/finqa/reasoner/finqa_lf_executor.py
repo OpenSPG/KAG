@@ -113,7 +113,7 @@ class FinQACoderMathOp(OpExecutor):
             get_history_context_info_list(history=history)
         )
         example_list = process_info["examples"]
-        example_str = "\n".join(example_list)
+        example_str = "\n\n".join(example_list)
         target = logic_node.target if logic_node.target else logic_node.sub_query
         try_times = 3
         error = None

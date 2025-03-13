@@ -58,7 +58,7 @@ finqa_builder_pipeline:
       similarity_threshold: 0.99
     splitter:
       type: line_length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 300
+      split_length: 500
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer

@@ -74,7 +74,7 @@ class FinQALFPlanner(LFPlannerABC):
         list of LFPlanResult
         """
         sub_querys, logic_forms = self.generate_logic_form(
-            question, kwargs.get("history", {})
+            question, kwargs.get("process_info", {}), kwargs.get("history", [])
         )
         return self._parse_lf(question, sub_querys, logic_forms)
 
@@ -117,10 +117,15 @@ class FinQALFPlanner(LFPlannerABC):
         )
         return self._convert_node_to_plan(parsed_logic_nodes, parent_query=question)
 
-    def generate_logic_form(self, question: str, history: List[LFPlan] = None):
+    def generate_logic_form(
+        self, question: str, process_info: Dict, history: List[LFPlan]
+    ):
+        example_list = process_info["examples"]
+        example_str = "\n\n".join(example_list)
         input_dict = {
             "question": question,
             "context": self.get_context_str(history),
+            "examples": example_str,
         }
         return self.llm_module.invoke(
             input_dict,

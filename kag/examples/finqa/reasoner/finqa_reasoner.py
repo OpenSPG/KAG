@@ -106,7 +106,7 @@ class FinQAReasoner(KagReasonerABC):
         self,
         question: str,
         memory: KagMemoryABC = None,
-        use_raw_query: bool = True,
+        use_raw_query: bool = False,
         **kwargs,
     ):
         tags = self.question_classify(question=question)

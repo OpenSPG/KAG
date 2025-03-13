@@ -195,27 +195,29 @@ class TableAndTextExtractor(ExtractorABC):
         rst_chunk_list.append(chunk)
 
         # TableRow nodes
-        for i, row_summary in enumerate(row_summary_list):
-            # content = f"doc: {doc_name}\ntable: {table_name}\ntable_row_summary: {row_summary.summary}\n{row_summary.content}"
-            content = row_summary.content
-            chunk = Chunk(
-                id=f"table_{table_id}_row_{i}",
-                name=f"{doc_name} / {table_name} / {row_summary.summary}",
-                content=content,
-                type=ChunkTypeEnum.Text,
-            )
-            rst_chunk_list.append(chunk)
+        if len(row_summary_list) > 1:
+            for i, row_summary in enumerate(row_summary_list):
+                # content = f"doc: {doc_name}\ntable: {table_name}\ntable_row_summary: {row_summary.summary}\n{row_summary.content}"
+                content = row_summary.content
+                chunk = Chunk(
+                    id=f"table_{table_id}_row_{i}",
+                    name=f"{doc_name} / {table_name} / {row_summary.summary}",
+                    content=content,
+                    type=ChunkTypeEnum.Text,
+                )
+                rst_chunk_list.append(chunk)
         # TableColumn nodes
-        for i, col_summary in enumerate(col_summary_list):
-            # content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
-            content = col_summary.content
-            chunk = Chunk(
-                id=f"table_{table_id}_col_{i}",
-                name=f"{doc_name} / {table_name} / {col_summary.summary}",
-                content=content,
-                type=ChunkTypeEnum.Text,
-            )
-            rst_chunk_list.append(chunk)
+        if len(col_summary_list) > 1:
+            for i, col_summary in enumerate(col_summary_list):
+                # content = f"doc: {doc_name}\ntable: {table_name}\ntable_column_summary: {col_summary.summary}\n{col_summary.content}"
+                content = col_summary.content
+                chunk = Chunk(
+                    id=f"table_{table_id}_col_{i}",
+                    name=f"{doc_name} / {table_name} / {col_summary.summary}",
+                    content=content,
+                    type=ChunkTypeEnum.Text,
+                )
+                rst_chunk_list.append(chunk)
         return rst_chunk_list
 
     def _table_context(self, input_table: Chunk):

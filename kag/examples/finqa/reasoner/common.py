@@ -32,6 +32,8 @@ def get_history_context_info_list(history: list):
 
 
 def get_history_context_str(context_list):
+    if len(context_list) <= 0:
+        return None
     context_str = ""
     for i, c in enumerate(context_list):
         context_str += f"\nSubQuestion{i+1}({c[1]}): {c[0]}\nResult{i+1}: {c[2]}\n"

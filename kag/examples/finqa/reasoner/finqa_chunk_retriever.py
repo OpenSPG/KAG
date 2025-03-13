@@ -91,9 +91,13 @@ class FinQAChunkRetriever(KAGRetriever):
         input_chunk_str = ""
         for i, doc in enumerate(for_select_doc_list):
             try:
+                doc: str = doc
                 doc = doc.strip("#")
                 x = doc.rfind("#")
                 doc = doc[:x]
+                x = doc.find("#")
+                if x > 0:
+                    doc = doc[x + 1 :]
             except:
                 pass
             input_chunk_str += f"\n### {i}\n{doc}\n"

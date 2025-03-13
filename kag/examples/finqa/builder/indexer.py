@@ -22,7 +22,7 @@ from kag.builder.runner import BuilderChainRunner
 from kag.common.conf import KAG_CONFIG
 
 
-def load_finqa_data(shuffle: bool = False) -> list:
+def load_finqa_data() -> map:
     """
     load data
     """
@@ -33,16 +33,21 @@ def load_finqa_data(shuffle: bool = False) -> list:
     print("finqa data list len " + str(len(data_list)))
     for _idx, data in enumerate(data_list):
         data["index"] = _idx
-    if shuffle:
-        random.shuffle(data_list)
-    return data_list
+
+    file_to_qa_map = {}
+    for data in data_list:
+        finqa_filename = data["filename"]
+        if finqa_filename not in file_to_qa_map:
+            file_to_qa_map[finqa_filename] = []
+        file_to_qa_map[finqa_filename].append(data)
+    return file_to_qa_map
 
 
 def convert_finqa_to_md_file(item: dict) -> str:
     """
     convert finqa data to md file
     """
-    _id = item["id"]
+    _file_name = item["filename"]
     prev_text_list = item["pre_text"]
     prev_text_list = [s for s in prev_text_list if s != "."]
     prev_text = "\n".join(prev_text_list)
@@ -54,16 +59,20 @@ def convert_finqa_to_md_file(item: dict) -> str:
     data = table_row_list[1:]
     table_df = pd.DataFrame(data=data, columns=columns)
     table_md_str = table_df.to_markdown(index=False)
-    md5_hash = hashlib.md5()
-    md5_hash.update(table_md_str.encode("utf-8"))
-    hash_id = md5_hash.hexdigest()
-    md_file_tmp_path = f"/tmp/tableeval/{hash_id}.md"
-    if os.path.exists(md_file_tmp_path):
-        os.remove(md_file_tmp_path)
-    os.makedirs(os.path.dirname(md_file_tmp_path), exist_ok=True)
-    with open(md_file_tmp_path, "w", encoding="utf-8") as f:
-        f.write(f"# {_id}\n\n" + prev_text + "\n\n" + table_md_str + "\n\n" + post_text)
-    return md_file_tmp_path
+    md_file_tmp = f"/tmp/tableeval/{_file_name}.md"
+    if os.path.exists(md_file_tmp):
+        os.remove(md_file_tmp)
+    os.makedirs(os.path.dirname(md_file_tmp), exist_ok=True)
+    with open(md_file_tmp, "w", encoding="utf-8") as f:
+        f.write(
+            f"# {_file_name}\n\n"
+            + prev_text
+            + "\n\n"
+            + table_md_str
+            + "\n\n"
+            + post_text
+        )
+    return md_file_tmp
 
 
 def build_finqa_graph(item):
@@ -75,8 +84,8 @@ def build_finqa_graph(item):
     ckpt_path = os.path.join(current_working_directory, "ckpt")
     if os.path.exists(ckpt_path):
         shutil.rmtree(ckpt_path)
-    file_name = convert_finqa_to_md_file(item)
-    build_md_file(file_name)
+    _file_name = convert_finqa_to_md_file(item)
+    build_md_file(_file_name)
 
 
 def build_md_file(md_file: str):
@@ -114,12 +123,8 @@ from kag.examples.finqa.builder.prompt.table_row_col_summary import (
 )
 
 if __name__ == "__main__":
-    _data_list = load_finqa_data()
-    test_i = 0
-    for i, _item in enumerate(_data_list):
-        if test_i is not None and i != test_i:
-            continue
-        _question = _item["qa"]["question"]
-        _gold = _item["qa"]["answer"]
-        build_finqa_graph(_item)
-        break
+    _finqa_file_to_qa_map = load_finqa_data()
+    for file_name, _item_list in _finqa_file_to_qa_map.items():
+        for _item in _item_list:
+            build_finqa_graph(_item)
+            break
