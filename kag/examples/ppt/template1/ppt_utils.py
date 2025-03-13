@@ -165,13 +165,12 @@ class PPTUtils:
         soup = BeautifulSoup(markdown_text, 'html.parser')
         parsed_tables = []
 
-        # 修复1：使用find_all获取所有表格（原代码find只能获取第一个）
         for table in soup.find_all('table'):
-            table_content = []
-            merge_cells = []
+
+            table_content = [] # table_content: 表格内容，二维列表
+            merge_cells = [] # merge_cells: 合并单元格信息 (start_row, start_col, end_row, end_col)
             rowspans = {}  # 新增跨行单元格追踪
 
-            # 修复2：重构行列计算逻辑
             max_cols = 0
             for row_idx, tr in enumerate(table.find_all('tr')):
                 row = []
@@ -210,7 +209,6 @@ class PPTUtils:
 
                     # 填充当前单元格
                     row.append(text)
-
                     # 处理行合并
                     if rowspan > 1:
                         for r in range(row_idx+1, row_idx + rowspan):
@@ -225,7 +223,6 @@ class PPTUtils:
                 max_cols = max(max_cols, col_idx)
                 table_content.append(row)
 
-            # 修复3：统一填充空单元格
             for row in table_content:
                 while len(row) < max_cols:
                     row.append('')

@@ -94,7 +94,6 @@ class TablePPTCreator:
 
         return slide
 
-
     def save(self, filename):
         """保存PPT文件"""
         self.prs.save(filename)
