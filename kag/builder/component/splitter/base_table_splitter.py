@@ -68,13 +68,13 @@ class BaseTableSplitter(SplitterABC):
         table_header_segmentation = table_rows[1]
         suffix = content[table_end:].strip("\n ")
 
-        splitted = []
+        split = []
         cur = [prefix, table_header, table_header_segmentation]
         cur_len = len(prefix)
         for idx, row in enumerate(table_rows[2:]):
             if cur_len > chunk_size:
                 cur.append(suffix)
-                splitted.append(cur)
+                split.append(cur)
                 cur_len = 0
                 cur = [prefix, table_header, table_header_segmentation]
             cur.append(row)
@@ -82,10 +82,10 @@ class BaseTableSplitter(SplitterABC):
 
         cur.append(content[table_end:])
         if len(cur) > 0:
-            splitted.append(cur)
+            split.append(cur)
 
         output = []
-        for idx, sentences in enumerate(splitted):
+        for idx, sentences in enumerate(split):
             chunk = Chunk(
                 id=f"{org_chunk.id}#{chunk_size}#table#{idx}#LEN",
                 name=f"{org_chunk.name}#{idx}",

@@ -142,7 +142,7 @@ def split_module_class_name(name: str, text: str) -> Tuple[str, str]:
 
 def dynamic_import_class(name: str, text: str):
     """
-    Import the class specified by `name` dyanmically.
+    Import the class specified by `name` dynamically.
 
     :param name: fully qualified class name, e.g. ``foo.bar.MyClass``
     :type name: str

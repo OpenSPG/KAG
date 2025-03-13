@@ -146,5 +146,5 @@ class LogicFormPlanPrompt(PromptABC):
                             sub_querys.append(current_sub_query)
             return sub_querys, logic_forms
         except Exception as e:
-            logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
+            logger.warning(f"{response} parse logic form failed {e}", exc_info=True)
             return [], []
