@@ -36,35 +36,28 @@ class DefaultIterativePlanningPrompt(PromptABC):
                     "name": "Retriever",
                     "description": "Retrieve relevant knowledge from the local knowledge base.",
                     "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "User-provided query for retrieval.",
-                            },
+                        "query": {
+                            "type": "string",
+                            "description": "User-provided query for retrieval.",
+                            "optional": False,
                         },
                     },
                 },
                 {
                     "name": "Math",
-                    "description": "Peform Math computation based on use query.",
+                    "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
                     "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "User-provided query for retrieval.",
-                            },
-                        },
+                        "query": {
+                            "type": "string",
+                            "description": "The user's input expression needs to conform to Python syntax.",
+                            "optional": False,
+                        }
                     },
                 },
                 {
                     "name": "Finish",
                     "description": "Performs no operation and is solely used to indicate that the task has been completed.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {},
-                    },
+                    "parameters": {},
                 },
             ],
             "output": {

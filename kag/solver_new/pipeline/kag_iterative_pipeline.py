@@ -23,6 +23,12 @@ from kag.interface import (
 
 @SolverPipelineABC.register("kag_iterative_pipeline")
 class KAGIterativePipeline(SolverPipelineABC):
+    """Iterative problem-solving pipeline that decomposes and analyzes problems step-by-step.
+
+    This pipeline coordinates planners, executors, and generators to solve problems through
+    repeated planning and execution cycles until completion or iteration limit is reached.
+    """
+
     def __init__(
         self,
         planner: PlannerABC,
@@ -30,6 +36,14 @@ class KAGIterativePipeline(SolverPipelineABC):
         generator: GeneratorABC,
         max_iteration: int = 10,
     ):
+        """Initialize the iterative pipeline.
+
+        Args:
+            planner: Component responsible for generating execution plans
+            executors: List of available executor components for task execution
+            generator: Component that generates final answers from context
+            max_iteration: Maximum number of allowed execution cycles (default: 10)
+        """
         super().__init__()
         self.planner = planner
         self.executors = executors
@@ -40,14 +54,35 @@ class KAGIterativePipeline(SolverPipelineABC):
         self.executors.append(self.finish_executor)
 
     def select_executor(self, executor_name: str):
+        """Select executor instance by name from available executors.
+
+        Args:
+            executor_name: Name of the executor to retrieve
+
+        Returns:
+            Matching executor instance, or None if not found
+        """
         for executor in self.executors:
             schema = executor.schema()
             if executor_name == schema["name"]:
                 return executor
         return None
 
-    #@retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3))
     async def planning(self, query, context, **kwargs):
+        """Perform planning phase to determine next execution step.
+
+        Args:
+            query: Original user query being processed
+            context: Current execution context containing historical tasks
+            **kwargs: Additional execution parameters
+
+        Returns:
+            Tuple containing the planned task and corresponding executor
+
+        Raises:
+            ValueError: If the required executor is not available
+        """
         task = await self.planner.ainvoke(
             query,
             context=context,
@@ -62,6 +97,18 @@ class KAGIterativePipeline(SolverPipelineABC):
         return task, executor
 
     async def ainvoke(self, query, **kwargs):
+        """Execute the problem-solving process for given query.
+
+        Args:
+            query: User query to solve
+            **kwargs: Additional execution parameters
+
+        Returns:
+            Generated answer from the final context
+
+        Raises:
+            RuntimeError: If maximum iterations reached without completion
+        """
         num_iteration = 0
         context: Context = Context()
         success = False

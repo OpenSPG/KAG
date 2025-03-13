@@ -18,8 +18,5 @@ class FinishExecutor(ExecutorABC):
         return {
             "name": "Finish",
             "description": "Performs no operation and is solely used to indicate that the task has been completed.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
+            "parameters": {},
         }
