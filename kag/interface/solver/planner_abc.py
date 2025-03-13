@@ -41,6 +41,7 @@ class Task(Registrable):
         arguments: dict,
         parents: List = None,
         children: List = None,
+        id: str = None,
     ):
         """Represents an executable task that can be processed by an executor.
 
@@ -48,7 +49,7 @@ class Task(Registrable):
             executor (str): Name of the executor responsible for running this task.
             arguments (dict): Parameters required for task execution.
             status (TaskStatus): Current execution status of the task (PENDING by default).
-            id (str): Unique identifier generated using UUID.
+            id (str): Unique identifier.
             parents (List[Task]): List of predecessor tasks that must complete before execution.
             children (List[Task]): List of successor tasks that depend on this task's completion.
             memory (dict): Storage for intermediate execution data.
@@ -57,7 +58,10 @@ class Task(Registrable):
         self.executor = executor
         self.arguments = arguments
         self.status = TaskStatus.PENDING
-        self.id = str(uuid.uuid4())
+        if id is None:
+            self.id = str(uuid.uuid4())
+        else:
+            self.id = id
         if parents is None:
             self.parents = []
         else:
@@ -114,23 +118,8 @@ class Task(Registrable):
 
     __repr__ = __str__
 
-
-class PlannerABC(Registrable):
-    """Abstract base class for task planners that generate execution workflows.
-
-    Planners are responsible for creating Directed Acyclic Graphs (DAGs) of tasks
-    based on user query.
-    """
-
-    @property
-    def input_types(self):
-        return str
-
-    @property
-    def output_types(self):
-        return List[Task]
-
-    def create_tasks_from_dag(self, task_dag: Dict[str, dict]):
+    @staticmethod
+    def create_tasks_from_dag(task_dag: Dict[str, dict]):
         """Constructs task objects from a task dependency graph definition.
 
         Example DAG format:
@@ -160,7 +149,7 @@ class PlannerABC(Registrable):
         task_map = {}
         for task_order, task_info in task_dag.items():
             print(f"task_info = {task_info}")
-            task = Task(task_info["executor"], task_info["arguments"])
+            task = Task(task_info["executor"], task_info["arguments"], id=task_order)
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]
@@ -170,6 +159,22 @@ class PlannerABC(Registrable):
                 task_map[dep].add_child(task_map[task_order])
 
         return list(task_map.values())
+
+
+class PlannerABC(Registrable):
+    """Abstract base class for task planners that generate execution workflows.
+
+    Planners are responsible for creating Directed Acyclic Graphs (DAGs) of tasks
+    based on user query.
+    """
+
+    @property
+    def input_types(self):
+        return str
+
+    @property
+    def output_types(self):
+        return List[Task]
 
     def invoke(self, query, **kwargs) -> List[Task]:
         """Synchronously creates an execution plan from the given query.
