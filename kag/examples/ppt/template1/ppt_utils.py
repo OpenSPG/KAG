@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from PIL import Image
 from pptx import Presentation
-
+from typing import List, Tuple
 from bs4 import BeautifulSoup
 import re
 import re
@@ -110,7 +110,7 @@ class PPTUtils:
         return json_data
 
     @staticmethod
-    def extract_md_images(md_file):
+    def extract_markdown_images(md_file):
         """
         提取Markdown文件中的图片信息
         :param md_file: Markdown文件路径
@@ -136,15 +136,6 @@ class PPTUtils:
                     while j >= 0:
                         prev_line = lines[j].strip()
 
-                        # 匹配figureText注释
-                        if not img_info.get('figure_text') and \
-                                '<!--' in prev_line and 'figureText:' in prev_line:
-                            ft_match = re.search(r'figureText:\s*(.*?)\s*-->', prev_line)
-                            if ft_match:
-                                img_info['figure_text'] = ft_match.group(1)
-                            j -= 1
-                            continue
-
                         # 匹配标题（非空行）
                         if prev_line and not prev_line.startswith(('<', '![', '|')):
                             img_info['title'] = prev_line
@@ -161,39 +152,84 @@ class PPTUtils:
                         'title': md_match.group(1),
                         'url': md_match.group(2)
                     }
-
-                    # 向前搜索figureText
-                    j = i - 1
-                    while j >= 0:
-                        prev_line = lines[j].strip()
-                        if '<!--' in prev_line and 'figureText:' in prev_line:
-                            ft_match = re.search(r'figureText:\s*(.*?)\s*-->', prev_line)
-                            if ft_match:
-                                img_info['figure_text'] = ft_match.group(1)
-                            break
-                        j -= 1
-
                     images.append(img_info)
 
         return images
 
     @staticmethod
     def extract_markdown_tables(md_file_path):
-        """ 从Markdown内容中提取所有HTML表格并转换为二维数组 """
-        # 读取 Markdown 文件内容
+        """ 从Markdown内容中提取所有HTML表格并转换为结构化数据 """
         with open(md_file_path, "r", encoding="utf-8") as file:
             markdown_text = file.read()
 
-        # 使用 BeautifulSoup 解析 Markdown 的 HTML 表格内容
         soup = BeautifulSoup(markdown_text, 'html.parser')
+        parsed_tables = []
 
-        tables = []
-        # 遍历所有 <table> 元素
+        # 修复1：使用find_all获取所有表格（原代码find只能获取第一个）
         for table in soup.find_all('table'):
-            rows = []
-            for tr in table.find_all('tr'):  # 遍历表格的每一行
-                row = [td.get_text(strip=True) for td in tr.find_all(['td', 'th'])]  # 获取每列的内容
-                rows.append(row)
-            tables.append(rows)  # 将当前表格添加到表格列表中
+            table_content = []
+            merge_cells = []
+            rowspans = {}  # 新增跨行单元格追踪
 
-        return tables
+            # 修复2：重构行列计算逻辑
+            max_cols = 0
+            for row_idx, tr in enumerate(table.find_all('tr')):
+                row = []
+                col_idx = 0
+
+                # 处理跨行单元格延续
+                while col_idx in rowspans.get(row_idx, {}):
+                    cell = rowspans[row_idx][col_idx]
+                    row.append(cell['text'])
+                    if cell['remaining'] > 1:
+                        for r in range(row_idx+1, row_idx + cell['remaining']):
+                            rowspans.setdefault(r, {})[col_idx] = {
+                                'text': cell['text'],
+                                'remaining': cell['remaining'] - (r - row_idx)
+                            }
+                    col_idx += 1
+
+                # 处理当前行新单元格
+                for cell in tr.find_all(['td', 'th']):
+                    # 跳过已处理的合并单元格
+                    while col_idx in rowspans.get(row_idx, {}):
+                        col_idx += 1
+
+                    # 获取单元格属性
+                    text = cell.get_text(strip=True)
+                    rowspan = int(cell.get('rowspan', 1))
+                    colspan = int(cell.get('colspan', 1))
+
+                    # 记录合并信息
+                    if rowspan > 1 or colspan > 1:
+                        merge_cells.append((
+                            row_idx, col_idx,
+                            row_idx + rowspan - 1,
+                            col_idx + colspan - 1
+                        ))
+
+                    # 填充当前单元格
+                    row.append(text)
+
+                    # 处理行合并
+                    if rowspan > 1:
+                        for r in range(row_idx+1, row_idx + rowspan):
+                            rowspans.setdefault(r, {})[col_idx] = {
+                                'text': text,
+                                'remaining': rowspan - (r - row_idx)
+                            }
+
+                    col_idx += colspan
+
+                # 更新最大列数
+                max_cols = max(max_cols, col_idx)
+                table_content.append(row)
+
+            # 修复3：统一填充空单元格
+            for row in table_content:
+                while len(row) < max_cols:
+                    row.append('')
+
+            parsed_tables.append((table_content, merge_cells))
+
+        return parsed_tables

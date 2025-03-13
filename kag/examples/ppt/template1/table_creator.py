@@ -1,5 +1,6 @@
 from typing import List
-
+from pptx.util import Inches
+from typing import List, Tuple
 from bs4 import BeautifulSoup
 
 
@@ -16,11 +17,53 @@ class TablePPTCreator:
             # 如果存在标题占位符，设置标题文本
             title_shape = slide.shapes.title
             title_shape.text = title
+        if content is not None:
+            shape = slide.shapes[1]
+            shape.text = content
+        # 设置表格位置和大小
+        shape = slide.shapes[2]
+        placeholder = shape
+        table_left, table_top, table_width, table_height = (
+            placeholder.left,
+            placeholder.top,
+            placeholder.width,
+            placeholder.height,
+        )
+        # 添加表格
+        table = slide.shapes.add_table(rows, cols, table_left, table_top, table_width, table_height).table
 
-            # 设置表格位置和大小
-        shape = slide.shapes[1]
-        shape.text = content
+        for i in range(rows):
+            for j in range(cols):
+                # 设置单元格内容
+                cell = table.cell(i, j)
+                cell.text = table_content[i][j]
 
+        return slide
+
+    def add_table_slide_with_merge(
+            self, title: str, content, table_content: List[List[str]], merge_cells: List[Tuple[int, int, int, int]]
+    ):
+        """
+        添加带有合并单元格的表格到 PowerPoint 幻灯片中
+        :param title: 幻灯片标题
+        :param table_content: 表格内容，二维列表
+        :param merge_cells: 合并单元格信息 (start_row, start_col, end_row, end_col)
+        """
+        # 创建一个空白布局幻灯片
+        slide = self.prs.slides.add_slide(self.prs.slide_layouts[8])
+
+        # 设置标题
+        title_box = slide.shapes.add_textbox(Inches(1), Inches(0.5), Inches(8), Inches(1))
+        title_frame = title_box.text_frame
+        title_frame.text = title
+
+        if content is not None:
+            shape = slide.shapes[1]
+            shape.text = content
+
+        rows = len(table_content)
+        cols = max(len(row) for row in table_content)
+        # 设置表格位置和大小
         shape = slide.shapes[2]
         placeholder = shape
         table_left, table_top, table_width, table_height = (
@@ -33,34 +76,24 @@ class TablePPTCreator:
         # 添加表格
         table = slide.shapes.add_table(rows, cols, table_left, table_top, table_width, table_height).table
 
-        for i in range(rows):
-            for j in range(cols):
-                # 设置单元格内容
-                cell = table.cell(i, j)
-                cell.text = table_content[i][j]
+        # 填充内容并合并单元格
+        for (start_row, start_col, end_row, end_col) in merge_cells:
+            try:
+                # 合并单元格
+                table.cell(start_row, start_col).merge(
+                    table.cell(end_row, end_col))
+            except IndexError:
+                # 添加错误处理
+                print(f"警告：无效的合并范围 ({start_row},{start_col})-({end_row},{end_col})")
+
+        # 填充文本内容
+        for row_idx, row in enumerate(table_content):
+            for col_idx, text in enumerate(row):
+                cell = table.cell(row_idx, col_idx)
+                cell.text_frame.paragraphs[0].text = text
 
         return slide
 
-    @staticmethod
-    def extract_markdown_tables(md_content):
-        """
-        从Markdown内容中提取所有HTML表格并转换为二维数组
-        :param md_content: Markdown文本内容
-        :return: 包含所有表格的列表（每个表格是一个二维数组）
-        """
-        soup = BeautifulSoup(md_content, 'html.parser')
-        tables = []
-
-        for table in soup.find_all('table'):
-            table_data = []
-            for row in table.find_all('tr'):
-                # 处理包含td或th的情况
-                columns = [col.get_text(strip=True) for col in row.find_all(['td', 'th'])]
-                if columns:  # 忽略空行
-                    table_data.append(columns)
-            tables.append(table_data)
-
-        return tables
 
     def save(self, filename):
         """保存PPT文件"""

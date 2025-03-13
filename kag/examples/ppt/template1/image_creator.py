@@ -1,6 +1,9 @@
 import os
+from io import BytesIO
 
+import requests
 from PIL import Image
+from pptx.util import Inches
 
 
 class ImagePPTCreator:
@@ -8,8 +11,8 @@ class ImagePPTCreator:
         """接收统一的 Presentation 对象"""
         self.prs = prs
 
-    def add_image_slide(self, title, image_path, position=None):
-        """添加图片页"""
+    def add_image_slide_offline(self, title, image_path, figure_text=None, position=None):
+        """添加一个包含离线图片的幻灯片，并附带标题和描述文字"""
         slide = self.prs.slides.add_slide(self.prs.slide_layouts[9])
 
         if slide.shapes.title:
@@ -40,6 +43,54 @@ class ImagePPTCreator:
                 position.width,
                 position.height,
             )
+
+        # 添加图片的描述性文字（FigureText）
+        if figure_text is not None:
+            body_shape = slide.shapes.placeholders[2]
+            body_shape.text = figure_text
+
+        return slide
+
+    def add_image_slide_online(self, title, image_url, figure_text=None, position=None):
+        """添加一个包含在线图片的幻灯片，并附带标题和描述文字"""
+        # 添加一个幻灯片
+        slide = self.prs.slides.add_slide(self.prs.slide_layouts[9])  # 使用空白布局
+        # 添加标题
+        if slide.shapes.title:
+            # 如果存在标题占位符，设置标题文本
+            title_shape = slide.shapes.title
+            title_shape.text = title
+
+        # 获取图片
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            image_data = BytesIO(response.content)
+            # 设置图片位置
+            if position is None:
+                placeholder = slide.shapes[1]
+                # 添加图片
+                slide.shapes.add_picture(
+                    image_data,
+                    placeholder.left,
+                    placeholder.top,
+                    placeholder.width,
+                    placeholder.height,
+                )
+                # 删除占位符
+                slide.shapes._spTree.remove(placeholder._element)
+            else:
+                slide.shapes.add_picture(
+                    image_data,
+                    position.left,
+                    position.top,
+                    position.width,
+                    position.height,
+                )
+
+        # 添加图片的描述性文字（FigureText）
+        if figure_text is not None:
+            body_shape = slide.shapes.placeholders[2]
+            body_shape.text = figure_text
 
         return slide
 

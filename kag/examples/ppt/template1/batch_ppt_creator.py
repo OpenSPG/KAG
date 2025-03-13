@@ -33,7 +33,7 @@ class BatchPPTCreator:
                 # 创建图片页
                 if 'images' in item:
                     for img in item['images']:
-                        manager.creators['image'].add_image_slide(
+                        manager.creators['image'].add_image_slide_offline(
                             img['title'],
                             img['path']
                         )
