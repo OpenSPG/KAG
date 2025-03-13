@@ -11,9 +11,7 @@
 # or implied.
 import copy
 import logging
-import os
 
-from kag.common.registry import import_modules_from_path
 from kag.solver.logic.solver_pipeline import SolverPipeline
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
@@ -123,8 +121,6 @@ if __name__ == "__main__":
     init_kag_config(
         "3300003", "http://antspg-gz00b-006003007104.sa128-sqa.alipay.net:8887"
     )
-    res = SolverMain().invoke(
-        3300003, 4100019, "我上班的时候受伤了，能认定工伤吗？", "2900007", True
-    )
+    res = SolverMain().invoke(3300003, 4100019, "我上班的时候受伤了，能认定工伤吗？", "2900007", True)
     print("*" * 80)
     print("The Answer is: ", res)
