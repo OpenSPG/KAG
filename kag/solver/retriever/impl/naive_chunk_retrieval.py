@@ -466,7 +466,7 @@ class NaiveChunkRetriever(ChunkRetriever):
             )
             node_dict = dict(node.items())
             matched_docs.append(
-                f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                f"{node_dict['pid']}#{node_dict['name']}#{node_dict['content']}#{doc_score}"
             )
             hits_docs.add(node_dict["name"])
         query = "\n".join(queries)
@@ -483,7 +483,7 @@ class NaiveChunkRetriever(ChunkRetriever):
                         else:
                             logger.warning(f"{query} matched docs is empty")
                         matched_docs.append(
-                            f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
+                            f'{item["node"]["pid"]}#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
                         )
                         break
         except Exception as e:

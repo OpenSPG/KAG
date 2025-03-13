@@ -48,8 +48,9 @@ class AisearchTXTReader(ReaderABC):
 
         content = input['text']
         chunk = Chunk(
-            id=f"{input['pid']}_{generate_hash_id(input['text'])}",
+            id=f"{generate_hash_id(input['text'])}",
             name=input['text'][1:20],
             content=content,
+            pid=input['pid']
         )
         return [chunk]
