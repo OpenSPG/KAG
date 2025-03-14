@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from PIL import Image
 from pptx import Presentation
-from typing import List, Tuple
+from typing import List, Dict
 from bs4 import BeautifulSoup
 import re
 import re
@@ -110,13 +110,12 @@ class PPTUtils:
         return json_data
 
     @staticmethod
-    def extract_markdown_images(md_file):
+    def extract_markdown_images(content):
         """
         提取Markdown文件中的图片信息
-        :param md_file: Markdown文件路径
         :return: 包含图片信息的字典列表
         """
-        content = Path(md_file).read_text(encoding='utf-8')
+        # content = Path(md_file).read_text(encoding='utf-8')
         lines = content.split('\n')
 
         images = []
@@ -157,76 +156,116 @@ class PPTUtils:
         return images
 
     @staticmethod
-    def extract_markdown_tables(md_file_path):
-        """ 从Markdown内容中提取所有HTML表格并转换为结构化数据 """
-        with open(md_file_path, "r", encoding="utf-8") as file:
-            markdown_text = file.read()
+    def extract_markdown_tables(markdown_text):
+        """
+        从 Markdown 文件中提取所有表格，并解析为多个二维数组
+        :return: List of tables, 每个表格为二维数组
+        """
+        # with open(md_file_path, "r", encoding="utf-8") as file:
+        #     markdown_text = file.read()
 
-        soup = BeautifulSoup(markdown_text, 'html.parser')
-        parsed_tables = []
+        # 定义 Markdown 表格块的正则表达式
+        table_block_regex = re.compile(
+            r"(?:\|.*?\|(?:\n|\r|\r\n))+"
+        )  # 匹配表格块（按行以 `|` 开头，并重复至少一行）
 
-        for table in soup.find_all('table'):
+        # 查找所有表格块
+        table_blocks = table_block_regex.findall(markdown_text)
 
-            table_content = [] # table_content: 表格内容，二维列表
-            merge_cells = [] # merge_cells: 合并单元格信息 (start_row, start_col, end_row, end_col)
-            rowspans = {}  # 新增跨行单元格追踪
+        # 如果没有匹配到任何表格，返回空列表
+        if not table_blocks:
+            return []
 
-            max_cols = 0
-            for row_idx, tr in enumerate(table.find_all('tr')):
-                row = []
-                col_idx = 0
+        # 存储解析后的所有表格
+        all_parsed_tables = []
 
-                # 处理跨行单元格延续
-                while col_idx in rowspans.get(row_idx, {}):
-                    cell = rowspans[row_idx][col_idx]
-                    row.append(cell['text'])
-                    if cell['remaining'] > 1:
-                        for r in range(row_idx+1, row_idx + cell['remaining']):
-                            rowspans.setdefault(r, {})[col_idx] = {
-                                'text': cell['text'],
-                                'remaining': cell['remaining'] - (r - row_idx)
-                            }
-                    col_idx += 1
+        # 逐个表格块进行解析
+        for table_block in table_blocks:
+            # 按行分割表格块
+            rows = table_block.strip().splitlines()
 
-                # 处理当前行新单元格
-                for cell in tr.find_all(['td', 'th']):
-                    # 跳过已处理的合并单元格
-                    while col_idx in rowspans.get(row_idx, {}):
-                        col_idx += 1
+            # 移除分隔行（例如 "----"）
+            parsed_table = []
+            header_processed = False  # 标志是否已经处理表头
+            for row in rows:
+                # 按列分隔，并去掉多余空格
+                columns = [col.strip() for col in row.strip('|').split('|')]
 
-                    # 获取单元格属性
-                    text = cell.get_text(strip=True)
-                    rowspan = int(cell.get('rowspan', 1))
-                    colspan = int(cell.get('colspan', 1))
+                # 判断是否为表头分隔符（例如 "----"）
+                if not header_processed:
+                    if all(re.match(r"^-+$", col) for col in columns):
+                        header_processed = True  # 标记表头分隔符已处理
+                        continue  # 跳过分隔符行
+                    else:
+                        # 标记表头内容加粗
+                        columns = [f"**{col}**" for col in columns]
 
-                    # 记录合并信息
-                    if rowspan > 1 or colspan > 1:
-                        merge_cells.append((
-                            row_idx, col_idx,
-                            row_idx + rowspan - 1,
-                            col_idx + colspan - 1
-                        ))
+                parsed_table.append(columns)
 
-                    # 填充当前单元格
-                    row.append(text)
-                    # 处理行合并
-                    if rowspan > 1:
-                        for r in range(row_idx+1, row_idx + rowspan):
-                            rowspans.setdefault(r, {})[col_idx] = {
-                                'text': text,
-                                'remaining': rowspan - (r - row_idx)
-                            }
-
-                    col_idx += colspan
-
-                # 更新最大列数
-                max_cols = max(max_cols, col_idx)
-                table_content.append(row)
-
-            for row in table_content:
+            # 补齐列数不一致的情况
+            max_cols = max(len(row) for row in parsed_table)
+            for row in parsed_table:
                 while len(row) < max_cols:
-                    row.append('')
+                    row.append("")  # 填充空单元格
 
-            parsed_tables.append((table_content, merge_cells))
+            # 添加解析后的表格到结果列表
+            all_parsed_tables.append(parsed_table)
 
-        return parsed_tables
+        return all_parsed_tables
+
+    @staticmethod
+    def parse_markdown(markdown_file):
+        """
+        解析 Markdown 文件，包括一级标题（#）作为标题页，按二级标题（##）分块，
+        并将所有三级标题（###）的内容聚合到对应二级标题的 content 中。
+        :param markdown_file: Markdown 文件路径
+        :return: [{'type': 'title', 'title': '一级标题内容'}, ...]
+        """
+        with open(markdown_file, 'r', encoding='utf-8') as f:
+            markdown_text = f.read()
+
+        # 用于存储解析后的结果
+        sections = []
+
+        # 提取一级标题（标题页）
+        title_match = re.match(r'^#\s*(.+)', markdown_text, re.MULTILINE)
+        if title_match:
+            # 提取一级标题并存入 sections
+            sections.append({
+                'type': 'title',
+                'title': title_match.group(1).strip(),
+                'content': ''  # 标题页无内容
+            })
+            # 去掉一级标题部分，便于后续解析二级标题
+            markdown_text = markdown_text[markdown_text.find('\n') + 1:]
+
+        # 初始化变量
+        current_section = None
+
+        # 按行解析 Markdown 文本
+        lines = markdown_text.splitlines()
+        for line in lines:
+            if line.startswith('## '):  # 二级标题
+                # 如果有当前 section，将其添加到 sections 中
+                if current_section:
+                    sections.append(current_section)
+                # 创建新的 section
+                current_section = {
+                    'type': 'section',
+                    'title': line[3:].strip(),  # 去掉 ## 和空格
+                    'content': ''
+                }
+            elif line.startswith('### '):  # 三级标题
+                # 将三级标题直接追加到当前 section 的 content
+                if current_section:
+                    current_section['content'] += f"\n{line.strip()}\n"
+            else:
+                # 将普通内容直接追加到当前 section 的 content
+                if current_section:
+                    current_section['content'] += f"{line.strip()}\n"
+
+        # 最后一部分内容需要添加到 sections 中
+        if current_section:
+            sections.append(current_section)
+
+        return sections

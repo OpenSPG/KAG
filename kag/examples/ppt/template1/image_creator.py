@@ -21,17 +21,30 @@ class ImagePPTCreator:
             title_shape.text = title
 
         # 处理图片
-        img_path = self._process_image(image_path)
+        img_path = self.process_image(image_path)
+        with Image.open(img_path) as img:
+            img_width_px, img_height_px = img.size  # 宽度和高度，单位为像素
         # 设置图片位置
         if position is None:
             placeholder = slide.shapes[1]
-            # 添加图片
+            placeholder_height = placeholder.height  # 保持高度固定
+            placeholder_left = placeholder.left
+            placeholder_top = placeholder.top
+
+            # 根据占位符高度，计算图片宽度，保持比例
+            img_aspect_ratio = img_width_px / img_height_px  # 图片宽高比
+            adjusted_width = int(placeholder_height * img_aspect_ratio)  # 根据高度调整宽度
+
+            # 计算图片的水平居中位置
+            adjusted_left = placeholder_left + (placeholder.width - adjusted_width) // 2
+
+            # 添加图片到幻灯片
             slide.shapes.add_picture(
                 img_path,
-                placeholder.left,
-                placeholder.top,
-                placeholder.width,
-                placeholder.height,
+                adjusted_left,  # 居中位置
+                placeholder_top,  # 占位符顶部位置
+                adjusted_width,  # 动态调整的宽度
+                placeholder_height,  # 固定高度
             )
             # 删除占位符
             slide.shapes._spTree.remove(placeholder._element)
@@ -95,8 +108,10 @@ class ImagePPTCreator:
         return slide
 
     @staticmethod
-    def _process_image(image_path, max_size_mb=2):
+    def process_image(image_path, max_size_mb=2):
         """处理图片尺寸和大小"""
+        # 获取当前脚本文件的所在目录
+        # absolute_image_path = os.path.join(os.getcwd(), image_path)
         img = Image.open(image_path)
 
         # 压缩图片直到小于指定大小
