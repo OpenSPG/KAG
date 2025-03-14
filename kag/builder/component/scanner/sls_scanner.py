@@ -294,7 +294,8 @@ def _prepare_data():
         accessKeyId=config["accessKeyId"],
         accessKey=config["accessKeySecret"],
     )
-    for i in range(0, test_item_count):
+    starter = 0
+    for i in range(starter, starter + test_item_count):
         logitemList = []  # LogItem list
 
         contents = [("user", "magic_user_" + str(i)), ("avg", "magic_age_" + str(i))]
@@ -355,4 +356,4 @@ def main():
 if __name__ == "__main__":
     _prepare_data()
 
-    main()
+    # main()
