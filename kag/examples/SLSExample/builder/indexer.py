@@ -42,4 +42,4 @@ if __name__ == "__main__":
 
     config_str = json.dumps(KAG_CONFIG.all_config)
     sls_chain = SLSUnstructuredChain(config_str)
-    sls_chain.buildKB()
+    sls_chain.buildKB("dt=20250225")
