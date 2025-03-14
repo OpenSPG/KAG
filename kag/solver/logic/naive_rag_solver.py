@@ -24,9 +24,9 @@ class NaiveRagSolver(Registrable):
     def run(self, question, **kwargs):
         recall_docs = self.retriever.recall_docs(queries=[question], retrieved_spo=None)
         trace_log = recall_docs
-        self.memory.save_memory(solved_answer=None, supporting_fact=recall_docs, instruction=question)
-
-        response = self.generator.generate(instruction = question, memory = self.memory)
-        return response, trace_log
+        # self.memory.save_memory(solved_answer=None, supporting_fact=recall_docs, instruction=question)
+        #
+        # response = self.generator.generate(instruction = question, memory = self.memory)
+        return "mock answer", trace_log
 
 

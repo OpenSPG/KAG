@@ -1,8 +1,9 @@
+import csv
 import json
 import logging
 import os
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 from tqdm import tqdm
 from kag.common.conf import KAG_CONFIG
@@ -33,6 +34,23 @@ class EvaForAISearch:
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
 
+    def load_queries(self, qaFilePath):
+        qa_list = []
+        with open(qaFilePath, mode='r', newline='', encoding='utf-8') as file1:
+            # 使用 csv.reader 读取文件，并指定分隔符为 '\t'
+            reader = csv.reader(file1, delimiter='\t')
+
+            # 遍历每一行
+            index = 0
+            for row in reader:
+                index += 1
+                qid = row[0]
+                query = row[1]
+                pid_rels = row[2]
+
+                qa_list.append((qid, query, pid_rels))
+        return qa_list
+
     """
         parallel qa from knowledge base
         and getBenchmarks(em, f1, answer_similarity)
@@ -48,20 +66,19 @@ class EvaForAISearch:
         def process_sample(data):
             try:
                 sample_idx, sample = data
-                sample_id = sample["id"]
-                question = sample["question"] + json.dumps(f"'{sample['options']}'", ensure_ascii=False)
-                gold = sample["answer"]
+                qid, question, pid_rels = sample
                 if question in ckpt:
                     print(f"found existing answer to question: {question}")
-                    prediction, traceLog = ckpt.read_from_ckpt(question)
+                    prediction, trace_log = ckpt.read_from_ckpt(question)
                 else:
-                    prediction, traceLog = self.qa(question)
-                    ckpt.write_to_ckpt(question, (prediction, traceLog))
+                    prediction, trace_log = self.qa(question)
+                    ckpt.write_to_ckpt(question, (prediction, trace_log))
 
                 evaObj = Evaluate()
-                metrics = evaObj.getLLMBenchMark(self.llm_client, questionList=[question], predictionlist=[str(prediction)],
-                                                 goldlist=[gold])
-                return sample_idx, sample_id, prediction, metrics, traceLog
+                hits, total = evaObj.getAisearchRecallBenchMark(question=question,
+                                                                trace_log=trace_log,
+                                                                pid_rels=pid_rels)
+                return sample_idx, qid, question, pid_rels, prediction, trace_log, hits, total
             except Exception as e:
                 import traceback
 
@@ -70,15 +87,16 @@ class EvaForAISearch:
                 )
                 return None
 
-        qaList = json.load(open(qaFilePath, "r"))
+        qa_list = self.load_queries(qaFilePath)
+        res_list = []
         total_metrics = {
-            "consistency": 0.0,
-            "processNum": 0,
+            "hits": 0.0,
+            "total": 0.0,
         }
         with ThreadPoolExecutor(max_workers=threadNum) as executor:
             futures = [
                 executor.submit(process_sample, (sample_idx, sample))
-                for sample_idx, sample in enumerate(qaList[:upperLimit])
+                for sample_idx, sample in enumerate(qa_list[:upperLimit])
             ]
             for future in tqdm(
                     as_completed(futures),
@@ -87,28 +105,30 @@ class EvaForAISearch:
             ):
                 result = future.result()
                 if result is not None:
-                    sample_idx, sample_id, prediction, metrics, traceLog = result
-                    sample = qaList[sample_idx]
+                    sample_idx, qid, query, pid_rels, prediction, traceLog, hits, total = result
+                    sample = {}
+                    sample['qid'] = qid
+                    sample['query'] = query
+                    sample['pid#rel'] = pid_rels
+                    sample['prediction'] = prediction
+                    sample['traceLog'] = traceLog
+                    sample['hits'] = hits
+                    sample['total'] = total
 
-                    sample["prediction"] = prediction
-                    sample["traceLog"] = traceLog
+                    total_metrics["hits"] += float(hits)
+                    total_metrics["total"] += float(total)
 
-                    total_metrics["consistency"] += metrics["consistency"]
-                    total_metrics["processNum"] += 1
+                    res_list.append(sample)
 
                     if sample_idx % 50 == 0:
                         with open(resFilePath, "w") as f:
-                            json.dump(qaList, f, ensure_ascii=False)
+                            json.dump(res_list, f, ensure_ascii=False)
 
         with open(resFilePath, encoding='utf-8', mode="w") as f:
-            json.dump(qaList, f, ensure_ascii=False)
+            json.dump(res_list, f, ensure_ascii=False)
 
-        res_metrics = {}
-        for item_key, item_value in total_metrics.items():
-            if item_key != "processNum":
-                res_metrics[item_key] = item_value / total_metrics["processNum"]
-            else:
-                res_metrics[item_key] = total_metrics["processNum"]
+        res_metrics = total_metrics
+        res_metrics['ratio'] = float(total_metrics['hits']) / float(total_metrics['total'])
         CheckpointerManager.close()
         return res_metrics
 
@@ -117,6 +137,21 @@ if __name__ == "__main__":
     import_modules_from_path("./prompt")
     delay_run(hours=0)
     evaObj = EvaForAISearch()
-    answer, traceLog = evaObj.qa("大学怎么网上选宿舍")
-    print(f"answer:{answer}, traceLog:{traceLog}")
+    # answer, traceLog = evaObj.qa("大学怎么网上选宿舍")
+    # print(f"answer:{answer}, traceLog:{traceLog}")
 
+    start_time = time.time()
+    filePath = "./data/queries.dev.100.csv"
+
+    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
+    resFilePath = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), f"aisearchqa_res_{start_time}.json"
+    )
+    total_metrics = evaObj.parallelQaAndEvaluate(
+        qaFilePath, resFilePath, threadNum=1, upperLimit=5
+    )
+
+    total_metrics["cost"] = time.time() - start_time
+    with open(f"./aisearchqa_metrics_{start_time}.json", encoding='utf-8', mode="w") as f:
+        json.dump(total_metrics, f)
+    print(total_metrics)

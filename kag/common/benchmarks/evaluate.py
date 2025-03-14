@@ -1,3 +1,4 @@
+import json
 from typing import List
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -8,13 +9,61 @@ from .evaUtils import compare_summarization_answers
 
 
 class Evaluate:
-
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
 
     def __init__(self, embedding_factory="text-embedding-ada-002"):
         self.embedding_factory = embedding_factory
+
+    """
+        question: 蜂巢取快递验证码摁错怎么办	
+        pid_rels: 159474#3,159475#3,219110#2,45280#1,269554#1,0#0,20367#0,103438#0,231595#0,391409#0,591217#0,486307#0,486306#0
+        trace_log: 
+            [{
+                'pid':159474,
+                'name':'name of 159474',
+                'content':'content of 159474'
+            },{
+                'pid':20367,
+                'name':'name of 20367',
+                'content':'content of 20367'
+            }]
+        response:
+            hits: sum(rel for each pid if pid hits in trace_log)
+            total: sum(rel for each pid)
+    """
+
+    def getAisearchRecallBenchMark(self, question: str, trace_log: list, pid_rels: str):
+        """
+        evaluate the similarity between prediction and gold #TODO
+        """
+        trace_log_list = trace_log
+        pid_rel_dict = {}
+        total = 0.0
+        hits = 0.0
+
+        try:
+            for pid_rel_item in pid_rels.split(","):
+                pid = pid_rel_item.split('#')[0]
+                rel = pid_rel_item.split('#')[1]
+                pid_rel_dict[pid] = rel
+                if (rel.isdigit()):
+                    total += float(rel)
+        except:
+            pass
+
+        try:
+            for trace_log in trace_log_list:
+                pid = trace_log['pid']
+                if pid in pid_rel_dict and pid_rel_dict[pid].isdigit():
+                    hits += float(pid_rel_dict[pid])
+        except:
+            pass
+
+        if total == 0:
+            total = 0.01
+        return hits, total
 
     def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
         """
@@ -86,13 +135,13 @@ class Evaluate:
         """
         # Initialize total metrics
         total_metrics = {"consistency": 0.0}
-        llm_judger = LLMJudger(llm = llm_client)
+        llm_judger = LLMJudger(llm=llm_client)
 
         # llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
         # Iterate over prediction and gold lists to calculate EM and F1 scores
         hits = 0
         for question, prediction, gold in zip(questionList, predictionlist, goldlist):
-            resposne = llm_judger.judge_by_llm(question = question, prediction = prediction, gold = gold)
+            resposne = llm_judger.judge_by_llm(question=question, prediction=prediction, gold=gold)
             if resposne.lower() == "true":
                 hits += 1
 
@@ -101,17 +150,17 @@ class Evaluate:
         return total_metrics
 
     def getSummarizationMetrics(
-        self,
-        queries: List[str],
-        answers1: List[str],
-        answers2: List[str],
-        *,
-        api_key="EMPTY",
-        base_url="http://127.0.0.1:38080/v1",
-        model="gpt-4o-mini",
-        language="English",
-        retries=3,
-        max_workers=50,
+            self,
+            queries: List[str],
+            answers1: List[str],
+            answers2: List[str],
+            *,
+            api_key="EMPTY",
+            base_url="http://127.0.0.1:38080/v1",
+            model="gpt-4o-mini",
+            language="English",
+            retries=3,
+            max_workers=50,
     ):
         """
         Calculates and returns QFS (query-focused summarization) evaluation metrics
@@ -171,7 +220,7 @@ class Evaluate:
                 )
             ]
             for future in tqdm(
-                as_completed(futures), total=len(futures), desc="Evaluating: "
+                    as_completed(futures), total=len(futures), desc="Evaluating: "
             ):
                 metrics = future.result()
                 if metrics is not None:
