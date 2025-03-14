@@ -9,7 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import asyncio
 from typing import List
 from tenacity import stop_after_attempt, retry
 from kag.interface import (
@@ -35,9 +35,6 @@ class KAGStaticPipeline(SolverPipelineABC):
         self.executors = executors
         self.generator = generator
         self.max_iteration = max_iteration
-        # append a finish executor to indicate task is finished.
-        self.finish_executor = ExecutorABC.from_config({"type": "finish_executor"})
-        self.executors.append(self.finish_executor)
 
     def select_executor(self, executor_name: str):
         """Select executor instance by name from available executors.
@@ -64,26 +61,30 @@ class KAGStaticPipeline(SolverPipelineABC):
         )
         return tasks
 
+    @retry(stop=stop_after_attempt(3))
+    async def execute_task(self, query, task, context, **kwargs):
+        if self.planner.check_require_rewrite(task):
+            print("rewrite required=============")
+            print(f"original query: {task.arguments}")
+            task.arguments = await self.planner.query_rewrite(task)
+            print(f"rewrited query: {task.arguments}")
+        executor = self.select_executor(task.executor)
+        await executor.ainvoke(query, task, context, **kwargs)
+
     async def ainvoke(self, query, **kwargs):
         context: Context = Context()
-        success = False
         tasks = await self.planning(query, context, **kwargs)
 
         for task in tasks:
             context.add_task(task)
-        for task in context.gen_task(group=True):
-            if self.planner.check_require_rewrite(task):
-                print("rewrite required=============")
-                print(f"original query: {task.arguments}")
-                task.arguments = await self.planner.query_rewrite(task)
-                print(f"rewrited query: {task.arguments}")
-            executor = self.select_executor(task.executor)
-            if executor == self.finish_executor:
-                success = True
-                break
-            await executor.ainvoke(query, task, context, **kwargs)
-        if success:
-            answer = await self.generator.ainvoke(query, context)
-            return answer
-        else:
-            raise RuntimeError("failed to solve question.")
+
+        for task_group in context.gen_task(group=True):
+            await asyncio.gather(
+                *[
+                    asyncio.create_task(self.execute_task(query, task, context))
+                    for task in task_group
+                ]
+            )
+
+        answer = await self.generator.ainvoke(query, context)
+        return answer
