@@ -64,10 +64,7 @@ class KAGStaticPipeline(SolverPipelineABC):
     @retry(stop=stop_after_attempt(3))
     async def execute_task(self, query, task, context, **kwargs):
         if self.planner.check_require_rewrite(task):
-            print("rewrite required=============")
-            print(f"original query: {task.arguments}")
             task.arguments = await self.planner.query_rewrite(task)
-            print(f"rewrited query: {task.arguments}")
         executor = self.select_executor(task.executor)
         await executor.ainvoke(query, task, context, **kwargs)
 
