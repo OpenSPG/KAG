@@ -25,7 +25,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '4'
+  id: '6'
   language: en
   namespace: AISearch
 #------------project configuration end----------------#
@@ -54,13 +54,13 @@ kag_builder_pipeline:
   num_chains: 10
   scanner:
     type: csv_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
-    col_names: ["pid", "text"]
+    col_names: [pid, text]
     delimiter: "\t"
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
 naive_chunk_retriever: &naive_chunk_retriever
-  type: naive_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
+  type: naive_kag_fr_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
   llm_client: *chat_llm
   recall_num: 10
   rerank_topk: 10

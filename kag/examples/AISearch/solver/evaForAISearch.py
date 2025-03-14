@@ -31,7 +31,7 @@ class EvaForAISearch:
         resp = NaiveRagSolver.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
         answer, trace_log = resp.run(query)
 
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
+        logger.info(f"\nso the answer for '{query}' is: {answer}\n")
         return answer, trace_log
 
     def load_queries(self, qaFilePath):
@@ -128,7 +128,7 @@ class EvaForAISearch:
             json.dump(res_list, f, ensure_ascii=False)
 
         res_metrics = total_metrics
-        res_metrics['ratio'] = float(total_metrics['hits']) / float(total_metrics['total'])
+        res_metrics['recall'] = float(total_metrics['hits']) / float(total_metrics['total'])
         CheckpointerManager.close()
         return res_metrics
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         os.path.abspath(os.path.dirname(__file__)), f"aisearchqa_res_{start_time}.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=1, upperLimit=5
+        qaFilePath, resFilePath, threadNum=5, upperLimit=5
     )
 
     total_metrics["cost"] = time.time() - start_time
