@@ -131,7 +131,7 @@ class Task(Registrable):
             },
             "1": {
                 "executor": "call_kg_retriever",
-                "dependent_task_ids": [0],
+                "dependent_task_ids": ["0"],
                 "arguments": {"query": "刘德华出演过的电影列表"},
             },
         }
@@ -148,13 +148,11 @@ class Task(Registrable):
 
         task_map = {}
         for task_order, task_info in task_dag.items():
-            print(f"task_info = {task_info}")
             task = Task(task_info["executor"], task_info["arguments"], id=task_order)
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]
             for dep in deps:
-                print(f"{task_order} has parent {dep}")
                 task_map[task_order].add_parent(task_map[dep])
                 task_map[dep].add_child(task_map[task_order])
 
