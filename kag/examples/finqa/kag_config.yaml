@@ -58,7 +58,7 @@ finqa_builder_pipeline:
       similarity_threshold: 0.99
     splitter:
       type: line_length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 500
+      split_length: 300
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
@@ -123,7 +123,7 @@ finqa_solver_pipeline:
         vectorize_model: *vectorize_model
         chunk_retriever: *chunk_retriever
   generator:
-    type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
+    type: finqa_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
   reflector:
     type: finqa_reflector # kag.solver.implementation.default_reflector.DefaultReflector

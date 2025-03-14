@@ -5,7 +5,6 @@ from typing import List
 
 from kag.common.benchmarks.evaluate import Evaluate
 
-from kag.solver.logic.solver_pipeline import SolverPipeline
 
 from kag.common.registry import import_modules_from_path
 from kag.common.conf import KAG_CONFIG
@@ -15,6 +14,7 @@ from kag.examples.finqa.builder.indexer import build_finqa_graph, load_finqa_dat
 from kag.examples.finqa.reasoner.finqa_reasoner import FinQAReasoner
 from kag.examples.finqa.reasoner.finqa_lf_planner import FinQALFPlanner
 from kag.examples.finqa.reasoner.finqa_lf_executor import FinQALFExecutor
+from kag.examples.finqa.reasoner.finqa_generator import FinQAGenerator
 from kag.examples.finqa.reasoner.finqa_chunk_retriever import FinQAChunkRetriever
 from kag.examples.finqa.reasoner.finqa_memory import FinQAMemory
 from kag.examples.finqa.reasoner.finqa_reflector import FinQAReflector
@@ -27,60 +27,80 @@ from kag.examples.finqa.solver.prompt.solve_question_without_spo import (
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 from kag.examples.finqa.solver.prompt.question_classify import FinQAQuestionClassify
 
+from kag.examples.finqa.reasoner.finqa_solver_pipeline import FinQASolverPipeline
+
 
 def qa(question, _i, _id):
-    resp = SolverPipeline.from_config(KAG_CONFIG.all_config["finqa_solver_pipeline"])
+    resp = FinQASolverPipeline.from_config(
+        KAG_CONFIG.all_config["finqa_solver_pipeline"]
+    )
     answer, traceLog = resp.run(question)
     try:
         print(json.dumps(traceLog, ensure_ascii=False))
         code = ""
-        for sub_q in traceLog[-1]["sub question"]:
-            lf_expr = sub_q["lf_expr"]
-            if "math" not in lf_expr:
-                continue
-            code = sub_q["debug_info"]["code"]
+        question = ""
+        memory = ""
+        try:
+            code = traceLog[-1]["code"]
+            question = traceLog[-1]["present_instruction"]
+            memory = traceLog[-1]["present_memory"]
+        except:
+            pass
         print(
-            f"finqa_processing_log\ni={_i}\nid={_id}\n<|memory|>\n{traceLog[-1]['present_memory']}\n<|memory|>\n<|code|>\n{code}\n<|code|>"
+            f"finqa_processing_log\ni={_i}\nid={_id}\nquestion={question}\n<|memory|>\n{memory}\n<|memory|>\n<|code|>\n{code}\n<|code|>"
         )
     except:
         pass
     return str(answer)
 
 
-class MultiHerttEvaluate(Evaluate):
-    def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
-        new_predictionlist = []
-        new_goldlist = []
-        # 如果是数值，按照精度进行判断
-        for _i, _prediction in enumerate(predictionlist):
-            _prediction = str(_prediction)
-            gold = str(goldlist[_i])
-            try:
-                # 结果是纯数值
-                gold = str(float(gold))
-                if "%" in _prediction:
-                    _prediction = _prediction.strip("%")
-                    _prediction = str(float(_prediction) / 100)
-                gold, _prediction = self.round_to_smaller_precision(gold, _prediction)
-                if self.is_close_rel(
-                    float(gold), float(_prediction)
-                ) or self.is_percentage_close(float(gold), float(_prediction)):
-                    new_predictionlist.append("em")
-                    new_goldlist.append("em")
-                    continue
-                new_predictionlist.append(_prediction)
-                new_goldlist.append(gold)
-            except Exception:
-                new_predictionlist.append(_prediction)
-                new_goldlist.append(gold)
-        return super().getBenchMark(new_predictionlist, new_goldlist)
+class FinQAEvaluate(Evaluate):
+
+    def check(self, prediction: str, answer: str, exe_ans: str):
+        try:
+            float(exe_ans)
+        except:
+            # yes or no
+            return super().getBenchMark([prediction], [exe_ans])
+
+        try:
+            # fix %
+            prediction = prediction.strip()
+            if prediction.endswith("%"):
+                prediction = prediction.strip("%")
+                prediction = str(float(prediction) / 100)
+
+            answer = answer.strip()
+            if answer.endswith("%"):
+                if not self.is_same_sign(answer.strip("%"), exe_ans):
+                    # 修复百分比问题中的正负号
+                    answer = str(abs(float(answer.strip("%")))) + "%"
+                    exe_ans = str(abs(float(exe_ans)))
+                    prediction = str(abs(float(prediction)))
+                tmp_answer, tmp_exe_ans = self.round_to_smaller_precision(
+                    answer.strip("%"), exe_ans
+                )
+                if self.is_close_rel(tmp_answer, tmp_exe_ans):
+                    exe_ans = str(float(exe_ans) / 100)
+        except:
+            pass
+
+        exe_ans, prediction = self.round_to_smaller_precision(exe_ans, prediction)
+        if self.is_close_rel(exe_ans, prediction) or self.is_percentage_close(
+            exe_ans, prediction
+        ):
+            return super().getBenchMark(["em"], ["em"])
+
+        return super().getBenchMark([prediction], [exe_ans])
 
     def is_close_rel(self, a, b, rel_tol=1e-9):
+        a = float(a)
+        b = float(b)
         return abs(a - b) < rel_tol * max(abs(a), abs(b))
 
     def is_percentage_close(self, a, b, rel_tol=1e-9):
-        b = b / 100
-        a, b = self.round_to_smaller_precision(str(a), str(b))
+        b = str(float(b) / 100)
+        a, b = self.round_to_smaller_precision(a, b)
         a = float(a)
         b = float(b)
         return abs(a - b) < rel_tol * max(abs(a), abs(b))
@@ -105,20 +125,31 @@ class MultiHerttEvaluate(Evaluate):
             f"{rounded_num2:.{smaller_precision}f}",
         )
 
+    def is_same_sign(self, str1, str2):
+        num1 = float(str1)
+        num2 = float(str2)
+        # 判断正负号是否相同
+        return (num1 >= 0 and num2 >= 0) or (num1 < 0 and num2 < 0)
+
 
 if __name__ == "__main__":
     _finqa_file_to_qa_map = load_finqa_data()
-    evaObj = MultiHerttEvaluate()
+    evaObj = FinQAEvaluate()
     total_metrics = {
         "em": 0.0,
         "f1": 0.0,
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = None
+    debug_index = [89]
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for file_name, _item_list in _finqa_file_to_qa_map.items():
-        build_finqa_graph(_item_list[0])
+        index_set = set([_item["index"] for _item in _item_list])
+        intersection = index_set.intersection(set(debug_index))
+        if len(intersection) <= 0:
+            continue
+
+        # build_finqa_graph(_item_list[0])
 
         for _item in _item_list:
             i = _item["index"]
@@ -127,7 +158,8 @@ if __name__ == "__main__":
                     continue
             _id = _item["id"]
             _question = _item["qa"]["question"]
-            _gold = str(_item["qa"]["exe_ans"])
+            _answer = str(_item["qa"]["answer"])
+            _exe_ans = str(_item["qa"]["exe_ans"])
             try:
                 _prediction = qa(question=_question, _i=i, _id=_id)
             except KeyboardInterrupt:
@@ -140,11 +172,11 @@ if __name__ == "__main__":
                 "index="
                 + str(i)
                 + ",gold="
-                + str(_gold)
+                + str(_exe_ans)
                 + ",prediction="
                 + str(_prediction)
             )
-            metrics = evaObj.getBenchMark([_prediction], [_gold])
+            metrics = evaObj.check(_prediction, _answer, _exe_ans)
 
             if metrics["em"] < 0.9:
                 if "None" == _prediction:

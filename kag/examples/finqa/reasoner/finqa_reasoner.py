@@ -14,24 +14,51 @@ from kag.interface.solver.base_model import LFExecuteResult, LFPlan
 from kag.interface import LLMClient
 from kag.interface.solver.base_model import LFExecuteResult
 from kag.solver.utils import init_prompt_with_fallback
+from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from knext.schema.client import CHUNK_TYPE, OTHER_TYPE
+from kag.interface import VectorizeModelABC as Vectorizer
+from kag.common.conf import KAG_CONFIG
+from kag.common.conf import KAG_PROJECT_CONF
 
 logger = logging.getLogger()
 
 from kag.examples.finqa.reasoner.common import (
     get_history_context_info_list,
     get_history_context_str,
+    get_all_recall_docs,
+    get_execute_context,
 )
 
 
 class FinQALFExecuteResult(LFExecuteResult):
 
-    def __init__(self):
+    def __init__(self, question, execute_rst_list: list[LFExecuteResult]):
         super().__init__()
+        self.question = question
+        self.execute_rst_list = execute_rst_list
 
     def get_support_facts(self):
-        context_list = get_history_context_info_list(self.sub_plans)
+        context_list = get_execute_context(self.question, self.execute_rst_list)
         context_str = get_history_context_str(context_list=context_list)
         return context_str
+
+    def get_trace_log(self):
+        context_list = get_execute_context(self.question, self.execute_rst_list)
+        context_str = get_history_context_str(context_list=context_list)
+        code = ""
+        try:
+            code = context_list[-1][3]["code"]
+        except:
+            pass
+        return {
+            "sub question": context_str,
+            "recall docs": self.recall_docs,
+            "rerank docs": self.rerank_docs,
+            "kg_exact_solved_answer": self.kg_exact_solved_answer,
+            "code": code,
+        }
 
 
 @KagReasonerABC.register("finqa_reasoner", as_default=True)
@@ -112,16 +139,17 @@ class FinQAReasoner(KagReasonerABC):
         tags = self.question_classify(question=question)
         examples = self.retrieval_examples(question=question, tags=tags)
         step_index = -1
+        execute_rst_list = []
         process_info = {
             "kg_solved_answer": [],
             "sub_qa_pair": [],
             "goal": question,
             "examples": examples,
+            "execute_rst_list": execute_rst_list,
         }
-        history = []
         while True:
             step_index += 1
-            if step_index >= 10 or len(history) > 20:
+            if step_index >= 10:
                 break
             if 0 == step_index and use_raw_query:
                 lf_nodes = self.lf_planner._parse_lf(
@@ -134,130 +162,52 @@ class FinQAReasoner(KagReasonerABC):
                 lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(
                     question,
                     process_info=process_info,
-                    history=history,
+                    execute_rst_list=execute_rst_list,
                 )
-            self._remove_duplicate_lf(history=history, lf_nodes=lf_nodes)
+            self._remove_duplicate_lf(
+                execute_rst_list=execute_rst_list, lf_nodes=lf_nodes
+            )
             if lf_nodes is None or len(lf_nodes) <= 0:
                 # TODO reflect
                 break
-            for lf_node in lf_nodes:
-                rst: LFExecuteResult = self.lf_executor.execute(
-                    question,
-                    [lf_node],
-                    step_index=step_index,
-                    process_info=process_info,
-                    history=history,
-                    **kwargs,
-                )
-                history = self._remove_duplicate_history(history=history)
-                self._use_doc_as_subanswer(history=history, process_info=process_info)
+            rst: LFExecuteResult = self.lf_executor.execute(
+                question,
+                lf_nodes,
+                step_index=step_index,
+                process_info=process_info,
+                **kwargs,
+            )
+            execute_rst_list.append(rst)
 
-        reason_res: LFExecuteResult = FinQALFExecuteResult()
-        all_recall_docs = set()
-        for h in history:
-            all_recall_docs.update(h.res.doc_retrieved)
-        all_recall_docs = list(all_recall_docs)
-        reason_res.recall_docs = all_recall_docs
-        reason_res.rerank_docs = all_recall_docs
-        reason_res.sub_plans = list(history)
-        self._print_proceed_info(question, process_info)
+            self._use_doc_as_subanswer(
+                question=question,
+                execute_rst_list=execute_rst_list,
+                process_info=process_info,
+            )
+            # 如果所有node都没有结果
+            if not get_all_recall_docs(execute_rst_list=execute_rst_list):
+                break
+
+        reason_res: LFExecuteResult = FinQALFExecuteResult(
+            question=question, execute_rst_list=execute_rst_list
+        )
+
         return reason_res
 
-    def _remove_duplicate_lf(self, history, lf_nodes):
+    def _remove_duplicate_lf(self, execute_rst_list, lf_nodes):
         query_set = set()
-        for lf in history:
-            lf: LFPlan = lf
-            query_set.add(lf.query)
+        for exe_info in execute_rst_list:
+            exe_info: LFExecuteResult = exe_info
+            for lf in exe_info.sub_plans:
+                lf: LFPlan = lf
+                query_set.add(lf.query)
         return [lf for lf in lf_nodes if lf.query not in query_set]
 
-    def _remove_duplicate_history(self, history):
-        """
-        数据中存在少量问题与
-        优先新的lf
-        """
-        doc_set = set()
-        rst_history = []
-        for lf in history:
-            lf: LFPlan = lf
-            if lf.sub_query_type != "retrieval":
-                rst_history.append(lf)
-                continue
-            if len(lf.res.doc_retrieved) <= 0:
-                rst_history.append(lf)
-                continue
-            if set(lf.res.doc_retrieved).issubset(doc_set):
-                continue
-            rst_history.append(lf)
-            doc_set.update(lf.res.doc_retrieved)
-        return rst_history
-
-    def _use_doc_as_subanswer(self, history, process_info):
-        context_list = get_history_context_info_list(history=history)
+    def _use_doc_as_subanswer(self, question, execute_rst_list, process_info):
+        context_list = get_execute_context(
+            question=question, execute_rst_list=execute_rst_list
+        )
         process_info["sub_qa_pair"] = []
         for c in context_list:
             process_info["sub_qa_pair"].append((c[0], c[2]))
         return process_info
-
-    def _print_proceed_info(self, question, process_info):
-        logger.info(f"question: {question}")
-        for i, qa in enumerate(process_info["sub_qa_pair"]):
-            logger.info(f"sub_qa_pair_{i}: {qa[0]}\n{qa[1]}")
-
-    def _reflect(self):
-        pass
-
-    def _rerank_docs(
-        self, question: str, plan_and_result_list: List, process_info: Dict
-    ):
-        all_select_list = []
-        all_select_list.extend(process_info["lf_plan"])
-        all_select_list.extend(plan_and_result_list)
-        if (
-            len(plan_and_result_list) == 1
-            and plan_and_result_list[0][1].if_answered
-            and plan_and_result_list[0][0].sub_query_type.lower() == "math"
-        ):
-            return all_select_list
-        for_select_list = []
-        for lf_node, res in all_select_list:
-            lf_node: LFPlan = lf_node
-            if not lf_node.res.if_answered:
-                continue
-            res: LFExecuteResult = res
-            for_select_list.append((lf_node, res))
-        if len(for_select_list) == 0:
-            return []
-        input_chunk_str = ""
-        for i, doc in enumerate(for_select_list):
-            select_doc_str = f"SubQuestion: {doc[0].query} by: {doc[0].sub_query_type}\nAnswer: {doc[1].sub_answer}\n"
-            input_chunk_str += f"\n### {i}\n{select_doc_str}\n"
-        input_dict = {
-            "question": question,
-            "chunks": input_chunk_str,
-            "context": self.get_context_str(process_info),
-        }
-        best_chunk_index_list = self.llm_module.invoke(
-            input_dict, self.rerank_docs_prompt, False, True
-        )
-        if best_chunk_index_list is None:
-            logger.error(f"best_chunk_index is None")
-            return None
-        best_chunks = []
-        for index in best_chunk_index_list:
-            best_chunks.append(for_select_list[index])
-        return best_chunks
-
-    def get_context_str(self, process_info: Dict):
-        context_list = []
-        for i, qa in enumerate(process_info["sub_qa_pair"]):
-            a = qa[1]
-            lf_plan = process_info["lf_plan"][i][0]
-            context_list.append((lf_plan.query, lf_plan.sub_query_type, a))
-        context_str = ""
-        for i, c in enumerate(context_list):
-            context_str += (
-                f"\nSubQuestion{i+1}: {c[0]} by: {c[1]}\nAnswer{i+1}: {c[2]}\n"
-            )
-        if len(context_str) == 0:
-            return "No selected chunks"
-        return context_str

@@ -6,7 +6,7 @@ from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
 
-@PromptABC.register("table_rerank_chunks")
+@PromptABC.register("table_rerank_chunks_1")
 class TableRerankChunksPrompt(PromptABC):
 
     template_zh = """
@@ -70,12 +70,13 @@ $chunks
             logger.warning(f"{response} parse logic form faied {e}", exc_info=True)
             return None
 
-@PromptABC.register("table_rerank_chunks_2")
+@PromptABC.register("table_rerank_chunks")
 class TableRerankChunksPrompt2(PromptABC):
 
     template_zh = """
 # Task
 你是一个财经专家，运用你的财经知识，选择对回答子问题最有帮助的chunks，返回chunk编号列表。
+注意chunk内容有包含关系，选择信息最明确的chunk。
 深入分析后，如果没有合适的chunk，返回none。
 
 # Output format
@@ -97,6 +98,7 @@ $chunks
     template_en = """
 # Task
 You are a financial expert. Using your financial knowledge, select the chunks that are most helpful for answering the sub-questions and return the list of chunk numbers.
+Note that some chunks have overlapping information; choose the chunk with the most specific and clear information.
 After thorough analysis, if there are no suitable chunks, return none.
 
 # Output format

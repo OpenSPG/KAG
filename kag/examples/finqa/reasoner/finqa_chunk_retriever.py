@@ -70,18 +70,18 @@ class FinQAChunkRetriever(KAGRetriever):
         )
 
     def rerank_docs(self, queries: List[str], passages: List[str]):
-        return passages
+        return self._rerank_docs_by_llm(queries=queries, passages=passages)
 
-    def recall_docs(
-        self,
-        queries: List[str],
-        retrieved_spo: Optional[List[RelationData]] = None,
-        **kwargs,
-    ) -> List[str]:
-        docs = super().recall_docs(
-            queries=queries, retrieved_spo=retrieved_spo, **kwargs
-        )
-        return self._rerank_docs_by_llm(queries=queries, passages=docs)
+    # def recall_docs(
+    #     self,
+    #     queries: List[str],
+    #     retrieved_spo: Optional[List[RelationData]] = None,
+    #     **kwargs,
+    # ) -> List[str]:
+    #     docs = super().recall_docs(
+    #         queries=queries, retrieved_spo=retrieved_spo, **kwargs
+    #     )
+    #     return self._rerank_docs_by_llm(queries=queries, passages=docs)
 
     @retry(stop=stop_after_attempt(3))
     def _rerank_docs_by_llm(self, queries: List[str], passages: List[str]):

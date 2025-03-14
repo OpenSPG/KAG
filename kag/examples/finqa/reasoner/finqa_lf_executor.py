@@ -48,6 +48,7 @@ from kag.solver.logic.core_modules.parser.logic_node_parser import MathNode
 from kag.examples.finqa.reasoner.common import (
     get_history_context_info_list,
     get_history_context_str,
+    get_execute_context,
 )
 
 
@@ -109,12 +110,14 @@ class FinQACoderMathOp(OpExecutor):
         param: dict,
         history: List[LFPlan],
     ):
+        execute_rst_list: List[LFExecuteResult] = process_info["execute_rst_list"]
+        question = process_info["goal"]
         content_str = get_history_context_str(
-            get_history_context_info_list(history=history)
+            get_execute_context(question=question, execute_rst_list=execute_rst_list)
         )
         example_list = process_info["examples"]
         example_str = "\n\n".join(example_list)
-        target = logic_node.target if logic_node.target else logic_node.sub_query
+        target = question
         try_times = 3
         error = None
         while try_times > 0:
@@ -226,8 +229,6 @@ class FinQALFExecutor(DefaultLFExecutor):
             process_info = kwargs.pop("process_info")
         kg_graph = KgGraph()
         history = []
-        if "history" in kwargs:
-            history = kwargs.pop("history")
         # Process each sub-query.
         for idx, lf in enumerate(lf_nodes):
             res = SubQueryResult()

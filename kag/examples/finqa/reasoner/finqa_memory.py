@@ -23,6 +23,7 @@ class FinQAMemory(KagMemoryABC):
         self.evidence_memory = []
         self.exact_answer = []
         self.instruction_set = []
+        self.lf_res = []
 
     def save_memory(
         self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult
@@ -32,6 +33,7 @@ class FinQAMemory(KagMemoryABC):
             return
         self.evidence_memory.append(supporting_fact)
         self.instruction_set.append(instruction)
+        self.lf_res = lf_res
 
     def get_solved_answer(self):
         return self.exact_answer[-1] if len(self.exact_answer) > 0 else None

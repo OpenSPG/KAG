@@ -16,10 +16,13 @@ from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import ParseLogicForm
 from kag.solver.logic.core_modules.parser.schema_std import SchemaRetrieval
 from kag.solver.utils import init_prompt_with_fallback
+from kag.interface.solver.base_model import LFExecuteResult
 
 from kag.examples.finqa.reasoner.common import (
     get_history_context_info_list,
     get_history_context_str,
+    get_all_recall_docs,
+    get_execute_context,
 )
 
 logger = logging.getLogger()
@@ -74,7 +77,7 @@ class FinQALFPlanner(LFPlannerABC):
         list of LFPlanResult
         """
         sub_querys, logic_forms = self.generate_logic_form(
-            question, kwargs.get("process_info", {}), kwargs.get("history", [])
+            question, kwargs.get("process_info", {}), kwargs.get("execute_rst_list", [])
         )
         return self._parse_lf(question, sub_querys, logic_forms)
 
@@ -118,13 +121,13 @@ class FinQALFPlanner(LFPlannerABC):
         return self._convert_node_to_plan(parsed_logic_nodes, parent_query=question)
 
     def generate_logic_form(
-        self, question: str, process_info: Dict, history: List[LFPlan]
+        self, question: str, process_info: Dict, execute_rst_list: List[LFPlan]
     ):
         example_list = process_info["examples"]
         example_str = "\n\n".join(example_list)
         input_dict = {
             "question": question,
-            "context": self.get_context_str(history),
+            "context": self.get_context_str(question,execute_rst_list),
             "examples": example_str,
         }
         return self.llm_module.invoke(
@@ -134,7 +137,9 @@ class FinQALFPlanner(LFPlannerABC):
             with_except=True,
         )
 
-    def get_context_str(self, history: List[LFPlan]):
-        context_list = get_history_context_info_list(history=history)
+    def get_context_str(self, question, execute_rst_list: List[LFExecuteResult]):
+        context_list = get_execute_context(
+            question=question, execute_rst_list=execute_rst_list
+        )
         context_str = get_history_context_str(context_list=context_list)
         return context_str

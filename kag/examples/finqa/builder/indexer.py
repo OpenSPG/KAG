@@ -47,7 +47,8 @@ def convert_finqa_to_md_file(item: dict) -> str:
     """
     convert finqa data to md file
     """
-    _file_name = item["filename"]
+    _file_name: str = item["filename"]
+    _file_name = _file_name.replace("/", "_")
     prev_text_list = item["pre_text"]
     prev_text_list = [s for s in prev_text_list if s != "."]
     prev_text = "\n".join(prev_text_list)

@@ -1,5 +1,58 @@
 from kag.interface.solver.base_model import LFPlan
 
+from kag.interface.solver.base_model import LFExecuteResult
+
+from enum import Enum
+
+
+class ExecuteStatus(Enum):
+    NO_RECALL = 1
+
+
+def _norm_doc_retrieved2(docs):
+    rst_list = []
+    for doc in docs:
+        doc: str = doc
+        doc = doc.strip("#")
+        x = doc.find("#")
+        if x > 0:
+            doc = doc[x + 1 :]
+        rst_list.append(doc.strip())
+    return rst_list
+
+
+def get_all_recall_docs(execute_rst_list: list[LFExecuteResult]):
+    _recall_docs = []
+    for _, exe_info in enumerate(execute_rst_list):
+        if len(exe_info.rerank_docs) <= 0:
+            continue
+        _recall_docs.extend(exe_info.rerank_docs)
+    return _norm_doc_retrieved2(_recall_docs)
+
+
+def get_execute_context(question, execute_rst_list: list[LFExecuteResult]) -> list:
+    context_list = []
+    if len(execute_rst_list) <= 0:
+        return context_list
+    _all_recall_docs = get_all_recall_docs(execute_rst_list)
+    if len(_all_recall_docs) <= 0:
+        context_list.append((question, "retrival", None, None))
+        return context_list
+
+    answer = "\n".join(_all_recall_docs)
+    context_list.append((question, "retrival", answer, None))
+    for _, exe_info in enumerate(execute_rst_list):
+        exe_info: LFExecuteResult = exe_info
+        for _, lf_plan in enumerate(exe_info.sub_plans):
+            lf_plan: LFPlan = lf_plan
+            if lf_plan.sub_query_type != "math":
+                continue
+            answer = (
+                f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
+            )
+            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer, lf_plan.res.debug_info))
+    return context_list
+
 
 def get_history_context_info_list(history: list):
     doc_map = {}
