@@ -15,7 +15,7 @@ from typing import List
 from kag.interface import PromptABC
 
 
-@PromptABC.register("query_rewrite_prompt")
+@PromptABC.register("default_query_rewrite")
 class QueryRewritePrompt(PromptABC):
     template_zh = {
         "instruction": """
