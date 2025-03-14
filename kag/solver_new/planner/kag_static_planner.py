@@ -15,7 +15,7 @@ from typing import List
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC
 
 
-@PlannerABC.register("kag_statkc_planner")
+@PlannerABC.register("kag_static_planner")
 class KAGStaticPlanner(PlannerABC):
     def __init__(
         self, llm: LLMClient, plan_prompt: PromptABC, rewrite_prompt: PromptABC
@@ -64,7 +64,6 @@ class KAGStaticPlanner(PlannerABC):
         return await self.llm.ainvoke(
             {
                 "query": query,
-                "context": self.format_context(kwargs.get("context")),
                 "executors": kwargs.get("executors", []),
             },
             self.plan_prompt,
