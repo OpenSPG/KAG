@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key:
+  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   model: deepseek-v3
   type: maas
 
 chat_llm: &chat_llm
-  api_key:
+  api_key: sk-ac40be2c36be4b6183b0ec9a55b0041d
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   model: deepseek-v3
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key:
+  api_key: sk-yndixxjfxvnsqfkvfuyubkxidhtwicjcflprvqguffrmxbrv
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -25,7 +25,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '6'
+  id: '1'
   language: en
   namespace: AISearch
 #------------project configuration end----------------#
@@ -35,14 +35,15 @@ kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      type: naive_rag_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+      type: event_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+      llm: *openie_llm
     reader:
       type: aisearch_txt_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
       similarity_threshold: 0.9
     splitter:
-      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      type: length_splitter_event # kag.builder.component.splitter.length_splitter.LengthSplitter
       split_length: 1000
       window_length: 0
     vectorizer:

@@ -1,9 +1,26 @@
+
 namespace AISearch
+
+Document(原始doc): EntityType
+     properties:
+        desc(内容): Text
+            index: TextAndVector
 
 Chunk(文本块): EntityType
      properties:
-        content(内容): Text
-          index: TextAndVector
+         content(内容): Text
+                index: TextAndVector
+
+Entity(实体): EntityType
+     properties:
+
+
+Event(事件): EntityType
+     properties:
+        pName(pName): Text
+               index: TextAndVector
+        pCondition(pCondition):Text
+            index: TextAndVector
 
 ArtificialObject(人造物体): EntityType
      properties:
@@ -110,19 +127,6 @@ Others(其他): EntityType
             index: TextAndVector
         semanticType(语义类型): Text
             index: Text
-
-Event(事件): EventType
-     properties:
-        subject(主体): Person
-        participants(参与者): Person
-            constraint: MultiValue
-        time(时间): Date
-        location(地点): GeographicLocation
-        abstract(摘要): Text
-            index: TextAndVector
-        type(事件类型): Text
-            index: Text
-
 
 SemanticConcept(语义概念): EntityType
      properties:

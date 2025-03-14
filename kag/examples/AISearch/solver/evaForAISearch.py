@@ -57,7 +57,7 @@ class EvaForAISearch:
     """
 
     def parallelQaAndEvaluate(
-            self, qaFilePath, resFilePath, threadNum=1, upperLimit=10
+            self, qaFilePath, resFilePath, threadNum=1, upperLimit=100
     ):
         ckpt = CheckpointerManager.get_checkpointer(
             {"type": "zodb", "ckpt_dir": "ckpt"}
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     import_modules_from_path("./prompt")
     delay_run(hours=0)
     evaObj = EvaForAISearch()
-    # answer, traceLog = evaObj.qa("大学怎么网上选宿舍")
+    #answer, traceLog = evaObj.qa("大学怎么网上选宿舍")
     # print(f"answer:{answer}, traceLog:{traceLog}")
 
     start_time = time.time()
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         os.path.abspath(os.path.dirname(__file__)), f"aisearchqa_res_{start_time}.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=5, upperLimit=5
+        qaFilePath, resFilePath, threadNum=5, upperLimit=100
     )
 
     total_metrics["cost"] = time.time() - start_time

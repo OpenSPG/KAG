@@ -31,6 +31,6 @@ def buildKB(file_path):
 if __name__ == "__main__":
     import_modules_from_path(".")
     dir_path = os.path.dirname(__file__)
-    file_path = os.path.join(dir_path, "data/collection.for100.csv")
+    file_path = os.path.join(dir_path, "data/collection.for1.csv")
 
     buildKB(file_path)
