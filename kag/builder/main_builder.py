@@ -30,7 +30,7 @@ class BuilderMain:
     def get_runner(self):
         return BuilderChainStreamRunner.from_config(self.config["kag_builder_pipeline"])
 
-    def buildKB(self, file_path="placeholder"):
+    def invoke(self, file_path="placeholder"):
         runner = self.get_runner()
         runner.invoke(file_path)
         logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
