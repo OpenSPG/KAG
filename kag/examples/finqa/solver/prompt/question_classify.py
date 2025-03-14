@@ -72,6 +72,7 @@ $question
 
         # 提取冒号后的内容
         labels_part = output.split("Question Classification Labels:", 1)[1].strip()
+        labels_part = labels_part.strip("`\n")
 
         # 按逗号分割并去除多余空格
         labels = [label.strip() for label in labels_part.split(",")]

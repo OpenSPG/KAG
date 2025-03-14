@@ -21,12 +21,15 @@ def _norm_doc_retrieved2(docs):
     return rst_list
 
 
-def get_all_recall_docs(execute_rst_list: list[LFExecuteResult]):
+def get_all_recall_docs(execute_rst_list: list[LFExecuteResult], rerank_doc=True):
     _recall_docs = []
     for _, exe_info in enumerate(execute_rst_list):
-        if len(exe_info.rerank_docs) <= 0:
+        docs = exe_info.recall_docs
+        if rerank_doc:
+            docs = exe_info.rerank_docs
+        if len(docs) <= 0:
             continue
-        _recall_docs.extend(exe_info.rerank_docs)
+        _recall_docs.extend(docs)
     return _norm_doc_retrieved2(_recall_docs)
 
 
@@ -50,7 +53,9 @@ def get_execute_context(question, execute_rst_list: list[LFExecuteResult]) -> li
             answer = (
                 f"The result calculated by the calculator is: {lf_plan.res.sub_answer}"
             )
-            context_list.append((lf_plan.query, lf_plan.sub_query_type, answer, lf_plan.res.debug_info))
+            context_list.append(
+                (lf_plan.query, lf_plan.sub_query_type, answer, lf_plan.res.debug_info)
+            )
     return context_list
 
 

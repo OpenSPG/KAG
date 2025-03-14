@@ -137,7 +137,7 @@ class FinQAReasoner(KagReasonerABC):
         **kwargs,
     ):
         tags = self.question_classify(question=question)
-        examples = self.retrieval_examples(question=question, tags=tags)
+        examples = self.retrieval_examples(question=question, tags=tags, topn=5)
         step_index = -1
         execute_rst_list = []
         process_info = {

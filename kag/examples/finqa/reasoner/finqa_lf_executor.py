@@ -2,6 +2,7 @@ import logging
 from typing import List, Dict
 
 import os
+import concurrent.futures
 import re
 import subprocess
 import sys
@@ -49,6 +50,7 @@ from kag.examples.finqa.reasoner.common import (
     get_history_context_info_list,
     get_history_context_str,
     get_execute_context,
+    get_all_recall_docs,
 )
 
 
@@ -61,6 +63,8 @@ class FinQACoderMathOp(OpExecutor):
         self.expression_builder = init_prompt_with_fallback(
             "expression_builder", self.biz_scene
         )
+
+        self.math_select = init_prompt_with_fallback("math_select", self.biz_scene)
 
     def _run_onetime(self, question, content, error: str, examples):
         llm: LLMClient = self.llm_module
@@ -103,21 +107,26 @@ class FinQACoderMathOp(OpExecutor):
 
     def execute_with_retry(
         self,
-        logic_node: MathNode,
-        kg_graph: KgGraph,
+        i: int,
+        lf_plan: LFPlan,
         process_info: Dict,
-        req_id: str,
-        param: dict,
-        history: List[LFPlan],
     ):
+        process_info[i] = {}
         execute_rst_list: List[LFExecuteResult] = process_info["execute_rst_list"]
         question = process_info["goal"]
         content_str = get_history_context_str(
             get_execute_context(question=question, execute_rst_list=execute_rst_list)
         )
         example_list = process_info["examples"]
-        example_str = "\n\n".join(example_list)
         target = question
+        if 0 == i:
+            example_list = [example_list[i] for i in [0, 2, 4]]
+        elif 1 == i:
+            example_list = [example_list[i] for i in [0, 1, 4]]
+        elif 2 == i:
+            example_list = [example_list[i] for i in [0, 1, 3]]
+            target = lf_plan.query
+        example_str = "\n\n".join(example_list)
         try_times = 3
         error = None
         while try_times > 0:
@@ -126,20 +135,20 @@ class FinQACoderMathOp(OpExecutor):
                 target, content_str, error, example_str
             )
             if rst is not None:
-                process_info[logic_node.sub_query]["debug"] = {
+                process_info[i]["debug"] = {
                     "code": code,
                     "rst": rst,
                     "error": run_error,
                 }
-                return rst
+                return rst, code
             error = f"code:\n{code}\nerror:\n{run_error}"
             print("code=" + str(code) + ",error=" + str(run_error))
-            if "debug" not in process_info[logic_node.sub_query]:
-                process_info[logic_node.sub_query]["debug"] = []
-            process_info[logic_node.sub_query]["debug"].append(
+            if "debug" not in process_info[i]:
+                process_info[i]["debug"] = []
+            process_info[i]["debug"].append(
                 {"code": code, "rst": rst, "error": run_error}
             )
-        return "I don't know"
+        return "I don't know", code
 
     def executor(
         self,
@@ -151,13 +160,45 @@ class FinQACoderMathOp(OpExecutor):
         history: List[LFPlan],
         param: dict,
     ) -> Dict:
-        result = self.execute_with_retry(
-            lf_plan.lf_node, kg_graph, process_info, req_id, param, history
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [
+                executor.submit(self.execute_with_retry, i, lf_plan, process_info)
+                for i in range(3)
+            ]
+            results = [
+                future.result() for future in concurrent.futures.as_completed(futures)
+            ]
+
+        answers_str = ""
+        as_index = 0
+        for ans, code in results:
+            answers_str += f"### answer {as_index}\n```python{code}```\noutput={ans}\n\n"
+            as_index += 1
+        llm: LLMClient = self.llm_module
+        execute_rst_list: List[LFExecuteResult] = process_info["execute_rst_list"]
+        question = process_info["goal"]
+        content_str = get_all_recall_docs(execute_rst_list=execute_rst_list)
+        content_str = "\n".join(content_str)
+        select_index = llm.invoke(
+            {
+                "question": question,
+                "context": content_str,
+                "answers": answers_str,
+            },
+            self.math_select,
+            with_json_parse=False,
+            with_except=True,
         )
-        lf_plan.res.debug_info = process_info[lf_plan.lf_node.sub_query]["debug"]
+        ans, code = results[select_index]
+
+        lf_plan.res.debug_info = {
+            "code": code,
+            "rst": ans,
+            "error": "",
+        }
         return {
-            "if_answered": False if "i don't know" in result.lower() else True,
-            "answer": result,
+            "if_answered": False if "i don't know" in ans.lower() else True,
+            "answer": ans,
         }
 
 

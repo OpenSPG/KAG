@@ -16,9 +16,9 @@ class LogicFormPlanPrompt(PromptABC):
 问题答案只可能是一个数字或者yes/or。
 
 # 要求
-1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题。
-2. 如果信息足够回答问题，规划下一步的操作为Math类子问题；Math类子问题通过计算模块得到答案。
-3. 你必须使用Math计算最终答案，如果已有Math子问题给出明确的答案，输出：`An explicit answer already exists.`
+1. 如果给出的信息不足以回答问题，规划下一步的操作为Retrieval类子问题。召回解答问题需要的信息。
+2. 如果信息足够回答问题，注意观察信息中是否有Math类问题及答案。如果Math类问题已经给出了问题的最终答案，输出：`An explicit answer already exists.`
+3. 如果没有Math类子问题，或者Math没有回答最终问题，规划下一步的操作为Math类子问题；使用Math类子问题调用计算模块得到答案。
 
 # 输出格式
 先输出你的思考过程，最后按照如下格式，将规划输出到<plan></plan>标签中。子问题不需要序号，按行分割。
@@ -49,8 +49,9 @@ Math:
 </plan>
 
 # 可供参考的解题思路
+```
 $examples
-
+```
 
 # 真正的输入
 ** 你需要规划的问题 **: $question
@@ -66,9 +67,9 @@ You have extensive knowledge in the field of finance. Based on the given questio
 The answer to the question can only be a number or yes/no.
 
 # Instruction
-1. If the given information is insufficient to answer the question, plan the next step as a Retrieval-type sub-question.
-2. If the information is sufficient to answer the question, plan the next step as a Math-type sub-question. Math-type sub-questions arrive at the answer through a calculation module.
-3. You must use Math to compute the final answer. If a clear answer already exists from a Math sub-question, output: `An explicit answer already exists.`
+1. If the provided information is insufficient to answer the question, plan the next step as a Retrieval-type subtask. Retrieve the information required to answer the question.
+2. If the information is sufficient to answer the question, carefully check if there is a Math-type problem and its answer within the information. If the Math-type problem already provides the final answer to the question, output: `An explicit answer already exists.`
+3. If there is no Math-type subtask, or if the Math-type subtask does not provide the final answer, plan the next step as a Math-type subtask. Use the Math-type subtask to invoke a calculation module to determine the answer.
 
 # Output Format
 First, output your thought process, and finally, according to the following format, output the plan within the <plan></plan> tags. Sub-questions do not need numbering and should be separated by line breaks.

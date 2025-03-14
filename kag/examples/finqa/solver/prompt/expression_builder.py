@@ -10,9 +10,17 @@ logger = logging.getLogger(__name__)
 class FinQAExpressionBuildr(PromptABC):
     template_zh = """
 # 任务
-你是一个财经领域的专家，根据给出的问题和信息，编写python代码，输出问题结果。
-注意严格根据输入内容进行编写代码，不允许进行假设。
-如果无法回答问题，print输出：I don't know.
+你是一位财经领域的专家。根据提供的问题和相关信息，编写 Python 代码以输出问题的答案。
+
+# 注意事项
+1. 严格依据输入内容：不得进行任何假设或添加额外信息。
+2. 答案格式：
+- 如果问题是“是否类问题”，输出 yes 或 no。
+- 其他问题的答案必须是一个数字，且数值需精确到小数点后 5 位。
+3. 输出要求：
+- 使用 print 输出答案时，应尽量附带完整的描述信息，以明确该数字的含义。
+4. 无法回答的情况：
+- 如果根据提供的信息无法得出答案，print 输出：I don't know.
 
 # 可参考的解题思路
 ```
@@ -21,16 +29,18 @@ $examples
 
 # 输出格式
 直接输出python代码，python版本为3.10，不要包含任何其他信息。
-数值结果要求精确到小数点后5位。
 
 # 例子
 ## Input
 ### Question
-47000元按照万分之1.5一共612天，计算利息，一共多少钱？
+in 2010 and 2009, what was the total fair value in billions of ...?
 ## Output
 ```python
-# total_amount计算过程，略
-print(f"总金额：{total_amount:.5f}")
+total_fair_value_2009 = ...
+total_fair_value_2010 = ...
+# total_fair_value
+total_fair_value = total_fair_value_2009 + total_fair_value_2010
+print(f"公允价值总额：{total_fair_value:.5f}")
 ```
 
 # 真正的输入
@@ -44,9 +54,17 @@ $error
 
     template_en = """
 # Task
-You are an expert in the field of finance. Based on the provided questions and information, write Python code to output the results of the questions.
-Note that you must strictly follow the input content to write the code without making any assumptions.
-If the question cannot be answered, use print to output: I don't know.
+You are an expert in the field of finance. Based on the provided questions and relevant information, write Python code to output the answers to the questions.
+
+# Notes
+1. Strictly adhere to the input content: Do not make any assumptions or add extra information.
+2. Answer format:
+   - If the question is a "yes/no" type, output `yes` or `no`.
+   - For other types of questions, the answer must be a number, accurate to 5 decimal places.
+3. Output requirements:
+   - When using `print` to output the answer, include a complete description to clearly indicate the meaning of the number.
+4. Unanswerable cases:
+   - If the answer cannot be derived from the provided information, output via `print`: `I don't know.`
 
 # Possible problem-solving strategies for reference
 ```
@@ -60,11 +78,14 @@ Numerical results should be accurate to 5 decimal places.
 # Example
 ## Input
 ### Question
-Calculate the interest for 47,000 yuan at 0.015% for 612 days, and determine the total amount.
+in 2010 and 2009, what was the total fair value in billions of ...?
 ## Output
 ```python
-# Calculation process for total_amount, omitted
-print(f"Total Amount: {total_amount:.5f}")
+total_fair_value_2009 = ...
+total_fair_value_2010 = ...
+# total_fair_value
+total_fair_value = total_fair_value_2009 + total_fair_value_2010
+print(f"total_fair_value: {total_fair_value:.5f}")
 ```
 
 # Actual Input

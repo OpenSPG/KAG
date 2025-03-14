@@ -26,6 +26,8 @@ from kag.examples.finqa.solver.prompt.solve_question_without_spo import (
 )
 from kag.examples.finqa.solver.prompt.rerank_chunks import TableRerankChunksPrompt
 from kag.examples.finqa.solver.prompt.question_classify import FinQAQuestionClassify
+from kag.examples.finqa.solver.prompt.finq_reflect_prompt import FinQAReflectQuestion
+from kag.examples.finqa.solver.prompt.math_select_prompt import MathSelectPrompt
 
 from kag.examples.finqa.reasoner.finqa_solver_pipeline import FinQASolverPipeline
 
@@ -59,6 +61,7 @@ class FinQAEvaluate(Evaluate):
     def check(self, prediction: str, answer: str, exe_ans: str):
         try:
             float(exe_ans)
+            float(prediction)
         except:
             # yes or no
             return super().getBenchMark([prediction], [exe_ans])
@@ -141,15 +144,16 @@ if __name__ == "__main__":
         "answer_similarity": 0.0,
         "processNum": 0,
     }
-    debug_index = [89]
+    debug_index = None
     error_question_map = {"error": [], "no_answer": [], "system_error": []}
     for file_name, _item_list in _finqa_file_to_qa_map.items():
-        index_set = set([_item["index"] for _item in _item_list])
-        intersection = index_set.intersection(set(debug_index))
-        if len(intersection) <= 0:
-            continue
+        if debug_index is not None:
+            index_set = set([_item["index"] for _item in _item_list])
+            intersection = index_set.intersection(set(debug_index))
+            if len(intersection) <= 0:
+                continue
 
-        # build_finqa_graph(_item_list[0])
+        build_finqa_graph(_item_list[0])
 
         for _item in _item_list:
             i = _item["index"]

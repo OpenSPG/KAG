@@ -94,7 +94,14 @@ class FinQAChunkRetriever(KAGRetriever):
                 doc: str = doc
                 doc = doc.strip("#")
                 x = doc.rfind("#")
-                doc = doc[:x]
+                try:
+                    is_float = False
+                    float(doc[x + 1:])
+                    is_float = True
+                except:
+                    pass
+                if is_float:
+                    doc = doc[:x]
                 x = doc.find("#")
                 if x > 0:
                     doc = doc[x + 1 :]

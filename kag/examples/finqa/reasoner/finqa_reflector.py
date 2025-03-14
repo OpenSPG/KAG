@@ -37,8 +37,7 @@ class FinQAReflector(KagReflectorABC):
         - rewrite_prompt (PromptABC): The prompt operation for rewriting responses.
         """
         super().__init__(llm_client=llm_client, **kwargs)
-        if refine_prompt is None:
-            refine_prompt = init_prompt_with_fallback("resp_reflector", self.biz_scene)
+        refine_prompt = init_prompt_with_fallback("reflect_question", "finqa")
         self.refine_prompt = refine_prompt
 
         if judge_prompt is None:
@@ -65,12 +64,16 @@ class FinQAReflector(KagReflectorABC):
             # 无数据召回
             return False
 
+        has_math = False
         for _, exe_info in enumerate(memory.lf_res.execute_rst_list):
             exe_info: LFExecuteResult = exe_info
             for _, lf_plan in enumerate(exe_info.sub_plans):
                 lf_plan: LFPlan = lf_plan
-                if lf_plan.sub_query_type != "math":
-                    continue
+                if lf_plan.sub_query_type == "math":
+                    has_math = True
+                    break
+        if not has_math:
+            return False
 
         serialize_memory = self._get_serialize_memory(memory)
         if serialize_memory == "":
@@ -88,4 +91,31 @@ class FinQAReflector(KagReflectorABC):
 
     @retry(stop=stop_after_attempt(3))
     def _refine_query(self, memory: KagMemoryABC, instruction: str):
+
+        memory: FinQAMemory = memory
+        recall_docs = get_all_recall_docs(memory.lf_res.execute_rst_list)
+        if len(recall_docs) <= 0:
+            # 无数据召回
+            info_str = str(get_all_recall_docs(memory.lf_res.execute_rst_list, False))
+            new_instruction = self.llm_module.invoke(
+                variables={"question": instruction, "info": info_str},
+                prompt_op=self.refine_prompt,
+                with_json_parse=False,
+                with_except=False,
+            )
+            if new_instruction is not None:
+                return new_instruction
+            return instruction
+
+        has_math = False
+        for _, exe_info in enumerate(memory.lf_res.execute_rst_list):
+            exe_info: LFExecuteResult = exe_info
+            for _, lf_plan in enumerate(exe_info.sub_plans):
+                lf_plan: LFPlan = lf_plan
+                if lf_plan.sub_query_type == "math":
+                    has_math = True
+                    break
+        if not has_math:
+            return instruction + " (must use math operator)"
+
         return instruction

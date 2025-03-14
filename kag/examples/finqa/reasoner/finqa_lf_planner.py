@@ -124,6 +124,8 @@ class FinQALFPlanner(LFPlannerABC):
         self, question: str, process_info: Dict, execute_rst_list: List[LFPlan]
     ):
         example_list = process_info["examples"]
+        if len(example_list) > 3:
+            example_list = example_list[:3]
         example_str = "\n\n".join(example_list)
         input_dict = {
             "question": question,
