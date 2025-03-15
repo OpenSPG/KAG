@@ -141,14 +141,14 @@ if __name__ == "__main__":
     # print(f"answer:{answer}, traceLog:{traceLog}")
 
     start_time = time.time()
-    filePath = "./data/queries.dev.100.csv"
+    filePath = "./data/queries.dev.1.csv"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"aisearchqa_res_{start_time}.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=5, upperLimit=100
+        qaFilePath, resFilePath, threadNum=1, upperLimit=10
     )
 
     total_metrics["cost"] = time.time() - start_time

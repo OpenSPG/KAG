@@ -223,7 +223,7 @@ class NaiveKagFrRetriever(ChunkRetriever):
                 )
         return scores
 
-    def match_entities(self, queries: Dict[str, str], top_k: int = 1):
+    def match_entities(self, queries: Dict[str, str], top_k: int = 5):
         """
         Match entities based on the provided queries.
 
@@ -244,58 +244,15 @@ class NaiveKagFrRetriever(ChunkRetriever):
                 query_vector=self.vectorize_model.vectorize(query),
                 topk=top_k,
             )
-            if query_type != self.schema.get_label_within_prefix(OTHER_TYPE):
-                nontyped_nodes = self.search_api.search_vector(
-                    label=self.schema.get_label_within_prefix(OTHER_TYPE),
-                    property_key="name",
-                    query_vector=self.vectorize_model.vectorize(query),
-                    topk=top_k,
-                )
-            else:
-                nontyped_nodes = typed_nodes
-
-            if len(typed_nodes) == 0 and len(nontyped_nodes) != 0:
-                matched_entities.append(
-                    {
-                        "name": nontyped_nodes[0]["node"]["name"],
-                        "type": self.schema.get_label_within_prefix(OTHER_TYPE),
-                        "score": nontyped_nodes[0]["score"],
-                    }
-                )
-            elif len(typed_nodes) != 0 and len(nontyped_nodes) != 0:
+            if len(typed_nodes) != 0 :
                 if typed_nodes[0]["score"] > 0.8:
                     matched_entities.append(
                         {
-                            "name": typed_nodes[0]["node"]["name"],
+                            "name": typed_nodes[0]["node"]["id"],
                             "type": query_type,
                             "score": typed_nodes[0]["score"],
                         }
                     )
-                else:
-                    matched_entities.append(
-                        {
-                            "name": nontyped_nodes[0]["node"]["name"],
-                            "type": self.schema.get_label_within_prefix(OTHER_TYPE),
-                            "score": nontyped_nodes[0]["score"],
-                        }
-                    )
-                    matched_entities.append(
-                        {
-                            "name": typed_nodes[0]["node"]["name"],
-                            "type": query_type,
-                            "score": typed_nodes[0]["score"],
-                        }
-                    )
-            elif len(typed_nodes) != 0 and len(nontyped_nodes) == 0:
-                if typed_nodes[0]["score"] > 0.8:
-                    matched_entities.append(
-                        {
-                            "name": typed_nodes[0]["node"]["name"],
-                            "type": query_type,
-                            "score": typed_nodes[0]["score"],
-                        }
-                    )
-
         if not matched_entities:
             logger.info(f"No entities matched for {queries}")
         return matched_entities
@@ -425,14 +382,7 @@ class NaiveKagFrRetriever(ChunkRetriever):
             ner_list = self._parse_ner_list(query)
             for item in ner_list:
                 entity = item.get("name", "")
-                category = item.get("category", "")
-                official_name = item.get("official_name", "")
-                if not entity or not (category or official_name):
-                    continue
-                if category.lower() in ["works", "person", "other"]:
-                    entities[entity] = category
-                else:
-                    entities[entity] = official_name or category
+                entities[entity] = 'Event'
 
             cur_matched = self.match_entities(entities)
             for matched_entity in cur_matched:
