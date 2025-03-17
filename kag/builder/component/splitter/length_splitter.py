@@ -11,12 +11,13 @@
 # or implied.
 
 from typing import Type, List
-from kag.interface import SplitterABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.interface.builder.base import KAG_PROJECT_CONF
-from kag.common.utils import generate_hash_id
-from knext.common.base.runnable import Input, Output
+
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum, dump_chunks
+from kag.common.utils import generate_hash_id
+from kag.interface import SplitterABC
+from kag.interface.builder.base import KAG_PROJECT_CONF
+from knext.common.base.runnable import Input, Output
 
 
 @SplitterABC.register("length")
@@ -176,4 +177,5 @@ class LengthSplitter(BaseTableSplitter):
             cutted.extend(
                 self.slide_window_chunk(input, self.split_length, self.window_length)
             )
+        dump_chunks(cutted, output_path="./split_" + input.kwargs.get("documentId") + ".jsonl")
         return cutted

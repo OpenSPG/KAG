@@ -77,6 +77,6 @@ class Chunk:
 
 def dump_chunks(chunks, **kwargs):
     if kwargs.get("output_path"):
-        with open(kwargs.get("output_path"), "w") as f:
+        with open(kwargs.get("output_path"), "a+") as f:
             for chunk in chunks:
                 f.write(json.dumps(chunk.to_dict(), ensure_ascii=False) + "\n")
