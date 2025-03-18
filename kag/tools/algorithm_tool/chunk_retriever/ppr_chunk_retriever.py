@@ -206,9 +206,9 @@ class PprChunkRetriever(ToolABC):
                             logger.warning(f"{query} matched docs is empty")
                         matched_docs.append(
                             ChunkData(
-                                content=item["content"],
-                                title=item["name"],
-                                chunk_id=item["id"],
+                                content=item["node"]["content"],
+                                title=item["node"]["name"],
+                                chunk_id=item["node"]["id"],
                                 score=item["score"],
                             )
                         )
