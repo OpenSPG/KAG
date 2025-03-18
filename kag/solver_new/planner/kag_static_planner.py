@@ -26,9 +26,9 @@ class KAGStaticPlanner(PlannerABC):
     """
 
     def __init__(
-        self, llm: LLMClient, plan_prompt: PromptABC, rewrite_prompt: PromptABC
+        self, llm: LLMClient, plan_prompt: PromptABC, rewrite_prompt: PromptABC, **kwargs
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         self.llm = llm
         self.plan_prompt = plan_prompt
         self.rewrite_prompt = rewrite_prompt
@@ -66,7 +66,7 @@ class KAGStaticPlanner(PlannerABC):
         pattern = r"\{\{\d+\.output\}\}"
         return bool(re.search(pattern, str(query)))
 
-    async def query_rewrite(self, task: Task):
+    async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
 
         Args:
@@ -77,13 +77,10 @@ class KAGStaticPlanner(PlannerABC):
         """
         query = task.arguments
         context = self.format_context(task)
-        return await self.llm.ainvoke(
-            {
-                "input": query,
-                "context": context,
-            },
-            self.rewrite_prompt,
-        )
+        return await self.llm.ainvoke({
+            "input": query,
+            "context": context,
+        }, self.rewrite_prompt, segment_name="thinker", tag_name="Rewrite query", **kwargs)
 
     def invoke(self, query, **kwargs) -> List[Task]:
         """Synchronously generates task plan using LLM.
@@ -115,10 +112,7 @@ class KAGStaticPlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
-        return await self.llm.ainvoke(
-            {
-                "query": query,
-                "executors": kwargs.get("executors", []),
-            },
-            self.plan_prompt,
-        )
+        return await self.llm.ainvoke({
+            "query": query,
+            "executors": kwargs.get("executors", []),
+        }, self.plan_prompt, segment_name="thinker", tag_name="Static planning", **kwargs)

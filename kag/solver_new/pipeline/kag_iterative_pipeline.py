@@ -121,5 +121,5 @@ class KAGIterativePipeline(SolverPipelineABC):
             context.append_task(task)
             await executor.ainvoke(query, task, context, **kwargs)
         if success:
-            answer = await self.generator.ainvoke(query, context)
+            answer = await self.generator.ainvoke(query, context, **kwargs)
             return answer

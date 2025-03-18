@@ -4,7 +4,8 @@ from kag.solver.task import TaskDAG
 
 @PlannerABC.register("static_planner")
 class MyStaticPlanner(PlannerABC):
-    def __init__(self, llm_client: LLMClient):
+    def __init__(self, llm_client: LLMClient, **kwargs):
+        super().__init__(**kwargs)
         self.llm_client = llm_client
         self.output = {
             0: {
@@ -47,7 +48,8 @@ class MyStaticPlanner(PlannerABC):
 
 @PlannerABC.register("iterative_planner")
 class MyIterativePlanner(PlannerABC):
-    def __init__(self, llm_client: LLMClient):
+    def __init__(self, llm_client: LLMClient, **kwargs):
+        super().__init__(**kwargs)
         self.llm_client = llm_client
         self.output = {
             0: {

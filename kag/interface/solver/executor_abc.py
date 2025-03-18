@@ -51,10 +51,9 @@ class ExecutorResponse(Registrable, ABC):
 class ExecutorABC(Registrable):
     """Abstract base class for task executors that perform actual computation."""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """Initializes the executor instance."""
-        pass
-
+        super().__init__(**kwargs)
     @property
     def input_types(self):
         return str
