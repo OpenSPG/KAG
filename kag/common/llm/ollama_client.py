@@ -100,7 +100,7 @@ class OllamaClient(LLMClient):
 
         return content
 
-    def __call__(self, prompt, image=None):
+    def __call__(self, prompt, image=None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -113,5 +113,5 @@ class OllamaClient(LLMClient):
 
         return self.sync_request(prompt, image)
 
-    async def acall(self, prompt, image=None):
+    async def acall(self, prompt, image=None, **kwargs):
         return await self.async_request(prompt, image)

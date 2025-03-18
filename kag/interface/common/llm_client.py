@@ -32,8 +32,9 @@ class LLMClient(Registrable):
     This class includes methods to call the model with a prompt, parse the response, and handle batch processing of prompts.
     """
 
-    def __init__(self, name: str, max_rate: float = 1000, time_period: float = 1):
+    def __init__(self, name: str, max_rate: float = 1000, time_period: float = 1, **kwargs):
 
+        super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
     @retry(stop=stop_after_attempt(3))
@@ -53,7 +54,7 @@ class LLMClient(Registrable):
         raise NotImplementedError
 
     @retry(stop=stop_after_attempt(3))
-    async def acall(self, prompt: Union[str, dict, list]) -> str:
+    async def acall(self, prompt: Union[str, dict, list], **kwargs) -> str:
         """
         Perform inference on the given prompt and return the result asynchronously.
 
@@ -69,7 +70,7 @@ class LLMClient(Registrable):
         raise NotImplementedError
 
     @retry(stop=stop_after_attempt(3))
-    def call_with_json_parse(self, prompt: Union[str, dict, list]):
+    def call_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.
 
@@ -82,7 +83,7 @@ class LLMClient(Registrable):
         Raises:
             NotImplementedError: If the subclass has not implemented this method.
         """
-        res = self(prompt)
+        res = self(prompt, **kwargs)
         _end = res.rfind("```")
         _start = res.find("```json")
         if _end != -1 and _start != -1:
@@ -96,7 +97,7 @@ class LLMClient(Registrable):
         return json_result
 
     @retry(stop=stop_after_attempt(3))
-    async def acall_with_json_parse(self, prompt: Union[str, dict, list]):
+    async def acall_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.
 
@@ -109,7 +110,7 @@ class LLMClient(Registrable):
         Raises:
             NotImplementedError: If the subclass has not implemented this method.
         """
-        res = await self.acall(prompt)
+        res = await self.acall(prompt, **kwargs)
         _end = res.rfind("```")
         _start = res.find("```json")
         if _end != -1 and _start != -1:
@@ -128,6 +129,7 @@ class LLMClient(Registrable):
         prompt_op: PromptABC,
         with_json_parse: bool = True,
         with_except: bool = True,
+        **kwargs
     ):
         """
         Call the model and process the result.
@@ -150,9 +152,9 @@ class LLMClient(Registrable):
         response = ""
         try:
             response = (
-                self.call_with_json_parse(prompt=prompt)
+                self.call_with_json_parse(prompt=prompt, **kwargs)
                 if with_json_parse
-                else self(prompt)
+                else self(prompt, **kwargs)
             )
             # logger.debug(f"Response: {response}")
             result = prompt_op.parse_response(response, model=self.model, **variables)
@@ -174,37 +176,38 @@ class LLMClient(Registrable):
         prompt_op: PromptABC,
         with_json_parse: bool = True,
         with_except: bool = True,
+        **kwargs
     ):
         """
         Call the model and process the result.
 
         Args:
+            **kwargs:
             variables (Dict[str, Any]): Variables used to build the prompt.
             prompt_op (PromptABC): Prompt operation object for building and parsing prompts.
             with_json_parse (bool, optional): Whether to attempt parsing the response as JSON. Defaults to True.
             with_except (bool, optional): Whether to raise an exception if an error occurs. Defaults to False.
-
         Returns:
             List: Processed result list.
         """
         result = []
         prompt = prompt_op.build_prompt(variables)
-        logger.debug(f"Prompt: {prompt}")
+        logger.info(f"Prompt: {prompt}")
         if not prompt:
             return result
         response = ""
         async with self.limiter:
             try:
                 response = await (
-                    self.acall_with_json_parse(prompt=prompt)
+                    self.acall_with_json_parse(prompt=prompt, **kwargs)
                     if with_json_parse
-                    else self.acall(prompt)
+                    else self.acall(prompt, **kwargs)
                 )
-                logger.debug(f"Response: {response}")
+                logger.info(f"Response: {response}")
                 result = prompt_op.parse_response(
                     response, model=self.model, **variables
                 )
-                logger.debug(f"Result: {result}")
+                logger.info(f"Result: {result}")
             except Exception as e:
                 import traceback
 

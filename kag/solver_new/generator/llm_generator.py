@@ -19,7 +19,7 @@ class LLMGenerator(GeneratorABC):
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
 
-    def invoke(self, query, context):
+    def invoke(self, query, context, **kwargs):
         results = []
         for task in context.gen_task(False):
             results.append(
@@ -28,4 +28,4 @@ class LLMGenerator(GeneratorABC):
         return self.llm_client.invoke({
             "query": query,
             "content": results
-        }, self.generated_prompt)
+        }, self.generated_prompt, segment_name="answer", tag_name="Final Answer", **kwargs)

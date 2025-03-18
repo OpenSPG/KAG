@@ -115,7 +115,7 @@ class VLLMClient(LLMClient):
                 content = content.replace("&middot;", "")
                 return content
 
-    def __call__(self, prompt):
+    def __call__(self, prompt, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -129,7 +129,7 @@ class VLLMClient(LLMClient):
         content = [{"role": "user", "content": prompt}]
         return self.sync_request(content)
 
-    async def acall(self, prompt):
+    async def acall(self, prompt, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 

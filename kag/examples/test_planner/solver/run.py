@@ -5,7 +5,7 @@ from kag.common.conf import KAG_CONFIG
 
 
 async def qa(pipeline, query):
-    result = await pipeline.ainvoke(query)
+    result = await pipeline.ainvoke(query, )
     return result
 
 

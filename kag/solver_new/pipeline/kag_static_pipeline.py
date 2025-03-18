@@ -91,7 +91,7 @@ class KAGStaticPipeline(SolverPipelineABC):
             **kwargs: Additional execution parameters
         """
         if self.planner.check_require_rewrite(task):
-            task.arguments = await self.planner.query_rewrite(task)
+            task.arguments = await self.planner.query_rewrite(task, **kwargs)
         executor = self.select_executor(task.executor)
         await executor.ainvoke(query, task, context, **kwargs)
 
@@ -119,10 +119,10 @@ class KAGStaticPipeline(SolverPipelineABC):
         for task_group in context.gen_task(group=True):
             await asyncio.gather(
                 *[
-                    asyncio.create_task(self.execute_task(query, task, context))
+                    asyncio.create_task(self.execute_task(query, task, context, **kwargs))
                     for task in task_group
                 ]
             )
 
-        answer = await self.generator.ainvoke(query, context)
+        answer = await self.generator.ainvoke(query, context, **kwargs)
         return answer

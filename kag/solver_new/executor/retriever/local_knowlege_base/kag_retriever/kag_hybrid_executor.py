@@ -1,11 +1,15 @@
-from typing import List, Any
+import logging
+
+from typing import List, Any, Optional
 
 from kag.interface import ExecutorABC, ExecutorResponse
 from kag.interface.solver.base_model import LogicNode
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.kag_lf_rewriter import \
     KAGLFRewriter
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_flow import KAGFlow
 
+logger = logging.getLogger()
 
 class KAGRetrievedResponse(ExecutorResponse):
     """Response object containing retrieved data from knowledge graph processing.
@@ -68,8 +72,9 @@ class KagHybridExecutor(ExecutorABC):
             self,
             flow,
             lf_rewriter: KAGLFRewriter,
+            **kwargs
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         self.lf_rewriter: KAGLFRewriter = lf_rewriter
         self.flow_str = flow
 
@@ -77,6 +82,10 @@ class KagHybridExecutor(ExecutorABC):
     def output_types(self):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
+
+    def report_content(self, reporter, segment, content, status):
+        if reporter:
+            reporter.report(segment, self.schema().get("name"), content, status)
 
     def invoke(
             self, query: str, task: Any, context: dict, **kwargs
@@ -102,22 +111,33 @@ class KagHybridExecutor(ExecutorABC):
             7. Save intermediate results
             8. Store final results
         """
-        # 1. Initialize response container
-        kag_response = _initialize_response(task)
-        # 2. Convert query to logical form
-        task_query = task.arguments['query']
-        logic_nodes = self._convert_to_logical_form(task_query, task)
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+        try:
 
-        flow: KAGFlow = KAGFlow(nl_query=task_query, lf_nodes=logic_nodes, flow_str=self.flow_str)
+            # 1. Initialize response container
+            kag_response = _initialize_response(task)
+            # 2. Convert query to logical form
+            task_query = task.arguments['query']
+            self.report_content(reporter, "thinker", "begin running executor", "init")
+            logic_nodes = self._convert_to_logical_form(task_query, task)
+            logic_nodes_str = "\n".join([str(n) for n in logic_nodes])
+            self.report_content(reporter, "thinker", logic_nodes_str, "running")
 
-        graph_data, retrieved_datas = flow.execute()
-        kag_response.graph_data = graph_data
-        kag_response.chunk_datas = retrieved_datas
-        for lf_node in logic_nodes:
-            kag_response.sub_retrieved_set.append(lf_node.get_fl_node_result())
+            flow: KAGFlow = KAGFlow(nl_query=task_query, lf_nodes=logic_nodes, flow_str=self.flow_str)
 
-        # 8. Final storage
-        self._store_results(task, kag_response)
+            graph_data, retrieved_datas = flow.execute()
+            kag_response.graph_data = graph_data
+            kag_response.chunk_datas = retrieved_datas
+            self.report_content(reporter, "reference", [graph_data] + retrieved_datas, "finish")
+            for lf_node in logic_nodes:
+                kag_response.sub_retrieved_set.append(lf_node.get_fl_node_result())
+
+            # 8. Final storage
+            self._store_results(task, kag_response)
+            self.report_content(reporter, "thinker", "end executor", "finish")
+        except Exception as e:
+            logger.warning(f"{self.schema().get('name')} executed failed {e}", exc_info=True)
+            self.report_content(reporter, "thinker", f"{self.schema().get('name')} executed failed {e}", "error")
 
     def _convert_to_logical_form(self, query: str, task) -> List[LogicNode]:
         """Convert task description to logical nodes
