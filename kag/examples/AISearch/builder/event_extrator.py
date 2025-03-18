@@ -12,13 +12,12 @@ from kag.interface.common.llm_client import LLMClient
 from tenacity import retry, stop_after_attempt
 import logging
 
-from datetime import datetime, timezone, timedelta
-import collections
 logger = logging.getLogger(__name__)
 
 
 entity_type_list = set(["组织", "地点", "人物", "体育", "法律", "产品", "政治人物", "娱乐人物", "科学家", "学者", "历史人物", "国家", "城市", "自然景观", "省", "县", "行政区域", "公司", "企业", "机构", "政府机构", "历史事件", "运动赛事", "文化活动", "绘画", "音乐", "文学作品", "电子产品", "食品", "服饰", "文化习俗", "体育项目", "运动员", "历史时期", "地形", "气候", "法律条款", "法律机构", "疾病", "医疗技术", "政策", "交通工具", "台风", "洪水", "地震", "飓风", "泥石", "雪崩", "自然灾害"])
 CHUNK_TYPE = 'Chunk'
+ENTITY_TYPE = 'Entity'
 
 def parser_one(d_one):
     d_one = d_one.strip().strip('"').strip("'").strip()
@@ -44,12 +43,13 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
             chunk, entity_res, event_res = self.extract_one_doc(input)
             events = self.__event_extraction(event_res)
             entities = self.__named_entity_recognition(entity_res)
-            sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
-            filtered_entities = [
-                {k: v for k, v in ent.items() if k in ["entity", "category"]}
-                for ent in entities
-            ]
-            # triples = self.triples_extraction(passage, filtered_entities)
+            sub_graph = SubGraph([], [])
+            #sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
+            #filtered_entities = [
+            #    {k: v for k, v in ent.items() if k in ["entity", "category"]}
+            #    for ent in entities
+            #]
+            #triples = self.triples_extraction(passage, filtered_entities)
             triples = []
             sub_graph = self.__assemble_sub_graph(
                 sub_graph, input, entities, triples, events
@@ -234,6 +234,31 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
         self.assemble_sub_graph_with_doc(sub_graph, chunk)
         return sub_graph
 
+    def assemble_sub_graph_with_entities(
+            self, sub_graph: SubGraph, entities: List[Dict]
+    ):
+        """
+        Assembles a subgraph using named entities.
+
+        Args:
+            sub_graph (SubGraph): The subgraph object to be assembled.
+            entities (List[Dict]): A list containing entity information.
+        """
+
+        for ent in entities:
+            name = processing_phrases(ent["name"])
+            sub_graph.add_node(
+                name,
+                name,
+                ENTITY_TYPE,
+                {
+                    "desc": ent.get("description", ""),
+                    "entityType": ent["category"],
+                    "name":name,
+                    "id": name,
+                    **ent.get("properties", {}),
+                },
+            )
 
     def assemble_sub_graph_with_chunk(self, sub_graph: SubGraph, chunk: Chunk):
         """
@@ -264,17 +289,20 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
         doc = chunk.kwargs.get('doc')
         if doc == None:
             return
+        docid = doc.pid
         for node in sub_graph.nodes:
             sub_graph.add_edge(
                 node.id,
                 node.label,
                 "sourceDoc",
-                 doc.id,
+                 docid,
                 'Document',
             )
-        props = {}
-        props['desc'] = doc.content
-        sub_graph.add_node(doc.id, doc.name, 'Document', props)
+        sub_graph.add_node(docid, doc.name, 'Document', {
+            "id": docid,
+            "name": doc.name,
+            "desc": doc.content,
+        },)
         chunk.kwargs.clear()
 
 
@@ -306,9 +334,11 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
                     + "_"
                     + event["objType"]
                 )
+                event_name = event["subName"] + event["pName"] + event["objName"]
                 event["subId"] = event["subName"]
                 event["objId"] = event["objName"]
-                event_name = event["subName"] + event["pName"] + event["objName"]
+                event["id"] = event_node_id
+                event['name'] = event_name
                 sub_graph.add_node(event_node_id, event_name, o_category, event)
                 sub_graph.add_edge(
                     event_node_id,

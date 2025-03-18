@@ -144,12 +144,10 @@ class LengthSplitterEvent(BaseTableSplitter):
         if len(cur) > 0:
             splitted.append(cur)
 
-        pid = org_chunk.id.split('_')[0]
-        org_chunk.id = pid
         output = []
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
-                id = pid + '_' +generate_hash_id(f"{org_chunk.name}##Content_{idx}"+sep.join(sentences)),
+                id = org_chunk.pid + '_' +generate_hash_id(f"{org_chunk.name}##Content_{idx}"+sep.join(sentences)),
                 name=f"{org_chunk.name}##Content_{idx}",
                 content=sep.join(sentences),
                 type=CHUNK_TYPE,

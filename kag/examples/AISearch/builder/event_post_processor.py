@@ -356,6 +356,7 @@ class EventPostProcessor(PostProcessorABC):
                 node["label"] = project_name + "Event"
             elif node["label"] == "Document":
                 node["properties"]["description"] = properties.pop("desc")
+                node["properties"]["isDel"] = 0
                 node["label"] = project_name + "Document"
             elif node["label"] == "Chunk":
                 node["label"] = project_name + "Chunk"
@@ -364,7 +365,7 @@ class EventPostProcessor(PostProcessorABC):
                 node["label"] = project_name + "Entity"
 
             if "_name_vector" in properties:
-                if node["label"] == "Event":
+                if node["label"] == project_name + "Event":
                     properties["embedding"] = properties.pop("_name_vector")
                 else:
                     properties["nameEmbed"] = properties.pop("_name_vector")
