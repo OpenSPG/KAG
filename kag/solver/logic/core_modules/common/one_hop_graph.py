@@ -2,10 +2,14 @@ import json
 import logging
 import re
 
+from kag.interface.solver.base_model import Identifier
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 
 logger = logging.getLogger()
 
+class RetrievedData:
+    def __init__(self):
+        pass
 
 def find_and_extra_prop_objects(text):
     """
@@ -249,6 +253,7 @@ class RelationData:
         self.end_alias = "o"
         self.type: str = None
         self.type_zh: str = None
+        self.score = 1.0
 
     def get_name(self):
         return self.to_show_id()
@@ -601,8 +606,9 @@ def copy_one_hop_graph_data(other: OneHopGraphData, alias_name: str):
     return ret
 
 
-class KgGraph:
+class KgGraph(RetrievedData):
     def __init__(self):
+        super().__init__()
         self.logic_form_base = {}
         self.start_node_alias_name = []
         self.start_node_name = []
@@ -970,6 +976,8 @@ class KgGraph:
         return res
 
     def get_entity_by_alias(self, alias):
+        if isinstance(alias, Identifier):
+            alias = alias.alias_name
         if alias in self.nodes_alias:
             if alias in self.entity_map.keys():
                 return self.entity_map[alias]
@@ -992,6 +1000,13 @@ class KgGraph:
             return self.edge_map[alias]
         return None
 
+class ChunkData(RetrievedData):
+    def __init__(self, content="", title="",chunk_id="", score=0.0):
+        super().__init__()
+        self.content = content
+        self.title = title
+        self.chunk_id = chunk_id
+        self.score = score
 def parse_entity_relation(one_graph, std_p: str, o_value: EntityData):
     s_entity = one_graph.s
     o_entity = o_value

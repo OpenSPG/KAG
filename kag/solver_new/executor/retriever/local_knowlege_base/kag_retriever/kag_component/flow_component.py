@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from kag.common.registry import Registrable
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_types.retrieved_data import RetrievedData
+from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData
 
 
 class FlowComponent(Registrable):
@@ -9,6 +9,13 @@ class FlowComponent(Registrable):
         super().__init__(**kwargs)
         self.name = kwargs.get('name', '')
         self.result: Optional[List[RetrievedData]] = None
+        self.break_flag = False
 
     def invoke(self, **kwargs):
         raise NotImplementedError("invoke not implemented yet.")
+
+    def is_break(self):
+        return self.break_flag
+
+    def break_judge(self, **kwargs):
+        self.break_flag = False

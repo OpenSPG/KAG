@@ -28,11 +28,11 @@ class DefaultSPORetrieverDecomposePrompt(PromptABC):
     default_case_zh = """"cases": [
             {
                 "query": "吴京是谁",
-                "answer": "Step1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)\nOutput:输出s1\nAction2:output(s1)"
+                "answer": "Step1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)"
             },
             {
-                "query": "30+6加上华为创始人在2024年的年龄是多少",
-                "answer": "Step1:30+6 等于多少？\nAction1:Math(content=[], target=`30+6等于多少`)->math1\nStep2:华为创始人是谁？\nAction2:Retrieval(s=s2:企业[`华为`],p=p2:创始人,o=o2)\nStep3:华为创始人出生在什么年份？\nAction3:Retrieval(s=o2,p=p3:出生年份,o=o3)\nStep4:30+6的结果与华为创始人在2024年的年龄相加是多少？\nAction4:Math(content=[`math1`,`o3`], target=`30+6的结果与华为创始人在2024年的年龄相加是多少？`)->math4\nStep5:输出math4\nAction5:output(math4)"
+                "query": "B公司创始人的妻子是谁",
+                "answer": "Step1:B公司创始人是谁？\nAction1:Retrieval(s=s1:企业[`B公司`],p=p1:创始人,o=o1[人物])\nStep2:B公司创始人的妻子是谁？\nAction2:Retrieval(s=o2,p=p2:妻子,o=o2[人物])"
             }
             ],"""
 
@@ -74,11 +74,10 @@ class DefaultSPORetrieverDecomposePrompt(PromptABC):
             {{
                 {self.instruct_zh}
                 {self.default_case_zh}
-                "output_format": "only output `Step`, `Action` and `Output` content.",
+                "output_format": "Only start with output words in answer, for examples: `Step`, `Action` content. Do not output json format",
                 "tips": [
-                    " Each `Step` must contain exactly one `Action` or `Output`",
-                    "Each step is an indivisible atomic question, please re-split accordingly.",
-                    "Output also needs to be a separate step."
+                    "Each `Step` must contain exactly one `Action`",
+                    "Each step is an indivisible atomic question, please re-split accordingly."
                 ],
                 "query": "$question"
             }}   

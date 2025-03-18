@@ -97,7 +97,7 @@ class ExactOneHopSelect(PathSelect):
             final_result_list = final_result_list + result
 
         for un_std_p in un_std_p_list:
-            target_value = n.o.entity_name
+            target_value = n.o.get_mention_name()
             target_node = n.o
             relation_name_set = one_graph.get_s_all_relation_name()
             attribute_name_set = one_graph.get_s_all_attribute_name()
