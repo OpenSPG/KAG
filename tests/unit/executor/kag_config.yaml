@@ -26,10 +26,10 @@ vectorizer: *vectorize_model
 
 
 log:
-  level: DEBUG
+  level: INFO
 project:
   biz_scene: default
-  host_addr: http://127.0.0.1:8887
+  host_addr: http://101.37.68.241:8887
   id: '4'
   language: zh
   namespace: BaiKe
@@ -77,5 +77,22 @@ iterative_solver_pipeline:
   executors:
   - *kag_hybrid_executor_conf
   - *mock_math_executor_conf
+  generator:
+    type: mock_generator
+
+
+static_solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: kag_static_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: default_static_planning
+    rewrite_prompt:
+      type: default_query_rewrite
+  executors:
+  - *kag_hybrid_executor_conf
+  - type: mock_math_executor
+    llm: *chat_llm
   generator:
     type: mock_generator

@@ -39,4 +39,4 @@ def do_kag_hybrid():
     print(res)
 
 if __name__ == "__main__":
-    do_pipeline_kag()
+    do_static_pipeline_kag()
