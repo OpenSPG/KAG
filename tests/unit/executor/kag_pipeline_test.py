@@ -8,13 +8,21 @@ async def qa(pipeline, query):
     result = await pipeline.ainvoke(query)
     return result
 
+def do_static_pipeline_kag():
+    pipeline_config = KAG_CONFIG.all_config["static_solver_pipeline"]
+    print(f"pipeline_config = {pipeline_config}")
+    pipeline = SolverPipelineABC.from_config(pipeline_config)
+
+    query = "周润发的妈妈是否还有其他兄弟姐妹"
+    result = asyncio.run(qa(pipeline, query))
+    print(result)
 
 def do_pipeline_kag():
     pipeline_config = KAG_CONFIG.all_config["iterative_solver_pipeline"]
     print(f"pipeline_config = {pipeline_config}")
     pipeline = SolverPipelineABC.from_config(pipeline_config)
 
-    query = "周润发的爸爸和妈妈分别叫做什么名字"
+    query = "周润发的妈妈是否还有其他兄弟姐妹"
     result = asyncio.run(qa(pipeline, query))
     print(result)
 

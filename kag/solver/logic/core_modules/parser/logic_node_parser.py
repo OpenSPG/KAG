@@ -36,17 +36,14 @@ class GetSPONodeData(LFNodeData):
 
     def __repr__(self) -> str:
         """Generate debug-friendly string representation"""
-        return f"""sub question: {self.sub_question}
-retrieved chunks:
-{self.chunks}
-
-retrieved spo:
-{self.spo}
-
-summary:
-{self.summary}
-"""
-
+        output_str = f"sub question: {self.sub_question}"
+        if self.chunks:
+            output_str += f"\nretrieved chunks:\n{self.chunks}"
+        if self.spo:
+            output_str += f"\nretrieved spo:\n{self.spo}"
+        if self.summary:
+            output_str += f"\nsummary:\n{self.summary}"
+        return output_str
 
 # get_spg(s, p, o)
 @LogicNode.register("get_spo")

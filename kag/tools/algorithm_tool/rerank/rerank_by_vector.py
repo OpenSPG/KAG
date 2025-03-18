@@ -17,21 +17,27 @@ def _flat_passages_set(passages_set: List[List[ChunkData]]):
     Returns:
     list: A list of passages sorted by their scores.
     """
+    chunk_id_maps = {}
     score_map = {}
     for passages in passages_set:
         for i, passage in enumerate(passages):
+            chunk_id_maps[passage.chunk_id] = passage
             score = 1.0 / (1 + i)
             if passage in score_map:
-                score_map[passage] += score
+                score_map[passage.chunk_id] += score
             else:
-                score_map[passage] = score
+                score_map[passage.chunk_id] = score
 
-    return [
+    chunk_ids = [
         k
         for k, v in sorted(
             score_map.items(), key=lambda item: item[1], reverse=True
         )
     ]
+    result = []
+    for i in chunk_ids:
+        result.append(chunk_id_maps[i])
+    return result
 
 
 @ToolABC.register("rerank_by_vector")
