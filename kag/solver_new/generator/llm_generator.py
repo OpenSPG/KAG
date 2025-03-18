@@ -23,10 +23,7 @@ class LLMGenerator(GeneratorABC):
         results = []
         for task in context.gen_task(False):
             results.append(
-                {
-                    "action": {"name": task.executor, "arguments": task.arguments},
-                    "result": str(task.result),
-                }
+                str(task.result)
             )
         return self.llm_client.invoke({
             "query": query,
