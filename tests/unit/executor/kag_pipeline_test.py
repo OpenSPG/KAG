@@ -1,11 +1,14 @@
 import asyncio
+
 from kag.interface import SolverPipelineABC
 from kag.common.conf import KAG_CONFIG
 from kag.interface import Task
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_hybrid_executor import KagHybridExecutor
+from kag.solver_new.reporter.open_spg_reporter import OpenSPGReporter
 
+reporter: OpenSPGReporter = OpenSPGReporter(task_id=505)
 async def qa(pipeline, query):
-    result = await pipeline.ainvoke(query)
+    result = await pipeline.ainvoke(query, reporter=reporter)
     return result
 
 def do_static_pipeline_kag():
@@ -40,3 +43,4 @@ def do_kag_hybrid():
 
 if __name__ == "__main__":
     do_static_pipeline_kag()
+    print(reporter.generate_report_data())

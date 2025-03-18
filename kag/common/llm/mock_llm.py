@@ -86,14 +86,14 @@ class MockLLMClient(LLMClient):
             ]
         return "I am an intelligent assistant"
 
-    def __call__(self, prompt):
+    def __call__(self, prompt, **kwargs):
         return json.dumps(self.match_input(prompt))
 
-    def call_with_json_parse(self, prompt):
+    def call_with_json_parse(self, prompt, **kwargs):
         return self.match_input(prompt)
 
-    async def acall(self, prompt):
+    async def acall(self, prompt, **kwargs):
         return json.dumps(self.match_input(prompt))
 
-    async def acall_with_json_parse(self, prompt):
+    async def acall_with_json_parse(self, prompt, **kwargs):
         return self.match_input(prompt)

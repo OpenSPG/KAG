@@ -24,8 +24,8 @@ class KAGIterativePlanner(PlannerABC):
         plan_prompt (PromptABC): Prompt template for planning requests
     """
 
-    def __init__(self, llm: LLMClient, plan_prompt: PromptABC):
-        super().__init__()
+    def __init__(self, llm: LLMClient, plan_prompt: PromptABC, **kwargs):
+        super().__init__(**kwargs)
         self.llm = llm
         self.plan_prompt = plan_prompt
 
@@ -86,11 +86,8 @@ class KAGIterativePlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
-        return await self.llm.ainvoke(
-            {
-                "query": query,
-                "context": self.format_context(kwargs.get("context")),
-                "executors": kwargs.get("executors", []),
-            },
-            self.plan_prompt,
-        )
+        return await self.llm.ainvoke({
+            "query": query,
+            "context": self.format_context(kwargs.get("context")),
+            "executors": kwargs.get("executors", []),
+        }, self.plan_prompt, segment_name="thinker", tag_name="Iterative planning", **kwargs)
