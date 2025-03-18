@@ -259,8 +259,8 @@ class MarkDownReader(ReaderABC):
                             {"headers": headers, "data": df, "context": table_context}
                         )
 
-                except Exception as e:
-                    logger.warning(f"Failed to parse table: {e}")
+                except Exception:
+                    # logger.warning(f"Failed to parse table: {e}")
                     continue
 
             elif element.name == "p":
@@ -573,20 +573,46 @@ class MarkDownReader(ReaderABC):
                 - The root MarkdownNode of the document tree
                 - A SubGraph representation of the document structure
         """
-        file_path: str = input
 
-        if not file_path.endswith(".md"):
-            raise ValueError(f"Please provide a markdown file, got {file_path}")
+        if isinstance(input, str):
+            file_path = input
+            id = input
 
-        if not os.path.isfile(file_path):
-            raise FileNotFoundError(f"The file {file_path} does not exist.")
+            if not file_path.endswith(".md"):
+                raise ValueError(f"Please provide a markdown file, got {file_path}")
 
-        with open(file_path, "r", encoding="utf-8") as reader:
-            content = reader.read()
+            if not os.path.isfile(file_path):
+                raise FileNotFoundError(f"The file {file_path} does not exist.")
 
-        basename, _ = os.path.splitext(os.path.basename(file_path))
+            with open(file_path, "r", encoding="utf-8") as reader:
+                content = reader.read()
+            basename, _ = os.path.splitext(os.path.basename(file_path))
 
-        chunks, subgraph = self.solve_content(input, basename, content)
+        elif isinstance(input, Chunk):
+            # Handle Chunk type separately
+            content = input.content
+            basename = input.name
+            id = input.id
+        elif isinstance(input, list):
+            if len(input) == 0:
+                raise ValueError("Input list is empty")
+            else:
+                if isinstance(input[0], str):
+                    content = input[0]
+                    basename = input[0]
+                    id = input[0]
+                elif isinstance(input[0], Chunk):
+                    content = input[0].content
+                    basename = input[0].name
+                    id = input[0].id
+                else:
+                    raise TypeError(
+                        f"Expected file path or Chunk, got {type(input[0]).__name__}"
+                    )
+        else:
+            raise TypeError(f"Expected file path or Chunk, got {type(input).__name__}")
+
+        chunks, subgraph = self.solve_content(id, basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
