@@ -30,6 +30,11 @@ class ExecutorResponse(Registrable, ABC):
         """Initializes the executor response instance."""
         pass
 
+    def __str__(self):
+        return self.to_string()
+
+    __repr__ = __str__
+
     @abstractmethod
     def to_string(self) -> str:
         """Generates a string representation of the executor response.
