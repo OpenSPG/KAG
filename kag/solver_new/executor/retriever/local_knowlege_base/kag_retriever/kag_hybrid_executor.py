@@ -1,10 +1,10 @@
 from typing import List, Any
 
-
 from kag.interface import ExecutorABC, ExecutorResponse
+from kag.interface.solver.base_model import LogicNode
+from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.kag_lf_rewriter import \
+    KAGLFRewriter
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_flow import KAGFlow
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_types.logic_node.logic_node import \
-    LogicNode
 
 
 class KAGRetrievedResponse(ExecutorResponse):
@@ -21,12 +21,13 @@ class KAGRetrievedResponse(ExecutorResponse):
         self.retrieved_task = ""  # Original task description
         self.graph_data = None
         self.chunk_datas = []
+
     def __str__(self):
         return f"task: f{self.retrieved_task}" + "\n".join(
             [str(item) for item in self.sub_retrieved_set]
         )
 
-    __repr__=__str__
+    __repr__ = __str__
 
     def to_string(self) -> str:
         """Convert response to human-readable string format
@@ -41,6 +42,20 @@ class KAGRetrievedResponse(ExecutorResponse):
         return str(self)
 
 
+def _initialize_response(task) -> KAGRetrievedResponse:
+    """Create and initialize response container
+
+    Args:
+        task: Task configuration object containing description
+
+    Returns:
+        KAGRetrievedResponse: Initialized response object
+    """
+    response = KAGRetrievedResponse()
+    response.retrieved_task = str(task)
+    return response
+
+
 @ExecutorABC.register("kag_hybrid_executor")
 class KagHybridExecutor(ExecutorABC):
     """Hybrid knowledge graph retrieval executor combining multiple strategies.
@@ -50,12 +65,12 @@ class KagHybridExecutor(ExecutorABC):
     """
 
     def __init__(
-        self,
-        flow,
-        lf_rewriter= None,
+            self,
+            flow,
+            lf_rewriter: KAGLFRewriter,
     ):
         super().__init__()
-        self.lf_rewriter = lf_rewriter
+        self.lf_rewriter: KAGLFRewriter = lf_rewriter
         self.flow_str = flow
 
     @property
@@ -64,7 +79,7 @@ class KagHybridExecutor(ExecutorABC):
         return KAGRetrievedResponse
 
     def invoke(
-        self, query: str, task: Any, context: dict, **kwargs
+            self, query: str, task: Any, context: dict, **kwargs
     ):
         """Execute hybrid knowledge graph retrieval process
 
@@ -88,7 +103,7 @@ class KagHybridExecutor(ExecutorABC):
             8. Store final results
         """
         # 1. Initialize response container
-        kag_response = self._initialize_response(task)
+        kag_response = _initialize_response(task)
         # 2. Convert query to logical form
         task_query = task.arguments['query']
         logic_nodes = self._convert_to_logical_form(task_query, task)
@@ -104,19 +119,6 @@ class KagHybridExecutor(ExecutorABC):
         # 8. Final storage
         self._store_results(task, kag_response)
 
-    def _initialize_response(self, task) -> KAGRetrievedResponse:
-        """Create and initialize response container
-
-        Args:
-            task: Task configuration object containing description
-
-        Returns:
-            KAGRetrievedResponse: Initialized response object
-        """
-        response = KAGRetrievedResponse()
-        response.retrieved_task = str(task)
-        return response
-
     def _convert_to_logical_form(self, query: str, task) -> List[LogicNode]:
         """Convert task description to logical nodes
 
@@ -127,14 +129,13 @@ class KagHybridExecutor(ExecutorABC):
         Returns:
             List[GetSPONode]: Logical nodes derived from task description
         """
-        # TODO 在拆解的时候应该需要本任务依赖的任务，此处需要从context中获取，还需要改下代码
         dep_tasks = task.parents
         context = []
         for dep_task in dep_tasks:
             if not dep_task.result:
                 continue
             context.append(dep_task.result)
-        return self._trans_query_to_logic_form(query, str(context))
+        return self.lf_rewriter.rewrite(query=query, context=context)
 
     def _store_results(self, task, response: KAGRetrievedResponse):
         """Store final results in task context

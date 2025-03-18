@@ -3,26 +3,25 @@ import concurrent.futures
 
 from typing import Dict, List, Tuple
 
+from kag.common.conf import KAG_CONFIG
+from kag.interface.solver.base_model import LogicNode
+from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData, KgGraph
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.flow_component import \
     FlowComponent
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_types.logic_node.logic_node import \
-    LogicNode
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_types.retrieved_data import RetrievedData, \
-    GraphData
-
 
 def _merge_graph(input_data: List[RetrievedData]):
     graph_data = None
     other_datas = []
     if input_data is not None:
         for data in input_data:
-            if not isinstance(data, GraphData):
+            if not isinstance(data, KgGraph):
                 other_datas.append(data)
+                continue
             if graph_data is None:
                 graph_data = data
                 continue
-            graph_data.merge_graph(data)
-        graph_datas = [data for data in input_data if isinstance(data, GraphData)]
+            graph_data.merge_kg_graph(data)
+        graph_datas = [data for data in input_data if isinstance(data, KgGraph)]
         graph_data = graph_datas[0] if len(graph_datas) > 0 else None
     return graph_data, other_datas
 
@@ -32,15 +31,18 @@ class KAGFlow:
         # Initialize the KAGFlow with natural language query, logic nodes, and flow string
         self.nl_query = nl_query
         self.lf_nodes: List[LogicNode] = lf_nodes
-        self.flow_str = flow_str.strip(' ', '')
+        self.flow_str = flow_str.strip()
         self.graph = nx.DiGraph()
         self.nodes: Dict[str, FlowComponent] = {}
         self.parse_flow()
+        self.graph_data = None
 
     def _add_node(self, node_name: str):
         # Add a node to the graph if it doesn't already exist
         if node_name not in self.nodes:
-            self.nodes[node_name] = FlowComponent(name=node_name)
+            if node_name not in KAG_CONFIG.all_config.keys():
+                raise ValueError(f"Unknown node type: {node_name}")
+            self.nodes[node_name] = FlowComponent.from_config(KAG_CONFIG.all_config[node_name])
 
     def _add_edge(self, src: str, dst: str):
         # Add an edge between two nodes, ensuring both nodes exist in the graph
@@ -67,18 +69,39 @@ class KAGFlow:
             else:
                 self._add_node(path.strip())
 
-    def execute_node(self, node_name: str, input_data: List[RetrievedData] = None) -> List[RetrievedData]:
+    def execute_node(self, node_name: str) -> List[RetrievedData]:
+        input_data = []
+        predecessors = self.graph.predecessors(node_name)
+        for pre_node in predecessors:
+            if pre_node not in self.nodes:
+                raise ValueError(f"Unknown node name: {type(pre_node)}")
+            if not self.nodes[pre_node].result:
+                continue
+            if self.nodes[pre_node].is_break():
+                # stop this graph
+                self.nodes[node_name].result = self.nodes[pre_node].result
+                self.nodes[node_name].break_flag = True
+                return self.nodes[node_name].result
+            if isinstance(self.nodes[pre_node].result, list):
+                input_data.extend(self.nodes[pre_node].result)
+            else:
+                input_data.append(self.nodes[pre_node].result)
         # Execute a specific node in the graph and return the results
         if input_data is None:
             input_data = []
-        graph_data, _ = _merge_graph(input_data)
+        self.graph_data, _ = _merge_graph(input_data)
+        cur_graph_data = KgGraph()
+        if self.graph_data:
+            cur_graph_data.merge_kg_graph(self.graph_data)
         node = self.nodes[node_name]
         if isinstance(node, FlowComponent):
-            return node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=graph_data, datas=input_data)
+            res = node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data)
+            node.break_judge(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data)
+            return res
         else:
             raise ValueError(f"Unknown node type: {type(node)}")
 
-    def execute(self) -> Tuple[GraphData, List[RetrievedData]]:
+    def execute(self) -> Tuple[KgGraph, List[RetrievedData]]:
         """
         Execute the DAG workflow and collect results from all nodes.
 
@@ -130,7 +153,13 @@ class KAGFlow:
         results = []
         for node_name in sink_nodes:
             node = self.nodes[node_name]
-            if node.result:
+            if not node.result:
+                continue
+            if isinstance(node.result, list):
                 results.extend(node.result)
+            else:
+                results.append(node.result)
         graph_data, others = _merge_graph(results)
-        return graph_data, others
+        if graph_data is not None:
+            self.graph_data = graph_data
+        return self.graph_data, others

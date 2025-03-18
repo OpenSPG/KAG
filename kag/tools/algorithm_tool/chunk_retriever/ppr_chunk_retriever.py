@@ -5,7 +5,7 @@ from typing import List, Dict
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC, LLMClient
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData
+from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, ChunkData
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
@@ -19,10 +19,11 @@ from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
 
+
 @ToolABC.register("ppr_chunk_retriever")
 class PprChunkRetriever(ToolABC):
     def __init__(self,
-                 llm_module: LLMClient,
+                 llm_client: LLMClient,
                  vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None,
                  search_api: SearchApiABC = None,
@@ -55,11 +56,13 @@ class PprChunkRetriever(ToolABC):
         )
         self.text_similarity = TextSimilarity(vectorize_model)
 
-        self.ner = ner or Ner(llm_module=llm_module)
-        self.el = el or EntityLinking(vectorize_model=vectorize_model, graph_api=graph_api, search_api=search_api, recognition_threshold=match_threshold)
+        self.ner = ner or Ner(llm_module=llm_client)
+        self.el = el or EntityLinking(vectorize_model=vectorize_model, graph_api=graph_api, search_api=search_api,
+                                      recognition_threshold=match_threshold)
         self.pagerank_threshold = pagerank_threshold
         self.text_chunk_retriever = text_chunk_retriever or TextChunkRetriever(search_api=search_api)
-        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(vectorize_model=vectorize_model, search_api=search_api)
+        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(vectorize_model=vectorize_model,
+                                                                                     search_api=search_api)
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
 
@@ -100,9 +103,8 @@ class PprChunkRetriever(ToolABC):
                 )
         return scores
 
-
     def calculate_combined_scores(
-        self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
+            self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
     ):
         """
         Calculate and return the combined scores that integrate both similarity scores and PageRank scores.
@@ -142,8 +144,8 @@ class PprChunkRetriever(ToolABC):
         combined_scores = dict()
         for key in pagerank_scores.keys():
             combined_scores[key] = (
-                sim_scores[key] * (1 - self.pagerank_weight)
-                + pagerank_scores[key] * self.pagerank_weight
+                    sim_scores[key] * (1 - self.pagerank_weight)
+                    + pagerank_scores[key] * self.pagerank_weight
             )
         return combined_scores
 
@@ -179,10 +181,12 @@ class PprChunkRetriever(ToolABC):
                     biz_id=doc_id,
                 )
                 node_dict = dict(node.items())
-                matched_docs.append(
-                    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
-                )
-                hits_docs.add(node_dict["name"])
+                matched_docs.append(ChunkData(
+                    content=node_dict["content"],
+                    title=node_dict["name"],
+                    chunk_id=doc_id,
+                    score=doc_score,
+                ))
             except Exception as e:
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
@@ -201,13 +205,19 @@ class PprChunkRetriever(ToolABC):
                         else:
                             logger.warning(f"{query} matched docs is empty")
                         matched_docs.append(
-                            f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
+                            ChunkData(
+                                content=item["content"],
+                                title=item["name"],
+                                chunk_id=item["id"],
+                                score=item["score"],
+                            )
                         )
                         break
         except Exception as e:
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         return matched_docs
-    def invoke(self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs)->List[str]:
+
+    def invoke(self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs) -> List[ChunkData]:
         chunk_nums = top_k * 20
         matched_entities = start_entities
         if start_entities is None:
@@ -215,7 +225,8 @@ class PprChunkRetriever(ToolABC):
         for query in queries:
             candidate_entities = self.ner.invoke(query, **kwargs)
             for candidate_entity in candidate_entities:
-                el_res = self.el.invoke(query=query, name=candidate_entity.get_mention_name(), type_name=candidate_entity.get_entity_first_type_or_un_std(), top_k=1)
+                el_res = self.el.invoke(query=query, name=candidate_entity.get_mention_name(),
+                                        type_name=candidate_entity.get_entity_first_type_or_un_std(), top_k=1)
                 matched_entities.extend(el_res)
 
         if len(matched_entities):
@@ -253,7 +264,6 @@ class PprChunkRetriever(ToolABC):
         )
 
         return self.get_all_docs_by_id(queries, sorted_scores, top_k)
-
 
     def schema(self):
         return {
