@@ -13,7 +13,7 @@ def do_static_pipeline_kag():
     print(f"pipeline_config = {pipeline_config}")
     pipeline = SolverPipelineABC.from_config(pipeline_config)
 
-    query = "周润发的妈妈是否还有其他兄弟姐妹"
+    query = "周润发的爸爸和妈妈叫做什么名字"
     result = asyncio.run(qa(pipeline, query))
     print(result)
 
@@ -22,7 +22,7 @@ def do_pipeline_kag():
     print(f"pipeline_config = {pipeline_config}")
     pipeline = SolverPipelineABC.from_config(pipeline_config)
 
-    query = "周润发的妈妈是否还有其他兄弟姐妹"
+    query = "周润发的爸爸和妈妈叫做什么名字"
     result = asyncio.run(qa(pipeline, query))
     print(result)
 
