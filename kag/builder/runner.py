@@ -303,7 +303,6 @@ class BuilderChainStreamRunner(BuilderChainRunner):
                 # Start a separate thread to iterate through the scanner
                 def generate_items():
                     for item in self.scanner.generate(input):
-                        print(f"Processing item: {item}")
                         item_id, item_abstract = generate_hash_id_and_abstract(item)
                         if self.checkpointer.exists(item_id):
                             continue
