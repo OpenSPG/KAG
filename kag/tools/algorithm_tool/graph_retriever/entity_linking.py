@@ -17,7 +17,8 @@ class EntityLinking(ToolABC):
                  graph_api: GraphApiABC = None,
                  search_api: SearchApiABC = None,
                  recognition_threshold: float = 0.8,
-                 top_k: int = 5):
+                 top_k: int = 5,
+                 exclude_types: List[str] = None):
         """Initialize entity linking components with default configurations
         Args:
             vectorize_model: Text vectorization model for similarity calculation
@@ -25,6 +26,7 @@ class EntityLinking(ToolABC):
             search_api: Search engine interface for vector/text search
             recognition_threshold: Minimum score threshold for valid matches
             top_k: Maximum number of results to return
+            exclude_types: exclude types for entity
         """
         super().__init__()
         self.schema_helper: SchemaUtils = SchemaUtils(
@@ -49,6 +51,7 @@ class EntityLinking(ToolABC):
         self.text_similarity = TextSimilarity(vectorize_model)
         self.recognition_threshold = recognition_threshold
         self.top_k = top_k
+        self.exclude_types = exclude_types
 
     # Re-rank the nodes based on semantic type matching if the query type is not an entity
     def rerank_sematic_type(self, candis_nodes: list, sematic_type: str):
@@ -90,6 +93,18 @@ class EntityLinking(ToolABC):
             candis_nodes, key=lambda n: n["type_match_score"], reverse=True
         )
         return sorted_people_dicts[:self.top_k]
+
+    def filter_target_types(self, type_nodes):
+        if self.exclude_types is None:
+            return type_nodes
+        result = []
+        for node in type_nodes:
+            recall_node_label = get_recall_node_label(node["node"]["__labels__"])
+            label_name = self.schema_helper.get_label_without_prefix(recall_node_label)
+            if label_name in self.exclude_types:
+                continue
+            result.append(node)
+        return result
 
     def invoke(self, query, name, type_name, topk_k = None, **kwargs) -> List[EntityData]:
         """Perform entity linking by combining vector and text search strategies
@@ -160,6 +175,7 @@ class EntityLinking(ToolABC):
 
         # Combine the results from both searches
         sorted_nodes = typed_nodes + content_recall_nodes
+        sorted_nodes = self.filter_target_types(sorted_nodes)
 
         # Fallback to text-based search if no nodes are found
         if len(sorted_nodes) == 0:

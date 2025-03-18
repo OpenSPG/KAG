@@ -1,15 +1,20 @@
 from typing import List
 
+from kag.interface.solver.base_model import LogicNode
+from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.flow_component import \
     FlowComponent
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_types.logic_node.logic_node import \
-    LogicNode
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_types.retrieved_data import GraphData
 
 
 class KGFreeRetrieverABC(FlowComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def invoke(self, query: str, logic_nodes: List[LogicNode], graph_data: GraphData, **kwargs) -> GraphData:
+    def invoke(self, query: str, logic_nodes: List[LogicNode], graph_data: KgGraph, **kwargs) -> KgGraph:
         raise NotImplementedError("invoke not implemented yet.")
+
+    def is_break(self):
+        return self.break_flag
+
+    def break_judge(self, logic_nodes: List[LogicNode], **kwargs):
+        self.break_flag = False
