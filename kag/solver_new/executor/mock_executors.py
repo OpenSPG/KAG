@@ -143,3 +143,82 @@ print(s)
                 }
             },
         }
+
+
+
+@ExecutorABC.register("mock_code_executor")
+class MockCodeExecutor(ExecutorABC):
+    """Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation."""
+
+    def __init__(self, llm: LLMClient):
+        self.llm = llm
+        self.prompt = """
+根据问题生成可执行Python代码(需要import所有的依赖包)，最后一行用`print`输出结果。代码需简洁无注释，仅返回代码，不要其他内容。
+
+
+**示例说明:**  
+用户问题：计算1到100的和。  
+模型返回：  
+```python
+s = sum(range(1, 101))
+print(s)
+```  
+
+用户问题：
+
+        """
+
+    @property
+    def category(self):
+        return "Code"
+
+    async def gen_py_code(self, query: str):
+        prompt = f"{self.prompt}\n{query}"
+        out = await self.llm.acall(prompt)
+        return out.lstrip("```python").rstrip("```")
+
+    def run_py_code(self, code):
+        import io
+        from contextlib import redirect_stdout
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            exec(code)
+        output = f.getvalue().strip()
+        return output
+
+    async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
+        """Asynchronous wrapper for synchronous invocation (runs in default threadpool).
+
+        Args:
+            query: Original mathematical query
+            task: Task containing the mathematical expression
+            context: Execution context
+            **kwargs: Additional execution parameters
+
+        Returns:
+            Result from synchronous invocation
+        """
+        try:
+            math_expr = task.arguments["query"]
+            result = eval(math_expr.replace("%", "/100"))
+            task.result = result
+            return result
+        except:
+            py_code = await self.gen_py_code(task.arguments["query"])
+            print(f"py_code = {py_code}")
+            result = self.run_py_code(py_code)
+            task.result = result
+
+    def schema(self):
+        return {
+            "name": "Code",
+            "description": "Perform mathematical calculations based on user input and return the result. The user input can be a valid mathematical expression or a problem described in natural language.",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "description": "The user inputs a string, which will be executed directly if it is a valid Python expression; otherwise, it will be translated into Python code before execution.",
+                    "optional": False,
+                }
+            },
+        }
