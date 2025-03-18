@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 entity_type_list = set(["组织", "地点", "人物", "体育", "法律", "产品", "政治人物", "娱乐人物", "科学家", "学者", "历史人物", "国家", "城市", "自然景观", "省", "县", "行政区域", "公司", "企业", "机构", "政府机构", "历史事件", "运动赛事", "文化活动", "绘画", "音乐", "文学作品", "电子产品", "食品", "服饰", "文化习俗", "体育项目", "运动员", "历史时期", "地形", "气候", "法律条款", "法律机构", "疾病", "医疗技术", "政策", "交通工具", "台风", "洪水", "地震", "飓风", "泥石", "雪崩", "自然灾害"])
+CHUNK_TYPE = 'Chunk'
 
 def parser_one(d_one):
     d_one = d_one.strip().strip('"').strip("'").strip()
@@ -39,8 +40,6 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
     def invoke(self, input, **kwargs):
         title = input.name
         passage = title + "\n" + input.content
-        if input.type == 'DOC':
-            return []
         try:
             chunk, entity_res, event_res = self.extract_one_doc(input)
             events = self.__event_extraction(event_res)
@@ -60,9 +59,6 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
                     node.properties["name"] = node.name
                     node.properties["id"] = node.id
                     node.properties["trunk_content"] = passage
-
-                if node.label == 'Chunk':
-                    node.properties['pid'] = node.id.split('_')[0]
             return [sub_graph]
         except Exception as e:
             logger.info(e)
@@ -235,7 +231,54 @@ class KAGEventExtractor3B(SchemaFreeExtractor):
         self.assemble_sub_graph_with_triples(sub_graph, entities, triples)
         self.__assemble_sub_graph_with_events(sub_graph, entities, events, chunk)
         self.assemble_sub_graph_with_chunk(sub_graph, chunk)
+        self.assemble_sub_graph_with_doc(sub_graph, chunk)
         return sub_graph
+
+
+    def assemble_sub_graph_with_chunk(self, sub_graph: SubGraph, chunk: Chunk):
+        """
+        Associates a Chunk object with the subgraph, adding it as a node and connecting it with existing nodes.
+        Args:
+            sub_graph (SubGraph): The subgraph to add the chunk information to.
+            chunk (Chunk): The chunk object containing the text and metadata.
+        Returns:
+            The constructed subgraph.
+        """
+        for node in sub_graph.nodes:
+            sub_graph.add_edge(node.id, node.label, "sourceChunk", chunk.id, CHUNK_TYPE)
+        sub_graph.add_node(
+            chunk.id,
+            chunk.name,
+            CHUNK_TYPE,
+            {
+                "id": chunk.id,
+                "name": chunk.name,
+                "content": chunk.content,
+                'pid': chunk.id.split('_')[0],
+            },
+        )
+        sub_graph.id = chunk.id
+        return sub_graph
+
+    def assemble_sub_graph_with_doc(self, sub_graph, chunk: Chunk):
+        doc = chunk.kwargs.get('doc')
+        if doc == None:
+            return
+        for node in sub_graph.nodes:
+            sub_graph.add_edge(
+                node.id,
+                node.label,
+                "sourceDoc",
+                 doc.id,
+                'Document',
+            )
+        props = {}
+        props['desc'] = doc.content
+        sub_graph.add_node(doc.id, doc.name, 'Document', props)
+        chunk.kwargs.clear()
+
+
+
 
     def __assemble_sub_graph_with_events(
             self,
