@@ -6,10 +6,13 @@ from kag.solver_new.prompt.iterative_planning_prompt import (
     DefaultIterativePlanningPrompt,
 )
 
+
 from kag.solver_new.prompt.static_planning_prompt import (
     DefaultStaticPlanningPrompt,
 )
 from kag.solver_new.prompt.query_rewrite_prompt import QueryRewritePrompt
+
+from kag.solver_new.prompt.final_generator import FinalGeneratorPrompt
 
 from kag.solver_new.executor.finish_executor import FinishExecutor
 from kag.solver_new.executor.mock_executors import (
@@ -17,7 +20,7 @@ from kag.solver_new.executor.mock_executors import (
     MockMathExecutor,
 )
 from kag.solver_new.generator.mock_generator import MockGenerator
-
+from kag.solver_new.generator.llm_generator import LLMGenerator
 __all__ = [
     "KAGIterativePipeline",
     "KAGStaticPipeline",
@@ -25,9 +28,11 @@ __all__ = [
     "KAGStaticPlanner",
     "DefaultIterativePlanningPrompt",
     "DefaultStaticPlanningPrompt",
+    "FinalGeneratorPrompt",
     "QueryRewritePrompt",
     "FinishExecutor",
     "MockRetrieverExecutor",
     "MockMathExecutor",
     "MockGenerator",
+    "LLMGenerator"
 ]

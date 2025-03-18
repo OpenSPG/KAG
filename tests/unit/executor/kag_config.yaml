@@ -67,6 +67,11 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
 mock_math_executor: &mock_math_executor_conf
   type: mock_math_executor
   llm: *openie_llm
+
+mock_code_executor: &mock_code_executor_conf
+  type: mock_code_executor
+  llm: *openie_llm
+
 iterative_solver_pipeline:
   type: kag_iterative_pipeline
   planner:
@@ -77,8 +82,12 @@ iterative_solver_pipeline:
   executors:
   - *kag_hybrid_executor_conf
   - *mock_math_executor_conf
+  - *mock_code_executor_conf
   generator:
-    type: mock_generator
+    type: llm_generator
+    llm_client: *chat_llm
+    generated_prompt:
+      type: default_llm_generator_prompt
 
 
 static_solver_pipeline:
@@ -92,7 +101,10 @@ static_solver_pipeline:
       type: default_query_rewrite
   executors:
   - *kag_hybrid_executor_conf
-  - type: mock_math_executor
-    llm: *chat_llm
+  - *mock_math_executor_conf
+  - *mock_code_executor_conf
   generator:
-    type: mock_generator
+    type: llm_generator
+    llm_client: *chat_llm
+    generated_prompt:
+      type: default_llm_generator_prompt
