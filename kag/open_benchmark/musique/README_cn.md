@@ -16,7 +16,7 @@
 ### Step 1：进入示例目录
 
 ```bash
-cd kag/examples/musique
+cd kag/open_benchmark/musique
 ```
 
 ### Step 2：配置模型
