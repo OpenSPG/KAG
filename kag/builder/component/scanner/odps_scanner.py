@@ -141,24 +141,34 @@ class ODPSScanner(ScannerABC):
                         f"Worker {worker} processing records from {start} to {end}"
                     )
 
-                    # Skip to the start position if needed
-                    if start > 0:
-                        reader.skip(start)
-                        logger.debug(f"Skipped {start} records")
-
-                    # Calculate how many records to read
+                    # 直接从起始位置开始读取
                     records_to_read = end - start
-                    logger.debug(f"Will read {records_to_read} records")
+                    logger.debug(
+                        f"Will read {records_to_read} records from position {start}"
+                    )
+
+                    # 使用切片直接获取该分片的数据
+                    try:
+                        shard_reader = reader[start:end]
+                        logger.debug(
+                            f"Successfully created shard reader for range {start}:{end}"
+                        )
+                        # 替换原有reader，使后续操作直接使用分片后的reader
+                        reader = shard_reader
+                        remaining = records_to_read
+                        # 重置起始位置，因为我们已经使用了分片reader
+                        start = 0
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to create shard reader: {str(e)}, falling back to manual filtering"
+                        )
+                        # 如果切片失败，保持原来的逻辑
+                        remaining = records_to_read
                 else:
                     records_to_read = None  # Read all records
                     start = 0
                     logger.debug("No sharding, will read all records")
-
-                # Implement our own chunking logic for internal fetching
-                if records_to_read is not None:
-                    remaining = records_to_read
-                else:
-                    remaining = reader.count - start
+                    remaining = reader.count
 
                 logger.debug(
                     f"Starting to read {remaining} records (internal batch size: {chunk_size})"
@@ -311,6 +321,7 @@ if __name__ == "__main__":
         "table": "jincheng_doc2x_finance_40w_parsed",
         "endpoint": "http://service-corp.odps.aliyun-inc.com/api",
         "col_names": ["content"],
+        "limit": 10,
     }
     scanner = ScannerABC.from_config(odps_config)
 
