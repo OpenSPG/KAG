@@ -210,3 +210,6 @@ class RefDoc(object):
             return True
 
         return self.to_dict() != other.to_dict()
+
+    def __hash__(self):
+        return hash(tuple(sorted(self.to_dict().items())))

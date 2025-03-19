@@ -271,8 +271,8 @@ class RelationData:
             self.end_entity.to_show_id(language),
         )
 
-    def to_show_id(self, langauge="en"):
-        return f"{self.from_entity.to_show_id(langauge)} {self._get_type_name(langauge)} {self.end_entity.to_show_id(langauge)}"
+    def to_show_id(self, language="en"):
+        return f"{self.from_entity.to_show_id(language)} {self._get_type_name(language)} {self.end_entity.to_show_id(language)}"
 
     def get_properties_map_list_value(self):
         if self.prop is None:

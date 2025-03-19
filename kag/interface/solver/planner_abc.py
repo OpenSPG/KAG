@@ -35,14 +35,8 @@ class Task(Registrable):
         result (Any): Final output of the task execution.
     """
 
-    def __init__(
-        self,
-        executor: str,
-        arguments: dict,
-        parents: List = None,
-        children: List = None,
-        id: str = None,
-    ):
+    def __init__(self, executor: str, arguments: dict, parents: List = None, children: List = None, id: str = None,
+                 **kwargs):
         """Represents an executable task that can be processed by an executor.
 
         Attributes:
@@ -55,6 +49,7 @@ class Task(Registrable):
             memory (dict): Storage for intermediate execution data.
             result (Any): Final output of the task execution.
         """
+        super().__init__(**kwargs)
         self.executor = executor
         self.arguments = arguments
         self.status = TaskStatus.PENDING
