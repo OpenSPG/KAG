@@ -145,28 +145,28 @@ class KagHybridExecutor(ExecutorABC):
             # 1. Initialize response container
             kag_response = _initialize_response(task)
             # 2. Convert query to logical form
-            self.report_content(reporter, "thinker", task_query, "begin running executor", "init")
+            self.report_content(reporter, "thinker", task_query, "begin running executor", "INIT")
             logic_nodes = self._convert_to_logical_form(task_query, task)
             logic_nodes_str = "\n".join([str(n) for n in logic_nodes])
             self.report_content(reporter, "thinker", task_query, f"""```
 {logic_nodes_str}
-```""", "running")
+```""", "RUNNING")
 
             flow: KAGFlow = KAGFlow(nl_query=task_query, lf_nodes=logic_nodes, flow_str=self.flow_str)
 
             graph_data, retrieved_datas = flow.execute()
             kag_response.graph_data = graph_data
             kag_response.chunk_datas = retrieved_datas
-            self.report_content(reporter, "reference", task_query, kag_response, "finish")
+            self.report_content(reporter, "reference", task_query, kag_response, "FINISH")
             for lf_node in logic_nodes:
                 kag_response.sub_retrieved_set.append(lf_node.get_fl_node_result())
 
             # 8. Final storage
             self._store_results(task, kag_response)
-            self.report_content(reporter, "thinker", task_query, "end executor", "finish")
+            self.report_content(reporter, "thinker", task_query, "end executor", "FINISH")
         except Exception as e:
             logger.warning(f"{self.schema().get('name')} executed failed {e}", exc_info=True)
-            self.report_content(reporter, "thinker", task_query, f"{self.schema().get('name')} executed failed {e}", "error")
+            self.report_content(reporter, "thinker", task_query, f"{self.schema().get('name')} executed failed {e}", "RUNNING")
 
     def _convert_to_logical_form(self, query: str, task) -> List[LogicNode]:
         """Convert task description to logical nodes
