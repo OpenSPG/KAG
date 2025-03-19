@@ -26,8 +26,9 @@ class EvalQa:
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer, trace_log
 
-    def process_sample(self, sample_idx, sample, ckpt: CheckPointer = None):
+    def process_sample(self, data):
         try:
+            sample_idx, sample, ckpt = data
             question = sample["question"]
             gold = sample["answer"]
             if ckpt and question in ckpt:
@@ -64,7 +65,7 @@ class EvalQa:
                 if k not in total_metrics:
                     total_metrics[k] = 0.0
                 total_metrics[k] += v
-        for k, v in total_metrics:
+        for k, v in total_metrics.items():
             if k in ["processNum"]:
                 res_metrics[k] = v
             else:
@@ -75,7 +76,7 @@ class EvalQa:
         ckpt = CheckpointerManager.get_checkpointer(
             {"type": "zodb", "ckpt_dir": "ckpt"}
         )
-
+        res_qa = []
         with ThreadPoolExecutor(max_workers=thread_num) as executor:
             futures = [
                 executor.submit(self.process_sample, (sample_idx, sample, ckpt))
@@ -89,19 +90,22 @@ class EvalQa:
             ):
                 result = future.result()
                 if result is not None:
-                    sample_idx, sample_id, prediction, metrics, traceLog = result
+                    sample_idx, prediction, metrics, traceLog = result
                     sample = qa_list[sample_idx]
 
                     sample["prediction"] = prediction
                     sample["traceLog"] = traceLog
                     sample["metrics"] = metrics
                     metrics_list.append(metrics)
+                    res_qa.append(sample)
 
                     if sample_idx % 20 == 0:
                         with open(res_file_path, "w") as f:
-                            json.dump(qa_list, f)
+                            json.dump(res_qa, f)
+        with open(res_file_path, "w") as f:
+            json.dump(res_qa, f)
 
-        return qa_list, metrics_list
+        return res_qa, metrics_list
 
     def load_data(self, file_path):
         """
@@ -138,13 +142,13 @@ def do_main(qa_file_path, thread_num, upper_limit, eval_obj, collect_file=None):
     print(metrics_lines)
     if collect_file:
         with open(collect_file, "a") as f:
-            f.writelines(metrics_lines)
+            f.writelines("\n"+metrics_lines)
 
 def running_paras():
-    parser = argparse.ArgumentParser(description="musique args")
+    parser = argparse.ArgumentParser(description="qa args")
     # 添加参数
-    parser.add_argument("qa_file", type=str, help="test file name in /data")
-    parser.add_argument("thread_num", type=int, help="thread num to run", default=10)
-    parser.add_argument("upper_limit", type=int, help="upper limit", default=1000)
-    parser.add_argument("res_file", type=str, help="record store file", default="benchmark.txt")
+    parser.add_argument("--qa_file", type=str, help="test file name in /data")
+    parser.add_argument("--thread_num", type=int, help="thread num to run", default=10)
+    parser.add_argument("--upper_limit", type=int, help="upper limit", default=1000)
+    parser.add_argument("--res_file", type=str, help="record store file", default="benchmark.txt")
     return parser

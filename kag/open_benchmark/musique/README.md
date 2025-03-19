@@ -16,7 +16,7 @@ Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s5
 ### Step 1: Enter the example directory
 
 ```bash
-cd kag/examples/musique
+cd kag/open_benchmark/musique
 ```
 
 ### Step 2: Configure models

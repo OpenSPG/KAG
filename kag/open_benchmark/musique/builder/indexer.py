@@ -9,6 +9,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
+import argparse
 from kag.common.registry import import_modules_from_path
 
 from kag.builder.runner import BuilderChainRunner
@@ -29,6 +30,13 @@ def buildKB(file_path):
 
 if __name__ == "__main__":
     import_modules_from_path(".")
-    file_path = "./data/musique_sub_corpus.json"
+    parser = argparse.ArgumentParser(description="args")
+    parser.add_argument("--corpus_file", type=str, help="test file name in /data", default="./data/musique_sub_corpus.json")
+
+    args = parser.parse_args()
+    file_path = args.corpus_file
+
+    dir_path = os.path.dirname(__file__)
+    file_path = os.path.join(dir_path, file_path)
 
     buildKB(file_path)
