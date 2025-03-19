@@ -82,6 +82,7 @@ class BuilderChainRunner(Registrable):
         chain: KAGBuilderChain,
         num_chains: int = 2,
         num_threads_per_chain: int = 8,
+        max_concurrency: int = 100,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -97,6 +98,7 @@ class BuilderChainRunner(Registrable):
         self.chain = chain
         self.num_chains = num_chains
         self.num_threads_per_chain = num_threads_per_chain
+        self.max_concurrency = max_concurrency
         self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
 
         self.checkpointer = CheckpointerManager.get_checkpointer(
@@ -197,26 +199,29 @@ class BuilderChainRunner(Registrable):
             input: The input data to be processed.
         """
 
-        async def process(data, data_id, data_abstract):
-            try:
-                result = await self.chain.ainvoke(
-                    data,
-                    max_workers=self.num_threads_per_chain,
-                )
-                return data, data_id, data_abstract, result
-            except Exception:
-                traceback.print_exc()
-                return None
+        async def process(data, data_id, data_abstract, semaphore):
+            async with semaphore:
+                try:
+
+                    result = await self.chain.ainvoke(
+                        data,
+                        max_workers=self.num_threads_per_chain,
+                    )
+                    return data, data_id, data_abstract, result
+                except Exception:
+                    traceback.print_exc()
+                    return None
 
         success = 0
         total = 0
         tasks = []
+
+        semaphore = asyncio.Semaphore(self.max_concurrency)
         for item in self.scanner.generate(input):
             item_id, item_abstract = generate_hash_id_and_abstract(item)
             if self.checkpointer.exists(item_id):
                 continue
-
-            task = asyncio.create_task(process(item, item_id, item_abstract))
+            task = asyncio.create_task(process(item, item_id, item_abstract, semaphore))
             tasks.append(task)
         from tqdm.asyncio import tqdm
 
