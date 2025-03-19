@@ -162,7 +162,7 @@ class BuilderJobSubmit(Command):
         if args.validity_check:
             BuilderJobSubmit.validity_check(args)
         if args.init_script is not None:
-            cmds.append("sh {args.init_script}")
+            cmds.append(f"sh {args.init_script}")
         entry_cmd = f"python {args.entry_script}"
         cmds.append(entry_cmd)
 
