@@ -89,7 +89,7 @@ class BuilderJobSubmit(Command):
         parser.add_argument(
             "--num_gpus",
             type=int,
-            default=1,
+            default=0,
             help="GPUs per worker. Requires NVIDIA CUDA-enabled cluster. \n",
         )
 
@@ -163,7 +163,11 @@ class BuilderJobSubmit(Command):
             BuilderJobSubmit.validity_check(args)
         if args.init_script is not None:
             cmds.append(f"sh {args.init_script}")
-        entry_cmd = f"python {args.entry_script}"
+
+        entry_script_dir = os.path.dirname(args.entry_script)
+        entry_script_name = os.path.basename(args.entry_script)
+
+        entry_cmd = f"cd {entry_script_dir} && python {entry_script_name}"
         cmds.append(entry_cmd)
 
         command = " && ".join(cmds)
