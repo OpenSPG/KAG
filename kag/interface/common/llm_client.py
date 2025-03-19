@@ -17,7 +17,7 @@ from typing import Union, Dict, List, Any
 import logging
 import traceback
 
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_exponential
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
 from kag.common.rate_limiter import RATE_LIMITER_MANGER
@@ -32,12 +32,14 @@ class LLMClient(Registrable):
     This class includes methods to call the model with a prompt, parse the response, and handle batch processing of prompts.
     """
 
-    def __init__(self, name: str, max_rate: float = 1000, time_period: float = 1, **kwargs):
+    def __init__(
+        self, name: str, max_rate: float = 1000, time_period: float = 1, **kwargs
+    ):
 
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
     def __call__(self, prompt: Union[str, dict, list]) -> str:
         """
         Perform inference on the given prompt and return the result.
@@ -53,7 +55,7 @@ class LLMClient(Registrable):
         """
         raise NotImplementedError
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
     async def acall(self, prompt: Union[str, dict, list], **kwargs) -> str:
         """
         Perform inference on the given prompt and return the result asynchronously.
@@ -69,7 +71,7 @@ class LLMClient(Registrable):
         """
         raise NotImplementedError
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
     def call_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.
@@ -96,7 +98,7 @@ class LLMClient(Registrable):
             return res
         return json_result
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
     async def acall_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.
@@ -129,7 +131,7 @@ class LLMClient(Registrable):
         prompt_op: PromptABC,
         with_json_parse: bool = True,
         with_except: bool = True,
-        **kwargs
+        **kwargs,
     ):
         """
         Call the model and process the result.
@@ -176,7 +178,7 @@ class LLMClient(Registrable):
         prompt_op: PromptABC,
         with_json_parse: bool = True,
         with_except: bool = True,
-        **kwargs
+        **kwargs,
     ):
         """
         Call the model and process the result.
