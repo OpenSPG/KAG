@@ -9,15 +9,36 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import asyncio
 import copy
 import logging
 
-from kag.solver.logic.solver_pipeline import SolverPipeline
+from kag.interface import SolverPipelineABC
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.solver_new.reporter.open_spg_reporter import OpenSPGReporter
 
 logger = logging.getLogger()
+
+
+async def qa(reporter, pipeline, query):
+    await reporter.start()
+    try:
+        answer = await pipeline.ainvoke(query, reporter=reporter)
+    except Exception as e:
+        answer = None
+        logger.warning(
+            f"An exception occurred while processing query: {query}. Error: {str(e)}",
+            exc_info=True,
+        )
+        if KAG_PROJECT_CONF.language == "en":
+            answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
+        else:
+            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+        reporter.add_report_line("answer", "error", answer, "ERROR")
+    await reporter.stop()
+    return answer
 
 
 class SolverMain:
@@ -30,88 +51,29 @@ class SolverMain:
         is_report=True,
         host_addr="http://127.0.0.1:8887",
     ):
+
         # resp
-        report_tool = ReporterIntermediateProcessTool(
-            report_log=is_report,
-            task_id=str(task_id),
-            project_id=str(project_id),
-            host_addr=host_addr,
-            language=KAG_PROJECT_CONF.language,
-        )
-        llm_client = KAG_CONFIG.all_config["llm"]
-        default_pipeline_config = {
-            "max_iterations": 3,
-            "memory": {"type": "default_memory", "llm_client": llm_client},
-            "generator": {
-                "generate_prompt": {"type": "default_resp_generator"},
-                "llm_client": llm_client,
-                "type": "default_generator",
-            },
-            "reasoner": {
-                "lf_executor": {
-                    "chunk_retriever": {
-                        "recall_num": 10,
-                        "rerank_topk": 10,
-                        "type": "default_chunk_retriever",
-                        "llm_client": llm_client,
-                    },
-                    "exact_kg_retriever": {
-                        "el_num": 5,
-                        "graph_api": {"type": "openspg_graph_api"},
-                        "search_api": {"type": "openspg_search_api"},
-                        "type": "default_exact_kg_retriever",
-                        "llm_client": llm_client,
-                    },
-                    "force_chunk_retriever": True,
-                    "fuzzy_kg_retriever": {
-                        "el_num": 5,
-                        "graph_api": {"type": "openspg_graph_api"},
-                        "search_api": {"type": "openspg_search_api"},
-                        "type": "default_fuzzy_kg_retriever",
-                        "llm_client": llm_client,
-                    },
-                    "merger": {
-                        "chunk_retriever": {
-                            "recall_num": 10,
-                            "rerank_topk": 10,
-                            "llm_client": llm_client,
-                            "type": "default_chunk_retriever",
-                        },
-                        "type": "default_lf_sub_query_res_merger",
-                    },
-                    "llm_client": llm_client,
-                    "type": "default_lf_executor",
-                },
-                "lf_planner": {
-                    "type": "default_lf_planner",
-                    "llm_client": llm_client,
-                },
-                "llm_client": llm_client,
-                "type": "default_reasoner",
-            },
-            "reflector": {"type": "default_reflector", "llm_client": llm_client},
-        }
+        reporter: OpenSPGReporter = OpenSPGReporter(task_id=task_id, host_addr=host_addr, project_id=project_id)
+
         conf = copy.deepcopy(
-            KAG_CONFIG.all_config.get("lf_solver_pipeline", default_pipeline_config)
+            KAG_CONFIG.all_config.get("kag_solver_pipeline", None)
         )
-        resp = SolverPipeline.from_config(conf)
+        resp = SolverPipelineABC.from_config(conf)
         try:
-            answer, trace_log = resp.run(
-                query, report_tool=report_tool, session_id=session_id
-            )
-            state = ReporterIntermediateProcessTool.STATE.FINISH
-            logger.info(f"{query} answer={answer} tracelog={trace_log}")
+
+            answer = asyncio.run(qa(reporter=reporter, pipeline=resp, query=query))
+            logger.info(f"{query} answer={answer}")
         except Exception as e:
             if KAG_PROJECT_CONF.language == "en":
                 answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
             else:
                 answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+
             state = ReporterIntermediateProcessTool.STATE.ERROR
             logger.warning(
                 f"An exception occurred while processing query: {query}. Error: {str(e)}",
                 exc_info=True,
             )
-        report_tool.report_final_answer(query, answer, state)
         return answer
 
 
@@ -119,8 +81,8 @@ if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
     init_kag_config(
-        "3300003", "http://antspg-gz00b-006003007104.sa128-sqa.alipay.net:8887"
+        "4000003", "http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
     )
-    res = SolverMain().invoke(3300003, 4100019, "我上班的时候受伤了，能认定工伤吗？", "2900007", True)
+    res = SolverMain().invoke(4000003, 5000007, "周润发的少年经历介绍下", "3500005", True, host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887")
     print("*" * 80)
     print("The Answer is: ", res)
