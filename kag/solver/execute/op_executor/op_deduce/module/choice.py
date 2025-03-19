@@ -1,7 +1,7 @@
-from typing import Dict
+from typing import Dict, List
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
-from kag.interface.solver.base_model import LogicNode
+from kag.interface.solver.base_model import LFPlan
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.utils import init_prompt_with_fallback
@@ -16,21 +16,14 @@ class ChoiceOp(OpExecutor):
         super().__init__(schema, **kwargs)
         self.prompt = init_prompt_with_fallback("deduce_choice", self.biz_scene)
 
-    def executor(
-        self,
-        nl_query: str,
-        logic_node: LogicNode,
-        req_id: str,
-        kg_graph: KgGraph,
-        process_info: dict,
-        param: dict,
-    ) -> Dict:
+    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
+                 history: List[LFPlan], param: dict) -> Dict:
         # get history qa pair from debug_info
         history_qa_pair = process_info.get("sub_qa_pair", [])
-        input_contents = process_info[logic_node.sub_query].get("input_contents", '')
+        input_contents = process_info[lf_plan.lf_node.sub_query].get("input_contents", '')
         content = input_contents if input_contents else "\n".join([f"Q: {q}\nA: {a}" for q, a in history_qa_pair])
         if_answered, answer = self.llm_module.invoke(
-            {"instruction": logic_node.sub_query, "memory": content},
+            {"instruction": lf_plan.lf_node.sub_query, "memory": content},
             self.prompt,
             with_json_parse=False,
             with_except=True,

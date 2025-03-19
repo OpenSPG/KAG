@@ -3,10 +3,10 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Dict
+from typing import Dict, List
 
 from kag.interface import LLMClient
-from kag.interface.solver.base_model import LogicNode
+from kag.interface.solver.base_model import LFPlan
 from kag.solver.execute.op_executor.op_executor import OpExecutor
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
@@ -30,6 +30,9 @@ class CoderMathOp(OpExecutor):
         )
         if not python_code:
             raise RuntimeError("python code generate failed")
+
+        if "I don't know".lower() in python_code.lower():
+            return "I don't know", None, python_code
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
             temp_file.write(python_code.encode("utf-8"))
@@ -60,13 +63,15 @@ class CoderMathOp(OpExecutor):
             content_l = re.findall('`(.*?)`', content)
         except Exception as e:
             # breakpoint()
-            pass
+            content_l = []
         contents = []
-        for c in content_l:
-            if c in nodes_alias and c in kg_graph.entity_map.keys():
-                values = kg_graph.entity_map[c]
-                c = str(values)
-            contents.append(c)
+        # for c in content_l:
+        #     values = kg_graph.get_answered_alias(c)
+        #     if values is not None:
+        #         c = str(values)
+        #     elif values == "":
+        #         continue
+        #     contents.append(c)
         history_qa_pair = process_info.get("sub_qa_pair", [])
         contents = '\n'.join(contents) if contents else history_qa_pair
         target = logic_node.target if logic_node.target else logic_node.sub_query
@@ -86,23 +91,17 @@ class CoderMathOp(OpExecutor):
             print("code=" + str(code) + ",error=" + str(run_error))
             if 'debug'  not in process_info[logic_node.sub_query]:
                 process_info[logic_node.sub_query]['debug'] = []
-            process_info[logic_node.sub_query]['debug'] .append({
+            process_info[logic_node.sub_query]['debug'].append({
                 'code': code,
                 'rst': rst,
                 'error': run_error
             })
         return "I don't know"
     
-    def executor(
-        self,
-        nl_query: str,
-        logic_node: MathNode,
-        req_id: str,
-        kg_graph: KgGraph,
-        process_info: dict,
-        param: dict,
-    ) -> Dict:
-        result = self.execute_with_retry(logic_node, kg_graph, process_info, req_id, param)
+    def executor(self, nl_query: str, lf_plan: LFPlan, req_id: str, kg_graph: KgGraph, process_info: dict,
+                 history: List[LFPlan], param: dict) -> Dict:
+        result = self.execute_with_retry(lf_plan.lf_node, kg_graph, process_info, req_id, param)
+        lf_plan.res.debug_info = process_info[lf_plan.lf_node.sub_query]['debug']
         return  {
             "if_answered": False if "i don't know" in result.lower() else True,
             "answer": result

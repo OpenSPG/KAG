@@ -2,6 +2,8 @@ import re
 import logging
 from typing import List
 
+from tenacity import retry, stop_after_attempt
+
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import LLMClient, VectorizeModelABC
 from kag.interface import PromptABC
@@ -53,7 +55,7 @@ class DefaultLFPlanner(LFPlannerABC):
 
     # 需要把大模型生成结果记录下来
     def lf_planing(
-        self, question: str, memory: KagMemoryABC = None, llm_output=None
+        self, question: str, memory: KagMemoryABC = None, llm_output=None, **kwargs
     ) -> List[LFPlan]:
         """
         Generates sub-queries and logic forms based on the input question or provided LLM output.
@@ -71,24 +73,17 @@ class DefaultLFPlanner(LFPlannerABC):
             sub_querys, logic_forms = self.generate_logic_form(question)
         return self._parse_lf(question, sub_querys, logic_forms)
 
-    def _split_sub_query(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
-        query_lf_map = {}
-        for n in logic_nodes:
-            if n.sub_query in query_lf_map.keys():
-                query_lf_map[n.sub_query] = query_lf_map[n.sub_query] + [n]
-            else:
-                query_lf_map[n.sub_query] = [n]
+    def _convert_node_to_plan(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
         plan_result = []
-        for k, v in query_lf_map.items():
+        for n in logic_nodes:
             lf_type = "retrieval"
-            for n in v:
-                if n.operator == "deduce":
-                    lf_type = "deduce"
-                    break
-                if n.operator == "math":
-                    lf_type = "math"
-                    break
-            plan_result.append(LFPlan(query=k, lf_nodes=v, sub_query_type=lf_type))
+            if n.operator == "deduce":
+                lf_type = "deduce"
+            elif n.operator == "math":
+                lf_type = "math"
+            elif n.operator == "get":
+                lf_type = "output"
+            plan_result.append(LFPlan(query=n.sub_query, lf_node=n, sub_query_type=lf_type))
         return plan_result
 
     def _process_output_query(self, question, sub_query: str):
@@ -106,8 +101,9 @@ class DefaultLFPlanner(LFPlannerABC):
         parsed_logic_nodes = self.parser.parse_logic_form_set(
             logic_forms, sub_querys, question
         )
-        return self._split_sub_query(parsed_logic_nodes)
+        return self._convert_node_to_plan(parsed_logic_nodes)
 
+    @retry(stop=stop_after_attempt(3))
     def generate_logic_form(self, question: str):
         return self.llm_module.invoke(
             {"question": question},

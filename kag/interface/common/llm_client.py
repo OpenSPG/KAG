@@ -9,14 +9,20 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+from kag.interface.common.rate_limiter import RateLimiter
 
-import json
+try:
+    from json_repair import loads, dumps
+except:
+    from json import loads, dumps
 from typing import Union, Dict, List, Any
 import logging
 import traceback
 from tenacity import retry, stop_after_attempt
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
+from kag.interface.common.kv_store import KVStore
+import hashlib
 
 
 logger = logging.getLogger(__name__)
@@ -24,10 +30,17 @@ logger = logging.getLogger(__name__)
 
 class LLMClient(Registrable):
     """
-    A class that provides methods for performing inference using large language model.
+    A client for interacting with a Language Model (LLM). It optionally utilizes a rate limiter to control the rate of requests.
 
-    This class includes methods to call the model with a prompt, parse the response, and handle batch processing of prompts.
+    Args:
+        rate_limiter (RateLimiter, optional): An instance of a rate limiter to manage the rate of requests to the LLM. Defaults to None.
+        **kwargs: Additional keyword arguments passed to the superclass constructor.
     """
+
+    def __init__(self, rate_limiter: RateLimiter = None, **kwargs):
+        super().__init__(**kwargs)
+        self.kv_store = KVStore()
+        self.rate_limiter = rate_limiter
 
     @retry(stop=stop_after_attempt(3))
     def __call__(self, prompt: Union[str, dict, list]) -> str:
@@ -67,10 +80,18 @@ class LLMClient(Registrable):
         else:
             json_str = res
         try:
-            json_result = json.loads(json_str)
+            json_result = loads(json_str)
         except:
             return res
         return json_result
+
+    def _get_message_key(self, prompt, image_url):
+        str_id = prompt + str(image_url)
+        hash_object = hashlib.sha256(str_id.encode())
+        json_str2 = str_id + "_add_some_salt"
+        hash_object2 = hashlib.sha256(json_str2.encode())
+        message_key = hash_object.hexdigest() + hash_object2.hexdigest()
+        return message_key
 
     def invoke(
         self,
@@ -91,6 +112,8 @@ class LLMClient(Registrable):
         Returns:
             List: Processed result list.
         """
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
         result = []
         prompt = prompt_op.build_prompt(variables)
         logger.debug(f"Prompt: {prompt}")
@@ -98,21 +121,28 @@ class LLMClient(Registrable):
             return result
         response = ""
         try:
+            msg_key = self._get_message_key(prompt=dumps(prompt,sort_keys=True), image_url="")
+            cache_rst, cache_llm_res = self.kv_store.get_value(msg_key)
+            if cache_rst is not None:
+                return cache_rst
             response = (
                 self.call_with_json_parse(prompt=prompt)
                 if with_json_parse
                 else self(prompt)
             )
+            # import pdb;pdb.set_trace()
             logger.debug(f"Response: {response}")
             result = prompt_op.parse_response(response, model=self.model, **variables)
             logger.debug(f"Result: {result}")
         except Exception as e:
             import traceback
+
             logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
                     f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
+        self.kv_store.set_value(key=msg_key, value=(result, response))
 
         return result
 

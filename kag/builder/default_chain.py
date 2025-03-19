@@ -155,7 +155,9 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 if node is None:
                     continue
                 flow_data = execute_node(node, flow_data, key=input_key)
-            return {input_key: flow_data[0]}
+            if len(flow_data) > 0:
+                return {input_key: flow_data[0]}
+            return {input_key: "None"}
 
         reader_output = self.reader.invoke(input_data, key=generate_hash_id(input_data))
         splitter_output = []
