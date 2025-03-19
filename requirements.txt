@@ -45,4 +45,8 @@ zodb
 matplotlib
 PyPDF2
 ruamel.yaml
+json_repair
+gitpython
+pyodps
+aliyun-log-python-sdk==0.8.8
 pyvis

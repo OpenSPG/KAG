@@ -1,9 +1,11 @@
-import os
+import logging
 from typing import List
 
 import numpy as np
 from kag.common.conf import KAG_CONFIG
 from kag.interface import VectorizeModelABC as Vectorizer
+
+logger = logging.getLogger()
 
 
 def cosine_similarity(vector1, vector2):
@@ -37,39 +39,47 @@ class TextSimilarity:
         self.cached_embs = {}
 
     def sentence_encode(self, sentences, is_cached=False):
-        if isinstance(sentences, str):
-            return self.vectorize_model.vectorize(sentences)
-        if not isinstance(sentences, list):
-            return []
-        if len(sentences) == 0:
-            return []
-        ready_list = split_list(sentences)
-        ret = []
-        for text_list in ready_list:
-            tmp_map = {}
-            need_call_emb_text = []
-            for text in text_list:
-                if text in self.cached_embs:
-                    tmp_map[text] = self.cached_embs[text]
-                else:
-                    need_call_emb_text.append(text)
-            if len(need_call_emb_text) > 0:
-                emb_res = self.vectorize_model.vectorize(need_call_emb_text)
-                for text, text_emb in zip(need_call_emb_text, emb_res):
-                    tmp_map[text] = text_emb
-                    if is_cached:
-                        self.cached_embs[text] = text_emb
-            for text in text_list:
-                ret.append(tmp_map[text])
-        return ret
+        try:
+            if isinstance(sentences, str):
+                return self.vectorize_model.vectorize(sentences)
+            if not isinstance(sentences, list):
+                return []
+            if len(sentences) == 0:
+                return []
+            ready_list = split_list(sentences)
+            ret = []
+            for text_list in ready_list:
+                tmp_map = {}
+                need_call_emb_text = []
+                for text in text_list:
+                    if text in self.cached_embs:
+                        tmp_map[text] = self.cached_embs[text]
+                    else:
+                        need_call_emb_text.append(text)
+                if len(need_call_emb_text) > 0:
+                    emb_res = self.vectorize_model.vectorize(need_call_emb_text)
+                    for text, text_emb in zip(need_call_emb_text, emb_res):
+                        tmp_map[text] = text_emb
+                        if is_cached:
+                            self.cached_embs[text] = text_emb
+                for text in text_list:
+                    ret.append(tmp_map[text])
+            return ret
+        except Exception as e:
+            logger.warning(
+                f"sentence_encode failed sentences {sentences}, {e}", exc_info=True
+            )
+            raise e
 
-    def text_sim_result(self, mention, candidates: List[str], topk=1, low_score=0.63):
+    def text_sim_result(
+        self, mention, candidates: List[str], topk=1, low_score=0.63, is_cached=False
+    ):
         """
         output: [(candi_name, candi_score),...]
         """
         if mention is None:
             return []
-        mention_emb = self.sentence_encode(mention)
+        mention_emb = self.sentence_encode(mention, is_cached)
         candidates = [
             cand for cand in candidates if cand is not None and cand.strip() != ""
         ]
