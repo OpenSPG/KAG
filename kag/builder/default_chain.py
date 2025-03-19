@@ -136,6 +136,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         Returns:
             List: The final output from the builder chain.
         """
+
         def collect_reader_outputs(data):
             chunks = []
             subgraphs = []
@@ -149,7 +150,9 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                     for item in data:
                         collect(item)
                 else:
-                    logger.debug(f"expect Chunk and SubGraph nested in tuple and list; found {data.__class__}")
+                    logger.debug(
+                        f"expect Chunk and SubGraph nested in tuple and list; found {data.__class__}"
+                    )
 
             collect(data)
             return chunks, subgraphs
@@ -192,7 +195,9 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
 
         if subgraphs:
             if self.splitter is not None:
-                logger.debug("when reader outputs SubGraph, splitter in chain is ignored; you can split chunks in reader")
+                logger.debug(
+                    "when reader outputs SubGraph, splitter in chain is ignored; you can split chunks in reader"
+                )
             for subgraph in subgraphs:
                 write_outline_subgraph(subgraph)
             splitter_output = chunks

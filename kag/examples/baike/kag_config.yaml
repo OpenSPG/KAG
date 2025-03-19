@@ -49,7 +49,6 @@ kag_builder_pipeline:
       type: txt_reader # kag.builder.component.reader.txt_reader.TXTReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
-      similarity_threshold: 0.9
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
       split_length: 300
@@ -88,7 +87,7 @@ fuzzy_kg_retriever: &fuzzy_kg_retriever
   graph_api: *graph_api
 
 chunk_retriever: &chunk_retriever
-  type: default_chunk_retriever # kag.solver.retriever.impl.default_fuzzy_kg_retriever.DefaultFuzzyKgRetriever
+  type: default_chunk_retriever # kag.solver.retriever.impl.default_chunk_retrieval.DefaultChunkRetriever
   llm_client: *chat_llm
   recall_num: 10
   rerank_topk: 10

@@ -9,8 +9,12 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+from kag.interface.common.rate_limiter import RateLimiter
 
-import json
+try:
+    from json_repair import loads
+except:
+    from json import loads
 from typing import Union, Dict, List, Any
 import logging
 import traceback
@@ -23,6 +27,18 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient(Registrable):
+    """
+    A client for interacting with a Language Model (LLM). It optionally utilizes a rate limiter to control the rate of requests.
+
+    Args:
+        rate_limiter (RateLimiter, optional): An instance of a rate limiter to manage the rate of requests to the LLM. Defaults to None.
+        **kwargs: Additional keyword arguments passed to the superclass constructor.
+    """
+
+    def __init__(self, rate_limiter: RateLimiter = None, **kwargs):
+        super().__init__(**kwargs)
+        self.rate_limiter = rate_limiter
+
     """
     A class that provides methods for performing inference using large language model.
 
@@ -67,7 +83,7 @@ class LLMClient(Registrable):
         else:
             json_str = res
         try:
-            json_result = json.loads(json_str)
+            json_result = loads(json_str)
         except:
             return res
         return json_result
@@ -91,6 +107,8 @@ class LLMClient(Registrable):
         Returns:
             List: Processed result list.
         """
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
         result = []
         prompt = prompt_op.build_prompt(variables)
         logger.debug(f"Prompt: {prompt}")
@@ -103,17 +121,18 @@ class LLMClient(Registrable):
                 if with_json_parse
                 else self(prompt)
             )
-            logger.debug(f"Response: {response}")
+            # logger.debug(f"Response: {response}")
             result = prompt_op.parse_response(response, model=self.model, **variables)
             logger.debug(f"Result: {result}")
         except Exception as e:
             import traceback
 
-            logger.error(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
             if with_except:
                 raise RuntimeError(
-                    f"LLM invoke exception, info: {e}\nllm input: {input}\nllm output: {response}"
+                    f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
+
         return result
 
     def batch(
@@ -140,6 +159,7 @@ class LLMClient(Registrable):
             return self.invoke(variables, prompt_op, with_json_parse=with_json_parse)
 
         for idx, prompt in enumerate(prompts, start=0):
+            response = ""
             logger.debug(f"Prompt_{idx}: {prompt}")
             try:
                 response = (
@@ -154,7 +174,7 @@ class LLMClient(Registrable):
                 logger.debug(f"Result_{idx}: {result}")
                 results.extend(result)
             except Exception as e:
-                logger.error(f"Error processing prompt {idx}: {e}")
+                logger.error(f"Error processing prompt {idx}: {e}. response={response}")
                 logger.debug(traceback.format_exc())
                 continue
         return results

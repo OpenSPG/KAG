@@ -98,7 +98,7 @@ class KGWriter(SinkWriterABC):
 
         return graph
 
-    def invoke(
+    def _invoke(
         self,
         input: Input,
         alter_operation: str = AlterOperationEnum.Upsert,

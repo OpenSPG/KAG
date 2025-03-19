@@ -30,7 +30,6 @@ class Reranker:
         Constructor for initializing the reranker class.
         Currently, there are no specific initialization parameters or operations.
         """
-        pass
 
     def rerank(self, queries: List[str], passages: List[str]):
         """

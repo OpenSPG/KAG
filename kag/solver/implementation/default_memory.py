@@ -4,6 +4,7 @@ from tenacity import retry, stop_after_attempt
 from kag.interface import PromptABC
 from kag.interface import LLMClient
 from kag.interface.solver.kag_memory_abc import KagMemoryABC
+from kag.interface.solver.base_model import LFExecuteResult
 from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
@@ -33,6 +34,8 @@ class DefaultMemory(KagMemoryABC):
         self.exact_answer = []
         self.instruction_set = []
 
+        self.lf_res: LFExecuteResult = None
+
     @retry(stop=stop_after_attempt(3))
     def _verifier(self, supporting_fact, sub_instruction):
         res = self.llm_module.invoke(
@@ -59,7 +62,20 @@ class DefaultMemory(KagMemoryABC):
         if evidence not in self.evidence_memory:
             self.evidence_memory.append(evidence)
 
-    def save_memory(self, solved_answer, supporting_fact, instruction):
+    def has_break(self):
+        if not self.lf_res:
+            return True
+        for lf in self.lf_res.sub_plans:
+            if not lf.res:
+                return True
+            if not lf.res.if_answered:
+                return True
+        return False
+
+    def save_memory(
+        self, solved_answer, supporting_fact, instruction, lf_res: LFExecuteResult
+    ):
+        self.lf_res = lf_res
         if solved_answer:
             self.exact_answer.append(solved_answer)
             return

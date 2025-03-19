@@ -30,7 +30,7 @@ from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
-from kag.builder.model.sub_graph import SubGraph, Node, Edge
+from kag.builder.model.sub_graph import SubGraph
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,15 @@ class MarkDownReader(ReaderABC):
     ALL_LEVELS = [f"h{x}" for x in range(1, 7)]
     TABLE_CHUCK_FLAG = "<<<table_chuck>>>"
 
-    def __init__(self, cut_depth: int = 3, llm: LLMClient = None, kg_writer: KGWriter = None, reserve_meta: bool = False, length_splitter: LengthSplitter = None, **kwargs):
+    def __init__(
+        self,
+        cut_depth: int = 3,
+        llm: LLMClient = None,
+        kg_writer: KGWriter = None,
+        reserve_meta: bool = False,
+        length_splitter: LengthSplitter = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.cut_depth = int(cut_depth)
         self.llm = llm
@@ -75,11 +83,15 @@ class MarkDownReader(ReaderABC):
 
     @property
     def output_types(self):
-        return Tuple[List[Chunk], Dict[MarkdownNode, Chunk], MarkdownNode, Tuple[SubGraph, dict]]
+        return Tuple[
+            List[Chunk], Dict[MarkdownNode, Chunk], MarkdownNode, Tuple[SubGraph, dict]
+        ]
 
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
-    ) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]:
+    ) -> Tuple[
+        List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]
+    ]:
         # Convert Markdown to HTML with additional extensions for lists
         html = markdown.markdown(
             content, extensions=["tables", "nl2br", "sane_lists", "fenced_code"]
@@ -193,24 +205,28 @@ class MarkDownReader(ReaderABC):
                 try:
                     # Add converters parameter to handle escaped strings
                     df = pd.read_html(
-                        io.StringIO(table_html), 
+                        io.StringIO(table_html),
                         header=0,
-                        converters={i: str for i in range(20)}  # Convert all columns to string
+                        converters={
+                            i: str for i in range(20)
+                        },  # Convert all columns to string
                     )[0]
-                    
+
                     # Clean up the data by removing escaped quotes
-                    df = df.applymap(lambda x: str(x).strip('"\\"') if isinstance(x, str) else x)
-                    
+                    df = df.applymap(
+                        lambda x: str(x).strip('"\\"') if isinstance(x, str) else x
+                    )
+
                     # Replace 'Unnamed' headers with empty string
-                    df.columns = ['' if 'Unnamed' in str(col) else str(col).strip('"\\"') for col in df.columns]
+                    df.columns = [
+                        "" if "Unnamed" in str(col) else str(col).strip('"\\"')
+                        for col in df.columns
+                    ]
                     headers = df.columns.tolist()
 
                     # Capture table context (text before and after the table)
-                    table_context = {
-                        "before_text": "",
-                        "after_text": ""
-                    }
-                    
+                    table_context = {"before_text": "", "after_text": ""}
+
                     # Get text before table
                     prev_texts = []
                     prev_element = element.find_previous_sibling()
@@ -220,7 +236,9 @@ class MarkDownReader(ReaderABC):
                         if prev_element.name == "p":
                             prev_texts.insert(0, process_text_with_links(prev_element))
                         prev_element = prev_element.find_previous_sibling()
-                    table_context["before_text"] = "\n".join(prev_texts) if prev_texts else ""
+                    table_context["before_text"] = (
+                        "\n".join(prev_texts) if prev_texts else ""
+                    )
 
                     # Get text after table
                     next_texts = []
@@ -231,18 +249,18 @@ class MarkDownReader(ReaderABC):
                         if next_element.name == "p":
                             next_texts.append(process_text_with_links(next_element))
                         next_element = next_element.find_next_sibling()
-                    table_context["after_text"] = "\n".join(next_texts) if next_texts else ""
+                    table_context["after_text"] = (
+                        "\n".join(next_texts) if next_texts else ""
+                    )
 
                     # Add table to current node with context
                     if stack[-1].title != "root":
-                        stack[-1].tables.append({
-                            "headers": headers, 
-                            "data": df,
-                            "context": table_context
-                        })
+                        stack[-1].tables.append(
+                            {"headers": headers, "data": df, "context": table_context}
+                        )
 
-                except Exception as e:
-                    logger.warning(f"Failed to parse table: {e}")
+                except Exception:
+                    # logger.warning(f"Failed to parse table: {e}")
                     continue
 
             elif element.name == "p":
@@ -261,7 +279,7 @@ class MarkDownReader(ReaderABC):
             # Split long outputs using LengthSplitter
             new_outputs = []
             new_node_chunk_map = {}
-            
+
             for output in outputs:
                 if len(output.content) > 5000:
                     # Split long chunks while maintaining parent-child relationships
@@ -269,10 +287,14 @@ class MarkDownReader(ReaderABC):
                     for chunk in split_chunks:
                         chunk.parent_id = output.parent_id
                     new_outputs.extend(split_chunks)
-                    
+
                     # Update node_chunk_map for split chunks
                     # Find all nodes that were mapped to this output
-                    related_nodes = [node for node, chunk in node_chunk_map.items() if chunk.id == output.id]
+                    related_nodes = [
+                        node
+                        for node, chunk in node_chunk_map.items()
+                        if chunk.id == output.id
+                    ]
                     for node in related_nodes:
                         # Map each node to all split chunks
                         if node not in new_node_chunk_map:
@@ -292,9 +314,12 @@ class MarkDownReader(ReaderABC):
 
         # Convert to SubGraph using the function from markdown_to_graph
         from kag.builder.component.reader.markdown_to_graph import convert_to_subgraph
+
         # Flatten the node_chunk_map to use first chunk for each node when converting to subgraph
         if self.length_splitter:
-            flat_node_chunk_map = {node: chunks[0] for node, chunks in new_node_chunk_map.items()}
+            flat_node_chunk_map = {
+                node: chunks[0] for node, chunks in new_node_chunk_map.items()
+            }
         else:
             flat_node_chunk_map = node_chunk_map
         subgraph_and_stats = convert_to_subgraph(root, outputs, flat_node_chunk_map)
@@ -316,7 +341,7 @@ class MarkDownReader(ReaderABC):
             """Convert table data to markdown format"""
             if not headers or data.empty:
                 return ""
-            data:pd.DataFrame = data
+            data: pd.DataFrame = data
             data = data.fillna("")
             data = data.astype(str)
             return "\n" + data.to_markdown(index=False) + "\n"
@@ -361,7 +386,9 @@ class MarkDownReader(ReaderABC):
             full_title = " / ".join(current_titles)
 
             # Store parent content separately
-            parent_content = "\n".join(filter(None, parent_contents)) if parent_contents else None
+            parent_content = (
+                "\n".join(filter(None, parent_contents)) if parent_contents else None
+            )
 
             # Current node's own content and child content
             current_content = [node.content] if node.content else []
@@ -383,7 +410,9 @@ class MarkDownReader(ReaderABC):
             all_tables = []
             if node.tables:
                 for i, table in enumerate(node.tables):
-                    table_content = convert_table_to_markdown(table["headers"], table["data"])
+                    table_content = convert_table_to_markdown(
+                        table["headers"], table["data"]
+                    )
                     table_chunk = Chunk(
                         id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
                         parent_id=current_output.id,
@@ -392,9 +421,13 @@ class MarkDownReader(ReaderABC):
                         type=ChunkTypeEnum.Table,
                         metadata={
                             # "table_data": table,
-                            "before_text": table.get("context", {}).get("before_text", ""),
-                            "after_text": table.get("context", {}).get("after_text", "")
-                        }
+                            "before_text": table.get("context", {}).get(
+                                "before_text", ""
+                            ),
+                            "after_text": table.get("context", {}).get(
+                                "after_text", ""
+                            ),
+                        },
                     )
                     outputs.append(table_chunk)
                     all_tables.append(table)
@@ -402,7 +435,9 @@ class MarkDownReader(ReaderABC):
             for child in node.children:
                 child_tables, _ = collect_tables(child)
                 for i, table in enumerate(child_tables, start=len(all_tables)):
-                    table_content = convert_table_to_markdown(table["headers"], table["data"])
+                    table_content = convert_table_to_markdown(
+                        table["headers"], table["data"]
+                    )
                     table_chunk = Chunk(
                         id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
                         parent_id=current_output.id,
@@ -411,9 +446,13 @@ class MarkDownReader(ReaderABC):
                         type=ChunkTypeEnum.Table,
                         metadata={
                             # "table_data": table,
-                            "before_text": table.get("context", {}).get("before_text", ""),
-                            "after_text": table.get("context", {}).get("after_text", "")
-                        }
+                            "before_text": table.get("context", {}).get(
+                                "before_text", ""
+                            ),
+                            "after_text": table.get("context", {}).get(
+                                "after_text", ""
+                            ),
+                        },
                     )
                     outputs.append(table_chunk)
                     all_tables.append(table)
@@ -422,7 +461,9 @@ class MarkDownReader(ReaderABC):
         elif node.level < self.cut_depth:
             # Check if any subtree contains target level nodes
             has_target_level = False
-            current_contents = parent_contents + ([node.content] if node.content else [])
+            current_contents = parent_contents + (
+                [node.content] if node.content else []
+            )
 
             for child in node.children:
                 child_outputs, child_map = self._convert_to_outputs(
@@ -436,9 +477,13 @@ class MarkDownReader(ReaderABC):
             # If no target level nodes found and current node is not root, output current node
             if not has_target_level and node.title != "root":
                 full_title = " / ".join(current_titles)
-                
+
                 # Store parent content separately
-                parent_content = "\n".join(filter(None, parent_contents)) if parent_contents else None
+                parent_content = (
+                    "\n".join(filter(None, parent_contents))
+                    if parent_contents
+                    else None
+                )
 
                 # Current node's own content and child content
                 current_content = [node.content] if node.content else []
@@ -460,26 +505,9 @@ class MarkDownReader(ReaderABC):
                 all_tables = []
                 if node.tables:
                     for i, table in enumerate(node.tables):
-                        table_content = convert_table_to_markdown(table["headers"], table["data"])
-                        table_chunk = Chunk(
-                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                            parent_id=current_output.id,
-                            name=f"{full_title} / Table {i+1}",
-                            content=table_content,
-                            type=ChunkTypeEnum.Table,
-                            metadata={
-                                # "table_data": table, 
-                                "before_text": table.get("context", {}).get("before_text", ""),
-                                "after_text": table.get("context", {}).get("after_text", "")
-                            }
+                        table_content = convert_table_to_markdown(
+                            table["headers"], table["data"]
                         )
-                        outputs.append(table_chunk)
-                        all_tables.append(table)
-
-                for child in node.children:
-                    child_tables, _ = collect_tables(child)
-                    for i, table in enumerate(child_tables, start=len(all_tables)):
-                        table_content = convert_table_to_markdown(table["headers"], table["data"])
                         table_chunk = Chunk(
                             id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
                             parent_id=current_output.id,
@@ -488,16 +516,49 @@ class MarkDownReader(ReaderABC):
                             type=ChunkTypeEnum.Table,
                             metadata={
                                 # "table_data": table,
-                                "before_text": table.get("context", {}).get("before_text", ""),
-                                "after_text": table.get("context", {}).get("after_text", "")
-                            }
+                                "before_text": table.get("context", {}).get(
+                                    "before_text", ""
+                                ),
+                                "after_text": table.get("context", {}).get(
+                                    "after_text", ""
+                                ),
+                            },
+                        )
+                        outputs.append(table_chunk)
+                        all_tables.append(table)
+
+                for child in node.children:
+                    child_tables, _ = collect_tables(child)
+                    for i, table in enumerate(child_tables, start=len(all_tables)):
+                        table_content = convert_table_to_markdown(
+                            table["headers"], table["data"]
+                        )
+                        table_chunk = Chunk(
+                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                            parent_id=current_output.id,
+                            name=f"{full_title} / Table {i+1}",
+                            content=table_content,
+                            type=ChunkTypeEnum.Table,
+                            metadata={
+                                # "table_data": table,
+                                "before_text": table.get("context", {}).get(
+                                    "before_text", ""
+                                ),
+                                "after_text": table.get("context", {}).get(
+                                    "after_text", ""
+                                ),
+                            },
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)
 
         return outputs, node_chunk_map
 
-    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]:
+    def _invoke(
+        self, input: Input, **kwargs
+    ) -> Tuple[
+        List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]
+    ]:
         """
         Processes a Markdown file and returns its content as structured chunks.
 
@@ -512,20 +573,46 @@ class MarkDownReader(ReaderABC):
                 - The root MarkdownNode of the document tree
                 - A SubGraph representation of the document structure
         """
-        file_path: str = input
 
-        if not file_path.endswith(".md"):
-            raise ValueError(f"Please provide a markdown file, got {file_path}")
+        if isinstance(input, str):
+            file_path = input
+            id = input
 
-        if not os.path.isfile(file_path):
-            raise FileNotFoundError(f"The file {file_path} does not exist.")
+            if not file_path.endswith(".md"):
+                raise ValueError(f"Please provide a markdown file, got {file_path}")
 
-        with open(file_path, "r", encoding="utf-8") as reader:
-            content = reader.read()
+            if not os.path.isfile(file_path):
+                raise FileNotFoundError(f"The file {file_path} does not exist.")
 
-        basename, _ = os.path.splitext(os.path.basename(file_path))
+            with open(file_path, "r", encoding="utf-8") as reader:
+                content = reader.read()
+            basename, _ = os.path.splitext(os.path.basename(file_path))
 
-        chunks, subgraph = self.solve_content(input, basename, content)
+        elif isinstance(input, Chunk):
+            # Handle Chunk type separately
+            content = input.content
+            basename = input.name
+            id = input.id
+        elif isinstance(input, list):
+            if len(input) == 0:
+                raise ValueError("Input list is empty")
+            else:
+                if isinstance(input[0], str):
+                    content = input[0]
+                    basename = input[0]
+                    id = input[0]
+                elif isinstance(input[0], Chunk):
+                    content = input[0].content
+                    basename = input[0].name
+                    id = input[0].id
+                else:
+                    raise TypeError(
+                        f"Expected file path or Chunk, got {type(input[0]).__name__}"
+                    )
+        else:
+            raise TypeError(f"Expected file path or Chunk, got {type(input).__name__}")
+
+        chunks, subgraph = self.solve_content(id, basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
@@ -553,7 +640,11 @@ class YuequeReader(MarkDownReader):
     extract their content, and convert it into a list of Chunk objects.
     """
 
-    def _invoke(self, input: Input, **kwargs) -> Tuple[List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]]:
+    def _invoke(
+        self, input: Input, **kwargs
+    ) -> Tuple[
+        List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]
+    ]:
         """
         Processes the input Yueque document and converts it into a list of Chunk objects.
 
@@ -583,10 +674,22 @@ class YuequeReader(MarkDownReader):
         chunks, subgraph = self.solve_content(id, title, content)
         return chunks
 
+
 if __name__ == "__main__":
     from kag.builder.component.reader.markdown_to_graph import visualize_graph
 
-    reader = ReaderABC.from_config({"type": "md", "cut_depth": 2, "kg_writer": {"type": "kg", "project_id": 1}, "length_splitter": {"type": "length_splitter", "split_length": 5000, "window_length": 500}})
+    reader = ReaderABC.from_config(
+        {
+            "type": "md",
+            "cut_depth": 2,
+            "kg_writer": {"type": "kg", "project_id": 1},
+            "length_splitter": {
+                "type": "length_splitter",
+                "split_length": 5000,
+                "window_length": 500,
+            },
+        }
+    )
     file_path = "/Users/zhangxinhong.zxh/Downloads/技术中心财务报销规定.md"
     chunks, subgraph = reader.invoke(file_path)
     visualize_graph(subgraph)

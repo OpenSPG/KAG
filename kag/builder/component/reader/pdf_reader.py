@@ -12,7 +12,7 @@
 
 import os
 import re
-from typing import List, Sequence, Union, Dict, Tuple
+from typing import List, Union, Dict, Tuple
 
 import pdfminer.layout  # noqa
 
@@ -26,7 +26,6 @@ from kag.interface import LLMClient
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
-from pdfminer.high_level import extract_text
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTPage
 from pdfminer.pdfparser import PDFParser
@@ -212,7 +211,9 @@ class PDFReader(ReaderABC):
                 final_content.append((outline[0], outline[1], start, -1, content))
         return final_content
 
-    def convert_finel_content_to_chunks(self, final_content) -> Tuple[List[Chunk], SubGraph]:
+    def convert_finel_content_to_chunks(
+        self, final_content
+    ) -> Tuple[List[Chunk], SubGraph]:
         def create_chunk(title, content, basename):
             chunk = Chunk(
                 id=generate_hash_id(f"{basename}#{title}"),
@@ -222,7 +223,11 @@ class PDFReader(ReaderABC):
             )
             # Apply length splitter if configured and content is too long
             if self.length_splitter:
-                split_chunks = self.length_splitter.slide_window_chunk(chunk,self.length_splitter.split_length,self.length_splitter.window_length)
+                split_chunks = self.length_splitter.slide_window_chunk(
+                    chunk,
+                    self.length_splitter.split_length,
+                    self.length_splitter.window_length,
+                )
                 for split_chunk in split_chunks:
                     split_chunk.parent_id = chunk.id
                 return split_chunks
@@ -235,42 +240,45 @@ class PDFReader(ReaderABC):
         node_map = {}  # Track created nodes by ID
         chunk_nodes = {}  # Track chunk nodes by their IDs
 
-        def add_bidirectional_edge(from_node: Node, to_node: Node, label: str, properties: Dict = None):
+        def add_bidirectional_edge(
+            from_node: Node, to_node: Node, label: str, properties: Dict = None
+        ):
             """Helper function to add bidirectional edges"""
             if properties is None:
                 properties = {}
-                
+
             # Forward edge
-            edges.append(Edge(
-                _id="",
-                from_node=from_node,
-                to_node=to_node,
-                label=label,
-                properties=properties.copy()
-            ))
-            
+            edges.append(
+                Edge(
+                    _id="",
+                    from_node=from_node,
+                    to_node=to_node,
+                    label=label,
+                    properties=properties.copy(),
+                )
+            )
+
             # Backward edge
             reverse_label = {
                 "hasChild": "hasParent",
                 "hasContent": "belongsToTitle",
             }.get(label, f"reverse_{label}")
-            
-            edges.append(Edge(
-                _id="",
-                from_node=to_node,
-                to_node=from_node,
-                label=reverse_label,
-                properties=properties.copy()
-            ))
+
+            edges.append(
+                Edge(
+                    _id="",
+                    from_node=to_node,
+                    to_node=from_node,
+                    label=reverse_label,
+                    properties=properties.copy(),
+                )
+            )
 
         # Create root node using filename
         basename = os.path.splitext(os.path.basename(self.fd.name))[0]
         root_node_id = f"node_root_{basename}"
         root_node = Node(
-            _id=root_node_id,
-            name=basename,
-            label="Title",
-            properties={"level": "0"}
+            _id=root_node_id, name=basename, label="Title", properties={"level": "0"}
         )
         nodes.append(root_node)
         node_map[root_node_id] = root_node
@@ -286,7 +294,7 @@ class PDFReader(ReaderABC):
                     _id=title_node_id,
                     name=title,
                     label="Title",
-                    properties={"level": str(level)}
+                    properties={"level": str(level)},
                 )
                 nodes.append(title_node)
                 node_map[title_node_id] = title_node
@@ -301,7 +309,7 @@ class PDFReader(ReaderABC):
                     label="Chunk",
                     properties={
                         "content": chunk.content,
-                    }
+                    },
                 )
                 nodes.append(chunk_node)
                 chunk_nodes[chunk.id] = chunk_node
@@ -313,7 +321,9 @@ class PDFReader(ReaderABC):
             if level == 0:
                 level_map[0] = chunks[-1]  # Use last chunk as level marker
                 # Connect level 0 titles to root
-                add_bidirectional_edge(root_node, title_node, "hasChild", {"level": "1"})
+                add_bidirectional_edge(
+                    root_node, title_node, "hasChild", {"level": "1"}
+                )
             else:
                 # Try to find parent in previous levels
                 parent_found = False
@@ -324,21 +334,25 @@ class PDFReader(ReaderABC):
                             level_map[parent_level].sub_chunks.append(chunk)
                         # Add title hierarchy relationship
                         parent_chunk = level_map[parent_level]
-                        parent_title_node = node_map[f"node_{hash(parent_chunk.name.split('#')[1])}"]
+                        parent_title_node = node_map[
+                            f"node_{hash(parent_chunk.name.split('#')[1])}"
+                        ]
                         add_bidirectional_edge(
                             parent_title_node,
                             title_node,
                             "hasChild",
-                            {"level": str(level)}
+                            {"level": str(level)},
                         )
                         parent_found = True
                         break
                     parent_level -= 1
-                
+
                 # If no parent found, connect to root
                 if not parent_found:
-                    add_bidirectional_edge(root_node, title_node, "hasChild", {"level": str(level)})
-                
+                    add_bidirectional_edge(
+                        root_node, title_node, "hasChild", {"level": str(level)}
+                    )
+
                 level_map[level] = chunks[-1]  # Use last chunk as level marker
 
         subgraph = SubGraph(nodes=nodes, edges=edges)
@@ -508,7 +522,9 @@ class PDFReader(ReaderABC):
                 )
                 chunks, subgraph = self.convert_finel_content_to_chunks(final_content)
 
-            return chunks, subgraph if 'subgraph' in locals() else SubGraph(nodes=[], edges=[])
+            return chunks, subgraph if "subgraph" in locals() else SubGraph(
+                nodes=[], edges=[]
+            )
 
         except Exception as e:
             raise RuntimeError(f"Error loading PDF file: {e}")
@@ -518,7 +534,17 @@ class PDFReader(ReaderABC):
 
 
 if __name__ == "__main__":
-    pdf_reader = ReaderABC.from_config({"type": "pdf_reader", "length_splitter": {"type": "length_splitter", "split_length": 50,"window_length": 10,"language": "zh"}})
+    pdf_reader = ReaderABC.from_config(
+        {
+            "type": "pdf_reader",
+            "length_splitter": {
+                "type": "length_splitter",
+                "split_length": 50,
+                "window_length": 10,
+                "language": "zh",
+            },
+        }
+    )
     pdf_path = os.path.join(
         os.path.dirname(__file__), "../../../../tests/unit/builder/data/aiwen.pdf"
     )

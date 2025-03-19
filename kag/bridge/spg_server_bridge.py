@@ -16,7 +16,6 @@ from kag.common.conf import KAGConstants, init_env
 
 
 def init_kag_config(project_id: str, host_addr: str):
-
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = project_id
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = host_addr
     init_env()
@@ -25,6 +24,16 @@ def init_kag_config(project_id: str, host_addr: str):
 class SPGServerBridge:
     def __init__(self):
         pass
+
+    def run_scanner(self, config, input_data):
+        if isinstance(config, str):
+            config = json.loads(config)
+        scanner_config = config["scanner"]
+        scanner = interface.ScannerABC.from_config(scanner_config)
+        output = []
+        for data in scanner.generate(input_data):
+            output.append(data)
+        return output
 
     def run_reader(self, config, input_data):
         if isinstance(config, str):
@@ -47,3 +56,44 @@ class SPGServerBridge:
         if hasattr(instance.input_types, "from_dict"):
             input_data = instance.input_types.from_dict(input_data)
         return [x.to_dict() for x in instance.invoke(input_data, write_ckpt=False)]
+
+    def run_llm_config_check(self, llm_config):
+        from kag.common.llm.llm_config_checker import LLMConfigChecker
+
+        return LLMConfigChecker().check(llm_config)
+
+    def run_vectorizer_config_check(self, vec_config):
+        from kag.common.vectorize_model.vectorize_model_config_checker import (
+            VectorizeModelConfigChecker,
+        )
+
+        return VectorizeModelConfigChecker().check(vec_config)
+
+    def run_builder(self, config, input):
+        from kag.builder.main_builder import BuilderMain
+
+        if isinstance(config, str):
+            config = json.loads(config)
+        builder_main = BuilderMain(config)
+        builder_main.invoke(input)
+
+    def run_solver(
+        self,
+        project_id,
+        session_id,
+        task_id,
+        query,
+        func_name="invoke",
+        is_report=True,
+        host_addr="http://127.0.0.1:8887",
+    ):
+        from kag.solver.main_solver import SolverMain
+
+        return getattr(SolverMain(), func_name)(
+            project_id=project_id,
+            task_id=task_id,
+            session_id=session_id,
+            query=query,
+            is_report=is_report,
+            host_addr=host_addr,
+        )

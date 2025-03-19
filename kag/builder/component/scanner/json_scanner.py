@@ -110,4 +110,17 @@ class JSONScanner(ScannerABC):
 
         if isinstance(corpus, dict):
             corpus = [corpus]
+
+        # Handle data sharding if multiple shards are specified
+        if self.sharding_info.shard_count > 1:
+            total_items = len(corpus)
+            shard_size = total_items // self.sharding_info.shard_count
+            start_idx = self.sharding_info.shard_id * shard_size
+            end_idx = (
+                start_idx + shard_size
+                if self.sharding_info.shard_id < self.sharding_info.shard_count - 1
+                else total_items
+            )
+            corpus = corpus[start_idx:end_idx]
+
         return corpus

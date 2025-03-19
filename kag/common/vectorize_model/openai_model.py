@@ -13,6 +13,16 @@ from typing import Union, Iterable
 from openai import OpenAI, AzureOpenAI
 from kag.interface import VectorizeModelABC, EmbeddingVector
 from typing import Callable
+import logging
+from tenacity import retry, stop_after_attempt
+
+import time
+import concurrent.futures
+import matplotlib.pyplot as plt
+
+
+logger = logging.getLogger(__name__)
+
 
 @VectorizeModelABC.register("openai")
 class OpenAIVectorizeModel(VectorizeModelABC):
@@ -42,7 +52,10 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         self.model = model
         self.timeout = timeout
         self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.base_url = base_url
+        self.api_key = api_key
 
+    @retry(stop=stop_after_attempt(3))
     def vectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
@@ -55,9 +68,50 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
-        results = self.client.embeddings.create(
-            input=texts, model=self.model, timeout=self.timeout
-        )
+
+        try:
+
+            # Handle empty strings in the input
+            if isinstance(texts, list):
+                # Create a map of original indices to track empty strings
+                empty_indices = {i: text.strip() == "" for i, text in enumerate(texts)}
+                # Filter out empty strings for the API call
+                filtered_texts = [
+                    text for i, text in enumerate(texts) if not empty_indices[i]
+                ]
+
+                if not filtered_texts:
+                    return [[] for _ in texts]  # Return empty vectors for all inputs
+
+                results = self.client.embeddings.create(
+                    input=filtered_texts, model=self.model, timeout=self.timeout
+                )
+
+                # Reconstruct the results with empty lists for empty strings
+                embeddings = [item.embedding for item in results.data]
+                full_results = []
+                embedding_idx = 0
+
+                for i in range(len(texts)):
+                    if empty_indices[i]:
+                        full_results.append([])  # Empty embedding for empty string
+                    else:
+                        full_results.append(embeddings[embedding_idx])
+                        embedding_idx += 1
+
+                return full_results
+            elif isinstance(texts, str) and not texts.strip():
+                return []  # Return empty vector for empty string
+            else:
+                results = self.client.embeddings.create(
+                    input=texts, model=self.model, timeout=self.timeout
+                )
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            logger.error(f"input: {texts}")
+            logger.error(f"model: {self.model}")
+            logger.error(f"timeout: {self.timeout}")
+            return None
         results = [item.embedding for item in results.data]
         if isinstance(texts, str):
             assert len(results) == 1
@@ -66,11 +120,12 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             assert len(results) == len(texts)
             return results
 
+
 @VectorizeModelABC.register("azure_openai")
 class AzureOpenAIVectorizeModel(VectorizeModelABC):
-    ''' A class that extends the VectorizeModelABC base class.
+    """A class that extends the VectorizeModelABC base class.
     It invokes Azure OpenAI or Azure OpenAI-compatible embedding services to convert texts into embedding vectors.
-    '''
+    """
 
     def __init__(
         self,
@@ -133,3 +188,102 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
         else:
             assert len(results) == len(texts)
             return results
+
+
+def test_single_request(client):
+    """测试单个请求"""
+    start_time = time.time()
+    client.vectorize("Hello, world!")
+    return time.time() - start_time
+
+
+def test_concurrent_requests(client, num_requests, max_workers):
+    """测试并发请求"""
+    texts = [f"Hello, world! {i}" for i in range(num_requests)]
+    start_time = time.time()
+
+    results = []
+    success_count = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_text = {
+            executor.submit(client.vectorize, text): text for text in texts
+        }
+        for future in concurrent.futures.as_completed(future_to_text):
+            try:
+                result = future.result()
+                success_count += 1
+                results.append(result)
+            except Exception as e:
+                print(f"请求失败: {e}")
+
+    total_time = time.time() - start_time
+    return total_time, success_count, num_requests
+
+
+def run_concurrency_test():
+    # 创建客户端
+    client = VectorizeModelABC.from_config(
+        {
+            "api_key": "",
+            "base_url": "https://api.siliconflow.cn/v1/",
+            "model": "BAAI/bge-m3",
+            "type": "openai",
+        }
+    )
+
+    # 测试单个请求的响应时间
+    single_request_time = test_single_request(client)
+    print(f"单个请求响应时间: {single_request_time:.4f}秒")
+
+    # 测试不同并发度
+    concurrency_levels = [1, 5, 10, 20, 50, 100]
+    total_requests = 100  # 每个并发度总共发送的请求数
+
+    times = []
+    success_rates = []
+    throughputs = []
+
+    for concurrency in concurrency_levels:
+        print(f"\n测试并发度: {concurrency}")
+        total_time, success_count, total = test_concurrent_requests(
+            client, total_requests, concurrency
+        )
+        success_rate = (success_count / total) * 100
+        throughput = success_count / total_time if total_time > 0 else 0
+
+        times.append(total_time)
+        success_rates.append(success_rate)
+        throughputs.append(throughput)
+
+        print(f"总时间: {total_time:.2f}秒")
+        print(f"成功率: {success_rate:.2f}%")
+        print(f"吞吐量: {throughput:.2f}请求/秒")
+
+    # 绘制结果图表
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
+
+    ax1.plot(concurrency_levels, times, "o-")
+    ax1.set_xlabel("并发度")
+    ax1.set_ylabel("总时间 (秒)")
+    ax1.set_title("并发度 vs 总时间")
+    ax1.grid(True)
+
+    ax2.plot(concurrency_levels, success_rates, "o-")
+    ax2.set_xlabel("并发度")
+    ax2.set_ylabel("成功率 (%)")
+    ax2.set_title("并发度 vs 成功率")
+    ax2.grid(True)
+
+    ax3.plot(concurrency_levels, throughputs, "o-")
+    ax3.set_xlabel("并发度")
+    ax3.set_ylabel("吞吐量 (请求/秒)")
+    ax3.set_title("并发度 vs 吞吐量")
+    ax3.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("concurrency_test_results.png")
+    plt.show()
+
+
+if __name__ == "__main__":
+    run_concurrency_test()

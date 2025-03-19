@@ -122,7 +122,6 @@ class ExternalGraphLoaderABC(BuilderComponent):
         Returns:
             Nodes in the graph that match the entity.
         """
-        pass
 
     @property
     def input_types(self):

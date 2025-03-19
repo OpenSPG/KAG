@@ -16,6 +16,7 @@ from openai import OpenAI, AzureOpenAI
 import logging
 
 from kag.interface import LLMClient
+from kag.interface.common.rate_limiter import RateLimiter
 from tenacity import retry, stop_after_attempt
 from typing import Callable
 
@@ -25,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 AzureADTokenProvider = Callable[[], str]
 
+
 @LLMClient.register("maas")
 @LLMClient.register("openai")
-
 class OpenAIClient(LLMClient):
     """
     A client class for interacting with the OpenAI API.
@@ -44,6 +45,8 @@ class OpenAIClient(LLMClient):
         stream: bool = False,
         temperature: float = 0.7,
         timeout: float = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs,
     ):
         """
         Initializes the OpenAIClient instance.
@@ -55,8 +58,11 @@ class OpenAIClient(LLMClient):
             stream (bool, optional): Whether to stream the response. Defaults to False.
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
 
+        super().__init__(rate_limiter, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -95,8 +101,6 @@ class OpenAIClient(LLMClient):
                 temperature=self.temperature,
                 timeout=self.timeout,
             )
-            rsp = response.choices[0].message.content
-            return rsp
 
         else:
             message = [
@@ -110,8 +114,21 @@ class OpenAIClient(LLMClient):
                 temperature=self.temperature,
                 timeout=self.timeout,
             )
-            rsp = response.choices[0].message.content
-            return rsp
+        if not self.stream:
+            reasoning_content = getattr(
+                response.choices[0].message, "reasoning_content", None
+            )
+            content = response.choices[0].message.content
+            if reasoning_content:
+                rsp = f"{reasoning_content}\n{content}"
+            else:
+                rsp = content
+        else:
+            rsp = ""
+            for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                    rsp += chunk.choices[0].delta.content
+        return rsp
 
     @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt):
@@ -137,8 +154,10 @@ class OpenAIClient(LLMClient):
         except:
             return rsp
         return json_result
+
+
 @LLMClient.register("azure_openai")
-class AzureOpenAIClient (LLMClient):
+class AzureOpenAIClient(LLMClient):
     def __init__(
         self,
         api_key: str,
@@ -151,6 +170,8 @@ class AzureOpenAIClient (LLMClient):
         timeout: float = None,
         azure_ad_token: str = None,
         azure_ad_token_provider: AzureADTokenProvider = None,
+        rate_limiter: RateLimiter = None,
+        **kwargs,
     ):
         """
         Initializes the AzureOpenAIClient instance.
@@ -168,8 +189,11 @@ class AzureOpenAIClient (LLMClient):
             azure_ad_token_provider: A function that returns an Azure Active Directory token, will be invoked on every request.
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
+            rate_limiter (RateLimiter, optional): An instance of RateLimiter to control the rate of requests. Defaults to None.
+            **kwargs: Additional keyword arguments that can be passed to the client.
         """
 
+        super().__init__(rate_limiter, **kwargs)
         self.api_key = api_key
         self.base_url = base_url
         self.azure_deployment = azure_deployment
@@ -180,7 +204,15 @@ class AzureOpenAIClient (LLMClient):
         self.api_version = api_version
         self.azure_ad_token = azure_ad_token
         self.azure_ad_token_provider = azure_ad_token_provider
-        self.client = AzureOpenAI(api_key=self.api_key, base_url=self.base_url,azure_deployment=self.azure_deployment ,model=self.model,api_version=self.api_version, azure_ad_token=self.azure_ad_token, azure_ad_token_provider=self.azure_ad_token_provider)
+        self.client = AzureOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            azure_deployment=self.azure_deployment,
+            model=self.model,
+            api_version=self.api_version,
+            azure_ad_token=self.azure_ad_token,
+            azure_ad_token_provider=self.azure_ad_token_provider,
+        )
         self.check()
 
     def __call__(self, prompt: str, image_url: str = None):
@@ -229,6 +261,7 @@ class AzureOpenAIClient (LLMClient):
             )
             rsp = response.choices[0].message.content
             return rsp
+
     @retry(stop=stop_after_attempt(3))
     def call_with_json_parse(self, prompt):
         """
