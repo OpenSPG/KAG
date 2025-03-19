@@ -1,12 +1,20 @@
+import logging
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData, KgGraph, ChunkData
+from knext.common.rest import ApiClient, Configuration
+from knext.reasoner import ReasonerApi
+from knext.reasoner.rest.models import TaskStreamRequest
+from knext.reasoner.rest.models.ref_doc import RefDoc
+from knext.reasoner.rest.models.ref_doc_set import RefDocSet
+from knext.reasoner.rest.models.stream_data import StreamData
 
+logger = logging.getLogger()
 
-def trans_retrieved_data_to_report_data(retrieved_data_list: List[RetrievedData]):
+def trans_retrieved_data_to_report_data(tag_name, retrieved_data_list: List[RetrievedData]):
     report_data = []
     """
     {
@@ -19,20 +27,21 @@ def trans_retrieved_data_to_report_data(retrieved_data_list: List[RetrievedData]
         if isinstance(data, KgGraph):
             all_spo = data.get_all_spo()
             for spo in all_spo:
-                report_data.append({
-                    "id": spo.to_show_id(),
-                    "content": str(spo),
-                    "document_id": spo.to_show_id(),
-                    "document_name": "graph data"
-                })
+                report_data.append(RefDoc(
+                    id=spo.to_show_id(),
+                    content=str(spo),
+                    document_id=spo.to_show_id(),
+                    document_name="graph data"
+                ))
         elif isinstance(data, ChunkData):
-            report_data.append({
-                "id": data.chunk_id,
-                "content": data.content,
-                "document_id": data.chunk_id,
-                "document_name": data.title
-            })
-        return report_data
+            report_data.append(RefDoc(
+                id=data.chunk_id,
+                content=data.content,
+                document_id=data.chunk_id,
+                document_name=data.title
+            ))
+    doc_set = RefDocSet(id=tag_name, type="chunk", info=report_data)
+    return doc_set
 
 
 @ReporterABC.register("open_spg_reporter")
@@ -62,8 +71,10 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "正在思考全局步骤"
             }
         }
-
-    def report(self, segment, tag_name, content, status):
+        self.client: ReasonerApi = ReasonerApi(
+            api_client=ApiClient(configuration=Configuration(host="http://svc-8hpkrb78p78kwph9.cloudide.svc.et15-sqa.alipay.net:8080"))
+        )
+    def add_report_line(self, segment, tag_name, content, status):
         report_id = f"{segment}_{tag_name}"
         self.report_stream_data[report_id] = {
             "segment": segment,
@@ -73,6 +84,14 @@ class OpenSPGReporter(ReporterABC):
         }
         self.report_record.append(report_id)
 
+    def do_report(self):
+        report_data, is_finish = self.generate_report_data()
+        content = StreamData(answer=report_data["content"]["answer"],
+                             reference=report_data["content"]["reference"],
+                             think=report_data["content"]["thinker"])
+        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum="FINISH" if is_finish else "RUNNING")
+        logging.info(f"do_report:{request}")
+        return self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
     def get_tag_name(self, tag_name):
         if tag_name in self.tag_mapping:
             return self.tag_mapping[tag_name][KAG_PROJECT_CONF.language]
@@ -86,7 +105,7 @@ class OpenSPGReporter(ReporterABC):
             "content": {
                 "answer": "",
                 "reference": [],
-                "thinker": "<thinker>"
+                "thinker": "<think>"
             },
         }
         status = ""
@@ -107,19 +126,17 @@ class OpenSPGReporter(ReporterABC):
 
 """
             elif segment_name == "answer":
-                if not report_to_spg_data["content"]["thinker"].endswith("</thinker>"):
-                    report_to_spg_data["content"]["thinker"] += "</thinker>"
-                report_to_spg_data["content"][segment_name] = f"<answer>{content}"
+                if not report_to_spg_data["content"]["thinker"].endswith("</think>"):
+                    report_to_spg_data["content"]["thinker"] += "</think>"
+                report_to_spg_data["content"][segment_name] = content
             elif segment_name == "reference":
-                report_to_spg_data["content"]["reference"] += trans_retrieved_data_to_report_data(content)
+                report_to_spg_data["content"]["reference"].append(trans_retrieved_data_to_report_data(report_data["tag_name"], content))
 
             status = report_data["status"]
             processed_report_record.append(report_id)
             if status != "finish":
                 break
-        if status == "finish" and segment_name == "answer":
-            report_to_spg_data["content"]["answer"] += "</answer>"
-
-        return report_to_spg_data
+        is_finish = status == "finish" and segment_name == "answer"
+        return report_to_spg_data, is_finish
     def __str__(self):
         return "\n".join([f"{line['segment']} {line['tag_name']} {line['content']} {line['status']}" for line in self.report_record.keys()])
