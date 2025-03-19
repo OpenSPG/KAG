@@ -133,7 +133,7 @@ class ODPSScanner(ScannerABC):
                 logger.debug(f"Total records available: {reader.count}")
 
                 # Calculate sharding information for proper distribution
-                if self.sharding_info.shard_count > 1:
+                if 1:
                     total_count = reader.count
                     start, end = self.sharding_info.get_sharding_range(total_count)
                     worker = f"{self.sharding_info.get_rank()}/{self.sharding_info.get_world_size()}"
@@ -193,7 +193,7 @@ class ODPSScanner(ScannerABC):
                     except Exception:
                         try:
                             # Option 2: Original method but ensure it's not at the end
-                            batch_records = list(reader.read(batch_size))
+                            batch_records = list(reader)
                         except Exception as inner_e:
                             logger.debug(f"Error reading batch: {str(inner_e)}")
                             batch_records = []
