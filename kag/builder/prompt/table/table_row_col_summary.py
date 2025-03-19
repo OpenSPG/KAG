@@ -57,14 +57,14 @@ $input
 """
 
     template_en = """
-# Your Task  
-Based on the provided table and contextual information, generate a summary for each row and column of the table.  
+# Your Task
+Based on the provided table and contextual information, generate a summary of the table's rows and columns.
 
-# Instructions  
-1. For each row in the table, first determine whether the row belongs to the header or the data rows, then summarize the content of that row.  
-2. For each column in the table, determine whether the column serves as an index column or a data column, then summarize the content of that column.  
-3. The summaries must not repeat the exact content or data from the rows or columns.  
-4. Ensure that readers can fully understand the information conveyed by the rows and columns through the summaries alone. 
+# Guidelines for Execution
+1. For each row in the table, labeled as `row_index_<number>`, first determine whether the row is a header row or a data row, and then summarize the information in that row.
+2. For each column in the table, labeled as `column_index_<number>`, identify whether the column represents an index column or a data column, and then summarize the information in that column.
+3. The summary must not duplicate the content or data present in the rows or columns.
+4. Ensure readers can fully understand the information in the rows and columns solely from the summary.
 
 # Output Format
 JSON format example:
