@@ -28,7 +28,7 @@ class OpenSPGSearchAPI(SearchApiABC):
     def search_vector(
         self, label, property_key, query_vector, topk=10, ef_search=None, params=None
     ) -> List:
-        return self.sc.search_vector(
+        res = self.sc.search_vector(
             label=label,
             property_key=property_key,
             query_vector=query_vector,
@@ -36,6 +36,9 @@ class OpenSPGSearchAPI(SearchApiABC):
             ef_search=ef_search,
             params=params,
         )
+        if res is None:
+            return []
+        return res
 
 
 if __name__ == "__main__":

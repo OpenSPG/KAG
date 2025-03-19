@@ -23,6 +23,8 @@ class SchemaRetrieval(KGRetriever):
             query_vector=self.vectorize_model.vectorize(mention_entity.entity_name),
             topk=1,
         )
+        if typed_nodes is None:
+            return []
         recalled_entity = EntityData()
         recalled_entity.type = "SemanticConcept"
         if len(typed_nodes) == 0 or typed_nodes[0]["score"] < 0.9:

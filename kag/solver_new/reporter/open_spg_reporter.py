@@ -36,11 +36,11 @@ def merge_ref_doc_set(left:RefDocSet, right:RefDocSet):
 
 @ReporterABC.register("open_spg_reporter")
 class OpenSPGReporter(ReporterABC):
-    def __init__(self, task_id, **kwargs):
+    def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
         super().__init__(**kwargs)
         self.task_id = task_id
-        self.host = KAG_PROJECT_CONF.host_addr
-        self.project_id = KAG_PROJECT_CONF.project_id
+        self.host = host_addr
+        self.project_id = project_id
         self.report_stream_data = {}
         self.report_record = []
         self.tag_mapping = {
@@ -61,9 +61,12 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "正在思考全局步骤"
             }
         }
-        self.client: ReasonerApi = ReasonerApi(
-            api_client=ApiClient(configuration=Configuration(host="http://svc-8hpkrb78p78kwph9.cloudide.svc.et15-sqa.alipay.net:8080"))
-        )
+        if self.host:
+            self.client: ReasonerApi = ReasonerApi(
+                api_client=ApiClient(configuration=Configuration(host=self.host))
+            )
+        else:
+            self.client = None
     def add_report_line(self, segment, tag_name, content, status):
         report_id = f"{segment}_{tag_name}"
         self.report_stream_data[report_id] = {
@@ -75,13 +78,17 @@ class OpenSPGReporter(ReporterABC):
         self.report_record.append(report_id)
 
     def do_report(self):
-        report_data, is_finish = self.generate_report_data()
+        if not self.client:
+            return
+        report_data, status_enum = self.generate_report_data()
         content = StreamData(answer=report_data["content"]["answer"],
                              reference=report_data["content"]["reference"],
                              think=report_data["content"]["thinker"])
-        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum="FINISH" if is_finish else "RUNNING")
+
+        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum)
         logging.info(f"do_report:{request}")
         return self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
+
     def get_tag_name(self, tag_name):
         if tag_name in self.tag_mapping:
             return self.tag_mapping[tag_name][KAG_PROJECT_CONF.language]
@@ -135,9 +142,11 @@ class OpenSPGReporter(ReporterABC):
                     continue
             status = report_data["status"]
             processed_report_record.append(report_id)
-            if status != "finish":
+            if status != "FINISH":
                 break
-        is_finish = status == "finish" and segment_name == "answer"
-        return report_to_spg_data, is_finish
+        if status == "FINISH":
+            if segment_name != "answer":
+                status = "RUNNING"
+        return report_to_spg_data, status
     def __str__(self):
         return "\n".join([f"{line['segment']} {line['tag_name']} {line['content']} {line['status']}" for line in self.report_record.keys()])

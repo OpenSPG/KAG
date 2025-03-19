@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
@@ -10,6 +11,7 @@ from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 
+logger = logging.getLogger()
 
 @ToolABC.register("entity_linking")
 class EntityLinking(ToolABC):
@@ -124,84 +126,88 @@ class EntityLinking(ToolABC):
         # 4. Text search fallback
         # 5. Semantic type re-ranking
         # 6. Final filtering and sorting
-        retdata = []
-        if name is None:
-            return retdata
+        try:
+            retdata = []
+            if name is None:
+                return retdata
 
-        # Determine the query type based on the entity's standard type or set it to "Entity" if not specified
-        query_type = type_name
-        if query_type is None:
-            query_type = "Entity"
-            with_prefix_type = query_type
-        else:
-            with_prefix_type = self.schema_helper.get_label_within_prefix(query_type)
+            # Determine the query type based on the entity's standard type or set it to "Entity" if not specified
+            query_type = type_name
+            if query_type is None:
+                query_type = "Entity"
+                with_prefix_type = query_type
+            else:
+                with_prefix_type = self.schema_helper.get_label_within_prefix(query_type)
 
-        recognition_threshold = kwargs.get("recognition_threshold", 0.8)
-        recall_topk = topk_k or self.top_k
+            recognition_threshold = kwargs.get("recognition_threshold", 0.8)
+            recall_topk = topk_k or self.top_k
 
-        # Adjust recall_topk if the query type is not an entity
-        if "entity" not in query_type.lower():
-            recall_topk = 10
+            # Adjust recall_topk if the query type is not an entity
+            if "entity" not in query_type.lower():
+                recall_topk = 10
 
-        # Vectorize the entity name for vector-based search
-        query_vector = self.vectorize_model.vectorize(name)
+            # Vectorize the entity name for vector-based search
+            query_vector = self.vectorize_model.vectorize(name)
 
-        # Perform a vector-based search using the determined query type
-        typed_nodes = self.search_api.search_vector(
-            label=with_prefix_type,
-            property_key="name",
-            query_vector=query_vector,
-            topk=recall_topk,
-        )
-        if len(typed_nodes) == 0:
+            # Perform a vector-based search using the determined query type
             typed_nodes = self.search_api.search_vector(
-                label="Entity",
+                label=with_prefix_type,
                 property_key="name",
                 query_vector=query_vector,
                 topk=recall_topk,
             )
+            if len(typed_nodes) == 0:
+                typed_nodes = self.search_api.search_vector(
+                    label="Entity",
+                    property_key="name",
+                    query_vector=query_vector,
+                    topk=recall_topk,
+                )
 
-        # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
-        if query_type not in ["Others", "Entity"]:
-            content_vector = self.vectorize_model.vectorize(query)
-            content_recall_nodes = self.search_api.search_vector(
-                label="Entity",
-                property_key="desc",
-                query_vector=content_vector,
-                topk=recall_topk,
-            )
-        else:
-            content_recall_nodes = []
-
-        # Combine the results from both searches
-        sorted_nodes = typed_nodes + content_recall_nodes
-        sorted_nodes = self.filter_target_types(sorted_nodes)
-
-        # Fallback to text-based search if no nodes are found
-        if len(sorted_nodes) == 0:
-            sorted_nodes = self.search_api.search_text(query_string=name)
-
-        if "entity" not in query_type.lower():
-            sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
-
-        # Final sorting based on score
-        sorted_people_dicts = sorted(
-            sorted_nodes, key=lambda node: node["score"], reverse=True
-        )
-
-        # Create EntityData objects for the top results that meet the recognition threshold
-        for recall in sorted_people_dicts:
-            if len(sorted_people_dicts) != 0 and recall["score"] >= recognition_threshold:
-                recalled_entity = EntityData()
-                recalled_entity.score = recall["score"]
-                recalled_entity.biz_id = recall["node"]["id"]
-                recalled_entity.name = recall["node"]["name"]
-                recalled_entity.type = get_recall_node_label(recall["node"]["__labels__"])
-                retdata.append(recalled_entity)
+            # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
+            if query_type not in ["Others", "Entity"]:
+                content_vector = self.vectorize_model.vectorize(query)
+                content_recall_nodes = self.search_api.search_vector(
+                    label="Entity",
+                    property_key="desc",
+                    query_vector=content_vector,
+                    topk=recall_topk,
+                )
             else:
-                break
+                content_recall_nodes = []
 
-        return retdata[:self.top_k]
+            # Combine the results from both searches
+            sorted_nodes = typed_nodes + content_recall_nodes
+            sorted_nodes = self.filter_target_types(sorted_nodes)
+
+            # Fallback to text-based search if no nodes are found
+            if len(sorted_nodes) == 0:
+                sorted_nodes = self.search_api.search_text(query_string=name)
+
+            if "entity" not in query_type.lower():
+                sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
+
+            # Final sorting based on score
+            sorted_people_dicts = sorted(
+                sorted_nodes, key=lambda node: node["score"], reverse=True
+            )
+
+            # Create EntityData objects for the top results that meet the recognition threshold
+            for recall in sorted_people_dicts:
+                if len(sorted_people_dicts) != 0 and recall["score"] >= recognition_threshold:
+                    recalled_entity = EntityData()
+                    recalled_entity.score = recall["score"]
+                    recalled_entity.biz_id = recall["node"]["id"]
+                    recalled_entity.name = recall["node"]["name"]
+                    recalled_entity.type = get_recall_node_label(recall["node"]["__labels__"])
+                    retdata.append(recalled_entity)
+                else:
+                    break
+
+            return retdata[:self.top_k]
+        except Exception as e:
+            logger.error(f"Error in entity_linking: {e}")
+            return []
 
     def schema(self):
         return {

@@ -144,14 +144,14 @@ class OpenAIClient(LLMClient):
                             segment_name,
                             tag_name,
                             rsp,
-                            status="running",
+                            status="RUNNING",
                         )
         if reporter:
             reporter.add_report_line(
                 segment_name,
                 tag_name,
                 rsp,
-                status="finish",
+                status="FINISH",
             )
         return rsp
 
@@ -199,7 +199,7 @@ class OpenAIClient(LLMClient):
                 segment_name,
                 tag_name,
                 "",
-                status="init",
+                status="INIT",
             )
 
         if image_url:
@@ -252,14 +252,14 @@ class OpenAIClient(LLMClient):
                         segment_name,
                         tag_name,
                         rsp,
-                        status="running",
+                        status="RUNNING",
                     )
         if reporter:
             reporter.add_report_line(
                 segment_name,
                 tag_name,
                 rsp,
-                status="finish",
+                status="FINISH",
             )
         return rsp
 
