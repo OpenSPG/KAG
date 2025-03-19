@@ -49,13 +49,13 @@ The goal of KAG is to build a knowledge-enhanced LLM service framework in profes
 
 ## 2.1 Knowledge Representation
 
-In the context of private knowledge bases, unstructured data, structured information, and business expert experience often coexist. KAG references the DIKW hierarchy to upgrade SPG to a version that is friendly to LLMs. 
+In the context of private knowledge bases, unstructured data, structured information, and business expert experience often coexist. KAG references the DIKW hierarchy to upgrade SPG to a version that is friendly to LLMs.
 
 For unstructured data such as news, events, logs, and books, as well as structured data like transactions, statistics, and approvals, along with business experience and domain knowledge rules, KAG employs techniques such as layout analysis, knowledge extraction, property normalization, and semantic alignment to integrate raw business data and expert rules into a unified business knowledge graph.
 
 ![KAG Diagram](./_static/images/kag-diag.jpg)
 
-This makes it compatible with schema-free information extraction and schema-constrained expertise construction on the same knowledge type (e. G., entity type, event type), and supports the cross-index representation between the graph structure and the original text block. 
+This makes it compatible with schema-free information extraction and schema-constrained expertise construction on the same knowledge type (e. G., entity type, event type), and supports the cross-index representation between the graph structure and the original text block.
 
 This mutual index representation is helpful to the construction of inverted index based on graph structure, and promotes the unified representation and reasoning of logical forms.
 
@@ -63,9 +63,9 @@ This mutual index representation is helpful to the construction of inverted inde
 
 ![Logical Form Solver](./_static/images/kag-lf-solver.png)
 
-KAG proposes a logically formal guided hybrid solution and inference engine. 
+KAG proposes a logically formal guided hybrid solution and inference engine.
 
-The engine includes three types of operators: planning, reasoning, and retrieval, which transform natural language problems into problem solving processes that combine language and notation. 
+The engine includes three types of operators: planning, reasoning, and retrieval, which transform natural language problems into problem solving processes that combine language and notation.
 
 In this process, each step can use different operators, such as exact match retrieval, text retrieval, numerical calculation or semantic reasoning, so as to realize the integration of four different problem solving processes: Retrieval, Knowledge Graph reasoning, language reasoning and numerical calculation.
 
@@ -134,6 +134,7 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 
 **macOS / Linux developers**
 
+
 ```text
 # Create conda env: conda create -n kag-demo python=3.10 && conda activate kag-demo
 
@@ -184,7 +185,7 @@ Follow OpenSPG Official Account to get technical articles and product updates ab
 
 <img src="./_static/images/openspg-qr.png" alt="Contact Us: OpenSPG QR-code" width="200">
 
-Scan the QR code below to join our WeChat group. 
+Scan the QR code below to join our WeChat group.
 
 <img src="./_static/images/robot-qr.JPG" alt="Join WeChat group" width="200">
 
