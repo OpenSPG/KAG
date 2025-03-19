@@ -30,6 +30,9 @@ from kag.builder.prompt.spg_prompt import SPGPrompt, SPGEntityPrompt, SPGEventPr
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 
+from kag.builder.prompt.table.table_context import TableContextPrompt
+from kag.builder.prompt.table.table_row_col_summary import TableRowColSummaryPrompt
+
 
 __all__ = [
     "DefaultOpenIENERPrompt",
@@ -44,4 +47,6 @@ __all__ = [
     "SPGPrompt",
     "SPGEntityPrompt",
     "SPGEventPrompt",
+    "TableContextPrompt",
+    "TableRowColSummaryPrompt",
 ]
