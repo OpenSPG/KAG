@@ -107,7 +107,7 @@ class LLMClient(Registrable):
         Returns:
             List: Processed result list.
         """
-        if self.rate_limiter:
+        if hasattr(self, "rate_limiter") and self.rate_limiter:
             self.rate_limiter.acquire()
         result = []
         prompt = prompt_op.build_prompt(variables)
