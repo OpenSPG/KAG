@@ -97,7 +97,7 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
 
         return final_output
 
-    async def ainvoke(self, file_path, **kwargs):
+    async def ainvoke(self, file_path, max_concurrency: int = 100, **kwargs):
         """
         Invokes the builder chain to process the input file asynchronously.
 
@@ -109,7 +109,7 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
             List: The final output from the builder chain.
         """
 
-        async def execute_node(node, inputs: list):
+        async def execute_node(node, inputs: list, semaphore: asyncio.Semaphore):
             """
             Executes a single node in the builder chain asynchronously.
 
@@ -120,10 +120,16 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
             Returns:
                 List: The output from the node.
             """
-            tasks = []
 
+            async def ainvoke_with_semaphore(node, item, semaphore):
+                async with semaphore:
+                    return await node.ainvoke(item)
+
+            tasks = []
             for item in inputs:
-                task = asyncio.create_task(node.ainvoke(item))
+                task = asyncio.create_task(
+                    ainvoke_with_semaphore(node, item, semaphore)
+                )
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
             return flatten_2d_list(results)
@@ -136,6 +142,7 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
         node_generations = list(nx.topological_generations(dag))
         nodes = flatten_2d_list(node_generations)
         node_outputs = {}
+        semaphore = asyncio.Semaphore(max_concurrency)
         for parallel_nodes in node_generations:
             tasks = []
             for node in parallel_nodes:
@@ -143,12 +150,16 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
                 # collect node inputs from the predecessors
                 if len(predecessors) == 0:
                     node_input = [file_path]
-                    task = asyncio.create_task(execute_node(node, node_input))
+                    task = asyncio.create_task(
+                        execute_node(node, node_input, semaphore)
+                    )
                 else:
                     node_input = []
                     for p in predecessors:
                         node_input.extend(node_outputs[p])
-                    task = asyncio.create_task(execute_node(node, node_input))
+                    task = asyncio.create_task(
+                        execute_node(node, node_input, semaphore)
+                    )
                 tasks.append(task)
             outputs = await asyncio.gather(*tasks)
             for node, node_output in zip(parallel_nodes, outputs):
