@@ -1,5 +1,3 @@
-import re
-from string import Template
 from typing import List
 import logging
 
@@ -8,15 +6,15 @@ from kag.interface import PromptABC
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("default_llm_generator_prompt")
-class FinalGeneratorPrompt(PromptABC):
+@PromptABC.register("default_refer_generator_prompt")
+class ReferGeneratorPrompt(PromptABC):
     template_zh = (
         "基于给定的引用信息回答问题。"
-        "\n输出答案，并且给出理由。并且在答案中引用reference的id字段"
+        "\n输出答案，如果答案中存在引用信息，则需要reference的id字段，如果不是检索结果，则不需要标记引用"
         "\n输出时，不需要重复输出参考文献"
         "\n给定的引用信息：'$content'\n问题：'$query'"
-        """示例：
-张三的妻子是谁？
+        """示例1：
+给定的引用信息：'
 reference：
 [
 {
@@ -24,9 +22,16 @@ reference：
     "document_name": "张三介绍",
     "id": "chunk:1_1"
 }
-]
+]'
+问题：'张三的妻子是谁？'
 
 张三的妻子是王五[chunk:1_1]
+
+示例2：
+给定的引用信息：'经过计算器计算，9.2比9.1要大'
+问题：'9.1和9.2谁大?'
+
+9.2大
 """
     )
     template_en = (

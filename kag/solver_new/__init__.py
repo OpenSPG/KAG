@@ -5,14 +5,13 @@ from kag.solver_new.planner.kag_static_planner import KAGStaticPlanner
 from kag.solver_new.prompt.iterative_planning_prompt import (
     DefaultIterativePlanningPrompt,
 )
-
+from kag.solver_new.prompt.reference_generator import ReferGeneratorPrompt
 
 from kag.solver_new.prompt.static_planning_prompt import (
     DefaultStaticPlanningPrompt,
 )
 from kag.solver_new.prompt.query_rewrite_prompt import QueryRewritePrompt
 
-from kag.solver_new.prompt.final_generator import FinalGeneratorPrompt
 
 from kag.solver_new.executor.finish_executor import FinishExecutor
 from kag.solver_new.executor.mock_executors import (
@@ -28,7 +27,7 @@ __all__ = [
     "KAGStaticPlanner",
     "DefaultIterativePlanningPrompt",
     "DefaultStaticPlanningPrompt",
-    "FinalGeneratorPrompt",
+    "ReferGeneratorPrompt",
     "QueryRewritePrompt",
     "FinishExecutor",
     "MockRetrieverExecutor",
