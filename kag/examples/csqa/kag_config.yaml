@@ -44,7 +44,7 @@ kag_builder_pipeline:
       triple_prompt:
         type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
     reader:
-      type: txt_reader # kag.builder.component.reader.txt_reader.TXTReader
+      type: md_reader # kag.builder.component.reader.markdown_reader.MarkDownReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
     splitter:
@@ -60,6 +60,7 @@ kag_builder_pipeline:
   num_chains: 16
   scanner:
     type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
+    file_suffix: md
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#

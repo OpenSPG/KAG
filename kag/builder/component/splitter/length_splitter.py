@@ -79,9 +79,7 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[str]: A list of sentences.
         """
-        sentence_delimiters = (
-            ".。？?！!" if KAG_PROJECT_CONF.language == "en" else "。？！"
-        )
+        sentence_delimiters = ".。？?！!" if KAG_PROJECT_CONF.language == "en" else "。？！"
         output = []
         start = 0
         for idx, char in enumerate(content):
@@ -147,7 +145,7 @@ class LengthSplitter(BaseTableSplitter):
         for idx, sentences in enumerate(splitted):
             chunk = Chunk(
                 id=generate_hash_id(f"{org_chunk.id}#{idx}"),
-                name=f"{org_chunk.name}",
+                name=f"{org_chunk.name}_split_{idx}",
                 content=sep.join(sentences),
                 type=org_chunk.type,
                 chunk_size=chunk_size,

@@ -23,7 +23,6 @@ class GraphStore(ABC):
         """
         Close the graph store resources.
         """
-        pass
 
     @abstractmethod
     def initialize_schema(self, schema):
@@ -33,7 +32,6 @@ class GraphStore(ABC):
         Parameters:
         - schema: Definition of the graph schema.
         """
-        pass
 
     @abstractmethod
     def upsert_node(self, label, properties, id_key="id", extra_labels=("Entity",)):
@@ -46,7 +44,6 @@ class GraphStore(ABC):
         - id_key: Property key used as the unique identifier.
         - extra_labels: Additional labels for the node.
         """
-        pass
 
     @abstractmethod
     def upsert_nodes(
@@ -61,7 +58,6 @@ class GraphStore(ABC):
         - id_key: Property key used as the unique identifier.
         - extra_labels: Additional labels for the nodes.
         """
-        pass
 
     @abstractmethod
     def batch_preprocess_node_properties(self, node_batch, extra_labels=("Entity",)):
@@ -72,7 +68,6 @@ class GraphStore(ABC):
         - node_batch: A batch of nodes.
         - extra_labels: Additional labels for the nodes.
         """
-        pass
 
     @abstractmethod
     def get_node(self, label, id_value, id_key="id"):
@@ -87,7 +82,6 @@ class GraphStore(ABC):
         Returns:
         - The matching node.
         """
-        pass
 
     @abstractmethod
     def delete_node(self, label, id_value, id_key="id"):
@@ -99,7 +93,6 @@ class GraphStore(ABC):
         - id_value: Unique identifier value of the node.
         - id_key: Property key used as the unique identifier.
         """
-        pass
 
     @abstractmethod
     def delete_nodes(self, label, id_values, id_key="id"):
@@ -111,7 +104,6 @@ class GraphStore(ABC):
         - id_values: List of unique identifier values for the nodes.
         - id_key: Property key used as the unique identifier.
         """
-        pass
 
     @abstractmethod
     def upsert_relationship(
@@ -140,7 +132,6 @@ class GraphStore(ABC):
         - start_node_id_key: Property key used as the unique identifier for the start node.
         - end_node_id_key: Property key used as the unique identifier for the end node.
         """
-        pass
 
     @abstractmethod
     def upsert_relationships(
@@ -165,7 +156,6 @@ class GraphStore(ABC):
         - start_node_id_key: Property key used as the unique identifier for the start node.
         - end_node_id_key: Property key used as the unique identifier for the end node.
         """
-        pass
 
     @abstractmethod
     def delete_relationship(
@@ -190,7 +180,6 @@ class GraphStore(ABC):
         - start_node_id_key: Property key used as the unique identifier for the start node.
         - end_node_id_key: Property key used as the unique identifier for the end node.
         """
-        pass
 
     @abstractmethod
     def delete_relationships(
@@ -215,7 +204,6 @@ class GraphStore(ABC):
         - start_node_id_key: Property key used as the unique identifier for the start node.
         - end_node_id_key: Property key used as the unique identifier for the end node.
         """
-        pass
 
     @abstractmethod
     def create_index(self, label, property_key, index_name=None):
@@ -227,7 +215,6 @@ class GraphStore(ABC):
         - property_key: Property key used for indexing.
         - index_name: Name of the index (optional).
         """
-        pass
 
     @abstractmethod
     def create_text_index(self, labels, property_keys, index_name=None):
@@ -239,7 +226,6 @@ class GraphStore(ABC):
         - property_keys: List of property keys used for indexing.
         - index_name: Name of the index (optional).
         """
-        pass
 
     @abstractmethod
     def create_vector_index(
@@ -264,7 +250,6 @@ class GraphStore(ABC):
         - hnsw_m: m parameter of the HNSW algorithm, default to None (for m=16)
         - hnsw_ef_construction: ef_construction parameter of the HNSW algorithm, default to None (for ef_construction=100)
         """
-        pass
 
     @abstractmethod
     def delete_index(self, index_name):
@@ -274,7 +259,6 @@ class GraphStore(ABC):
         Parameters:
         - index_name: Name of the index.
         """
-        pass
 
     @abstractmethod
     def text_search(
@@ -292,7 +276,6 @@ class GraphStore(ABC):
         Returns:
         - List of search results.
         """
-        pass
 
     @abstractmethod
     def vector_search(
@@ -318,7 +301,6 @@ class GraphStore(ABC):
         Returns:
         - List of search results.
         """
-        pass
 
     @abstractmethod
     def execute_pagerank(self, iterations=20, damping_factor=0.85):
@@ -329,7 +311,6 @@ class GraphStore(ABC):
         - iterations: Number of iterations, default is 20.
         - damping_factor: Damping factor, default is 0.85.
         """
-        pass
 
     @abstractmethod
     def get_pagerank_scores(self, start_nodes, target_type):
@@ -343,7 +324,6 @@ class GraphStore(ABC):
         Returns:
         - PageRank scores.
         """
-        pass
 
     @abstractmethod
     def run_script(self, script):
@@ -353,7 +333,6 @@ class GraphStore(ABC):
         Parameters:
         - script: Script to be executed.
         """
-        pass
 
     @abstractmethod
     def get_all_entity_labels(self):
@@ -363,4 +342,3 @@ class GraphStore(ABC):
         Returns:
         - List of entity labels.
         """
-        pass

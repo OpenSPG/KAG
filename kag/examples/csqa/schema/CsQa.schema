@@ -4,6 +4,20 @@ Chunk(文本块): EntityType
      properties:
         content(内容): Text
           index: TextAndVector
+        parentContent(父级内容): Text
+          index: TextAndVector
+        type(类型): Text
+     relations:
+        belongsToTitle(属于标题): Title
+
+Title(标题): EntityType
+     properties:
+        level(层级): Text
+     relations:
+        hasContent(包含内容): Chunk
+        hasTable(包含表格): Chunk
+        hasChild(子标题): Title
+        hasParent(父标题): Title
 
 ArtificialObject(人造物体): EntityType
      properties:
