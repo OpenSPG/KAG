@@ -204,18 +204,14 @@ class MarkDownReader(ReaderABC):
                 table_html = str(element)
                 try:
                     # Add converters parameter to handle escaped strings
-                    df = pd.read_html(
-                        io.StringIO(table_html),
-                        header=0,
-                        converters={
-                            i: str for i in range(20)
-                        },  # Convert all columns to string
-                    )[0]
+                    df = pd.read_html(io.StringIO(table_html), header=0)[0]
+                    df = df.astype(str)
 
                     # Clean up the data by removing escaped quotes
-                    df = df.applymap(
-                        lambda x: str(x).strip('"\\"') if isinstance(x, str) else x
-                    )
+                    for col in df.columns:
+                        df[col] = df[col].map(
+                            lambda x: str(x).strip('"\\"') if isinstance(x, str) else x
+                        )
 
                     # Replace 'Unnamed' headers with empty string
                     df.columns = [
@@ -421,13 +417,10 @@ class MarkDownReader(ReaderABC):
                         type=ChunkTypeEnum.Table,
                         metadata={
                             # "table_data": table,
-                            "before_text": table.get("context", {}).get(
-                                "before_text", ""
-                            ),
-                            "after_text": table.get("context", {}).get(
-                                "after_text", ""
-                            ),
+                            "before_text": table.get("context", {}).get("before_text", ""),
+                            "after_text": table.get("context", {}).get("after_text", "")
                         },
+                        file_name=os.path.basename(id),
                     )
                     outputs.append(table_chunk)
                     all_tables.append(table)
@@ -446,13 +439,10 @@ class MarkDownReader(ReaderABC):
                         type=ChunkTypeEnum.Table,
                         metadata={
                             # "table_data": table,
-                            "before_text": table.get("context", {}).get(
-                                "before_text", ""
-                            ),
-                            "after_text": table.get("context", {}).get(
-                                "after_text", ""
-                            ),
+                            "before_text": table.get("context", {}).get("before_text", ""),
+                            "after_text": table.get("context", {}).get("after_text", "")
                         },
+                        file_name=os.path.basename(id),
                     )
                     outputs.append(table_chunk)
                     all_tables.append(table)
@@ -516,13 +506,10 @@ class MarkDownReader(ReaderABC):
                             type=ChunkTypeEnum.Table,
                             metadata={
                                 # "table_data": table,
-                                "before_text": table.get("context", {}).get(
-                                    "before_text", ""
-                                ),
-                                "after_text": table.get("context", {}).get(
-                                    "after_text", ""
-                                ),
+                                "before_text": table.get("context", {}).get("before_text", ""),
+                                "after_text": table.get("context", {}).get("after_text", "")
                             },
+                            file_name=os.path.basename(id),
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)
@@ -541,13 +528,10 @@ class MarkDownReader(ReaderABC):
                             type=ChunkTypeEnum.Table,
                             metadata={
                                 # "table_data": table,
-                                "before_text": table.get("context", {}).get(
-                                    "before_text", ""
-                                ),
-                                "after_text": table.get("context", {}).get(
-                                    "after_text", ""
-                                ),
+                                "before_text": table.get("context", {}).get("before_text", ""),
+                                "after_text": table.get("context", {}).get("after_text", "")
                             },
+                            file_name=os.path.basename(id),
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)

@@ -16,7 +16,7 @@ from kag.interface import LLMClient
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
-from kag.builder.model.chunk import Chunk
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.model.sub_graph import SubGraph
 from knext.schema.client import CHUNK_TYPE
 from knext.common.base.runnable import Input, Output
@@ -43,6 +43,7 @@ class NaiveRagExtractor(ExtractorABC):
     def __init__(
             self,
             external_graph: ExternalGraphLoaderABC = None,
+            table_extractor: ExtractorABC = None,
     ):
         """
         Initializes the KAGExtractor with the specified parameters.
@@ -56,6 +57,7 @@ class NaiveRagExtractor(ExtractorABC):
         """
         super().__init__()
         self.external_graph = external_graph
+        self.table_extractor = table_extractor
 
     @property
     def input_types(self) -> Type[Input]:
@@ -102,6 +104,9 @@ class NaiveRagExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
+
+        if self.table_extractor is not None and input.type == ChunkTypeEnum.Table:
+            return self.table_extractor._invoke(input)
 
         out = []
         sub_graph = SubGraph([], [])
