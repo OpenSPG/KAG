@@ -47,3 +47,5 @@ PyPDF2
 ruamel.yaml
 json_repair
 gitpython
+docstring_parser
+aiolimiter
