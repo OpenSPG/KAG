@@ -133,7 +133,7 @@ class ODPSScanner(ScannerABC):
                 logger.debug(f"Total records available: {reader.count}")
 
                 # Calculate sharding information for proper distribution
-                if 1:
+                if self.sharding_info.shard_count > 1:
                     total_count = reader.count
                     start, end = self.sharding_info.get_sharding_range(total_count)
                     worker = f"{self.sharding_info.get_rank()}/{self.sharding_info.get_world_size()}"
