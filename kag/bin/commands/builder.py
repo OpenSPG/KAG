@@ -33,7 +33,19 @@ class BuilderJobSubmit(Command):
         parser.add_argument(
             "--user_number",
             type=str,
-            help="Git repository URL containing project source code (supports SSH/HTTP)",
+            help="User number",
+        )
+
+        parser.add_argument(
+            "--host_addr",
+            default=None,
+            help="Host address of SPG server.",
+        )
+
+        parser.add_argument(
+            "--project_id",
+            default=None,
+            help="Project ID in SPG server.",
         )
 
         parser.add_argument(
@@ -164,8 +176,12 @@ class BuilderJobSubmit(Command):
                 key, value = kv.split("=")
                 envs[key.strip()] = value.strip()
 
+        if args.project_id is not None:
+            project_id = int(args.project_id)
+        else:
+            project_id = int(KAG_PROJECT_CONF.project_id)
         req = {
-            "projectId": int(KAG_PROJECT_CONF.project_id),
+            "projectId": project_id,
             "command": command,
             "workerNum": args.num_workers,
             "workerCpu": args.num_cpus,
@@ -182,7 +198,12 @@ class BuilderJobSubmit(Command):
         if args.user_number:
             req["userNumber"] = args.user_number
 
-        url = KAG_PROJECT_CONF.host_addr.rstrip("/") + "/public/v1/builder/kag/submit"
+        if args.host_addr is not None:
+            host_addr = args.host_addr.rstrip("/")
+        else:
+            host_addr = KAG_PROJECT_CONF.host_addr.rstrip("/")
+
+        url = host_addr + "/public/v1/builder/kag/submit"
         rsp = requests.post(url, json=req)
         rsp.raise_for_status()
         print(f"{bold}{green}Success submit job to server, info:{reset}")
