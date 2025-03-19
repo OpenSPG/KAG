@@ -69,6 +69,14 @@ class SPGServerBridge:
 
         return VectorizeModelConfigChecker().check(vec_config)
 
+    def run_builder(self, config, input):
+        from kag.builder.main_builder import BuilderMain
+
+        if isinstance(config, str):
+            config = json.loads(config)
+        builder_main = BuilderMain(config)
+        builder_main.invoke(input)
+
     def run_solver(
         self,
         project_id,

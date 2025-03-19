@@ -17,7 +17,6 @@ class KagMemoryABC(KagBaseModule, ABC):
         :param instruction: The instruction.
         :param lf_res: The lf result.
         """
-        pass
 
     @abstractmethod
     def has_break(self) -> bool:

@@ -2,6 +2,7 @@ from typing import List
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
 from .evaUtils import compute_rouge
@@ -73,6 +74,44 @@ class Evaluate:
         )
 
         # Return evaluation metrics dictionary
+        return total_metrics
+
+    def getLLMBenchMark(
+        self,
+        llm_client,
+        questionList: List[str],
+        predictionlist: List[str],
+        goldlist: List[str],
+    ):
+        """
+        Calculates and returns evaluation metrics between predictions and ground truths.
+
+        This function evaluates the match between predictions and ground truths by calculating
+        the exact match (EM) and F1 score, as well as answer similarity.
+
+        Parameters:
+        predictionlist (List[str]): List of predicted values from the model.
+        goldlist (List[str]): List of actual ground truth values.
+
+        Returns:
+        dict: Dictionary containing EM, F1 score, and answer similarity.
+        """
+        # Initialize total metrics
+        total_metrics = {"consistency": 0.0}
+        llm_judger = LLMJudger(llm=llm_client)
+
+        # llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
+        # Iterate over prediction and gold lists to calculate EM and F1 scores
+        hits = 0
+        for question, prediction, gold in zip(questionList, predictionlist, goldlist):
+            resposne = llm_judger.judge_by_llm(
+                question=question, prediction=prediction, gold=gold
+            )
+            if resposne.lower() == "true":
+                hits += 1
+
+        # Calculate consistency
+        total_metrics["consistency"] = float(hits) / len(predictionlist)
         return total_metrics
 
     def getSummarizationMetrics(

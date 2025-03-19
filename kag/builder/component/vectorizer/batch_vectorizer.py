@@ -34,6 +34,7 @@ class EmbeddingVectorPlaceholder(object):
 
     def replace(self):
         if self._embedding_vector is not None:
+            self._properties[self._property_key] = self._property_value
             self._properties[self._vector_field] = self._embedding_vector
 
     def __repr__(self):
@@ -49,11 +50,10 @@ class EmbeddingVectorManager(object):
             field_name = get_vector_field_name(property_key)
             if field_name != vector_field:
                 continue
-            if not property_value:
+            if property_value is None:
                 return None
             if not isinstance(property_value, str):
-                message = f"property {property_key!r} must be string to generate embedding vector, got {property_value} with type {type(property_value)}"
-                raise RuntimeError(message)
+                property_value = str(property_value)
             num = len(self._placeholders)
             placeholder = EmbeddingVectorPlaceholder(
                 num, properties, vector_field, property_key, property_value
@@ -173,7 +173,8 @@ class BatchVectorizer(VectorizerABC):
         spg_types = schema_client.load()
         for type_name, spg_type in spg_types.items():
             for prop_name, prop in spg_type.properties.items():
-                if prop_name == "name" or prop.index_type in [
+                # if prop_name == "name" or prop.index_type in [
+                if prop.index_type in [
                     IndexTypeEnum.Vector,
                     IndexTypeEnum.TextAndVector,
                 ]:
