@@ -146,6 +146,7 @@ class ODPSScanner(ScannerABC):
                     logger.debug(
                         f"Will read {records_to_read} records from position {start}"
                     )
+                    raw_reader = reader
 
                     # 使用切片直接获取该分片的数据
                     try:
@@ -177,7 +178,7 @@ class ODPSScanner(ScannerABC):
                 chunk_number = 0
 
                 # Get column names for converting records to dictionaries
-                column_names = [c.name for c in reader.schema.columns]
+                column_names = [c.name for c in raw_reader.schema.columns]
 
                 while remaining > 0:
                     # Read a chunk of records
