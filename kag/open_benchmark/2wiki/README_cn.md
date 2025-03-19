@@ -16,7 +16,7 @@
 ### Step 1：进入示例目录
 
 ```bash
-cd kag/examples/2wiki
+cd kag/open_benchmark/2wiki
 ```
 
 ### Step 2：配置模型
