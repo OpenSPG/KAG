@@ -209,3 +209,22 @@ __version__ = "0.6"
 from kag.common.conf import init_env
 
 init_env()
+
+import kag.interface
+import kag.interface.solver.execute
+import kag.interface.solver.plan
+import kag.solver.execute
+import kag.solver.plan
+import kag.solver.retriever
+import kag.solver.tools
+import kag.builder.component
+import kag.builder.default_chain
+import kag.builder.runner
+import kag.builder.prompt
+import kag.solver.prompt
+import kag.common.vectorize_model
+import kag.common.llm
+import kag.common.rate_limiter
+import kag.common.checkpointer
+import kag.solver
+import kag.bin.commands
