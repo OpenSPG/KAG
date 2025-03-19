@@ -227,15 +227,17 @@ def generate_hash_id(value):
         value: The input value to be hashed and abstracted.
 
     Returns:
-        Tuple[str, Any]: A tuple containing the hash ID and the abstracted value.
+        str: A hash ID generated from the input value.
     """
     if isinstance(value, dict):
         sorted_items = sorted(value.items())
         key = str(sorted_items)
     else:
-        key = value
-    if isinstance(key, str):
-        key = key.encode("utf-8")
+        key = str(value)  # Ensure key is a string regardless of input type
+
+    # Encode to bytes for hashing
+    key = key.encode("utf-8")
+
     hasher = hashlib.sha256()
     hasher.update(key)
 

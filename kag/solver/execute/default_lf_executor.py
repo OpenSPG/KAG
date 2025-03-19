@@ -28,10 +28,10 @@ logger = logging.getLogger()
 class DefaultLFExecutor(LFExecutorABC):
     def __init__(
         self,
+        chunk_retriever: ChunkRetriever,
         merger: LFSubQueryResMerger,
         exact_kg_retriever: ExactKgRetriever = None,
         fuzzy_kg_retriever: FuzzyKgRetriever = None,
-        chunk_retriever: ChunkRetriever = None,
         force_chunk_retriever: bool = False,
         llm_client: LLMClient = None,
         **kwargs,

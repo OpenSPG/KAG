@@ -59,7 +59,6 @@ class OpExecutor(KagBaseModule, ABC):
         Returns:
             Dict: The result of the operation, which could be a dict.
         """
-        pass
 
     def is_this_op(self, logic_node: LogicNode) -> bool:
         """
@@ -74,4 +73,3 @@ class OpExecutor(KagBaseModule, ABC):
         Returns:
             bool: True if this executor can handle the logic node, False otherwise.
         """
-        pass

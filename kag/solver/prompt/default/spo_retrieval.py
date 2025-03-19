@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List
 
 from kag.interface import PromptABC
 

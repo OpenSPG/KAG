@@ -1,12 +1,10 @@
-import json
 import logging
-import re
 import time
 import concurrent.futures
 from abc import ABC
 from typing import List
 
-from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import LLMClient, VectorizeModelABC
 from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (

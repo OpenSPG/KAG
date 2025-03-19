@@ -219,3 +219,165 @@ class BuilderChainRunner(Registrable):
 
 
 BuilderChainRunner.register("base", as_default=True)(BuilderChainRunner)
+
+
+@BuilderChainRunner.register("stream")
+class BuilderChainStreamRunner(BuilderChainRunner):
+    """
+    A class that manages the execution of a KAGBuilderChain with parallel processing and checkpointing.
+
+    This class provides methods to initialize the runner, process input data, and manage checkpoints for tracking processed data.
+    """
+
+    def __init__(
+        self,
+        scanner: ScannerABC,
+        chain: KAGBuilderChain,
+        num_chains: int = 2,
+        num_threads_per_chain: int = 8,
+    ):
+        """
+        Initializes the BuilderChainRunner instance.
+
+        Args:
+            scanner (ScannerABC): The source scanner to generate input data.
+            chain (KAGBuilderChain): The builder chain to process the input data.
+            num_chains (int, optional): The number of parallel threads to use, with each thread launching a builder chain instance. Defaults to 2.
+            num_threads_per_chain (int, optional): The number of parallel workers within a builder chain. Defaults to 8.
+            ckpt_dir (str, optional): The directory to store checkpoint files. Defaults to "./ckpt".
+        """
+        self.scanner = scanner
+        self.chain = chain
+        self.num_chains = num_chains
+        self.num_threads_per_chain = num_threads_per_chain
+        self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
+
+        self.checkpointer = CheckpointerManager.get_checkpointer(
+            {
+                "type": "txt",
+                "ckpt_dir": self.ckpt_dir,
+                "rank": self.scanner.sharding_info.get_rank(),
+                "world_size": self.scanner.sharding_info.get_world_size(),
+            }
+        )
+        self.processed_chunks = CheckpointerManager.get_checkpointer(
+            {
+                "type": "zodb",
+                "ckpt_dir": os.path.join(self.ckpt_dir, "chain"),
+                "rank": self.scanner.sharding_info.get_rank(),
+                "world_size": self.scanner.sharding_info.get_world_size(),
+            }
+        )
+        self._local = threading.local()
+
+    def invoke(self, input):
+        """
+        Processes the input data using the builder chain in a streaming fashion.
+        This method works with a blocking/continuous generator by processing results
+        as they complete while continuing to accept new items from the stream.
+
+        Args:
+            input: The input data to be processed.
+        """
+
+        def process(data, data_id, data_abstract):
+            try:
+                result = self.chain.invoke(
+                    data,
+                    max_workers=self.num_threads_per_chain,
+                    processed_chunk_keys=self.processed_chunks.keys(),
+                )
+                return data, data_id, data_abstract, result
+            except Exception:
+                traceback.print_exc()
+                return None
+
+        print(f"Processing stream from {input}")
+        success = 0
+        submitted = 0
+
+        try:
+            with ThreadPoolExecutor(self.num_chains) as executor:
+                futures_map = {}  # Maps Future objects to metadata
+
+                # Start a separate thread to iterate through the scanner
+                def generate_items():
+                    for item in self.scanner.generate(input):
+                        item_id, item_abstract = generate_hash_id_and_abstract(item)
+                        if self.checkpointer.exists(item_id):
+                            continue
+
+                        # Submit new task and track its metadata
+                        fut = executor.submit(process, item, item_id, item_abstract)
+                        nonlocal submitted
+                        futures_map[fut] = (submitted, item_id, item_abstract)
+                        submitted += 1
+
+                # Start the generator thread
+                gen_thread = threading.Thread(target=generate_items, daemon=True)
+                gen_thread.start()
+
+                # Process results as they complete
+                with tqdm(desc="Processing stream", position=0) as pbar:
+                    while gen_thread.is_alive() or futures_map:
+                        # Process any completed futures
+                        done_futures = []
+                        for fut in list(futures_map.keys()):
+                            if fut.done():
+                                done_futures.append(fut)
+
+                        for fut in done_futures:
+                            result = fut.result()
+                            _, _, _ = futures_map.pop(fut)  # Remove from tracking map
+
+                            if result is not None:
+                                item, item_id, item_abstract, chain_output = result
+
+                                # Process the result and update checkpoints
+                                num_nodes, num_edges, num_subgraphs = 0, 0, 0
+                                for item in chain_output:
+                                    if isinstance(item, SubGraph):
+                                        num_nodes += len(item.nodes)
+                                        num_edges += len(item.edges)
+                                        num_subgraphs += 1
+                                    elif isinstance(item, dict):
+                                        for k, v in item.items():
+                                            self.processed_chunks.write_to_ckpt(k, k)
+                                            if isinstance(v, SubGraph):
+                                                num_nodes += len(v.nodes)
+                                                num_edges += len(v.edges)
+                                                num_subgraphs += 1
+
+                                info = {
+                                    "num_nodes": num_nodes,
+                                    "num_edges": num_edges,
+                                    "num_subgraphs": num_subgraphs,
+                                }
+                                self.checkpointer.write_to_ckpt(
+                                    item_id,
+                                    {"abstract": item_abstract, "graph_stat": info},
+                                )
+                                success += 1
+                                pbar.update(1)
+                                pbar.set_description(
+                                    f"Processed: {success}/{submitted}"
+                                )
+
+                        # Small sleep to avoid busy-waiting
+                        if not done_futures:
+                            import time
+
+                            time.sleep(0.1)
+
+        except KeyboardInterrupt:
+            print("\nInterrupted by user. Saving progress...")
+        except Exception:
+            traceback.print_exc()
+
+        CheckpointerManager.close()
+        msg = (
+            f"{bold}{red}Done processing stream. {success} successfully processed out of {submitted} submitted tasks.\n"
+            f"The log file is located at {self.checkpointer._ckpt_file_path}. "
+            f"Please access this file to obtain detailed task statistics.{reset}"
+        )
+        print(msg)

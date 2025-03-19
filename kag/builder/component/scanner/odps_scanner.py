@@ -3,6 +3,10 @@ from odps import ODPS
 from kag.interface.builder.scanner_abc import ScannerABC
 from typing import Any, Generator, List
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 @ScannerABC.register("odps_scanner")
 class ODPSScanner(ScannerABC):
@@ -15,6 +19,7 @@ class ODPSScanner(ScannerABC):
         endpoint,
         col_names=None,
         col_ids=None,
+        limit=None,
     ):
         super().__init__()
         self.access_id = access_id
@@ -24,6 +29,7 @@ class ODPSScanner(ScannerABC):
         self.endpoint = endpoint
         self.col_names = col_names
         self.col_ids = col_ids
+        self.limit = limit
 
         self._o = ODPS(self.access_id, self.access_key, self.project, self.endpoint)
         if not self._o.exist_table(self.table):
@@ -31,15 +37,17 @@ class ODPSScanner(ScannerABC):
         self.table = self._o.get_table(self.table)
 
         # 打印表的基本信息
-        print(f"Table {self.table.name} info:")
-        print(f"  - Schema: {self.table.table_schema}")
-        print(f"  - Partitions: {[p.name for p in self.table.table_schema.partitions]}")
+        logger.debug(f"Table {self.table.name} info:")
+        logger.debug(f"  - Schema: {self.table.table_schema}")
+        logger.debug(
+            f"  - Partitions: {[p.name for p in self.table.table_schema.partitions]}"
+        )
 
         # 如果有分区，列出所有分区
         if self.table.table_schema.partitions:
-            print("  - Available partitions:")
+            logger.debug("  - Available partitions:")
             for p in self.table.partitions:
-                print(f"      {p.name}")
+                logger.debug(f"      {p.name}")
 
     def reload(self):
         self.table.reload()
@@ -57,38 +65,35 @@ class ODPSScanner(ScannerABC):
             List[Any]: A list containing all records as pandas DataFrames
         """
         try:
-            cols = kwargs.get("colns", None)
-            rows = kwargs.get("rows", None)
-            partition_spec = input
+            partition_spec = (
+                input if input and self.table.table_schema.partitions else None
+            )
 
             import pandas as pd
 
             # Get all data as a DataFrame
             with self.table.open_reader(partition=partition_spec) as reader:
-                print(
+                logger.debug(
                     f"Reading data from {self.table.name}{' with partition ' + partition_spec if partition_spec else ''}"
                 )
-                print(f"Total records in this query: {reader.count}")
+                logger.debug(f"Total records in this query: {reader.count}")
 
                 records = list(reader)
-                print(f"Got {len(records)} records")
+                logger.debug(f"Got {len(records)} records")
 
-                if cols:
-                    df = pd.DataFrame([{k: r[k] for k in cols} for r in records])
-                    print(f"Created DataFrame with columns {cols}, shape: {df.shape}")
-                else:
-                    df = pd.DataFrame(
-                        [r.values for r in records],
-                        columns=[c.name for c in reader.schema.columns],
-                    )
-                    print(f"Created DataFrame with all columns, shape: {df.shape}")
+                df = pd.DataFrame(
+                    [r.values for r in records],
+                    columns=[c.name for c in reader.schema.columns],
+                )
+                logger.debug(f"Created DataFrame with all columns, shape: {df.shape}")
 
             # Apply row filtering if specified
-            if rows:
-                start, end = rows
-                df = df.iloc[start:end]
-                print(
-                    f"After row filtering [{start}:{end}], DataFrame shape: {df.shape}"
+
+            # Apply limit if specified
+            if self.limit is not None:
+                df = df.head(self.limit)
+                logger.debug(
+                    f"Applied row limit of {self.limit}, DataFrame shape: {df.shape}"
                 )
 
             return [df]
@@ -110,38 +115,44 @@ class ODPSScanner(ScannerABC):
             dict: Individual records as dictionaries
         """
         try:
-            cols = kwargs.get("colns", None)
-            chunk_size = kwargs.get(
-                "chunk_size", 1000
-            )  # Still using chunk size for internal batch fetching
-            partition_spec = input
+            chunk_size = kwargs.get("chunk_size", 1000)
+            # 只有当表有分区且input不为空时才使用分区
+            partition_spec = (
+                input if input and self.table.table_schema.partitions else None
+            )
 
-            print(f"Generating data row by row (internal batch size: {chunk_size})")
+            logger.debug(
+                f"Generating data row by row (internal batch size: {chunk_size})"
+            )
+            if self.limit is not None:
+                logger.debug(f"Row limit set to {self.limit}")
 
             # Get the reader with partition if specified
             with self.table.open_reader(partition=partition_spec) as reader:
-                print(f"Reader created with partition: {partition_spec}")
-                print(f"Total records available: {reader.count}")
+                logger.debug(f"Reader created with partition: {partition_spec}")
+                logger.debug(f"Total records available: {reader.count}")
 
                 # Calculate sharding information for proper distribution
                 if self.sharding_info.shard_count > 1:
                     total_count = reader.count
                     start, end = self.sharding_info.get_sharding_range(total_count)
                     worker = f"{self.sharding_info.get_rank()}/{self.sharding_info.get_world_size()}"
-                    print(f"Worker {worker} processing records from {start} to {end}")
+                    logger.debug(
+                        f"Worker {worker} processing records from {start} to {end}"
+                    )
 
                     # Skip to the start position if needed
                     if start > 0:
                         reader.skip(start)
-                        print(f"Skipped {start} records")
+                        logger.debug(f"Skipped {start} records")
 
                     # Calculate how many records to read
                     records_to_read = end - start
-                    print(f"Will read {records_to_read} records")
+                    logger.debug(f"Will read {records_to_read} records")
                 else:
                     records_to_read = None  # Read all records
                     start = 0
-                    print("No sharding, will read all records")
+                    logger.debug("No sharding, will read all records")
 
                 # Implement our own chunking logic for internal fetching
                 if records_to_read is not None:
@@ -149,7 +160,7 @@ class ODPSScanner(ScannerABC):
                 else:
                     remaining = reader.count - start
 
-                print(
+                logger.debug(
                     f"Starting to read {remaining} records (internal batch size: {chunk_size})"
                 )
                 current_offset = 0
@@ -161,7 +172,7 @@ class ODPSScanner(ScannerABC):
                 while remaining > 0:
                     # Read a chunk of records
                     batch_size = min(chunk_size, remaining)
-                    print(
+                    logger.debug(
                         f"Reading internal batch {chunk_number}, batch size: {batch_size}"
                     )
 
@@ -173,35 +184,66 @@ class ODPSScanner(ScannerABC):
                             # Option 2: Original method but ensure it's not at the end
                             batch_records = list(reader.read(batch_size))
                         except Exception as inner_e:
-                            print(f"Error reading batch: {str(inner_e)}")
+                            logger.debug(f"Error reading batch: {str(inner_e)}")
                             batch_records = []
 
-                    print(f"Got {len(batch_records)} records in this batch")
+                    logger.debug(f"Got {len(batch_records)} records in this batch")
 
                     # If no records, break the loop
                     if not batch_records:
-                        print("No more records to read, breaking loop")
+                        logger.debug("No more records to read, breaking loop")
                         break
 
-                    # Yield records one by one
+                    # Yield records one by one with limit
+                    rows_yielded = 0
                     for record in batch_records:
-                        if cols:
-                            # If specific columns are requested, return only those columns
-                            row_dict = {k: record[k] for k in cols}
-                        else:
-                            # Otherwise, return all columns
-                            row_dict = dict(zip(column_names, record.values))
+                        if self.limit is not None and rows_yielded >= self.limit:
+                            logger.debug(
+                                f"Reached row limit of {self.limit}, stopping generation"
+                            )
+                            break
 
-                        yield row_dict
+                        row_dict = dict(zip(column_names, record.values))
+
+                        col_keys = self.col_names if self.col_names else self.col_ids
+                        if col_keys is None:
+                            logger.debug(
+                                "No columns specified, returning all rows as dictionaries"
+                            )
+                            yield row_dict
+                            rows_yielded += 1
+                        else:
+                            for k, v in row_dict.items():
+                                if k in col_keys:
+                                    v = str(v)
+                                    name = v if len(v) < 10 else v[:5] + "..." + v[-5:]
+                                    yield {
+                                        "id": generate_hash_id(v),
+                                        "name": name,
+                                        "content": v,
+                                    }
+                                    rows_yielded += 1
+                                    if (
+                                        self.limit is not None
+                                        and rows_yielded >= self.limit
+                                    ):
+                                        break
+
+                        # Check limit after processing each record
+                        if self.limit is not None and rows_yielded >= self.limit:
+                            logger.debug(
+                                f"Reached row limit of {self.limit}, stopping generation"
+                            )
+                            break
 
                     # Update remaining count
                     remaining -= batch_size
                     current_offset += batch_size
                     chunk_number += 1
-                    print(f"Remaining records: {remaining}")
+                    logger.debug(f"Remaining records: {remaining}")
 
                     if remaining <= 0:
-                        print("No more records to read, breaking loop")
+                        logger.debug("No more records to read, breaking loop")
                         break
 
         except Exception as e:
@@ -225,24 +267,25 @@ class ODPSScanner(ScannerABC):
         """
         import pandas as pd
 
-        print(f"Invoking scanner with input: {input}")
+        logger.debug(f"Invoking scanner with input: {input}")
 
         # Collect all rows from the generator
         rows = list(self.generate(input, **kwargs))
 
-        print(f"Got {len(rows)} rows")
+        logger.debug(f"Got {len(rows)} rows")
 
         if not rows:
-            print("No data returned, returning empty DataFrame")
+            logger.debug("No data returned, returning empty DataFrame")
             return pd.DataFrame()
 
         # Convert collected rows (dictionaries) to a DataFrame
         result = pd.DataFrame(rows)
-        print(f"Combined result shape: {result.shape}")
+        logger.debug(f"Combined result shape: {result.shape}")
 
         # Process the data based on column parameters
         col_keys = self.col_names if self.col_names else self.col_ids
         if col_keys is None:
+            logger.debug("No columns specified, returning all rows as dictionaries")
             return result.to_dict(orient="records")
 
         contents = []
@@ -261,42 +304,51 @@ class ODPSScanner(ScannerABC):
 if __name__ == "__main__":
     # 尝试多种分区格式
     odps_config = {
+        "type": "odps_scanner",
         "access_id": "",
         "access_key": "",
-        "project": "",
-        "table": "",
-        "endpoint": "",
-        "col_names": ["description"],
+        "project": "alifin_jtest_dev",
+        "table": "jincheng_doc2x_finance_40w_parsed",
+        "endpoint": "http://service-corp.odps.aliyun-inc.com/api",
+        "col_names": ["content"],
     }
-    scanner = ODPSScanner(**odps_config)
+    scanner = ScannerABC.from_config(odps_config)
 
     # 测试不同的分区格式
-    print("\n\n==== 测试 1: 使用dt=20250225 格式 ====")
+    logger.debug("\n\n==== 测试 1: 使用dt=20250225 格式 ====")
     try:
-        result = scanner.invoke(input="dt=20250226")
-        print(f"Total rows: {len(result)}")
+        result = list(scanner.generate(input="dt=20250226"))
+        logger.debug(f"Total rows: {len(result)}")
         if len(result) > 0:
-            print("Data sample:")
-            print(result)
+            logger.debug("Data sample:")
+            print(result[0:2])
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
 
-    print("\n\n==== 测试 2: 只使用20250225值（自动添加分区名） ====")
+    logger.debug("\n\n==== 测试 2: 只使用20250225值（自动添加分区名） ====")
     try:
         result = scanner.invoke(input="20250225")
-        print(f"Total rows: {len(result)}")
+        logger.debug(f"Total rows: {len(result)}")
         if len(result) > 0:
-            print("Data sample:")
-            print(result)
+            logger.debug("Data sample:")
+            print(result[0:2])
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
 
-    print("\n\n==== 测试 3: 不指定分区（读取整个表） ====")
+    logger.debug("\n\n==== 测试 3: 不指定分区（读取整个表） ====")
     try:
         result = scanner.invoke(input="")
-        print(f"Total rows: {len(result)}")
+        logger.debug(f"Total rows: {len(result)}")
         if len(result) > 0:
-            print("Data sample:")
-            print(result.head(2))
+            logger.debug("Data sample:")
+            print(result[0:2])
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
+
+    # Example: Limit to 100 rows
+    result = scanner.invoke(input="dt=20250226", limit=100)
+
+    # Or with generate
+    for row in scanner.generate(input="dt=20250226", limit=100):
+        # Process row
+        pass
