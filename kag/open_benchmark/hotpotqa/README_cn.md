@@ -16,7 +16,7 @@
 ### Step 1：进入示例目录
 
 ```bash
-cd kag/examples/hotpotqa
+cd kag/open_benchmark/hotpotqa
 ```
 
 ### Step 2：配置模型
