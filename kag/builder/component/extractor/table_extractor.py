@@ -43,7 +43,7 @@ class TableExtractor(ExtractorABC):
         llm: LLMClient,
         table_context_prompt: PromptABC,
         table_row_col_summary_prompt: PromptABC,
-        extract_type:str = "chunk",
+        extract_type: str = "chunk",
         **kwargs,
     ):
         """
@@ -289,8 +289,8 @@ class TableExtractor(ExtractorABC):
     def _do_split_table_to_chunk(
         self,
         input_table: Chunk,
-        row_summary_list: list["TableRowSummary"],
-        col_summary_list: list["TableColSummary"],
+        row_summary_list,
+        col_summary_list,
     ):
         doc_name = input_table.kwargs.get("file_name", "unknow doc name")
         section = input_table.name
@@ -352,8 +352,8 @@ class TableExtractor(ExtractorABC):
         self,
         input_table: Chunk,
         table_df: pd.DataFrame,
-        row_summary_list: list["TableRowSummary"],
-        col_summary_list: list["TableColSummary"],
+        row_summary_list,
+        col_summary_list,
     ):
         """
         generate subgraph
