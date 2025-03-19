@@ -53,7 +53,6 @@ class DefaultLFPlanner(LFPlannerABC):
             )
         self.logic_form_plan_prompt = logic_form_plan_prompt
 
-    @retry(stop=stop_after_attempt(3))
     def lf_planing(
         self, question: str, memory: KagMemoryABC = None, llm_output=None
     ) -> List[LFPlan]:
@@ -67,11 +66,22 @@ class DefaultLFPlanner(LFPlannerABC):
         Returns:
         list of LFPlanResult
         """
-        if llm_output is not None:
-            sub_querys, logic_forms = self.parse_logic_form_llm_output(llm_output)
-        else:
-            sub_querys, logic_forms = self.generate_logic_form(question)
-        return self._parse_lf(question, sub_querys, logic_forms)
+        retry_times = 0
+        max_retries = 3
+        while retry_times < max_retries:
+            sub_querys = []
+            logic_forms = []
+            try:
+                if llm_output is not None:
+                    sub_querys, logic_forms = self.parse_logic_form_llm_output(llm_output)
+                else:
+                    sub_querys, logic_forms = self.generate_logic_form(question)
+                return self._parse_lf(question, sub_querys, logic_forms)
+            except Exception as e:
+                querys = '\n'.join(sub_querys)
+                lf = '\n'.join(logic_forms)
+                logger.warning(f"lf_planing retry err={e} content={querys}\n{lf}")
+            retry_times += 1
 
     def _convert_node_to_plan(self, logic_nodes: List[LogicNode]) -> List[LFPlan]:
         plan_result = []
