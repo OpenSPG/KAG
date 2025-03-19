@@ -132,6 +132,8 @@ class ODPSScanner(ScannerABC):
                 logger.debug(f"Reader created with partition: {partition_spec}")
                 logger.debug(f"Total records available: {reader.count}")
 
+                raw_reader = reader
+
                 # Calculate sharding information for proper distribution
                 if self.sharding_info.shard_count > 1:
                     total_count = reader.count
@@ -146,7 +148,6 @@ class ODPSScanner(ScannerABC):
                     logger.debug(
                         f"Will read {records_to_read} records from position {start}"
                     )
-                    raw_reader = reader
 
                     # 使用切片直接获取该分片的数据
                     try:
