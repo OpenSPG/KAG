@@ -42,8 +42,8 @@ class RetrievalExecutor(OpExecutor):
         history: List[LFPlan],
         param: dict,
     ) -> Dict:
-        op = self.op_register_map.get(lf_plan.lf_node.operator, None)
-        if op is None:
+        op = self.op_register_map.get(logic_node.operator, None)
+        if not op:
             return {}
         try:
             op.executor(

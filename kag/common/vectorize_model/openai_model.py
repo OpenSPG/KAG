@@ -13,6 +13,9 @@ from typing import Union, Iterable
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 from kag.interface import VectorizeModelABC, EmbeddingVector
 from typing import Callable
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @VectorizeModelABC.register("openai")
@@ -64,9 +67,50 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
-        results = self.client.embeddings.create(
-            input=texts, model=self.model, timeout=self.timeout
-        )
+
+        try:
+
+            # Handle empty strings in the input
+            if isinstance(texts, list):
+                # Create a map of original indices to track empty strings
+                empty_indices = {i: text.strip() == "" for i, text in enumerate(texts)}
+                # Filter out empty strings for the API call
+                filtered_texts = [
+                    text for i, text in enumerate(texts) if not empty_indices[i]
+                ]
+
+                if not filtered_texts:
+                    return [[] for _ in texts]  # Return empty vectors for all inputs
+
+                results = self.client.embeddings.create(
+                    input=filtered_texts, model=self.model, timeout=self.timeout
+                )
+
+                # Reconstruct the results with empty lists for empty strings
+                embeddings = [item.embedding for item in results.data]
+                full_results = []
+                embedding_idx = 0
+
+                for i in range(len(texts)):
+                    if empty_indices[i]:
+                        full_results.append([])  # Empty embedding for empty string
+                    else:
+                        full_results.append(embeddings[embedding_idx])
+                        embedding_idx += 1
+
+                return full_results
+            elif isinstance(texts, str) and not texts.strip():
+                return []  # Return empty vector for empty string
+            else:
+                results = self.client.embeddings.create(
+                    input=texts, model=self.model, timeout=self.timeout
+                )
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            logger.error(f"input: {texts}")
+            logger.error(f"model: {self.model}")
+            logger.error(f"timeout: {self.timeout}")
+            return None
         results = [item.embedding for item in results.data]
         if isinstance(texts, str):
             assert len(results) == 1

@@ -49,3 +49,6 @@ json_repair
 gitpython
 docstring_parser
 aiolimiter
+pyodps
+aliyun-log-python-sdk==0.8.8
+pyvis

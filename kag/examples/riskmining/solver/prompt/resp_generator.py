@@ -1,5 +1,3 @@
-import re
-from string import Template
 from typing import List
 import logging
 
@@ -11,9 +9,7 @@ logger = logging.getLogger(__name__)
 @PromptABC.register("resp_riskmining")
 class RespGenerator(PromptABC):
     template_zh = (
-        "基于给定的引用信息回答问题。"
-        "\n输出答案，并且给出理由。"
-        "\n给定的引用信息：'$memory'\n问题：'$instruction'"
+        "基于给定的引用信息回答问题。" "\n输出答案，并且给出理由。" "\n给定的引用信息：'$memory'\n问题：'$instruction'"
     )
     template_en = (
         "Answer the question based on the given reference."

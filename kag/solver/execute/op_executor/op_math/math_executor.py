@@ -1,4 +1,4 @@
-from typing import Union, Dict, List
+from typing import Dict, List
 
 from kag.solver.execute.op_executor.op_executor import OpExecutor
 from kag.interface.solver.base_model import LogicNode, LFPlan

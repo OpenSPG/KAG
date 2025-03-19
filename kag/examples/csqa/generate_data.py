@@ -28,7 +28,7 @@ def main():
             if content not in documents:
                 name = to_snake_case(title)
                 output_file_path = os.path.join(
-                    dir_path, "builder", "data", name + ".txt"
+                    dir_path, "builder", "data", name + ".md"
                 )
                 with io.open(
                     output_file_path, "w", encoding="utf-8", newline="\n"

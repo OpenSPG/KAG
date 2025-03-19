@@ -12,7 +12,7 @@
 
 import json
 from string import Template
-from typing import List, Optional
+from typing import List
 
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
