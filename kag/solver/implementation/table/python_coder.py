@@ -43,8 +43,9 @@ class PythonCoderAgent(KagBaseModule):
         python_code = llm.invoke(
             {
                 "question": self.question,
-                "context": str(self.history.as_subquestion_context()),
+                "context": str(self.history.as_subquestion_context_json()),
                 "error": error,
+                "dk": self.history.dk,
             },
             self.code_prompt,
             with_except=True,
@@ -53,6 +54,7 @@ class PythonCoderAgent(KagBaseModule):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
             temp_file.write(python_code.encode("utf-8"))
             temp_file_path = temp_file.name
+            os.chmod(temp_file_path, 0o777)
 
         try:
             # 获取当前Python环境的可执行文件路径
@@ -61,6 +63,12 @@ class PythonCoderAgent(KagBaseModule):
             result = subprocess.run(
                 [python_executable, temp_file_path], capture_output=True, text=True
             )
+            print(f"stdout:{result.stdout}, stderr:{result.stderr}")
+        except Exception as e:
+            if result:
+                print(f"stdout:{result.stdout}, stderr:{result.stderr} {e}")
+            else:
+                print(f"subprocess.run failed {e}")
         finally:
             # 清理临时文件
             os.remove(temp_file_path)

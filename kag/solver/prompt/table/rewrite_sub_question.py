@@ -8,20 +8,22 @@ from kag.common.base.prompt_op import PromptOp
 logger = logging.getLogger(__name__)
 
 
-class RespGenerator(PromptOp):
+class RewriteSubQuestionPrompt(PromptOp):
     template_zh = """
 # task
-基于给定的信息回答问题。
-如果是简单问题，直接说出答案。
-如果是复杂问题，给出简洁的解题过程和中间结果，并以正式的口吻总结答案。
+根据给定的前置问题答案，重写子问题。
+如果子问题信息已经完整，直接返回原有子问题即可。
+改写后的子问题，必须保持信息完整，关键字不能有丢失。
 
 # output format
 纯文本，不要包含markdown格式。
 
 # context
-$memory
+$history
 
-# question
+$dk
+
+# sub question
 $question
 
 # your answer
@@ -33,8 +35,7 @@ $question
 
     @property
     def template_variables(self) -> List[str]:
-        return ["memory", "question"]
+        return ["history", "question", "dk"]
 
     def parse_response(self, response: str, **kwargs):
-        logger.debug("推理器判别:{}".format(response))
         return response

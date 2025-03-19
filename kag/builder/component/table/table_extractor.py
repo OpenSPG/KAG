@@ -738,9 +738,9 @@ class TableExtractor(ExtractorABC, BaseTableSplitter):
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 value = data.iloc[i, j]
-                value = format_value(value)
-                if not value:
-                    continue
+                #value = format_value(value)
+                #if not value:
+                #    continue
                 x_index = i + len(header)
                 y_index = j + 1
                 cell_id = f"{x_index-1}-{y_index-1}"

@@ -106,8 +106,17 @@ class LFSolver:
         if len(self.last_iter_docs) > 0:
             passages_set.append(self.last_iter_docs)
         for passages in passages_set:
-            passages = ["#".join(item.split("#")[:-1]) for item in passages]
-            for i, passage in enumerate(passages):
+            filtered_passages = []
+            for p in passages:
+                try:
+                    score = float(p.split("#")[-1])
+                except Exception as e:
+                    logger.warning(f"_flat_passages_set convert score failed {e}", exc_info=True)
+                p_without_score = "#".join(p.split("#")[:-1])
+                if score < 0.5 and len(filtered_passages) > 3:
+                    continue
+                filtered_passages.append(p_without_score)
+            for i, passage in enumerate(filtered_passages):
                 score = 1.0 / (1 + i)
                 if passage in score_map:
                     score_map[passage] += score
