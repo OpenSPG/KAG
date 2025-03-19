@@ -30,12 +30,25 @@ project:
   namespace: NaiveRagMedQA
 #------------project configuration end----------------#
 
+#------------table-extractor configuration start----------------#
+table_extractor: &table_extractor
+  type: table_extractor
+  llm: *chat_llm
+  table_context_prompt:
+    type: table_context
+    language: zh
+  table_row_col_summary_prompt:
+    type: table_row_col_summary
+    language: zh
+#------------table-extractor configuration end----------------#
+
 #------------kag-builder configuration start----------------#
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
       type: naive_rag_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+      table_extractor: *table_extractor
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
