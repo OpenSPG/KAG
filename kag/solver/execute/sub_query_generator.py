@@ -1,4 +1,7 @@
 import logging
+
+from tenacity import retry, stop_after_attempt
+
 from kag.interface import KagBaseModule
 
 from kag.solver.utils import init_prompt_with_fallback
@@ -25,6 +28,7 @@ class LFSubGenerator(KagBaseModule):
             "solve_question_without_spo", self.biz_scene
         )
 
+    @retry(stop=stop_after_attempt(3))
     def generate_sub_answer(
         self, question: str, knowledge_graph: [], docs: [], history=[]
     ):

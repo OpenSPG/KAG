@@ -47,7 +47,6 @@ kag_builder_pipeline:
       type: md_reader # kag.builder.component.reader.markdown_reader.MarkDownReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
-      similarity_threshold: 0.9
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
       split_length: 4950

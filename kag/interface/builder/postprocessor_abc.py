@@ -31,4 +31,4 @@ class PostProcessorABC(BuilderComponent):
 
     @property
     def ckpt_subdir(self):
-        return "postprocessor"
+        return "post_processor"

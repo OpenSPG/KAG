@@ -1,6 +1,6 @@
 from typing import List
 
-from kag.common.conf import KAG_CONFIG, KAGGlobalConf, KAGConfigMgr, KAG_PROJECT_CONF
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.interface import KagBaseModule, LLMClient, VectorizeModelABC
 from kag.interface.solver.base_model import SPOEntity
 from kag.solver.logic.core_modules.common.one_hop_graph import (

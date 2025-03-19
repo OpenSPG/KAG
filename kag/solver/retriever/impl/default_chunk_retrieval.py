@@ -94,7 +94,7 @@ class KAGRetriever(ChunkRetriever):
         else:
             self.reranker = None
 
-        self.with_semantic = True
+        self.with_semantic = False
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_recognition(self, query: str):
@@ -171,7 +171,6 @@ class KAGRetriever(ChunkRetriever):
         Returns:
         dict: A dictionary with keys as document chunk IDs and values as the vector similarity scores.
         """
-        scores = dict()
         try:
             scores = query_sim_doc_cache.get(query)
             if scores:
@@ -186,7 +185,11 @@ class KAGRetriever(ChunkRetriever):
             scores = {item["node"]["id"]: item["score"] for item in top_k}
             query_sim_doc_cache.put(query, scores)
         except Exception as e:
-            logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
+            scores = dict()
+            logger.error(
+                f"run calculate_sim_scores failed query={query}, info: {e}",
+                exc_info=True,
+            )
         return scores
 
     def calculate_pagerank_scores(self, start_nodes: List[Dict]):
@@ -234,6 +237,8 @@ class KAGRetriever(ChunkRetriever):
         matched_entities = []
         for query, query_type in queries.items():
             query = processing_phrases(query)
+            if not query:
+                continue
             if query_type not in self.schema.node_en_zh.keys():
                 query_type = self.schema.get_label_within_prefix(OTHER_TYPE)
             else:
@@ -386,14 +391,20 @@ class KAGRetriever(ChunkRetriever):
         return matched_entities
 
     def _parse_ner_list(self, query):
-        ner_list = ner_cache.get(query)
-        if ner_list:
-            return ner_list
-        ner_list = self.named_entity_recognition(query)
-        if self.with_semantic:
-            std_ner_list = self.named_entity_standardization(query, ner_list)
-            self.append_official_name(ner_list, std_ner_list)
-        ner_cache.put(query, ner_list)
+        ner_list = []
+        try:
+            ner_list = ner_cache.get(query)
+            if ner_list:
+                return ner_list
+            ner_list = self.named_entity_recognition(query)
+            if self.with_semantic:
+                std_ner_list = self.named_entity_standardization(query, ner_list)
+                self.append_official_name(ner_list, std_ner_list)
+            ner_cache.put(query, ner_list)
+        except Exception as e:
+            if not ner_list:
+                ner_list = []
+            logger.warning(f"_parse_ner_list {query} failed {e}", exc_info=True)
         return ner_list
 
     def recall_docs(
@@ -424,6 +435,8 @@ class KAGRetriever(ChunkRetriever):
             assert isinstance(query, str), "Query must be a string"
             ner_list = self._parse_ner_list(query)
             for item in ner_list:
+                if not isinstance(item, dict):
+                    continue
                 entity = item.get("name", "")
                 category = item.get("category", "")
                 official_name = item.get("official_name", "")
@@ -476,7 +489,7 @@ class KAGRetriever(ChunkRetriever):
         sorted_scores = sorted(
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
-        logger.debug(f"sorted_scores: {sorted_scores}")
+        logger.debug(f"sorted_scores: {sorted_scores[:self.recall_num+1]}")
 
         return self.get_all_docs_by_id(queries, sorted_scores, self.recall_num)
 
@@ -504,34 +517,35 @@ class KAGRetriever(ChunkRetriever):
             else:
                 doc_score = doc_ids[doc_id]
             counter += 1
-            node = self.graph_api.get_entity_prop_by_id(
-                label=self.schema.get_label_within_prefix(CHUNK_TYPE),
-                biz_id=doc_id,
-            )
-            node_dict = dict(node.items())
-            matched_docs.append(
-                f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
-            )
-            hits_docs.add(node_dict["name"])
-        query = "\n".join(queries)
-        try:
-            text_matched = self.search_api.search_text(
-                query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
-            )
-            if text_matched:
-                for item in text_matched:
-                    title = item["node"]["name"]
-                    if title not in hits_docs:
-                        if len(matched_docs) > 0:
-                            matched_docs.pop()
-                        else:
-                            logger.warning(f"{query} matched docs is empty")
-                        matched_docs.append(
-                            f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
-                        )
-                        break
-        except Exception as e:
-            logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
+            try:
+                node = self.graph_api.get_entity_prop_by_id(
+                    label=self.schema.get_label_within_prefix(CHUNK_TYPE),
+                    biz_id=doc_id,
+                )
+                node_dict = dict(node.items())
+                matched_docs.append(
+                    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                )
+                hits_docs.add(node_dict["name"])
+            except Exception as e:
+                logger.warning(
+                    f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
+                )
+        for query in queries:
+            try:
+                text_matched = self.search_api.search_text(
+                    query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
+                )
+                if text_matched:
+                    for item in text_matched:
+                        title = item["node"]["name"]
+                        if title not in hits_docs:
+                            matched_docs.append(
+                                f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
+                            )
+                            break
+            except Exception as e:
+                logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         logger.debug(f"matched_docs: {matched_docs}")
         return matched_docs
 

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List
 
 from kag.interface import PromptABC
 
@@ -112,8 +112,10 @@ class SpoRetrieval(PromptABC):
             f"SpoRetrieval {response} mention:{self.template_variables_value.get('mention', '')} "
             f"candis:{self.template_variables_value.get('candis', '')}"
         )
+        if isinstance(response, list):
+            return response
         if not isinstance(response, dict):
-            return []
+            return response
         if "output" in response:
             return response["output"]
         if "Output" in response:

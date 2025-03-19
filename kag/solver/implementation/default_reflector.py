@@ -46,6 +46,8 @@ class DefaultReflector(KagReflectorABC):
         :param instruction (str): The original instruction to be rewritten.
         :return: Whether the query can be answered (boolean)
         """
+        if memory.has_break():
+            return False
         serialize_memory = self._get_serialize_memory(memory)
         if serialize_memory == "":
             return False

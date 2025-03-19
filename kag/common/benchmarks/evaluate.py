@@ -5,10 +5,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
+from .evaUtils import compute_rouge
 
 
 class Evaluate:
-
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
@@ -32,6 +32,12 @@ class Evaluate:
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
         return 0.0
+
+    def compute_rouge(self, predictionlist: List[str], goldlist: List[str]):
+        rouge_scores = compute_rouge(predictionlist, goldlist)
+        rouge_ls = [score["rouge-l"]["f"] for score in rouge_scores]
+        average_rouge_l = sum(rouge_ls) / len(rouge_ls)
+        return {"rouge-L": average_rouge_l}
 
     def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
         """
@@ -70,7 +76,13 @@ class Evaluate:
         # Return evaluation metrics dictionary
         return total_metrics
 
-    def getLLMBenchMark(self, llm_client, questionList: List[str], predictionlist: List[str], goldlist: List[str]):
+    def getLLMBenchMark(
+        self,
+        llm_client,
+        questionList: List[str],
+        predictionlist: List[str],
+        goldlist: List[str],
+    ):
         """
         Calculates and returns evaluation metrics between predictions and ground truths.
 
@@ -86,13 +98,15 @@ class Evaluate:
         """
         # Initialize total metrics
         total_metrics = {"consistency": 0.0}
-        llm_judger = LLMJudger(llm = llm_client)
+        llm_judger = LLMJudger(llm=llm_client)
 
         # llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
         # Iterate over prediction and gold lists to calculate EM and F1 scores
         hits = 0
         for question, prediction, gold in zip(questionList, predictionlist, goldlist):
-            resposne = llm_judger.judge_by_llm(question = question, prediction = prediction, gold = gold)
+            resposne = llm_judger.judge_by_llm(
+                question=question, prediction=prediction, gold=gold
+            )
             if resposne.lower() == "true":
                 hits += 1
 

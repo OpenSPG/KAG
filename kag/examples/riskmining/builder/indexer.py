@@ -12,7 +12,6 @@
 
 import os
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
-from kag.builder.default_chain import DefaultStructuredBuilderChain
 from kag.builder.component import KGWriter, RelationMapping, SPGTypeMapping
 from kag.builder.component.scanner.csv_scanner import CSVScanner
 from kag.common.conf import KAG_CONFIG
