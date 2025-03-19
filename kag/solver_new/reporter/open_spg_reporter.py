@@ -4,7 +4,7 @@ from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData, KgGraph, ChunkData
+from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_hybrid_executor import KAGRetrievedResponse
 from knext.common.rest import ApiClient, Configuration
 from knext.reasoner import ReasonerApi
 from knext.reasoner.rest.models import TaskStreamRequest
@@ -14,34 +14,24 @@ from knext.reasoner.rest.models.stream_data import StreamData
 
 logger = logging.getLogger()
 
-def trans_retrieved_data_to_report_data(tag_name, retrieved_data_list: List[RetrievedData]):
-    report_data = []
-    """
-    {
-        "id": "02c5ef73c6b90f85",
-        "content": "于谦（1398年5月13日－1457年2月16日），字廷益，号节庵，浙江杭州府钱塘县（今杭州市上城区）人。明朝政治家、军事家、民族英雄。",
-        "document_id": "53052eb0f40b11ef817442010a8a0006",
-        "document_name": "test.txt"
-    }"""
-    for data in retrieved_data_list:
-        if isinstance(data, KgGraph):
-            all_spo = data.get_all_spo()
-            for spo in all_spo:
-                report_data.append(RefDoc(
-                    id=spo.to_show_id(),
-                    content=str(spo),
-                    document_id=spo.to_show_id(),
-                    document_name="graph data"
-                ))
-        elif isinstance(data, ChunkData):
-            report_data.append(RefDoc(
-                id=data.chunk_id,
-                content=data.content,
-                document_id=data.chunk_id,
-                document_name=data.title
-            ))
-    doc_set = RefDocSet(id=tag_name, type="chunk", info=report_data)
-    return doc_set
+def generate_ref_doc_set(tag_name, ref_type, retrieved_data_list: list):
+    refer = []
+    for d in retrieved_data_list:
+        refer.append(RefDoc(
+            id=d["id"],
+            content=d["content"],
+            document_id=d["document_id"],
+            document_name=d["document_name"]
+        ))
+    return RefDocSet(id=tag_name, type=ref_type, info=refer)
+
+def merge_ref_doc_set(left:RefDocSet, right:RefDocSet):
+    if left.type != right.type:
+        return None
+    left_refer = left.info
+    right_refer = right.info
+    left.info = list(set(left_refer + right_refer))
+    return left
 
 
 @ReporterABC.register("open_spg_reporter")
@@ -130,8 +120,19 @@ class OpenSPGReporter(ReporterABC):
                     report_to_spg_data["content"]["thinker"] += "</think>"
                 report_to_spg_data["content"][segment_name] = content
             elif segment_name == "reference":
-                report_to_spg_data["content"]["reference"].append(trans_retrieved_data_to_report_data(report_data["tag_name"], content))
-
+                if isinstance(content, KAGRetrievedResponse):
+                    refer_list = content.to_reference_list()
+                    ref_doc_set = generate_ref_doc_set(tag_name, "chunk", refer_list)
+                    for ref in report_to_spg_data["content"]["reference"]:
+                        merged_data = merge_ref_doc_set(ref, ref_doc_set)
+                        if merged_data:
+                            ref.info = merged_data.info
+                            break
+                    else:
+                        report_to_spg_data["content"]["reference"].append(ref_doc_set)
+                else:
+                    logger.warning(f"Unknown reference type {type(content)}")
+                    continue
             status = report_data["status"]
             processed_report_record.append(report_id)
             if status != "finish":
