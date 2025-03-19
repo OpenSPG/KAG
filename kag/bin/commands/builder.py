@@ -158,6 +158,7 @@ class BuilderJobSubmit(Command):
             f"git clone {args.git_url} {work_dir}",
             f"cd {work_dir}",
             f"git checkout {args.commit_id}",
+            "/openspg_venv/bin/pip3.8 install -e . -i https://artifacts.antgroup-inc.cn/artifact/repositories/simple-dev/",
         ]
         if args.validity_check:
             BuilderJobSubmit.validity_check(args)
