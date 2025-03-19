@@ -119,7 +119,7 @@ if __name__ == "__main__":
     evaObj = EvaForMedQA()
 
     start_time = time.time()
-    filePath = "./data/medqa.jsonl"
+    filePath = "./data/medqa.json"
     # filePath = "./data/musique_qa_train.json"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
