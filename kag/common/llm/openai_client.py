@@ -140,14 +140,14 @@ class OpenAIClient(LLMClient):
                 if chunk.choices[0].delta.content is not None:
                     rsp += chunk.choices[0].delta.content
                     if reporter:
-                        reporter.report(
+                        reporter.add_report_line(
                             segment_name,
                             tag_name,
                             rsp,
                             status="running",
                         )
         if reporter:
-            reporter.report(
+            reporter.add_report_line(
                 segment_name,
                 tag_name,
                 rsp,
@@ -195,7 +195,7 @@ class OpenAIClient(LLMClient):
         segment_name = kwargs.get("segment_name", None)
         tag_name = kwargs.get("tag_name", None)
         if reporter:
-            reporter.report(
+            reporter.add_report_line(
                 segment_name,
                 tag_name,
                 "",
@@ -248,14 +248,14 @@ class OpenAIClient(LLMClient):
                 if chunk.choices[0].delta.content is not None:
                     rsp += chunk.choices[0].delta.content
                 if reporter:
-                    reporter.report(
+                    reporter.add_report_line(
                         segment_name,
                         tag_name,
                         rsp,
                         status="running",
                     )
         if reporter:
-            reporter.report(
+            reporter.add_report_line(
                 segment_name,
                 tag_name,
                 rsp,

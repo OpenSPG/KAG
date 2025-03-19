@@ -31,3 +31,4 @@ from knext.reasoner.rest.models.reason_task_response import ReasonTaskResponse
 from knext.reasoner.rest.models.table_result import TableResult
 from knext.reasoner.rest.models.spg_type_instance import SpgTypeInstance
 from knext.reasoner.rest.models.spg_type_query_request import SpgTypeQueryRequest
+from knext.reasoner.rest.models.task_stream_request import TaskStreamRequest

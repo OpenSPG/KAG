@@ -83,9 +83,9 @@ class KagHybridExecutor(ExecutorABC):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
 
-    def report_content(self, reporter, segment, content, status):
+    def report_content(self, reporter, segment, tag_id, content, status):
         if reporter:
-            reporter.report(segment, self.schema().get("name"), content, status)
+            reporter.add_report_line(segment, f"{self.schema().get('name')}\n{tag_id}", content, status)
 
     def invoke(
             self, query: str, task: Any, context: dict, **kwargs
@@ -112,32 +112,33 @@ class KagHybridExecutor(ExecutorABC):
             8. Store final results
         """
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+        task_query = task.arguments['query']
+
         try:
 
             # 1. Initialize response container
             kag_response = _initialize_response(task)
             # 2. Convert query to logical form
-            task_query = task.arguments['query']
-            self.report_content(reporter, "thinker", "begin running executor", "init")
+            self.report_content(reporter, "thinker", task_query, "begin running executor", "init")
             logic_nodes = self._convert_to_logical_form(task_query, task)
             logic_nodes_str = "\n".join([str(n) for n in logic_nodes])
-            self.report_content(reporter, "thinker", logic_nodes_str, "running")
+            self.report_content(reporter, "thinker", task_query, logic_nodes_str, "running")
 
             flow: KAGFlow = KAGFlow(nl_query=task_query, lf_nodes=logic_nodes, flow_str=self.flow_str)
 
             graph_data, retrieved_datas = flow.execute()
             kag_response.graph_data = graph_data
             kag_response.chunk_datas = retrieved_datas
-            self.report_content(reporter, "reference", [graph_data] + retrieved_datas, "finish")
+            self.report_content(reporter, "reference", task_query, [graph_data] + retrieved_datas, "finish")
             for lf_node in logic_nodes:
                 kag_response.sub_retrieved_set.append(lf_node.get_fl_node_result())
 
             # 8. Final storage
             self._store_results(task, kag_response)
-            self.report_content(reporter, "thinker", "end executor", "finish")
+            self.report_content(reporter, "thinker", task_query, "end executor", "finish")
         except Exception as e:
             logger.warning(f"{self.schema().get('name')} executed failed {e}", exc_info=True)
-            self.report_content(reporter, "thinker", f"{self.schema().get('name')} executed failed {e}", "error")
+            self.report_content(reporter, "thinker", task_query, f"{self.schema().get('name')} executed failed {e}", "error")
 
     def _convert_to_logical_form(self, query: str, task) -> List[LogicNode]:
         """Convert task description to logical nodes
