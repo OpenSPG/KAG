@@ -31,9 +31,26 @@ class GetSPONodeData(LFNodeData):
         self.chunks = []  # List of retrieved text chunks
         self.spo = []  # List of SPO relation data objects
 
-    def to_str(self):
-        return str(self)
+    def to_dict(self):
+        return {
+            "sub_question": self.sub_question,
+            "summary": self.summary,
+            "chunks": [item.to_dict() for item in self.chunks],
+            "spo": str(self.spo),
+        }
+    def __str__(self):
+        """Generate debug-friendly string representation"""
+        output_str = f"sub question: {self.sub_question}"
 
+        if self.summary:
+            output_str += f"\nsummary:\n{self.summary}"
+            return output_str
+        if self.chunks:
+            output_str += f"\nretrieved chunks:\n{self.chunks}"
+        if self.spo:
+            output_str += f"\nretrieved spo:\n{self.spo}"
+
+        return output_str
     def __repr__(self) -> str:
         """Generate debug-friendly string representation"""
         output_str = f"sub question: {self.sub_question}"

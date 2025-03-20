@@ -80,10 +80,7 @@ class OpenSPGReporter(ReporterABC):
     def do_report(self):
         if not self.client:
             return
-        report_data, status_enum = self.generate_report_data()
-        content = StreamData(answer=report_data["content"]["answer"],
-                             reference=report_data["content"]["reference"],
-                             think=report_data["content"]["thinker"])
+        content, status_enum = self.generate_report_data()
 
         request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum)
         logging.info(f"do_report:{request}")
@@ -147,6 +144,9 @@ class OpenSPGReporter(ReporterABC):
         if status == "FINISH":
             if segment_name != "answer":
                 status = "RUNNING"
-        return report_to_spg_data, status
+        content = StreamData(answer=report_to_spg_data["content"]["answer"],
+                             reference=report_to_spg_data["content"]["reference"],
+                             think=report_to_spg_data["content"]["thinker"])
+        return content, status
     def __str__(self):
         return "\n".join([f"{line['segment']} {line['tag_name']} {line['content']} {line['status']}" for line in self.report_record.keys()])

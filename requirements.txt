@@ -52,3 +52,4 @@ aiolimiter
 pyodps
 aliyun-log-python-sdk==0.8.8
 pyvis
+asyncio

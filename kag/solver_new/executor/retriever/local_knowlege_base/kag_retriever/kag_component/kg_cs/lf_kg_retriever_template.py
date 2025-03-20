@@ -49,8 +49,13 @@ class KgRetrieverTemplate:
         kg_graph = graph_data or KgGraph()
         for logic_node in logic_nodes:
             if isinstance(logic_node, GetSPONode):
+                if logic_node.get_fl_node_result().spo:
+                    continue
                 select_rel = self._retrieved_on_graph(kg_graph, logic_node)
                 logic_node.get_fl_node_result().spo = select_rel
+                if select_rel and kwargs.get("is_exact_match", False):
+                    logic_node.get_fl_node_result().summary = str(select_rel)
+
         return kg_graph
 
     def _retrieved_on_graph(self, kg_graph: KgGraph, logic_node: GetSPONode):

@@ -327,9 +327,6 @@ class LFNodeData:
     def __init__(self):
         pass
 
-    def to_str(self):
-        raise NotImplementedError()
-
 class LogicNode(Registrable):
     def __init__(self, operator, args, **kwargs):
         super().__init__(**kwargs)
