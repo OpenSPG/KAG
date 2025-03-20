@@ -9,6 +9,7 @@ chat_llm: &chat_llm
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
+  stream: True
 
 ner_llm: &ner_llm
   type: maas
@@ -87,7 +88,7 @@ iterative_solver_pipeline:
     type: llm_generator
     llm_client: *chat_llm
     generated_prompt:
-      type: default_llm_generator_prompt
+      type: default_refer_generator_prompt
 
 
 static_solver_pipeline:
@@ -107,4 +108,4 @@ static_solver_pipeline:
     type: llm_generator
     llm_client: *chat_llm
     generated_prompt:
-      type: default_llm_generator_prompt
+      type: default_refer_generator_prompt
