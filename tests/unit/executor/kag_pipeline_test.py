@@ -8,7 +8,9 @@ from kag.solver_new.reporter.open_spg_reporter import OpenSPGReporter
 
 reporter: OpenSPGReporter = OpenSPGReporter(task_id=505)
 async def qa(pipeline, query):
+    await reporter.start()
     result = await pipeline.ainvoke(query, reporter=reporter)
+    await reporter.stop()
     return result
 
 def do_static_pipeline_kag():
@@ -16,7 +18,7 @@ def do_static_pipeline_kag():
     print(f"pipeline_config = {pipeline_config}")
     pipeline = SolverPipelineABC.from_config(pipeline_config)
 
-    query = "周润发的爸爸和妈妈叫做什么名字"
+    query = "周润发的父亲是做什么工作的"
     result = asyncio.run(qa(pipeline, query))
     print(result)
 
@@ -43,4 +45,3 @@ def do_kag_hybrid():
 
 if __name__ == "__main__":
     do_static_pipeline_kag()
-    print(reporter.generate_report_data())
