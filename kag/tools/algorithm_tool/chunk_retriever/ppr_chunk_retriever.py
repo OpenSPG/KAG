@@ -244,7 +244,6 @@ class PprChunkRetriever(ToolABC):
             combined_scores = pagerank_scores
         else:
             sim_scores = {}
-            queries = queries[1:]
             for query in queries:
                 query_sim_scores = self.vector_chunk_retriever.invoke(query, chunk_nums)
                 for doc_id, node in query_sim_scores.items():

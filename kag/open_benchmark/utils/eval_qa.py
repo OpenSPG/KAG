@@ -32,7 +32,7 @@ class EvalQa:
 
         info, status = reporter.generate_report_data()
         return answer, {
-            "info": info,
+            "info": info.to_dict(),
             "status": status
         }
 
@@ -45,7 +45,7 @@ class EvalQa:
                 print(f"found existing answer to question: {question}")
                 prediction, trace_log = ckpt.read_from_ckpt(question)
             else:
-                prediction, trace_log =self.qa(query=question)
+                prediction, trace_log = await self.qa(query=question)
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
             metrics = self.do_metrics_eval([prediction], [gold])

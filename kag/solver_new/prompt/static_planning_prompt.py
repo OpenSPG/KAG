@@ -86,6 +86,77 @@ class DefaultStaticPlanningPrompt(PromptABC):
             },
         },
     }
+    template_en = {
+    "instruction": """
+
+You are a problem-solving planner. Your task is to analyze complex problems provided by users and, through your analysis and reasoning, provide specific step-by-step plans for solving the problem using available tools. The plan should be represented as a Directed Acyclic Graph (DAG). Note that you do not need to answer the question directly but instead produce the steps required to answer the question. The user's question is provided in the query field, and the available tools are listed in the executors field.
+
+Your reasoning should follow these steps:
+1. Analyze the request to understand the scope of the task.
+2. Break down the original complex problem into several finest-grained atomic problem sets and define their dependencies in DAG format.
+3. Use the tools defined in executors to create clear and actionable plans to drive the task forward and make substantial progress.
+
+Note:
+1. Please return your planning result in JSON format, following the example in the output field of the example section.
+""",
+    "example": {
+        "query": "Which movies have Jacky Cheung and Andy Lau starred in together?",
+        "executors": [
+            {
+                "name": "Retriever",
+                "description": "Retrieve relevant knowledge from the local knowledge base.",
+                "parameters": {
+                    "query": {
+                        "type": "string",
+                        "description": "User-provided query for retrieval.",
+                        "optional": False,
+                    },
+                },
+            },
+            {
+                "name": "Math",
+                "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
+                "parameters": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's input expression needs to conform to Python syntax.",
+                        "optional": False,
+                    }
+                },
+            },
+            {
+                "name": "Code",
+                "description": "Write Python code based on the user's query, execute it to solve the problem, and obtain the answer.",
+                "parameters": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's input query needs to be guaranteed to be interpretable as Python code for solving.",
+                        "optional": False,
+                    }
+                },
+            },
+        ],
+        "output": {
+            "0": {
+                "executor": "Retriever",
+                "dependent_task_ids": [],
+                "arguments": {"query": "List of movies Jacky Cheung has starred in"},
+            },
+            "1": {
+                "executor": "Retriever",
+                "dependent_task_ids": [],
+                "arguments": {"query": "List of movies Andy Lau has starred in"},
+            },
+            "2": {
+                "executor": "Code",
+                "dependent_task_ids": ["0", "1"],
+                "arguments": {
+                    "query": "Please write Python code to find the common elements in the following two lists:\nJacky Cheung movie list: {{0.output}}\nAndy Lau movie list: {{1.output}}"
+                },
+            },
+        },
+    },
+}
 
     @property
     def template_variables(self) -> List[str]:
