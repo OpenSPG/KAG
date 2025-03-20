@@ -173,8 +173,8 @@ class BatchVectorizer(VectorizerABC):
         spg_types = schema_client.load()
         for type_name, spg_type in spg_types.items():
             for prop_name, prop in spg_type.properties.items():
-                # if prop_name == "name" or prop.index_type in [
-                if prop.index_type in [
+                if prop_name == "name" or prop.index_type in [
+                    # if prop.index_type in [
                     IndexTypeEnum.Vector,
                     IndexTypeEnum.TextAndVector,
                 ]:
