@@ -24,9 +24,7 @@ class KgConstrainRetrieverWithOpenSPG(KGConstrainRetrieverABC):
         self.template = KgRetrieverTemplate(path_select=self.path_select, entity_linking=self.entity_linking)
 
     def invoke(self, query: str, logic_nodes: List[LogicNode], **kwargs) -> KgGraph:
-        graph = self.template.invoke(query=query, logic_nodes=logic_nodes, **kwargs)
-
-        return graph
+        return self.template.invoke(query=query, logic_nodes=logic_nodes, is_exact_match=True, **kwargs)
 
     def is_break(self):
         return self.break_flag

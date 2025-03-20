@@ -11,6 +11,8 @@ class RetrievedData:
     def __init__(self):
         pass
 
+    def to_dict(self):
+        raise NotImplementedError("retrieved data")
 def find_and_extra_prop_objects(text):
     """
     Extracts and parses serialized objects from the given text.
@@ -1000,6 +1002,9 @@ class KgGraph(RetrievedData):
             return self.edge_map[alias]
         return None
 
+    def to_dict(self):
+        return self.to_json()
+
 class ChunkData(RetrievedData):
     def __init__(self, content="", title="",chunk_id="", score=0.0):
         super().__init__()
@@ -1008,6 +1013,13 @@ class ChunkData(RetrievedData):
         self.chunk_id = chunk_id
         self.score = score
 
+    def to_dict(self):
+        return {
+            "content": str(self.content),
+            "title": str(self.title),
+            "chunk_id": str(self.chunk_id),
+            "score": str(self.score)
+        }
     def __repr__(self):
         return f"ChunkData(content={self.content}, title={self.title}, chunk_id={self.chunk_id}, score={self.score})"
 
