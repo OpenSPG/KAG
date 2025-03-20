@@ -228,3 +228,8 @@ import kag.common.rate_limiter
 import kag.common.checkpointer
 import kag.solver
 import kag.bin.commands
+
+try:
+    import kag_ant
+except ImportError:
+    pass
