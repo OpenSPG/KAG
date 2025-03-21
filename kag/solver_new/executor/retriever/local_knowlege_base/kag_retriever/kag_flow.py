@@ -27,7 +27,7 @@ def _merge_graph(input_data: List[RetrievedData]):
 
 
 class KAGFlow:
-    def __init__(self, nl_query, lf_nodes: List[LogicNode], flow_str):
+    def __init__(self, flow_id, nl_query, lf_nodes: List[LogicNode], flow_str):
         # Initialize the KAGFlow with natural language query, logic nodes, and flow string
         self.nl_query = nl_query
         self.lf_nodes: List[LogicNode] = lf_nodes
@@ -36,6 +36,7 @@ class KAGFlow:
         self.nodes: Dict[str, FlowComponent] = {}
         self.parse_flow()
         self.graph_data = None
+        self.flow_id = flow_id
 
     def _add_node(self, node_name: str):
         # Add a node to the graph if it doesn't already exist
@@ -43,6 +44,7 @@ class KAGFlow:
             if node_name not in KAG_CONFIG.all_config.keys():
                 raise ValueError(f"Unknown node type: {node_name}")
             self.nodes[node_name] = FlowComponent.from_config(KAG_CONFIG.all_config[node_name])
+
 
     def _add_edge(self, src: str, dst: str):
         # Add an edge between two nodes, ensuring both nodes exist in the graph
@@ -69,7 +71,7 @@ class KAGFlow:
             else:
                 self._add_node(path.strip())
 
-    def execute_node(self, node_name: str) -> List[RetrievedData]:
+    def execute_node(self, node_name: str, **kwargs) -> List[RetrievedData]:
         input_data = []
         predecessors = self.graph.predecessors(node_name)
         for pre_node in predecessors:
@@ -95,13 +97,13 @@ class KAGFlow:
             cur_graph_data.merge_kg_graph(self.graph_data)
         node = self.nodes[node_name]
         if isinstance(node, FlowComponent):
-            res = node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data)
+            res = node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data, **kwargs)
             node.break_judge(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data)
             return res
         else:
             raise ValueError(f"Unknown node type: {type(node)}")
 
-    def execute(self) -> Tuple[KgGraph, List[RetrievedData]]:
+    def execute(self, **kwargs) -> Tuple[KgGraph, List[RetrievedData]]:
         """
         Execute the DAG workflow and collect results from all nodes.
 
@@ -135,7 +137,7 @@ class KAGFlow:
                     raise RuntimeError("Execution stuck - no executable nodes found. Check dependencies.")
 
                 # Execute current level nodes in parallel
-                futures = {executor.submit(self.execute_node, node): node for node in current_level}
+                futures = {executor.submit(self.execute_node, node, **kwargs): node for node in current_level}
 
                 for future in concurrent.futures.as_completed(futures):
                     node = futures[future]
