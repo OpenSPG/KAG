@@ -34,17 +34,24 @@ class LengthSplitter(BaseTableSplitter):
         window_length (int): The length of the overlap between chunks.
     """
 
-    def __init__(self, split_length: int = 500, window_length: int = 100):
+    def __init__(
+        self,
+        split_length: int = 500,
+        window_length: int = 100,
+        strict_length: bool = False,
+    ):
         """
         Initializes the LengthSplitter with the specified split length and window length.
 
         Args:
             split_length (int): The maximum length of each chunk. Defaults to 500.
             window_length (int): The length of the overlap between chunks. Defaults to 100.
+            strict_length (bool): Whether to split strictly by length without preserving sentences. Defaults to False.
         """
         super().__init__()
         self.split_length = split_length
         self.window_length = window_length
+        self.strict_length = strict_length
 
     @property
     def input_types(self) -> Type[Input]:
@@ -119,6 +126,11 @@ class LengthSplitter(BaseTableSplitter):
             )
             if table_chunks is not None:
                 return table_chunks
+
+        # 如果启用严格长度切分，不按句子切分
+        if getattr(self, "strict_length", False):
+            return self.strict_length_chunk(org_chunk)
+
         content = self.split_sentence(org_chunk.content)
         splitted = []
         cur = []
@@ -153,6 +165,54 @@ class LengthSplitter(BaseTableSplitter):
                 **org_chunk.kwargs,
             )
             output.append(chunk)
+        return output
+
+    def strict_length_chunk(
+        self,
+        org_chunk: Chunk,
+    ) -> List[Chunk]:
+        """
+        Splits the content into chunks strictly by length without preserving sentence boundaries.
+
+        Args:
+            org_chunk (Chunk): The original chunk to be split.
+            chunk_size (int, optional): The maximum size of each chunk. Defaults to 2000.
+            window_length (int, optional): The length of the overlap between chunks. Defaults to 300.
+
+        Returns:
+            List[Chunk]: A list of Chunk objects.
+        """
+        content = org_chunk.content
+        total_length = len(content)
+        output = []
+
+        position = 0
+        chunk_index = 0
+
+        while position < total_length:
+            # 计算当前chunk的内容
+            chunk_content = content[position : position + self.split_length]
+
+            # 创建新的Chunk对象
+            chunk = Chunk(
+                id=generate_hash_id(f"{org_chunk.id}#{chunk_index}"),
+                name=f"{org_chunk.name}_split_{chunk_index}",
+                content=chunk_content,
+                type=org_chunk.type,
+                chunk_size=self.split_length,
+                window_length=self.window_length,
+                **org_chunk.kwargs,
+            )
+            output.append(chunk)
+
+            # 更新位置和索引
+            position = position + self.split_length - self.window_length
+            chunk_index += 1
+
+            # 确保不会出现负索引
+            if position < 0:
+                position = 0
+
         return output
 
     def _invoke(self, input: Chunk, **kwargs) -> List[Output]:

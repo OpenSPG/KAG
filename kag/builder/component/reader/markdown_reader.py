@@ -26,7 +26,7 @@ from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.writer.kg_writer import KGWriter
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum, dump_chunks
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
@@ -277,34 +277,24 @@ class MarkDownReader(ReaderABC):
             new_node_chunk_map = {}
 
             for output in outputs:
-                if len(output.content) > 5000:
-                    # Split long chunks while maintaining parent-child relationships
-                    split_chunks = self.length_splitter.slide_window_chunk(output)
-                    for chunk in split_chunks:
-                        chunk.parent_id = output.parent_id
-                    new_outputs.extend(split_chunks)
+                # Split long chunks while maintaining parent-child relationships
+                split_chunks = self.length_splitter.slide_window_chunk(output)
+                for chunk in split_chunks:
+                    chunk.parent_id = output.parent_id
+                new_outputs.extend(split_chunks)
 
-                    # Update node_chunk_map for split chunks
-                    # Find all nodes that were mapped to this output
-                    related_nodes = [
-                        node
-                        for node, chunk in node_chunk_map.items()
-                        if chunk.id == output.id
-                    ]
-                    for node in related_nodes:
-                        # Map each node to all split chunks
-                        if node not in new_node_chunk_map:
-                            new_node_chunk_map[node] = []
-                        new_node_chunk_map[node].extend(split_chunks)
-                else:
-                    new_outputs.append(output)
-                    # Keep original mapping for unsplit chunks
-                    for node, chunk in node_chunk_map.items():
-                        if chunk.id == output.id:
-                            if node not in new_node_chunk_map:
-                                new_node_chunk_map[node] = []
-                            new_node_chunk_map[node].append(chunk)
-
+                # Update node_chunk_map for split chunks
+                # Find all nodes that were mapped to this output
+                related_nodes = [
+                    node
+                    for node, chunk in node_chunk_map.items()
+                    if chunk.id == output.id
+                ]
+                for node in related_nodes:
+                    # Map each node to all split chunks
+                    if node not in new_node_chunk_map:
+                        new_node_chunk_map[node] = []
+                    new_node_chunk_map[node].extend(split_chunks)
             # use `outputs` to refer the split new chunks from now on
             outputs = new_outputs
 
@@ -314,7 +304,7 @@ class MarkDownReader(ReaderABC):
         # Flatten the node_chunk_map to use first chunk for each node when converting to subgraph
         if self.length_splitter:
             flat_node_chunk_map = {
-                node: chunks[0] for node, chunks in new_node_chunk_map.items()
+                node: chunks[0] for node, chunks in new_node_chunk_map.items() if chunks
             }
         else:
             flat_node_chunk_map = node_chunk_map
@@ -417,8 +407,12 @@ class MarkDownReader(ReaderABC):
                         type=ChunkTypeEnum.Table,
                         metadata={
                             # "table_data": table,
-                            "before_text": table.get("context", {}).get("before_text", ""),
-                            "after_text": table.get("context", {}).get("after_text", "")
+                            "before_text": table.get("context", {}).get(
+                                "before_text", ""
+                            ),
+                            "after_text": table.get("context", {}).get(
+                                "after_text", ""
+                            ),
                         },
                         file_name=os.path.basename(id),
                     )
@@ -439,8 +433,12 @@ class MarkDownReader(ReaderABC):
                         type=ChunkTypeEnum.Table,
                         metadata={
                             # "table_data": table,
-                            "before_text": table.get("context", {}).get("before_text", ""),
-                            "after_text": table.get("context", {}).get("after_text", "")
+                            "before_text": table.get("context", {}).get(
+                                "before_text", ""
+                            ),
+                            "after_text": table.get("context", {}).get(
+                                "after_text", ""
+                            ),
                         },
                         file_name=os.path.basename(id),
                     )
@@ -506,8 +504,12 @@ class MarkDownReader(ReaderABC):
                             type=ChunkTypeEnum.Table,
                             metadata={
                                 # "table_data": table,
-                                "before_text": table.get("context", {}).get("before_text", ""),
-                                "after_text": table.get("context", {}).get("after_text", "")
+                                "before_text": table.get("context", {}).get(
+                                    "before_text", ""
+                                ),
+                                "after_text": table.get("context", {}).get(
+                                    "after_text", ""
+                                ),
                             },
                             file_name=os.path.basename(id),
                         )
@@ -528,8 +530,12 @@ class MarkDownReader(ReaderABC):
                             type=ChunkTypeEnum.Table,
                             metadata={
                                 # "table_data": table,
-                                "before_text": table.get("context", {}).get("before_text", ""),
-                                "after_text": table.get("context", {}).get("after_text", "")
+                                "before_text": table.get("context", {}).get(
+                                    "before_text", ""
+                                ),
+                                "after_text": table.get("context", {}).get(
+                                    "after_text", ""
+                                ),
                             },
                             file_name=os.path.basename(id),
                         )
@@ -574,7 +580,7 @@ class MarkDownReader(ReaderABC):
 
         elif isinstance(input, Chunk):
             # Handle Chunk type separately
-            content = input.content
+            content = input.content.replace("\\n", "\n")
             basename = input.name
             id = input.id
         elif isinstance(input, list):
@@ -660,22 +666,22 @@ class YuequeReader(MarkDownReader):
 
 
 if __name__ == "__main__":
-    from kag.builder.component.reader.markdown_to_graph import visualize_graph
 
     reader = ReaderABC.from_config(
         {
             "type": "md",
-            "cut_depth": 2,
-            "kg_writer": {"type": "kg", "project_id": 1},
             "length_splitter": {
                 "type": "length_splitter",
-                "split_length": 5000,
-                "window_length": 500,
+                "split_length": 250,
+                "window_length": 50,
+                "strict_length": True,
             },
         }
     )
-    file_path = "/Users/zhangxinhong.zxh/Downloads/技术中心财务报销规定.md"
+    file_path = ""
     chunks, subgraph = reader.invoke(file_path)
-    visualize_graph(subgraph)
+    dump_chunks(chunks, output_path="./builder/data/chunks.json")
+
+    # visualize_graph(subgraph)
     assert len(chunks) > 0
     print(chunks)
