@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import asyncio
+import logging
 from typing import List
 from tenacity import stop_after_attempt, retry
 from kag.interface import (
@@ -19,6 +20,8 @@ from kag.interface import (
     GeneratorABC,
     Context,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @SolverPipelineABC.register("kag_static_pipeline")
@@ -93,7 +96,10 @@ class KAGStaticPipeline(SolverPipelineABC):
         if self.planner.check_require_rewrite(task):
             task.arguments = await self.planner.query_rewrite(task, **kwargs)
         executor = self.select_executor(task.executor)
-        await executor.ainvoke(query, task, context, **kwargs)
+        if executor:
+            await executor.ainvoke(query, task, context, **kwargs)
+        else:
+            logger.warn(f"Executor not  found for task {task}")
 
     async def ainvoke(self, query, **kwargs):
         """Orchestrates full problem-solving workflow asynchronously.
@@ -119,10 +125,15 @@ class KAGStaticPipeline(SolverPipelineABC):
         for task_group in context.gen_task(group=True):
             await asyncio.gather(
                 *[
-                    asyncio.create_task(self.execute_task(query, task, context, **kwargs))
+                    asyncio.create_task(
+                        self.execute_task(query, task, context, **kwargs)
+                    )
                     for task in task_group
                 ]
             )
 
         answer = await self.generator.ainvoke(query, context, **kwargs)
+        from kag.common.utils import green, reset
+
+        print(f"{green}Input Query: {query}\nFinal Answer: {answer}{reset}")
         return answer
