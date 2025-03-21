@@ -1,5 +1,7 @@
 from typing import List
 
+from tenacity import stop_after_attempt, retry
+
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.registry import Registrable
 from kag.interface import LLMClient, PromptABC, VectorizeModelABC
@@ -51,7 +53,8 @@ class KAGGetSpoLF(KAGLFRewriter):
 
         self.logic_node_parser = ParseLogicForm(schema=self.schema_helper, schema_retrieval=self.std_schema)
 
-    def _trans_query_to_logic_form(self, query: str, context: str) -> List[GetSPONode]:
+    @retry(stop=stop_after_attempt(3))
+    def _trans_query_to_logic_form(self, query: str, context: str, reporter) -> List[GetSPONode]:
         """Convert user query to logical form (SPO nodes)
 
         Args:
@@ -69,6 +72,9 @@ class KAGGetSpoLF(KAGLFRewriter):
             self.lf_trans_prompt,
             with_json_parse=False,
             with_except=True,
+            reporter=reporter,
+            tag_name=f"{query}_logic_node",
+            segment_name="thinker",
         )
         return self._parse_lf(question=query, sub_queries=sub_queries, logic_forms=lf_nodes_str)
 
@@ -86,4 +92,4 @@ class KAGGetSpoLF(KAGLFRewriter):
         )
 
     def rewrite(self, query, **kwargs) -> List[LogicNode]:
-        return self._trans_query_to_logic_form(query, kwargs.get('context', ""))
+        return self._trans_query_to_logic_form(query, kwargs.get('context', ""), kwargs.get("reporter", None))
