@@ -12,7 +12,7 @@ from kag.common.conf import KAG_CONFIG
 from kag.interface import SolverPipelineABC
 
 from kag.common.checkpointer import CheckpointerManager
-from kag.solver_new.reporter.open_spg_reporter import OpenSPGReporter
+from kag.solver_new.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class EvalQa:
         self.task_name = task_name
 
     async def qa(self, query):
-        reporter: OpenSPGReporter = OpenSPGReporter(task_id=0)
+        reporter: TraceLogReporter = TraceLogReporter()
 
         pipeline = SolverPipelineABC.from_config(KAG_CONFIG.all_config[self.solver_pipeline_name])
         answer = await pipeline.ainvoke(query, reporter=reporter)
