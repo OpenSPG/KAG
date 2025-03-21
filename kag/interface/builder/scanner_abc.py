@@ -12,6 +12,7 @@
 import os
 import asyncio
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
 from kag.common.conf import KAG_PROJECT_CONF
@@ -156,7 +157,10 @@ class ScannerABC(BuilderComponent, ABC):
         Returns:
             List[Output]: A list of processed results.
         """
-        return await asyncio.to_thread(self.invoke(input, **kwargs))
+        with ThreadPoolExecutor() as executor:
+            await asyncio.get_event_loop().run_in_executor(
+                executor, lambda: self.invoke(input, **kwargs)
+            )
 
     @property
     def inherit_input_key(self):
