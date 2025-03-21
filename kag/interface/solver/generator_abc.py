@@ -11,6 +11,8 @@
 # or implied.
 import asyncio
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
+
 from kag.common.registry import Registrable
 
 
@@ -51,4 +53,7 @@ class GeneratorABC(Registrable, ABC):
         Returns:
             Asynchronously generated answer
         """
-        return await asyncio.to_thread(lambda: self.invoke(query, context, **kwargs))
+        with ThreadPoolExecutor() as executor:
+            return await asyncio.get_event_loop().run_in_executor(
+                executor, lambda: self.invoke(query, context, **kwargs)
+            )

@@ -80,6 +80,7 @@ class SPGServerBridge:
     def run_solver(
         self,
         project_id,
+        session_id,
         task_id,
         query,
         func_name="invoke",
@@ -90,6 +91,7 @@ class SPGServerBridge:
 
         return getattr(SolverMain(), func_name)(
             project_id=project_id,
+            session_id=session_id,
             task_id=task_id,
             query=query,
             is_report=is_report,
