@@ -45,22 +45,85 @@ class OpenSPGReporter(ReporterABC):
         self.report_record = []
         self.tag_mapping = {
             "Rewrite query": {
-                "en": "rewrite question by llm",
-                "zh": "正在重写问题"
+                "en": "## Rewriting question using LLM\n--------- \n {content}",
+                "zh": "## 正在使用LLM重写问题\n--------- \n {content}"
             },
             "Final Answer": {
-                "en": "generate answer",
-                "zh": "正在生成答案"
+                "en": "## Generating final answer\n--------- \n {content}",
+                "zh": "## 正在生成最终答案\n--------- \n {content}"
             },
             "Iterative planning": {
-                "en": "iterative planning",
-                "zh": "正在思考当前步骤"
+                "en": "## Iterative planning\n--------- \n {content}",
+                "zh": "## 正在思考当前步骤\n--------- \n {content}"
             },
             "Static planning": {
-                "en": "global planning",
-                "zh": "正在思考全局步骤"
+                "en": "## Global planning\n--------- \n {content}",
+                "zh": "## 正在思考全局步骤\n--------- \n {content}"
+            },
+            "begin_kg_retriever": {
+                "en": "#### Starting KG retriever\n--------- \n Retrieving sub-question: {content}",
+                "zh": "#### 正在执行知识图谱检索\n--------- \n 检索子问题为： {content}"
+            },
+            "end_kg_retriever": {
+                "en": "#### KG retriever completed\n {content}",
+                "zh": "#### 检索结果为\n {content}"
+            },
+            "rc_retriever_begin": {
+                "en": "#### Starting chunk retriever\n--------- \n Retrieving sub-question: {content}",
+                "zh": "#### 正在执行文档检索\n--------- \n 检索子问题为： {content}"
+            },
+            "rc_retriever_rewrite": {
+                "en": "#### Rewriting chunk retriever query\n--------- \n Rewritten question:\n {content}",
+                "zh": "#### 正在根据依赖问题重写检索子问题\n--------- 重写问题为：\n {content}"
+            },
+            "rc_retriever_end": {
+                "en": "#### Chunk retriever completed, retrieved {content} documents",
+                "zh": "#### 检索结束，共计检索文档 {content} 篇"
+            },
+            "rc_retriever_summary": {
+                "en": "#### Summarizing retrieved documents\n {content}",
+                "zh": "#### 正在对文档进行总结\n {content}"
+            },
+            "begin_kag_retriever": {
+                "en": "### Starting KAG retriever\n--------- \n Retrieving question: {content}",
+                "zh": "### 正在执行KAG检索\n--------- \n 检索问题为： {content}"
+            },
+            "logic_node": {
+                "en": """#### Translate query to logic form expression
+--------- 
+```json
+{content}
+```""",
+                "zh": """#### 将query转换成逻辑形式表达
+--------- 
+```json
+{content}
+```"""
+            },
+            "kag_retriever_result": {
+                "en": "### Retrieved documents\n--------- \n {content}",
+                "zh": "### 检索到的文档\n--------- \n {content}"
+            },
+            "end_kag_retriever": {
+                "en": "### KAG retriever completed\n {content}",
+                "zh": "### KAG检索结束\n {content}"
+            },
+            "failed_kag_retriever": {
+                "en": """### KAG retriever failed
+--------- 
+```json
+{content}
+```
+""",
+                "zh": """KAG检索失败
+--------- 
+```json
+{content}
+```
+                """
             }
         }
+
         if self.host:
             self.client: ReasonerApi = ReasonerApi(
                 api_client=ApiClient(configuration=Configuration(host=self.host))
@@ -86,11 +149,12 @@ class OpenSPGReporter(ReporterABC):
         logging.info(f"do_report:{request}")
         return self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
 
-    def get_tag_name(self, tag_name):
-        if tag_name in self.tag_mapping:
-            return self.tag_mapping[tag_name][KAG_PROJECT_CONF.language]
-        else:
-            return tag_name
+    def get_tag_template(self, tag_name):
+        for name in self.tag_mapping:
+            if name in tag_name:
+                return self.tag_mapping[name][KAG_PROJECT_CONF.language]
+        logger.info(f"not found tag {tag_name}")
+        return None
 
     def generate_report_data(self):
         processed_report_record = []
@@ -109,16 +173,14 @@ class OpenSPGReporter(ReporterABC):
                 continue
             report_data = self.report_stream_data[report_id]
             segment_name = report_data["segment"]
-            tag_name = self.get_tag_name(report_data["tag_name"])
+            tag_template = self.get_tag_template(report_data["tag_name"])
             content = report_data["content"]
             if segment_name == "thinker":
-                report_to_spg_data["content"][segment_name] += f"""
-
-# {tag_name}  
---------- 
-{content}  
-
-"""
+                if tag_template is None:
+                    report_to_spg_data["content"][segment_name] += str(content)
+                else:
+                    report_to_spg_data["content"][segment_name] += tag_template.format(content=str(content))
+                report_to_spg_data["content"][segment_name] += "\n\n"
             elif segment_name == "answer":
                 if not report_to_spg_data["content"]["thinker"].endswith("</think>"):
                     report_to_spg_data["content"]["thinker"] += "</think>"
@@ -126,7 +188,7 @@ class OpenSPGReporter(ReporterABC):
             elif segment_name == "reference":
                 if isinstance(content, KAGRetrievedResponse):
                     refer_list = content.to_reference_list()
-                    ref_doc_set = generate_ref_doc_set(tag_name, "chunk", refer_list)
+                    ref_doc_set = generate_ref_doc_set(report_data["tag_name"], "chunk", refer_list)
                     for ref in report_to_spg_data["content"]["reference"]:
                         merged_data = merge_ref_doc_set(ref, ref_doc_set)
                         if merged_data:

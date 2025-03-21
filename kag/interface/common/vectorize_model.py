@@ -12,6 +12,8 @@
 import io
 import os
 import tarfile
+from concurrent.futures import ThreadPoolExecutor
+
 import requests
 import logging
 import asyncio
@@ -126,4 +128,7 @@ class VectorizeModelABC(Registrable):
             NotImplementedError: This method must be implemented by subclasses.
         """
         async with self.limiter:
-            return await asyncio.to_thread(lambda: self.vectorize(texts))
+            with ThreadPoolExecutor() as executor:
+                await asyncio.get_event_loop().run_in_executor(
+                    executor, lambda: self.vectorize(texts)
+                )

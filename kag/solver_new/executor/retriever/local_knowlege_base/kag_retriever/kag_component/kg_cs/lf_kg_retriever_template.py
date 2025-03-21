@@ -1,11 +1,9 @@
-from typing import List
+from typing import List, Optional
 
 from kag.interface.solver.base_model import SPOEntity, LogicNode
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.kg_cs.kg_cs_retriever import \
-    KGConstrainRetrieverABC
-from kag.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
 
@@ -47,11 +45,16 @@ class KgRetrieverTemplate:
 
     def invoke(self, query: str, logic_nodes: List[LogicNode], graph_data: KgGraph = None, **kwargs) -> KgGraph:
         kg_graph = graph_data or KgGraph()
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         for logic_node in logic_nodes:
             if isinstance(logic_node, GetSPONode):
                 if logic_node.get_fl_node_result().spo:
                     continue
+                if reporter:
+                    reporter.add_report_line("thinker", f"begin_kg_retriever_{logic_node.sub_query}", logic_node.sub_query, "FINISH")
                 select_rel = self._retrieved_on_graph(kg_graph, logic_node)
+                if reporter:
+                    reporter.add_report_line("thinker", f"end_kg_retriever_{logic_node.sub_query}", select_rel, "FINISH")
                 logic_node.get_fl_node_result().spo = select_rel
                 if select_rel and kwargs.get("is_exact_match", False):
                     logic_node.get_fl_node_result().summary = str(select_rel)

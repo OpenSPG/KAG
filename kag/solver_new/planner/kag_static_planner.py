@@ -48,7 +48,6 @@ class KAGStaticPlanner(PlannerABC):
         # get all prvious tasks from context.
         for parent_task in task.parents:
             formatted_context[parent_task.id] = {
-                "action": f"{parent_task.executor}({parent_task.arguments})",
                 "result": str(parent_task.result),
             }
         return formatted_context

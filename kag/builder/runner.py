@@ -246,11 +246,12 @@ class BuilderChainRunner(Registrable):
                     "num_edges": num_edges,
                     "num_subgraphs": num_subgraphs,
                 }
-                await asyncio.to_thread(
-                    lambda: self.checkpointer.write_to_ckpt(
-                        item_id, {"abstract": item_abstract, "graph_stat": info}
+                with ThreadPoolExecutor() as executor:
+                    await asyncio.get_event_loop().run_in_executor(
+                        executor, lambda: self.checkpointer.write_to_ckpt(
+                            item_id, {"abstract": item_abstract, "graph_stat": info}
+                        )
                     )
-                )
                 success += 1
             total += 1
         CheckpointerManager.close()
