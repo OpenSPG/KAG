@@ -115,15 +115,11 @@ class ODPSScanner(ScannerABC):
             dict: Individual records as dictionaries
         """
         try:
-            chunk_size = kwargs.get("chunk_size", 1000)
             # 只有当表有分区且input不为空时才使用分区
             partition_spec = (
                 input if input and self.table.table_schema.partitions else None
             )
 
-            logger.debug(
-                f"Generating data row by row (internal batch size: {chunk_size})"
-            )
             if self.limit is not None:
                 logger.debug(f"Row limit set to {self.limit}")
 
@@ -155,107 +151,60 @@ class ODPSScanner(ScannerABC):
                         logger.debug(
                             f"Successfully created shard reader for range {start}:{end}"
                         )
-                        # 替换原有reader，使后续操作直接使用分片后的reader
-                        reader = shard_reader
-                        remaining = records_to_read
-                        # 重置起始位置，因为我们已经使用了分片reader
                         start = 0
                     except Exception as e:
                         logger.warning(
                             f"Failed to create shard reader: {str(e)}, falling back to manual filtering"
                         )
-                        # 如果切片失败，保持原来的逻辑
-                        remaining = records_to_read
                 else:
-                    records_to_read = None  # Read all records
+                    records_to_read = reader.count  # Read all records
+                    shard_reader = reader[:]
                     start = 0
                     logger.debug("No sharding, will read all records")
-                    remaining = reader.count
-
-                logger.debug(
-                    f"Starting to read {remaining} records (internal batch size: {chunk_size})"
-                )
-                current_offset = 0
-                chunk_number = 0
 
                 # Get column names for converting records to dictionaries
                 column_names = [c.name for c in raw_reader.schema.columns]
 
-                while remaining > 0:
-                    # Read a chunk of records
-                    batch_size = min(chunk_size, remaining)
-                    logger.debug(
-                        f"Reading internal batch {chunk_number}, batch size: {batch_size}"
-                    )
-
-                    try:
-                        # Option 1: Use the reader as an iterator with limit
-                        batch_records = list(reader[:batch_size])
-                    except Exception:
-                        try:
-                            # Option 2: Original method but ensure it's not at the end
-                            batch_records = list(reader)
-                        except Exception as inner_e:
-                            logger.debug(f"Error reading batch: {str(inner_e)}")
-                            batch_records = []
-
-                    logger.debug(f"Got {len(batch_records)} records in this batch")
-
-                    # If no records, break the loop
-                    if not batch_records:
-                        logger.debug("No more records to read, breaking loop")
+                # Yield records one by one with limit
+                rows_yielded = 0
+                for record in shard_reader:
+                    if self.limit is not None and rows_yielded >= self.limit:
+                        logger.debug(
+                            f"Reached row limit of {self.limit}, stopping generation"
+                        )
                         break
 
-                    # Yield records one by one with limit
-                    rows_yielded = 0
-                    for record in batch_records:
-                        if self.limit is not None and rows_yielded >= self.limit:
-                            logger.debug(
-                                f"Reached row limit of {self.limit}, stopping generation"
-                            )
-                            break
+                    row_dict = dict(zip(column_names, record.values))
 
-                        row_dict = dict(zip(column_names, record.values))
+                    col_keys = self.col_names if self.col_names else self.col_ids
+                    if col_keys is None:
+                        logger.debug(
+                            "No columns specified, returning all rows as dictionaries"
+                        )
+                        yield row_dict
+                        rows_yielded += 1
+                    else:
+                        for k, v in row_dict.items():
+                            if k in col_keys:
+                                v = str(v)
+                                name = v if len(v) < 10 else v[:5] + "..." + v[-5:]
+                                yield {
+                                    "id": generate_hash_id(v),
+                                    "name": name,
+                                    "content": v,
+                                }
+                                rows_yielded += 1
+                                if (
+                                    self.limit is not None
+                                    and rows_yielded >= self.limit
+                                ):
+                                    break
 
-                        col_keys = self.col_names if self.col_names else self.col_ids
-                        if col_keys is None:
-                            logger.debug(
-                                "No columns specified, returning all rows as dictionaries"
-                            )
-                            yield row_dict
-                            rows_yielded += 1
-                        else:
-                            for k, v in row_dict.items():
-                                if k in col_keys:
-                                    v = str(v)
-                                    name = v if len(v) < 10 else v[:5] + "..." + v[-5:]
-                                    yield {
-                                        "id": generate_hash_id(v),
-                                        "name": name,
-                                        "content": v,
-                                    }
-                                    rows_yielded += 1
-                                    if (
-                                        self.limit is not None
-                                        and rows_yielded >= self.limit
-                                    ):
-                                        break
-
-                        # Check limit after processing each record
-                        if self.limit is not None and rows_yielded >= self.limit:
-                            logger.debug(
-                                f"Reached row limit of {self.limit}, stopping generation"
-                            )
-                            break
-
-                    # Update remaining count
-                    remaining -= batch_size
-                    current_offset += batch_size
-                    chunk_number += 1
-                    logger.debug(f"Remaining records: {remaining}")
-
-                    if remaining <= 0:
-                        logger.debug("No more records to read, breaking loop")
+                    # Check limit after processing each record
+                    if self.limit is not None and rows_yielded >= self.limit:
+                        logger.debug(
+                            f"Reached row limit of {self.limit}, stopping generation"
+                        )
                         break
 
         except Exception as e:
@@ -320,9 +269,8 @@ if __name__ == "__main__":
         "access_id": "",
         "access_key": "",
         "project": "alifin_jtest_dev",
-        "table": "jincheng_doc2x_finance_40w_parsed",
+        "table": "aisearch_data_pdf_v1",
         "endpoint": "http://service-corp.odps.aliyun-inc.com/api",
-        "col_names": ["content"],
         "limit": 10,
     }
     scanner = ScannerABC.from_config(odps_config)
@@ -330,7 +278,7 @@ if __name__ == "__main__":
     # 测试不同的分区格式
     logger.debug("\n\n==== 测试 1: 使用dt=20250225 格式 ====")
     try:
-        result = list(scanner.generate(input="dt=20250226"))
+        result = list(scanner.generate(input="dt=20250319"))
         logger.debug(f"Total rows: {len(result)}")
         if len(result) > 0:
             logger.debug("Data sample:")
