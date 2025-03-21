@@ -26,7 +26,11 @@ class KAGStaticPlanner(PlannerABC):
     """
 
     def __init__(
-        self, llm: LLMClient, plan_prompt: PromptABC, rewrite_prompt: PromptABC, **kwargs
+        self,
+        llm: LLMClient,
+        plan_prompt: PromptABC,
+        rewrite_prompt: PromptABC,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm = llm
@@ -48,8 +52,7 @@ class KAGStaticPlanner(PlannerABC):
         # get all prvious tasks from context.
         for parent_task in task.parents:
             formatted_context[parent_task.id] = {
-                "action": f"{parent_task.executor}({parent_task.arguments})",
-                "result": str(parent_task.result),
+                "output": str(parent_task.result),
             }
         return formatted_context
 
@@ -76,11 +79,20 @@ class KAGStaticPlanner(PlannerABC):
             str: Rewritten query with resolved dynamic references
         """
         query = task.arguments
+        # print(f"Old query: {query}")
         context = self.format_context(task)
-        return await self.llm.ainvoke({
-            "input": query,
-            "context": context,
-        }, self.rewrite_prompt, segment_name="thinker", tag_name="Rewrite query", **kwargs)
+        new_query = await self.llm.ainvoke(
+            {
+                "input": query,
+                "context": context,
+            },
+            self.rewrite_prompt,
+            segment_name="thinker",
+            tag_name="Rewrite query",
+            **kwargs,
+        )
+        # print(f"New query: {new_query}")
+        return new_query
 
     def invoke(self, query, **kwargs) -> List[Task]:
         """Synchronously generates task plan using LLM.
@@ -112,7 +124,13 @@ class KAGStaticPlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
-        return await self.llm.ainvoke({
-            "query": query,
-            "executors": kwargs.get("executors", []),
-        }, self.plan_prompt, segment_name="thinker", tag_name="Static planning", **kwargs)
+        return await self.llm.ainvoke(
+            {
+                "query": query,
+                "executors": kwargs.get("executors", []),
+            },
+            self.plan_prompt,
+            segment_name="thinker",
+            tag_name="Static planning",
+            **kwargs,
+        )

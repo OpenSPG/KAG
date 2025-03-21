@@ -57,7 +57,7 @@ class VLLMClient(LLMClient):
         self.timeout = timeout
         self.param = {}
         self.check()
-        logger.info(
+        logger.debug(
             f"Initialize VLLMClient with rate limit {max_rate} every {time_period}s"
         )
 

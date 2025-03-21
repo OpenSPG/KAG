@@ -76,7 +76,7 @@ class OpenAIClient(LLMClient):
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.aclient = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
         self.check()
-        logger.info(
+        logger.debug(
             f"Initialize OpenAIClient with rate limit {max_rate} every {time_period}s"
         )
 
@@ -334,7 +334,7 @@ class AzureOpenAIClient(LLMClient):
         )
 
         self.check()
-        logger.info(
+        logger.debug(
             f"Initialize AzureOpenAIClient with rate limit {max_rate} every {time_period}s"
         )
 
