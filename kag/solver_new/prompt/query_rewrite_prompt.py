@@ -42,14 +42,12 @@ class QueryRewritePrompt(PromptABC):
             "input": {"query": "{{0.output}}获得的奖项中，有哪些是{{1.output}}没有获得过的"},
             "context": {
                 "0": {
-                    "action": 'Reteiver({"query": "86版电视剧西游记的孙悟空的主演是谁？"})',
-                    "result": [
+                    "output": [
                         "六小龄童出生于1959年，祖籍浙江绍兴，是国家一级演员，曾担任浙江大学人文学院兼职教授。他在1982年《西游记》拍摄期间全程担任孙悟空的主演，凭借该角色获得中国第六届“金鹰奖”最佳男主角奖‌"
                     ],
                 },
                 "1": {
-                    "action": 'Reteiver({"query": "歌曲青花瓷的演唱者是谁"})',
-                    "result": [
+                    "output": [
                         "歌曲《青花瓷》由方文山作词，周杰伦作曲，钟兴民编曲，收录在周杰伦于2007年11月2日发行的个人第八张音乐专辑《我很忙》中‌"
                     ],
                 },
@@ -85,14 +83,12 @@ You are a problem-reformulation engine with semantic focusing capabilities, task
             },
             "context": {
                 "0": {
-                    "action": 'Reteiver({"query": "Who is the main actor who played Sun Wukong in the 1986 TV series Journey to the West?"})',
-                    "result": [
+                    "output": [
                         "Liu Xiao Ling Tong was born in 1959 and hails from Shaoxing, Zhejiang. He is a National Class-A Actor and has served as an adjunct professor at the School of Humanities, Zhejiang University. During the filming of the TV series 'Journey to the West' in 1982, he played the role of Sun Wukong throughout, winning the Best Actor Award at the 6th China Golden Eagle Awards for his performance."
                     ],
                 },
                 "1": {
-                    "action": 'Reteiver({"query": "Who is the singer of the song Blue and White Porcelain?"})',
-                    "result": [
+                    "output": [
                         "The song 'Blue and White Porcelain' was written by Vincent Fang, composed by Jay Chou, arranged by Roger Chung, and included in Jay Chou’s eighth studio album 'I'm Busy', released on November 2, 2007."
                     ],
                 },

@@ -35,7 +35,6 @@ class LLMClient(Registrable):
     def __init__(
         self, name: str, max_rate: float = 1000, time_period: float = 1, **kwargs
     ):
-
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
@@ -194,7 +193,7 @@ class LLMClient(Registrable):
         """
         result = []
         prompt = prompt_op.build_prompt(variables)
-        logger.info(f"Prompt: {prompt}")
+        # logger.info(f"Prompt: {prompt}")
         if not prompt:
             return result
         response = ""
@@ -205,11 +204,11 @@ class LLMClient(Registrable):
                     if with_json_parse
                     else self.acall(prompt, **kwargs)
                 )
-                logger.info(f"Response: {response}")
+                # logger.info(f"Response: {response}")
                 result = prompt_op.parse_response(
                     response, model=self.model, **variables
                 )
-                logger.info(f"Result: {result}")
+                # logger.info(f"Result: {result}")
             except Exception as e:
                 import traceback
 
