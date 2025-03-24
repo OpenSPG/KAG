@@ -43,46 +43,46 @@ class Metrics(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'thinker_cost': 'int'
+        'think_cost': 'int'
     }
 
     attribute_map = {
-        'thinker_cost': 'thinkerCost'
+        'think_cost': 'thinkCost'
     }
 
-    def __init__(self, thinker_cost=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(self, think_cost=None, local_vars_configuration=None):  # noqa: E501
         """Metrics - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
         self.local_vars_configuration = local_vars_configuration
 
-        self._thinker_cost = None
+        self._think_cost = None
         self.discriminator = None
 
-        self.thinker_cost = thinker_cost
+        self.think_cost = think_cost
 
     @property
-    def thinker_cost(self):
-        """Gets the thinker_cost of this Metrics.  # noqa: E501
+    def think_cost(self):
+        """Gets the think_cost of this Metrics.  # noqa: E501
 
 
-        :return: The thinker_cost of this Metrics.  # noqa: E501
+        :return: The think_cost of this Metrics.  # noqa: E501
         :rtype: int
         """
-        return self._thinker_cost
+        return self._think_cost
 
-    @thinker_cost.setter
-    def thinker_cost(self, thinker_cost):
-        """Sets the thinker_cost of this Metrics.
+    @think_cost.setter
+    def think_cost(self, think_cost):
+        """Sets the think_cost of this Metrics.
 
 
-        :param thinker_cost: The thinker_cost of this Metrics.  # noqa: E501
+        :param think_cost: The think_cost of this Metrics.  # noqa: E501
         :type: int
         """
-        if self.local_vars_configuration.client_side_validation and thinker_cost is None:  # noqa: E501
-            raise ValueError("Invalid value for `thinker_cost`, must not be `None`")  # noqa: E501
+        if self.local_vars_configuration.client_side_validation and think_cost is None:  # noqa: E501
+            raise ValueError("Invalid value for `think_cost`, must not be `None`")  # noqa: E501
 
-        self._thinker_cost = thinker_cost
+        self._think_cost = think_cost
 
     def to_dict(self):
         """Returns the model properties as a dict"""
