@@ -40,13 +40,13 @@ def qa(query):
     except (ValueError, TypeError) as e:  # 捕获具体的异常
         import traceback
         logger.warning(
-            f"process sample failed with known error: {e}\n{traceback.format_exc()}\nfor: {data}"
+            f"process sample failed with known error: {e}\n{traceback.format_exc()}\n"
         )
         return None
     except Exception as e:  # 兜底捕获未知异常
         import traceback
         logger.error(
-            f"process sample failed with unexpected error: {e}\n{traceback.format_exc()}\nfor: {data}"
+            f"process sample failed with unexpected error: {e}\n{traceback.format_exc()}\n"
         )
         return None
 
@@ -95,4 +95,3 @@ if __name__ == "__main__":
     # print(f"Question: {question}")
     # print(f"Answer: {qa_answer}")
     # print(f"TraceLog: {traceLog}")
-
