@@ -40,5 +40,7 @@ class ReporterABC(Registrable):
             self.do_report()
         except asyncio.CancelledError:
             logging.info("reporter is cancel")
+        except Exception as e:
+            logging.error(f"reporter is error: {e}")
         finally:
             self._running = False

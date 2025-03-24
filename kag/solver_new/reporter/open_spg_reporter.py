@@ -1,4 +1,6 @@
 import logging
+import threading
+import time
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
@@ -8,6 +10,7 @@ from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_hyb
 from knext.common.rest import ApiClient, Configuration
 from knext.reasoner import ReasonerApi
 from knext.reasoner.rest.models import TaskStreamRequest
+from knext.reasoner.rest.models.metrics import Metrics
 from knext.reasoner.rest.models.ref_doc import RefDoc
 from knext.reasoner.rest.models.ref_doc_set import RefDocSet
 from knext.reasoner.rest.models.stream_data import StreamData
@@ -38,10 +41,12 @@ def merge_ref_doc_set(left:RefDocSet, right:RefDocSet):
 class OpenSPGReporter(ReporterABC):
     def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
         super().__init__(**kwargs)
+        self._lock = threading.Lock()
         self.task_id = task_id
         self.host = host_addr
         self.project_id = project_id
         self.report_stream_data = {}
+        self.report_segment_time = {}
         self.report_record = []
         self.tag_mapping = {
             "Rewrite query": {
@@ -136,16 +141,23 @@ class OpenSPGReporter(ReporterABC):
             "segment": segment,
             "tag_name": tag_name,
             "content": content,
-            "status": status
+            "status": status,
+            "time": time.time()
         }
         self.report_record.append(report_id)
+        if segment not in self.report_segment_time:
+            with self._lock:
+                if segment not in self.report_segment_time:
+                    self.report_segment_time[segment] = {
+                        "start_time": time.time(),
+                    }
 
     def do_report(self):
         if not self.client:
             return
-        content, status_enum = self.generate_report_data()
+        content, status_enum, metrics = self.generate_report_data()
 
-        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum)
+        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum, metrics=metrics)
         logging.info(f"do_report:{request}")
         return self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
 
@@ -153,7 +165,6 @@ class OpenSPGReporter(ReporterABC):
         for name in self.tag_mapping:
             if name in tag_name:
                 return self.tag_mapping[name][KAG_PROJECT_CONF.language]
-        logger.info(f"not found tag {tag_name}")
         return None
 
     def generate_report_data(self):
@@ -168,12 +179,14 @@ class OpenSPGReporter(ReporterABC):
         }
         status = ""
         segment_name = ""
+        thinker_cost = 0.0
         for report_id in self.report_record:
             if report_id in processed_report_record:
                 continue
             report_data = self.report_stream_data[report_id]
             segment_name = report_data["segment"]
             tag_template = self.get_tag_template(report_data["tag_name"])
+            report_time = report_data["time"]
             content = report_data["content"]
             if segment_name == "thinker":
                 if tag_template is None:
@@ -181,6 +194,11 @@ class OpenSPGReporter(ReporterABC):
                 else:
                     report_to_spg_data["content"][segment_name] += tag_template.format(content=str(content))
                 report_to_spg_data["content"][segment_name] += "\n\n"
+                thinker_start_time = self.report_segment_time.get(segment_name, {
+                    "start_time": time.time()
+                })["start_time"]
+                thinker_cost = report_time - thinker_start_time if report_time > thinker_start_time else 0.0
+
             elif segment_name == "answer":
                 if not report_to_spg_data["content"]["thinker"].endswith("</think>"):
                     report_to_spg_data["content"]["thinker"] += "</think>"
@@ -209,6 +227,6 @@ class OpenSPGReporter(ReporterABC):
         content = StreamData(answer=report_to_spg_data["content"]["answer"],
                              reference=report_to_spg_data["content"]["reference"],
                              think=report_to_spg_data["content"]["thinker"])
-        return content, status
+        return content, status, Metrics(thinker_cost=thinker_cost)
     def __str__(self):
         return "\n".join([f"{line['segment']} {line['tag_name']} {line['content']} {line['status']}" for line in self.report_record.keys()])
