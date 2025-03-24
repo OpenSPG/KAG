@@ -20,6 +20,7 @@ from kag.solver_new.executor.mock_executors import (
 )
 from kag.solver_new.generator.mock_generator import MockGenerator
 from kag.solver_new.generator.llm_generator import LLMGenerator
+from kag.solver_new.executor.deduce.evidence_based_reasoner import EvidenceBasedReasoner
 __all__ = [
     "KAGIterativePipeline",
     "KAGStaticPipeline",
@@ -33,5 +34,6 @@ __all__ = [
     "MockRetrieverExecutor",
     "MockMathExecutor",
     "MockGenerator",
-    "LLMGenerator"
+    "LLMGenerator",
+    "EvidenceBasedReasoner"
 ]
