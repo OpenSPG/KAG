@@ -227,6 +227,6 @@ class OpenSPGReporter(ReporterABC):
         content = StreamData(answer=report_to_spg_data["content"]["answer"],
                              reference=report_to_spg_data["content"]["reference"],
                              think=report_to_spg_data["content"]["thinker"])
-        return content, status, Metrics(thinker_cost=thinker_cost)
+        return content, status, Metrics(think_cost=thinker_cost)
     def __str__(self):
         return "\n".join([f"{line['segment']} {line['tag_name']} {line['content']} {line['status']}" for line in self.report_record.keys()])
