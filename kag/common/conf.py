@@ -155,7 +155,11 @@ class KAGConfigMgr:
             log_level = log_conf.get("level", "INFO")
         else:
             log_level = "INFO"
-        logging.basicConfig(level=logging.getLevelName(log_level))
+        logging.basicConfig(
+            level=logging.getLevelName(log_level),
+            format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
         logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
         logging.getLogger("neo4j.io").setLevel(logging.INFO)
         logging.getLogger("neo4j.pool").setLevel(logging.INFO)
@@ -176,6 +180,7 @@ class KAGConfigMgr:
     @property
     def all_config(self):
         return copy.deepcopy(self.config)
+
 
 
 KAG_CONFIG = KAGConfigMgr()

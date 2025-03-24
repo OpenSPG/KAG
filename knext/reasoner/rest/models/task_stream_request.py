@@ -45,18 +45,16 @@ class TaskStreamRequest(object):
     openapi_types = {
         'task_id': 'str',
         'content': 'StreamData',
-        'status_enum': 'str',
-        'metrics': 'Metrics'
+        'status_enum': 'str'
     }
 
     attribute_map = {
         'task_id': 'taskId',
         'content': 'content',
-        'status_enum': 'statusEnum',
-        'metrics': 'metrics'
+        'status_enum': 'statusEnum'
     }
 
-    def __init__(self, task_id=None, content=None, status_enum=None, metrics=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(self, task_id=None, content=None, status_enum=None, local_vars_configuration=None):  # noqa: E501
         """TaskStreamRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -65,13 +63,11 @@ class TaskStreamRequest(object):
         self._task_id = None
         self._content = None
         self._status_enum = None
-        self._metrics = None
         self.discriminator = None
 
         self.task_id = task_id
         self.content = content
         self.status_enum = status_enum
-        self.metrics = metrics
 
     @property
     def task_id(self):
@@ -141,29 +137,6 @@ class TaskStreamRequest(object):
             raise ValueError("Invalid value for `status_enum`, must not be `None`")  # noqa: E501
 
         self._status_enum = status_enum
-
-    @property
-    def metrics(self):
-        """Gets the metrics of this TaskStreamRequest.  # noqa: E501
-
-
-        :return: The metrics of this TaskStreamRequest.  # noqa: E501
-        :rtype: Metrics
-        """
-        return self._metrics
-
-    @metrics.setter
-    def metrics(self, metrics):
-        """Sets the metrics of this TaskStreamRequest.
-
-
-        :param metrics: The metrics of this TaskStreamRequest.  # noqa: E501
-        :type: Metrics
-        """
-        if self.local_vars_configuration.client_side_validation and metrics is None:  # noqa: E501
-            raise ValueError("Invalid value for `metrics`, must not be `None`")  # noqa: E501
-
-        self._metrics = metrics
 
     def to_dict(self):
         """Returns the model properties as a dict"""

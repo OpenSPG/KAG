@@ -513,13 +513,10 @@ class ParseLogicForm:
                 sub_query = sub_querys[i]
             else:
                 sub_query = None
-            try:
-                logic_node = self.parse_logic_form(
-                    input_str, parsed_cached_map, sub_query=sub_query, query=question
-                )
-                parsed_node.append(logic_node)
-            except Exception as e:
-                logger.warning(f"parse node {input_str} error", exc_info=True)
+            logic_node = self.parse_logic_form(
+                input_str, parsed_cached_map, sub_query=sub_query, query=question
+            )
+            parsed_node.append(logic_node)
         return parsed_node
 
     def std_node_type_name(self, type_name):

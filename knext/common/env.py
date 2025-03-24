@@ -36,7 +36,9 @@ class Environment:
             try:
                 log_config = cls._instance.config.get("log", {})
                 value = log_config.get("level", "INFO")
-                logging.basicConfig(level=logging.getLevelName(value))
+                logging.basicConfig(level=logging.getLevelName(value),
+                                    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+                                    datefmt='%Y-%m-%d %H:%M:%S')
             except:
                 logger.info("logger info not set")
         return cls._instance
