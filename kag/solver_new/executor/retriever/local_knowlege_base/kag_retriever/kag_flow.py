@@ -2,12 +2,19 @@ import networkx as nx
 import concurrent.futures
 
 from typing import Dict, List, Tuple
+import time
+
+import logging
 
 from kag.common.conf import KAG_CONFIG
 from kag.interface.solver.base_model import LogicNode
 from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData, KgGraph
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.flow_component import \
     FlowComponent
+
+
+logger = logging.getLogger()
+
 
 def _merge_graph(input_data: List[RetrievedData]):
     graph_data = None
@@ -45,7 +52,6 @@ class KAGFlow:
                 raise ValueError(f"Unknown node type: {node_name}")
             self.nodes[node_name] = FlowComponent.from_config(KAG_CONFIG.all_config[node_name])
 
-
     def _add_edge(self, src: str, dst: str):
         # Add an edge between two nodes, ensuring both nodes exist in the graph
         self._add_node(src)
@@ -53,25 +59,31 @@ class KAGFlow:
         self.graph.add_edge(src, dst)
 
     def parse_flow(self):
-        # Parse the flow string to build the graph structure
+        logger.info(f"Parsing flow string: {self.flow_str}")
         paths = self.flow_str.split(';')
 
         for path in paths:
             path = path.strip()
+            logger.info(f"Processing path: {path}")
 
             if '->' in path:
                 parts = path.split('->')
                 for current_part, next_part in zip(parts, parts[1:]):
                     current_nodes = [n.strip() for n in current_part.split(',')]
                     next_nodes = [n.strip() for n in next_part.split(',')]
+                    logger.info(f"Adding edges from {current_nodes} to {next_nodes}")
 
                     for src in current_nodes:
                         for dst in next_nodes:
                             self._add_edge(src, dst)
             else:
                 self._add_node(path.strip())
+                logger.info(f"Added node: {path.strip()}")
 
     def execute_node(self, node_name: str, **kwargs) -> List[RetrievedData]:
+        logger.info(f"Executing node: {node_name}")
+        start_time = time.time()
+
         input_data = []
         predecessors = self.graph.predecessors(node_name)
         for pre_node in predecessors:
@@ -83,6 +95,7 @@ class KAGFlow:
                 # stop this graph
                 self.nodes[node_name].result = self.nodes[pre_node].result
                 self.nodes[node_name].break_flag = True
+                logger.info(f"Node {node_name} stopped due to break flag in {pre_node}")
                 return self.nodes[node_name].result
             if isinstance(self.nodes[pre_node].result, list):
                 input_data.extend(self.nodes[pre_node].result)
@@ -99,11 +112,15 @@ class KAGFlow:
         if isinstance(node, FlowComponent):
             res = node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data, **kwargs)
             node.break_judge(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data)
+            logger.info(f"Node {node_name} executed in {time.time() - start_time:.2f} seconds")
             return res
         else:
             raise ValueError(f"Unknown node type: {type(node)}")
 
     def execute(self, **kwargs) -> Tuple[KgGraph, List[RetrievedData]]:
+        logger.info("Starting KAGFlow execution")
+        start_time = time.time()
+
         """
         Execute the DAG workflow and collect results from all nodes.
 
@@ -120,6 +137,7 @@ class KAGFlow:
                 cycles = list(nx.simple_cycles(self.graph))
                 raise ValueError(f"Graph contains cycles: {cycles[0]}")
             topological_order = list(nx.topological_sort(self.graph))
+            logger.info(f"Topological order retrieved: {topological_order}")
         except nx.NetworkXUnfeasible:
             raise ValueError("Graph is not a valid Directed Acyclic Graph (DAG)")
 
@@ -135,6 +153,7 @@ class KAGFlow:
                 ]
                 if not current_level:
                     raise RuntimeError("Execution stuck - no executable nodes found. Check dependencies.")
+                logger.info(f"Current level nodes to execute: {current_level}")
 
                 # Execute current level nodes in parallel
                 futures = {executor.submit(self.execute_node, node, **kwargs): node for node in current_level}
@@ -149,6 +168,7 @@ class KAGFlow:
                     # Update results and remove node from remaining nodes
                     self.nodes[node].result = result
                     remaining_nodes.remove(node)
+                    logger.info(f"Node {node} executed successfully")
 
         # Collect results from sink nodes (nodes with no outgoing edges)
         sink_nodes: List[str] = [node for node in self.graph.nodes() if self.graph.out_degree(node) == 0]
@@ -164,4 +184,6 @@ class KAGFlow:
         graph_data, others = _merge_graph(results)
         if graph_data is not None:
             self.graph_data = graph_data
+        logger.info(f"KAGFlow execution completed in {time.time() - start_time:.2f} seconds")
         return self.graph_data, others
+
