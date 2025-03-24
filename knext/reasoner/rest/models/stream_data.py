@@ -45,16 +45,18 @@ class StreamData(object):
     openapi_types = {
         'answer': 'str',
         'reference': 'list[RefDocSet]',
-        'think': 'str'
+        'think': 'str',
+        'metrics': 'Metrics'
     }
 
     attribute_map = {
         'answer': 'answer',
         'reference': 'reference',
-        'think': 'think'
+        'think': 'think',
+        'metrics': 'metrics'
     }
 
-    def __init__(self, answer=None, reference=None, think=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(self, answer=None, reference=None, think=None, metrics=None, local_vars_configuration=None):  # noqa: E501
         """StreamData - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -63,11 +65,13 @@ class StreamData(object):
         self._answer = None
         self._reference = None
         self._think = None
+        self._metrics = None
         self.discriminator = None
 
         self.answer = answer
         self.reference = reference
         self.think = think
+        self.metrics = metrics
 
     @property
     def answer(self):
@@ -137,6 +141,29 @@ class StreamData(object):
             raise ValueError("Invalid value for `think`, must not be `None`")  # noqa: E501
 
         self._think = think
+
+    @property
+    def metrics(self):
+        """Gets the metrics of this StreamData.  # noqa: E501
+
+
+        :return: The metrics of this StreamData.  # noqa: E501
+        :rtype: Metrics
+        """
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, metrics):
+        """Sets the metrics of this StreamData.
+
+
+        :param metrics: The metrics of this StreamData.  # noqa: E501
+        :type: Metrics
+        """
+        if self.local_vars_configuration.client_side_validation and metrics is None:  # noqa: E501
+            raise ValueError("Invalid value for `metrics`, must not be `None`")  # noqa: E501
+
+        self._metrics = metrics
 
     def to_dict(self):
         """Returns the model properties as a dict"""

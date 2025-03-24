@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 import uuid
 
 from typing import List, Any, Optional
@@ -7,12 +8,39 @@ from typing import List, Any, Optional
 from kag.interface import ExecutorABC, ExecutorResponse
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.logic.core_modules.common.one_hop_graph import ChunkData
+from kag.solver.logic.core_modules.common.one_hop_graph import ChunkData, RetrievedData, KgGraph
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.kag_lf_rewriter import \
     KAGLFRewriter
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_flow import KAGFlow
 
 logger = logging.getLogger()
+def to_reference_list(prefix_id,  retrieved_datas: List[RetrievedData]):
+    refer_docs = []
+    refer_id = 0
+    for rd in retrieved_datas:
+        if isinstance(rd, ChunkData):
+            refer_docs.append(
+                {
+                    "id": f"chunk:{prefix_id}_{refer_id}",
+                    "content": rd.content,
+                    "document_id": rd.chunk_id,
+                    "document_name": rd.title,
+                }
+            )
+            refer_id += 1
+
+        if isinstance(rd, KgGraph):
+            for spo in rd.get_all_spo():
+                refer_docs.append(
+                    {
+                        "id": f"chunk:{prefix_id}_{refer_id}",
+                        "content": spo.to_show_id(),
+                        "document_id": str(uuid.uuid5(uuid.NAMESPACE_URL, spo.to_show_id())),
+                        "document_name": "graph data",
+                    }
+                )
+                refer_id += 1
+    return refer_docs
 
 class KAGRetrievedResponse(ExecutorResponse):
     """Response object containing retrieved data from knowledge graph processing.
@@ -43,33 +71,8 @@ class KAGRetrievedResponse(ExecutorResponse):
             "document_id": "53052eb0f40b11ef817442010a8a0006",
             "document_name": "test.txt"
         }"""
-        refer_docs = []
-        refer_id = 0
-        for c in self.chunk_datas:
-            if isinstance(c, ChunkData):
-                refer_docs.append(
-                    {
-                        "id": f"chunk:{self.task_id}_{refer_id}",
-                        "content": c.content,
-                        "document_id": c.chunk_id,
-                        "document_name": c.title,
-                    }
-                )
-                refer_id += 1
-        if not self.graph_data:
-            return refer_docs
+        return to_reference_list(self.task_id, self.chunk_datas + ([self.graph_data] if self.graph_data else []))
 
-        for spo in self.graph_data.get_all_spo():
-            refer_docs.append(
-                {
-                    "id": f"chunk:{self.task_id}_{refer_id}",
-                    "content": spo.to_show_id(),
-                    "document_id": str(uuid.uuid5(uuid.NAMESPACE_URL, spo.to_show_id())),
-                    "document_name": "graph data",
-                }
-            )
-            refer_id += 1
-        return refer_docs
     def to_string(self) -> str:
         """Convert response to human-readable string format
 
@@ -145,35 +148,57 @@ class KagHybridExecutor(ExecutorABC):
             reporter.add_report_line(segment, f"{self.schema().get('name')}\n{tag_id}", content, status)
 
     def invoke(
-            self, query: str, task: Any, context: dict, **kwargs
+        self, query: str, task: Any, context: dict, **kwargs
     ):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         task_query = task.arguments['query']
-
+        logger.info(f"{task_query} begin kag hybrid executor")
         try:
-
             # 1. Initialize response container
+            logger.info(f"Initializing response container for task: {task_query}")
+            start_time = time.time()  # 添加开始时间记录
             kag_response = _initialize_response(task)
+            logger.info(f"Response container initialized in {time.time() - start_time:.2f} seconds for task: {task_query}")
+
             # 2. Convert query to logical form
+            logger.info(f"Converting query to logical form for task: {task_query}")
+            start_time = time.time()  # 添加开始时间记录
             self.report_content(reporter, "thinker", f"{task_query}_begin_kag_retriever", task_query, "FINISH")
             logic_nodes = self._convert_to_logical_form(task_query, task, reporter=reporter)
+            logger.info(f"Query converted to logical form in {time.time() - start_time:.2f} seconds for task: {task_query}")
 
-
+            logger.info(f"Creating KAGFlow for task: {task_query}")
+            start_time = time.time()  # 添加开始时间记录
             flow: KAGFlow = KAGFlow(flow_id=task.id, nl_query=task_query, lf_nodes=logic_nodes, flow_str=self.flow_str)
+            logger.info(f"KAGFlow created in {time.time() - start_time:.2f} seconds for task: {task_query}")
 
+            logger.info(f"Executing KAGFlow for task: {task_query}")
+            start_time = time.time()  # 添加开始时间记录
             graph_data, retrieved_datas = flow.execute(reporter=reporter)
             kag_response.graph_data = graph_data
             kag_response.chunk_datas = retrieved_datas
+            logger.info(f"KAGFlow executed in {time.time() - start_time:.2f} seconds for task: {task_query}")
             self.report_content(reporter, "reference", f"{task_query}_kag_retriever_result", kag_response, "FINISH")
+
+            logger.info(f"Processing logic nodes for task: {task_query}")
+            start_time = time.time()  # 添加开始时间记录
             for lf_node in logic_nodes:
                 kag_response.sub_retrieved_set.append(lf_node.get_fl_node_result())
+            logger.info(f"Logic nodes processed in {time.time() - start_time:.2f} seconds for task: {task_query}")
 
             # 8. Final storage
+            logger.info(f"Storing results for task: {task_query}")
+            start_time = time.time()  # 添加开始时间记录
             self._store_results(task, kag_response)
+            logger.info(f"Results stored in {time.time() - start_time:.2f} seconds for task: {task_query}")
             self.report_content(reporter, "thinker", f"{task_query}_end_kag_retriever", "", "FINISH")
+            logger.info(f"Completed storing results for task: {task_query}")
         except Exception as e:
             logger.warning(f"{self.schema().get('name')} executed failed {e}", exc_info=True)
             self.report_content(reporter, "thinker", f"{task_query}_failed_kag_retriever", f"{self.schema().get('name')} executed failed {e}", "RUNNING")
+            logger.info(f"Exception occurred for task: {task_query}, error: {e}")
+    
+        logger.info(f"{task_query} end kag hybrid executor")
 
     def _convert_to_logical_form(self, query: str, task, reporter) -> List[LogicNode]:
         """Convert task description to logical nodes
@@ -201,6 +226,7 @@ class KagHybridExecutor(ExecutorABC):
             response (KAGRetrievedResponse): Processed results
         """
         task.update_memory("response", response)
+        task.update_memory("chunks", response.chunk_datas)
         task.update_result(response)
 
     def schema(self) -> dict:

@@ -157,9 +157,13 @@ class OpenSPGReporter(ReporterABC):
             return
         content, status_enum, metrics = self.generate_report_data()
 
-        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum, metrics=metrics)
+        request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum)
         logging.info(f"do_report:{request}")
-        return self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
+        try:
+            ret = self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
+            logger.info(f"do_report: {request} ret={ret}")
+        except Exception as e:
+            logging.error(f"do_report failed:{e}")
 
     def get_tag_template(self, tag_name):
         for name in self.tag_mapping:
@@ -226,7 +230,8 @@ class OpenSPGReporter(ReporterABC):
                 status = "RUNNING"
         content = StreamData(answer=report_to_spg_data["content"]["answer"],
                              reference=report_to_spg_data["content"]["reference"],
-                             think=report_to_spg_data["content"]["thinker"])
+                             think=report_to_spg_data["content"]["thinker"],
+                             metrics=Metrics(think_cost=thinker_cost))
         return content, status, Metrics(think_cost=thinker_cost)
     def __str__(self):
         return "\n".join([f"{line['segment']} {line['tag_name']} {line['content']} {line['status']}" for line in self.report_record.keys()])
