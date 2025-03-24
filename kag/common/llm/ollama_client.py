@@ -58,7 +58,7 @@ class OllamaClient(LLMClient):
         self.client = Client(host=self.base_url, timeout=self.timeout)
         self.aclient = AsyncClient(host=self.base_url, timeout=self.timeout)
         self.check()
-        logger.info(
+        logger.debug(
             f"Initialize OllamaClient with rate limit {max_rate} every {time_period}s"
         )
 
