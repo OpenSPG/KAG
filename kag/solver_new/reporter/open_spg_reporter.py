@@ -89,6 +89,10 @@ class OpenSPGReporter(ReporterABC):
                 "en": "#### Summarizing retrieved documents\n {content}",
                 "zh": "#### 正在对文档进行总结\n {content}"
             },
+            "retriever_summary": {
+                "en": "#### Summarizing retrieved documents\n {content}",
+                "zh": "#### 正在对文档进行总结\n {content}"
+            },
             "begin_kag_retriever": {
                 "en": "### Starting KAG retriever\n--------- \n Retrieving question: {content}",
                 "zh": "### 正在执行KAG检索\n--------- \n 检索问题为： {content}"

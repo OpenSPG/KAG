@@ -72,6 +72,7 @@ class KAGIterativePlanner(PlannerABC):
                 "executors": kwargs.get("executors", []),
             },
             self.plan_prompt,
+            segment_name="thinker", tag_name="Iterative planning", **kwargs
         )
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:

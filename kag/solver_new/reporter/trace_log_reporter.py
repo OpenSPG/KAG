@@ -9,14 +9,16 @@ logger = logging.getLogger()
 class TraceLog:
     def __init__(self):
         self.decompose = []
-        self.thinker = ""
+        self.thinker = {}
         self.answer = ""
+        self.generator = []
 
     def to_dict(self):
         return {
             "decompose": self.decompose,
             "thinker": self.thinker,
             "answer": self.answer,
+            "generator": self.generator
         }
 
 @ReporterABC.register("trace_log_reporter")
@@ -38,16 +40,8 @@ class TraceLogReporter(OpenSPGReporter):
             segment_name = report_data["segment"]
             content = report_data["content"]
             if segment_name == "thinker":
-                report_to_spg_data.thinker += f"""
-
-report_data["tag_name"]
---------- 
-{content}  
-
-"""
+                report_to_spg_data.thinker[report_data["tag_name"]] = f"{content}"
             elif segment_name == "answer":
-                if not report_to_spg_data.thinker.endswith("</think>"):
-                    report_to_spg_data.thinker += "</think>"
                 report_to_spg_data.answer = content
             elif segment_name == "reference":
                 if isinstance(content, KAGRetrievedResponse):
@@ -55,6 +49,8 @@ report_data["tag_name"]
                 else:
                     logger.warning(f"Unknown reference type {type(content)}")
                     continue
+            elif segment_name == "generator":
+                report_to_spg_data.generator.append(content)
             status = report_data["status"]
             processed_report_record.append(report_id)
             if status != "FINISH":

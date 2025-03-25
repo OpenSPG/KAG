@@ -34,7 +34,7 @@ class KAGIterativePipeline(SolverPipelineABC):
         planner: PlannerABC,
         executors: List[ExecutorABC],
         generator: GeneratorABC,
-        max_iteration: int = 10,
+        max_iteration: int = 5,
     ):
         """Initialize the iterative pipeline.
 

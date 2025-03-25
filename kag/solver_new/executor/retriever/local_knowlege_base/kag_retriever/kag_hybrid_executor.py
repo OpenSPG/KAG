@@ -5,12 +5,18 @@ import uuid
 
 from typing import List, Any, Optional
 
-from kag.interface import ExecutorABC, ExecutorResponse
+from tenacity import stop_after_attempt, retry
+
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.interface import ExecutorABC, ExecutorResponse, LLMClient
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.logic.core_modules.common.one_hop_graph import ChunkData, RetrievedData, KgGraph
+from kag.solver.utils import init_prompt_with_fallback
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.kag_lf_rewriter import \
     KAGLFRewriter
+from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.rc.default_rc_retriever import \
+    get_history_qa
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_flow import KAGFlow
 
 logger = logging.getLogger()
@@ -57,6 +63,7 @@ class KAGRetrievedResponse(ExecutorResponse):
         self.retrieved_task = ""  # Original task description
         self.graph_data = None
         self.chunk_datas = []
+        self.summary = ""
 
     def __str__(self):
         return self.to_string()
@@ -86,11 +93,16 @@ class KAGRetrievedResponse(ExecutorResponse):
         refer_docs = self.to_reference_list()
         for doc in refer_docs:
             doc.pop("document_id")
-        response_str = {
-            "retrieved_task": self.retrieved_task,
-            "sub_question": [str(item) for item in self.sub_retrieved_set],
-            "reference_docs": refer_docs
-        }
+        if "i don't know" in self.summary.lower() or self.summary == "":
+            response_str = {
+                "retrieved_task": self.retrieved_task,
+                "reference_docs": refer_docs
+            }
+        else:
+            response_str = {
+                "retrieved_task": self.retrieved_task,
+                "summary": self.summary
+            }
 
         return json.dumps(response_str, ensure_ascii=False)
 
@@ -132,11 +144,17 @@ class KagHybridExecutor(ExecutorABC):
             self,
             flow,
             lf_rewriter: KAGLFRewriter,
+            llm_module: LLMClient = None,
             **kwargs
     ):
         super().__init__(**kwargs)
         self.lf_rewriter: KAGLFRewriter = lf_rewriter
         self.flow_str = flow
+        self.solve_question_without_spo_prompt = init_prompt_with_fallback(
+            "summary_question", KAG_PROJECT_CONF.biz_scene
+        )
+        self.llm_module = llm_module or LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
+
 
     @property
     def output_types(self):
@@ -147,17 +165,63 @@ class KagHybridExecutor(ExecutorABC):
         if reporter:
             reporter.add_report_line(segment, f"{self.schema().get('name')}\n{tag_id}", content, status)
 
+    @retry(stop=stop_after_attempt(3))
+    def generate_answer(
+            self, question: str, docs: [], history_qa=[], **kwargs
+    ):
+        """
+        Generates a sub-answer based on the given question, knowledge graph, documents, and history.
+
+        Parameters:
+        question (str): The main question to answer.
+        knowledge_graph (list): A list of knowledge graph data.
+        docs (list): A list of documents related to the question.
+        history (list, optional): A list of previous query-answer pairs. Defaults to an empty list.
+
+        Returns:
+        str: The generated sub-answer.
+        """
+        prompt = self.solve_question_without_spo_prompt
+        params = {
+            "question": question,
+            "docs": [str(d) for d in docs],
+            "history": "\n".join(history_qa),
+        }
+
+        llm_output = self.llm_module.invoke(
+            params, prompt,
+            with_json_parse=False,
+            with_except=True,
+            tag_name=f"kag_hybrid_retriever_summary_{question}",
+            segment_name="thinker",
+            **kwargs
+        )
+        logger.debug(
+            f"sub_question:{question}\n sub_answer:{llm_output} prompt:\n{prompt}"
+        )
+        if llm_output:
+            return llm_output
+        return "I don't know"
+
+    def generate_summary(self, query, chunks, history, **kwargs):
+        if not chunks:
+            return ""
+        history_qa = get_history_qa(history)
+        return self.generate_answer(question=query, docs=chunks, history_qa=history_qa, **kwargs)
+
     def invoke(
         self, query: str, task: Any, context: dict, **kwargs
     ):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         task_query = task.arguments['query']
         logger.info(f"{task_query} begin kag hybrid executor")
+        # 1. Initialize response container
+        logger.info(f"Initializing response container for task: {task_query}")
+        start_time = time.time()  # 添加开始时间记录
+        kag_response = _initialize_response(task)
+
         try:
-            # 1. Initialize response container
-            logger.info(f"Initializing response container for task: {task_query}")
-            start_time = time.time()  # 添加开始时间记录
-            kag_response = _initialize_response(task)
+
             logger.info(f"Response container initialized in {time.time() - start_time:.2f} seconds for task: {task_query}")
 
             # 2. Convert query to logical form
@@ -186,6 +250,8 @@ class KagHybridExecutor(ExecutorABC):
                 kag_response.sub_retrieved_set.append(lf_node.get_fl_node_result())
             logger.info(f"Logic nodes processed in {time.time() - start_time:.2f} seconds for task: {task_query}")
 
+            kag_response.summary = self.generate_summary(query=task_query, chunks=kag_response.to_reference_list(), history=logic_nodes, **kwargs)
+            logger.info(f"Summary Question {task_query} : {kag_response.summary}")
             # 8. Final storage
             logger.info(f"Storing results for task: {task_query}")
             start_time = time.time()  # 添加开始时间记录
@@ -195,6 +261,7 @@ class KagHybridExecutor(ExecutorABC):
             logger.info(f"Completed storing results for task: {task_query}")
         except Exception as e:
             logger.warning(f"{self.schema().get('name')} executed failed {e}", exc_info=True)
+            self._store_results(task, kag_response)
             self.report_content(reporter, "thinker", f"{task_query}_failed_kag_retriever", f"{self.schema().get('name')} executed failed {e}", "RUNNING")
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")
     

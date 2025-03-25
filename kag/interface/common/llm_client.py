@@ -93,7 +93,8 @@ class LLMClient(Registrable):
             json_str = res
         try:
             json_result = loads(json_str)
-        except:
+        except Exception as e:
+            logger.info(f"parse json failed {json_str}")
             return res
         return json_result
 
@@ -163,7 +164,7 @@ class LLMClient(Registrable):
         except Exception as e:
             import traceback
 
-            logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
+            logger.info(f"Error {e} during invocation: {traceback.format_exc()}. prompt={prompt} response={response}")
             if with_except:
                 raise RuntimeError(
                     f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
@@ -212,7 +213,7 @@ class LLMClient(Registrable):
             except Exception as e:
                 import traceback
 
-                logger.info(f"Error {e} during invocation: {traceback.format_exc()}")
+                logger.info(f"Error {e} during invocation: {traceback.format_exc()} prompt={prompt} response={response}")
                 if with_except:
                     raise RuntimeError(
                         f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
