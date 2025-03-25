@@ -14,7 +14,8 @@ from kag.interface import ExecutorABC, LLMClient, Task, Context
 
 @ExecutorABC.register("evidence_based_reasoner")
 class EvidenceBasedReasoner(ExecutorABC):
-    def __init__(self, llm: LLMClient):
+    def __init__(self, llm: LLMClient, **kwargs):
+        super().__init__(**kwargs)
         self.llm = llm
 
     async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
@@ -44,7 +45,7 @@ class EvidenceBasedReasoner(ExecutorABC):
 
     def schema(self, func_name: str = None):
         return {
-            "name": "Reasoner",
+            "name": "Deduce",
             "description": "Synthesizes precise, evidence-backed answers to user queries by analyzing provided contextual documents. Note: Contextual documents are pre-loaded and processed implicitly; no explicit context parameter is required.",
             "parameters": {
                 "query": {
