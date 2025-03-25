@@ -46,17 +46,19 @@ class StreamData(object):
         'answer': 'str',
         'reference': 'list[RefDocSet]',
         'think': 'str',
-        'metrics': 'Metrics'
+        'metrics': 'Metrics',
+        'subgraph': 'list[SubGraph]'
     }
 
     attribute_map = {
         'answer': 'answer',
         'reference': 'reference',
         'think': 'think',
-        'metrics': 'metrics'
+        'metrics': 'metrics',
+        'subgraph': 'subgraph'
     }
 
-    def __init__(self, answer=None, reference=None, think=None, metrics=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(self, answer=None, reference=None, think=None, metrics=None, subgraph=None, local_vars_configuration=None):  # noqa: E501
         """StreamData - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -66,12 +68,14 @@ class StreamData(object):
         self._reference = None
         self._think = None
         self._metrics = None
+        self._subgraph = None
         self.discriminator = None
 
         self.answer = answer
         self.reference = reference
         self.think = think
         self.metrics = metrics
+        self.subgraph = subgraph
 
     @property
     def answer(self):
@@ -164,6 +168,29 @@ class StreamData(object):
             raise ValueError("Invalid value for `metrics`, must not be `None`")  # noqa: E501
 
         self._metrics = metrics
+
+    @property
+    def subgraph(self):
+        """Gets the subgraph of this StreamData.  # noqa: E501
+
+
+        :return: The subgraph of this StreamData.  # noqa: E501
+        :rtype: list[SubGraph]
+        """
+        return self._subgraph
+
+    @subgraph.setter
+    def subgraph(self, subgraph):
+        """Sets the subgraph of this StreamData.
+
+
+        :param subgraph: The subgraph of this StreamData.  # noqa: E501
+        :type: list[SubGraph]
+        """
+        if self.local_vars_configuration.client_side_validation and subgraph is None:  # noqa: E501
+            raise ValueError("Invalid value for `subgraph`, must not be `None`")  # noqa: E501
+
+        self._subgraph = subgraph
 
     def to_dict(self):
         """Returns the model properties as a dict"""

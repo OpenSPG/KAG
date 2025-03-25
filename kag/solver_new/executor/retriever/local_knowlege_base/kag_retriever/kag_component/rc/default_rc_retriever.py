@@ -1,4 +1,7 @@
+import logging
 from typing import List, Optional
+
+from tenacity import stop_after_attempt, retry
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.interface import PromptABC, LLMClient
@@ -13,6 +16,18 @@ from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_com
     RCRetrieverABC
 from kag.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import PprChunkRetriever
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
+
+logger = logging.getLogger()
+
+
+def get_history_qa(history: List[LogicNode]):
+    history_qa = []
+    for idx, lf in enumerate(history):
+        if lf.get_fl_node_result().summary != "" and "i don't know" not in lf.get_fl_node_result().summary.lower():
+            history_qa.append(
+                f"step{idx}:{lf.get_fl_node_result().sub_question}\nanswer:{lf.get_fl_node_result().summary}"
+            )
+    return history_qa
 
 
 @FlowComponent.register("rc_open_spg", as_default=True)
@@ -38,32 +53,73 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             "rewrite_sub_query", KAG_PROJECT_CONF.biz_scene
         )
 
+        self.solve_question_prompt = init_prompt_with_fallback(
+            "solve_question", KAG_PROJECT_CONF.biz_scene
+        )
+        self.solve_question_without_docs_prompt = init_prompt_with_fallback(
+            "solve_question_without_docs", KAG_PROJECT_CONF.biz_scene
+        )
+        self.solve_question_without_spo_prompt = init_prompt_with_fallback(
+            "solve_question_without_spo", KAG_PROJECT_CONF.biz_scene
+        )
+
+    @retry(stop=stop_after_attempt(3))
+    def generate_sub_answer(
+        self, question: str, knowledge_graph: [], docs: [], history_qa=[]
+    ):
+        """
+        Generates a sub-answer based on the given question, knowledge graph, documents, and history.
+
+        Parameters:
+        question (str): The main question to answer.
+        knowledge_graph (list): A list of knowledge graph data.
+        docs (list): A list of documents related to the question.
+        history (list, optional): A list of previous query-answer pairs. Defaults to an empty list.
+
+        Returns:
+        str: The generated sub-answer.
+        """
+        if knowledge_graph:
+            if len(docs) > 0:
+                prompt = self.solve_question_prompt
+                params = {
+                    "question": question,
+                    "knowledge_graph": str(knowledge_graph),
+                    "docs": [str(d) for d in docs],
+                    "history": "\n".join(history_qa),
+                }
+            else:
+                prompt = self.solve_question_without_docs_prompt
+                params = {
+                    "question": question,
+                    "knowledge_graph": str(knowledge_graph),
+                    "history": "\n".join(history_qa),
+                }
+        else:
+            prompt = self.solve_question_without_spo_prompt
+            params = {
+                "question": question,
+                "docs": [str(d) for d in docs],
+                "history": "\n".join(history_qa),
+            }
+        llm_output = self.llm_module.invoke(
+            params, prompt, with_json_parse=False, with_except=True
+        )
+        logger.debug(
+            f"sub_question:{question}\n sub_answer:{llm_output} prompt:\n{prompt}"
+        )
+        if llm_output:
+            return llm_output
+        return "I don't know"
     def generate_summary(self, query, graph, chunks, history, **kwargs):
         if not chunks:
             return ""
-        history_qa = self.get_history_qa(history)
-        return self.llm_module.invoke({
-            "history": history_qa,
-            "knowledge_graph": str(graph),
-            "question": query,
-            "docs": chunks
-        }, self.summary_prompt,
-            reporter=kwargs.get("reporter", None),
-            tag_name=kwargs.get("tag_name", None),
-            segment_name="thinker")
-
-    def get_history_qa(self, history: List[LogicNode]):
-        history_qa = []
-        for idx, lf in enumerate(history):
-            if lf.get_fl_node_result().summary != "":
-                history_qa.append(
-                    f"step{idx}:{lf.get_fl_node_result().sub_question}\nanswer:{lf.get_fl_node_result().summary}"
-                )
-        return history_qa
+        history_qa = get_history_qa(history)
+        return self.generate_sub_answer(question=query, knowledge_graph=graph, docs=chunks, history_qa=history_qa)
 
     def _rewrite_sub_query_with_history_qa(self, history: List[LogicNode], sub_query, reporter, tag_name):
         if history:
-            history_qa = self.get_history_qa(history)
+            history_qa = get_history_qa(history)
             sub_query_rewrite = []
 
             sub_query_rewrite_l = self.llm_module.invoke(
@@ -111,12 +167,15 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
         sub_queries = []
         sub_chunks = []
         used_lf = []
+        logger.info(f"Starting invoke method with query: {query}")
         for logic_node in logic_nodes:
             if not isinstance(logic_node, GetSPONode):
                 continue
             if logic_node.get_fl_node_result().summary:
                 used_lf.append(logic_node)
                 continue
+            # Start processing a new logic node
+            logger.info(f"`{query}` Processing logic node with sub-query: {logic_node.sub_query}")
             if reporter:
                 reporter.add_report_line(
                     "thinker",
@@ -127,6 +186,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             rewrite_queries = self._rewrite_sub_query_with_history_qa(history=used_lf, sub_query=logic_node.sub_query,
                                                                       reporter=reporter,
                                                                       tag_name=f"rc_retriever_rewrite_{logic_node.sub_query}")
+            logger.info(f"`{query}` Rewritten queries: {rewrite_queries}")
             entities = []
             if graph_data is not None:
                 s_entities = graph_data.get_entity_by_alias(logic_node.s.alias_name)
@@ -138,6 +198,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             chunks = self.ppr_chunk_retriever_tool.invoke(
                 queries=[query] + rewrite_queries, start_entities=entities, top_k=self.top_k
             )
+            logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
             if reporter:
                 reporter.add_report_line(
                     "thinker",
@@ -146,10 +207,14 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     "FINISH",
                 )
             # summary
-            summary = self.generate_summary(query=rewrite_queries, graph=logic_node.get_fl_node_result().spo,
-                                            chunks=chunks, history=used_lf, reporter=reporter,
-                                            tag_name=f"rc_retriever_summary_{logic_node.sub_query}")
-            logic_node.get_fl_node_result().summary = summary
+            try:
+                summary = self.generate_summary(query=logic_node.sub_query, graph=logic_node.get_fl_node_result().spo,
+                                                chunks=chunks, history=used_lf, reporter=reporter,
+                                                tag_name=f"rc_retriever_summary_{logic_node.sub_query}")
+                logger.info(f"`{query}` subq: {logic_node.sub_query} answer:{summary}")
+                logic_node.get_fl_node_result().summary = summary
+            except Exception as e:
+                logger.error(f"`{query}` subq: {logic_node.sub_query} error:{e}")
             logic_node.get_fl_node_result().sub_question = rewrite_queries
             logic_node.get_fl_node_result().chunks = chunks
             sub_queries += rewrite_queries

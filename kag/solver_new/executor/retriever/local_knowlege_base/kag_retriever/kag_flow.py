@@ -110,8 +110,8 @@ class KAGFlow:
             cur_graph_data.merge_kg_graph(self.graph_data)
         node = self.nodes[node_name]
         if isinstance(node, FlowComponent):
-            res = node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data, **kwargs)
-            node.break_judge(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data)
+            res = node.invoke(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data,flow_id=self.flow_id, **kwargs)
+            node.break_judge(query=self.nl_query, logic_nodes=self.lf_nodes, graph_data=cur_graph_data, datas=input_data,flow_id=self.flow_id,)
             logger.info(f"{self.nl_query} Node {node_name} executed in {time.time() - start_time:.2f} seconds")
             return res
         else:
