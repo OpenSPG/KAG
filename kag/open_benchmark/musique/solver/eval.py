@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -22,6 +23,14 @@ class EvaForMusique(EvalQa):
     def load_data(self, file_path):
         with open(file_path, "r") as f:
             return json.load(f)
+
+    def do_recall_eval(self, sample, references):
+        eva_obj = Evaluate()
+        paragraph_support_idx_set = [idx["paragraph_support_idx"] for idx in sample["question_decomposition"]]
+        golds = []
+        for idx in paragraph_support_idx_set:
+            golds.append(eva_obj.generate_id(sample['paragraphs'][idx]['title'], sample['paragraphs'][idx]['paragraph_text']))
+        return eva_obj.recall_top(predictionlist=references, goldlist=golds)
 
     def do_metrics_eval(self, predictions: List[str], golds: List[str]):
         eva_obj = Evaluate()
