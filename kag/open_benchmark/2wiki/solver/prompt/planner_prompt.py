@@ -60,46 +60,58 @@ Please complete the task according to the following rules:
         return ["executors", "query"]
 
     def format_dag(self, response: Dict):
-        def get_retrieve_task_id(task_id):
-            return str(int(task_id) * 2)
-
-        def get_reason_task_id(task_id):
-            return str(int(task_id) * 2 + 1)
-
-        def update_task_id(query):
-            parts = re.split(r"(\{\{.*?\}\})", query)
-            new_query = []
-            for part in parts:
-                if re.match("(\{\{.*?\}\})", part):
-                    task_id = part.lstrip("{{").rstrip(".output}}")
-                    new_task_id = get_reason_task_id(task_id)
-                    new_query.append("{{" + new_task_id + ".output}}")
-                else:
-                    new_query.append(part)
-            return "".join(new_query)
-
-        new_tasks = {}
+        tasks = {}
         for task_id, task_info in response.items():
-            retrieve_task_id = get_retrieve_task_id(task_id)
-            dependent_task_ids = [
-                get_reason_task_id(x) for x in task_info["dependent_task_ids"]
-            ]
-            retrieve_task = {
-                "executor": "Retriever",
-                "dependent_task_ids": dependent_task_ids,
-                "arguments": {"query": update_task_id(task_info["query"])},
-            }
-            reason_task_id = get_reason_task_id(task_id)
             reason_task = {
                 "executor": "Reasoner",
-                "dependent_task_ids": dependent_task_ids + [retrieve_task_id],
-                "arguments": {"query": update_task_id(task_info["query"])},
+                "dependent_task_ids": task_info["dependent_task_ids"],
+                "arguments": {"query": task_info["query"]},
             }
-            new_tasks[retrieve_task_id] = retrieve_task
-            new_tasks[reason_task_id] = reason_task
+            tasks[task_id] = reason_task
+        print(f"Planning output:\n{tasks}")
+        return tasks
 
-        print(f"Planning output:\n{new_tasks}")
-        return new_tasks
+    # def format_dag(self, response: Dict):
+    #     def get_retrieve_task_id(task_id):
+    #         return str(int(task_id) * 2)
+
+    #     def get_reason_task_id(task_id):
+    #         return str(int(task_id) * 2 + 1)
+
+    #     def update_task_id(query):
+    #         parts = re.split(r"(\{\{.*?\}\})", query)
+    #         new_query = []
+    #         for part in parts:
+    #             if re.match("(\{\{.*?\}\})", part):
+    #                 task_id = part.lstrip("{{").rstrip(".output}}")
+    #                 new_task_id = get_reason_task_id(task_id)
+    #                 new_query.append("{{" + new_task_id + ".output}}")
+    #             else:
+    #                 new_query.append(part)
+    #         return "".join(new_query)
+
+    #     new_tasks = {}
+    #     for task_id, task_info in response.items():
+    #         retrieve_task_id = get_retrieve_task_id(task_id)
+    #         dependent_task_ids = [
+    #             get_reason_task_id(x) for x in task_info["dependent_task_ids"]
+    #         ]
+    #         retrieve_task = {
+    #             "executor": "Retriever",
+    #             "dependent_task_ids": dependent_task_ids,
+    #             "arguments": {"query": update_task_id(task_info["query"])},
+    #         }
+    #         reason_task_id = get_reason_task_id(task_id)
+    #         reason_task = {
+    #             "executor": "Reasoner",
+    #             "dependent_task_ids": dependent_task_ids + [retrieve_task_id],
+    #             "arguments": {"query": update_task_id(task_info["query"])},
+    #         }
+    #         new_tasks[retrieve_task_id] = retrieve_task
+    #         new_tasks[reason_task_id] = reason_task
+
+    #     print(f"Planning output:\n{new_tasks}")
+    #     return new_tasks
 
     def parse_response(self, response: str, **kwargs):
         if isinstance(response, str):
