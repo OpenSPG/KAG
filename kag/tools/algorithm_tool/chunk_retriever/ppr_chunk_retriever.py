@@ -27,8 +27,8 @@ class PprChunkRetriever(ToolABC):
                  vectorize_model: VectorizeModelABC = None,
                  graph_api: GraphApiABC = None,
                  search_api: SearchApiABC = None,
-                 pagerank_threshold: float = 0.8,
-                 match_threshold: float = 0.9,
+                 pagerank_threshold: float = 0.9,
+                 match_threshold: float = 0.6,
                  pagerank_weight: float = 0.5,
                  ner: Ner = None,
                  el: EntityLinking = None,
@@ -58,7 +58,7 @@ class PprChunkRetriever(ToolABC):
 
         self.ner = ner or Ner(llm_module=llm_client)
         self.el = el or EntityLinking(vectorize_model=vectorize_model, graph_api=graph_api, search_api=search_api,
-                                      recognition_threshold=match_threshold)
+                                      recognition_threshold=match_threshold, top_k=1, exclude_types=["Chunk"])
         self.pagerank_threshold = pagerank_threshold
         self.text_chunk_retriever = text_chunk_retriever or TextChunkRetriever(search_api=search_api)
         self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(vectorize_model=vectorize_model,
@@ -222,12 +222,31 @@ class PprChunkRetriever(ToolABC):
         matched_entities = start_entities
         if start_entities is None:
             matched_entities = []
+        ner_maps = {}
         for query in queries:
             candidate_entities = self.ner.invoke(query, **kwargs)
             for candidate_entity in candidate_entities:
-                el_res = self.el.invoke(query=query, name=candidate_entity.get_mention_name(),
-                                        type_name=candidate_entity.get_entity_first_type_or_un_std(), top_k=1)
+                ner_id = f"{candidate_entity.entity_name}_{candidate_entity.get_entity_first_type_or_un_std()}"
+                if ner_id in ner_maps:
+                    continue
+                ner_maps[ner_id] = {
+                    'candidate': candidate_entity,
+                    'query': query
+                }
+        for k,info in ner_maps.items():
+            query_type = info['candidate'].get_entity_first_type_or_un_std()
+            if query_type in self.schema_helper.node_en_zh.keys():
+                query_type = self.schema_helper.get_label_within_prefix(query_type)
+                el_res = self.el.invoke(query=info['query'], name=info['candidate'].get_mention_name(),
+                                        type_name=query_type, top_k=1)
                 matched_entities.extend(el_res)
+            if "Others" not in query_type:
+                query_type = self.schema_helper.get_label_within_prefix("Others")
+                el_res = self.el.invoke(query=info['query'], name=info['candidate'].get_mention_name(),
+                                        type_name=query_type, top_k=1)
+                matched_entities.extend(el_res)
+
+        matched_entities = list(set(matched_entities))
 
         if len(matched_entities):
             pagerank_scores = self.calculate_pagerank_scores(matched_entities)

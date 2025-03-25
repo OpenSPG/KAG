@@ -52,6 +52,7 @@ class Task(Registrable):
         super().__init__(**kwargs)
         self.executor = executor
         self.arguments = arguments
+        self.thought = kwargs.get('thought', '')
         self.status = TaskStatus.PENDING
         if id is None:
             self.id = str(uuid.uuid4())

@@ -1024,7 +1024,7 @@ class ChunkData(RetrievedData):
         return f"ChunkData(content={self.content}, title={self.title}, chunk_id={self.chunk_id}, score={self.score})"
 
     def __str__(self):
-        return f"ChunkData(content={self.content}, title={self.title}, score={self.score})"
+        return self.content
 
 def parse_entity_relation(one_graph, std_p: str, o_value: EntityData):
     s_entity = one_graph.s

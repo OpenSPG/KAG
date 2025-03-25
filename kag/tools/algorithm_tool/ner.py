@@ -37,7 +37,7 @@ class Ner(ToolABC):
         Returns:
         The result returned by the service client, with the type and format depending on the used service.
         """
-        return self.llm_module.invoke({"input": query}, self.ner_prompt)
+        return self.llm_module.invoke({"input": query}, self.ner_prompt, with_json_parse=True)
 
     @retry(stop=stop_after_attempt(3))
     def named_entity_standardization(self, query: str, entities: List[Dict]):
@@ -56,7 +56,7 @@ class Ner(ToolABC):
         - The result of the remote service call, typically standardized named entity information.
         """
         return self.llm_module.invoke(
-            {"input": query, "named_entities": entities}, self.std_prompt
+            {"input": query, "named_entities": entities}, self.std_prompt, with_json_parse=True
         )
 
     @staticmethod
