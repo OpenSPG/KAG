@@ -1,5 +1,4 @@
 from kag.common.utils import generate_hash_id
-from odps import ODPS
 from kag.interface.builder.scanner_abc import ScannerABC
 from typing import Any, Generator, List
 
@@ -30,6 +29,7 @@ class ODPSScanner(ScannerABC):
         self.col_names = col_names
         self.col_ids = col_ids
         self.limit = limit
+        from odps import ODPS
 
         self._o = ODPS(self.access_id, self.access_key, self.project, self.endpoint)
         if not self._o.exist_table(self.table):
