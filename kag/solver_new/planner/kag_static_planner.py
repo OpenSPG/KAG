@@ -52,6 +52,7 @@ class KAGStaticPlanner(PlannerABC):
         # get all prvious tasks from context.
         for parent_task in task.parents:
             formatted_context[parent_task.id] = {
+                "query": parent_task.arguments["query"],
                 "output": str(parent_task.result),
             }
         return formatted_context
@@ -91,6 +92,7 @@ class KAGStaticPlanner(PlannerABC):
             tag_name="Rewrite query",
             **kwargs,
         )
+        # print(f"query rewrite context = {context}")
         # print(f"New query: {new_query}")
         return new_query
 
