@@ -167,17 +167,13 @@ class PprChunkRetriever(ToolABC):
         matched_docs = []
         hits_docs = set()
         counter = 0
-        for doc_id in doc_ids:
-            if counter == top_k:
-                break
+
+        def process_get_doc_id(doc_id):
             if isinstance(doc_id, tuple):
                 doc_score = doc_id[1]
                 doc_id = doc_id[0]
             else:
                 doc_score = doc_ids[doc_id]
-            if doc_score == 0.0:
-                continue
-            counter += 1
             try:
                 node = self.graph_api.get_entity_prop_by_id(
                     label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
@@ -194,6 +190,10 @@ class PprChunkRetriever(ToolABC):
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
+
+        limit_doc_ids = doc_ids[:top_k]
+        with ThreadPoolExecutor() as executor:
+            executor.map(process_get_doc_id, limit_doc_ids)
         query = "\n".join(queries)
         try:
             text_matched = self.search_api.search_text(
@@ -312,14 +312,21 @@ class PprChunkRetriever(ToolABC):
             combined_scores = pagerank_scores
         else:
             sim_scores = {}
-            for query in queries:
+            def process_query_sim(query):
+                sim_scores_start_time = time.time()
+                """Process a single query for similarity scores in parallel."""
                 query_sim_scores = self.vector_chunk_retriever.invoke(query, chunk_nums)
+                logger.info(
+                    f"`{query}` Similarity scores calculation completed in {time.time() - sim_scores_start_time:.2f} seconds.")
                 for doc_id, node in query_sim_scores.items():
                     score = node['score']
                     if doc_id not in sim_scores:
                         sim_scores[doc_id] = score
                     elif score > sim_scores[doc_id]:
                         sim_scores[doc_id] = score
+                # Use ThreadPoolExecutor to parallelize similarity score calculation
+            with ThreadPoolExecutor() as executor:
+                executor.map(process_query_sim, queries)
             if not matched_entities:
                 combined_scores = sim_scores
             else:

@@ -49,6 +49,8 @@ class EvalQa:
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
             metrics = self.do_metrics_eval([prediction], [gold])
+            recall_metrics = self.do_recall_eval(sample, trace_log['info'].get("reference", []))
+            metrics.update(recall_metrics)
             return sample_idx, prediction, metrics, trace_log
         except Exception as e:
             import traceback
@@ -60,6 +62,11 @@ class EvalQa:
 
     def do_metrics_eval(self, predictions: List[str], golds: List[str]):
         raise NotImplementedError("do_eval need implement")
+
+    def do_recall_eval(self, sample, references):
+        return {
+            "recall": None
+        }
 
     def do_total_metrics_process(self, metrics_list: List[dict]):
         total_metrics = {

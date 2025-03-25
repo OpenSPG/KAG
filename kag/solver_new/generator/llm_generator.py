@@ -66,7 +66,7 @@ class LLMGenerator(GeneratorABC):
         content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if reporter:
             reporter.add_report_line("generator", "input", content_json, "FINISH")
-            reporter.add_report_line("generator_reference", "reference", refer_data, "FINISH")
+            reporter.add_report_line("generator_reference", "reference", rerank_chunks, "FINISH")
             reporter.add_report_line("generator_reference_graphs", "graph", graph_data, "FINISH")
         return self.llm_client.invoke({
             "query": query,

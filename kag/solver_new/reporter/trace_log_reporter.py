@@ -12,13 +12,15 @@ class TraceLog:
         self.thinker = {}
         self.answer = ""
         self.generator = []
+        self.reference = []
 
     def to_dict(self):
         return {
             "decompose": self.decompose,
             "thinker": self.thinker,
             "answer": self.answer,
-            "generator": self.generator
+            "generator": self.generator,
+            "reference": [ref.to_dict() for ref in self.reference]
         }
 
 @ReporterABC.register("trace_log_reporter")
@@ -51,6 +53,9 @@ class TraceLogReporter(OpenSPGReporter):
                     continue
             elif segment_name == "generator":
                 report_to_spg_data.generator.append(content)
+            elif segment_name == "generator_reference":
+                report_to_spg_data.reference = content
+
             status = report_data["status"]
             processed_report_record.append(report_id)
             if status != "FINISH":
