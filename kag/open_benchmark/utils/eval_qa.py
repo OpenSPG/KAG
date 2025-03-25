@@ -37,10 +37,10 @@ class EvalQa:
         }
 
     async def async_process_sample(self, data):
+        sample_idx, sample, ckpt = data
+        question = sample["question"]
+        gold = sample["answer"]
         try:
-            sample_idx, sample, ckpt = data
-            question = sample["question"]
-            gold = sample["answer"]
             if ckpt and question in ckpt:
                 print(f"found existing answer to question: {question}")
                 prediction, trace_log = ckpt.read_from_ckpt(question)

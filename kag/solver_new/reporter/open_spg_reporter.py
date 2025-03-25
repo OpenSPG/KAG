@@ -6,14 +6,19 @@ from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.interface.solver.reporter_abc import ReporterABC
+from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData, RelationData
+from kag.solver.logic.core_modules.common.utils import generate_random_string
 from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_hybrid_executor import KAGRetrievedResponse
 from knext.common.rest import ApiClient, Configuration
 from knext.reasoner import ReasonerApi
 from knext.reasoner.rest.models import TaskStreamRequest
+from knext.reasoner.rest.models.data_edge import DataEdge
+from knext.reasoner.rest.models.data_node import DataNode
 from knext.reasoner.rest.models.metrics import Metrics
 from knext.reasoner.rest.models.ref_doc import RefDoc
 from knext.reasoner.rest.models.ref_doc_set import RefDocSet
 from knext.reasoner.rest.models.stream_data import StreamData
+from knext.reasoner.rest.models.sub_graph import SubGraph
 
 logger = logging.getLogger()
 
@@ -36,6 +41,45 @@ def merge_ref_doc_set(left:RefDocSet, right:RefDocSet):
     left.info = list(set(left_refer + right_refer))
     return left
 
+
+def _convert_spo_to_graph(graph_id, spo_retrieved):
+    nodes = {}
+    edges = []
+    for spo in spo_retrieved:
+        def _get_node(entity: EntityData):
+            node = DataNode(
+                id=entity.to_show_id(KAG_PROJECT_CONF.language),
+                name=entity.get_short_name(),
+                label=entity.type_zh if KAG_PROJECT_CONF.language == "zh" else entity.type,
+                properties=entity.prop.get_properties_map() if entity.prop else {},
+            )
+            return node
+
+        start_node = _get_node(spo.from_entity)
+        end_node = _get_node(spo.end_entity)
+        if start_node.id not in nodes:
+            nodes[start_node.id] = start_node
+        if end_node.id not in nodes:
+            nodes[end_node.id] = end_node
+        spo_id = spo.to_show_id(KAG_PROJECT_CONF.language)
+        data_spo = DataEdge(
+            id=spo_id,
+            _from=start_node.id,
+            from_type=start_node.label,
+            to=end_node.id,
+            to_type=end_node.label,
+            properties=spo.prop.get_properties_map() if spo.prop else {},
+            label=spo.type_zh if KAG_PROJECT_CONF.language == "zh" else spo.type,
+        )
+        edges.append(data_spo)
+    sub_graph = SubGraph(
+        class_name=graph_id, result_nodes=list(nodes.values()), result_edges=edges
+    )
+    return sub_graph
+
+def _convert_kg_graph_to_show_graph(graph_id, kg_graph: KgGraph):
+    spo_retrieved = kg_graph.get_all_spo()
+    return _convert_spo_to_graph(graph_id, spo_retrieved)
 
 @ReporterABC.register("open_spg_reporter")
 class OpenSPGReporter(ReporterABC):
@@ -162,7 +206,7 @@ class OpenSPGReporter(ReporterABC):
         content, status_enum, metrics = self.generate_report_data()
 
         request = TaskStreamRequest(task_id=self.task_id, content=content, status_enum=status_enum)
-        logging.info(f"do_report:{request}")
+        # logging.info(f"do_report:{request}")
         try:
             ret = self.client.reasoner_dialog_report_completions_post(task_stream_request=request)
             logger.info(f"do_report: {request} ret={ret}")
@@ -188,6 +232,7 @@ class OpenSPGReporter(ReporterABC):
         status = ""
         segment_name = ""
         thinker_cost = 0.0
+        graph_list = []
         for report_id in self.report_record:
             if report_id in processed_report_record:
                 continue
@@ -200,7 +245,13 @@ class OpenSPGReporter(ReporterABC):
                 if tag_template is None:
                     report_to_spg_data["content"][segment_name] += str(content)
                 else:
-                    report_to_spg_data["content"][segment_name] += tag_template.format(content=str(content))
+                    if isinstance(content, list) and content and isinstance(content[0], RelationData):
+                        graph_id = f"graph_{generate_random_string(3)}"
+                        graph_list.append(_convert_spo_to_graph(graph_id, content))
+                        report_to_spg_data["content"][segment_name] += tag_template.format(content=f"""<div class={graph_id}></div>""")
+                    else:
+                        report_to_spg_data["content"][segment_name] += tag_template.format(content=str(content))
+
                 report_to_spg_data["content"][segment_name] += "\n\n"
                 thinker_start_time = self.report_segment_time.get(segment_name, {
                     "start_time": time.time()
@@ -222,9 +273,18 @@ class OpenSPGReporter(ReporterABC):
                             break
                     else:
                         report_to_spg_data["content"]["reference"].append(ref_doc_set)
+
+                    # if content.graph_data:
+                    #     graph_list.append(_convert_kg_graph_to_show_graph(f"graph_{content.task_id}", content.graph_data))
+
                 else:
                     logger.warning(f"Unknown reference type {type(content)}")
                     continue
+            elif segment_name == "generator_reference":
+                ref_doc_set = generate_ref_doc_set(report_data["tag_name"], "chunk", content)
+                report_to_spg_data["content"]["reference"] = [ref_doc_set]
+            elif segment_name == "generator_reference_graphs":
+                continue
             status = report_data["status"]
             processed_report_record.append(report_id)
             if status != "FINISH":
@@ -235,6 +295,7 @@ class OpenSPGReporter(ReporterABC):
         content = StreamData(answer=report_to_spg_data["content"]["answer"],
                              reference=report_to_spg_data["content"]["reference"],
                              think=report_to_spg_data["content"]["thinker"],
+                             subgraph=graph_list,
                              metrics=Metrics(think_cost=thinker_cost))
         return content, status, Metrics(think_cost=thinker_cost)
     def __str__(self):

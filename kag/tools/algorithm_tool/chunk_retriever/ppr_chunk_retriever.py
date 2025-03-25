@@ -1,4 +1,7 @@
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 
 from typing import List, Dict
@@ -61,7 +64,7 @@ class PprChunkRetriever(ToolABC):
                                       recognition_threshold=match_threshold, top_k=1, exclude_types=["Chunk"])
         self.pagerank_threshold = pagerank_threshold
         self.text_chunk_retriever = text_chunk_retriever or TextChunkRetriever(search_api=search_api)
-        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(vectorize_model=vectorize_model,
+        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(vectorize_model=self.vectorize_model,
                                                                                      search_api=search_api)
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
@@ -218,40 +221,85 @@ class PprChunkRetriever(ToolABC):
         return matched_docs
 
     def invoke(self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs) -> List[ChunkData]:
+        start_time = time.time()
+        logger.info(f"Starting invoke method with queries: {queries}, start_entities: {start_entities}, top_k: {top_k}")
+
         chunk_nums = top_k * 20
         matched_entities = start_entities
         if start_entities is None:
             matched_entities = []
         ner_maps = {}
-        for query in queries:
-            candidate_entities = self.ner.invoke(query, **kwargs)
+        ner_start_time = time.time()
+        logger.info(f"Extracting candidate entities using NER for queries: {queries}")
+
+        def process_query(ner_query):
+            """Process a single query in parallel."""
+            candidate_entities = self.ner.invoke(ner_query, **kwargs)
             for candidate_entity in candidate_entities:
-                ner_id = f"{candidate_entity.entity_name}_{candidate_entity.get_entity_first_type_or_un_std()}"
-                if ner_id in ner_maps:
-                    continue
-                ner_maps[ner_id] = {
-                    'candidate': candidate_entity,
-                    'query': query
-                }
-        for k,info in ner_maps.items():
-            query_type = info['candidate'].get_entity_first_type_or_un_std()
-            if query_type in self.schema_helper.node_en_zh.keys():
-                query_type = self.schema_helper.get_label_within_prefix(query_type)
-                el_res = self.el.invoke(query=info['query'], name=info['candidate'].get_mention_name(),
-                                        type_name=query_type, top_k=1)
-                matched_entities.extend(el_res)
-            if "Others" not in query_type:
-                query_type = self.schema_helper.get_label_within_prefix("Others")
-                el_res = self.el.invoke(query=info['query'], name=info['candidate'].get_mention_name(),
-                                        type_name=query_type, top_k=1)
-                matched_entities.extend(el_res)
+                query_type = candidate_entity.get_entity_first_type_or_un_std()
+                if query_type not in self.schema_helper.node_en_zh.keys():
+                    query_type = "Others"
 
-        matched_entities = list(set(matched_entities))
+                ner_id = f"{candidate_entity.entity_name}_{query_type}"
+                if ner_id not in ner_maps:
+                    ner_maps[ner_id] = {
+                        'candidate': candidate_entity,
+                        'query': ner_query,
+                        "query_type": query_type
+                    }
+                ner_others = f"{candidate_entity.entity_name}_Others"
+                if ner_others not in ner_maps:
+                    ner_maps[ner_id] = {
+                        'candidate': candidate_entity,
+                        'query': ner_query,
+                        "query_type": "Others"
+                    }
+            # Use ThreadPoolExecutor to parallelize NER processing
 
+        with ThreadPoolExecutor() as executor:
+            executor.map(process_query, queries)
+        logger.info(
+            f"NER completed in {time.time() - ner_start_time:.2f} seconds. Found {len(ner_maps)} unique entities.")
+
+        el_start_time = time.time()
+        logger.info(f"Performing entity linking (EL) for {len(ner_maps)} candidate entities.")
+
+        def process_entity(k, data):
+            """Process a single entity in parallel."""
+            el_query = data["query"]
+            query_type = data["query_type"]
+            mention = data["candidate"].entity_name
+            try:
+                el_res = self.el.invoke(
+                    query=el_query,
+                    name=mention,
+                    type_name=query_type,
+                    top_k=1
+                )
+                return el_res
+            except Exception as e:
+                logger.warning(f"Entity linking failed for entity {k}: {e}", exc_info=True)
+                return []
+
+        # Use ThreadPoolExecutor to parallelize EL processing
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(lambda item: process_entity(item[0], item[1]), ner_maps.items()))
+
+        # Flatten the results and extend matched_entities
+        for result in results:
+            if result:
+                matched_entities.extend(result)
+
+        logger.info(
+            f"Entity linking completed in {time.time() - el_start_time:.2f} seconds. Found {len(matched_entities)} unique entities.")
+
+        pagerank_start_time = time.time()
         if len(matched_entities):
             pagerank_scores = self.calculate_pagerank_scores(matched_entities)
         else:
             pagerank_scores = []
+        logger.info(
+            f"PageRank calculation completed in {time.time() - pagerank_start_time:.2f} seconds.")
 
         try:
             matched_scores = [k.score for k in matched_entities]
@@ -259,6 +307,7 @@ class PprChunkRetriever(ToolABC):
             matched_scores = []
             logger.error(f"mathematics error: {e}")
 
+        combined_scores_start_time = time.time()
         if matched_entities and np.min(matched_scores) > self.pagerank_threshold:
             combined_scores = pagerank_scores
         else:
@@ -277,6 +326,7 @@ class PprChunkRetriever(ToolABC):
                 combined_scores = self.calculate_combined_scores(
                     sim_scores, pagerank_scores
                 )
+        logger.info(f"Combined scores calculation completed in {time.time() - combined_scores_start_time:.2f} seconds.")
         sorted_scores = sorted(
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
