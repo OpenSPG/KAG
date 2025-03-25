@@ -6,6 +6,7 @@ from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
 from .evaUtils import compute_rouge
+from ..utils import processing_phrases
 
 
 class Evaluate:
@@ -15,6 +16,8 @@ class Evaluate:
 
     def __init__(self, embedding_factory="text-embedding-ada-002"):
         self.embedding_factory = embedding_factory
+    def generate_id(self, title, content):
+        return processing_phrases(f"{title}\n{content}").replace("\n", "")
 
     def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
         """
@@ -38,6 +41,55 @@ class Evaluate:
         rouge_ls = [score["rouge-l"]["f"] for score in rouge_scores]
         average_rouge_l = sum(rouge_ls) / len(rouge_ls)
         return {"rouge-L": average_rouge_l}
+    def convert_chunk_data_2_str(self, predictionlist: list):
+        return [processing_phrases(chunk_data["content"]).replace("\n", "") for chunk_data in predictionlist]
+    def recall_top(self, predictionlist: list, goldlist: List[str]):
+        """
+               Calculate recall for top-3, top-5, and all predictions.
+
+               Parameters:
+               predictionlist (List[str]): List of predicted values from the model.
+               goldlist (List[str]): List of actual ground truth values.
+
+               Returns:
+               dict: Dictionary containing recall for top-3, top-5, and all predictions.
+               """
+        predictionlist = self.convert_chunk_data_2_str(predictionlist)
+        # Split predictions into lists of top-3 and top-5
+        top3_predictions = predictionlist[:3]
+        top5_predictions = predictionlist[:5]
+
+        gold_set = set(goldlist)
+        all_set = set(predictionlist)
+        top3_set = set(top3_predictions)
+        top5_set = set(top5_predictions)
+
+        true_positives_top3 = len(gold_set.intersection(top3_set))
+        false_negatives_top3 = len(gold_set - top3_set)
+
+        recall_top3 = true_positives_top3 / (true_positives_top3 + false_negatives_top3) if (
+                                                                                                        true_positives_top3 + false_negatives_top3) > 0 else 0.0
+
+        # Update counters for top-5
+        true_positives_top5 = len(gold_set.intersection(top5_set))
+        false_negatives_top5 = len(gold_set - top5_set)
+
+
+        recall_top5 = true_positives_top5 / (true_positives_top5 + false_negatives_top5) if (
+                                                                                                        true_positives_top5 + false_negatives_top5) > 0 else 0.0
+        # Update counters for all
+        true_positives_all = len(gold_set.intersection(all_set))
+        false_negatives_all = len(gold_set - all_set)
+
+        recall_all = true_positives_all / (true_positives_all + false_negatives_all) if (
+                                                                                                    true_positives_all + false_negatives_all) > 0 else 0.0
+
+        return {
+            "recall_top3": recall_top3,
+            "recall_top5": recall_top5,
+            "recall_all": recall_all
+        }
+
 
     def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
         """
