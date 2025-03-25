@@ -47,6 +47,6 @@ PyPDF2
 ruamel.yaml
 json_repair
 gitpython
-pyodps==0.12.1.1
+pyodps==0.12.2
 aliyun-log-python-sdk==0.8.8
 pyvis
