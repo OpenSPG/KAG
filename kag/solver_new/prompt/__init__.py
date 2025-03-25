@@ -2,3 +2,4 @@ import kag.solver_new.prompt.spo_retriever_decompose_prompt
 import kag.solver_new.prompt.iterative_planning_prompt
 import kag.solver_new.prompt.sub_question_summary
 import kag.solver_new.prompt.retriever_static_planning_prompt
+import kag.solver_new.prompt.summary_question
