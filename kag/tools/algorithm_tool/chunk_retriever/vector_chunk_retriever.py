@@ -2,7 +2,7 @@ import knext.common.cache
 import logging
 from typing import List, Dict
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
@@ -19,8 +19,12 @@ class VectorChunkRetriever(ToolABC):
     def __init__(self, vectorize_model: VectorizeModelABC = None,
                  search_api: SearchApiABC = None):
         super().__init__()
-        self.vectorize_model = vectorize_model
-        self.search_api = search_api
+        self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
+            KAG_CONFIG.all_config["vectorize_model"]
+        )
+        self.search_api = search_api or SearchApiABC.from_config(
+            {"type": "openspg_search_api"}
+        )
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {

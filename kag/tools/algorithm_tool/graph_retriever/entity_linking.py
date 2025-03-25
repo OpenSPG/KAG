@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
@@ -85,11 +86,14 @@ class EntityLinking(ToolABC):
                     "semanticType" not in node["node"].keys()
                     or node["node"]["semanticType"] == ""
             ):
-                node["type_match_score"] = 0.3
+                node["type_match_score"] = 0.3 * node["score"]
             else:
+                type_score = sematic_match_score_map[node["node"]["semanticType"]]
+                if type_score < 0.6:
+                    type_score = 0.3
                 node["type_match_score"] = (
                         node["score"]
-                        * sematic_match_score_map[node["node"]["semanticType"]]
+                        * type_score
                 )
         sorted_people_dicts = sorted(
             candis_nodes, key=lambda n: n["type_match_score"], reverse=True
@@ -127,6 +131,7 @@ class EntityLinking(ToolABC):
         # 5. Semantic type re-ranking
         # 6. Final filtering and sorting
         try:
+            start_time = time.time()
             retdata = []
             if name is None:
                 return retdata
@@ -139,16 +144,18 @@ class EntityLinking(ToolABC):
             else:
                 with_prefix_type = self.schema_helper.get_label_within_prefix(query_type)
 
-            recognition_threshold = kwargs.get("recognition_threshold", 0.8)
             recall_topk = topk_k or self.top_k
 
             # Adjust recall_topk if the query type is not an entity
             if "entity" not in query_type.lower():
                 recall_topk = 10
 
+            vectorize_start_time = time.time()
             # Vectorize the entity name for vector-based search
             query_vector = self.vectorize_model.vectorize(name)
+            logger.info(f"`{name}` Vectorization completed in {time.time() - vectorize_start_time:.2f} seconds.")
 
+            vector_search_start_time = time.time()
             # Perform a vector-based search using the determined query type
             typed_nodes = self.search_api.search_vector(
                 label=with_prefix_type,
@@ -156,16 +163,23 @@ class EntityLinking(ToolABC):
                 query_vector=query_vector,
                 topk=recall_topk,
             )
+            logger.info(
+                f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes.")
             if len(typed_nodes) == 0:
+                vector_search_entity_start_time = time.time()
                 typed_nodes = self.search_api.search_vector(
                     label="Entity",
                     property_key="name",
                     query_vector=query_vector,
                     topk=recall_topk,
                 )
+                logger.info(
+                    f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes.")
 
             # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
+
             if query_type not in ["Others", "Entity"]:
+                content_search_start_time = time.time()
                 content_vector = self.vectorize_model.vectorize(query)
                 content_recall_nodes = self.search_api.search_vector(
                     label="Entity",
@@ -173,6 +187,8 @@ class EntityLinking(ToolABC):
                     query_vector=content_vector,
                     topk=recall_topk,
                 )
+                logger.info(
+                    f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes.")
             else:
                 content_recall_nodes = []
 
@@ -185,7 +201,10 @@ class EntityLinking(ToolABC):
                 sorted_nodes = self.search_api.search_text(query_string=name)
 
             if "entity" not in query_type.lower():
+                text_search_start_time = time.time()
                 sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
+                logger.info(
+                    f"`{name}`  rerank_sematic_type completed in {time.time() - text_search_start_time:.2f} seconds. Found {len(sorted_nodes)} nodes.")
 
             # Final sorting based on score
             sorted_people_dicts = sorted(
@@ -194,7 +213,7 @@ class EntityLinking(ToolABC):
 
             # Create EntityData objects for the top results that meet the recognition threshold
             for recall in sorted_people_dicts:
-                if len(sorted_people_dicts) != 0 and recall["score"] >= recognition_threshold:
+                if len(sorted_people_dicts) != 0 and recall["score"] >= self.recognition_threshold:
                     recalled_entity = EntityData()
                     recalled_entity.score = recall["score"]
                     recalled_entity.biz_id = recall["node"]["id"]

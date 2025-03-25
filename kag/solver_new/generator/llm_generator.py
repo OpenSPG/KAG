@@ -19,6 +19,7 @@ from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_hyb
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
+
 @GeneratorABC.register("llm_generator")
 class LLMGenerator(GeneratorABC):
     def __init__(self, llm_client: LLMClient, generated_prompt: PromptABC, chunk_reranker:RerankByVector=None, **kwargs):
@@ -38,7 +39,8 @@ class LLMGenerator(GeneratorABC):
         for task in context.gen_task(False):
             if isinstance(task.result, KAGRetrievedResponse) and self.chunk_reranker:
                 rerank_queries.append(task.arguments['query'])
-                graph_data.append(task.result.graph_data)
+                if task.result.graph_data:
+                    graph_data.append(task.result.graph_data)
                 chunks.append(task.result.chunk_datas)
                 if "i don't know" in task.result.summary.lower() or task.result.summary == "":
                     continue
@@ -63,7 +65,9 @@ class LLMGenerator(GeneratorABC):
             content_json['reference'] = refer_data
         content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if reporter:
-            reporter.add_report_line("generator", "input", content_json, "success")
+            reporter.add_report_line("generator", "input", content_json, "FINISH")
+            reporter.add_report_line("generator_reference", "reference", refer_data, "FINISH")
+            reporter.add_report_line("generator_reference_graphs", "graph", graph_data, "FINISH")
         return self.llm_client.invoke({
             "query": query,
             "content": content
