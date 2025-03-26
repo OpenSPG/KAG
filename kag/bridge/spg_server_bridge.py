@@ -11,14 +11,40 @@
 # or implied.
 import os
 import json
+from kag.builder.model.chunk import Chunk
+from kag.builder.model.sub_graph import SubGraph
 import kag.interface as interface
 from kag.common.conf import KAGConstants, init_env
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def init_kag_config(project_id: str, host_addr: str):
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = project_id
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = host_addr
     init_env()
+
+
+def collect_reader_outputs(data):
+    chunks = []
+    subgraphs = []
+
+    def collect(data):
+        if isinstance(data, Chunk):
+            chunks.append(data)
+        elif isinstance(data, SubGraph):
+            subgraphs.append(data)
+        elif isinstance(data, (tuple, list)):
+            for item in data:
+                collect(item)
+        else:
+            logger.debug(
+                f"expect Chunk and SubGraph nested in tuple and list; found {data.__class__}"
+            )
+
+    collect(data)
+    return chunks, subgraphs
 
 
 class SPGServerBridge:
@@ -44,7 +70,9 @@ class SPGServerBridge:
         reader = interface.ReaderABC.from_config(reader_config)
         chunks = []
         for data in scanner.generate(input_data):
-            chunks += reader.invoke(data, write_ckpt=False)
+            reader_output = reader.invoke(data, write_ckpt=False)
+            chunk, _ = collect_reader_outputs(reader_output)
+            chunks += chunk
         return [x.to_dict() for x in chunks]
 
     def run_component(self, component_name, component_config, input_data):
@@ -97,3 +125,12 @@ class SPGServerBridge:
             is_report=is_report,
             host_addr=host_addr,
         )
+
+
+if __name__ == "__main__":
+    config = {"reader": {"cut_depth": 3, "type": "md"}, "scanner": {"type": "file"}}
+    bridge = SPGServerBridge()
+    res = bridge.run_reader(
+        config, "/Users/zhangxinhong.zxh/Downloads/baike-person-zhoujielun.md"
+    )
+    print(res)
