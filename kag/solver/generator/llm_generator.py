@@ -86,6 +86,9 @@ class LLMGenerator(GeneratorABC):
                 "generator_reference", "reference", rerank_chunks, "FINISH"
             )
             reporter.add_report_line(
+                "generator_reference_all", "reference", refer_data, "FINISH"
+            )
+            reporter.add_report_line(
                 "generator_reference_graphs", "graph", graph_data, "FINISH"
             )
         return self.llm_client.invoke(
