@@ -94,6 +94,7 @@ class KAGStaticPipeline(SolverPipelineABC):
             **kwargs: Additional execution parameters
         """
         if self.planner.check_require_rewrite(task):
+            task.update_memory("origin_arguments", task.arguments)
             task.arguments = await self.planner.query_rewrite(task, **kwargs)
         executor = self.select_executor(task.executor)
         if executor:
@@ -133,7 +134,21 @@ class KAGStaticPipeline(SolverPipelineABC):
             )
 
         answer = await self.generator.ainvoke(query, context, **kwargs)
-        from kag.common.utils import green, reset
+        from kag.common.utils import red, green, reset
 
-        print(f"{green}Input Query: {query}\nFinal Answer: {answer}{reset}")
+        task_info = []
+        for task in context.gen_task(group=False):
+            task_info.append(
+                {
+                    "task": task.arguments,
+                    "memory": task.memory,
+                    "result": task.result,
+                }
+            )
+        if answer is None:
+            print(f"{red}Failed to answer quesion: {query}\nTasks:{task_info}\n{reset}")
+            return "UNKNOWN"
+        print(
+            f"{green}Input Query: {query}\n\nTasks:\n\n{task_info}\n\nFinal Answer: {answer}\nGoldAnswer: {kwargs.get('gold')}{reset}"
+        )
         return answer
