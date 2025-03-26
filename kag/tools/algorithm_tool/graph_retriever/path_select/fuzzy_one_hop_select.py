@@ -4,25 +4,37 @@ from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import VectorizeModelABC, LLMClient, PromptABC
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData, OneHopGraphData
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    EntityData,
+    RelationData,
+    OneHopGraphData,
+)
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+from kag.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.tools.search_api.search_api_abc import SearchApiABC
 from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
-from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import generate_gql_spo_element, run_gql
+from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import (
+    generate_gql_spo_element,
+    run_gql,
+)
 
 logger = logging.getLogger()
 
+
 @PathSelect.register("fuzzy_one_hop_select")
 class FuzzyOneHopSelect(PathSelect):
-    def __init__(self, llm_client: LLMClient,vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None,
-                 search_api: SearchApiABC = None,
-                 spo_retrieval_prompt: PromptABC = None,):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        spo_retrieval_prompt: PromptABC = None,
+    ):
         super().__init__()
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
@@ -45,11 +57,20 @@ class FuzzyOneHopSelect(PathSelect):
         )
         self.text_similarity = TextSimilarity(vectorize_model)
         self.llm_client = llm_client
-        self.spo_retrieval_prompt = spo_retrieval_prompt or init_prompt_with_fallback("spo_retrieval", KAG_PROJECT_CONF.biz_scene)
-    def recall_graph_data_from_knowledge_base(self, n: GetSPONode, heads: List[EntityData],
-                                              tails: List[EntityData]) -> List[OneHopGraphData]:
-        gql_header_labels, _, gql_tail_labels, where_gql, params = generate_gql_spo_element(n, heads,
-                                                                                            tails, self.schema_helper)
+        self.spo_retrieval_prompt = spo_retrieval_prompt or init_prompt_with_fallback(
+            "spo_retrieval", KAG_PROJECT_CONF.biz_scene
+        )
+
+    def recall_graph_data_from_knowledge_base(
+        self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData]
+    ) -> List[OneHopGraphData]:
+        (
+            gql_header_labels,
+            _,
+            gql_tail_labels,
+            where_gql,
+            params,
+        ) = generate_gql_spo_element(n, heads, tails, self.schema_helper)
 
         spg_gql = f"""
         MATCH (s:{gql_header_labels})-[p:rdf_expand()]->(o:{gql_tail_labels})
@@ -183,13 +204,23 @@ class FuzzyOneHopSelect(PathSelect):
             if std_p is None or std_p == "":
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
-            rel_set = one_hop_graph.get_std_p_value_by_spo_text(std_p, std_spo_text, len(n.p.value_list) != 0, KAG_PROJECT_CONF.language)
+            rel_set = one_hop_graph.get_std_p_value_by_spo_text(
+                std_p, std_spo_text, len(n.p.value_list) != 0, KAG_PROJECT_CONF.language
+            )
             result += rel_set
         return result
 
-    def invoke(self, query, spo: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
-        RelationData]:
-        one_hop_graph_list = self.recall_graph_data_from_knowledge_base(spo, heads, tails)
+    def invoke(
+        self,
+        query,
+        spo: GetSPONode,
+        heads: List[EntityData],
+        tails: List[EntityData],
+        **kwargs,
+    ) -> List[RelationData]:
+        one_hop_graph_list = self.recall_graph_data_from_knowledge_base(
+            spo, heads, tails
+        )
         start_time = time.time()
         selected_rels = self.match_spo(spo, one_hop_graph_list)
         logger.debug(

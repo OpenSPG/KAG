@@ -9,7 +9,7 @@ from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
 from kag.interface import SolverPipelineABC
-from kag.solver_new.reporter.trace_log_reporter import TraceLogReporter
+from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger(__name__)
 

@@ -12,10 +12,14 @@ from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, Chunk
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.solver.tools.search_api.search_api_abc import SearchApiABC
-from kag.tools.algorithm_tool.chunk_retriever.text_chunk_retriever import TextChunkRetriever
-from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import VectorChunkRetriever
+from kag.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.tools.algorithm_tool.chunk_retriever.text_chunk_retriever import (
+    TextChunkRetriever,
+)
+from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
+    VectorChunkRetriever,
+)
 from kag.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
 from kag.tools.algorithm_tool.ner import Ner
 from knext.schema.client import CHUNK_TYPE
@@ -25,18 +29,20 @@ logger = logging.getLogger()
 
 @ToolABC.register("ppr_chunk_retriever")
 class PprChunkRetriever(ToolABC):
-    def __init__(self,
-                 llm_client: LLMClient,
-                 vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None,
-                 search_api: SearchApiABC = None,
-                 pagerank_threshold: float = 0.9,
-                 match_threshold: float = 0.6,
-                 pagerank_weight: float = 0.5,
-                 ner: Ner = None,
-                 el: EntityLinking = None,
-                 text_chunk_retriever: TextChunkRetriever = None,
-                 vector_chunk_retriever: VectorChunkRetriever = None):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        pagerank_threshold: float = 0.9,
+        match_threshold: float = 0.6,
+        pagerank_weight: float = 0.5,
+        ner: Ner = None,
+        el: EntityLinking = None,
+        text_chunk_retriever: TextChunkRetriever = None,
+        vector_chunk_retriever: VectorChunkRetriever = None,
+    ):
         super().__init__()
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
@@ -60,12 +66,21 @@ class PprChunkRetriever(ToolABC):
         self.text_similarity = TextSimilarity(vectorize_model)
 
         self.ner = ner or Ner(llm_module=llm_client)
-        self.el = el or EntityLinking(vectorize_model=vectorize_model, graph_api=graph_api, search_api=search_api,
-                                      recognition_threshold=match_threshold, top_k=1, exclude_types=["Chunk"])
+        self.el = el or EntityLinking(
+            vectorize_model=vectorize_model,
+            graph_api=graph_api,
+            search_api=search_api,
+            recognition_threshold=match_threshold,
+            top_k=1,
+            exclude_types=["Chunk"],
+        )
         self.pagerank_threshold = pagerank_threshold
-        self.text_chunk_retriever = text_chunk_retriever or TextChunkRetriever(search_api=search_api)
-        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(vectorize_model=self.vectorize_model,
-                                                                                     search_api=search_api)
+        self.text_chunk_retriever = text_chunk_retriever or TextChunkRetriever(
+            search_api=search_api
+        )
+        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(
+            vectorize_model=self.vectorize_model, search_api=search_api
+        )
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
 
@@ -92,12 +107,15 @@ class PprChunkRetriever(ToolABC):
                 for s in start_nodes:
                     if s.type == target_type or not s.name or not s.type:
                         continue
-                    start_node_set.append({
-                        "name": s.name,
-                        "type": s.type,
-                    })
+                    start_node_set.append(
+                        {
+                            "name": s.name,
+                            "type": s.type,
+                        }
+                    )
                 scores = self.graph_api.calculate_pagerank_scores(
-                    self.schema_helper.get_label_within_prefix(CHUNK_TYPE), start_node_set
+                    self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+                    start_node_set,
                 )
             except Exception as e:
                 logger.error(
@@ -107,7 +125,7 @@ class PprChunkRetriever(ToolABC):
         return scores
 
     def calculate_combined_scores(
-            self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
+        self, sim_scores: Dict[str, float], pagerank_scores: Dict[str, float]
     ):
         """
         Calculate and return the combined scores that integrate both similarity scores and PageRank scores.
@@ -147,8 +165,8 @@ class PprChunkRetriever(ToolABC):
         combined_scores = dict()
         for key in pagerank_scores.keys():
             combined_scores[key] = (
-                    sim_scores[key] * (1 - self.pagerank_weight)
-                    + pagerank_scores[key] * self.pagerank_weight
+                sim_scores[key] * (1 - self.pagerank_weight)
+                + pagerank_scores[key] * self.pagerank_weight
             )
         return combined_scores
 
@@ -166,7 +184,6 @@ class PprChunkRetriever(ToolABC):
         """
         matched_docs = []
         hits_docs = set()
-        counter = 0
 
         def process_get_doc_id(doc_id):
             if isinstance(doc_id, tuple):
@@ -180,12 +197,14 @@ class PprChunkRetriever(ToolABC):
                     biz_id=doc_id,
                 )
                 node_dict = dict(node.items())
-                matched_docs.append(ChunkData(
-                    content=node_dict["content"],
-                    title=node_dict["name"],
-                    chunk_id=doc_id,
-                    score=doc_score,
-                ))
+                matched_docs.append(
+                    ChunkData(
+                        content=node_dict["content"],
+                        title=node_dict["name"],
+                        chunk_id=doc_id,
+                        score=doc_score,
+                    )
+                )
             except Exception as e:
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
@@ -220,9 +239,12 @@ class PprChunkRetriever(ToolABC):
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         return matched_docs
 
-    def invoke(self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs) -> List[ChunkData]:
-        start_time = time.time()
-        logger.info(f"Starting invoke method with queries: {queries}, start_entities: {start_entities}, top_k: {top_k}")
+    def invoke(
+        self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs
+    ) -> List[ChunkData]:
+        logger.info(
+            f"Starting invoke method with queries: {queries}, start_entities: {start_entities}, top_k: {top_k}"
+        )
 
         chunk_nums = top_k * 20
         matched_entities = start_entities
@@ -243,26 +265,29 @@ class PprChunkRetriever(ToolABC):
                 ner_id = f"{candidate_entity.entity_name}_{query_type}"
                 if ner_id not in ner_maps:
                     ner_maps[ner_id] = {
-                        'candidate': candidate_entity,
-                        'query': ner_query,
-                        "query_type": query_type
+                        "candidate": candidate_entity,
+                        "query": ner_query,
+                        "query_type": query_type,
                     }
                 ner_others = f"{candidate_entity.entity_name}_Others"
                 if ner_others not in ner_maps:
                     ner_maps[ner_id] = {
-                        'candidate': candidate_entity,
-                        'query': ner_query,
-                        "query_type": "Others"
+                        "candidate": candidate_entity,
+                        "query": ner_query,
+                        "query_type": "Others",
                     }
             # Use ThreadPoolExecutor to parallelize NER processing
 
         with ThreadPoolExecutor() as executor:
             executor.map(process_query, queries)
         logger.info(
-            f"NER completed in {time.time() - ner_start_time:.2f} seconds. Found {len(ner_maps)} unique entities.")
+            f"NER completed in {time.time() - ner_start_time:.2f} seconds. Found {len(ner_maps)} unique entities."
+        )
 
         el_start_time = time.time()
-        logger.info(f"Performing entity linking (EL) for {len(ner_maps)} candidate entities.")
+        logger.info(
+            f"Performing entity linking (EL) for {len(ner_maps)} candidate entities."
+        )
 
         def process_entity(k, data):
             """Process a single entity in parallel."""
@@ -271,19 +296,22 @@ class PprChunkRetriever(ToolABC):
             mention = data["candidate"].entity_name
             try:
                 el_res = self.el.invoke(
-                    query=el_query,
-                    name=mention,
-                    type_name=query_type,
-                    top_k=1
+                    query=el_query, name=mention, type_name=query_type, top_k=1
                 )
                 return el_res
             except Exception as e:
-                logger.warning(f"Entity linking failed for entity {k}: {e}", exc_info=True)
+                logger.warning(
+                    f"Entity linking failed for entity {k}: {e}", exc_info=True
+                )
                 return []
 
         # Use ThreadPoolExecutor to parallelize EL processing
         with ThreadPoolExecutor() as executor:
-            results = list(executor.map(lambda item: process_entity(item[0], item[1]), ner_maps.items()))
+            results = list(
+                executor.map(
+                    lambda item: process_entity(item[0], item[1]), ner_maps.items()
+                )
+            )
 
         # Flatten the results and extend matched_entities
         for result in results:
@@ -291,7 +319,8 @@ class PprChunkRetriever(ToolABC):
                 matched_entities.extend(result)
 
         logger.info(
-            f"Entity linking completed in {time.time() - el_start_time:.2f} seconds. Found {len(matched_entities)} unique entities.")
+            f"Entity linking completed in {time.time() - el_start_time:.2f} seconds. Found {len(matched_entities)} unique entities."
+        )
 
         pagerank_start_time = time.time()
         if len(matched_entities):
@@ -299,7 +328,8 @@ class PprChunkRetriever(ToolABC):
         else:
             pagerank_scores = []
         logger.info(
-            f"PageRank calculation completed in {time.time() - pagerank_start_time:.2f} seconds.")
+            f"PageRank calculation completed in {time.time() - pagerank_start_time:.2f} seconds."
+        )
 
         try:
             matched_scores = [k.score for k in matched_entities]
@@ -312,19 +342,22 @@ class PprChunkRetriever(ToolABC):
             combined_scores = pagerank_scores
         else:
             sim_scores = {}
+
             def process_query_sim(query):
                 sim_scores_start_time = time.time()
                 """Process a single query for similarity scores in parallel."""
                 query_sim_scores = self.vector_chunk_retriever.invoke(query, chunk_nums)
                 logger.info(
-                    f"`{query}` Similarity scores calculation completed in {time.time() - sim_scores_start_time:.2f} seconds.")
+                    f"`{query}` Similarity scores calculation completed in {time.time() - sim_scores_start_time:.2f} seconds."
+                )
                 for doc_id, node in query_sim_scores.items():
-                    score = node['score']
+                    score = node["score"]
                     if doc_id not in sim_scores:
                         sim_scores[doc_id] = score
                     elif score > sim_scores[doc_id]:
                         sim_scores[doc_id] = score
                 # Use ThreadPoolExecutor to parallelize similarity score calculation
+
             with ThreadPoolExecutor() as executor:
                 executor.map(process_query_sim, queries)
             if not matched_entities:
@@ -333,7 +366,9 @@ class PprChunkRetriever(ToolABC):
                 combined_scores = self.calculate_combined_scores(
                     sim_scores, pagerank_scores
                 )
-        logger.info(f"Combined scores calculation completed in {time.time() - combined_scores_start_time:.2f} seconds.")
+        logger.info(
+            f"Combined scores calculation completed in {time.time() - combined_scores_start_time:.2f} seconds."
+        )
         sorted_scores = sorted(
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
@@ -349,29 +384,41 @@ class PprChunkRetriever(ToolABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query for context retrieval"
+                        "description": "Search query for context retrieval",
                     },
                     "start_entities": {
                         "type": "array",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "id": {"type": "string", "description": "Entity ID in knowledge graph"},
-                                "type": {"type": "string", "description": "Entity type category"},
-                                "name": {"type": "string", "description": "Canonical entity name"},
-                                "score": {"type": "string", "description": "The weight of this entity"}
+                                "id": {
+                                    "type": "string",
+                                    "description": "Entity ID in knowledge graph",
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "Entity type category",
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "Canonical entity name",
+                                },
+                                "score": {
+                                    "type": "string",
+                                    "description": "The weight of this entity",
+                                },
                             },
-                            "required": ["id", "name", "score"]
+                            "required": ["id", "name", "score"],
                         },
-                        "description": "Seed entities for personalized PageRank calculation"
+                        "description": "Seed entities for personalized PageRank calculation",
                     },
                     "top_k": {
                         "type": "integer",
                         "description": "Number of top-ranked chunks to return",
                         "default": 5,
-                        "minimum": 1
-                    }
+                        "minimum": 1,
+                    },
                 },
-                "required": ["query", "start_entities"]
-            }
+                "required": ["query", "start_entities"],
+            },
         }
