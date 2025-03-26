@@ -9,19 +9,23 @@ from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.common.utils import get_recall_node_label
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+from kag.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.tools.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 
+
 @ToolABC.register("entity_linking")
 class EntityLinking(ToolABC):
-    def __init__(self, vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None,
-                 search_api: SearchApiABC = None,
-                 recognition_threshold: float = 0.8,
-                 top_k: int = 5,
-                 exclude_types: List[str] = None):
+    def __init__(
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+        recognition_threshold: float = 0.8,
+        top_k: int = 5,
+        exclude_types: List[str] = None,
+    ):
         """Initialize entity linking components with default configurations
         Args:
             vectorize_model: Text vectorization model for similarity calculation
@@ -83,22 +87,19 @@ class EntityLinking(ToolABC):
             if recall_node_label == sematic_type:
                 node["type_match_score"] = node["score"]
             elif (
-                    "semanticType" not in node["node"].keys()
-                    or node["node"]["semanticType"] == ""
+                "semanticType" not in node["node"].keys()
+                or node["node"]["semanticType"] == ""
             ):
                 node["type_match_score"] = 0.3 * node["score"]
             else:
                 type_score = sematic_match_score_map[node["node"]["semanticType"]]
                 if type_score < 0.6:
                     type_score = 0.3
-                node["type_match_score"] = (
-                        node["score"]
-                        * type_score
-                )
+                node["type_match_score"] = node["score"] * type_score
         sorted_people_dicts = sorted(
             candis_nodes, key=lambda n: n["type_match_score"], reverse=True
         )
-        return sorted_people_dicts[:self.top_k]
+        return sorted_people_dicts[: self.top_k]
 
     def filter_target_types(self, type_nodes):
         if self.exclude_types is None:
@@ -112,7 +113,7 @@ class EntityLinking(ToolABC):
             result.append(node)
         return result
 
-    def invoke(self, query, name, type_name, topk_k = None, **kwargs) -> List[EntityData]:
+    def invoke(self, query, name, type_name, topk_k=None, **kwargs) -> List[EntityData]:
         """Perform entity linking by combining vector and text search strategies
         Args:
             query: Original text context containing the entity
@@ -131,7 +132,6 @@ class EntityLinking(ToolABC):
         # 5. Semantic type re-ranking
         # 6. Final filtering and sorting
         try:
-            start_time = time.time()
             retdata = []
             if name is None:
                 return retdata
@@ -142,7 +142,9 @@ class EntityLinking(ToolABC):
                 query_type = "Entity"
                 with_prefix_type = query_type
             else:
-                with_prefix_type = self.schema_helper.get_label_within_prefix(query_type)
+                with_prefix_type = self.schema_helper.get_label_within_prefix(
+                    query_type
+                )
 
             recall_topk = topk_k or self.top_k
 
@@ -153,7 +155,9 @@ class EntityLinking(ToolABC):
             vectorize_start_time = time.time()
             # Vectorize the entity name for vector-based search
             query_vector = self.vectorize_model.vectorize(name)
-            logger.info(f"`{name}` Vectorization completed in {time.time() - vectorize_start_time:.2f} seconds.")
+            logger.info(
+                f"`{name}` Vectorization completed in {time.time() - vectorize_start_time:.2f} seconds."
+            )
 
             vector_search_start_time = time.time()
             # Perform a vector-based search using the determined query type
@@ -164,7 +168,8 @@ class EntityLinking(ToolABC):
                 topk=recall_topk,
             )
             logger.info(
-                f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes.")
+                f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
+            )
             if len(typed_nodes) == 0:
                 vector_search_entity_start_time = time.time()
                 typed_nodes = self.search_api.search_vector(
@@ -174,7 +179,8 @@ class EntityLinking(ToolABC):
                     topk=recall_topk,
                 )
                 logger.info(
-                    f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes.")
+                    f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
+                )
 
             # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
 
@@ -188,7 +194,8 @@ class EntityLinking(ToolABC):
                     topk=recall_topk,
                 )
                 logger.info(
-                    f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes.")
+                    f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes."
+                )
             else:
                 content_recall_nodes = []
 
@@ -204,7 +211,8 @@ class EntityLinking(ToolABC):
                 text_search_start_time = time.time()
                 sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
                 logger.info(
-                    f"`{name}`  rerank_sematic_type completed in {time.time() - text_search_start_time:.2f} seconds. Found {len(sorted_nodes)} nodes.")
+                    f"`{name}`  rerank_sematic_type completed in {time.time() - text_search_start_time:.2f} seconds. Found {len(sorted_nodes)} nodes."
+                )
 
             # Final sorting based on score
             sorted_people_dicts = sorted(
@@ -213,17 +221,22 @@ class EntityLinking(ToolABC):
 
             # Create EntityData objects for the top results that meet the recognition threshold
             for recall in sorted_people_dicts:
-                if len(sorted_people_dicts) != 0 and recall["score"] >= self.recognition_threshold:
+                if (
+                    len(sorted_people_dicts) != 0
+                    and recall["score"] >= self.recognition_threshold
+                ):
                     recalled_entity = EntityData()
                     recalled_entity.score = recall["score"]
                     recalled_entity.biz_id = recall["node"]["id"]
                     recalled_entity.name = recall["node"]["name"]
-                    recalled_entity.type = get_recall_node_label(recall["node"]["__labels__"])
+                    recalled_entity.type = get_recall_node_label(
+                        recall["node"]["__labels__"]
+                    )
                     retdata.append(recalled_entity)
                 else:
                     break
 
-            return retdata[:self.top_k]
+            return retdata[: self.top_k]
         except Exception as e:
             logger.error(f"Error in entity_linking: {e}")
             return []
@@ -237,17 +250,17 @@ class EntityLinking(ToolABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Original text that needs entity linking"
+                        "description": "Original text that needs entity linking",
                     },
                     "name": {
                         "type": "string",
-                        "description": "Name of the entity to be linked"
+                        "description": "Name of the entity to be linked",
                     },
                     "type_name": {
                         "type": "string",
-                        "description": "Entity type, such as person, location, organization, etc."
-                    }
+                        "description": "Entity type, such as person, location, organization, etc.",
+                    },
                 },
-                "required": ["query", "name", "type_name"]
-            }
+                "required": ["query", "name", "type_name"],
+            },
         }
