@@ -12,7 +12,6 @@
 import os
 import asyncio
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
 from kag.common.conf import KAG_PROJECT_CONF
@@ -74,7 +73,7 @@ class ScannerABC(BuilderComponent, ABC):
             f"{self.sharding_info.get_rank()}/{self.sharding_info.get_world_size()}"
         )
         msg = (
-            f"There are total {len(data)} data to process, worker "
+            f"[Scanner]: There are total {len(data)} data to process, worker "
             f"{worker} will process range [{start}, {end})"
         )
 
@@ -157,10 +156,12 @@ class ScannerABC(BuilderComponent, ABC):
         Returns:
             List[Output]: A list of processed results.
         """
-        with ThreadPoolExecutor() as executor:
-            await asyncio.get_event_loop().run_in_executor(
-                executor, lambda: self.invoke(input, **kwargs)
-            )
+        await asyncio.to_thread(lambda: lambda: self.invoke(input, **kwargs))
+
+    def size(self, input):
+        if not hasattr(self, "_data_size"):
+            self._data_size = len(self.load_data(input))
+        return self._data_size
 
     @property
     def inherit_input_key(self):

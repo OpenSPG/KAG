@@ -15,7 +15,7 @@ ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
-  model: qwen2.5-7b-instruct-1m
+  model: qwen2.5-72b-instruct
 
 vectorize_model: &vectorize_model
   api_key: key
@@ -30,7 +30,7 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://127.0.0.1:8887
+  host_addr: http://121.199.161.46:8887
   id: '2'
   language: en
   namespace: TwoWiki
@@ -110,14 +110,10 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
   flow: |
     kg_cs->kg_fr->rc
 
-mock_math_executor: &mock_math_executor_conf
-  type: mock_math_executor
-  llm: *openie_llm
-
-mock_code_executor: &mock_code_executor_conf
-  type: mock_code_executor
-  llm: *openie_llm
-
+reasoner: &reasoner_conf
+  type: evidence_based_reasoner
+  llm: *chat_llm
+  retriever: *kag_hybrid_executor_conf
 
 kag_solver_pipeline:
   type: kag_static_pipeline
@@ -129,12 +125,8 @@ kag_solver_pipeline:
     rewrite_prompt:
       type: default_query_rewrite
   executors:
-  - *kag_hybrid_executor_conf
-  - *mock_math_executor_conf
-  - *mock_code_executor_conf
+    - *reasoner_conf
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: resp_simple
 #------------kag-solver configuration end----------------#
