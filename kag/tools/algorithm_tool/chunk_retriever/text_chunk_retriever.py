@@ -2,19 +2,18 @@ import logging
 from typing import Dict
 
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.interface import ToolABC, VectorizeModelABC
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+from kag.tools.search_api.search_api_abc import SearchApiABC
 from knext.schema.client import CHUNK_TYPE
+from kag.interface import ToolABC
 
 logger = logging.getLogger()
 
 
 @ToolABC.register("text_chunk_retriever")
 class TextChunkRetriever(ToolABC):
-    def __init__(self,
-                 search_api: SearchApiABC = None):
+    def __init__(self, search_api: SearchApiABC = None):
         super().__init__()
         self.search_api = search_api
         self.schema_helper: SchemaUtils = SchemaUtils(
@@ -29,15 +28,20 @@ class TextChunkRetriever(ToolABC):
     def invoke(self, query, top_k: int, **kwargs) -> Dict[str, dict]:
         try:
             top_k_docs = self.search_api.search_text(
-                label_constraints=[self.schema_helper.get_label_within_prefix(CHUNK_TYPE)],
+                label_constraints=[
+                    self.schema_helper.get_label_within_prefix(CHUNK_TYPE)
+                ],
                 query_string=query,
                 topk=top_k,
             )
-            scores = {item["node"]["id"]: {
-                'score': item["score"],
-                'content': item["node"]["content"],
-                'name': item["node"]["name"],
-            } for item in top_k_docs}
+            scores = {
+                item["node"]["id"]: {
+                    "score": item["score"],
+                    "content": item["node"]["content"],
+                    "name": item["node"]["name"],
+                }
+                for item in top_k_docs
+            }
         except Exception as e:
             scores = dict()
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
@@ -52,14 +56,14 @@ class TextChunkRetriever(ToolABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query for retrieving relevant text chunks"
+                        "description": "Search query for retrieving relevant text chunks",
                     },
                     "top_k": {
                         "type": "integer",
                         "description": "Number of top results to return",
-                        "default": 5
-                    }
+                        "default": 5,
+                    },
                 },
-                "required": ["query"]
-            }
+                "required": ["query"],
+            },
         }

@@ -12,7 +12,7 @@
 # flake8: noqa
 import json
 from kag.interface import GeneratorABC, LLMClient, PromptABC
-from kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_hybrid_executor import (
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
@@ -23,13 +23,11 @@ class LLMGeneratorWithThought(GeneratorABC):
     def __init__(
         self,
         llm_client: LLMClient,
-        generated_prompt: PromptABC,
         chunk_reranker: RerankByVector = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_client = llm_client
-        self.generated_prompt = generated_prompt
         self.chunk_reranker = chunk_reranker or RerankByVector.from_config(
             {
                 "type": "rerank_by_vector",
@@ -41,6 +39,7 @@ class LLMGeneratorWithThought(GeneratorABC):
         chunks = []
         thoughts = []
         for task in context.gen_task(False):
+            print(f"task.result = {task.result}")
             task_result = json.loads(task.result)
             subq = task_result["query"]
             suba = task_result["response"]
@@ -73,33 +72,3 @@ NOTE:
             raise ValueError(f"no answer found in response: {response}")
         answer = response.split("Answer:")[1].strip()
         return answer
-
-    def invoke(self, query, context, **kwargs):
-        results = []
-        rerank_queries = []
-        chunks = []
-        thoughts = []
-        for task in context.gen_task(False):
-            task_result = json.loads(task.result)
-            subq = task_result["query"]
-            suba = task_result["response"]
-            thoughts.append(f"SubQuestion: {subq}\n{suba}")
-            retrieved_docs = task.memory.get("retriever")
-            if retrieved_docs and self.chunk_reranker:
-                rerank_queries.append(task.arguments["query"])
-                chunks.append(retrieved_docs.chunk_datas)
-        rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
-        total_reference_source = rerank_chunks
-        refer_data = to_reference_list(
-            prefix_id=0, retrieved_datas=total_reference_source
-        )
-        refer_data = [x["content"] for x in refer_data]
-
-        results = {"reference": refer_data, "step by step analysis": thoughts}
-        return self.llm_client.invoke(
-            {"query": query, "content": results},
-            self.generated_prompt,
-            segment_name="answer",
-            tag_name="Final Answer",
-            **kwargs,
-        )
