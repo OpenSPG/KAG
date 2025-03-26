@@ -36,7 +36,7 @@ class EvidenceBasedReasoner(ExecutorABC):
             retrieved_docs = "\n\n".join([x.content for x in retrieved_docs])
         else:
             retrieved_docs = str(retrieve_task.result)
-        # print(f"retrieved_docs = {retrieved_docs}")
+
         system_instruction = """
 As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
         
@@ -75,16 +75,9 @@ Thought: The question asks about the origin of the last name Sylvester during th
         subqa = "\n\n".join(subqa)
         request = f"{system_instruction}\nDocs:\n{retrieved_docs}\nQuestions:\n{subqa}\n{query}"
 
-        print(f"Reasoner request = {request}")
+        # print(f"Reasoner request = {request}")
         response = await self.llm.acall(request)
-        print(f"Reasoner response = {response}")
-        # from kag.common.utils import red, reset
-
-        # print(f"{red}Answer To Query {query}: \nReq: {request}\nRsp: {response}{reset}")
-        # if "Answer:" in response:
-        #     answer = response.split("Answer:")[1]
-        # else:
-        #     answer = response
+        # print(f"Reasoner response = {response}")
         task.update_memory("retriever", retrieve_task.result)
         task.result = json.dumps(
             {"query": task.arguments["query"], "response": response}, ensure_ascii=False
@@ -104,47 +97,3 @@ Thought: The question asks about the origin of the last name Sylvester during th
                 },
             },
         }
-
-
-# @ExecutorABC.register("evidence_based_reasoner")
-# class EvidenceBasedReasoner(ExecutorABC):
-#     def __init__(self, llm: LLMClient):
-#         self.llm = llm
-
-#     async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
-#         prompt = (
-#             "As an advanced reading comprehension assistant, your task is to analyze text passages and corresponding questions meticulously. "
-#             'Your response start after "Thought: ", where you will methodically break down the reasoning process step by step, illustrating how you arrive at conclusions. '
-#             'Conclude with "Answer: " to present a concise, definitive response, devoid of additional elaborations.'
-#         )
-
-#         query = task.arguments["query"]
-#         docs = []
-#         for pt in task.parents:
-#             docs.append(str(pt.result))
-#         docs = "\n\n".join(docs)
-#         request = f"{prompt}\nQuery:\n{query}\nPassages:\n{docs}"
-#         response = await self.llm.acall(request)
-#         # from kag.common.utils import red, reset
-
-#         # print(f"{red}Answer To Query {query}: \nReq: {request}\nRsp: {response}{reset}")
-#         if "Answer:" in response:
-#             answer = response.split("Answer:")[1]
-#         else:
-#             answer = response
-#         task.result = answer
-
-#         return response
-
-#     def schema(self, func_name: str = None):
-#         return {
-#             "name": "Reasoner",
-#             "description": "Synthesizes precise, evidence-backed answers to user queries by analyzing provided contextual documents. Note: Contextual documents are pre-loaded and processed implicitly; no explicit context parameter is required.",
-#             "parameters": {
-#                 "query": {
-#                     "type": "string",
-#                     "description": "User-provided query.",
-#                     "optional": False,
-#                 },
-#             },
-#         }

@@ -15,8 +15,9 @@ import os
 import traceback
 import logging
 import asyncio
+import threading
 from typing import Dict
-
+from tqdm.asyncio import tqdm
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.registry import Registrable
 from kag.common.utils import reset, bold, red, generate_hash_id
@@ -157,9 +158,6 @@ class BuilderChainRunner(Registrable):
                     result = future.result()
                     if result is not None:
                         item, item_id, item_abstract, chain_output = result
-                        print(f"item = {item}")
-                        print(f"item_id = {item_id}")
-                        print(f"chain_output = {chain_output}")
                         info = {}
                         num_nodes = 0
                         num_edges = 0
@@ -199,64 +197,87 @@ class BuilderChainRunner(Registrable):
             input: The input data to be processed.
         """
 
-        async def process(data, data_id, data_abstract, semaphore):
-            async with semaphore:
-                try:
+        async def process(data, data_id, data_abstract):
+            try:
+                print(f"process {data_id}")
+                result = await self.chain.ainvoke(data)
+                if result is not None:
+                    info = {}
+                    num_nodes = 0
+                    num_edges = 0
+                    num_subgraphs = 0
+                    for item in result:
+                        if isinstance(item, BuilderComponentData):
+                            item = item.data
+                        if isinstance(item, SubGraph):
+                            num_nodes += len(item.nodes)
+                            num_edges += len(item.edges)
+                            num_subgraphs += 1
 
-                    result = await self.chain.ainvoke(
-                        data,
-                        max_workers=self.num_threads_per_chain,
-                    )
-                    return data, data_id, data_abstract, result
-                except Exception:
-                    traceback.print_exc()
-                    return None
-
-        success = 0
-        total = 0
-        tasks = []
-
-        semaphore = asyncio.Semaphore(self.max_concurrency)
-        for item in self.scanner.generate(input):
-            item_id, item_abstract = generate_hash_id_and_abstract(item)
-            if self.checkpointer.exists(item_id):
-                continue
-            task = asyncio.create_task(process(item, item_id, item_abstract, semaphore))
-            tasks.append(task)
-        from tqdm.asyncio import tqdm
-
-        async for task in tqdm(asyncio.as_completed(tasks), total=len(tasks)):
-            result = await task
-            if result is not None:
-                item, item_id, item_abstract, chain_output = result
-                info = {}
-                num_nodes = 0
-                num_edges = 0
-                num_subgraphs = 0
-                for item in chain_output:
-                    if isinstance(item, BuilderComponentData):
-                        item = item.data
-                    if isinstance(item, SubGraph):
-                        num_nodes += len(item.nodes)
-                        num_edges += len(item.edges)
-                        num_subgraphs += 1
-
-                info = {
-                    "num_nodes": num_nodes,
-                    "num_edges": num_edges,
-                    "num_subgraphs": num_subgraphs,
-                }
-                with ThreadPoolExecutor() as executor:
-                    await asyncio.get_event_loop().run_in_executor(
-                        executor, lambda: self.checkpointer.write_to_ckpt(
-                            item_id, {"abstract": item_abstract, "graph_stat": info}
+                    info = {
+                        "num_nodes": num_nodes,
+                        "num_edges": num_edges,
+                        "num_subgraphs": num_subgraphs,
+                    }
+                    await asyncio.to_thread(
+                        lambda: self.checkpointer.write_to_ckpt(
+                            data_id, {"abstract": data_abstract, "graph_stat": info}
                         )
                     )
-                success += 1
-            total += 1
+                return 1
+            except Exception:
+                logger.error(f"Failed to process data {data_abstract}, info:")
+                traceback.print_exc()
+                return 0
+
+        async def producer(queue):
+            for item in self.scanner.generate(input):
+                await queue.put(item)
+            for _ in range(self.max_concurrency):
+                await queue.put(None)
+
+        async def consumer(queue, pbar):
+            total = 0
+            checkpointed = 0
+            success = 0
+            while True:
+                item = await queue.get()
+                if item is None:
+                    queue.task_done()
+                    break
+                total += 1
+                item_id, item_abstract = generate_hash_id_and_abstract(item)
+                if not self.checkpointer.exists(item_id):
+                    flag = await process(item, item_id, item_abstract)
+                    success += flag
+
+                else:
+                    checkpointed += 1
+                pbar.update(1)
+                queue.task_done()
+
+            return total, checkpointed, success
+
+        pbar = tqdm(total=self.scanner.size(input))
+        queue = asyncio.Queue(maxsize=self.max_concurrency * 10)
+
+        producer_task = asyncio.create_task(producer(queue))
+        consumer_tasks = [
+            asyncio.create_task(consumer(queue, pbar))
+            for _ in range(self.max_concurrency)
+        ]
+        await producer_task
+        await queue.join()
+        results = await asyncio.gather(*consumer_tasks)
+
+        total = sum(t for t, _, _ in results)
+        checkpointed = sum(c for _, c, _ in results)
+        success = sum(s for _, _, s in results)
+        pbar.close()
         CheckpointerManager.close()
         msg = (
-            f"{bold}{red}Done process {total} records, with {success} successfully processed and {total-success} failures encountered.\n"
+            f"{bold}{red}Done process {total} records, with {checkpointed} found in checkpoint, "
+            f"{success} successfully processed and {total-checkpointed-success} failures encountered.\n"
             f"The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"
         )

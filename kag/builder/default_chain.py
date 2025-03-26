@@ -73,18 +73,6 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 
         return chain
 
-    # def get_component_with_ckpts(self):
-    #     return [
-    #         self.mapping,
-    #         self.vectorizer,
-    #         self.writer,
-    #     ]
-
-    # def close_checkpointers(self):
-    #     for node in self.get_component_with_ckpts():
-    #         if node and hasattr(node, "checkpointer"):
-    #             node.checkpointer.close()
-
 
 @KAGBuilderChain.register("unstructured")
 @KAGBuilderChain.register("unstructured_builder_chain")
