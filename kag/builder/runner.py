@@ -303,15 +303,19 @@ class BuilderChainStreamRunner(BuilderChainRunner):
                 # Start a separate thread to iterate through the scanner
                 def generate_items():
                     for item in self.scanner.generate(input):
-                        item_id, item_abstract = generate_hash_id_and_abstract(item)
-                        if self.checkpointer.exists(item_id):
-                            continue
+                        try:
+                            item_id, item_abstract = generate_hash_id_and_abstract(item)
+                            if self.checkpointer.exists(item_id):
+                                continue
 
-                        # Submit new task and track its metadata
-                        fut = executor.submit(process, item, item_id, item_abstract)
-                        nonlocal submitted
-                        futures_map[fut] = (submitted, item_id, item_abstract)
-                        submitted += 1
+                            # Submit new task and track its metadata
+                            fut = executor.submit(process, item, item_id, item_abstract)
+                            nonlocal submitted
+                            futures_map[fut] = (submitted, item_id, item_abstract)
+                            submitted += 1
+                        except Exception:
+                            traceback.print_exc()
+                            continue
 
                 # Start the generator thread
                 gen_thread = threading.Thread(target=generate_items, daemon=True)
