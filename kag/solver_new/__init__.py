@@ -2,9 +2,7 @@ from kag.solver_new.pipeline.kag_iterative_pipeline import KAGIterativePipeline
 from kag.solver_new.pipeline.kag_static_pipeline import KAGStaticPipeline
 from kag.solver_new.planner.kag_iterative_planner import KAGIterativePlanner
 from kag.solver_new.planner.kag_static_planner import KAGStaticPlanner
-from kag.solver_new.prompt.iterative_planning_prompt import (
-    DefaultIterativePlanningPrompt,
-)
+
 from kag.solver_new.prompt.reference_generator import ReferGeneratorPrompt
 
 from kag.solver_new.prompt.static_planning_prompt import (
@@ -37,3 +35,5 @@ __all__ = [
     "LLMGenerator",
     "EvidenceBasedReasoner"
 ]
+
+from kag.solver_new.prompt.thought_iterative_planning_prompt import DefaultIterativePlanningPrompt

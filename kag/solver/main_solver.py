@@ -83,6 +83,6 @@ if __name__ == "__main__":
     init_kag_config(
         "4000003", "http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
     )
-    res = SolverMain().invoke(4000003, 5000007, "周润发的少年经历介绍下", "3500005", True, host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887")
+    res = SolverMain().invoke(4000003, 5500025, "周润发的父亲的职业", "3500005", True, host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887")
     print("*" * 80)
     print("The Answer is: ", res)
