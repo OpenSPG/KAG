@@ -1,5 +1,4 @@
 from kag.common.utils import generate_hash_id
-from odps import ODPS
 from kag.interface.builder.scanner_abc import ScannerABC
 from typing import Any, Generator, List
 
@@ -30,6 +29,7 @@ class ODPSScanner(ScannerABC):
         self.col_names = col_names
         self.col_ids = col_ids
         self.limit = limit
+        from odps import ODPS
 
         self._o = ODPS(self.access_id, self.access_key, self.project, self.endpoint)
         if not self._o.exist_table(self.table):
@@ -124,15 +124,11 @@ class ODPSScanner(ScannerABC):
             dict: Individual records as dictionaries
         """
         try:
-            chunk_size = kwargs.get("chunk_size", 1000)
             # 只有当表有分区且input不为空时才使用分区
             partition_spec = (
                 input if input and self.table.table_schema.partitions else None
             )
 
-            logger.debug(
-                f"Generating data row by row (internal batch size: {chunk_size})"
-            )
             if self.limit is not None:
                 logger.debug(f"Row limit set to {self.limit}")
 
@@ -140,6 +136,8 @@ class ODPSScanner(ScannerABC):
             with self.table.open_reader(partition=partition_spec) as reader:
                 logger.debug(f"Reader created with partition: {partition_spec}")
                 logger.debug(f"Total records available: {reader.count}")
+
+                raw_reader = reader
 
                 # Calculate sharding information for proper distribution
                 if self.sharding_info.shard_count > 1:
@@ -150,109 +148,72 @@ class ODPSScanner(ScannerABC):
                         f"Worker {worker} processing records from {start} to {end}"
                     )
 
-                    # Skip to the start position if needed
-                    if start > 0:
-                        reader.skip(start)
-                        logger.debug(f"Skipped {start} records")
-
-                    # Calculate how many records to read
+                    # 直接从起始位置开始读取
                     records_to_read = end - start
-                    logger.debug(f"Will read {records_to_read} records")
+                    logger.debug(
+                        f"Will read {records_to_read} records from position {start}"
+                    )
+
+                    # 使用切片直接获取该分片的数据
+                    try:
+                        shard_reader = reader[start:end]
+                        logger.debug(
+                            f"Successfully created shard reader for range {start}:{end}"
+                        )
+                        start = 0
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to create shard reader: {str(e)}, falling back to manual filtering"
+                        )
                 else:
-                    records_to_read = None  # Read all records
+                    records_to_read = reader.count  # Read all records
+                    shard_reader = reader[:]
                     start = 0
                     logger.debug("No sharding, will read all records")
 
-                # Implement our own chunking logic for internal fetching
-                if records_to_read is not None:
-                    remaining = records_to_read
-                else:
-                    remaining = reader.count - start
-
-                logger.debug(
-                    f"Starting to read {remaining} records (internal batch size: {chunk_size})"
-                )
-                current_offset = 0
-                chunk_number = 0
-
                 # Get column names for converting records to dictionaries
-                column_names = [c.name for c in reader.schema.columns]
+                column_names = [c.name for c in raw_reader.schema.columns]
 
-                while remaining > 0:
-                    # Read a chunk of records
-                    batch_size = min(chunk_size, remaining)
-                    logger.debug(
-                        f"Reading internal batch {chunk_number}, batch size: {batch_size}"
-                    )
-
-                    try:
-                        # Option 1: Use the reader as an iterator with limit
-                        batch_records = list(reader[:batch_size])
-                    except Exception:
-                        try:
-                            # Option 2: Original method but ensure it's not at the end
-                            batch_records = list(reader.read(batch_size))
-                        except Exception as inner_e:
-                            logger.debug(f"Error reading batch: {str(inner_e)}")
-                            batch_records = []
-
-                    logger.debug(f"Got {len(batch_records)} records in this batch")
-
-                    # If no records, break the loop
-                    if not batch_records:
-                        logger.debug("No more records to read, breaking loop")
+                # Yield records one by one with limit
+                rows_yielded = 0
+                for record in shard_reader:
+                    if self.limit is not None and rows_yielded >= self.limit:
+                        logger.debug(
+                            f"Reached row limit of {self.limit}, stopping generation"
+                        )
                         break
 
-                    # Yield records one by one with limit
-                    rows_yielded = 0
-                    for record in batch_records:
-                        if self.limit is not None and rows_yielded >= self.limit:
-                            logger.debug(
-                                f"Reached row limit of {self.limit}, stopping generation"
-                            )
-                            break
+                    row_dict = dict(zip(column_names, record.values))
 
-                        row_dict = dict(zip(column_names, record.values))
+                    col_keys = self.col_names if self.col_names else self.col_ids
+                    if col_keys is None:
+                        logger.debug(
+                            "No columns specified, returning all rows as dictionaries"
+                        )
+                        yield row_dict
+                        rows_yielded += 1
+                    else:
+                        for k, v in row_dict.items():
+                            if k in col_keys:
+                                v = str(v)
+                                name = v if len(v) < 10 else v[:5] + "..." + v[-5:]
+                                yield {
+                                    "id": generate_hash_id(v),
+                                    "name": name,
+                                    "content": v,
+                                }
+                                rows_yielded += 1
+                                if (
+                                    self.limit is not None
+                                    and rows_yielded >= self.limit
+                                ):
+                                    break
 
-                        col_keys = self.col_names if self.col_names else self.col_ids
-                        if col_keys is None:
-                            logger.debug(
-                                "No columns specified, returning all rows as dictionaries"
-                            )
-                            yield row_dict
-                            rows_yielded += 1
-                        else:
-                            for k, v in row_dict.items():
-                                if k in col_keys:
-                                    v = str(v)
-                                    name = v if len(v) < 10 else v[:5] + "..." + v[-5:]
-                                    yield {
-                                        "id": generate_hash_id(v),
-                                        "name": name,
-                                        "content": v,
-                                    }
-                                    rows_yielded += 1
-                                    if (
-                                        self.limit is not None
-                                        and rows_yielded >= self.limit
-                                    ):
-                                        break
-
-                        # Check limit after processing each record
-                        if self.limit is not None and rows_yielded >= self.limit:
-                            logger.debug(
-                                f"Reached row limit of {self.limit}, stopping generation"
-                            )
-                            break
-
-                    # Update remaining count
-                    remaining -= batch_size
-                    current_offset += batch_size
-                    chunk_number += 1
-                    logger.debug(f"Remaining records: {remaining}")
-
-                    if remaining <= 0:
-                        logger.debug("No more records to read, breaking loop")
+                    # Check limit after processing each record
+                    if self.limit is not None and rows_yielded >= self.limit:
+                        logger.debug(
+                            f"Reached row limit of {self.limit}, stopping generation"
+                        )
                         break
 
         except Exception as e:

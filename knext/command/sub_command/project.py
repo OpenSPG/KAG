@@ -33,6 +33,11 @@ from kag.common.vectorize_model.vectorize_model_config_checker import (
 )
 from shutil import copy2
 
+try:
+    import kag_ant
+except ImportError:
+    pass
+
 yaml = YAML()
 yaml.default_flow_style = False 
 yaml.indent(mapping=2, sequence=4, offset=2)
