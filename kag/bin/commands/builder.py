@@ -70,8 +70,8 @@ class BuilderJobSubmit(Command):
 
         parser.add_argument(
             "--entry_script",
-            required=True,
             type=str,
+            default=None,
             help="Python entry script path. \n"
             "Will be executed as: python <entry_script>",
         )
@@ -89,7 +89,7 @@ class BuilderJobSubmit(Command):
         parser.add_argument(
             "--num_gpus",
             type=int,
-            default=1,
+            default=0,
             help="GPUs per worker. Requires NVIDIA CUDA-enabled cluster. \n",
         )
 
@@ -158,13 +158,18 @@ class BuilderJobSubmit(Command):
             f"git clone {args.git_url} {work_dir}",
             f"cd {work_dir}",
             f"git checkout {args.commit_id}",
+            "/openspg_venv/bin/pip3.8 install -e . -i https://artifacts.antgroup-inc.cn/artifact/repositories/simple-dev/",
         ]
         if args.validity_check:
             BuilderJobSubmit.validity_check(args)
         if args.init_script is not None:
             cmds.append(f"sh {args.init_script}")
-        entry_cmd = f"python {args.entry_script}"
-        cmds.append(entry_cmd)
+
+        if args.entry_script is not None:
+            entry_script_dir = os.path.dirname(args.entry_script)
+            entry_script_name = os.path.basename(args.entry_script)
+            entry_cmd = f"cd {entry_script_dir} && python {entry_script_name}"
+            cmds.append(entry_cmd)
 
         command = " && ".join(cmds)
 
@@ -202,7 +207,6 @@ class BuilderJobSubmit(Command):
             host_addr = args.host_addr.rstrip("/")
         else:
             host_addr = KAG_PROJECT_CONF.host_addr.rstrip("/")
-
         url = host_addr + "/public/v1/builder/kag/submit"
         rsp = requests.post(url, json=req)
         rsp.raise_for_status()
