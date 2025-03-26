@@ -25,7 +25,7 @@ from kag.common.checkpointer import CheckpointerManager
 from kag.interface import KAGBuilderChain, ScannerABC
 
 from kag.builder.model.sub_graph import SubGraph
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger()
 
@@ -297,7 +297,7 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         submitted = 0
 
         try:
-            with ThreadPoolExecutor(self.num_chains) as executor:
+            with ProcessPoolExecutor(self.num_chains) as executor:
                 futures_map = {}  # Maps Future objects to metadata
 
                 # Start a separate thread to iterate through the scanner
