@@ -1,1 +1,0 @@
-import kag.solver_new.executor.retriever.local_knowlege_base.kag_retriever.kag_component.rc.default_rc_retriever

@@ -1,12 +1,12 @@
 import knext.common.cache
 import logging
-from typing import List, Dict
+from typing import Dict
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+from kag.tools.search_api.search_api_abc import SearchApiABC
 
 from knext.schema.client import CHUNK_TYPE
 
@@ -16,8 +16,9 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 
 @ToolABC.register("vector_chunk_retriever")
 class VectorChunkRetriever(ToolABC):
-    def __init__(self, vectorize_model: VectorizeModelABC = None,
-                 search_api: SearchApiABC = None):
+    def __init__(
+        self, vectorize_model: VectorizeModelABC = None, search_api: SearchApiABC = None
+    ):
         super().__init__()
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
@@ -46,11 +47,14 @@ class VectorChunkRetriever(ToolABC):
                 query_vector=query_vector,
                 topk=top_k,
             )
-            scores = {item["node"]["id"]: {
-                'score': item["score"],
-                'content': item["node"]["content"],
-                'name': item["node"]["name"],
-            } for item in top_k_docs}
+            scores = {
+                item["node"]["id"]: {
+                    "score": item["score"],
+                    "content": item["node"]["content"],
+                    "name": item["node"]["name"],
+                }
+                for item in top_k_docs
+            }
             chunk_cached_by_query_map.put(query, scores)
         except Exception as e:
             scores = dict()
@@ -66,14 +70,14 @@ class VectorChunkRetriever(ToolABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query for retrieving relevant text chunks"
+                        "description": "Search query for retrieving relevant text chunks",
                     },
                     "top_k": {
                         "type": "integer",
                         "description": "Number of top results to return",
-                        "default": 5
-                    }
+                        "default": 5,
+                    },
                 },
-                "required": ["query"]
-            }
+                "required": ["query"],
+            },
         }
