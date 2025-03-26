@@ -39,7 +39,7 @@ class KGWriter(SinkWriterABC):
     to a Knowledge Graph storage system. It supports operations like upsert and delete.
     """
 
-    def __init__(self, project_id: int = None, **kwargs):
+    def __init__(self, project_id: int = None, delete: bool = False, **kwargs):
         """
         Initializes the KGWriter with the specified project ID.
 
@@ -53,6 +53,7 @@ class KGWriter(SinkWriterABC):
         else:
             self.project_id = project_id
         self.client = GraphClient(project_id=project_id)
+        self.delete = delete
 
     @property
     def input_types(self) -> Type[Input]:
@@ -117,15 +118,21 @@ class KGWriter(SinkWriterABC):
         Returns:
             List[Output]: A list of output objects (currently always [None]).
         """
-
-        input = self.standarlize_graph(input)
-        logger.debug(f"final graph to write: {input}")
-        self.client.write_graph(
-            sub_graph=input.to_dict(),
-            operation=alter_operation,
-            lead_to_builder=lead_to_builder,
-        )
-        return [input]
+        if self.delete:
+            self.client.write_graph(
+                sub_graph=input.to_dict(),
+                operation=AlterOperationEnum.Delete,
+                lead_to_builder=lead_to_builder,
+            )
+        else:
+            input = self.standarlize_graph(input)
+            logger.debug(f"final graph to write: {input}")
+            self.client.write_graph(
+                sub_graph=input.to_dict(),
+                operation=alter_operation,
+                lead_to_builder=lead_to_builder,
+            )
+            return [input]
 
     def invoke(
         self, input: Input, **kwargs
