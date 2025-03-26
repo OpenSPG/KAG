@@ -9,7 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+# flake8: noqa
 import json
 from typing import List
 from kag.interface import PromptABC
@@ -57,25 +57,10 @@ class QueryRewritePrompt(PromptABC):
     }
 
     template_en = {
-        "instruction": """
-You are a problem-reformulation engine with semantic focusing capabilities, tasked with transforming questions in the query field that contain placeholders like {{N.output}} into standalone, complete questions. The main challenge is to extract precise semantic fragments from unstructured long answers.
-\n1. Input Specification
-- The input field contains the question to be rewritten, containing the original question with placeholders like {{N.output}} (where N is the parent node ID).
-- The context represents the parent node's context.
-\n2. Processing Workflow
-- Placeholder Parsing: Identify all patterns of {{number.output}} and record the set of parent_ids that need to be processed.
-- Context Retrieval: For each parent_id:
-  a. Locate the corresponding parent node's question-answer pair.
-  b. Establish the question focus: Use the parent question as the semantic anchor for information extraction.
-- Information Distillation:
-   a. Parse the type of answer to the parent question (e.g., person name/place/date).
-   b. Extract the core fragment from the answer that best matches the question type.
-   c. Verify whether the extracted result can be directly embedded into the current question context.
-- Question Rewriting:
-  a. Incorporate the parent node's answer into the question to be rewritten, refining it to ensure the reformulated question is accurate, fluent, and consistent with the intent of the original question.
-  b. The rewritten question must follow the same format as the input field, meaning it should have the same dictionary structure and identical keys.
-  c. Ensure the language of the question is preserved.
-\nThe example field provides a simple example for reference. Please return only the reformulated question string, similar to the output field in the example.
+        "instruction": """You are an expert skilled in restructuring multi-step queries. The original multi-step query has been broken down into several straightforward single-step query, each of which may explicitly (in the form of "{{i.output}}") or implicitly (such as "the person," "the city") rely on the answers to preceding queries. Please replace the references to the answers of previous queries in the provided query with the actual answers, based on the thought by the preceding queries, and rephrase the question accordingly. Refer to the example for the output format.
+
+        
+\nThe example field provides a simple example for reference. Please return only the reformulated question string IN JSON FORMAT, follow the format of  output field in the example.
         """,
         "example": {
             "input": {
@@ -83,13 +68,15 @@ You are a problem-reformulation engine with semantic focusing capabilities, task
             },
             "context": {
                 "0": {
+                    "query": "Who played Sun Wukong in Journey to the West?",
                     "output": [
-                        "Liu Xiao Ling Tong was born in 1959 and hails from Shaoxing, Zhejiang. He is a National Class-A Actor and has served as an adjunct professor at the School of Humanities, Zhejiang University. During the filming of the TV series 'Journey to the West' in 1982, he played the role of Sun Wukong throughout, winning the Best Actor Award at the 6th China Golden Eagle Awards for his performance."
+                        "Liu Xiao Ling Tong was born in 1959 and hails from Shaoxing, Zhejiang. He is a National Class-A Actor and has served as an adjunct professor at the School of Humanities, Zhejiang University. During the filming of the TV series 'Journey to the West' in 1982, he played the role of Sun Wukong throughout, winning the Best Actor Award at the 6th China Golden Eagle Awards for his performance. Answer: Liu Xiao Ling Tong"
                     ],
                 },
                 "1": {
+                    "query": "Who sing the song 'Blue and White Porcelain'?",
                     "output": [
-                        "The song 'Blue and White Porcelain' was written by Vincent Fang, composed by Jay Chou, arranged by Roger Chung, and included in Jay Chou’s eighth studio album 'I'm Busy', released on November 2, 2007."
+                        "The song 'Blue and White Porcelain' was written by Vincent Fang, composed by Jay Chou, arranged by Roger Chung, and included in Jay Chou’s eighth studio album 'I'm Busy', released on November 2, 2007. Answer: JayChou"
                     ],
                 },
             },
@@ -98,6 +85,50 @@ You are a problem-reformulation engine with semantic focusing capabilities, task
             },
         },
     }
+
+    #     template_en = {
+    #         "instruction": """
+    # You are a problem-reformulation engine with semantic focusing capabilities, tasked with transforming questions in the query field that contain placeholders like {{N.output}} into standalone, complete questions. The main challenge is to extract precise semantic fragments from unstructured long answers.
+    # \n1. Input Specification
+    # - The input field contains the question to be rewritten, containing the original question with placeholders like {{N.output}} (where N is the parent node ID).
+    # - The context represents the parent node's context.
+    # \n2. Processing Workflow
+    # - Placeholder Parsing: Identify all patterns of {{number.output}} and record the set of parent_ids that need to be processed.
+    # - Context Retrieval: For each parent_id:
+    #   a. Locate the corresponding parent node's question-answer pair.
+    #   b. Establish the question focus: Use the parent question as the semantic anchor for information extraction.
+    # - Information Distillation:
+    #    a. Parse the type of answer to the parent question (e.g., person name/place/date).
+    #    b. Extract the core fragment from the answer that best matches the question type.
+    #    c. Verify whether the extracted result can be directly embedded into the current question context.
+    # - Question Rewriting:
+    #   a. Incorporate the parent node's answer into the question to be rewritten, refining it to ensure the reformulated question is accurate, fluent, and consistent with the intent of the original question.
+    #   b. The rewritten question must follow the same format as the input field, meaning it should have the same dictionary structure and identical keys.
+    #   c. Ensure the language of the question is preserved.
+    # \nThe example field provides a simple example for reference. Please return only the reformulated question string, similar to the output field in the example.
+    #         """,
+    #         "example": {
+    #             "input": {
+    #                 "query": "{{0.output}} has won awards, which ones have not been obtained by {{1.output}}?"
+    #             },
+    #             "context": {
+    #                 "0": {
+    #                     "output": [
+    #                         "Liu Xiao Ling Tong was born in 1959 and hails from Shaoxing, Zhejiang. He is a National Class-A Actor and has served as an adjunct professor at the School of Humanities, Zhejiang University. During the filming of the TV series 'Journey to the West' in 1982, he played the role of Sun Wukong throughout, winning the Best Actor Award at the 6th China Golden Eagle Awards for his performance. Answer: Liu Xiao Ling Tong"
+    #                     ],
+    #                 },
+    #                 "1": {
+    #                     ""
+    #                     "output": [
+    #                         "The song 'Blue and White Porcelain' was written by Vincent Fang, composed by Jay Chou, arranged by Roger Chung, and included in Jay Chou’s eighth studio album 'I'm Busy', released on November 2, 2007. Answer: JayChou"
+    #                     ],
+    #                 },
+    #             },
+    #             "output": {
+    #                 "query": "Among the awards won by Liu Xiao Ling Tong, which ones have not been won by Jay Chou?"
+    #             },
+    #         },
+    #     }
 
     @property
     def template_variables(self) -> List[str]:
