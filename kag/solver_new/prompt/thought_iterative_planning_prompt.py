@@ -9,13 +9,14 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import logging
 import json
 from typing import List
 from kag.interface import PromptABC, Task
 
+logger = logging.getLogger()
 
-@PromptABC.register("default_iterative_planning")
+@PromptABC.register("default_thought_iterative_planning")
 class DefaultIterativePlanningPrompt(PromptABC):
     template_zh = {
         "instruction": """
@@ -55,6 +56,17 @@ class DefaultIterativePlanningPrompt(PromptABC):
                     },
                 },
                 {
+                    "name": "Deduce",
+                    "description": "Synthesizes precise, evidence-backed answers to user queries by analyzing provided contextual documents. Note: Contextual documents are pre-loaded and processed implicitly; no explicit context parameter is required.",
+                    "parameters": {
+                        "query": {
+                            "type": "string",
+                            "description": "User-provided query.",
+                            "optional": False,
+                        },
+                    },
+                },
+                {
                     "name": "Finish",
                     "description": "Performs no operation and is solely used to indicate that the task has been completed.",
                     "parameters": {},
@@ -81,49 +93,108 @@ Important considerations:
 1. Return your planning results in JSON format, following the example provided in the "output" field of the "example" section.
 2. If you determine from the context that the task has been completed, return a "Finish" tool call to indicate no further actions are required.  
 """,
-        "example": {
-            "query": "张学友和刘德华共同出演过哪些电影",
+        "executors": [
+            {
+                "name": "Retriever",
+                "description": "Retrieve relevant knowledge from the local knowledge base.",
+                "parameters": {
+                    "query": {
+                        "type": "string",
+                        "description": "User-provided query for retrieval.",
+                        "optional": False,
+                    },
+                },
+            },
+            {
+                "name": "Math",
+                "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
+                "parameters": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's input expression needs to conform to Python syntax.",
+                        "optional": False,
+                    }
+                },
+            },
+            {
+                "name": "Deduce",
+                "description": "Synthesizes precise, evidence-backed answers to user queries by analyzing provided contextual documents. Note: Contextual documents are pre-loaded and processed implicitly; no explicit context parameter is required.",
+                "parameters": {
+                    "query": {
+                        "type": "string",
+                        "description": "User-provided query.",
+                        "optional": False,
+                    },
+                },
+            },
+            {
+                "name": "Finish",
+                "description": "Performs no operation and is solely used to indicate that the task has been completed.",
+                "parameters": {},
+            },
+        ],
+        "example1": {
+            "query": "How old was Albert Einstein when he won the Nobel Prize?",
             "context": [],
-            "executors": [
-                {
+            "output": {
+                "executor": {
                     "name": "Retriever",
-                    "description": "Retrieve relevant knowledge from the local knowledge base.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "User-provided query for retrieval.",
-                            },
-                        },
-                    },
-                },
+                    "arguments": {"query": "When was Albert Einstein born?"},
+                    "thought": "Initial requirement: To calculate Einstein's age at the time of the award, we must first obtain his birth year. This foundational data is critical for all subsequent calculations."
+                }
+            },
+        },
+        "example2": {
+            "query": "How old was Albert Einstein when he won the Nobel Prize?",
+            "context": [
                 {
-                    "name": "Math",
-                    "description": "Peform Math computation based on use query.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "User-provided query for retrieval.",
-                            },
-                        },
-                    },
-                },
-                {
-                    "name": "Finish",
-                    "description": "Performs no operation and is solely used to indicate that the task has been completed.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {},
-                    },
-                },
+                    "executor": "Retriever",
+                    "arguments": {"query": "When was Albert Einstein born?"},
+                    "result": "1879"
+                }
             ],
             "output": {
                 "executor": {
                     "name": "Retriever",
-                    "arguments": {"query": "张学友出演的电影列表"},
+                    "arguments": {"query": "What year did Albert Einstein win the Nobel Prize?"},
+                    "thought": "Confirmed birth year: 1879. Next critical data point: Nobel Prize year. Age calculation requires both temporal markers. Priority: Retrieve award year."
+                }
+            },
+        },
+        "example3": {
+            "query": "How old was Albert Einstein when he won the Nobel Prize?",
+            "context": [
+                {
+                    "executor": "Retriever",
+                    "arguments": {"query": "When was Albert Einstein born?"},
+                    "result": "1879"
+                },
+                {
+                    "executor": "Retriever",
+                    "arguments": {"query": "What year did Albert Einstein win the Nobel Prize?"},
+                    "result": "1921"
+                }
+            ],
+            "output": {
+                "executor": {
+                    "name": "Math",
+                    "arguments": {"query": "Subtract 1879 from 1921 to get his age"},
+                    "thought": "Essential data acquired: Birth year (1879) and award year (1921). Execution formula: Award year - Birth year = Age. Mathematical verification required."
+                }
+            },
+        },
+        "example4": {
+            "query": "How old was Albert Einstein when he won the Nobel Prize?",
+            "context": [
+                {"executor": "Retriever", "arguments": {"query": "When was Albert Einstein born?"}, "result": "1879"},
+                {"executor": "Retriever", "arguments": {"query": "What year did Albert Einstein win the Nobel Prize?"}, "result": "1921"},
+                {"executor": "Math", "arguments": {"query": "Subtract 1879 from 1921 to get his age"}, "result": "42"}
+            ],
+            "output": {
+                "executor": {
+                    "name": "Deduce",
+                    "arguments": {"query": "Combine birth year and award year to confirm his age"},
+                    "thought": "Calculation result: 42 years old. Validation checklist: 1. Consistency with historical records 2. Potential timeline anomalies (e.g., award delays). Context synthesis needed for final confirmation."
                 }
             },
         },
@@ -149,5 +220,6 @@ Important considerations:
             and "name" in executor
             and "arguments" in executor
         ), "repsonse must be a dict with `name` and `arguments`"
-        task = Task(executor=executor["name"], arguments=executor["arguments"])
+        task = Task(executor=executor["name"], arguments=executor["arguments"], thought=executor.get("thought", ""))
+        logging.info(f'{executor["arguments"]} thought {executor.get("thought", "")}')
         return [task]

@@ -111,15 +111,13 @@ class KAGIterativePipeline(SolverPipelineABC):
         """
         num_iteration = 0
         context: Context = Context()
-        success = False
         while num_iteration < self.max_iteration:
             num_iteration += 1
             task, executor = await self.planning(query, context, **kwargs)
             if executor == self.finish_executor:
-                success = True
                 break
             context.append_task(task)
             await executor.ainvoke(query, task, context, **kwargs)
-        if success:
-            answer = await self.generator.ainvoke(query, context, **kwargs)
-            return answer
+        # force answer
+        answer = await self.generator.ainvoke(query, context, **kwargs)
+        return answer
