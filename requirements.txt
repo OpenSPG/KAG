@@ -49,7 +49,7 @@ json_repair
 gitpython
 docstring_parser
 aiolimiter
-pyodps
+pyodps==0.12.2
 aliyun-log-python-sdk==0.8.8
 pyvis
 asyncio
