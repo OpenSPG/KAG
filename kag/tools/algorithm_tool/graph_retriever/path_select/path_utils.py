@@ -1,11 +1,16 @@
 import logging
 from typing import List
 
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, OneHopGraphData
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    EntityData,
+    OneHopGraphData,
+)
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.solver.tools.graph_api.graph_api_abc import generate_gql_id_params, generate_label
+from kag.tools.graph_api.graph_api_abc import generate_gql_id_params, generate_label
 
 logger = logging.getLogger()
+
+
 def extra_relation_candis_types(n: GetSPONode):
     p_type_set = n.p.type_set
     p_label_str_set = []
@@ -29,7 +34,9 @@ def generate_gql_head_element(alias, entity: List[EntityData]):
     return params, where_gql
 
 
-def generate_gql_spo_element(n: GetSPONode, heads: List[EntityData], tails: List[EntityData], schema):
+def generate_gql_spo_element(
+    n: GetSPONode, heads: List[EntityData], tails: List[EntityData], schema
+):
     params = {}
     where_gql = []
     heads_params, head_where_gql = generate_gql_head_element("s", heads)

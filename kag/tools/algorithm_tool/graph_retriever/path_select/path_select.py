@@ -3,14 +3,21 @@ from typing import List
 from kag.interface import ToolABC
 from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.solver.tools.graph_api.graph_api_abc import generate_label, generate_gql_id_params
 
 
 @ToolABC.register("path_select")
 class PathSelect(ToolABC):
     def __init__(self):
         super().__init__()
-    def invoke(self, query, spo: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[RelationData]:
+
+    def invoke(
+        self,
+        query,
+        spo: GetSPONode,
+        heads: List[EntityData],
+        tails: List[EntityData],
+        **kwargs
+    ) -> List[RelationData]:
         raise NotImplementedError("invoke not implemented yet.")
 
     def schema(self):
@@ -22,25 +29,25 @@ class PathSelect(ToolABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Input text for path selection"
+                        "description": "Input text for path selection",
                     },
                     "spo": {
                         "type": "object",
                         "properties": {
                             "subject": {
                                 "type": "string",
-                                "description": "Subject entity in SPO triple"
+                                "description": "Subject entity in SPO triple",
                             },
                             "predicate": {
                                 "type": "string",
-                                "description": "Relationship type in SPO triple"
+                                "description": "Relationship type in SPO triple",
                             },
                             "object": {
                                 "type": "string",
-                                "description": "Object entity in SPO triple"
-                            }
+                                "description": "Object entity in SPO triple",
+                            },
                         },
-                        "required": ["subject", "predicate", "object"]
+                        "required": ["subject", "predicate", "object"],
                     },
                     "heads": {
                         "type": "array",
@@ -49,19 +56,19 @@ class PathSelect(ToolABC):
                             "properties": {
                                 "id": {
                                     "type": "string",
-                                    "description": "Entity id in graph"
+                                    "description": "Entity id in graph",
                                 },
                                 "name": {
                                     "type": "string",
-                                    "description": "Starting entity name"
+                                    "description": "Starting entity name",
                                 },
                                 "type": {
                                     "type": "string",
-                                    "description": "Entity type category"
-                                }
+                                    "description": "Entity type category",
+                                },
                             },
-                            "required": ["id", "type"]
-                        }
+                            "required": ["id", "type"],
+                        },
                     },
                     "tails": {
                         "type": "array",
@@ -70,21 +77,21 @@ class PathSelect(ToolABC):
                             "properties": {
                                 "id": {
                                     "type": "string",
-                                    "description": "Entity id in graph"
+                                    "description": "Entity id in graph",
                                 },
                                 "name": {
                                     "type": "string",
-                                    "description": "Starting entity name"
+                                    "description": "Starting entity name",
                                 },
                                 "type": {
                                     "type": "string",
-                                    "description": "Entity type category"
-                                }
+                                    "description": "Entity type category",
+                                },
                             },
-                            "required": ["id", "type"]
-                        }
-                    }
+                            "required": ["id", "type"],
+                        },
+                    },
                 },
-                "required": ["query", "spo"]
-            }
+                "required": ["query", "spo"],
+            },
         }

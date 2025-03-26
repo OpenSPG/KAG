@@ -4,25 +4,37 @@ from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import VectorizeModelABC
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData, OneHopGraphData, KgGraph, \
-    parse_entity_relation
+from kag.solver.logic.core_modules.common.one_hop_graph import (
+    EntityData,
+    RelationData,
+    OneHopGraphData,
+    parse_entity_relation,
+)
 from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
 from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
 from kag.solver.logic.core_modules.config import LogicFormConfiguration
 from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
-from kag.solver.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params, generate_label
-from kag.solver.tools.search_api.search_api_abc import SearchApiABC
+from kag.tools.graph_api.graph_api_abc import (
+    GraphApiABC,
+)
+from kag.tools.search_api.search_api_abc import SearchApiABC
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
-from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import run_gql, generate_gql_spo_element
+from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import (
+    run_gql,
+    generate_gql_spo_element,
+)
 
 logger = logging.getLogger()
 
 
 @PathSelect.register("exact_one_hop_select")
 class ExactOneHopSelect(PathSelect):
-    def __init__(self, vectorize_model: VectorizeModelABC = None,
-                 graph_api: GraphApiABC = None,
-                 search_api: SearchApiABC = None):
+    def __init__(
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        graph_api: GraphApiABC = None,
+        search_api: SearchApiABC = None,
+    ):
         super().__init__()
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
@@ -45,7 +57,9 @@ class ExactOneHopSelect(PathSelect):
         )
         self.text_similarity = TextSimilarity(vectorize_model)
 
-    def recall_one_graph(self, gql_header_labels, gql_tail_labels, id_filters, **kwargs) -> List[OneHopGraphData]:
+    def recall_one_graph(
+        self, gql_header_labels, gql_tail_labels, id_filters, **kwargs
+    ) -> List[OneHopGraphData]:
         spg_gql = f"""
         MATCH (s:{gql_header_labels})-[p:rdf_expand()]->(o:{gql_tail_labels})
         WHERE {' and '.join(id_filters)}
@@ -53,8 +67,9 @@ class ExactOneHopSelect(PathSelect):
         """
         return run_gql(self.graph_api, spg_gql, **kwargs)
 
-    def recall_by_spg_gql(self, gql_header_labels, gql_tail_labels, p_label_set, id_filters, **kwargs) -> List[
-        OneHopGraphData]:
+    def recall_by_spg_gql(
+        self, gql_header_labels, gql_tail_labels, p_label_set, id_filters, **kwargs
+    ) -> List[OneHopGraphData]:
         spg_gql = f"""
                 MATCH (s:{gql_header_labels})-[p:{'|'.join(p_label_set)}]->(o:{gql_tail_labels})
                 WHERE {' and '.join(id_filters)}
@@ -62,27 +77,38 @@ class ExactOneHopSelect(PathSelect):
                 """
         return run_gql(self.graph_api, spg_gql, **kwargs)
 
-    def recall_graph_data_from_knowledge_base(self, n: GetSPONode, heads: List[EntityData],
-                                              tails: List[EntityData]) -> List[OneHopGraphData]:
-        gql_header_labels, gql_rel_labels, gql_tail_labels, where_gql, params = generate_gql_spo_element(n, heads, tails, self.schema_helper)
+    def recall_graph_data_from_knowledge_base(
+        self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData]
+    ) -> List[OneHopGraphData]:
+        (
+            gql_header_labels,
+            gql_rel_labels,
+            gql_tail_labels,
+            where_gql,
+            params,
+        ) = generate_gql_spo_element(n, heads, tails, self.schema_helper)
 
         if len(gql_rel_labels) == 0:
             return []
 
-        gql_result = self.recall_by_spg_gql(gql_header_labels, gql_tail_labels, gql_rel_labels, where_gql, **params)
+        gql_result = self.recall_by_spg_gql(
+            gql_header_labels, gql_tail_labels, gql_rel_labels, where_gql, **params
+        )
         if len(gql_result) != 0:
             return gql_result
 
-        return self.recall_one_graph(gql_header_labels, gql_tail_labels, where_gql, **params)
+        return self.recall_one_graph(
+            gql_header_labels, gql_tail_labels, where_gql, **params
+        )
 
     def _std_best_p_with_value_and_p_name(
-            self, n: GetSPONode, one_graph: OneHopGraphData
+        self, n: GetSPONode, one_graph: OneHopGraphData
     ):
         """
         :param one_graph:
         :return: list(RelationData)
         """
-        logger.debug(f"std_best_p_with_value_and_p_name begin std " + str(n))
+        logger.debug("std_best_p_with_value_and_p_name begin std " + str(n))
         un_std_p_list = n.p.get_entity_type_or_un_std_list()
         final_result_list = []
         if len(un_std_p_list) == 0:
@@ -123,15 +149,13 @@ class ExactOneHopSelect(PathSelect):
                 relation_data = one_graph.get_std_relation_value(std_p)
             else:
                 logger.info(
-                    f"relation with el: un std p is " + un_std_p + ", std p is " + std_p
+                    "relation with el: un std p is " + un_std_p + ", std p is " + std_p
                 )
                 value = one_graph.get_std_attribute_value(std_p)
                 if value is None or value == "":
                     continue
                 # new a RelationData
-                relation_data = [
-                    parse_entity_relation(one_graph, std_p, value)
-                ]
+                relation_data = [parse_entity_relation(one_graph, std_p, value)]
             if target_value is not None:
                 for r in relation_data:
                     candi_target_value = (
@@ -153,9 +177,17 @@ class ExactOneHopSelect(PathSelect):
             result += rel_set
         return result
 
-    def invoke(self, query, spo: GetSPONode, heads: List[EntityData], tails: List[EntityData], **kwargs) -> List[
-        RelationData]:
-        one_hop_graph_list = self.recall_graph_data_from_knowledge_base(spo, heads, tails)
+    def invoke(
+        self,
+        query,
+        spo: GetSPONode,
+        heads: List[EntityData],
+        tails: List[EntityData],
+        **kwargs,
+    ) -> List[RelationData]:
+        one_hop_graph_list = self.recall_graph_data_from_knowledge_base(
+            spo, heads, tails
+        )
         start_time = time.time()
         selected_rels = self.match_spo(spo, one_hop_graph_list)
         logger.debug(
