@@ -121,6 +121,8 @@ class LLMClient(Registrable):
             json_str = res
         try:
             json_result = loads(json_str)
+            if not json_result:
+                return res
         except:
             return res
         return json_result
