@@ -113,6 +113,7 @@ class KAGRetrievedResponse(ExecutorResponse):
             "sub_question": [item.to_dict() for item in self.sub_retrieved_set],
             "graph_data": [str(spo) for spo in self.graph_data.get_all_spo()],
             "chunk_datas": [item.to_dict() for item in self.chunk_datas],
+            "summary": self.summary
         }
 
 
