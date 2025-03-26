@@ -27,11 +27,13 @@ class CSVScanner(ScannerABC):
         col_ids: List[int] = None,
         rank: int = 0,
         world_size: int = 1,
+        delimiter: str = ",",
     ):
         super().__init__(rank=rank, world_size=world_size)
         self.header = header
         self.col_names = col_names
         self.col_ids = col_ids
+        self.delimiter = delimiter
 
     @property
     def input_types(self) -> Input:
@@ -55,9 +57,9 @@ class CSVScanner(ScannerABC):
         input = self.download_data(input)
 
         if self.header:
-            data = pd.read_csv(input, dtype=str)
+            data = pd.read_csv(input, dtype=str, delimiter=self.delimiter)
         else:
-            data = pd.read_csv(input, dtype=str, header=None)
+            data = pd.read_csv(input, dtype=str, header=None, delimiter=self.delimiter)
 
         # 如果有多个分片，根据rank和world_size进行数据分片
         if self.sharding_info.shard_count > 1:
@@ -110,6 +112,7 @@ class CSVStructuredScanner(ScannerABC):
         col_map: Dict[str, str] = None,
         rank: int = 0,
         world_size: int = 1,
+        delimiter: str = ",",
     ):
         super().__init__(rank=rank, world_size=world_size)
         self.header = header
@@ -117,6 +120,7 @@ class CSVStructuredScanner(ScannerABC):
         for k, v in col_map.items():
             new_col_map[int(k)] = v
         self.col_map = new_col_map
+        self.delimiter = delimiter
 
     @property
     def input_types(self) -> Input:
@@ -140,9 +144,9 @@ class CSVStructuredScanner(ScannerABC):
         input = self.download_data(input)
 
         if self.header:
-            data = pd.read_csv(input, dtype=str)
+            data = pd.read_csv(input, dtype=str, delimiter=self.delimiter)
         else:
-            data = pd.read_csv(input, dtype=str, header=None)
+            data = pd.read_csv(input, dtype=str, header=None, delimiter=self.delimiter)
 
         # 如果有多个分片，根据rank和world_size进行数据分片
         if self.sharding_info.shard_count > 1:
