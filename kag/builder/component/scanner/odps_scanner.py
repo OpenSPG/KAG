@@ -49,6 +49,15 @@ class ODPSScanner(ScannerABC):
             for p in self.table.partitions:
                 logger.debug(f"      {p.name}")
 
+    def size(self, input):
+        partition_spec = input if input and self.table.table_schema.partitions else None
+        with self.table.open_reader(partition=partition_spec) as reader:
+            logger.debug(f"Reader created with partition: {partition_spec}")
+            logger.debug(f"Total records available: {reader.count}")
+            total_count = reader.count
+            start, end = self.sharding_info.get_sharding_range(total_count)
+            return end - start
+
     def reload(self):
         self.table.reload()
 
@@ -299,56 +308,3 @@ class ODPSScanner(ScannerABC):
                     )
 
         return contents
-
-
-if __name__ == "__main__":
-    # 尝试多种分区格式
-    odps_config = {
-        "type": "odps_scanner",
-        "access_id": "",
-        "access_key": "",
-        "project": "alifin_jtest_dev",
-        "table": "jincheng_doc2x_finance_40w_parsed",
-        "endpoint": "http://service-corp.odps.aliyun-inc.com/api",
-        "col_names": ["content"],
-    }
-    scanner = ScannerABC.from_config(odps_config)
-
-    # 测试不同的分区格式
-    logger.debug("\n\n==== 测试 1: 使用dt=20250225 格式 ====")
-    try:
-        result = list(scanner.generate(input="dt=20250226"))
-        logger.debug(f"Total rows: {len(result)}")
-        if len(result) > 0:
-            logger.debug("Data sample:")
-            print(result[0:2])
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-
-    logger.debug("\n\n==== 测试 2: 只使用20250225值（自动添加分区名） ====")
-    try:
-        result = scanner.invoke(input="20250225")
-        logger.debug(f"Total rows: {len(result)}")
-        if len(result) > 0:
-            logger.debug("Data sample:")
-            print(result[0:2])
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-
-    logger.debug("\n\n==== 测试 3: 不指定分区（读取整个表） ====")
-    try:
-        result = scanner.invoke(input="")
-        logger.debug(f"Total rows: {len(result)}")
-        if len(result) > 0:
-            logger.debug("Data sample:")
-            print(result[0:2])
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-
-    # Example: Limit to 100 rows
-    result = scanner.invoke(input="dt=20250226", limit=100)
-
-    # Or with generate
-    for row in scanner.generate(input="dt=20250226", limit=100):
-        # Process row
-        pass
