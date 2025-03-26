@@ -26,6 +26,8 @@ from kag.interface import KAGBuilderChain, ScannerABC
 
 from kag.builder.model.sub_graph import SubGraph
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from kag.common.registry import import_modules_from_path
+
 
 logger = logging.getLogger()
 
@@ -160,8 +162,8 @@ class BuilderChainRunner(Registrable):
             with ThreadPoolExecutor(self.num_chains) as executor:
                 for item in self.scanner.generate(input):
                     item_id, item_abstract = generate_hash_id_and_abstract(item)
-                    if self.checkpointer.exists(item_id):
-                        continue
+                    # if self.checkpointer.exists(item_id):
+                    #     continue
                     fut = executor.submit(
                         process,
                         item,
@@ -212,7 +214,6 @@ class BuilderChainRunner(Registrable):
         CheckpointerManager.close()
         msg = (
             f"{bold}{red}Done process {len(futures)} records, with {success} successfully processed and {len(futures)-success} failures encountered.\n"
-            f"The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"
         )
         print(msg)
@@ -235,6 +236,7 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         chain: KAGBuilderChain,
         num_chains: int = 2,
         num_threads_per_chain: int = 8,
+        register_path: str = None,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -245,21 +247,22 @@ class BuilderChainStreamRunner(BuilderChainRunner):
             num_chains (int, optional): The number of parallel threads to use, with each thread launching a builder chain instance. Defaults to 2.
             num_threads_per_chain (int, optional): The number of parallel workers within a builder chain. Defaults to 8.
             ckpt_dir (str, optional): The directory to store checkpoint files. Defaults to "./ckpt".
+            register_path (str, optional): The path to register modules. Defaults to None.
         """
         self.scanner = scanner
         self.chain = chain
         self.num_chains = num_chains
         self.num_threads_per_chain = num_threads_per_chain
         self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
-
-        self.checkpointer = CheckpointerManager.get_checkpointer(
-            {
-                "type": "txt",
-                "ckpt_dir": self.ckpt_dir,
-                "rank": self.scanner.sharding_info.get_rank(),
-                "world_size": self.scanner.sharding_info.get_world_size(),
-            }
-        )
+        self.register_path = register_path
+        # self.checkpointer = CheckpointerManager.get_checkpointer(
+        #     {
+        #         "type": "txt",
+        #         "ckpt_dir": self.ckpt_dir,
+        #         "rank": self.scanner.sharding_info.get_rank(),
+        #         "world_size": self.scanner.sharding_info.get_world_size(),
+        #     }
+        # )
         self.processed_chunks = CheckpointerManager.get_checkpointer(
             {
                 "type": "zodb",
@@ -269,6 +272,29 @@ class BuilderChainStreamRunner(BuilderChainRunner):
             }
         )
         self._local = threading.local()
+
+    @staticmethod
+    def _init_worker(chain_config, num_threads, register_path):
+        global process_chain, process_num_threads
+        logger.info(f"jincheng__register_path: {register_path}")
+        import_modules_from_path(register_path)
+        # 在每个进程中重新创建chain
+        process_chain = KAGBuilderChain.from_config(chain_config)
+        process_num_threads = num_threads
+
+    @staticmethod
+    def process(data, data_id, data_abstract, processed_chunk_keys):
+        try:
+            global process_chain, process_num_threads
+            result = process_chain.invoke(
+                data,
+                max_workers=process_num_threads,
+                processed_chunk_keys=processed_chunk_keys,
+            )
+            return data, data_id, data_abstract, result
+        except Exception:
+            traceback.print_exc()
+            return None
 
     def invoke(self, input):
         """
@@ -280,37 +306,38 @@ class BuilderChainStreamRunner(BuilderChainRunner):
             input: The input data to be processed.
         """
 
-        def process(data, data_id, data_abstract):
-            try:
-                result = self.chain.invoke(
-                    data,
-                    max_workers=self.num_threads_per_chain,
-                    processed_chunk_keys=self.processed_chunks.keys(),
-                )
-                return data, data_id, data_abstract, result
-            except Exception:
-                traceback.print_exc()
-                return None
-
         print(f"Processing stream from {input}")
         success = 0
         submitted = 0
 
-        try:
-            with ProcessPoolExecutor(self.num_chains) as executor:
-                futures_map = {}  # Maps Future objects to metadata
+        # 不使用manager.dict()，使用普通字典
+        futures_map = {}
 
-                # Start a separate thread to iterate through the scanner
+        # 获取chain的配置
+        chain_config = self.chain.to_config()
+
+        try:
+            with ProcessPoolExecutor(
+                max_workers=self.num_chains,
+                initializer=self._init_worker,
+                initargs=(chain_config, self.num_threads_per_chain, self.register_path),
+            ) as executor:
+
                 def generate_items():
                     for item in self.scanner.generate(input):
                         try:
                             item_id, item_abstract = generate_hash_id_and_abstract(item)
-                            if self.checkpointer.exists(item_id):
-                                continue
 
-                            # Submit new task and track its metadata
-                            fut = executor.submit(process, item, item_id, item_abstract)
+                            # 提交任务
+                            fut = executor.submit(
+                                BuilderChainStreamRunner.process,
+                                item,
+                                item_id,
+                                item_abstract,
+                                self.processed_chunks.keys(),
+                            )
                             nonlocal submitted
+                            # 在本地字典中存储Future对象
                             futures_map[fut] = (submitted, item_id, item_abstract)
                             submitted += 1
                         except Exception:
@@ -331,8 +358,11 @@ class BuilderChainStreamRunner(BuilderChainRunner):
                                 done_futures.append(fut)
 
                         for fut in done_futures:
+                            # 从本地字典获取信息
+                            submitted_id, item_id, item_abstract = futures_map.pop(fut)
+
+                            # 处理结果
                             result = fut.result()
-                            _, _, _ = futures_map.pop(fut)  # Remove from tracking map
 
                             if result is not None:
                                 item, item_id, item_abstract, chain_output = result
@@ -352,15 +382,15 @@ class BuilderChainStreamRunner(BuilderChainRunner):
                                                 num_edges += len(v.edges)
                                                 num_subgraphs += 1
 
-                                info = {
-                                    "num_nodes": num_nodes,
-                                    "num_edges": num_edges,
-                                    "num_subgraphs": num_subgraphs,
-                                }
-                                self.checkpointer.write_to_ckpt(
-                                    item_id,
-                                    {"abstract": item_abstract, "graph_stat": info},
-                                )
+                                # info = {
+                                #     "num_nodes": num_nodes,
+                                #     "num_edges": num_edges,
+                                #     "num_subgraphs": num_subgraphs,
+                                # }
+                                # self.checkpointer.write_to_ckpt(
+                                #     item_id,
+                                #     {"abstract": item_abstract, "graph_stat": info},
+                                # )
                                 success += 1
                                 pbar.update(1)
                                 pbar.set_description(
@@ -381,7 +411,6 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         CheckpointerManager.close()
         msg = (
             f"{bold}{red}Done processing stream. {success} successfully processed out of {submitted} submitted tasks.\n"
-            f"The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"
         )
         print(msg)
