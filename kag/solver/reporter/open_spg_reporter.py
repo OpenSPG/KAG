@@ -56,20 +56,28 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
     nodes = {}
     edges = []
     for spo in spo_retrieved:
+        def get_label(type_en, type_zh):
+            type_name = type_zh if KAG_PROJECT_CONF.language == "zh" else type_en
+            if not type_name:
+                type_name = type_en
+            if not type_name:
+                type_name = "Entity"
+            return type_name
 
         def _get_node(entity: EntityData):
-            node = DataNode(
+            return DataNode(
                 id=entity.to_show_id(KAG_PROJECT_CONF.language),
                 name=entity.get_short_name(),
-                label=entity.type_zh
-                if KAG_PROJECT_CONF.language == "zh"
-                else entity.type,
+                label=get_label(entity.type, entity.type_zh),
                 properties=entity.prop.get_properties_map() if entity.prop else {},
             )
-            return node
 
         start_node = _get_node(spo.from_entity)
+        if start_node.label is None:
+            print(spo)
         end_node = _get_node(spo.end_entity)
+        if end_node.label is None:
+            print(spo)
         if start_node.id not in nodes:
             nodes[start_node.id] = start_node
         if end_node.id not in nodes:
@@ -82,8 +90,10 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
             to=end_node.id,
             to_type=end_node.label,
             properties=spo.prop.get_properties_map() if spo.prop else {},
-            label=spo.type_zh if KAG_PROJECT_CONF.language == "zh" else spo.type,
+            label=get_label(spo.type, spo.type_zh),
         )
+        if data_spo.label is None:
+            print(spo)
         edges.append(data_spo)
     sub_graph = SubGraph(
         class_name=graph_id, result_nodes=list(nodes.values()), result_edges=edges
@@ -306,19 +316,14 @@ class OpenSPGReporter(ReporterABC):
                     else:
                         report_to_spg_data["content"]["reference"].append(ref_doc_set)
 
-                    # if content.graph_data:
-                    #     graph_list.append(_convert_kg_graph_to_show_graph(f"graph_{content.task_id}", content.graph_data))
-
                 else:
                     logger.warning(f"Unknown reference type {type(content)}")
                     continue
-            elif segment_name == "generator_reference":
+            elif segment_name == "generator_reference_all":
                 ref_doc_set = generate_ref_doc_set(
                     report_data["tag_name"], "chunk", content
                 )
                 report_to_spg_data["content"]["reference"] = [ref_doc_set]
-            elif segment_name == "generator_reference_graphs":
-                continue
             status = report_data["status"]
             processed_report_record.append(report_id)
             if status != "FINISH":

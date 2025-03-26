@@ -33,14 +33,19 @@ class ReporterABC(Registrable):
     async def do_cycle_report(self):
         try:
             while self._running:
-                # 定期获取数据
-                await asyncio.sleep(1)
+                try:
+                    # 定期获取数据
+                    await asyncio.sleep(1)
 
-                self.do_report()
+                    self.do_report()
+                except asyncio.CancelledError:
+                    logging.info("reporter is cancel")
+                except Exception as e:
+                    logging.error(f"reporter is error: {e}", exc_info=True)
             self.do_report()
         except asyncio.CancelledError:
             logging.info("reporter is cancel")
         except Exception as e:
-            logging.error(f"reporter is error: {e}")
+            logging.error(f"reporter is error: {e}", exc_info=True)
         finally:
             self._running = False
