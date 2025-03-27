@@ -22,13 +22,13 @@ class EvalQa:
         self.solver_pipeline_name = solver_pipeline_name
         self.task_name = task_name
 
-    async def qa(self, query):
+    async def qa(self, query, gold):
         reporter: TraceLogReporter = TraceLogReporter()
 
         pipeline = SolverPipelineABC.from_config(
             KAG_CONFIG.all_config[self.solver_pipeline_name]
         )
-        answer = await pipeline.ainvoke(query, reporter=reporter)
+        answer = await pipeline.ainvoke(query, reporter=reporter, gold=gold)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
 
@@ -44,7 +44,7 @@ class EvalQa:
                 print(f"found existing answer to question: {question}")
                 prediction, trace_log = ckpt.read_from_ckpt(question)
             else:
-                prediction, trace_log = await self.qa(query=question)
+                prediction, trace_log = await self.qa(query=question, gold=gold)
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
             metrics = self.do_metrics_eval([prediction], [gold])

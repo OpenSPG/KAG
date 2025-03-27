@@ -149,6 +149,6 @@ class KAGStaticPipeline(SolverPipelineABC):
             print(f"{red}Failed to answer quesion: {query}\nTasks:{task_info}\n{reset}")
             return "UNKNOWN"
         print(
-            f"{green}Input Query: {query}\n\nTasks:\n\n{task_info}\n\nFinal Answer: {answer}\nGoldAnswer: {kwargs.get('gold')}{reset}"
+            f"{green}Input Query: {query}\n\nTasks:\n\n{task_info}\n\nFinal Answer: {answer}\nGold Answer: {kwargs.get('gold')}{reset}"
         )
         return answer
