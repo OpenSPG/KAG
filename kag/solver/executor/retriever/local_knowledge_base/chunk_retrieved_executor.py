@@ -70,7 +70,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
         # Log the end of the retrieval process and calculate the duration
         end_time = time.time()  # End time logging
         logger.info(f"Finished retrieval process for query: {task_query}. Duration: {end_time - start_time} bytes")
-
+        kag_response.summary = "retrieved by local knowledgebase"
         store_results(task, kag_response)
 
     def report_content(self, reporter, segment, tag_id, content, status):
