@@ -113,7 +113,7 @@ class KAGIterativePipeline(SolverPipelineABC):
         context: Context = Context()
         while num_iteration < self.max_iteration:
             num_iteration += 1
-            task, executor = await self.planning(query, context, **kwargs)
+            task, executor = await self.planning(query, context, num_iteration=num_iteration, **kwargs)
             if executor == self.finish_executor:
                 break
             context.append_task(task)

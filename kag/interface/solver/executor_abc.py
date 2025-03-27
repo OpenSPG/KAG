@@ -179,3 +179,9 @@ class ExecutorABC(Registrable):
         else:
             func = getattr(self, func_name)
         return self.parse_function_schema(func)
+
+    def report_content(self, reporter, segment, tag_id, content, status):
+        if reporter:
+            reporter.add_report_line(
+                segment, f"{self.schema().get('name')}\n{tag_id}", content, status
+            )

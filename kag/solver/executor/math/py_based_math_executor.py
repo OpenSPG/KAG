@@ -12,6 +12,8 @@
 
 import os
 import asyncio
+from typing import Optional
+
 import aiofiles
 import subprocess
 import sys
@@ -19,19 +21,21 @@ import tempfile
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import LLMClient, ExecutorABC, Task, Context
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
 
 @ExecutorABC.register("py_code_based_math_executor")
 class PyBasedMathExecutor(ExecutorABC):
     def __init__(self, llm: LLMClient, tries: int = 3, **kwargs):
+        super().__init__(**kwargs)
         self.llm = llm
         self.tries = tries
         self.expression_builder = init_prompt_with_fallback(
             "expression_builder", KAG_PROJECT_CONF.biz_scene
         )
 
-    async def agen_py_code(self, query: str, context: str, error: str):
+    async def agen_py_code(self, query: str, context: str, error: str, **kwargs):
         python_code = await self.llm.ainvoke(
             {
                 "question": query,
@@ -40,11 +44,11 @@ class PyBasedMathExecutor(ExecutorABC):
             },
             self.expression_builder,
             with_json_parse=False,
+            **kwargs
         )
-        print(f"python_code = {python_code}")
         return python_code
 
-    async def arun_py_code(self, python_code: str):
+    async def arun_py_code(self, python_code: str, **kwargs):
         temp_file = None
         stdout = None
         stderr = None
@@ -64,6 +68,8 @@ class PyBasedMathExecutor(ExecutorABC):
             )
 
             stdout, stderr = await proc.communicate()
+            stdout = stdout.decode("utf8")
+            stderr = stderr.decode("utf8")
         finally:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
@@ -72,16 +78,22 @@ class PyBasedMathExecutor(ExecutorABC):
             return None, stderr, python_code
         return stdout, None, python_code
 
-    async def arun_once(self, query: str, context: str, error: str):
-        python_code = await self.agen_py_code(query, context, error)
+    async def arun_once(self, query: str, context: str, error: str, **kwargs):
+        python_code = await self.agen_py_code(query, context, error, **kwargs)
         if not python_code:
             raise RuntimeError("python code generate failed")
 
-        code_result = await self.arun_py_code(python_code)
+        code_result = await self.arun_py_code(python_code, **kwargs)
         return code_result
 
     async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+
         task_query = task.arguments["query"]
+        self.report_content(
+            reporter, "thinker", f"{task_query}_begin_math_executor", "", "FINISH"
+        )
+
         parent_results = []
         for pt in task.parents:
             parent_results.append(str(pt.result))
@@ -89,13 +101,27 @@ class PyBasedMathExecutor(ExecutorABC):
         parent_results = "\n".join(parent_results)
         tries = self.tries
         error = None
+
+
         while tries > 0:
             tries -= 1
-            rst, error, code = await self.arun_once(task_query, parent_results, error)
+            rst, error, code = await self.arun_once(task_query, parent_results, error, segment_name="thinker", tag_name=f"{task_query}_code_generator", **kwargs)
             if rst is not None:
-                return rst
+                result = f"""
+                    ```{code}```
+                    rst:{rst}
+                    """
+                task.update_result(result)
+                self.report_content(
+                    reporter, "thinker", f"{task_query}_end_math_executor", f"```{rst}```", "FINISH"
+                )
+                return result
             error = f"code:\n{code}\nerror:\n{error}"
-        return "I don't know"
+        task.update_result(error)
+
+        self.report_content(
+            reporter, "thinker", f"{task_query}_end_math_executor", task.result, "FINISH"
+        )
 
     def gen_py_code(self, query: str, context: str, error: str):
         python_code = self.llm.invoke(
@@ -150,18 +176,22 @@ class PyBasedMathExecutor(ExecutorABC):
             tries -= 1
             rst, error, code = self.run_once(task_query, parent_results, error)
             if rst is not None:
-                return rst
+                result = f"""
+                ```{code}```
+                rst:{rst}
+                """
+                task.update_result(result)
             error = f"code:\n{code}\nerror:\n{error}"
-        return "I don't know"
+        task.update_result(error)
 
     def schema(self):
         return {
             "name": "Math",
-            "description": "Used to address users' math or computational problems. The user's question is first transformed into executable Python code, which is then executed to return the result.",
+            "description": "Used to address users' math or computational problems.",
             "parameters": {
                 "query": {
                     "type": "string",
-                    "description": "User input math or computational problem and will be transformed into Python code for execution.",
+                    "description": "The computable problem derived from the user's input question, retaining the essential information for the calculation target and dependencies.",
                     "optional": False,
                 }
             },
