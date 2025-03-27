@@ -91,7 +91,7 @@ class PyBasedMathExecutor(ExecutorABC):
 
         task_query = task.arguments["query"]
         self.report_content(
-            reporter, "thinker", f"{task_query}_begin_math_executor", "", "FINISH"
+            reporter, "thinker", f"{task_query}_begin_math_executor_{task.id}", task_query, "FINISH"
         )
 
         parent_results = []
@@ -109,18 +109,18 @@ class PyBasedMathExecutor(ExecutorABC):
             if rst is not None:
                 result = f"""
                     ```{code}```
-                    rst:{rst}
+                    code result:{rst}
                     """
                 task.update_result(result)
                 self.report_content(
-                    reporter, "thinker", f"{task_query}_end_math_executor", f"```{rst}```", "FINISH"
+                    reporter, "thinker", f"{task_query}_end_math_executor_{task.id}", rst, "FINISH"
                 )
                 return result
             error = f"code:\n{code}\nerror:\n{error}"
         task.update_result(error)
 
         self.report_content(
-            reporter, "thinker", f"{task_query}_end_math_executor", task.result, "FINISH"
+            reporter, "thinker", f"{task_query}_end_math_executor_{task.id}", task.result, "FINISH"
         )
 
     def gen_py_code(self, query: str, context: str, error: str):
