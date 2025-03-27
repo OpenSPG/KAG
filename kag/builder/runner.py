@@ -199,7 +199,6 @@ class BuilderChainRunner(Registrable):
 
         async def process(data, data_id, data_abstract):
             try:
-                print(f"process {data_id}")
                 result = await self.chain.ainvoke(data)
                 if result is not None:
                     info = {}
