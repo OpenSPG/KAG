@@ -133,7 +133,7 @@ class KAGRetrievedResponse(ExecutorResponse):
         }
 
 
-def _initialize_response(task) -> KAGRetrievedResponse:
+def initialize_response(task) -> KAGRetrievedResponse:
     """Create and initialize response container
 
     Args:
@@ -146,6 +146,18 @@ def _initialize_response(task) -> KAGRetrievedResponse:
     response.retrieved_task = str(task)
     response.task_id = task.id
     return response
+
+
+def store_results(task, response: KAGRetrievedResponse):
+    """Store final results in task context
+
+    Args:
+        task: Task configuration object
+        response (KAGRetrievedResponse): Processed results
+    """
+    task.update_memory("response", response)
+    task.update_memory("chunks", response.chunk_datas)
+    task.update_result(response)
 
 
 @ExecutorABC.register("kag_hybrid_executor")
@@ -232,7 +244,7 @@ class KagHybridExecutor(ExecutorABC):
         # 1. Initialize response container
         logger.info(f"Initializing response container for task: {task_query}")
         start_time = time.time()  # 添加开始时间记录
-        kag_response = _initialize_response(task)
+        kag_response = initialize_response(task)
 
         try:
 
@@ -303,7 +315,7 @@ class KagHybridExecutor(ExecutorABC):
             # 8. Final storage
             logger.info(f"Storing results for task: {task_query}")
             start_time = time.time()  # 添加开始时间记录
-            self._store_results(task, kag_response)
+            store_results(task, kag_response)
             logger.info(
                 f"Results stored in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
@@ -315,7 +327,7 @@ class KagHybridExecutor(ExecutorABC):
             logger.warning(
                 f"{self.schema().get('name')} executed failed {e}", exc_info=True
             )
-            self._store_results(task, kag_response)
+            store_results(task, kag_response)
             self.report_content(
                 reporter,
                 "thinker",
@@ -344,17 +356,6 @@ class KagHybridExecutor(ExecutorABC):
                 continue
             context.append(dep_task.result)
         return self.lf_rewriter.rewrite(query=query, context=context, reporter=reporter)
-
-    def _store_results(self, task, response: KAGRetrievedResponse):
-        """Store final results in task context
-
-        Args:
-            task: Task configuration object
-            response (KAGRetrievedResponse): Processed results
-        """
-        task.update_memory("response", response)
-        task.update_memory("chunks", response.chunk_datas)
-        task.update_result(response)
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling
