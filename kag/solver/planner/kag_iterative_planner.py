@@ -65,6 +65,7 @@ class KAGIterativePlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
+        num_iteration = kwargs.get("num_iteration", 0)
         return self.llm.invoke(
             {
                 "query": query,
@@ -73,7 +74,7 @@ class KAGIterativePlanner(PlannerABC):
             },
             self.plan_prompt,
             segment_name="thinker",
-            tag_name="Iterative planning",
+            tag_name=f"Iterative planning {num_iteration}",
             **kwargs
         )
 
@@ -89,6 +90,7 @@ class KAGIterativePlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
+        num_iteration = kwargs.get("num_iteration", 0)
         return await self.llm.ainvoke(
             {
                 "query": query,
@@ -97,6 +99,6 @@ class KAGIterativePlanner(PlannerABC):
             },
             self.plan_prompt,
             segment_name="thinker",
-            tag_name="Iterative planning",
+            tag_name=f"Iterative planning {num_iteration}",
             **kwargs
         )

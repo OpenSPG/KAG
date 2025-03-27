@@ -13,7 +13,8 @@ class ReferGeneratorPrompt(PromptABC):
         "\n输出答案，如果答案中存在引用信息，则需要reference的id字段，如果不是检索结果，则不需要标记引用"
         "\n输出时，不需要重复输出参考文献"
         "\n给定的引用信息：'$content'\n问题：'$query'"
-        """示例1：
+        """
+示例1：
 给定的引用信息：'
 reference：
 [
