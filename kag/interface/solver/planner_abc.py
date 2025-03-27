@@ -144,7 +144,7 @@ class Task(Registrable):
 
         task_map = {}
         for task_order, task_info in task_dag.items():
-            task = Task(task_info["executor"], task_info["arguments"], id=task_order)
+            task = Task(task_info["executor"], task_info["arguments"], id=task_order, thought=task_info.get('thought', ''))
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]

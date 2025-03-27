@@ -64,13 +64,21 @@ class LLMGenerator(GeneratorABC):
                     }
                 )
             else:
-                results.append(
-                    {
-                        "task": task.arguments,
-                        "thought": task.thought,
-                        "result": task.result,
-                    }
-                )
+                if task.result:
+                    results.append(
+                        {
+                            "task": task.arguments,
+                            "thought": task.thought,
+                            "result": task.result,
+                        }
+                    )
+                else:
+                    results.append(
+                        {
+                            "task": task.arguments,
+                            "thought": task.thought,
+                        }
+                    )
         rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
         total_reference_source = graph_data + rerank_chunks
         refer_data = to_reference_list(

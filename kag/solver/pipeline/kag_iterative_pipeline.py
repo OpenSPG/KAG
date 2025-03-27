@@ -114,9 +114,9 @@ class KAGIterativePipeline(SolverPipelineABC):
         while num_iteration < self.max_iteration:
             num_iteration += 1
             task, executor = await self.planning(query, context, num_iteration=num_iteration, **kwargs)
+            context.append_task(task)
             if executor == self.finish_executor:
                 break
-            context.append_task(task)
             await executor.ainvoke(query, task, context, **kwargs)
         # force answer
         answer = await self.generator.ainvoke(query, context, **kwargs)
