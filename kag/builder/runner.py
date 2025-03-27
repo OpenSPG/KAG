@@ -362,7 +362,11 @@ class BuilderChainStreamRunner(BuilderChainRunner):
                             submitted_id, item_id, item_abstract = futures_map.pop(fut)
 
                             # 处理结果
-                            result = fut.result()
+                            try:
+                                result = fut.result()
+                            except Exception:
+                                traceback.print_exc()
+                                continue
 
                             if result is not None:
                                 item, item_id, item_abstract, chain_output = result
