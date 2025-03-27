@@ -18,9 +18,9 @@ def extra_relation_candis_types(n: GetSPONode):
     for p_type in p_type_set:
         if p_type.std_entity_type is not None:
             p_label_set.append(p_type.std_entity_type)
-            p_label_str_set.append(f'"{p_type.std_entity_type}"')
+            p_label_str_set.append(f'`{p_type.std_entity_type}`')
         else:
-            p_label_str_set.append(f'"{p_type.un_std_entity_type}"')
+            p_label_str_set.append(f'`{p_type.un_std_entity_type}`')
     return p_label_str_set
 
 
