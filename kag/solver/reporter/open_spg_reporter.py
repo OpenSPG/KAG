@@ -73,11 +73,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
             )
 
         start_node = _get_node(spo.from_entity)
-        if start_node.label is None:
-            print(spo)
         end_node = _get_node(spo.end_entity)
-        if end_node.label is None:
-            print(spo)
         if start_node.id not in nodes:
             nodes[start_node.id] = start_node
         if end_node.id not in nodes:
@@ -92,8 +88,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
             properties=spo.prop.get_properties_map() if spo.prop else {},
             label=get_label(spo.type, spo.type_zh),
         )
-        if data_spo.label is None:
-            print(spo)
+
         edges.append(data_spo)
     sub_graph = SubGraph(
         class_name=graph_id, result_nodes=list(nodes.values()), result_edges=edges
