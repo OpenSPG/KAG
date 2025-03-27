@@ -44,26 +44,15 @@ class DefaultStaticPlanningPrompt(PromptABC):
                 },
                 {
                     "name": "Math",
-                    "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
+                    "description": "Used to address users' math or computational problems.",
                     "parameters": {
                         "query": {
                             "type": "string",
-                            "description": "The user's input expression needs to conform to Python syntax.",
+                            "description": "The computable problem derived from the user's input question, retaining the essential information for the calculation target and dependencies.",
                             "optional": False,
                         }
                     },
-                },
-                {
-                    "name": "Code",
-                    "description": "Write Python code based on the user's query, execute it to solve the problem, and obtain the answer.",
-                    "parameters": {
-                        "query": {
-                            "type": "string",
-                            "description": "The user's input query needs to be guaranteed to be interpretable as Python code for solving.",
-                            "optional": False,
-                        }
-                    },
-                },
+                }
             ],
             "output": {
                 "0": {
@@ -115,26 +104,15 @@ Note:
                 },
                 {
                     "name": "Math",
-                    "description": "Given a mathematical expression that conforms to Python syntax, perform the mathematical calculation.",
+                    "description": "Used to address users' math or computational problems.",
                     "parameters": {
                         "query": {
                             "type": "string",
-                            "description": "The user's input expression needs to conform to Python syntax.",
+                            "description": "The computable problem derived from the user's input question, retaining the essential information for the calculation target and dependencies.",
                             "optional": False,
                         }
                     },
-                },
-                {
-                    "name": "Code",
-                    "description": "Write Python code based on the user's query, execute it to solve the problem, and obtain the answer.",
-                    "parameters": {
-                        "query": {
-                            "type": "string",
-                            "description": "The user's input query needs to be guaranteed to be interpretable as Python code for solving.",
-                            "optional": False,
-                        }
-                    },
-                },
+                }
             ],
             "output": {
                 "0": {
