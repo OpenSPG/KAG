@@ -11,6 +11,7 @@ from kag.solver.prompt.static_planning_prompt import (
 from kag.solver.prompt.query_rewrite_prompt import QueryRewritePrompt
 
 
+from kag.solver.executor.math.py_based_math_executor import PyBasedMathExecutor
 from kag.solver.executor.finish_executor import FinishExecutor
 from kag.solver.executor.mock_executors import (
     MockRetrieverExecutor,
@@ -28,6 +29,7 @@ __all__ = [
     "DefaultStaticPlanningPrompt",
     "ReferGeneratorPrompt",
     "QueryRewritePrompt",
+    "PyBasedMathExecutor",
     "FinishExecutor",
     "MockRetrieverExecutor",
     "MockMathExecutor",
