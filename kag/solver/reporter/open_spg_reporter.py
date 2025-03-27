@@ -119,8 +119,8 @@ class OpenSPGReporter(ReporterABC):
         self.report_record = []
         self.tag_mapping = {
             "Rewrite query": {
-                "en": "## Rewriting question using LLM\n--------- \n {content}",
-                "zh": "## 正在使用LLM重写问题\n--------- \n {content}",
+                "en": "## Rethinking question using LLM\n--------- \n {content}",
+                "zh": "## 正在使用LLM重思考问题\n--------- \n {content}",
             },
             "Final Answer": {
                 "en": "## Generating final answer\n--------- \n {content}",
@@ -200,6 +200,18 @@ class OpenSPGReporter(ReporterABC):
 ```
                 """,
             },
+            "begin_math_executor": {
+                "en": "### Starting math executor\n--------- \n {content}",
+                "zh": "### 正在执行计算\n--------- \n {content}",
+            },
+            "end_math_executor": {
+                "en": "### Math executor completed\n {content}",
+                "zh": "### 计算结束\n {content}",
+            },
+            "code_generator": {
+                "en": "#### Generating code\n--------- \n {content}",
+                "zh": "#### 正在生成代码\n--------- \n {content}",
+            }
         }
 
         if self.host:

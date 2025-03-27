@@ -96,5 +96,6 @@ class LLMGenerator(GeneratorABC):
             self.generated_prompt,
             segment_name="answer",
             tag_name="Final Answer",
+            with_json_parse=False,
             **kwargs
         )
