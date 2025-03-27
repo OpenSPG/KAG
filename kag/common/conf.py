@@ -116,6 +116,8 @@ def load_config(prod: bool = False, config_file: str = None):
         host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
         project_client = ProjectClient(host_addr=host_addr, project_id=project_id)
         project = project_client.get_by_id(project_id)
+        if not project:
+            return {}
         config = json.loads(project.config)
         if "project" not in config:
             config["project"] = {
