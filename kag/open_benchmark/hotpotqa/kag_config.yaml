@@ -111,14 +111,10 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
   flow: |
     kg_cs->kg_fr->rc
 
-mock_math_executor: &mock_math_executor_conf
-  type: mock_math_executor
-  llm: *openie_llm
-
-mock_code_executor: &mock_code_executor_conf
-  type: mock_code_executor
-  llm: *openie_llm
-
+reasoner: &reasoner_conf
+  type: evidence_based_reasoner
+  llm: *chat_llm
+  retriever: *kag_hybrid_executor_conf
 
 kag_solver_pipeline:
   type: kag_static_pipeline
@@ -130,12 +126,9 @@ kag_solver_pipeline:
     rewrite_prompt:
       type: default_query_rewrite
   executors:
-  - *kag_hybrid_executor_conf
-  - *mock_math_executor_conf
-  - *mock_code_executor_conf
+    - *reasoner_conf
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: resp_simple
 #------------kag-solver configuration end----------------#
+
