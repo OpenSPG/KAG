@@ -42,11 +42,6 @@ class ChunkRetrievedExecutor(ExecutorABC):
             "FINISH",
         )
         retrieved_result = self.retriever.invoke(query=task_query, top_k=self.top_k)
-        """item["node"]["id"]: {
-                    "score": item["score"],
-                    "content": item["node"]["content"],
-                    "name": item["node"]["name"],
-                }"""
 
         # Log the retrieved results
         logger.debug(f"Retrieved results: {retrieved_result}")
@@ -54,8 +49,8 @@ class ChunkRetrievedExecutor(ExecutorABC):
         chunk_datas = []
         for k, v in retrieved_result.items():
             chunk_datas.append(ChunkData(
-                content=v["node"]["content"],
-                title=v["node"]["name"],
+                content=v["content"],
+                title=v["name"],
                 chunk_id=k,
                 score=v["score"]
             ))

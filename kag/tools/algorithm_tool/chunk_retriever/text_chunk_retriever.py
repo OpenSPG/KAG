@@ -15,7 +15,9 @@ logger = logging.getLogger()
 class TextChunkRetriever(ToolABC):
     def __init__(self, search_api: SearchApiABC = None):
         super().__init__()
-        self.search_api = search_api
+        self.search_api = search_api or SearchApiABC.from_config(
+            {"type": "openspg_search_api"}
+        )
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
