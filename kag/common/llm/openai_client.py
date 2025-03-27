@@ -155,31 +155,6 @@ class OpenAIClient(LLMClient):
             )
         return rsp
 
-    @retry(stop=stop_after_attempt(3))
-    def call_with_json_parse(self, prompt, **kwargs):
-        """
-        Calls the model and attempts to parse the response into JSON format.
-
-        Parameters:
-            prompt (str): The prompt provided to the model.
-
-        Returns:
-            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
-        """
-        # Call the model and attempt to parse the response into JSON format
-        rsp = self(prompt, **kwargs)
-        _end = rsp.rfind("```")
-        _start = rsp.find("```json")
-        if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json") : _end].strip()
-        else:
-            json_str = rsp
-        try:
-            json_result = json.loads(json_str)
-        except:
-            return rsp
-        return json_result
-
     async def acall(self, prompt: str, image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
