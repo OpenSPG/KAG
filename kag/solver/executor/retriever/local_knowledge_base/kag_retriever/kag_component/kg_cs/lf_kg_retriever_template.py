@@ -2,8 +2,8 @@ from typing import List, Optional
 
 from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.logic.core_modules.common.one_hop_graph import KgGraph, EntityData
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
 
@@ -78,6 +78,11 @@ class KgRetrieverTemplate:
                 logic_node.get_fl_node_result().spo = select_rel
                 if select_rel and kwargs.get("is_exact_match", False):
                     logic_node.get_fl_node_result().summary = str(select_rel)
+                    # updated alias with spo
+                    kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
+                    kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
+                    kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
+
 
         return kg_graph
 

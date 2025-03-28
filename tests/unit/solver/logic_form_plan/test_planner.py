@@ -3,7 +3,7 @@ import unittest
 
 from kag.common.env import init_kag_config
 from kag.solver.plan.default_lf_planner import DefaultLFPlanner
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
+from kag.common.text_sim_by_vector import TextSimilarity
 
 configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), "kag_config.cfg")
 init_kag_config(configFilePath)

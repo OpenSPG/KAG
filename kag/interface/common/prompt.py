@@ -60,6 +60,9 @@ class PromptABC(Registrable, ABC):
             except:
                 pass
 
+    def is_json_format(self):
+        return True
+
     @property
     def project_id(self):
         return KAG_PROJECT_CONF.project_id

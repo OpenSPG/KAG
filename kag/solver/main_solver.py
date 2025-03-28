@@ -14,7 +14,6 @@ import copy
 import logging
 
 from kag.interface import SolverPipelineABC
-from kag.tools.info_processor import ReporterIntermediateProcessTool
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
@@ -140,15 +139,15 @@ if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
     init_kag_config(
-        "4000003", "http://127.0.0.1:8887"
+        "4000003", "http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
     )
     res = SolverMain().invoke(
         4000003,
-        5600004,
-        "随机生成两个100000到200000之间的素数，计算他们的乘积",
+        5900006,
+        "随机生成两个100000到200000之间的素数，计算他们的加法",
         "3500005",
         True,
-        host_addr="http://127.0.0.1:8887",
+        host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",
     )
     print("*" * 80)
     print("The Answer is: ", res)

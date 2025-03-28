@@ -1,6 +1,6 @@
 from typing import List
 
-from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData
+from kag.interface.solver.model.one_hop_graph import RetrievedData
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
     FlowComponent,
 )

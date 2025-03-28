@@ -7,8 +7,8 @@ from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.interface import PromptABC, LLMClient
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.logic.core_modules.common.one_hop_graph import ChunkData, KgGraph
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.interface.solver.model.one_hop_graph import ChunkData, KgGraph
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.solver.utils import init_prompt_with_fallback
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
     FlowComponent,
@@ -257,6 +257,11 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 )
                 logger.info(f"`{query}` subq: {logic_node.sub_query} answer:{summary}")
                 logic_node.get_fl_node_result().summary = summary
+                if summary and "i don't know" not in summary.lower():
+                    graph_data.add_answered_alias(logic_node.s.alias_name.alias_name, summary)
+                    graph_data.add_answered_alias(logic_node.p.alias_name.alias_name, summary)
+                    graph_data.add_answered_alias(logic_node.o.alias_name.alias_name, summary)
+
             except Exception as e:
                 logger.error(f"`{query}` subq: {logic_node.sub_query} error:{e}")
             logic_node.get_fl_node_result().sub_question = rewrite_queries

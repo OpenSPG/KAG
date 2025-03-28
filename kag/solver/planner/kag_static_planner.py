@@ -90,6 +90,7 @@ class KAGStaticPlanner(PlannerABC):
             self.rewrite_prompt,
             segment_name="thinker",
             tag_name="Rewrite query",
+            with_json_parse=self.rewrite_prompt.is_json_format(),
             **kwargs,
         )
         # print(f"query rewrite context = {context}")
@@ -107,12 +108,18 @@ class KAGStaticPlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
+        num_iteration = kwargs.get("num_iteration", 0)
+
         return self.llm.invoke(
             {
                 "query": query,
                 "executors": kwargs.get("executors", []),
             },
             self.plan_prompt,
+            with_json_parse=self.plan_prompt.is_json_format(),
+            segment_name="thinker",
+            tag_name=f"Static planning {num_iteration}",
+            **kwargs,
         )
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:
@@ -126,13 +133,15 @@ class KAGStaticPlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
+        num_iteration = kwargs.get("num_iteration", 0)
         return await self.llm.ainvoke(
             {
                 "query": query,
                 "executors": kwargs.get("executors", []),
             },
             self.plan_prompt,
+            with_json_parse=self.plan_prompt.is_json_format(),
             segment_name="thinker",
-            tag_name="Static planning",
+            tag_name=f"Static planning {num_iteration}",
             **kwargs,
         )

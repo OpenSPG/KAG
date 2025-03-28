@@ -1,3 +1,4 @@
+from kag.solver.executor.deduce.kag_output_executor import KagOutputExecutor
 from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor import ChunkRetrievedExecutor
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import KagHybridExecutor
 from kag.solver.pipeline.kag_iterative_pipeline import KAGIterativePipeline
@@ -36,6 +37,7 @@ __all__ = [
     "MockRetrieverExecutor",
     "KagHybridExecutor",
     "ChunkRetrievedExecutor",
+    "KagOutputExecutor",
     "MockMathExecutor",
     "MockGenerator",
     "LLMGenerator",

@@ -4,16 +4,16 @@ from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import VectorizeModelABC
-from kag.solver.logic.core_modules.common.one_hop_graph import (
+from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     RelationData,
     OneHopGraphData,
     parse_entity_relation,
 )
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.interface.solver.model.schema_utils import SchemaUtils
+from kag.common.text_sim_by_vector import TextSimilarity
+from kag.common.config import LogicFormConfiguration
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.tools.graph_api.graph_api_abc import (
     GraphApiABC,
 )

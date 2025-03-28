@@ -18,6 +18,7 @@ from docstring_parser import parse
 from typing import Dict, Any
 
 from kag.common.registry import Registrable
+from kag.interface import Context
 
 
 class ExecutorResponse(Registrable, ABC):
@@ -72,7 +73,7 @@ class ExecutorABC(Registrable):
         """
         return "Empty"
 
-    def invoke(self, query, task, context, **kwargs):
+    def invoke(self, query, task, context: Context, **kwargs):
         """Synchronously executes the given task.
 
         Args:
@@ -89,7 +90,7 @@ class ExecutorABC(Registrable):
         """
         raise NotImplementedError("invoke not implemented yet.")
 
-    async def ainvoke(self, query, task, context, **kwargs):
+    async def ainvoke(self, query, task, context: Context, **kwargs):
         """Asynchronously executes the given task (default implementation runs sync invoke in thread).
 
         Args:
