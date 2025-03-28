@@ -63,7 +63,7 @@ class KgRetrieverTemplate:
                 if reporter:
                     reporter.add_report_line(
                         "thinker",
-                        f"begin_kg_retriever_{logic_node.sub_query}",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}",
                         logic_node.sub_query,
                         "FINISH",
                     )
@@ -71,7 +71,7 @@ class KgRetrieverTemplate:
                 if reporter:
                     reporter.add_report_line(
                         "thinker",
-                        f"end_kg_retriever_{logic_node.sub_query}",
+                        f"end_sub_kag_retriever_{logic_node.sub_query}",
                         select_rel,
                         "FINISH",
                     )

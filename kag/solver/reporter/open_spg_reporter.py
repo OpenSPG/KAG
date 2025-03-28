@@ -128,25 +128,17 @@ class OpenSPGReporter(ReporterABC):
                 "en": "## Global planning\n--------- \n {content}",
                 "zh": "## 正在思考全局步骤\n--------- \n {content}",
             },
-            "begin_kg_retriever": {
+            "begin_sub_kag_retriever": {
                 "en": "#### Starting KG retriever\n--------- \n Retrieving sub-question: {content}",
                 "zh": "#### 正在执行知识图谱检索\n--------- \n 检索子问题为： {content}",
             },
-            "end_kg_retriever": {
+            "end_sub_kag_retriever": {
                 "en": "#### KG retriever completed\n {content}",
                 "zh": "#### 检索结果为\n {content}",
-            },
-            "rc_retriever_begin": {
-                "en": "#### Starting chunk retriever\n--------- \n Retrieving sub-question: {content}",
-                "zh": "#### 正在执行文档检索\n--------- \n 检索子问题为： {content}",
             },
             "rc_retriever_rewrite": {
                 "en": "#### Rewriting chunk retriever query\n--------- \n Rewritten question:\n {content}",
                 "zh": "#### 正在根据依赖问题重写检索子问题\n--------- 重写问题为：\n {content}",
-            },
-            "rc_retriever_end": {
-                "en": "#### Chunk retriever completed, retrieved {content} documents",
-                "zh": "#### 检索结束，共计检索文档 {content} 篇",
             },
             "rc_retriever_summary": {
                 "en": "#### Summarizing retrieved documents\n {content}",
