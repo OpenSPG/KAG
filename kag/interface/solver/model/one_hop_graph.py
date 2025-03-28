@@ -3,7 +3,7 @@ import logging
 import re
 
 from kag.interface.solver.base_model import Identifier
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
+from kag.interface.solver.model.schema_utils import SchemaUtils
 
 logger = logging.getLogger()
 

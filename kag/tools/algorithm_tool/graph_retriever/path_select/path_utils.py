@@ -1,11 +1,11 @@
 import logging
 from typing import List
 
-from kag.solver.logic.core_modules.common.one_hop_graph import (
+from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     OneHopGraphData,
 )
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.tools.graph_api.graph_api_abc import generate_gql_id_params, generate_label
 
 logger = logging.getLogger()

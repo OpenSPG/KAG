@@ -8,10 +8,10 @@ from typing import List, Any, Optional
 from tenacity import stop_after_attempt, retry
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
-from kag.interface import ExecutorABC, ExecutorResponse, LLMClient
+from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.logic.core_modules.common.one_hop_graph import (
+from kag.interface.solver.model.one_hop_graph import (
     ChunkData,
     RetrievedData,
     KgGraph,
@@ -228,13 +228,16 @@ class KagHybridExecutor(ExecutorABC):
         if not chunks:
             return ""
         history_qa = get_history_qa(history)
+        if len(history) == 1 and len(history_qa) == 1:
+            return history[0].get_fl_node_result().summary
         return self.generate_answer(
             question=query, docs=chunks, history_qa=history_qa, **kwargs
         )
 
-    def invoke(self, query: str, task: Any, context: dict, **kwargs):
+    def invoke(self, query: str, task: Any, context: Context, **kwargs):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         task_query = task.arguments["query"]
+        logic_node = task.arguments.get("logic_form_node", None)
         logger.info(f"{task_query} begin kag hybrid executor")
         # 1. Initialize response container
         logger.info(f"Initializing response container for task: {task_query}")
@@ -257,9 +260,12 @@ class KagHybridExecutor(ExecutorABC):
                 task_query,
                 "FINISH",
             )
-            logic_nodes = self._convert_to_logical_form(
-                task_query, task, reporter=reporter
-            )
+            if not logic_node:
+                logic_nodes = self._convert_to_logical_form(
+                    task_query, task, reporter=reporter
+                )
+            else:
+                logic_nodes = [logic_node]
             logger.info(
                 f"Query converted to logical form in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
@@ -280,6 +286,8 @@ class KagHybridExecutor(ExecutorABC):
             start_time = time.time()  # 添加开始时间记录
             graph_data, retrieved_datas = flow.execute(reporter=reporter)
             kag_response.graph_data = graph_data
+            if graph_data:
+                context.variables_graph.merge_kg_graph(graph_data)
             kag_response.chunk_datas = retrieved_datas
             logger.info(
                 f"KAGFlow executed in {time.time() - start_time:.2f} seconds for task: {task_query}"

@@ -1,8 +1,8 @@
 from typing import List
 
 from kag.interface import ToolABC
-from kag.solver.logic.core_modules.common.one_hop_graph import EntityData, RelationData
-from kag.solver.logic.core_modules.parser.logic_node_parser import GetSPONode
+from kag.interface.solver.model.one_hop_graph import EntityData, RelationData
+from kag.common.parser.logic_node_parser import GetSPONode
 
 
 @ToolABC.register("path_select")

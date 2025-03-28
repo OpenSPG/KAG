@@ -7,16 +7,16 @@ from knext.graph.client import GraphClient
 from knext.reasoner.rest.models.reason_task import ReasonTask
 
 from kag.interface.solver.base_model import SPOEntity, TypeInfo
-from kag.solver.logic.core_modules.common.one_hop_graph import (
+from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     OneHopGraphData,
     Prop,
     RelationData,
     copy_one_hop_graph_data,
 )
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.common.utils import generate_biz_id_with_type
+from kag.common.config import LogicFormConfiguration
+from kag.interface.solver.model.schema_utils import SchemaUtils
+from kag.common.utils import generate_biz_id_with_type
 from kag.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.tools.graph_api.model.table_model import TableData
 from knext.reasoner.client import ReasonerClient

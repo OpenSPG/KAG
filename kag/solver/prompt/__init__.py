@@ -16,6 +16,7 @@ from kag.solver.prompt.deduce_extractor import DeduceExtractor
 from kag.solver.prompt.deduce_judge import DeduceJudge
 from kag.solver.prompt.deduce_multi_choice import DeduceMutiChoice
 from kag.solver.prompt.expression_builder import ExpressionBuildr
+from kag.solver.prompt.lf_static_planning_prompt import RetrieverLFStaticPlanningPrompt
 from kag.solver.prompt.logic_form_plan import LogicFormPlanPrompt
 from kag.solver.prompt.question_ner import QuestionNER
 from kag.solver.prompt.resp_extractor import RespExtractor
@@ -73,4 +74,5 @@ __all__ = [
     "DefaultIterativePlanningPrompt",
     "SubQuestionSummary",
     "SummaryQuestionWithOutSPO",
+    "RetrieverLFStaticPlanningPrompt"
 ]

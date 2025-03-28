@@ -3,8 +3,8 @@ from typing import List
 
 from kag.common.conf import KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC
-from kag.solver.logic.core_modules.common.one_hop_graph import ChunkData
-from kag.solver.logic.core_modules.common.text_sim_by_vector import TextSimilarity, cosine_similarity
+from kag.interface.solver.model.one_hop_graph import ChunkData
+from kag.common.text_sim_by_vector import TextSimilarity, cosine_similarity
 
 
 def _flat_passages_set(passages_set: List[List[ChunkData]]):
