@@ -630,8 +630,6 @@ class KgGraph(RetrievedData):
             self.answered_alias[alias] = [value]
 
     def get_answered_alias(self, alias):
-        if alias not in self.alias_set:
-            return None
         if alias in self.answered_alias.keys():
             return self.answered_alias[alias]
         else:
