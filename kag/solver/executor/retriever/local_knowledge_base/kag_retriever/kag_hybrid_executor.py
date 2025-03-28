@@ -7,7 +7,8 @@ from typing import List, Any, Optional
 
 from tenacity import stop_after_attempt, retry
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.config import get_default_chat_llm_config
 from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
@@ -178,7 +179,7 @@ class KagHybridExecutor(ExecutorABC):
             "summary_question", KAG_PROJECT_CONF.biz_scene
         )
         self.llm_module = llm_module or LLMClient.from_config(
-            KAG_CONFIG.all_config["chat_llm"]
+            get_default_chat_llm_config()
         )
 
     @property

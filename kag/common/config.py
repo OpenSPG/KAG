@@ -1,4 +1,12 @@
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+
+
+def get_default_chat_llm_config():
+    if "chat_llm" in KAG_CONFIG.all_config:
+        return KAG_CONFIG.all_config["chat_llm"]
+    if "llm" in KAG_CONFIG.all_config:
+        return KAG_CONFIG.all_config["llm"]
+    raise RuntimeError("not found chat_llm config")
 
 
 class LogicFormConfiguration:
