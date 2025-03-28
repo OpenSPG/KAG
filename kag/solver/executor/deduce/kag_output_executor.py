@@ -4,8 +4,7 @@ import logging
 
 from typing import Any
 
-
-from kag.common.conf import KAG_CONFIG
+from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetNode
 from kag.interface import ExecutorABC, LLMClient, PromptABC, Context
 
@@ -26,7 +25,7 @@ class KagOutputExecutor(ExecutorABC):
     ):
         super().__init__(**kwargs)
         self.llm_module = llm_module or LLMClient.from_config(
-            KAG_CONFIG.all_config["chat_llm"]
+            get_default_chat_llm_config()
         )
         self.summary_prompt = summary_prompt
 
