@@ -40,10 +40,11 @@ default_pipeline_template = {
         'type': 'llm_generator',
         'generated_prompt': {'type': 'default_refer_generator_prompt'}
     },
-    'type': 'kag_iterative_pipeline',
+    'type': 'kag_static_pipeline',
     'planner': {
-        'plan_prompt': {'type': 'default_thought_iterative_planning'},
-        'type': 'kag_iterative_planner',
+        'plan_prompt': {'type': 'default_lf_static_planning'},
+        'rewrite_prompt': {'type': 'default_query_rewrite'},
+        'type': 'kag_static_planner',
         'llm': '{llm}'
     }
 }
