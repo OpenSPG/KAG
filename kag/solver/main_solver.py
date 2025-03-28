@@ -139,13 +139,13 @@ if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
     init_kag_config(
-        "4000003", "http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
+        "4400002", "http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
     )
     res = SolverMain().invoke(
-        4000003,
-        5900006,
-        "随机生成两个100000到200000之间的素数，计算他们的加法",
-        "3500005",
+        4400002,
+        5900027,
+        "2+2等于几?",
+        "4300012",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",
     )
