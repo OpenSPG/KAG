@@ -4,8 +4,8 @@ from typing import Dict
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from kag.interface.solver.model.schema_utils import SchemaUtils
+from kag.common.config import LogicFormConfiguration
 from kag.tools.search_api.search_api_abc import SearchApiABC
 
 from knext.schema.client import CHUNK_TYPE

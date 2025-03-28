@@ -1,17 +1,16 @@
 import logging
 import threading
 import time
-from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.logic.core_modules.common.one_hop_graph import (
+from kag.interface.solver.model.one_hop_graph import (
     KgGraph,
     EntityData,
     RelationData,
 )
-from kag.solver.logic.core_modules.common.utils import generate_random_string
+from kag.common.utils import generate_random_string
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KAGRetrievedResponse,
 )

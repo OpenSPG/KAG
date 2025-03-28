@@ -9,8 +9,8 @@ from kag.interface.solver.base_model import (
     TypeInfo,
     LogicNode, LFNodeData,
 )
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.common.utils import extract_content_target
+from kag.interface.solver.model.schema_utils import SchemaUtils
+from kag.common.utils import extract_content_target
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class GetSPONode(LogicNode):
             raise RuntimeError(f"parse {str(spo_params)} error not found p")
         if o is None:
             raise RuntimeError(f"parse {str(spo_params)} error not found o")
-        return GetSPONode("get_spo", {"s": s, "p": p, "o": o})
+        return GetSPONode("Retriever", {"s": s, "p": p, "o": o})
 
     @staticmethod
     def parse_node_value(get_spo_node_op, value_params):
@@ -235,7 +235,7 @@ class MathNode(LogicNode):
         if content is None and target is None:
             raise RuntimeError(f"parse {input_str} error not found content/target")
         params_dict = {"alias_name": output_name, "content": content, "target": target}
-        return MathNode("math", params_dict)
+        return MathNode("Math", params_dict)
 
 
 class DeduceNode(LogicNode):
@@ -270,7 +270,7 @@ class DeduceNode(LogicNode):
                     .split(",")
                 )
             params_dict[key] = value
-        return DeduceNode("deduce", params_dict)
+        return DeduceNode("Deduce", params_dict)
 
 
 # get(alias_name)
@@ -289,7 +289,7 @@ class GetNode(LogicNode):
     def parse_node(input_str):
         input_args = input_str.split(",")
         return GetNode(
-            "get",
+            "Output",
             {
                 "alias_name": Identifier(input_args[0]),
                 "alias_name_set": [Identifier(e) for e in input_args],

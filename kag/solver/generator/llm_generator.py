@@ -58,7 +58,7 @@ class LLMGenerator(GeneratorABC):
                     continue
                 results.append(
                     {
-                        "task": task.arguments,
+                        "task": task.arguments.get("query", ""),
                         "thought": task.thought,
                         "result": task.result.summary,
                     }
@@ -67,7 +67,7 @@ class LLMGenerator(GeneratorABC):
                 if task.result:
                     results.append(
                         {
-                            "task": task.arguments,
+                            "task": task.arguments.get("query", ""),
                             "thought": task.thought,
                             "result": task.result,
                         }
@@ -75,7 +75,7 @@ class LLMGenerator(GeneratorABC):
                 else:
                     results.append(
                         {
-                            "task": task.arguments,
+                            "task": task.arguments.get("query", ""),
                             "thought": task.thought,
                         }
                     )

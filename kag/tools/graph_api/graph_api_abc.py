@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from kag.common.registry import Registrable
 from kag.interface.solver.base_model import SPOEntity, SPOBase
-from kag.solver.logic.core_modules.common.one_hop_graph import (
+from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     OneHopGraphData,
 )

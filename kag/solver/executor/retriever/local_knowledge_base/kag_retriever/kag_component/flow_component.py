@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from kag.common.registry import Registrable
-from kag.solver.logic.core_modules.common.one_hop_graph import RetrievedData
+from kag.interface.solver.model.one_hop_graph import RetrievedData
 
 
 class FlowComponent(Registrable):

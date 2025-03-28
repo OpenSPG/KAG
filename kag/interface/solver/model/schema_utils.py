@@ -8,7 +8,7 @@ from typing import List
 
 from knext.reasoner.client import ReasonerClient
 from knext.schema.model.property import Property
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
+from kag.common.config import LogicFormConfiguration
 
 
 class SchemaUtils:

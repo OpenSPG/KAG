@@ -28,9 +28,9 @@ from kag.interface.builder.external_graph_abc import (
 from kag.interface.builder.builder_chain_abc import KAGBuilderChain
 from kag.interface.builder.postprocessor_abc import PostProcessorABC
 from kag.interface.solver.base import KagBaseModule, Question
+from kag.interface.solver.context import Context
 
-
-from kag.interface.solver.pipeline_abc import Context, SolverPipelineABC
+from kag.interface.solver.pipeline_abc import SolverPipelineABC
 from kag.interface.solver.planner_abc import TaskStatus, Task, PlannerABC
 from kag.interface.solver.executor_abc import ExecutorABC, ExecutorResponse
 from kag.interface.solver.tool_abc import ToolABC

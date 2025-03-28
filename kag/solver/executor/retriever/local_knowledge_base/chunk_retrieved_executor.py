@@ -6,7 +6,7 @@ from kag.interface import ExecutorABC, ToolABC
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import KAGRetrievedResponse, \
     initialize_response, store_results
-from kag.solver.logic.core_modules.common.one_hop_graph import ChunkData
+from kag.interface.solver.model.one_hop_graph import ChunkData
 
 logger = logging.getLogger()
 

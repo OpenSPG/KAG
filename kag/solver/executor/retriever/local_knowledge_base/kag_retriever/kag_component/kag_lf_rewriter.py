@@ -6,13 +6,13 @@ from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.registry import Registrable
 from kag.interface import LLMClient, PromptABC, VectorizeModelABC
 from kag.interface.solver.base_model import LogicNode
-from kag.solver.logic.core_modules.common.schema_utils import SchemaUtils
-from kag.solver.logic.core_modules.config import LogicFormConfiguration
-from kag.solver.logic.core_modules.parser.logic_node_parser import (
+from kag.interface.solver.model.schema_utils import SchemaUtils
+from kag.common.config import LogicFormConfiguration
+from kag.common.parser.logic_node_parser import (
     GetSPONode,
     ParseLogicForm,
 )
-from kag.solver.logic.core_modules.parser.schema_std import SchemaRetrieval
+from kag.common.parser.schema_std import DefaultStdSchema
 
 
 class KAGLFRewriter(Registrable):
@@ -54,7 +54,7 @@ class KAGGetSpoLF(KAGLFRewriter):
             KAG_CONFIG.all_config["vectorize_model"]
         )
 
-        self.std_schema = SchemaRetrieval(
+        self.std_schema = DefaultStdSchema(
             vectorize_model=self.vectorize_model, llm_client=llm_client
         )
 
