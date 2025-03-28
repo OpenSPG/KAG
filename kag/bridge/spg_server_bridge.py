@@ -111,12 +111,14 @@ class SPGServerBridge:
         session_id,
         task_id,
         query,
+        args,
         func_name="invoke",
         is_report=True,
         host_addr="http://127.0.0.1:8887",
     ):
         from kag.solver.main_solver import SolverMain
-
+        if isinstance(args, str):
+            args = json.loads(args)
         return getattr(SolverMain(), func_name)(
             project_id=project_id,
             session_id=session_id,
@@ -124,6 +126,7 @@ class SPGServerBridge:
             query=query,
             is_report=is_report,
             host_addr=host_addr,
+            **args
         )
 
 
