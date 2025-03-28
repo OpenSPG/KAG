@@ -123,6 +123,7 @@ class SolverMain:
             session_id: str = "0",
             is_report=True,
             host_addr="http://127.0.0.1:8887",
+            **kwargs
     ):
         answer = None
         try:
@@ -144,8 +145,8 @@ if __name__ == "__main__":
     )
     res = SolverMain().invoke(
         4000003,
-        5900006,
-        "随机生成两个100000到200000之间的素数，计算他们的加法",
+        5900048,
+        "周润发的爸爸是做什么工作的",
         "3500005",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",

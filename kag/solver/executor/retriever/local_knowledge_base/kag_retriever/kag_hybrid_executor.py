@@ -278,6 +278,7 @@ class KagHybridExecutor(ExecutorABC):
                 nl_query=task_query,
                 lf_nodes=logic_nodes,
                 flow_str=self.flow_str,
+                graph_data=context.variables_graph
             )
             logger.info(
                 f"KAGFlow created in {time.time() - start_time:.2f} seconds for task: {task_query}"
