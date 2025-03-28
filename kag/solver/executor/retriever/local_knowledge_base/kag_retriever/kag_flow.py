@@ -35,7 +35,7 @@ def _merge_graph(input_data: List[RetrievedData]):
 
 
 class KAGFlow:
-    def __init__(self, flow_id, nl_query, lf_nodes: List[LogicNode], flow_str):
+    def __init__(self, flow_id, nl_query, lf_nodes: List[LogicNode], flow_str, graph_data):
         # Initialize the KAGFlow with natural language query, logic nodes, and flow string
         self.nl_query = nl_query
         self.lf_nodes: List[LogicNode] = lf_nodes
@@ -43,7 +43,7 @@ class KAGFlow:
         self.graph = nx.DiGraph()
         self.nodes: Dict[str, FlowComponent] = {}
         self.parse_flow()
-        self.graph_data = None
+        self.graph_data = graph_data
         self.flow_id = flow_id
 
     def _add_node(self, node_name: str):

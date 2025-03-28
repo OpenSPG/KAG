@@ -379,11 +379,13 @@ class PprChunkRetriever(ToolABC):
     def _convert_relation_datas(self, chunk_docs, matched_entities):
         relation_datas = []
         def chunk_to_Node(chunk):
-            node = EntityData(entity_id=chunk.chunk_id, name=chunk.title, node_type="Chunk", node_type_zh="Chunk")
+            chunk_type = self.schema_helper.get_label_within_prefix("Chunk")
+            chunk_type_zh = self.schema_helper.node_en_zh["Chunk"]
+            node = EntityData(entity_id=chunk.chunk_id, name=chunk.title, node_type=chunk_type, node_type_zh=chunk_type_zh)
             node.prop = Prop.from_dict(json_dict={
                 "name": chunk.title,
                 "content": chunk.content
-            }, label_name="Chunk", schema=self.schema_helper)
+            }, label_name=chunk_type, schema=self.schema_helper)
             node.score = chunk.score
             return node
         # Mock Relation Data
