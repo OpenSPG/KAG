@@ -214,7 +214,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             if reporter:
                 reporter.add_report_line(
                     "thinker",
-                    f"rc_retriever_begin_{logic_node.sub_query}",
+                    f"begin_sub_kag_retriever_{logic_node.sub_query}",
                     logic_node.sub_query,
                     "FINISH",
                 )
@@ -226,6 +226,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             )
             logger.info(f"`{query}` Rewritten queries: {rewrite_queries}")
             entities = []
+            selected_rel = []
             if graph_data is not None:
                 s_entities = graph_data.get_entity_by_alias(logic_node.s.alias_name)
                 if s_entities:
@@ -233,7 +234,8 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 o_entities = graph_data.get_entity_by_alias(logic_node.o.alias_name)
                 if o_entities:
                     entities.extend(o_entities)
-            chunks = self.ppr_chunk_retriever_tool.invoke(
+                selected_rel = graph_data.get_all_spo()
+            chunks, match_spo = self.ppr_chunk_retriever_tool.invoke(
                 queries=[query] + rewrite_queries,
                 start_entities=entities,
                 top_k=self.top_k,
@@ -242,8 +244,8 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             if reporter:
                 reporter.add_report_line(
                     "thinker",
-                    f"rc_retriever_end_{logic_node.sub_query}",
-                    len(chunks),
+                    f"end_sub_kag_retriever_{logic_node.sub_query}",
+                    match_spo + selected_rel,
                     "FINISH",
                 )
             # summary

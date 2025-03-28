@@ -4,11 +4,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC, LLMClient
-from kag.interface.solver.model.one_hop_graph import EntityData, ChunkData
+from kag.interface.solver.model.one_hop_graph import EntityData, ChunkData, RelationData, Prop
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.common.config import LogicFormConfiguration
@@ -241,7 +241,7 @@ class PprChunkRetriever(ToolABC):
 
     def invoke(
         self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs
-    ) -> List[ChunkData]:
+    ) -> Tuple[List[ChunkData], List[RelationData]]:
         logger.info(
             f"Starting invoke method with queries: {queries}, start_entities: {start_entities}, top_k: {top_k}"
         )
@@ -373,7 +373,47 @@ class PprChunkRetriever(ToolABC):
             combined_scores.items(), key=lambda item: item[1], reverse=True
         )
 
-        return self.get_all_docs_by_id(queries, sorted_scores, top_k)
+        matched_docs = self.get_all_docs_by_id(queries, sorted_scores, top_k)
+        return matched_docs, self._convert_relation_datas(chunk_docs=matched_docs, matched_entities=matched_entities)
+
+    def _convert_relation_datas(self, chunk_docs, matched_entities):
+        relation_datas = []
+        def chunk_to_Node(chunk):
+            node = EntityData(entity_id=chunk.chunk_id, name=chunk.title, node_type="Chunk", node_type_zh="Chunk")
+            node.prop = Prop.from_dict(json_dict={
+                "name": chunk.title,
+                "content": chunk.content
+            }, label_name="Chunk", schema=self.schema_helper)
+            node.score = chunk.score
+            return node
+        # Mock Relation Data
+        ppr_node = EntityData(entity_id="ppr_id", name="PPR compute", node_type="PPR", node_type_zh="PPR")
+        for entity in matched_entities:
+            rel = RelationData.from_dict(json_dict={
+                "__from_id__": entity.biz_id,
+                "__from_id_type__": entity.type,
+                "__to_id__": ppr_node.biz_id,
+                "__to_id_type__": ppr_node.type,
+                "__label__": "start",
+                "score": entity.score
+            }, schema=self.schema_helper)
+            rel.from_entity = entity
+            rel.end_entity = ppr_node
+            relation_datas.append(rel)
+        for chunk in chunk_docs:
+            entity = chunk_to_Node(chunk)
+            rel = RelationData.from_dict(json_dict={
+                "__to_id__": entity.biz_id,
+                "__to_id_type__": entity.type,
+                "__from_id__": ppr_node.biz_id,
+                "__from_id_type__": ppr_node.type,
+                "__label__": "end",
+                "score": entity.score
+            }, schema=self.schema_helper)
+            rel.from_entity = ppr_node
+            rel.end_entity = entity
+            relation_datas.append(rel)
+        return relation_datas
 
     def schema(self):
         return {
