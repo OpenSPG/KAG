@@ -233,6 +233,7 @@ class LLMClient(Registrable):
                     raise RuntimeError(
                         f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                     )
+        return result
 
     def batch(
         self,
