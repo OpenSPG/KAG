@@ -39,7 +39,7 @@ class LLMClient(Registrable):
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
-    def __call__(self, prompt: Union[str, dict, list]) -> str:
+    def __call__(self, prompt: Union[str, dict, list], **kwargs) -> str:
         """
         Perform inference on the given prompt and return the result.
 
@@ -68,7 +68,7 @@ class LLMClient(Registrable):
         Raises:
             NotImplementedError: If the subclass has not implemented this method.
         """
-        raise NotImplementedError
+        return self(prompt, **kwargs)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
     def call_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
