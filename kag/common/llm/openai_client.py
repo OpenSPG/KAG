@@ -132,8 +132,11 @@ class OpenAIClient(LLMClient):
             tool_calls = None  # TODO: Handle tool calls in stream mode
 
             for chunk in response:
-                if chunk.choices[0].delta.content is not None:
-                    rsp += chunk.choices[0].delta.content
+                if not chunk.choices:
+                    continue
+                delta_content = getattr(chunk.choices[0].delta, "content", None)
+                if delta_content is not None:
+                    rsp += delta_content
                     if reporter:
                         reporter.add_report_line(
                             segment_name,
@@ -213,8 +216,11 @@ class OpenAIClient(LLMClient):
             rsp = ""
             tool_calls = None
             async for chunk in response:
-                if chunk.choices[0].delta.content is not None:
-                    rsp += chunk.choices[0].delta.content
+                if not chunk.choices:
+                    continue
+                delta_content = getattr(chunk.choices[0].delta, "content", None)
+                if delta_content is not None:
+                    rsp += delta_content
                 if reporter:
                     reporter.add_report_line(
                         segment_name,
