@@ -91,7 +91,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
 
     @retry(stop=stop_after_attempt(3))
     def generate_sub_answer(
-        self, question: str, knowledge_graph: [], docs: [], history_qa=[]
+        self, question: str, knowledge_graph: [], docs: [], history_qa=[], **kwargs
     ):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
@@ -129,7 +129,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 "history": "\n".join(history_qa),
             }
         llm_output = self.llm_module.invoke(
-            params, prompt, with_json_parse=False, with_except=True
+            params, prompt, with_json_parse=False, with_except=True, **kwargs
         )
         logger.debug(
             f"sub_question:{question}\n sub_answer:{llm_output} prompt:\n{prompt}"
@@ -143,7 +143,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             return ""
         history_qa = get_history_qa(history)
         return self.generate_sub_answer(
-            question=query, knowledge_graph=graph, docs=chunks, history_qa=history_qa
+            question=query, knowledge_graph=graph, docs=chunks, history_qa=history_qa, **kwargs
         )
 
     def _rewrite_sub_query_with_history_qa(
@@ -256,6 +256,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     chunks=chunks,
                     history=used_lf,
                     reporter=reporter,
+                    segment_name="thinker",
                     tag_name=f"rc_retriever_summary_{logic_node.sub_query}",
                 )
                 logger.info(f"`{query}` subq: {logic_node.sub_query} answer:{summary}")

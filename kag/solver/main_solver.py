@@ -49,6 +49,24 @@ default_pipeline_template = {
     }
 }
 
+
+default_naive_rag_pipeline = {
+	'type': 'naive_rag_pipeline',
+	'executors': [{
+		'type': 'chunk_retrieved_executor',
+		'top_k': 10,
+		'retriever': {
+			'type': 'vector_chunk_retriever'
+		}
+	}],
+	'generator': {
+		'type': 'llm_generator',
+		'llm_client': '{llm}',
+		'generated_prompt': {
+			'type': 'default_refer_generator_prompt'
+		}
+	}
+}
 def replace_placeholders(config, replacements):
     """
     替换配置字典中花括号 {} 中的变量。
@@ -70,8 +88,10 @@ def replace_placeholders(config, replacements):
     else:
         return config
 
-async def qa(task_id, query, project_id, host_addr):
-    # resp
+async def qa(task_id, query, project_id, host_addr, params=None):
+    if params is None:
+        params = {}
+    print(f"qa(task_id={task_id}, query={query}, project_id={project_id}, params={params})")
     reporter: OpenSPGReporter = OpenSPGReporter(
         task_id=task_id, host_addr=host_addr, project_id=project_id
     )
@@ -84,18 +104,27 @@ async def qa(task_id, query, project_id, host_addr):
         vectorize_model = KAG_CONFIG.all_config.get("vectorize_model", None)
         if vectorize_model is None:
             raise Exception("vectorize_model config is not set")
-        default_conf = dict(default_pipeline_template)
-        default_conf["executors"] = [
-            math_executor_conf,
-            kag_hybrid_executor_conf
-        ]
+
         placeholder_config = {
             "llm": llm,
             "vectorize_model": vectorize_model
         }
+        thinking_enabled = params.get("thinking_enabled", True)
+        if isinstance(thinking_enabled, str):
+            thinking_enabled = True if thinking_enabled.lower() == "true" else False
+        if thinking_enabled:
+            default_conf = dict(default_pipeline_template)
+            default_conf["executors"] = [
+                math_executor_conf,
+                kag_hybrid_executor_conf
+            ]
+            pipeline_name = "kag_solver_pipeline"
+        else:
+            default_conf = dict(default_naive_rag_pipeline)
+            pipeline_name = "naive_rag_pipeline"
         default_pipeline = replace_placeholders(default_conf, placeholder_config)
 
-        conf = copy.deepcopy(KAG_CONFIG.all_config.get("kag_solver_pipeline", default_pipeline))
+        conf = copy.deepcopy(KAG_CONFIG.all_config.get(pipeline_name, default_pipeline))
         pipeline = SolverPipelineABC.from_config(conf)
 
         answer = await pipeline.ainvoke(query, reporter=reporter)
@@ -123,11 +152,13 @@ class SolverMain:
             session_id: str = "0",
             is_report=True,
             host_addr="http://127.0.0.1:8887",
-            **kwargs
+            params=None
     ):
         answer = None
+        if params is None:
+            params = {}
         try:
-            answer = asyncio.run(qa(task_id=task_id, project_id=project_id, host_addr=host_addr, query=query))
+            answer = asyncio.run(qa(task_id=task_id, project_id=project_id, host_addr=host_addr, query=query, params=params))
             logger.info(f"{query} answer={answer}")
         except Exception as e:
             logger.warning(
@@ -145,11 +176,11 @@ if __name__ == "__main__":
     )
     res = SolverMain().invoke(
         4000003,
-        5900048,
-        "周润发的爸爸是做什么工作的",
+        5900001,
+        "查询周杰伦的作品",
         "3500005",
         True,
-        host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",
+        host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
     )
     print("*" * 80)
     print("The Answer is: ", res)
