@@ -94,7 +94,7 @@ class LLMClient(Registrable):
         try:
             json_result = loads(json_str)
         except Exception as e:
-            logger.info(f"parse json failed {json_str}")
+            logger.info(f"parse json failed {json_str}, info: {e}")
             return res
         return json_result
 
@@ -154,25 +154,30 @@ class LLMClient(Registrable):
         if not prompt:
             return result
         response = ""
+        tools = kwargs.get("tools", None)
+        if tools:
+            with_json_parse = False
         try:
             response = (
                 self.call_with_json_parse(prompt=prompt, **kwargs)
                 if with_json_parse
                 else self(prompt, **kwargs)
             )
-            # logger.debug(f"Response: {response}")
+            if tools:
+                return response
             result = prompt_op.parse_response(response, model=self.model, **variables)
             logger.debug(f"Result: {result}")
+            return result
         except Exception as e:
             import traceback
 
-            logger.info(f"Error {e} during invocation: {traceback.format_exc()}. prompt={prompt} response={response}")
+            logger.info(
+                f"Error {e} during invocation: {traceback.format_exc()}. prompt={prompt} response={response}"
+            )
             if with_except:
                 raise RuntimeError(
                     f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                 )
-
-        return result
 
     async def ainvoke(
         self,
@@ -200,6 +205,10 @@ class LLMClient(Registrable):
         if not prompt:
             return result
         response = ""
+        tools = kwargs.get("tools", None)
+        if tools:
+            with_json_parse = False
+
         async with self.limiter:
             try:
                 response = await (
@@ -207,21 +216,23 @@ class LLMClient(Registrable):
                     if with_json_parse
                     else self.acall(prompt, **kwargs)
                 )
-                # logger.info(f"Response: {response}")
-                result = prompt_op.parse_response(
-                    response, model=self.model, **variables
-                )
-                # logger.info(f"Result: {result}")
+                if tools:
+                    return response
+                else:
+                    result = prompt_op.parse_response(
+                        response, model=self.model, **variables
+                    )
+                    logger.debug(f"Result: {result}")
             except Exception as e:
                 import traceback
 
-                logger.info(f"Error {e} during invocation: {traceback.format_exc()} prompt={prompt} response={response}")
+                logger.info(
+                    f"Error {e} during invocation: {traceback.format_exc()} prompt={prompt} response={response}"
+                )
                 if with_except:
                     raise RuntimeError(
                         f"LLM invoke exception, info: {e}\nllm input: \n{prompt}\nllm output: \n{response}"
                     )
-
-        return result
 
     def batch(
         self,
