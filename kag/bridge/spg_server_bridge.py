@@ -119,6 +119,8 @@ class SPGServerBridge:
         from kag.solver.main_solver import SolverMain
         if isinstance(args, str):
             args = json.loads(args)
+        params = args.get("args", {})
+        print(f"run_solver {func_name} args: {params} {args}")
         return getattr(SolverMain(), func_name)(
             project_id=project_id,
             session_id=session_id,
@@ -126,7 +128,7 @@ class SPGServerBridge:
             query=query,
             is_report=is_report,
             host_addr=host_addr,
-            **args
+            params=params
         )
 
 

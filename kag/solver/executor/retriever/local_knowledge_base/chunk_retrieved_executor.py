@@ -64,7 +64,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
         )
 
         self.report_content(
-            reporter, "thinker", f"{task_query}_end_kag_retriever", "", "FINISH"
+            reporter, "thinker", f"{task_query}_end_kag_retriever", f"{len(chunk_datas)}", "FINISH"
         )
 
         # Log the end of the retrieval process and calculate the duration

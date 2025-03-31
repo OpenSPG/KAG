@@ -169,8 +169,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "### 检索到的文档\n--------- \n {content}",
             },
             "end_kag_retriever": {
-                "en": "### KAG retriever completed\n {content}",
-                "zh": "### KAG检索结束\n {content}",
+                "en": "### KAG retriever completed\n retrieved {content}",
+                "zh": "### KAG检索结束\n 共计检索到 {content}",
             },
             "failed_kag_retriever": {
                 "en": """### KAG retriever failed

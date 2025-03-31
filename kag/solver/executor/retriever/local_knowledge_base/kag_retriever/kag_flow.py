@@ -17,8 +17,7 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_compon
 logger = logging.getLogger()
 
 
-def _merge_graph(input_data: List[RetrievedData]):
-    graph_data = None
+def _merge_graph(graph_data, input_data: List[RetrievedData]):
     other_datas = []
     if input_data is not None:
         for data in input_data:
@@ -29,8 +28,6 @@ def _merge_graph(input_data: List[RetrievedData]):
                 graph_data = data
                 continue
             graph_data.merge_kg_graph(data)
-        graph_datas = [data for data in input_data if isinstance(data, KgGraph)]
-        graph_data = graph_datas[0] if len(graph_datas) > 0 else None
     return graph_data, other_datas
 
 
@@ -111,7 +108,7 @@ class KAGFlow:
         # Execute a specific node in the graph and return the results
         if input_data is None:
             input_data = []
-        self.graph_data, _ = _merge_graph(input_data)
+        self.graph_data, _ = _merge_graph(self.graph_data, input_data)
         cur_graph_data = KgGraph()
         if self.graph_data:
             cur_graph_data.merge_kg_graph(self.graph_data)
@@ -220,7 +217,7 @@ class KAGFlow:
                 results.extend(node.result)
             else:
                 results.append(node.result)
-        graph_data, others = _merge_graph(results)
+        graph_data, others = _merge_graph(self.graph_data, results)
         if graph_data is not None:
             self.graph_data = graph_data
         logger.info(
