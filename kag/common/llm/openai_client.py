@@ -9,13 +9,9 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import json
 import logging
 
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
-
-
-from tenacity import retry, stop_after_attempt
 
 from kag.interface import LLMClient
 from typing import Callable, Optional
@@ -32,6 +28,7 @@ AzureADTokenProvider = Callable[[], str]
 
 @LLMClient.register("maas")
 @LLMClient.register("openai")
+@LLMClient.register("vllm")
 class OpenAIClient(LLMClient):
     """
     A client class for interacting with the OpenAI API.
@@ -42,9 +39,9 @@ class OpenAIClient(LLMClient):
 
     def __init__(
         self,
-        api_key: str,
         base_url: str,
         model: str,
+        api_key: str = "dummy",
         stream: bool = False,
         temperature: float = 0.7,
         timeout: float = None,
@@ -94,6 +91,7 @@ class OpenAIClient(LLMClient):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         segment_name = kwargs.get("segment_name", None)
         tag_name = kwargs.get("tag_name", None)
+        tools = kwargs.get("tools", None)
         if image_url:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
@@ -105,37 +103,34 @@ class OpenAIClient(LLMClient):
                     ],
                 },
             ]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
-
         else:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
                 {"role": "user", "content": prompt},
             ]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=message,
+            stream=self.stream,
+            temperature=self.temperature,
+            timeout=self.timeout,
+            tools=tools,
+        )
         if not self.stream:
-            reasoning_content = getattr(
-                response.choices[0].message, "reasoning_content", None
-            )
-            content = response.choices[0].message.content
-            if reasoning_content:
-                rsp = f"{reasoning_content}\n{content}"
-            else:
-                rsp = content
+            # reasoning_content = getattr(
+            #     response.choices[0].message, "reasoning_content", None
+            # )
+            # content = response.choices[0].message.content
+            # if reasoning_content:
+            #     rsp = f"{reasoning_content}\n{content}"
+            # else:
+            #     rsp = content
+            rsp = response.choices[0].message.content
+            tool_calls = response.choices[0].message.tool_calls
         else:
             rsp = ""
+            tool_calls = None  # TODO: Handle tool calls in stream mode
+
             for chunk in response:
                 if chunk.choices[0].delta.content is not None:
                     rsp += chunk.choices[0].delta.content
@@ -153,6 +148,8 @@ class OpenAIClient(LLMClient):
                 rsp,
                 status="FINISH",
             )
+        if tools:
+            return tool_calls
         return rsp
 
     async def acall(self, prompt: str, image_url: str = None, **kwargs):
@@ -177,6 +174,7 @@ class OpenAIClient(LLMClient):
                 status="INIT",
             )
 
+        tools = kwargs.get("tools", None)
         if image_url:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
@@ -188,37 +186,32 @@ class OpenAIClient(LLMClient):
                     ],
                 },
             ]
-            response = await self.aclient.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
 
         else:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
                 {"role": "user", "content": prompt},
             ]
-            response = await self.aclient.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
+        response = await self.aclient.chat.completions.create(
+            model=self.model,
+            messages=message,
+            stream=self.stream,
+            temperature=self.temperature,
+            timeout=self.timeout,
+            tools=tools,
+        )
         if not self.stream:
-            content = response.choices[0].message.content
             # reasoning_content = getattr(
             #     response.choices[0].message, "reasoning_content", None
             # )
             # if reasoning_content:
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
-            rsp = content
+            rsp = response.choices[0].message.content
+            tool_calls = response.choices[0].message.tool_calls
         else:
             rsp = ""
+            tool_calls = None
             async for chunk in response:
                 if chunk.choices[0].delta.content is not None:
                     rsp += chunk.choices[0].delta.content
@@ -236,6 +229,8 @@ class OpenAIClient(LLMClient):
                 rsp,
                 status="FINISH",
             )
+        if tools:
+            return tool_calls
         return rsp
 
 
@@ -324,6 +319,7 @@ class AzureOpenAIClient(LLMClient):
             str: The response content generated by the model.
         """
         # Call the model with the given prompt and return the response
+        tools = kwargs.get("tools", None)
         if image_url:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
@@ -335,55 +331,23 @@ class AzureOpenAIClient(LLMClient):
                     ],
                 },
             ]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
-            rsp = response.choices[0].message.content
-            return rsp
-
         else:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
                 {"role": "user", "content": prompt},
             ]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
-            rsp = response.choices[0].message.content
-            return rsp
-
-    @retry(stop=stop_after_attempt(3))
-    def call_with_json_parse(self, prompt, **kwargs):
-        """
-        Calls the model and attempts to parse the response into JSON format.
-
-        Parameters:
-            prompt (str): The prompt provided to the model.
-
-        Returns:
-            Union[dict, str]: If the response is valid JSON, returns the parsed dictionary; otherwise, returns the original response.
-        """
-        # Call the model and attempt to parse the response into JSON format
-        rsp = self(prompt, **kwargs)
-        _end = rsp.rfind("```")
-        _start = rsp.find("```json")
-        if _end != -1 and _start != -1:
-            json_str = rsp[_start + len("```json") : _end].strip()
-        else:
-            json_str = rsp
-        try:
-            json_result = json.loads(json_str)
-        except:
-            return rsp
-        return json_result
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=message,
+            stream=self.stream,
+            temperature=self.temperature,
+            timeout=self.timeout,
+        )
+        rsp = response.choices[0].message.content
+        tool_calls = response.choices[0].message.tool_calls
+        if tools:
+            return tool_calls
+        return rsp
 
     async def acall(self, prompt: str, image_url: str = None, **kwargs):
         """
@@ -396,6 +360,7 @@ class AzureOpenAIClient(LLMClient):
             str: The response content generated by the model.
         """
         # Call the model with the given prompt and return the response
+        tools = kwargs.get("tools", None)
         if image_url:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
@@ -407,27 +372,21 @@ class AzureOpenAIClient(LLMClient):
                     ],
                 },
             ]
-            response = await self.aclient.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
-            rsp = response.choices[0].message.content
-            return rsp
 
         else:
             message = [
                 {"role": "system", "content": "you are a helpful assistant"},
                 {"role": "user", "content": prompt},
             ]
-            response = await self.aclient.chat.completions.create(
-                model=self.model,
-                messages=message,
-                stream=self.stream,
-                temperature=self.temperature,
-                timeout=self.timeout,
-            )
-            rsp = response.choices[0].message.content
-            return rsp
+        response = await self.aclient.chat.completions.create(
+            model=self.model,
+            messages=message,
+            stream=self.stream,
+            temperature=self.temperature,
+            timeout=self.timeout,
+        )
+        rsp = response.choices[0].message.content
+        tool_calls = response.choices[0].message.tool_calls
+        if tools:
+            return tool_calls
+        return rsp
