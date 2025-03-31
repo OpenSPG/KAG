@@ -26,8 +26,13 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
     # Try existing entities in knowledge graph
     entities = kg_graph.get_entity_by_alias(symbol_entity.alias_name)
     if entities:
-        kg_graph.entity_map[symbol_entity.alias_name] = entities
-        return entities
+        filter_entities = []
+        for e in entities:
+            if e.type == "Text":
+                continue
+            filter_entities.append(e)
+        if filter_entities:
+            return filter_entities
     # Perform entity linking if possible
     if symbol_entity.entity_name:
         entities = el.invoke(
@@ -114,7 +119,12 @@ class KgRetrieverTemplate:
             tails=tail_entities,
         )
         predicate = logic_node.p.alias_name
-        kg_graph.edge_map[predicate] = selected_relations
+        if selected_relations:
+            kg_graph.edge_map[predicate] = selected_relations
+            kg_graph.nodes_alias.append(logic_node.s.alias_name)
+            kg_graph.nodes_alias.append(logic_node.o.alias_name)
+            kg_graph.edge_alias.append(logic_node.p.alias_name)
+
         return selected_relations
 
     def _find_tail_entities(

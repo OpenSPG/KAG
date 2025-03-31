@@ -3,6 +3,8 @@ from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import KagHybridExecutor
 from kag.solver.pipeline.kag_iterative_pipeline import KAGIterativePipeline
 from kag.solver.pipeline.kag_static_pipeline import KAGStaticPipeline
+
+from kag.solver.pipeline.naive_rag_pipeline import NaiveRAGPipeline
 from kag.solver.planner.kag_iterative_planner import KAGIterativePlanner
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
 
@@ -26,6 +28,7 @@ from kag.solver.generator.llm_generator import LLMGenerator
 __all__ = [
     "KAGIterativePipeline",
     "KAGStaticPipeline",
+    "NaiveRAGPipeline",
     "KAGIterativePlanner",
     "KAGStaticPlanner",
     "DefaultIterativePlanningPrompt",
