@@ -1,0 +1,15 @@
+{
+  "mcpServers": [
+  {
+    "name": "baidu-map",
+    "desc": "百度地图服务",
+    "api_key": "iuGFNeRkwrIzmLd3vTmcOSxkdau6siZK",
+    "mcp_file": "/Users/wan/Documents/KAG/kag/examples/baidu_map_mcp/map.py/map.py"
+  },
+  {
+    "name": "gaode-map",
+    "desc": "高德地图服务",
+    "api_key": "iuGFNeRkwrIzmLd3vTmcOSxkdau6siZK",
+    "mcp_file": "/Users/wan/Documents/KAG/kag/examples/baidu_map_mcp/map.py/map.py"
+  }]
+}
