@@ -111,6 +111,7 @@ class OpenSPGReporter(ReporterABC):
         self.report_stream_data = {}
         self.report_segment_time = {}
         self.report_record = []
+        self.thinking_enabled = kwargs.get("thinking_enabled", True)
         self.tag_mapping = {
             "Rewrite query": {
                 "en": "## Rethinking question using LLM\n--------- \n {content}",
@@ -251,7 +252,7 @@ class OpenSPGReporter(ReporterABC):
         processed_report_record = []
         report_to_spg_data = {
             "task_id": self.task_id,
-            "content": {"answer": "", "reference": [], "thinker": "<think>"},
+            "content": {"answer": "", "reference": [], "thinker": ""},
         }
         status = ""
         segment_name = ""
@@ -265,7 +266,9 @@ class OpenSPGReporter(ReporterABC):
             tag_template = self.get_tag_template(report_data["tag_name"])
             report_time = report_data["time"]
             content = report_data["content"]
-            if segment_name == "thinker":
+            if segment_name == "thinker" and self.thinking_enabled:
+                if report_to_spg_data["content"][segment_name] == "":
+                    report_to_spg_data["content"][segment_name] = "<think>"
                 if tag_template is None:
                     report_to_spg_data["content"][segment_name] += str(content)
                 else:
@@ -297,7 +300,7 @@ class OpenSPGReporter(ReporterABC):
                 )
 
             elif segment_name == "answer":
-                if not report_to_spg_data["content"]["thinker"].endswith("</think>"):
+                if report_to_spg_data["content"]["thinker"] and not report_to_spg_data["content"]["thinker"].endswith("</think>"):
                     report_to_spg_data["content"]["thinker"] += "</think>"
                 report_to_spg_data["content"][segment_name] = content
             elif segment_name == "reference":
