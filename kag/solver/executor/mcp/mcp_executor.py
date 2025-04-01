@@ -55,6 +55,3 @@ class McpExecutor(ExecutorABC):
             ]
         }
         return mcp_schema_data
-
-    def invoke_mcp_server(self, server_name, api_key):
-        return None
