@@ -678,6 +678,30 @@ class MarkDownReader(ReaderABC):
                 [node.content] if node.content else []
             )
 
+            # 新增：如果当前节点有内容且不是根节点，单独生成一个chunk
+            if node.content and node.title != "root":
+                full_title = " / ".join(current_titles)
+
+                # Store parent content separately
+                parent_content = (
+                    "\n".join(filter(None, parent_contents))
+                    if parent_contents
+                    else None
+                )
+
+                current_output = Chunk(
+                    id=f"{generate_hash_id(full_title)}",
+                    parent_id=parent_id,
+                    name=full_title,
+                    content=node.content,  # 只包含当前节点自身的内容
+                    parent_content=parent_content if self.reserve_meta else "",
+                )
+                outputs.append(current_output)
+                node_chunk_map[node] = current_output
+
+                # 注意：这里不处理表格，因为表格会在下面的代码中处理
+
+            # 继续处理子节点（保持原逻辑不变）
             for child in node.children:
                 child_outputs, child_map = self._convert_to_outputs(
                     child, id, parent_id, current_titles, current_contents
@@ -687,7 +711,7 @@ class MarkDownReader(ReaderABC):
                     outputs.extend(child_outputs)
                     node_chunk_map.update(child_map)  # Merge child mappings
 
-            # If no target level nodes found and current node is not root, output current node
+            # 原有的逻辑保持不变：如果没有找到目标级别节点，处理当前节点及其子内容
             if not has_target_level and node.title != "root":
                 full_title = " / ".join(current_titles)
 
@@ -903,7 +927,7 @@ if __name__ == "__main__":
             },
         }
     )
-    file_path = ""
+    file_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/tests/unit/builder/data/finance1.md"
     chunks, subgraph = reader.invoke(file_path)
     dump_chunks(chunks, output_path="./builder/data/chunks.json")
 
