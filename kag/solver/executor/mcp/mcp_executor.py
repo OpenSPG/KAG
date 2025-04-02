@@ -22,10 +22,12 @@ logger = logging.getLogger()
 @ExecutorABC.register("mcp_executor")
 class McpExecutor(ExecutorABC):
     def __init__(
-            self, json_file_path, llm_module: LLMClient = None, **kwargs
+            self, json_file_path, mcp_server_name, mcp_server_desc, llm_module: LLMClient = None, **kwargs
     ):
         super().__init__(**kwargs)
         self.file_path = json_file_path
+        self.name = mcp_server_name
+        self.desc = mcp_server_desc
         self.solve_question_without_spo_prompt = init_prompt_with_fallback(
             "summary_question", KAG_PROJECT_CONF.biz_scene
         )
@@ -35,23 +37,25 @@ class McpExecutor(ExecutorABC):
         self.mcp_client = MCPClient()  # 在构造器中创建 MCPClient 的实例
 
     async def ainvoke(self, server_name, query, **kwargs):
-        mcp_server_info = self.mcp_client.get_mcp_server(server_name)
-        await self.mcp_client.connect_to_server(mcp_server_info['mcp_file'])
+        mcp_server_info = self.mcp_client.get_mcp_server(server_name, self.file_path)
+        await self.mcp_client.connect_to_server(mcp_server_info['store_path'])
         response = await self.mcp_client.process_query(query)
         return response
 
-    def schema(self, server_info) -> dict:
+    def schema(self, func_name: str = None) -> dict:
         """Function schema definition for OpenAI Function Calling
 
         Returns:
             dict: Schema definition in OpenAI Function format
         """
-        self.mcp_client.get_mcp_servers()
-        # 构造 JSON 格式的内容
-        mcp_schema_data = {
-            "available_servers": [
-                {"name": server["name"], "desc": server["desc"]}
-                for server in server_info
-            ]
+        return {
+            "name": self.name,
+            "description": self.desc,
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "description": "User-provided query for retrieval.",
+                    "optional": False,
+                },
+            },
         }
-        return mcp_schema_data

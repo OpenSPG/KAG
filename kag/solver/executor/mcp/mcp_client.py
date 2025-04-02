@@ -22,8 +22,6 @@ llm_config = {
     'type': 'maas'
 }
 
-mcp_json_path = ".kag/solver/executor/mcp/mcp.json"
-
 
 class MCPClient:
     def __init__(self):
@@ -32,7 +30,6 @@ class MCPClient:
         self.openai_api_key = llm_config["api_key"]  # 读取 OpenAI API Key
         self.base_url = llm_config["base_url"]  # 读取 BASE YRL
         self.model = llm_config["model"]  # 读取 model
-        self.file_path = mcp_json_path
         if not self.openai_api_key:
             raise ValueError("未找到 OpenAI API Key")
         self.client = OpenAI(api_key=self.openai_api_key, base_url=self.base_url)  # 创建OpenAI client
@@ -164,56 +161,73 @@ class MCPClient:
 
         return content.message.content
 
-    def get_mcp_servers(self):
+    def extract_all_servers_info(self, mcp_file_path):
+        """
+        提取所有服务器的 `API_KEY`、`store_path` 和 `description`。
+        Returns:
+            一个字典，包含每个服务器的相关信息。
+        """
         try:
             # 读取 JSON 文件内容
-            with open(self.file_path, 'r', encoding='utf-8') as file:
+            with open(mcp_file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file)
 
-            # 解析 mcpServers 并提取 name 和 desc
-            servers = data.get("mcpServers", [])
-            server_info = [{"name": server["name"], "desc": server["desc"]} for server in servers]
+            # 初始化结果存储字典
+            extracted_info = {}
 
-            return server_info
+            # 遍历所有服务器
+            for server_name, server_data in data.items():
+                env = server_data.get("env", {})
+                api_keys = list(env.values())  # 提取环境变量中的所有 API_KEY（通常只会有一个）
+                extracted_info[server_name] = {
+                    "API_KEY": api_keys[0] if api_keys else "",
+                    "store_path": server_data.get("store_path", ""),
+                    "description": server_data.get("description", "")
+                }
+
+            return extracted_info
 
         except FileNotFoundError:
-            print(f"文件未找到：{self.file_path}")
-            return []
+            print(f"文件未找到：{self.mcp_file_path}")
+            return None
         except json.JSONDecodeError:
             print("JSON 文件解析错误，请检查内容格式是否正确。")
-            return []
-        except KeyError as e:
-            print(f"缺少关键字段：{e}")
-            return []
+            return None
+        except Exception as e:
+            print(f"发生错误：{e}")
+            return None
 
-    def get_mcp_server(self, server_name: str):
+    def get_mcp_server(self, server_name: str, json_file_path: str):
         """
         根据 server_name 从 mcp.json 获取对应的 api_key 和 mcp_file。
+        :param json_file_path: mcp.json 文件路径
         :param server_name: 要查找的服务器名称
         :return: 包含 api_key 和 mcp_file 的字典，如果未找到则返回 None
         """
         try:
             # 读取 JSON 文件内容
-            with open(self.file_path, 'r', encoding='utf-8') as file:
+            with open(json_file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file)
 
-            # 获取 mcpServers 列表
-            servers = data.get("mcpServers", [])
+            # 查找指定服务器
+            servers = data.get("mcpServers", {})
+            server_data = servers.get(server_name)
 
-            # 遍历服务器列表，寻找匹配的 server_name
-            for server in servers:
-                if server.get("name") == server_name:
-                    return {
-                        "api_key": server.get("api_key", ""),
-                        "mcp_file": server.get("mcp_file", "")
-                    }
+            if not server_data:
+                print(f"未找到服务器：{server_name}")
+                return None
 
-            # 如果未找到 server_name，返回 None
-            print(f"未找到指定的服务器：{server_name}")
-            return None
+            # 提取 API_KEY 和 store_path
+            api_key = list(server_data.get("env", {}).values())[0] if server_data.get("env", {}) else ""
+            store_path = server_data.get("store_path", "")
+
+            return {
+                "API_KEY": api_key,
+                "store_path": store_path
+            }
 
         except FileNotFoundError:
-            print(f"文件未找到：{self.file_path}")
+            print(f"文件未找到：{json_file_path}")
             return None
         except json.JSONDecodeError:
             print("JSON 文件解析错误，请检查内容格式是否正确。")
