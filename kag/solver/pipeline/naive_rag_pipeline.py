@@ -18,7 +18,8 @@ from kag.interface import (
     PlannerABC,
     ExecutorABC,
     GeneratorABC,
-    Context, Task,
+    Context,
+    Task,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,13 +27,10 @@ logger = logging.getLogger(__name__)
 
 @SolverPipelineABC.register("naive_rag_pipeline")
 class NaiveRAGPipeline(SolverPipelineABC):
-    """Pipeline implementing static planning and execution workflow with iterative task processing.
-
+    """Pipeline useing Naive RAG to retrieve relevant documents and generate answers.
     Args:
-        planner (PlannerABC): Task planning component for generating execution plans
         executors (List[ExecutorABC]): Available executor instances for task execution
         generator (GeneratorABC): Result generation component for final answer synthesis
-        max_iteration (int): Maximum allowed execution iterations (default: 10)
     """
 
     def __init__(

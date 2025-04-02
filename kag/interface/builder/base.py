@@ -12,7 +12,6 @@
 
 import os
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any, Union
 
 from knext.common.base.component import Component
@@ -161,10 +160,7 @@ class BuilderComponent(Component, Registrable):
         Raises:
             NotImplementedError: If the method is not implemented by the subclass.
         """
-        with ThreadPoolExecutor() as executor:
-            return await asyncio.get_event_loop().run_in_executor(
-                executor, lambda: self._invoke(input, **kwargs)
-            )
+        return await asyncio.to_thread(lambda: self._invoke(input, **kwargs))
 
     async def ainvoke(
         self, input: Input, **kwargs
@@ -184,20 +180,19 @@ class BuilderComponent(Component, Registrable):
         if write_ckpt and self.checkpointer:
             # found existing data in checkpointer
             if input_key and self.checkpointer.exists(input_key):
-                with ThreadPoolExecutor() as executor:
-                    output = await asyncio.get_event_loop().run_in_executor(
-                        executor, lambda: self.checkpointer.read_from_ckpt(input_key)
-                    )
+                output = await asyncio.to_thread(
+                    lambda: self.checkpointer.read_from_ckpt(input_key)
+                )
+
                 if output is not None:
                     return [BuilderComponentData(x, output_key) for x in output]
 
             # not found
             output = await self._ainvoke(input_data, **kwargs)
             if input_key:
-                with ThreadPoolExecutor() as executor:
-                    await asyncio.get_event_loop().run_in_executor(
-                        executor, lambda: self.checkpointer.write_to_ckpt(input_key, output)
-                    )
+                await asyncio.to_thread(
+                    lambda: self.checkpointer.write_to_ckpt(input_key, output)
+                )
             return [BuilderComponentData(x, output_key) for x in output]
 
         else:

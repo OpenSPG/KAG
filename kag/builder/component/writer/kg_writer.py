@@ -11,6 +11,7 @@
 # or implied.
 import json
 import logging
+import asyncio
 from enum import Enum
 from typing import Type, Dict, List, Union
 
@@ -161,6 +162,43 @@ class KGWriter(SinkWriterABC):
             return [BuilderComponentData(x, output_key) for x in output]
         else:
             output = self._invoke(input_data, **kwargs)
+            return [BuilderComponentData(x, output_key) for x in output]
+
+    async def ainvoke(
+        self, input: Input, **kwargs
+    ) -> List[Union[Output, BuilderComponentData]]:
+
+        if not isinstance(input, BuilderComponentData):
+            input = BuilderComponentData(input)
+
+        input_data = input.data
+        input_key = input.hash_key
+
+        if self.inherit_input_key:
+            output_key = input_key
+        else:
+            output_key = None
+        write_ckpt = kwargs.get("write_ckpt", True)
+        if write_ckpt and self.checkpointer:
+            # found existing data in checkpointer
+            if input_key and self.checkpointer.exists(input_key):
+                output = await asyncio.to_thread(
+                    lambda: self.checkpointer.read_from_ckpt(input_key)
+                )
+
+                if output is not None:
+                    return [BuilderComponentData(x, output_key) for x in output]
+
+            # not found
+            output = await self._ainvoke(input_data, **kwargs)
+            if input_key:
+                await asyncio.to_thread(
+                    lambda: self.checkpointer.write_to_ckpt(input_key, input_key)
+                )
+            return [BuilderComponentData(x, output_key) for x in output]
+
+        else:
+            output = await self._ainvoke(input_data, **kwargs)
             return [BuilderComponentData(x, output_key) for x in output]
 
     def _handle(self, input: Dict, alter_operation: str, **kwargs):
