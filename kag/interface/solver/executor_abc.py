@@ -12,7 +12,6 @@
 import asyncio
 import inspect
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
 
 from docstring_parser import parse
 from typing import Dict, Any
@@ -56,6 +55,7 @@ class ExecutorABC(Registrable):
     def __init__(self, **kwargs):
         """Initializes the executor instance."""
         super().__init__(**kwargs)
+
     @property
     def input_types(self):
         return str
@@ -102,10 +102,10 @@ class ExecutorABC(Registrable):
         Returns:
             ExecutorResponse containing the execution results.
         """
-        with ThreadPoolExecutor() as executor:
-            return await asyncio.get_event_loop().run_in_executor(
-                executor, lambda: self.invoke(query, task, context, **kwargs)
-            )
+        return await asyncio.to_thread(
+            lambda: self.invoke(query, task, context, **kwargs)
+        )
+
     def parse_function_schema(self, func) -> Dict[str, Any]:
         """
         Parses a function's Google Style Docstring and parameters into a schema dictionary.
