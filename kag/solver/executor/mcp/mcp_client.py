@@ -7,10 +7,10 @@ from typing import (
     Optional,
 )
 
-from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from openai import OpenAI
+from kag.interface import LLMClient
 
 if TYPE_CHECKING:
     pass
@@ -24,15 +24,16 @@ llm_config = {
 
 
 class MCPClient:
-    def __init__(self):
+    def __init__(self, llm: LLMClient):
         """初始化 MCP 客户端"""
         self.exit_stack = AsyncExitStack()
-        self.openai_api_key = llm_config["api_key"]  # 读取 OpenAI API Key
-        self.base_url = llm_config["base_url"]  # 读取 BASE YRL
-        self.model = llm_config["model"]  # 读取 model
-        if not self.openai_api_key:
-            raise ValueError("未找到 OpenAI API Key")
-        self.client = OpenAI(api_key=self.openai_api_key, base_url=self.base_url)  # 创建OpenAI client
+        # self.openai_api_key = llm_config["api_key"]  # 读取 OpenAI API Key
+        # self.base_url = llm_config["base_url"]  # 读取 BASE YRL
+        # self.model = llm_config["model"]  # 读取 model
+        # if not self.openai_api_key:
+        #     raise ValueError("未找到 OpenAI API Key")
+        # self.client = OpenAI(api_key=self.openai_api_key, base_url=self.base_url)  # 创建OpenAI client
+        self.client = llm
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
 
@@ -188,7 +189,7 @@ class MCPClient:
             return extracted_info
 
         except FileNotFoundError:
-            print(f"文件未找到：{self.mcp_file_path}")
+            print(f"文件未找到：{mcp_file_path}")
             return None
         except json.JSONDecodeError:
             print("JSON 文件解析错误，请检查内容格式是否正确。")

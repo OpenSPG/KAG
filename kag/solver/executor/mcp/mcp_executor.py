@@ -22,23 +22,19 @@ logger = logging.getLogger()
 @ExecutorABC.register("mcp_executor")
 class McpExecutor(ExecutorABC):
     def __init__(
-            self, json_file_path, mcp_server_name, mcp_server_desc, llm_module: LLMClient = None, **kwargs
+            self, mcp_file_path, mcp_server_name, mcp_server_desc, llm_module: LLMClient, **kwargs
     ):
         super().__init__(**kwargs)
-        self.file_path = json_file_path
         self.name = mcp_server_name
         self.desc = mcp_server_desc
-        self.solve_question_without_spo_prompt = init_prompt_with_fallback(
-            "summary_question", KAG_PROJECT_CONF.biz_scene
-        )
+        self.mcp_file_path = mcp_file_path
         self.llm_module = llm_module or LLMClient.from_config(
             KAG_CONFIG.all_config["chat_llm"]
         )
-        self.mcp_client = MCPClient()  # 在构造器中创建 MCPClient 的实例
+        self.mcp_client = MCPClient(llm_module)  # 在构造器中创建 MCPClient 的实例
 
-    async def ainvoke(self, server_name, query, **kwargs):
-        mcp_server_info = self.mcp_client.get_mcp_server(server_name, self.file_path)
-        await self.mcp_client.connect_to_server(mcp_server_info['store_path'])
+    async def ainvoke(self, query, task, context: Context, **kwargs):
+        await self.mcp_client.connect_to_server(self.mcp_file_path)
         response = await self.mcp_client.process_query(query)
         return response
 
