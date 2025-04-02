@@ -124,6 +124,7 @@ class ZODBCheckPointer(CheckPointer):
             dict: The root object of the ZODB database, which is a dictionary-like object.
         """
         with self._lock:
+            print("aaa "+self._ckpt_file_path)
             storage = FileStorage(self._ckpt_file_path)
             db = DB(storage)
             with db.transaction() as conn:

@@ -246,9 +246,9 @@ class OpenSPGGraphApi(GraphApiABC):
 
 
 if __name__ == "__main__":
-    rc = ReasonerClient(host_addr="http://127.0.0.1:8887", project_id=4)
+    rc = ReasonerClient(host_addr="http://127.0.0.1:8887", project_id=2)
     rc.get_reason_schema()
-    graph_api = OpenSPGGraphApi(project_id="4", host_addr="http://127.0.0.1:8887")
+    graph_api = OpenSPGGraphApi(project_id="2", host_addr="http://127.0.0.1:8887")
     entity = SPOEntity()
     entity.id_set.append("entity_test_id")
     entity.type_set.append(TypeInfo("Pillar"))

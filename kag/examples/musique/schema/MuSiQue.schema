@@ -5,6 +5,16 @@ Chunk(文本块): EntityType
         content(内容): Text
           index: TextAndVector
 
+AtomicQuestion(原子问题): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+
+AtomicAnswer(原子答案): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+
 ArtificialObject(人造物体): EntityType
      properties:
         desc(描述): Text

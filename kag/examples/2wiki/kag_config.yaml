@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: key
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
+  api_key: sk-krunlbqxmpmnvmobwydvuazjinlzlrkbpscrdmbulajjljml
+  base_url: https://api.siliconflow.cn/v1
+  model: Qwen/Qwen2.5-7B-Instruct
   type: maas
 
 chat_llm: &chat_llm
-  api_key: key
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
+  api_key: sk-krunlbqxmpmnvmobwydvuazjinlzlrkbpscrdmbulajjljml
+  base_url: https://api.siliconflow.cn/v1
+  model: Qwen/Qwen2.5-7B-Instruct
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key: sk-krunlbqxmpmnvmobwydvuazjinlzlrkbpscrdmbulajjljml
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -25,7 +25,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '7'
+  id: '1'
   language: en
   namespace: TwoWiki
 #------------project configuration end----------------#

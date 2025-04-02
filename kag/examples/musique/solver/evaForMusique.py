@@ -128,7 +128,7 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     start_time = time.time()
-    filePath = "./data/musique_qa_sub.json"
+    filePath = "/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique/solver/data/musique_qa_dev.json"
     # filePath = "./data/musique_qa_train.json"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)

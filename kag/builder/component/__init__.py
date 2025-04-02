@@ -17,6 +17,8 @@ from kag.builder.component.extractor.schema_free_extractor import SchemaFreeExtr
 from kag.builder.component.extractor.schema_constraint_extractor import (
     SchemaConstraintExtractor,
 )
+from kag.builder.component.decomposer.atomic_question_chunk_decomposer import AtomicQuestionChunkDecomposer
+from kag.builder.component.decomposer.atomic_question_kb_decomposer import AtomicQuestionKBDecomposer
 from kag.builder.component.aligner.kag_aligner import KAGAligner
 from kag.builder.component.aligner.spg_aligner import SPGAligner
 from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcessor
@@ -56,6 +58,8 @@ __all__ = [
     "DefaultExternalGraphLoader",
     "SchemaFreeExtractor",
     "SchemaConstraintExtractor",
+    "AtomicQuestionChunkDecomposer",
+    "AtomicQuestionKBDecomposer",
     "KAGAligner",
     "SPGAligner",
     "KAGPostProcessor",

@@ -17,6 +17,7 @@ from kag.interface.builder.scanner_abc import ScannerABC
 from kag.interface.builder.reader_abc import ReaderABC
 from kag.interface.builder.splitter_abc import SplitterABC
 from kag.interface.builder.extractor_abc import ExtractorABC
+from kag.interface.builder.decomposer_abc import DecomposerABC
 from kag.interface.builder.mapping_abc import MappingABC
 from kag.interface.builder.aligner_abc import AlignerABC
 from kag.interface.builder.writer_abc import SinkWriterABC
@@ -45,6 +46,7 @@ __all__ = [
     "ReaderABC",
     "SplitterABC",
     "ExtractorABC",
+    "DecomposerABC",
     "MappingABC",
     "AlignerABC",
     "SinkWriterABC",

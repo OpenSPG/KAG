@@ -26,9 +26,8 @@ def buildKB(file_path):
 
     logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
 
-
 if __name__ == "__main__":
     import_modules_from_path(".")
-    file_path = "./data/musique_sub_corpus.json"
+    file_path = "/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique/builder/data/musique_corpus.json"
 
     buildKB(file_path)

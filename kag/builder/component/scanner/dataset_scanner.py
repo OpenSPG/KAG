@@ -110,7 +110,9 @@ class MusiqueCorpusScanner(ScannerABC):
             with open(input, "r") as f:
                 corpus = json.load(f)
         else:
+            print("coupus=",input)
             corpus = json.loads(input)
+
 
         data = []
 

@@ -29,6 +29,7 @@ from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from kag.builder.prompt.spg_prompt import SPGPrompt, SPGEntityPrompt, SPGEventPrompt
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.builder.prompt.decomposer.pike_decomposition import DecompositionGeneratorPrompt
 
 
 __all__ = [
@@ -44,4 +45,5 @@ __all__ = [
     "SPGPrompt",
     "SPGEntityPrompt",
     "SPGEventPrompt",
+    "DecompositionGeneratorPrompt"
 ]

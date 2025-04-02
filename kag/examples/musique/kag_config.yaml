@@ -25,7 +25,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '11'
+  id: '1'
   language: en
   namespace: MuSiQue
 #------------project configuration end----------------#
@@ -57,10 +57,72 @@ kag_builder_pipeline:
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 2
-  num_chains: 10
+  num_chains: 50
   scanner:
     type: musique_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
 #------------kag-builder configuration end----------------#
+
+#------------pike atomic question injection start----------------#
+kag_pike_chunk_injection_pipeline:
+  chain:
+    type: pike_chunk_injection_chain # kag.builder.default_chain.PikeChunkInjectionChain
+    decomposer:
+      type: atomic_question_chunk_decomposer # kag.builder.component.decomposer.atomic_chunk_question_decomposerr.AtomicQuestionChunkDecomposer
+      llm: *openie_llm
+      decomposition_prompt:
+        type: default_decomposition # kag.builder.prompt.decomposer.pike_decomposition.DecompositionGenerater
+    reader:
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
+    splitter:
+      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 100000
+      window_length: 0
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+    writer:
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+  num_threads_per_chain: 2
+  num_chains: 50
+  scanner:
+    type: musique_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+#------------pike atomic query injection end----------------#
+
+#------------pike atomic question injection start----------------#
+graph_api_for_decomposer: &graph_api_for_decomposer
+  type: openspg_graph_api
+
+kag_pike_kb_injection_pipeline:
+  chain:
+    type: pike_kb_injection_chain # kag.builder.default_chain.PikeKBInjectionChain
+    decomposer:
+      type: atomic_question_kb_decomposer # kag.builder.component.decomposer.atomic_chunk_question_decomposerr.AtomicQuestionChunkDecomposer
+      llm: *openie_llm
+      graph_api: *graph_api_for_decomposer
+      decomposition_prompt:
+        type: default_decomposition # kag.builder.prompt.decomposer.pike_decomposition.DecompositionGenerater
+      ner_prompt:
+        type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
+      std_prompt:
+        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+      triple_prompt:
+        type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+    reader:
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
+    splitter:
+      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 100000
+      window_length: 0
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+    writer:
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+  num_threads_per_chain: 2
+  num_chains: 50
+  scanner:
+    type: musique_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+#------------pike atomic query injection end----------------#
 
 #------------kag-solver configuration start----------------#
 search_api: &search_api
@@ -90,6 +152,12 @@ chunk_retriever: &chunk_retriever
   recall_num: 10
   rerank_topk: 10
 
+atomic_question_retriever: &atomic_question_retriever
+  type: default_atomic_question_chunk_retriever # kag.solver.retriever.impl.default_atomic_question_retriever.DefaultAtomicQueryRetriever
+  llm_client: *chat_llm
+  recall_num: 10
+  rerank_topk: 10
+
 kag_solver_pipeline:
   memory:
     type: default_memory # kag.solver.implementation.default_memory.DefaultMemory
@@ -103,12 +171,13 @@ kag_solver_pipeline:
       llm_client: *chat_llm
       vectorize_model: *vectorize_model
     lf_executor:
-      type: default_lf_executor # kag.solver.execute.default_lf_executor.DefaultLFExecutor
+      type: lf_with_atomic_question_executor # kag.solver.execute.default_lf_executor.LFWithAtomicQuestionExecutor
       llm_client: *chat_llm
-      force_chunk_retriever: false
+      force_chunk_retriever: true
       exact_kg_retriever: *exact_kg_retriever
       fuzzy_kg_retriever: *fuzzy_kg_retriever
       chunk_retriever: *chunk_retriever
+      atomic_question_retriever: *atomic_question_retriever
       merger:
         type: default_lf_sub_query_res_merger # kag.solver.execute.default_sub_query_merger.DefaultLFSubQueryResMerger
         vectorize_model: *vectorize_model
