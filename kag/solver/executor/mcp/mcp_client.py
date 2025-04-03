@@ -76,7 +76,10 @@ class MCPClient:
             }
             for tool in response.tools
         ]
+        stream = self.llm.stream
+        self.llm.stream = False
         response = await self.llm.acall(messages=messages, tools=available_tools)
+        self.llm.stream = stream
         # process tool call
         if not isinstance(response, str) and response.tool_calls:
             tool_calls_message = response.model_dump()
