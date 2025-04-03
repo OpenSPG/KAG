@@ -1,20 +1,21 @@
-from kag.common.conf import KAG_CONFIG
-import json
+# -*- coding: utf-8 -*-
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
+
+import os
 import logging
-
-from typing import Any
-from dotenv import load_dotenv
+from typing import Dict
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.interface import ExecutorABC, LLMClient, Context
-from kag.solver.utils import init_prompt_with_fallback
-from typing import (
-    TYPE_CHECKING,
-)
-
-from mcp_client import MCPClient
-
-if TYPE_CHECKING:
-    pass
+from kag.interface import ExecutorABC, LLMClient, Context, PromptABC
+from kag.solver.executor.mcp.mcp_client import MCPClient
 
 logger = logging.getLogger()
 
@@ -22,20 +23,58 @@ logger = logging.getLogger()
 @ExecutorABC.register("mcp_executor")
 class McpExecutor(ExecutorABC):
     def __init__(
-            self, mcp_file_path, mcp_server_name, mcp_server_desc, llm_module: LLMClient, **kwargs
+        self,
+        store_path: str,
+        name: str,
+        desc: str,
+        llm: LLMClient,
+        prompt: PromptABC = None,
+        env: Dict = {},
+        **kwargs,
     ):
         super().__init__(**kwargs)
-        self.name = mcp_server_name
-        self.desc = mcp_server_desc
-        self.mcp_file_path = mcp_file_path
-        self.llm_module = llm_module or LLMClient.from_config(
-            KAG_CONFIG.all_config["chat_llm"]
-        )
-        self.mcp_client = MCPClient(llm_module)  # 在构造器中创建 MCPClient 的实例
+        self.name = name
+        self.desc = desc
+        self.mcp_file_path = self.download_data(store_path)
+        self.prompt = prompt
+        self.env = dict(env)
+        self.llm = llm
+        self.mcp_client = MCPClient(self.llm, self.prompt)
+
+    def download_data(self, input: str, **kwargs):
+        """
+        Downloads data from a given input URL or returns the input directly if it is not a URL.
+
+        Args:
+            input (Input): The input source, which can be a URL (starting with "http://" or "https://") or a local path.
+            **kwargs: Additional keyword arguments (currently unused).
+
+        Returns:
+            List[Output]: A list containing the local file path if the input is a URL, or the input itself if it is not a URL.
+
+        """
+        if input.startswith("http://") or input.startswith("https://"):
+            from kag.common.utils import download_from_http
+
+            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
+            if not os.path.exists(local_file_path):
+                os.makedirs(local_file_path)
+            from urllib.parse import urlparse
+
+            parsed_url = urlparse(input)
+            local_file = os.path.join(
+                local_file_path, os.path.basename(parsed_url.path)
+            )
+
+            local_file = download_from_http(input, local_file)
+            return local_file
+        return input
 
     async def ainvoke(self, query, task, context: Context, **kwargs):
-        await self.mcp_client.connect_to_server(self.mcp_file_path)
-        response = await self.mcp_client.process_query(query)
+        task_query = task.arguments["query"]
+        await self.mcp_client.connect_to_server(self.mcp_file_path, self.env)
+        response = await self.mcp_client.process_query(task_query)
+        task.update_result(response)
         return response
 
     def schema(self, func_name: str = None) -> dict:
