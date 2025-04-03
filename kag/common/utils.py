@@ -18,6 +18,9 @@ import json
 import hashlib
 import os
 import tempfile
+import time
+import uuid
+
 import requests
 import importlib
 from typing import Tuple
@@ -391,3 +394,10 @@ def extract_content_target(input_string):
     else:
         target = None
     return content, target
+
+def generate_unique_message_key(message):
+    unique_id = uuid.uuid5(uuid.NAMESPACE_URL, str(message))
+    timestamp = int(time.time() * 1000)  # 获取当前时间戳（毫秒级）
+    # unique_id = uuid.uuid4().hex  # 生成一个UUID并转换为十六进制字符串
+    async_message_key = f"KAG_{timestamp}_{unique_id}"
+    return async_message_key
