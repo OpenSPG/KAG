@@ -21,4 +21,10 @@ def count_correct(file_path):
 
 
 # 使用文件路径
-count_correct("./evaluation_results_7.json")
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--result_file", type=str, default="evaluation_results_1.json")
+args = parser.parse_args()
+
+count_correct(args.result_file)

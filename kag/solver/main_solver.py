@@ -91,9 +91,12 @@ def replace_placeholders(config, replacements):
 async def qa(task_id, query, project_id, host_addr, params=None):
     if params is None:
         params = {}
-    print(f"qa(task_id={task_id}, query={query}, project_id={project_id}, params={params})")
+    thinking_enabled = params.get("thinking_enabled", True)
+    if isinstance(thinking_enabled, str):
+        thinking_enabled = True if thinking_enabled.lower() == "true" else False
+    print(f"qa(task_id={task_id}, query={query}, project_id={project_id}, thinking_enabled={thinking_enabled}, params={params})")
     reporter: OpenSPGReporter = OpenSPGReporter(
-        task_id=task_id, host_addr=host_addr, project_id=project_id
+        task_id=task_id, host_addr=host_addr, project_id=project_id, thinking_enabled=thinking_enabled
     )
     await reporter.start()
     try:
@@ -109,9 +112,7 @@ async def qa(task_id, query, project_id, host_addr, params=None):
             "llm": llm,
             "vectorize_model": vectorize_model
         }
-        thinking_enabled = params.get("thinking_enabled", True)
-        if isinstance(thinking_enabled, str):
-            thinking_enabled = True if thinking_enabled.lower() == "true" else False
+
         if thinking_enabled:
             default_conf = dict(default_pipeline_template)
             default_conf["executors"] = [
@@ -176,9 +177,9 @@ if __name__ == "__main__":
     )
     res = SolverMain().invoke(
         4000003,
-        5900001,
-        "查询周杰伦的作品",
-        "3500005",
+        6100031,
+        "周润发的dad是做什么的",
+        "4700026",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
     )
