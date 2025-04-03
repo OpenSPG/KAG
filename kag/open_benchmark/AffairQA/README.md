@@ -83,11 +83,3 @@ To delete the KAG project and associated knowledge graph, execute a command simi
 ```bash
 curl http://127.0.0.1:8887/project/api/delete?projectId=1
 ```
-```
-
-这个英文版本：
-1. 保持了原文档的结构
-2. 准确翻译了所有技术术语
-3. 保留了所有命令行示例和文件路径
-4. 维持了原有的链接和引用
-5. 保持了格式化和代码块的样式
