@@ -170,7 +170,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--qa_file", type=str, default="solver/data/res14.json")
+    parser.add_argument("--qa_file", type=str, default="solver/data/res1.json")
     args = parser.parse_args()
     qa_file = os.path.join(dir_path, args.qa_file)
     evaluate_qa(qa_file)
