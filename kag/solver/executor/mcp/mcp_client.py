@@ -52,7 +52,7 @@ class MCPClient:
         if not (is_python or is_js):
             raise ValueError("Server script must be a .py or .js file")
 
-        command = "python" if is_python else "node"
+        command = "python3" if is_python else "node"
         server_params = StdioServerParameters(
             command=command, args=[server_script_path], env=env
         )

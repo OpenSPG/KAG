@@ -13,9 +13,9 @@ ollama_llm: &ollama_llm
 
 mcp_executor:
   type: mcp_executor
-  store_path: /Users/simplex/Src/libs/opensource/KAG/kag/examples/baidu_map_mcp/map.py
+  store_path: ./map.py
   name: baidu_map_mcp
-  desc: Baidu Maps MCP, which covers geocoding, reverse geocoding, place search, route planning, and more, enables capabilities such as finding nearby places and planning travel routes.
+  description: Baidu Maps MCP, which covers geocoding, reverse geocoding, place search, route planning, and more, enables capabilities such as finding nearby places and planning travel routes.
   env:
     BAIDU_MAPS_API_KEY: key
   llm: *chat_llm
