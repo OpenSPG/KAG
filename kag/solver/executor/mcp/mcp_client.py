@@ -23,7 +23,12 @@ from kag.interface import LLMClient, PromptABC
 
 class MCPClient:
     def __init__(self, llm: LLMClient, prompt: PromptABC = None):
-        """初始化 MCP 客户端"""
+        """Initialize the MCP client
+
+        Args:
+            llm: LLMClient instance for language model interactions
+            prompt: Optional PromptABC instance for prompt management (defaults to default_mcp_tool_call config)
+        """
         self.llm = llm
         self.prompt = prompt or PromptABC.from_config({"type": "default_mcp_tool_call"})
 
@@ -31,10 +36,16 @@ class MCPClient:
         self.exit_stack = AsyncExitStack()
 
     async def connect_to_server(self, server_script_path: str, env: Dict):
-        """Connect to an MCP server
+        """Establish connection to an MCP server instance
 
         Args:
-            server_script_path: Path to the server script (.py or .js)
+            server_script_path: Path to server script (.py or .js)
+            env: Environment variables dictionary for server execution
+
+        Raises:
+            ValueError: If script is not a Python or JavaScript file
+
+        Connects to the server, initializes communication session, and prints available tools
         """
         is_python = server_script_path.endswith(".py")
         is_js = server_script_path.endswith(".js")
@@ -62,7 +73,21 @@ class MCPClient:
         print("\nConnected to server with tools:", [tool.name for tool in tools])
 
     async def process_query(self, query: str) -> str:
-        """Process a query using Claude and available tools"""
+        """Process user query using LLM and available tools
+
+        Args:
+            query: User input query string
+
+        Returns:
+            Processed response from the LLM after tool interactions
+
+        Handles:
+            - Prompt construction
+            - Tool availability check
+            - LLM response handling with tool calls
+            - Tool execution/result integration
+            - Final LLM response generation
+        """
         messages = self.prompt.build_prompt(query)
         response = await self.session.list_tools()
         available_tools = [
@@ -80,6 +105,7 @@ class MCPClient:
         self.llm.stream = False
         response = await self.llm.acall(messages=messages, tools=available_tools)
         self.llm.stream = stream
+        print(f"responses = {response}")
         # process tool call
         if not isinstance(response, str) and response.tool_calls:
             tool_calls_message = response.model_dump()
@@ -89,6 +115,7 @@ class MCPClient:
                 tool_name = tool_call["name"]
                 tool_args = json.loads(tool_call["arguments"])
                 result = await self.session.call_tool(tool_name, tool_args)
+                print(f"result = {result}")
                 if "id" in tool_call:
                     messages.append(
                         {
