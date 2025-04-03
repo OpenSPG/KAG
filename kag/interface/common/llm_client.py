@@ -149,7 +149,9 @@ class LLMClient(Registrable):
         """
         result = []
         prompt = prompt_op.build_prompt(variables)
-
+        if isinstance(prompt, list):
+            prompt = ""
+            kwargs["messages"] = prompt
         logger.debug(f"Prompt: {prompt}")
         if not prompt:
             return result
@@ -204,6 +206,10 @@ class LLMClient(Registrable):
         # logger.info(f"Prompt: {prompt}")
         if not prompt:
             return result
+        if isinstance(prompt, list):
+            prompt = ""
+            kwargs["messages"] = prompt
+
         response = ""
         tools = kwargs.get("tools", None)
         if tools:
