@@ -26,7 +26,7 @@ class McpExecutor(ExecutorABC):
         self,
         store_path: str,
         name: str,
-        desc: str,
+        description: str,
         llm: LLMClient,
         prompt: PromptABC = None,
         env: Dict = {},
@@ -34,7 +34,7 @@ class McpExecutor(ExecutorABC):
     ):
         super().__init__(**kwargs)
         self.name = name
-        self.desc = desc
+        self.description = description
         self.mcp_file_path = self.download_data(store_path)
         self.prompt = prompt
         self.env = dict(env)
@@ -85,7 +85,7 @@ class McpExecutor(ExecutorABC):
         """
         return {
             "name": self.name,
-            "description": self.desc,
+            "description": self.description,
             "parameters": {
                 "query": {
                     "type": "string",
