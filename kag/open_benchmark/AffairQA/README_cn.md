@@ -1,4 +1,4 @@
-# KAG 示例：TwoWiki
+# KAG AffairQA
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
