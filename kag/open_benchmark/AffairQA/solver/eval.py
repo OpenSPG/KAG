@@ -142,7 +142,7 @@ if __name__ == "__main__":
     # print(f"TraceLog: {trace_log}")
 
     dir = os.path.dirname(os.path.abspath(__file__))
-    result_file_path = os.path.join(dir, "data/res7.json")
+    result_file_path = os.path.join(dir, "data/res1.json")
     result_file_path = get_next_result_filename(result_file_path)
 
     res_metrics = demo.parallelQaAndEvaluate(
