@@ -84,6 +84,8 @@ def replace_placeholders(config, replacements):
             placeholder = config[1:-1]  # 去掉花括号
             if placeholder in replacements:
                 return replacements[placeholder]
+            else:
+                raise RuntimeError(f"Placeholder '{placeholder}' not found in config.")
         return config
     else:
         return config
@@ -104,16 +106,6 @@ async def qa(task_id, query, project_id, host_addr, params={}):
     )
     await reporter.start()
     try:
-        llm = KAG_CONFIG.all_config.get("llm", None)
-        if llm is None:
-            raise Exception("llm config is not set")
-        llm["stream"] = True
-        vectorize_model = KAG_CONFIG.all_config.get("vectorize_model", None)
-        if vectorize_model is None:
-            raise Exception("vectorize_model config is not set")
-
-        placeholder_config = {"llm": llm, "vectorize_model": vectorize_model}
-
         if thinking_enabled:
             default_conf = dict(default_pipeline_template)
             default_conf["executors"] = [math_executor_conf, kag_hybrid_executor_conf]
@@ -121,7 +113,6 @@ async def qa(task_id, query, project_id, host_addr, params={}):
         else:
             default_conf = dict(default_naive_rag_pipeline)
             pipeline_name = "naive_rag_pipeline"
-        default_pipeline = replace_placeholders(default_conf, placeholder_config)
 
         mcp_servers = params.get("mcpServers", None)
         mcp_executors = []
@@ -137,10 +128,23 @@ async def qa(task_id, query, project_id, host_addr, params={}):
                         "name": mcp_name,
                         "description": desc,
                         "env": env,
-                        "llm": llm,
+                        "llm": "{llm}",
                     }
                 )
-        default_pipeline["executors"] += mcp_executors
+        if mcp_executors:
+            default_conf["executors"] += mcp_executors
+
+        placeholder_config = {}
+        llm = KAG_CONFIG.all_config.get("llm", None)
+        if llm:
+            llm["stream"] = True
+            placeholder_config["llm"] = llm
+        vectorize_model = KAG_CONFIG.all_config.get("vectorize_model", None)
+        if vectorize_model:
+            placeholder_config["vectorize_model"] = vectorize_model
+
+        default_pipeline = replace_placeholders(default_conf, placeholder_config)
+
         conf = copy.deepcopy(KAG_CONFIG.all_config.get(pipeline_name, default_pipeline))
         pipeline = SolverPipelineABC.from_config(conf)
 
