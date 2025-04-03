@@ -135,7 +135,7 @@ async def qa(task_id, query, project_id, host_addr, params={}):
                         "type": "mcp_executor",
                         "store_path": store_path,
                         "name": mcp_name,
-                        "desc": desc,
+                        "description": desc,
                         "env": env,
                         "llm": llm,
                     }
