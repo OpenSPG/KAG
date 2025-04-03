@@ -94,7 +94,8 @@ class KAGRetrievedResponse(ExecutorResponse):
         }"""
         return to_reference_list(
             self.task_id,
-            self.chunk_datas + ([self.graph_data] if self.graph_data else []),
+            self.chunk_datas
+            # self.chunk_datas + ([self.graph_data] if self.graph_data else []),
         )
 
     def to_string(self) -> str:
@@ -128,9 +129,9 @@ class KAGRetrievedResponse(ExecutorResponse):
         return {
             "retrieved_task": self.retrieved_task,
             "sub_question": [item.to_dict() for item in self.sub_retrieved_set],
-            "graph_data": [str(spo) for spo in self.graph_data.get_all_spo()]
-            if self.graph_data
-            else [],
+            # "graph_data": [str(spo) for spo in self.graph_data.get_all_spo()]
+            # if self.graph_data
+            # else [],
             "chunk_datas": [item.to_dict() for item in self.chunk_datas],
             "summary": self.summary,
         }

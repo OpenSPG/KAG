@@ -1,4 +1,4 @@
-namespace MuSiQue
+namespace MuSiQuePike
 
 Chunk(文本块): EntityType
      properties:
