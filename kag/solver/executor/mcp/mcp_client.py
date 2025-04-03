@@ -111,12 +111,13 @@ class MCPClient:
             tool_calls_message = response.model_dump()
             messages.append(tool_calls_message)
             for tool_call in response.tool_calls:
-                tool_call = tool_call.dict()["function"]
-                tool_name = tool_call["name"]
-                tool_args = json.loads(tool_call["arguments"])
+                tool_call = tool_call.dict()
+                tool_call_id = tool_call.get("id", None)
+                tool_name = tool_call["function"]["name"]
+                tool_args = json.loads(tool_call["function"]["arguments"])
                 result = await self.session.call_tool(tool_name, tool_args)
                 print(f"result = {result}")
-                if "id" in tool_call:
+                if tool_call_id:
                     messages.append(
                         {
                             "role": "tool",
