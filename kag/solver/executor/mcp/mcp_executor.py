@@ -56,7 +56,7 @@ class McpExecutor(ExecutorABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "mcp_service")
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             from urllib.parse import urlparse
