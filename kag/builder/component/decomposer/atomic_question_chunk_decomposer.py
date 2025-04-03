@@ -17,7 +17,7 @@ from kag.interface import LLMClient
 from tenacity import stop_after_attempt, retry
 
 from kag.interface import DecomposerABC, PromptABC, ExternalGraphLoaderABC
-
+from kag.common.utils import generate_hash_id
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
@@ -135,7 +135,7 @@ class AtomicQuestionChunkDecomposer(DecomposerABC):
             question = qa["question"]
             answer = qa["answer"]
             sub_graph.add_node(
-                question,
+                generate_hash_id(question),
                 question,
                 "AtomicQuestion",
                 {
@@ -144,23 +144,6 @@ class AtomicQuestionChunkDecomposer(DecomposerABC):
                     "content": f"{question}",
                     "answer": answer
                 },
-            )
-            sub_graph.add_node(
-                answer,
-                answer,
-                "AtomicAnswer",
-                {
-                    "id": answer,
-                    "name": answer,
-                    "content": f"{answer}"
-                },
-            )
-            sub_graph.add_edge(
-                question,
-                "AtomicQuestion",
-                "answer",
-                answer,
-                "AtomicAnswer",
             )
 
     def assemble_sub_graph(

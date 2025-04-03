@@ -57,8 +57,9 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         pagerank_threshold: float = 0.9,
-        match_threshold: float = 0.6,
+        match_threshold: float = 0.5,
         pagerank_weight: float = 0.5,
+        max_iteration: int = 1,
         recall_num: int = 10,
         rerank_topk: int = 10,
         reranker_model_path: str = None,
@@ -87,6 +88,7 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         self.pagerank_threshold = pagerank_threshold
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
+        self.max_iteration = max_iteration
 
         self.reranker_model_path = reranker_model_path
         if self.reranker_model_path:
@@ -513,10 +515,9 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         output = self.get_all_docs_by_related_atomic_question(queries, sorted_scores, self.recall_num)
         return output
 
-    def recall_docs_with_embedding(
+    def recall_chunk_with_atomic_question(
         self,
         queries: List[str],
-        retrieved_spo: Optional[List[RelationData]] = None,
         **kwargs,
     ) -> List[str]:
         """
@@ -599,7 +600,8 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
-        query = "\n".join(queries)
+        # query = "\n".join(queries)
+        query = queries[1]
         try:
             text_matched = self.search_api.search_text(
                 query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
@@ -619,8 +621,7 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         except Exception as e:
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         logger.debug(f"matched_docs: {matched_docs}")
-        # for i in matched_docs:
-        #     print(f"matched_docs:{i}")
+
         return matched_docs
 
     def rerank_docs(self, queries: List[str], passages: List[str]):
@@ -646,8 +647,9 @@ class DefaultAtomicQuestionChunkRetriever(AtomicQuestionChunkRetriever):
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         pagerank_threshold: float = 0.9,
-        match_threshold: float = 0.6,
+        match_threshold: float = 0.5,
         pagerank_weight: float = 0.5,
+        max_iterations: int = 1,
         recall_num: int = 10,
         rerank_topk: int = 10,
         reranker_model_path: str = None,
@@ -665,6 +667,7 @@ class DefaultAtomicQuestionChunkRetriever(AtomicQuestionChunkRetriever):
             pagerank_weight,
             recall_num,
             rerank_topk,
+            max_iterations,
             reranker_model_path,
             vectorize_model,
             graph_api,

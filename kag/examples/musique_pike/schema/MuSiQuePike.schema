@@ -8,12 +8,9 @@ Chunk(文本块): EntityType
 AtomicQuestion(原子问题): EntityType
      properties:
         content(内容): Text
-          index: TextAndVector
-
-AtomicAnswer(原子答案): EntityType
-     properties:
-        content(内容): Text
-          index: TextAndVector
+            index: TextAndVector
+        answer(答案):Text
+            index: Text
 
 ArtificialObject(人造物体): EntityType
      properties:

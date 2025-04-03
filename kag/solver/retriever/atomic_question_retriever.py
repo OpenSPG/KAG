@@ -72,10 +72,9 @@ class AtomicQuestionRetriever(KagBaseModule, ABC):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def recall_docs_with_embedding(
+    def recall_chunk_with_atomic_question(
             self,
             queries: List[str],
-            retrieved_spo: Optional[List[RelationData]] = None,
             **kwargs
     ) -> List[str]:
         """

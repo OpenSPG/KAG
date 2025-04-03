@@ -41,5 +41,5 @@ if __name__ == "__main__":
     import_modules_from_path(".")
     file_path = "/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique_pike/builder/data/musique_corpus.json"
 
-    # AtomicQuestionChunkInjection(file_path)
-    AtomicQuestionKBInjection(file_path)
+    AtomicQuestionChunkInjection(file_path)
+    # AtomicQuestionKBInjection(file_path)

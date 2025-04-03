@@ -81,11 +81,13 @@ class EvaForMusique:
             for param, value in recall.items():
                 if param in total_recall:
                     total_recall[param] += value
+        result_recall = {**total_recall}
         for inx, value in  total_recall.items():
-            total_recall[inx] = (value*100)/count
+            result_recall[f"{inx}_rate"] = (value*100)/count
+        result_recall["process_num"] = count
 
         with open(resFilePath, "w") as f:
-            json.dump(total_recall, f)
+            json.dump(result_recall, f)
 
     def do_recall_eval(self, sample, references):
         paragraph_support_idx_set = [idx["paragraph_support_idx"] for idx in sample["question_decomposition"]]
@@ -148,12 +150,14 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     start_time = time.time()
-    filePath = "/kag/examples/musique/solver/results/musique_res_1743532848.835058.json"
+    filePath = "/kag/examples/musique_pike/solver/results/new_baseline/both_B1_res.json"
     # filePath = "./data/musique_qa_train.json"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
+    file_name_without_ext, file_ext = os.path.splitext(os.path.basename(filePath))
+
     resFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), f"musique_res_{start_time}.json"
+        os.path.abspath(os.path.dirname(__file__)), f"{file_name_without_ext}_{start_time}.json"
     )
     evaObj.evalForRecall(qaFilePath, resFilePath)
 

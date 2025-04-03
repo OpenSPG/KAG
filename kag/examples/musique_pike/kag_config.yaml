@@ -157,6 +157,8 @@ atomic_question_retriever: &atomic_question_retriever
   llm_client: *chat_llm
   recall_num: 10
   rerank_topk: 10
+  max_iterations: 5
+  match_threshold: 0.5
 
 kag_solver_pipeline:
   memory:

@@ -123,6 +123,7 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             else:
                 logger.warning(f"unknown operator: {n.operator}")
 
+
         res.spo_retrieved = process_info[lf.query].get("spo_retrieved", [])
         res.sub_answer = process_info[lf.query]["kg_answer"]
         res.doc_retrieved = []
@@ -151,13 +152,10 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             if self.force_chunk_retriever:
                 # force chunk retriever, so we clear kg solved answer
                 process_info["kg_solved_answer"] = []
-            # atomic_question to chunk retriever
-            all_related_entities = kg_graph.get_all_spo()
-            all_related_entities = list(set(all_related_entities))
+
             sub_query = self._generate_sub_query_with_history_qa(history, lf.query)
-            doc_retrieved = self.atomic_question_retriever.recall_docs_with_embedding(
+            doc_retrieved = self.atomic_question_retriever.recall_chunk_with_atomic_question(
                 queries=[query, sub_query],
-                retrieved_spo=all_related_entities,
                 kwargs=self.params,
             )
             res.doc_retrieved = doc_retrieved
@@ -233,6 +231,7 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             process_info[lf.query]["match_type"] = "chunk"
             # generate sub answer by chunk ans spo
             docs = ["#".join(item.split("#")[:-1]) for item in doc_retrieved]
+            ###
             res.sub_answer = self.generator.generate_sub_answer(
                 lf.query, res.spo_retrieved, docs, history
             )
@@ -273,12 +272,12 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         )
         if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
             # if not found answer in kg, we retrieved atomic_question then transfer to chunk to answer.
-            res = self._execute_chunk_answer(
-                req_id, query, lf, process_info, kg_graph, history, res
-            )
-            # res = self._execute_atomic_question_answer_with_embedding(
+            # res = self._execute_chunk_answer(
             #     req_id, query, lf, process_info, kg_graph, history, res
             # )
+            res = self._execute_atomic_question_answer_with_embedding(
+                req_id, query, lf, process_info, kg_graph, history, res
+            )
             # res = self._execute_atomic_question_answer_with_ppr(
             #     req_id, query, lf, process_info, kg_graph, history, res
             # )
