@@ -14,10 +14,10 @@ import os
 from kag.builder.component import KGWriter
 from kag.builder.component.scanner.csv_scanner import CSVScanner
 from kag.common.conf import KAG_CONFIG
-from kag.open_benchmark.AffairQA2.builder.affair_batch_vectorizer import (
+from kag.open_benchmark.AffairQA.builder.affair_batch_vectorizer import (
     AffairBatchVectorizer,
 )
-from kag.open_benchmark.AffairQA2.builder.mapping import AffairTypeMapping
+from kag.open_benchmark.AffairQA.builder.mapping import AffairTypeMapping
 
 from kag.interface import KAGBuilderChain as BuilderChainABC
 from kag.builder.runner import BuilderChainRunner
@@ -59,19 +59,19 @@ class AffairEntityChain(BuilderChainABC):
 def import_data():
     file_path = os.path.dirname(__file__)
     for spg_type_name in [
-        # "医疗机构",  # 只重建医疗机构数据
-        # "人物",
-        # "公园",
-        # "加油站",
-        # "协会",
-        # "图书馆",
-        # "学校",
-        # "宗教场所",
-        # "政府机构",
-        # "旅游景点",
-        # "旅行社",
-        # "自然保护区",
-        # "许可证",
+        "医疗机构",  # 只重建医疗机构数据
+        "人物",
+        "公园",
+        "加油站",
+        "协会",
+        "图书馆",
+        "学校",
+        "宗教场所",
+        "政府机构",
+        "旅游景点",
+        "旅行社",
+        "自然保护区",
+        "许可证",
         "行政区",
     ]:
         file_name = os.path.join(file_path, f"data/{spg_type_name}.csv")

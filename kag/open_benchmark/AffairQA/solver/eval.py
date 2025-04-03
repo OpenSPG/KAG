@@ -5,7 +5,7 @@ from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
 
-from kag.solver.logic.solver_pipeline import SolverPipeline
+from kag.interface import SolverPipelineABC
 import json
 from tqdm import tqdm
 import re
@@ -19,11 +19,12 @@ class AffairQaDemo:
     """
 
     def qa(self, query):
-        resp = SolverPipeline.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
-        answer, trace_log = resp.run(query)
+        resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
+        import asyncio
+        answer = asyncio.run(resp.ainvoke(query))
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
-        return answer, trace_log
+        return answer
 
     def parallelQaAndEvaluate(
         self, qFilePath, aFilePath, resFilePath, threadNum=1, upperLimit=10
@@ -34,11 +35,11 @@ class AffairQaDemo:
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction, traceLog = self.qa(question)
+                prediction = self.qa(question)
 
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([prediction], [gold])
-                return sample_idx, sample_id, prediction, metrics, traceLog
+                return sample_idx, sample_id, prediction, metrics
             except Exception as e:
                 import traceback
 
@@ -72,11 +73,10 @@ class AffairQaDemo:
             ):
                 result = future.result()
                 if result is not None:
-                    sample_idx, sample_id, prediction, metrics, traceLog = result
+                    sample_idx, sample_id, prediction, metrics = result
                     sample = qaList[sample_idx]
 
                     sample["prediction"] = prediction
-                    sample["traceLog"] = traceLog
                     sample["em"] = str(metrics["em"])
                     sample["f1"] = str(metrics["f1"])
 
@@ -130,7 +130,8 @@ def get_next_result_filename(base_path):
 
 
 if __name__ == "__main__":
-    import_modules_from_path("./prompt")
+    dir = os.path.dirname(os.path.abspath(__file__))
+    import_modules_from_path(dir)
 
     demo = AffairQaDemo()
 
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         qFilePath=os.path.join(dir, "data/test.json"),
         aFilePath=os.path.join(dir, "data/AffairQA.json"),
         resFilePath=result_file_path,
-        threadNum=10,
+        threadNum=5,
         upperLimit=-1,
     )
     print(res_metrics)
