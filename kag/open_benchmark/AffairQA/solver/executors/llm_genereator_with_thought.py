@@ -57,7 +57,7 @@ class LLMGeneratorWithThought(GeneratorABC):
 
         refer_data = [f"Title:{x['document_name']}\n{x['content']}" for x in refer_data]
         refer_data = "\n\n".join(refer_data)
-        refer_data_graph = context.variables_graph.to_json()
+        refer_data_graph = context.variables_graph._graph_to_json()
         def serialize_object(obj):
             if isinstance(obj, Identifier):
                 return str(obj)
@@ -72,7 +72,11 @@ class LLMGeneratorWithThought(GeneratorABC):
             else:
                 return obj
         refer_data_graph = serialize_object(refer_data_graph)
-        refer_data_graph = json.dumps(refer_data_graph, ensure_ascii=False)
+        # 截断图数据，避免超过长度限制
+        refer_data_graph_str = json.dumps(refer_data_graph, ensure_ascii=False)
+        if len(refer_data_graph_str) > 20000:
+            refer_data_graph_str = refer_data_graph_str[:20000] + "..."
+        refer_data_graph = refer_data_graph_str
 
         thoughts = "\n\n".join(thoughts)
         refer_data = refer_data + "\n\n" + refer_data_graph
@@ -86,7 +90,17 @@ NOTE:
 """
 
         prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}Question: {query}"
-        response = self.llm_client(prompt)
+
+        try:
+            response = self.llm_client(prompt)
+        except Exception as e:
+            # save prompt to file in the same directory
+            import os
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            with open(os.path.join(current_dir, "prompt.txt"), "a") as f:
+                f.write(prompt)
+            raise e
+
         if "Answer: " not in response:
             raise ValueError(f"no answer found in response: {response}")
         answer = response.split("Answer:")[1].strip()
