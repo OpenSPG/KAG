@@ -167,5 +167,10 @@ def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
 
 if __name__ == "__main__":
     dir_path = os.path.dirname(__file__)
-    qa_file = os.path.join(dir_path, "solver/data/res7.json")
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--qa_file", type=str, default="solver/data/res1.json")
+    args = parser.parse_args()
+    qa_file = os.path.join(dir_path, args.qa_file)
     evaluate_qa(qa_file)
