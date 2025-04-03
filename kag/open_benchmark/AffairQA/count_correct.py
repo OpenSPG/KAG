@@ -24,7 +24,7 @@ def count_correct(file_path):
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--result_file", type=str, default="evaluation_results_4.json")
+parser.add_argument("--result_file", type=str, default="evaluation_results_1.json")
 args = parser.parse_args()
 
 count_correct(args.result_file)
