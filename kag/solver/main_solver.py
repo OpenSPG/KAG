@@ -12,13 +12,15 @@
 import asyncio
 import copy
 import logging
-
+import json
 from kag.interface import SolverPipelineABC
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
 
+
 logger = logging.getLogger()
+
 math_executor_conf = {"type": "py_code_based_math_executor", "llm": "{llm}"}
 kag_hybrid_executor_conf = {
     "type": "kag_hybrid_executor",
@@ -84,6 +86,8 @@ def replace_placeholders(config, replacements):
             placeholder = config[1:-1]  # 去掉花括号
             if placeholder in replacements:
                 return replacements[placeholder]
+            else:
+                raise RuntimeError(f"Placeholder '{placeholder}' not found in config.")
         return config
     else:
         return config
@@ -104,16 +108,6 @@ async def qa(task_id, query, project_id, host_addr, params={}):
     )
     await reporter.start()
     try:
-        llm = KAG_CONFIG.all_config.get("llm", None)
-        if llm is None:
-            raise Exception("llm config is not set")
-        llm["stream"] = True
-        vectorize_model = KAG_CONFIG.all_config.get("vectorize_model", None)
-        if vectorize_model is None:
-            raise Exception("vectorize_model config is not set")
-
-        placeholder_config = {"llm": llm, "vectorize_model": vectorize_model}
-
         if thinking_enabled:
             default_conf = dict(default_pipeline_template)
             default_conf["executors"] = [math_executor_conf, kag_hybrid_executor_conf]
@@ -121,13 +115,13 @@ async def qa(task_id, query, project_id, host_addr, params={}):
         else:
             default_conf = dict(default_naive_rag_pipeline)
             pipeline_name = "naive_rag_pipeline"
-        default_pipeline = replace_placeholders(default_conf, placeholder_config)
 
         mcp_servers = params.get("mcpServers", None)
         mcp_executors = []
         if mcp_servers is not None:
+            mcp_servers = json.loads(mcp_servers)
             for mcp_name, mcp_conf in mcp_servers.items():
-                desc = mcp_conf["desc"]
+                desc = mcp_conf["description"]
                 env = mcp_conf["env"]
                 store_path = mcp_conf["store_path"]
                 mcp_executors.append(
@@ -137,11 +131,25 @@ async def qa(task_id, query, project_id, host_addr, params={}):
                         "name": mcp_name,
                         "description": desc,
                         "env": env,
-                        "llm": llm,
+                        "llm": "{llm}",
                     }
                 )
-        default_pipeline["executors"] += mcp_executors
+        if mcp_executors:
+            default_conf["executors"] += mcp_executors
+
+        placeholder_config = {}
+        llm = KAG_CONFIG.all_config.get("llm", None)
+        if llm:
+            llm["stream"] = True
+            placeholder_config["llm"] = llm
+        vectorize_model = KAG_CONFIG.all_config.get("vectorize_model", None)
+        if vectorize_model:
+            placeholder_config["vectorize_model"] = vectorize_model
+
+        default_pipeline = replace_placeholders(default_conf, placeholder_config)
+
         conf = copy.deepcopy(KAG_CONFIG.all_config.get(pipeline_name, default_pipeline))
+        logger.error(f"pipeline conf: \n{conf}")
         pipeline = SolverPipelineABC.from_config(conf)
 
         answer = await pipeline.ainvoke(query, reporter=reporter)
@@ -186,6 +194,9 @@ class SolverMain:
             )
             logger.info(f"{query} answer={answer}")
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             logger.warning(
                 f"An exception occurred while processing query: {query}. Error: {str(e)}",
                 exc_info=True,

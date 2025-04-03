@@ -15,7 +15,10 @@ async def chat_loop(client):
             if query.lower() == "quit":
                 break
 
-            response = await client.process_query(query)
+            from kag.interface import Task
+
+            task = Task("mcp", arguments={"query": query})
+            response = await client.ainvoke(task)
             print("\n" + response)
 
         except Exception as e:
@@ -33,11 +36,10 @@ async def cleanup(client):
 async def main():
     server_script_path = "./map.py"
     executor = ExecutorABC.from_config(KAG_CONFIG.all_config["mcp_executor"])
-    client = executor.mcp_client
+    client = executor
 
     try:
         print(f"executor.env = {executor.env}")
-        await client.connect_to_server(server_script_path, executor.env)
         await chat_loop(client)
     finally:
         await cleanup(client)
