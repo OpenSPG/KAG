@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "music-maps": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@kag/{ns_path}/music.py"
+      ],
+      "env": {
+        "MUSIC_API_KEY": "您在网易云官网上申请的key"
+      },
+      "store_path":"/upload/mcp/8d386d1a-06a9-4220-b3ef-4751409eb530/music.py",
+      "description":"这是一个音乐相关的服务知识库，包含歌曲查找、音乐解析、歌手查询、排行榜获取等功能"
+    }
+  },
+  "baidu-maps": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@kag/{ns_path}/map.py"
+    ],
+    "env": {
+      "AMAP_MAPS_API_KEY": ""
+    },
+    "store_path":"/Users/wan/Documents/KAG/kag/examples/baidu_map_mcp/map.py/map.py",
+    "description":"这是一个地图相关的服务知识库，包含逆地理编码服务、地理编码服务、地点检索服务、地点详情检索服务、批量算路服务、路线规划服务、天气查询服务、IP定位服务"
+  }
+}
