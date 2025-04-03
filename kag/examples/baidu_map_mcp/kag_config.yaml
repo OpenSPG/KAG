@@ -1,40 +1,25 @@
 #------------project configuration start----------------#
-openie_llm: &openie_llm
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key:
-  model: qwen-max-latest
-
-llm:
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key:
-  model: qwen-max-latest
 
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key:
-  model: qwen-max-latest
-  stream: true
-
-ner_llm: &ner_llm
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key:
-  model: qwen-max-latest
-
-vectorize_model: &vectorize_model
   api_key: key
-  base_url: https://api.siliconflow.cn/v1/
-  model: BAAI/bge-m3
-  type: openai
-  vector_dimensions: 1024
-vectorizer: *vectorize_model
+  model: qwen2.5-72b-instruct
 
-mcp_client: &mcp_client
-  type: mcp_client
-  llm: *openie_llm
+ollama_llm: &ollama_llm
+  type: ollama
+  model: qwen2.5:0.5b
+
+
+mcp_executor:
+  type: mcp_executor
+  store_path: /Users/simplex/Src/libs/opensource/KAG/kag/examples/baidu_map_mcp/map.py
+  name: baidu_map_mcp
+  desc: Baidu Maps MCP, which covers geocoding, reverse geocoding, place search, route planning, and more, enables capabilities such as finding nearby places and planning travel routes.
+  env:
+    BAIDU_MAPS_API_KEY: key
+  llm: *chat_llm
+
 
 log:
   level: INFO
@@ -45,83 +30,3 @@ project:
   language: zh
   namespace: Baidu_Map_MCP
 
-#------------project configuration end----------------#
-
-#------------kag-builder configuration start----------------#
-kag_builder_pipeline:
-  chain:
-    type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
-    extractor:
-      type: schema_constraint_extractor # kag.builder.component.extractor.schema_constraint_extractor.SchemaConstraintExtractor
-      llm: *openie_llm
-      ner_prompt:
-        type: spg_entity # kag.builder.prompt.spg_prompt.SPGEntityPrompt
-      event_prompt:
-        type: spg_event # kag.builder.prompt.spg_prompt.SPGEventPrompt
-      std_prompt:
-        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-      relation_prompt:
-        type: spg_relation # kag.builder.prompt.spg_prompt.SPGRelationPrompt
-    reader:
-      type: txt_reader # kag.builder.component.reader.txt_reader.TXTReader
-    post_processor:
-      type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
-    splitter:
-      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 300
-      window_length: 0
-    vectorizer:
-      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
-      vectorize_model: *vectorize_model
-    writer:
-      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
-  num_threads_per_chain: 2
-  num_chains: 10
-  scanner:
-    type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
-#------------kag-builder configuration end----------------#
-
-#------------kag-solver configuration start----------------#
-
-
-kg_cs:
-  type: kg_cs_open_spg
-  path_select:
-    type: exact_one_hop_select
-
-kg_fr:
-  type: kg_fr_open_spg
-  path_select:
-    type: fuzzy_one_hop_select
-    llm_client: *chat_llm
-
-rc:
-  type: rc_open_spg
-  ppr_chunk_retriever_tool:
-    type: ppr_chunk_retriever
-    llm_client: *ner_llm
-  reranker:
-    type: rerank_by_vector
-
-mcp_executor: &mcp_executor_conf
-  type: mcp_executor
-  llm: *openie_llm
-
-kag_solver_pipeline:
-  type: kag_static_pipeline
-  planner:
-    type: kag_static_planner
-    llm: *chat_llm
-    plan_prompt:
-      type: default_static_planning
-    rewrite_prompt:
-      type: default_query_rewrite
-  executors:
-    - *mcp_executor_conf
-  generator:
-    type: llm_generator
-    llm_client: *chat_llm
-    generated_prompt:
-      type: default_refer_generator_prompt
-
-#------------kag-solver configuration end----------------#

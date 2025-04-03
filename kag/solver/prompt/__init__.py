@@ -46,6 +46,7 @@ from kag.solver.prompt.thought_iterative_planning_prompt import (
 )
 from kag.solver.prompt.sub_question_summary import SubQuestionSummary
 from kag.solver.prompt.summary_question import SummaryQuestionWithOutSPO
+from kag.solver.prompt.mcp_tool_call import MCPToolCallPrompt
 
 __all__ = [
     "DeduceChoice",
@@ -74,5 +75,6 @@ __all__ = [
     "DefaultIterativePlanningPrompt",
     "SubQuestionSummary",
     "SummaryQuestionWithOutSPO",
-    "RetrieverLFStaticPlanningPrompt"
+    "RetrieverLFStaticPlanningPrompt",
+    "MCPToolCallPrompt",
 ]

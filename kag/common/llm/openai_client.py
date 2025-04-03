@@ -77,7 +77,7 @@ class OpenAIClient(LLMClient):
             f"Initialize OpenAIClient with rate limit {max_rate} every {time_period}s"
         )
 
-    def __call__(self, prompt: str, image_url: str = None, **kwargs):
+    def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -92,25 +92,27 @@ class OpenAIClient(LLMClient):
         segment_name = kwargs.get("segment_name", None)
         tag_name = kwargs.get("tag_name", None)
         tools = kwargs.get("tools", None)
-        if image_url:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ]
-        else:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": prompt},
-            ]
+        messages = kwargs.get("messages", None)
+        if messages is None:
+            if image_url:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ],
+                    },
+                ]
+            else:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ]
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=message,
+            messages=messages,
             stream=self.stream,
             temperature=self.temperature,
             timeout=self.timeout,
@@ -151,11 +153,12 @@ class OpenAIClient(LLMClient):
                 rsp,
                 status="FINISH",
             )
-        if tools:
-            return tool_calls
+        if tools and tool_calls:
+            return response.choices[0].message
+
         return rsp
 
-    async def acall(self, prompt: str, image_url: str = None, **kwargs):
+    async def acall(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -178,26 +181,28 @@ class OpenAIClient(LLMClient):
             )
 
         tools = kwargs.get("tools", None)
-        if image_url:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ]
+        messages = kwargs.get("messages", None)
+        if messages is None:
+            if image_url:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ],
+                    },
+                ]
 
-        else:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": prompt},
-            ]
+            else:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ]
         response = await self.aclient.chat.completions.create(
             model=self.model,
-            messages=message,
+            messages=messages,
             stream=self.stream,
             temperature=self.temperature,
             timeout=self.timeout,
@@ -235,8 +240,8 @@ class OpenAIClient(LLMClient):
                 rsp,
                 status="FINISH",
             )
-        if tools:
-            return tool_calls
+        if tools and tool_calls:
+            return response.choices[0].message
         return rsp
 
 
@@ -314,7 +319,7 @@ class AzureOpenAIClient(LLMClient):
             f"Initialize AzureOpenAIClient with rate limit {max_rate} every {time_period}s"
         )
 
-    def __call__(self, prompt: str, image_url: str = None, **kwargs):
+    def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -326,36 +331,40 @@ class AzureOpenAIClient(LLMClient):
         """
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
-        if image_url:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ]
-        else:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": prompt},
-            ]
+        messages = kwargs.get("messages", None)
+        if messages is None:
+
+            if image_url:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ],
+                    },
+                ]
+            else:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ]
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=message,
+            messages=messages,
             stream=self.stream,
             temperature=self.temperature,
             timeout=self.timeout,
         )
         rsp = response.choices[0].message.content
         tool_calls = response.choices[0].message.tool_calls
-        if tools:
-            return tool_calls
+        if tools and tool_calls:
+            return response.choices[0].message
+
         return rsp
 
-    async def acall(self, prompt: str, image_url: str = None, **kwargs):
+    async def acall(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -367,32 +376,35 @@ class AzureOpenAIClient(LLMClient):
         """
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
-        if image_url:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ]
+        messages = kwargs.get("messages", None)
+        if messages is None:
+            if image_url:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ],
+                    },
+                ]
 
-        else:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": prompt},
-            ]
+            else:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ]
         response = await self.aclient.chat.completions.create(
             model=self.model,
-            messages=message,
+            messages=messages,
             stream=self.stream,
             temperature=self.temperature,
             timeout=self.timeout,
         )
         rsp = response.choices[0].message.content
         tool_calls = response.choices[0].message.tool_calls
-        if tools:
-            return tool_calls
+
+        if tools and tool_calls:
+            return rsp.choices[0].message
         return rsp

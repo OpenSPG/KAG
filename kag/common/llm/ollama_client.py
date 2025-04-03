@@ -64,7 +64,7 @@ class OllamaClient(LLMClient):
             f"Initialize OllamaClient with rate limit {max_rate} every {time_period}s"
         )
 
-    def __call__(self, prompt: str, image_url: str = None, **kwargs):
+    def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -80,25 +80,27 @@ class OllamaClient(LLMClient):
         tag_name = kwargs.get("tag_name", None)
 
         tools = kwargs.get("tools", None)
-        if image_url:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ]
-        else:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": prompt},
-            ]
+        messages = kwargs.get("messages", None)
+        if messages is None:
+            if image_url:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ],
+                    },
+                ]
+            else:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ]
         response = self.client.chat(
             model=self.model,
-            messages=message,
+            messages=messages,
             stream=self.stream,
             tools=tools,
         )
@@ -134,11 +136,11 @@ class OllamaClient(LLMClient):
                 rsp,
                 status="FINISH",
             )
-        if tools:
-            return tool_calls
+        if tools and tool_calls:
+            return response.message
         return rsp
 
-    async def acall(self, prompt: str, image_url: str = None, **kwargs):
+    async def acall(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
 
@@ -154,25 +156,28 @@ class OllamaClient(LLMClient):
         tag_name = kwargs.get("tag_name", None)
 
         tools = kwargs.get("tools", None)
-        if image_url:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}},
-                    ],
-                },
-            ]
-        else:
-            message = [
-                {"role": "system", "content": "you are a helpful assistant"},
-                {"role": "user", "content": prompt},
-            ]
+        messages = kwargs.get("messages", None)
+        if messages is None:
+
+            if image_url:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ],
+                    },
+                ]
+            else:
+                messages = [
+                    {"role": "system", "content": "you are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ]
         response = await self.aclient.chat(
             model=self.model,
-            messages=message,
+            messages=messages,
             stream=self.stream,
             tools=tools,
         )
@@ -208,6 +213,6 @@ class OllamaClient(LLMClient):
                 rsp,
                 status="FINISH",
             )
-        if tools:
-            return tool_calls
+        if tools and tool_calls:
+            return response.message
         return rsp
