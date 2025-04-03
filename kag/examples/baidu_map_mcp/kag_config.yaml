@@ -1,84 +1,87 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
   type: maas
-  api_key: 
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key:
+  model: qwen-max-latest
+
+llm:
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key:
   model: qwen-max-latest
 
 chat_llm: &chat_llm
   type: maas
-  api_key: 
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key:
   model: qwen-max-latest
+  stream: true
 
 ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: 
-  model: qwen2.5-72b-instruct
+  api_key:
+  model: qwen-max-latest
 
 vectorize_model: &vectorize_model
-  api_key: 
+  api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
 vectorizer: *vectorize_model
 
-chain_vectorizer:
-  type: batch
-  vectorize_model: *vectorize_model
+mcp_client: &mcp_client
+  type: mcp_client
+  llm: *openie_llm
 
 log:
   level: INFO
-
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
+  id: '7'
   language: zh
-  namespace: AffairQA
+  namespace: Baidu_Map_MCP
+
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
-  id: '9'
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+      type: schema_constraint_extractor # kag.builder.component.extractor.schema_constraint_extractor.SchemaConstraintExtractor
       llm: *openie_llm
       ner_prompt:
-        type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
+        type: spg_entity # kag.builder.prompt.spg_prompt.SPGEntityPrompt
+      event_prompt:
+        type: spg_event # kag.builder.prompt.spg_prompt.SPGEventPrompt
       std_prompt:
         type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-      triple_prompt:
-        type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+      relation_prompt:
+        type: spg_relation # kag.builder.prompt.spg_prompt.SPGRelationPrompt
     reader:
-      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
+      type: txt_reader # kag.builder.component.reader.txt_reader.TXTReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 100000
+      split_length: 300
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
       vectorize_model: *vectorize_model
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
-  num_threads_per_chain: 1
-  num_chains: 32
+  num_threads_per_chain: 2
+  num_chains: 10
   scanner:
-    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+    type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
 #------------kag-builder configuration end----------------#
 
-
 #------------kag-solver configuration start----------------#
-search_api: &search_api
-  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
-
-graph_api:
-  type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 
 kg_cs:
@@ -97,28 +100,12 @@ rc:
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
     llm_client: *ner_llm
-    vector_chunk_retriever:
-      type: vector_chunk_retriever
-      vectorize_model: *vectorize_model
-      search_api: *search_api
   reranker:
     type: rerank_by_vector
 
-kag_hybrid_executor: &kag_hybrid_executor_conf
-  type: kag_hybrid_executor
-  lf_rewriter:
-    type: kag_spo_lf
-    llm_client: *openie_llm
-    lf_trans_prompt:
-      type: default_spo_retriever_decompose
-    vectorize_model: *vectorize_model
-  flow: |
-    kg_cs->kg_fr->rc
-
-reasoner: &reasoner_conf
-  type: evidence_based_reasoner
-  llm: *chat_llm
-  retriever: *kag_hybrid_executor_conf
+mcp_executor: &mcp_executor_conf
+  type: mcp_executor
+  llm: *openie_llm
 
 kag_solver_pipeline:
   type: kag_static_pipeline
@@ -126,12 +113,15 @@ kag_solver_pipeline:
     type: kag_static_planner
     llm: *chat_llm
     plan_prompt:
-      type: retriever_static_planning
+      type: default_static_planning
     rewrite_prompt:
       type: default_query_rewrite
   executors:
-    - *reasoner_conf
+    - *mcp_executor_conf
   generator:
-    type: llm_generator_with_thought
+    type: llm_generator
     llm_client: *chat_llm
+    generated_prompt:
+      type: default_refer_generator_prompt
+
 #------------kag-solver configuration end----------------#

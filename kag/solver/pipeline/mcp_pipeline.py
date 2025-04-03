@@ -1,14 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright 2023 OpenSPG Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License. You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License
-# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-# or implied.
 import asyncio
 import logging
 from typing import List
@@ -19,42 +8,37 @@ from kag.interface import (
     ExecutorABC,
     GeneratorABC,
     Context,
-    Task,
 )
 
 logger = logging.getLogger(__name__)
 
-
-@SolverPipelineABC.register("naive_rag_pipeline")
-class NaiveRAGPipeline(SolverPipelineABC):
-    """Pipeline useing Naive RAG to retrieve relevant documents and generate answers.
-    Args:
-        executors (List[ExecutorABC]): Available executor instances for task execution
-        generator (GeneratorABC): Result generation component for final answer synthesis
-    """
-
+@SolverPipelineABC.register("mcp_pipeline")
+class MCPPipeline(SolverPipelineABC):
     def __init__(
-        self,
-        executors: List[ExecutorABC],
-        generator: GeneratorABC,
+            self,
+            planner: PlannerABC,
+            executors: List[ExecutorABC],
+            generator: GeneratorABC,
+            max_iteration: int = 10,
     ):
         super().__init__()
+        self.planner = planner
         self.executors = executors
         self.generator = generator
+        self.max_iteration = max_iteration
 
-    def select_executor(self, executor_name: str):
+    def select_mcp_server(self, mcp_server_name: str):
         """Select executor instance by name from available executors.
-
         Args:
-            executor_name: Name of the executor to retrieve
-
+            mcp_server_name: The server name to retrieve
         Returns:
             Matching executor instance, or None if not found
         """
-        for executor in self.executors:
-            schema = executor.schema()
-            if executor_name == schema["name"]:
-                return executor
+        mcp_schema_data = self.executor.schema()
+
+        for server in mcp_schema_data.get("available_servers", []):
+            if server["name"] == mcp_server_name:
+                return {"name": server["name"], "desc": server["desc"]}
         return None
 
     @retry(stop=stop_after_attempt(3))
@@ -69,13 +53,13 @@ class NaiveRAGPipeline(SolverPipelineABC):
         Returns:
             List[Task]: Planned task sequence in DAG format
         """
-        tasks_dep = {}
-        tasks_dep[0] = {
-            "executor": "Retriever",
-            "dependent_task_ids": [],
-            "arguments": {"query": query},
-        }
-        return Task.create_tasks_from_dag(tasks_dep)
+        tasks = await self.planner.ainvoke(
+            query,
+            context=context,
+            executors=[x.schema() for x in self.executors],
+            **kwargs,
+        )
+        return tasks
 
     @retry(stop=stop_after_attempt(3))
     async def execute_task(self, query, task, context, **kwargs):
@@ -87,9 +71,12 @@ class NaiveRAGPipeline(SolverPipelineABC):
             context: Execution context for dependency resolution
             **kwargs: Additional execution parameters
         """
-        executor = self.select_executor(task.executor)
-        if executor:
-            await executor.ainvoke(query, task, context, **kwargs)
+        if self.planner.check_require_rewrite(task):
+            task.update_memory("origin_arguments", task.arguments)
+            task.arguments = await self.planner.query_rewrite(task, **kwargs)
+        mcp_server = self.select_mcp_server(task.executor)
+        if mcp_server:
+            await self.executors[0].ainvoke(query, task, context, **kwargs)
         else:
             logger.warn(f"Executor not  found for task {task}")
 

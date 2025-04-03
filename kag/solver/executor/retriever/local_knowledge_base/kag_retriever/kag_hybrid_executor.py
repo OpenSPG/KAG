@@ -128,7 +128,9 @@ class KAGRetrievedResponse(ExecutorResponse):
         return {
             "retrieved_task": self.retrieved_task,
             "sub_question": [item.to_dict() for item in self.sub_retrieved_set],
-            "graph_data": [str(spo) for spo in self.graph_data.get_all_spo()],
+            "graph_data": [str(spo) for spo in self.graph_data.get_all_spo()]
+            if self.graph_data
+            else [],
             "chunk_datas": [item.to_dict() for item in self.chunk_datas],
             "summary": self.summary,
         }
@@ -186,7 +188,6 @@ class KagHybridExecutor(ExecutorABC):
     def output_types(self):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
-
 
     @retry(stop=stop_after_attempt(3))
     def generate_answer(self, question: str, docs: [], history_qa=[], **kwargs):
@@ -278,7 +279,7 @@ class KagHybridExecutor(ExecutorABC):
                 nl_query=task_query,
                 lf_nodes=logic_nodes,
                 flow_str=self.flow_str,
-                graph_data=context.variables_graph
+                graph_data=context.variables_graph,
             )
             logger.info(
                 f"KAGFlow created in {time.time() - start_time:.2f} seconds for task: {task_query}"
@@ -325,7 +326,11 @@ class KagHybridExecutor(ExecutorABC):
                 f"Results stored in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
             self.report_content(
-                reporter, "thinker", f"{task_query}_end_kag_retriever", f"{len(kag_response.chunk_datas)}", "FINISH"
+                reporter,
+                "thinker",
+                f"{task_query}_end_kag_retriever",
+                f"{len(kag_response.chunk_datas)}",
+                "FINISH",
             )
             logger.info(f"Completed storing results for task: {task_query}")
         except Exception as e:
