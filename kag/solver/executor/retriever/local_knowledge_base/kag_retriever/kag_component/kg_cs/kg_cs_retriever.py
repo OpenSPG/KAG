@@ -10,6 +10,7 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_compon
 class KGConstrainRetrieverABC(FlowComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.name = "kg_cs"
 
     def invoke(self, query: str, logic_nodes: List[LogicNode], **kwargs) -> KgGraph:
         raise NotImplementedError("invoke not implemented yet.")

@@ -23,7 +23,7 @@ class KgConstrainRetrieverWithOpenSPG(KGConstrainRetrieverABC):
             {"type": "exact_one_hop_select"}
         )
         self.entity_linking = entity_linking or EntityLinking.from_config(
-            {"type": "default_entity_linking", "recognition_threshold": 0.9}
+            {"type": "default_entity_linking", "recognition_threshold": 0.9, "exclude_types": ["Chunk"]}
         )
         self.template = KgRetrieverTemplate(
             path_select=self.path_select, entity_linking=self.entity_linking
@@ -31,7 +31,7 @@ class KgConstrainRetrieverWithOpenSPG(KGConstrainRetrieverABC):
 
     def invoke(self, query: str, logic_nodes: List[LogicNode], **kwargs) -> KgGraph:
         return self.template.invoke(
-            query=query, logic_nodes=logic_nodes, is_exact_match=True, **kwargs
+            query=query, logic_nodes=logic_nodes, is_exact_match=True, name=self.name, **kwargs
         )
 
     def is_break(self):
