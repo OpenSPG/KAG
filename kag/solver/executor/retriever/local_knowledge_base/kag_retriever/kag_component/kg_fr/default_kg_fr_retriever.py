@@ -1,5 +1,7 @@
 from typing import List
 
+from kag.common.config import get_default_chat_llm_config
+from kag.interface import LLMClient
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.one_hop_graph import KgGraph
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
@@ -17,8 +19,11 @@ from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import Pat
 
 @FlowComponent.register("kg_fr_open_spg", as_default=True)
 class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
-    def __init__(self, path_select: PathSelect = None, entity_linking=None, **kwargs):
+    def __init__(self, path_select: PathSelect = None, entity_linking=None, llm:LLMClient = None, **kwargs):
         super().__init__(**kwargs)
+        self.llm = llm or LLMClient.from_config(
+            get_default_chat_llm_config()
+        )
         self.path_select = path_select or PathSelect.from_config(
             {"type": "fuzzy_one_hop_select"}
         )
@@ -26,7 +31,7 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
             {"type": "default_entity_linking", "recognition_threshold": 0.8, "exclude_types": ["Chunk"]}
         )
         self.template = KgRetrieverTemplate(
-            path_select=self.path_select, entity_linking=self.entity_linking
+            path_select=self.path_select, entity_linking=self.entity_linking, llm_module=self.llm
         )
 
     def invoke(self, query: str, logic_nodes: List[LogicNode], **kwargs) -> KgGraph:
@@ -36,4 +41,9 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
         return self.break_flag
 
     def break_judge(self, logic_nodes: List[LogicNode], **kwargs):
-        self.break_flag = False
+        for logic_node in logic_nodes:
+            if logic_node.get_fl_node_result().summary:
+                continue
+            self.break_flag = False
+            return
+        self.break_flag = True

@@ -113,46 +113,60 @@ class OpenSPGReporter(ReporterABC):
         self.report_segment_time = {}
         self.report_record = []
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
+        self.word_mapping = {
+            "not found": {
+                "en": "Not found",
+                "zh": "未找到"
+            },
+            "executing": {
+                "en": "Executing...",
+                "zh": "正在执行..."
+            }
+        }
         self.tag_mapping = {
             "Rewrite query": {
-                "en": "## Rethinking question using LLM\n--------- \n {content}",
-                "zh": "## 正在使用LLM重思考问题\n--------- \n {content}",
+                "en": "## Rethinking question using LLM\n--------- \n{content}",
+                "zh": "## 正在使用LLM重思考问题\n--------- \n{content}",
             },
             "Final Answer": {
-                "en": "## Generating final answer\n--------- \n {content}",
-                "zh": "## 正在生成最终答案\n--------- \n {content}",
+                "en": "## Generating final answer\n--------- \n{content}",
+                "zh": "## 正在生成最终答案\n--------- \n{content}",
             },
             "Iterative planning": {
-                "en": "## Iterative planning\n--------- \n {content}",
-                "zh": "## 正在思考当前步骤\n--------- \n {content}",
+                "en": "## Iterative planning\n--------- \n{content}",
+                "zh": "## 正在思考当前步骤\n--------- \n{content}",
             },
             "Static planning": {
-                "en": "## Global planning\n--------- \n {content}",
-                "zh": "## 正在思考全局步骤\n--------- \n {content}",
+                "en": "## Global planning\n--------- \n{content}",
+                "zh": "## 正在思考全局步骤\n--------- \n{content}",
             },
             "begin_sub_kag_retriever": {
-                "en": "#### Starting KG retriever({component_name})\n--------- \n Retrieving sub-question: {content}",
-                "zh": "#### 正在执行知识图谱检索({component_name})\n--------- \n 检索子问题为： {content}",
+                "en": "#### Starting knowledge retriever({component_name})\n--------- \nRetrieving sub-question: {content}",
+                "zh": "#### 正在执行知识检索({component_name})\n--------- \n检索子问题为： {content}",
             },
             "end_sub_kag_retriever": {
-                "en": "#### KG retriever completed\n {content}",
-                "zh": "#### 检索结果为\n {content}",
+                "en": "#### KG retriever completed\n{content}",
+                "zh": "#### 检索结果为\n{content}",
             },
             "rc_retriever_rewrite": {
-                "en": "#### Rewriting chunk retriever query\n--------- \n Rewritten question:\n {content}",
-                "zh": "#### 正在根据依赖问题重写检索子问题\n--------- 重写问题为：\n {content}",
+                "en": "#### Rewriting chunk retriever query\n--------- \nRewritten question:\n{content}",
+                "zh": "#### 正在根据依赖问题重写检索子问题\n--------- \n重写问题为：\n{content}",
             },
             "rc_retriever_summary": {
-                "en": "#### Summarizing retrieved documents\n {content}",
-                "zh": "#### 正在对文档进行总结\n {content}",
+                "en": "#### Summarizing retrieved documents\n{content}",
+                "zh": "#### 正在对文档进行总结\n{content}",
+            },
+            "kg_retriever_summary": {
+                "en": "#### Summarizing retrieved graph\n{content}",
+                "zh": "#### 正在对召回的知识进行总结\n{content}",
             },
             "retriever_summary": {
-                "en": "#### Summarizing retrieved documents\n {content}",
-                "zh": "#### 正在对文档进行总结\n {content}",
+                "en": "#### Summarizing retrieved documents\n{content}",
+                "zh": "#### 正在对文档进行总结\n{content}",
             },
-            "begin_kag_retriever": {
-                "en": "### Starting KAG retriever\n--------- \n Retrieving question: {content}",
-                "zh": "### 正在执行KAG检索\n--------- \n 检索问题为： {content}",
+            "begin_task": {
+                "en": "### Starting Task {step} \n--------- \nquestion: {content}",
+                "zh": "### 正在执行 {step}\n--------- \n问题为： {content}",
             },
             "logic_node": {
                 "en": """#### Translate query to logic form expression
@@ -167,12 +181,12 @@ class OpenSPGReporter(ReporterABC):
 ```""",
             },
             "kag_retriever_result": {
-                "en": "### Retrieved documents\n--------- \n {content}",
-                "zh": "### 检索到的文档\n--------- \n {content}",
+                "en": "### Retrieved documents\n--------- \n{content}",
+                "zh": "### 检索到的文档\n--------- \n{content}",
             },
-            "end_kag_retriever": {
-                "en": "### KAG retriever completed",
-                "zh": "### KAG检索结束",
+            "end_task": {
+                "en": "### Task completed",
+                "zh": "### 执行结束",
             },
             "failed_kag_retriever": {
                 "en": """### KAG retriever failed
@@ -189,16 +203,16 @@ class OpenSPGReporter(ReporterABC):
                 """,
             },
             "begin_math_executor": {
-                "en": "### Starting math executor\n--------- \n {content}",
-                "zh": "### 正在执行计算\n--------- \n {content}",
+                "en": "### Starting math executor\n--------- \n{content}",
+                "zh": "### 正在执行计算\n--------- \n{content}",
             },
             "end_math_executor": {
-                "en": "### Math executor completed\n {content}",
-                "zh": "### 计算结束\n {content}",
+                "en": "### Math executor completed\n{content}",
+                "zh": "### 计算结束\n{content}",
             },
             "code_generator": {
-                "en": "#### Generating code\n--------- \n {content}",
-                "zh": "#### 正在生成代码\n--------- \n {content}",
+                "en": "#### Generating code\n--------- \n{content}",
+                "zh": "#### 正在生成代码\n--------- \n{content}",
             }
         }
 
@@ -251,6 +265,11 @@ class OpenSPGReporter(ReporterABC):
         except Exception as e:
             logging.error(f"do_report failed:{e}")
 
+    def get_word_template(self, word):
+        for name in self.word_mapping:
+            if name in word:
+                return self.word_mapping[name][KAG_PROJECT_CONF.language]
+        return word
     def get_tag_template(self, tag_name):
         for name in self.tag_mapping:
             if name in tag_name:
@@ -279,26 +298,21 @@ class OpenSPGReporter(ReporterABC):
             if segment_name == "thinker" and self.thinking_enabled:
                 if report_to_spg_data["content"][segment_name] == "":
                     report_to_spg_data["content"][segment_name] = "<think>"
-                if tag_template is None:
-                    report_to_spg_data["content"][segment_name] += str(content)
-                else:
-                    if (
+
+                report_content = f"{content}"
+                if (
                         isinstance(content, list)
                         and content
                         and isinstance(content[0], RelationData)
-                    ):
-                        graph_id = f"graph_{generate_random_string(3)}"
-                        graph_list.append(_convert_spo_to_graph(graph_id, content))
-                        report_to_spg_data["content"][
-                            segment_name
-                        ] += tag_template.format(
-                            content=f"""<div class={graph_id}></div>"""
-                            , **kwargs
-                        )
-                    else:
-                        report_to_spg_data["content"][
-                            segment_name
-                        ] += tag_template.format(content=str(content), **kwargs)
+                ):
+                    graph_id = f"graph_{generate_random_string(3)}"
+                    graph_list.append(_convert_spo_to_graph(graph_id, content))
+                    report_content = f"""<div class={graph_id}></div>"""
+
+                report_content = self.get_word_template(report_content)
+                report_to_spg_data["content"][
+                    segment_name
+                ] += tag_template.format(content=str(report_content), **kwargs)
 
                 report_to_spg_data["content"][segment_name] += "\n\n"
                 thinker_start_time = self.report_segment_time.get(

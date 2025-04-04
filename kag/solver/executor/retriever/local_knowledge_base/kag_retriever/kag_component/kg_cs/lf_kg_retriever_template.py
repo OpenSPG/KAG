@@ -1,9 +1,16 @@
 from typing import List, Optional
 
+from tenacity import retry, stop_after_attempt
+
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface import LLMClient
 from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import \
+    get_history_qa
+from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
 
@@ -47,10 +54,44 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(self, path_select: PathSelect, entity_linking, **kwargs):
+    def __init__(self, path_select: PathSelect, entity_linking,  llm_module: LLMClient, **kwargs):
         super().__init__(**kwargs)
         self.path_select = path_select
         self.entity_linking = entity_linking
+        self.solve_question_without_docs_prompt = init_prompt_with_fallback(
+            "solve_question_without_docs", KAG_PROJECT_CONF.biz_scene
+        )
+        self.llm_module = llm_module
+    @retry(stop=stop_after_attempt(3))
+    def generate_sub_answer(
+        self, question: str, knowledge_graph: [], history_qa=[], **kwargs
+    ):
+        """
+        Generates a sub-answer based on the given question, knowledge graph, documents, and history.
+
+        Parameters:
+        question (str): The main question to answer.
+        knowledge_graph (list): A list of knowledge graph data.
+        docs (list): A list of documents related to the question.
+        history (list, optional): A list of previous query-answer pairs. Defaults to an empty list.
+
+        Returns:
+        str: The generated sub-answer.
+        """
+        if not knowledge_graph:
+            return "I don't know"
+        prompt = self.solve_question_without_docs_prompt
+        params = {
+            "question": question,
+            "knowledge_graph": str(knowledge_graph),
+            "history": "\n".join(history_qa),
+        }
+        llm_output = self.llm_module.invoke(
+            params, prompt, with_json_parse=False, with_except=True, **kwargs
+        )
+        if llm_output and "i don't know" not in llm_output.lower():
+            return llm_output
+        return ""
 
     def invoke(
         self,
@@ -62,7 +103,11 @@ class KgRetrieverTemplate:
         component_name = kwargs.get("name", "")
         kg_graph = graph_data or KgGraph()
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+        used_lf = []
         for logic_node in logic_nodes:
+            if logic_node.get_fl_node_result().summary:
+                used_lf.append(logic_node)
+                continue
             if isinstance(logic_node, GetSPONode):
                 if logic_node.get_fl_node_result().spo:
                     continue
@@ -74,22 +119,44 @@ class KgRetrieverTemplate:
                         "FINISH",
                         component_name = component_name
                     )
+                    reporter.add_report_line(
+                        "thinker",
+                        f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                        "executing",
+                        "RUNNING",
+                        component_name=component_name
+                    )
                 select_rel = self._retrieved_on_graph(kg_graph, logic_node)
                 if reporter:
                     reporter.add_report_line(
                         "thinker",
                         f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        select_rel,
+                        select_rel if select_rel else "not found",
                         "FINISH",
                         component_name = component_name
                     )
                 logic_node.get_fl_node_result().spo = select_rel
-                if select_rel and kwargs.get("is_exact_match", False):
-                    logic_node.get_fl_node_result().summary = str(select_rel)
-                    # updated alias with spo
-                    kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
-                    kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
-                    kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
+                if select_rel:
+                    if kwargs.get("is_exact_match", False):
+                        logic_node.get_fl_node_result().summary = str(select_rel)
+                        # updated alias with spo
+                        kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
+                        kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
+                        kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
+                    else:
+                        summary = self.generate_sub_answer(
+                            question=logic_node.sub_query,
+                            knowledge_graph=select_rel,
+                            history_qa=get_history_qa(used_lf),
+                            reporter=reporter,
+                            segment_name="thinker",
+                            tag_name=f"kg_retriever_summary_{logic_node.sub_query}_{component_name}",
+                        )
+                        logic_node.get_fl_node_result().summary = summary
+                        if summary:
+                            kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, f"Q:{logic_node.sub_query} A:{summary}")
+                            kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, f"Q:{logic_node.sub_query} A:{summary}")
+                            kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, f"Q:{logic_node.sub_query} A:{summary}")
 
 
         return kg_graph
