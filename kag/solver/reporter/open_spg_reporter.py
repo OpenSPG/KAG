@@ -114,13 +114,33 @@ class OpenSPGReporter(ReporterABC):
         self.report_record = []
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
         self.word_mapping = {
+            "next_finish": {
+                "zh": "检索信息不足以回答，需要继续检索",
+                "en": "Insufficient information retrieved to answer, need to continue retrieving",
+            },
             "not found": {
                 "en": "Not found",
                 "zh": "未找到"
             },
             "executing": {
-                "en": "Executing...",
-                "zh": "正在执行..."
+                "en": "Executing{refresh}",
+                "zh": "执行中{refresh}"
+            },
+            "finish": {
+                "en": "Finish",
+                "zh": "完成"
+            },
+            "rc": {
+                "en": "Raw Chunk Retrieve",
+                "zh": "文档层检索"
+            },
+            "kg_fr": {
+                "en": "Open Information Extraction Graph Retrieve",
+                "zh": "开放信息抽取层检索"
+            },
+            "kg_cs": {
+                "en": "SPG Graph Retrieve",
+                "zh": "SPG知识层检索"
             }
         }
         self.tag_mapping = {
@@ -141,12 +161,12 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "## 正在思考全局步骤\n--------- \n{content}",
             },
             "begin_sub_kag_retriever": {
-                "en": "#### Starting knowledge retriever({component_name})\n--------- \nRetrieving sub-question: {content}",
-                "zh": "#### 正在执行知识检索({component_name})\n--------- \n检索子问题为： {content}",
+                "en": "**Starting {component_name}** {content}",
+                "zh": "**执行{component_name}** {content}",
             },
             "end_sub_kag_retriever": {
-                "en": "#### KG retriever completed\n{content}",
-                "zh": "#### 检索结果为\n{content}",
+                "en": " {content}",
+                "zh": " {content}",
             },
             "rc_retriever_rewrite": {
                 "en": "#### Rewriting chunk retriever query\n--------- \nRewritten question:\n{content}",
@@ -165,8 +185,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "#### 正在对文档进行总结\n{content}",
             },
             "begin_task": {
-                "en": "### Starting Task {step} \n--------- \nquestion: {content}",
-                "zh": "### 正在执行 {step}\n--------- \n问题为： {content}",
+                "en": "--------- \n### Starting Task {step}: {content}",
+                "zh": "--------- \n### 正在执行 {step}: {content}",
             },
             "logic_node": {
                 "en": """#### Translate query to logic form expression
@@ -265,10 +285,13 @@ class OpenSPGReporter(ReporterABC):
         except Exception as e:
             logging.error(f"do_report failed:{e}")
 
-    def get_word_template(self, word):
+    def get_word_template(self, word, params):
         for name in self.word_mapping:
             if name in word:
-                return self.word_mapping[name][KAG_PROJECT_CONF.language]
+                template = self.word_mapping[name][KAG_PROJECT_CONF.language]
+                if "{" in template:
+                    template = template.format(**params)
+                return template
         return word
     def get_tag_template(self, tag_name):
         for name in self.tag_mapping:
@@ -294,12 +317,19 @@ class OpenSPGReporter(ReporterABC):
             tag_template = self.get_tag_template(report_data["tag_name"])
             report_time = report_data["time"]
             content = report_data["content"]
-            kwargs = report_data["params"]
+            params = report_data.get("params", {})
+            # replace word
+            kwargs = {}
+            for k,v in params.items():
+                kwargs[k] = self.get_word_template(v, params)
+
             if segment_name == "thinker" and self.thinking_enabled:
                 if report_to_spg_data["content"][segment_name] == "":
                     report_to_spg_data["content"][segment_name] = "<think>"
-
                 report_content = f"{content}"
+                if "planning" in report_data["tag_name"]:
+                    report_content = report_content.replace("`", "\`")
+
                 if (
                         isinstance(content, list)
                         and content
@@ -309,10 +339,13 @@ class OpenSPGReporter(ReporterABC):
                     graph_list.append(_convert_spo_to_graph(graph_id, content))
                     report_content = f"""<div class={graph_id}></div>"""
 
-                report_content = self.get_word_template(report_content)
-                report_to_spg_data["content"][
-                    segment_name
-                ] += tag_template.format(content=str(report_content), **kwargs)
+                report_content = self.get_word_template(report_content, params)
+                if tag_template:
+                    report_to_spg_data["content"][
+                        segment_name
+                    ] += tag_template.format(content=str(report_content), **kwargs)
+                else:
+                    report_to_spg_data["content"][segment_name] += str(report_content)
 
                 report_to_spg_data["content"][segment_name] += "\n\n"
                 thinker_start_time = self.report_segment_time.get(

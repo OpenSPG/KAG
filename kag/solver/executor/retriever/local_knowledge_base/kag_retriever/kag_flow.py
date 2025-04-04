@@ -128,6 +128,7 @@ class KAGFlow:
                 graph_data=cur_graph_data,
                 datas=input_data,
                 flow_id=self.flow_id,
+                **kwargs,
             )
             logger.info(
                 f"{self.nl_query} Node {node_name} executed in {time.time() - start_time:.2f} seconds"

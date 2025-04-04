@@ -1,11 +1,10 @@
 from typing import List, Optional
-
 from tenacity import retry, stop_after_attempt
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import LLMClient
 from kag.interface.solver.base_model import SPOEntity, LogicNode
-from kag.interface.solver.reporter_abc import ReporterABC
+from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import \
@@ -54,7 +53,7 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(self, path_select: PathSelect, entity_linking,  llm_module: LLMClient, **kwargs):
+    def __init__(self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs):
         super().__init__(**kwargs)
         self.path_select = path_select
         self.entity_linking = entity_linking
@@ -62,9 +61,10 @@ class KgRetrieverTemplate:
             "solve_question_without_docs", KAG_PROJECT_CONF.biz_scene
         )
         self.llm_module = llm_module
+
     @retry(stop=stop_after_attempt(3))
     def generate_sub_answer(
-        self, question: str, knowledge_graph: [], history_qa=[], **kwargs
+            self, question: str, knowledge_graph: [], history_qa=[], **kwargs
     ):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
@@ -94,11 +94,11 @@ class KgRetrieverTemplate:
         return ""
 
     def invoke(
-        self,
-        query: str,
-        logic_nodes: List[LogicNode],
-        graph_data: KgGraph = None,
-        **kwargs,
+            self,
+            query: str,
+            logic_nodes: List[LogicNode],
+            graph_data: KgGraph = None,
+            **kwargs,
     ) -> KgGraph:
         component_name = kwargs.get("name", "")
         kg_graph = graph_data or KgGraph()
@@ -109,55 +109,81 @@ class KgRetrieverTemplate:
                 used_lf.append(logic_node)
                 continue
             if isinstance(logic_node, GetSPONode):
+
                 if logic_node.get_fl_node_result().spo:
                     continue
+
+                dot_refresh = DotRefresher(reporter=reporter, segment="thinker",
+                                           tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                                           content="executing", params={
+                        "component_name": component_name
+                    })
+
                 if reporter:
                     reporter.add_report_line(
                         "thinker",
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         logic_node.sub_query,
-                        "FINISH",
-                        component_name = component_name
+                        "INIT",
+                        component_name=component_name
                     )
                     reporter.add_report_line(
                         "thinker",
-                        f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         "executing",
                         "RUNNING",
                         component_name=component_name
                     )
-                select_rel = self._retrieved_on_graph(kg_graph, logic_node)
-                if reporter:
-                    reporter.add_report_line(
-                        "thinker",
-                        f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        select_rel if select_rel else "not found",
-                        "FINISH",
-                        component_name = component_name
-                    )
-                logic_node.get_fl_node_result().spo = select_rel
-                if select_rel:
-                    if kwargs.get("is_exact_match", False):
-                        logic_node.get_fl_node_result().summary = str(select_rel)
-                        # updated alias with spo
-                        kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
-                        kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
-                        kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
-                    else:
-                        summary = self.generate_sub_answer(
-                            question=logic_node.sub_query,
-                            knowledge_graph=select_rel,
-                            history_qa=get_history_qa(used_lf),
-                            reporter=reporter,
-                            segment_name="thinker",
-                            tag_name=f"kg_retriever_summary_{logic_node.sub_query}_{component_name}",
-                        )
-                        logic_node.get_fl_node_result().summary = summary
-                        if summary:
-                            kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, f"Q:{logic_node.sub_query} A:{summary}")
-                            kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, f"Q:{logic_node.sub_query} A:{summary}")
-                            kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, f"Q:{logic_node.sub_query} A:{summary}")
 
+                    dot_refresh.start()
+                try:
+                    select_rel = self._retrieved_on_graph(kg_graph, logic_node)
+                    if reporter:
+                        dot_refresh.stop()
+                        if select_rel:
+                            reporter.add_report_line(
+                                "thinker",
+                                f"end_sub_kag_retriever_{logic_node.sub_query}",
+                                select_rel,
+                                "FINISH",
+                                component_name=component_name
+                            )
+                    logic_node.get_fl_node_result().spo = select_rel
+                    if select_rel:
+                        if kwargs.get("is_exact_match", False):
+                            logic_node.get_fl_node_result().summary = str(select_rel)
+                            # updated alias with spo
+                            kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
+                            kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
+                            kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
+                        else:
+                            summary = self.generate_sub_answer(
+                                question=logic_node.sub_query,
+                                knowledge_graph=select_rel,
+                                history_qa=get_history_qa(used_lf),
+                                reporter=reporter,
+                                segment_name="thinker",
+                                tag_name=f"kg_retriever_summary_{logic_node.sub_query}_{component_name}",
+                            )
+                            logic_node.get_fl_node_result().summary = summary
+                            if summary:
+                                kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name,
+                                                            f"Q:{logic_node.sub_query} A:{summary}")
+                                kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name,
+                                                            f"Q:{logic_node.sub_query} A:{summary}")
+                                kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name,
+                                                            f"Q:{logic_node.sub_query} A:{summary}")
+
+                except Exception as e:
+                    if reporter:
+                        dot_refresh.stop()
+                        reporter.add_report_line(
+                            "thinker",
+                            f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                            f"failed: reason={e}",
+                            "ERROR",
+                            component_name=component_name
+                        )
 
         return kg_graph
 
@@ -176,11 +202,11 @@ class KgRetrieverTemplate:
         )
 
     def _retrieve_relations(
-        self,
-        kg_graph: KgGraph,
-        logic_node: GetSPONode,
-        head_entities: List[EntityData],
-        tail_entities: List[EntityData],
+            self,
+            kg_graph: KgGraph,
+            logic_node: GetSPONode,
+            head_entities: List[EntityData],
+            tail_entities: List[EntityData],
     ):
         selected_relations = self.path_select.invoke(
             query=logic_node.sub_query,
@@ -198,7 +224,7 @@ class KgRetrieverTemplate:
         return selected_relations
 
     def _find_tail_entities(
-        self, kg_graph: KgGraph, logic_node: GetSPONode
+            self, kg_graph: KgGraph, logic_node: GetSPONode
     ) -> List[EntityData]:
         """Find tails entities for path selection
 
@@ -214,7 +240,7 @@ class KgRetrieverTemplate:
         )
 
     def _find_head_entities(
-        self, kg_graph: KgGraph, logic_node: GetSPONode
+            self, kg_graph: KgGraph, logic_node: GetSPONode
     ) -> List[EntityData]:
         """Find heads entities for path selection
 
