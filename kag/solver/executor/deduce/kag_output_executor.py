@@ -64,7 +64,7 @@ class KagOutputExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_output",
-            result,
+            "finish",
             "FINISH",
             step=task.name
         )
