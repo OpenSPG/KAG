@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Dict
 
 from kag.common.conf import KAG_PROJECT_CONF
@@ -23,6 +24,8 @@ from knext.reasoner.client import ReasonerClient
 
 logger = logging.getLogger()
 
+import knext.common.cache
+entities_query_map = knext.common.cache.LinkCache(maxsize=1000, ttl=3000)
 
 def update_cached_one_hop_rel(rel_dict: dict, rel: RelationData):
     rel_set = rel_dict.get(rel.type, [])
@@ -165,6 +168,7 @@ class OpenSPGGraphApi(GraphApiABC):
         return [self.convert_raw_data_to_node(row[0], False, {}) for row in tables.data]
 
     def get_entity_one_hop(self, entity: EntityData) -> OneHopGraphData:
+        start_time = time.time()
         s_id_param = generate_gql_id_params([entity.biz_id])
         dsl_query = f"""
         MATCH (s:`{entity.type}`)-[p:rdf_expand()]-(o:Entity)
@@ -172,9 +176,8 @@ class OpenSPGGraphApi(GraphApiABC):
         )
         RETURN s,p,o,s.id,o.id
         """
-        one_hop: OneHopGraphData = self._get_cached_one_hop_graph(
-            entity.biz_id, entity.type, self.cache_one_hop_graph
-        )
+        s_biz_id_with_type_name = generate_biz_id_with_type(entity.biz_id, entity.type)
+        one_hop: OneHopGraphData = entities_query_map.get(s_biz_id_with_type_name)
         if not one_hop:
             try:
                 table: TableData = self.execute_dsl(dsl_query, sid=s_id_param)
@@ -183,12 +186,14 @@ class OpenSPGGraphApi(GraphApiABC):
                 one_hop = self._get_cached_one_hop_graph(
                     entity.biz_id, entity.type, self.cache_one_hop_graph
                 )
+                entities_query_map.put(s_biz_id_with_type_name, one_hop)
             except Exception as e:
-                logger.debug(f"get_entity_one_hop failed! {e}", exc_info=True)
+                logger.info(f"get_entity_one_hop failed! {e}", exc_info=True)
 
         if one_hop is None:
             logger.debug(f"get_entity_one_hop failed! {dsl_query}")
             return None
+        logger.info(f"get_entity_one_hop  cost ={time.time() - start_time}")
         return copy_one_hop_graph_data(one_hop, "s")
 
     def convert_spo_to_one_graph(self, table: TableData) -> Dict[str, OneHopGraphData]:

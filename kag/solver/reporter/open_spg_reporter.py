@@ -104,6 +104,7 @@ def _convert_kg_graph_to_show_graph(graph_id, kg_graph: KgGraph):
 class OpenSPGReporter(ReporterABC):
     def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
         super().__init__(**kwargs)
+        self.last_report = None
         self._lock = threading.Lock()
         self.task_id = task_id
         self.host = host_addr
@@ -130,8 +131,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "## 正在思考全局步骤\n--------- \n {content}",
             },
             "begin_sub_kag_retriever": {
-                "en": "#### Starting KG retriever\n--------- \n Retrieving sub-question: {content}",
-                "zh": "#### 正在执行知识图谱检索\n--------- \n 检索子问题为： {content}",
+                "en": "#### Starting KG retriever({component_name})\n--------- \n Retrieving sub-question: {content}",
+                "zh": "#### 正在执行知识图谱检索({component_name})\n--------- \n 检索子问题为： {content}",
             },
             "end_sub_kag_retriever": {
                 "en": "#### KG retriever completed\n {content}",
@@ -170,8 +171,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "### 检索到的文档\n--------- \n {content}",
             },
             "end_kag_retriever": {
-                "en": "### KAG retriever completed\n retrieved {content}",
-                "zh": "### KAG检索结束\n 共计检索到 {content}",
+                "en": "### KAG retriever completed",
+                "zh": "### KAG检索结束",
             },
             "failed_kag_retriever": {
                 "en": """### KAG retriever failed
@@ -208,13 +209,14 @@ class OpenSPGReporter(ReporterABC):
         else:
             self.client = None
 
-    def add_report_line(self, segment, tag_name, content, status):
+    def add_report_line(self, segment, tag_name, content, status, **kwargs):
         report_id = f"{segment}_{tag_name}"
         self.report_stream_data[report_id] = {
             "segment": segment,
             "tag_name": tag_name,
             "content": content,
             "status": status,
+            "params": kwargs,
             "time": time.time(),
         }
         self.report_record.append(report_id)
@@ -238,7 +240,14 @@ class OpenSPGReporter(ReporterABC):
             ret = self.client.reasoner_dialog_report_completions_post(
                 task_stream_request=request
             )
+            if  self.last_report is None:
+                logger.info(f"begin do_report: {request} ret={ret}")
+                self.last_report = request
+            if self.last_report.to_dict() == request.to_dict():
+                return
             logger.info(f"do_report: {request} ret={ret}")
+            self.last_report = request
+
         except Exception as e:
             logging.error(f"do_report failed:{e}")
 
@@ -266,6 +275,7 @@ class OpenSPGReporter(ReporterABC):
             tag_template = self.get_tag_template(report_data["tag_name"])
             report_time = report_data["time"]
             content = report_data["content"]
+            kwargs = report_data["params"]
             if segment_name == "thinker" and self.thinking_enabled:
                 if report_to_spg_data["content"][segment_name] == "":
                     report_to_spg_data["content"][segment_name] = "<think>"
@@ -283,11 +293,12 @@ class OpenSPGReporter(ReporterABC):
                             segment_name
                         ] += tag_template.format(
                             content=f"""<div class={graph_id}></div>"""
+                            , **kwargs
                         )
                     else:
                         report_to_spg_data["content"][
                             segment_name
-                        ] += tag_template.format(content=str(content))
+                        ] += tag_template.format(content=str(content), **kwargs)
 
                 report_to_spg_data["content"][segment_name] += "\n\n"
                 thinker_start_time = self.report_segment_time.get(

@@ -21,7 +21,7 @@ from kag.tools.search_api.search_api_abc import SearchApiABC
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import (
     run_gql,
-    generate_gql_spo_element,
+    generate_gql_spo_element, recall_one_hop_graph_by_entities,
 )
 
 logger = logging.getLogger()
@@ -90,16 +90,16 @@ class ExactOneHopSelect(PathSelect):
 
         if len(gql_rel_labels) == 0:
             return []
+        try:
+            gql_result = self.recall_by_spg_gql(
+                gql_header_labels, gql_tail_labels, gql_rel_labels, where_gql, **params
+            )
+            if len(gql_result) != 0:
+                return gql_result
+        except Exception as e:
+            logger.warning(f"recall_by_spg_gql failed {e},", exc_info=True)
 
-        gql_result = self.recall_by_spg_gql(
-            gql_header_labels, gql_tail_labels, gql_rel_labels, where_gql, **params
-        )
-        if len(gql_result) != 0:
-            return gql_result
-
-        return self.recall_one_graph(
-            gql_header_labels, gql_tail_labels, where_gql, **params
-        )
+        return recall_one_hop_graph_by_entities(self.graph_api, heads=heads, tails=tails)
 
     def _std_best_p_with_value_and_p_name(
         self, n: GetSPONode, one_graph: OneHopGraphData
@@ -185,12 +185,13 @@ class ExactOneHopSelect(PathSelect):
         tails: List[EntityData],
         **kwargs,
     ) -> List[RelationData]:
+        begin_time = time.time()
         one_hop_graph_list = self.recall_graph_data_from_knowledge_base(
             spo, heads, tails
         )
         start_time = time.time()
         selected_rels = self.match_spo(spo, one_hop_graph_list)
-        logger.debug(
-            f"_exact_match_spo cost={time.time() - start_time} selected_rels={len(selected_rels)}"
+        logger.info(
+            f"_exact_match_spo total cost={time.time() - begin_time} cost={time.time() - start_time} selected_rels={len(selected_rels)}"
         )
         return selected_rels

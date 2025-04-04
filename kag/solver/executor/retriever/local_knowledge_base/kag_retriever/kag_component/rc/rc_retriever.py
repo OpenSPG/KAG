@@ -10,6 +10,7 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_compon
 class RCRetrieverABC(FlowComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.name = "rc"
 
     def invoke(
         self, query, logic_nodes: List[LogicNode], graph_data: KgGraph, **kwargs
