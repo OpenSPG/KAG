@@ -15,10 +15,10 @@ async def chat_loop(client):
             if query.lower() == "quit":
                 break
 
-            from kag.interface import Task
+            from kag.interface import Task, Context
 
             task = Task("mcp", arguments={"query": query})
-            response = await client.ainvoke(task)
+            response = await client.ainvoke(query, task, Context())
             print("\n" + response)
 
         except Exception as e:
