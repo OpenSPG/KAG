@@ -258,9 +258,10 @@ class KagHybridExecutor(ExecutorABC):
             self.report_content(
                 reporter,
                 "thinker",
-                f"{task_query}_begin_kag_retriever",
+                f"{task_query}_begin_task",
                 task_query,
                 "FINISH",
+                step=task.name
             )
             if not logic_node:
                 logic_nodes = self._convert_to_logical_form(
@@ -328,9 +329,10 @@ class KagHybridExecutor(ExecutorABC):
             self.report_content(
                 reporter,
                 "thinker",
-                f"{task_query}_end_kag_retriever",
+                f"{task_query}_end_task",
                 f"{len(kag_response.chunk_datas)}",
                 "FINISH",
+                step=task.name
             )
             logger.info(f"Completed storing results for task: {task_query}")
         except Exception as e:

@@ -244,6 +244,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 deps = [] if i ==0 else [i - 1]
 
             tasks_dep[i] = {
+                "name": f"Step{i+1}",
                 "executor": logic_form.operator,
                 "dependent_task_ids": deps,
                 "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form},
