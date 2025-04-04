@@ -326,14 +326,6 @@ class KagHybridExecutor(ExecutorABC):
             logger.info(
                 f"Results stored in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
-            self.report_content(
-                reporter,
-                "thinker",
-                f"{task_query}_end_task",
-                f"{len(kag_response.chunk_datas)}",
-                "FINISH",
-                step=task.name
-            )
             logger.info(f"Completed storing results for task: {task_query}")
         except Exception as e:
             logger.warning(
