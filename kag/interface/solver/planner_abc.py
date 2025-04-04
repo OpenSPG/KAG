@@ -70,6 +70,8 @@ class Task(Registrable):
         self.memory = {}
         self.result = None
 
+        self.name = kwargs.get("name", None) or str(self.id)
+
     def add_parent(self, parent):
         """Adds a predecessor task to the dependency list.
 
@@ -144,7 +146,7 @@ class Task(Registrable):
 
         task_map = {}
         for task_order, task_info in task_dag.items():
-            task = Task(task_info["executor"], task_info["arguments"], id=task_order, thought=task_info.get('thought', ''))
+            task = Task(task_info["executor"], task_info["arguments"], id=task_order, thought=task_info.get('thought', ''), name=task_info.get('name', None))
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]

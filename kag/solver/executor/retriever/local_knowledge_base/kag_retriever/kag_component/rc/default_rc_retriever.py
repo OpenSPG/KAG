@@ -220,6 +220,13 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     "FINISH",
                     component_name=component_name
                 )
+                reporter.add_report_line(
+                    "thinker",
+                    f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                    "executing",
+                    "RUNNING",
+                    component_name=component_name
+                )
             rewrite_queries = self._rewrite_sub_query_with_history_qa(
                 history=used_lf,
                 sub_query=logic_node.sub_query,
@@ -244,10 +251,11 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             )
             logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
             if reporter:
+                matched_graph = match_spo + selected_rel
                 reporter.add_report_line(
                     "thinker",
                     f"end_sub_kag_retriever_{logic_node.sub_query}",
-                    match_spo + selected_rel,
+                    matched_graph if matched_graph else "not found",
                     "FINISH",
                 )
             # summary
