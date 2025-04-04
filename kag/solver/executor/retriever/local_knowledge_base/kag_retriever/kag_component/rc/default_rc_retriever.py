@@ -7,7 +7,7 @@ from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import PromptABC, LLMClient
 from kag.interface.solver.base_model import LogicNode
-from kag.interface.solver.reporter_abc import ReporterABC
+from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
 from kag.interface.solver.model.one_hop_graph import ChunkData, KgGraph
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.solver.utils import init_prompt_with_fallback
@@ -212,54 +212,69 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             logger.info(
                 f"`{query}` Processing logic node with sub-query: {logic_node.sub_query}"
             )
+            dot_refresh = DotRefresher(reporter=reporter, segment="thinker",
+                                       tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                                       content="executing", params={
+                    "component_name": component_name
+                })
+
             if reporter:
                 reporter.add_report_line(
                     "thinker",
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     logic_node.sub_query,
-                    "FINISH",
+                    "INIT",
                     component_name=component_name
                 )
                 reporter.add_report_line(
                     "thinker",
-                    f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                    f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     "executing",
                     "RUNNING",
                     component_name=component_name
                 )
-            rewrite_queries = self._rewrite_sub_query_with_history_qa(
-                history=used_lf,
-                sub_query=logic_node.sub_query,
-                reporter=reporter,
-                tag_name=f"rc_retriever_rewrite_{logic_node.sub_query}",
-            )
-            logger.info(f"`{query}` Rewritten queries: {rewrite_queries}")
-            entities = []
-            selected_rel = []
-            if graph_data is not None:
-                s_entities = graph_data.get_entity_by_alias(logic_node.s.alias_name)
-                if s_entities:
-                    entities.extend(s_entities)
-                o_entities = graph_data.get_entity_by_alias(logic_node.o.alias_name)
-                if o_entities:
-                    entities.extend(o_entities)
-                selected_rel = graph_data.get_all_spo()
-            chunks, match_spo = self.ppr_chunk_retriever_tool.invoke(
-                queries=[query] + rewrite_queries,
-                start_entities=entities,
-                top_k=self.top_k,
-            )
-            logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
-            if reporter:
-                matched_graph = match_spo + selected_rel
-                reporter.add_report_line(
-                    "thinker",
-                    f"end_sub_kag_retriever_{logic_node.sub_query}",
-                    matched_graph if matched_graph else "not found",
-                    "FINISH",
-                )
-            # summary
+                dot_refresh.start()
             try:
+                rewrite_queries = self._rewrite_sub_query_with_history_qa(
+                    history=used_lf,
+                    sub_query=logic_node.sub_query,
+                    reporter=reporter,
+                    tag_name=f"rc_retriever_rewrite_{logic_node.sub_query}",
+                )
+                logger.info(f"`{query}` Rewritten queries: {rewrite_queries}")
+                entities = []
+                selected_rel = []
+                if graph_data is not None:
+                    s_entities = graph_data.get_entity_by_alias(logic_node.s.alias_name)
+                    if s_entities:
+                        entities.extend(s_entities)
+                    o_entities = graph_data.get_entity_by_alias(logic_node.o.alias_name)
+                    if o_entities:
+                        entities.extend(o_entities)
+                    selected_rel = graph_data.get_all_spo()
+                chunks, match_spo = self.ppr_chunk_retriever_tool.invoke(
+                    queries=[query] + rewrite_queries,
+                    start_entities=entities,
+                    top_k=self.top_k,
+                )
+                logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
+                if reporter:
+                    dot_refresh.stop()
+                    matched_graph = match_spo + selected_rel
+                    reporter.add_report_line(
+                        "thinker",
+                        f"end_sub_kag_retriever_{logic_node.sub_query}",
+                        matched_graph if matched_graph else "finish",
+                        "FINISH",
+                    )
+                    reporter.add_report_line(
+                        "thinker",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                        "finish",
+                        "FINISH",
+                        component_name=component_name
+                    )
+
                 summary = self.generate_summary(
                     query=logic_node.sub_query,
                     graph=logic_node.get_fl_node_result().spo,
@@ -276,13 +291,22 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     graph_data.add_answered_alias(logic_node.p.alias_name.alias_name, summary)
                     graph_data.add_answered_alias(logic_node.o.alias_name.alias_name, summary)
 
+                logic_node.get_fl_node_result().sub_question = rewrite_queries
+                logic_node.get_fl_node_result().chunks = chunks
+                sub_queries += rewrite_queries
+                sub_chunks.append(chunks)
+                used_lf.append(logic_node)
             except Exception as e:
-                logger.error(f"`{query}` subq: {logic_node.sub_query} error:{e}")
-            logic_node.get_fl_node_result().sub_question = rewrite_queries
-            logic_node.get_fl_node_result().chunks = chunks
-            sub_queries += rewrite_queries
-            sub_chunks.append(chunks)
-            used_lf.append(logic_node)
+                if reporter:
+                    dot_refresh.stop()
+                    reporter.add_report_line(
+                        "thinker",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                        f"failed: reason={e}",
+                        "ERROR",
+                        component_name=component_name
+                    )
+                logger.error(f"`{query}` subq: {logic_node.sub_query} error:{e}", exc_info=True)
 
         return self.reranker.invoke(
             query=query, sub_queries=sub_queries, sub_question_chunks=sub_chunks

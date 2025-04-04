@@ -1,6 +1,8 @@
 import logging
 import asyncio
-
+import time
+from concurrent.futures import ThreadPoolExecutor, Future
+from typing import Optional
 from kag.common.registry import Registrable
 
 logger = logging.getLogger()
@@ -49,3 +51,46 @@ class ReporterABC(Registrable):
             logging.error(f"reporter is error: {e}", exc_info=True)
         finally:
             self._running = False
+
+
+class DotRefresher:
+    def __init__(self, reporter, segment, tag_name, content, params, interval=1):
+        self.reporter = reporter
+        self.segment = segment
+        self.tag_name = tag_name
+        self.content = content
+        self.interval = interval
+        self.is_running = False
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.future: Optional[Future] = None
+        self.params = params
+
+    def _update_status(self):
+        update_dot_count = 1
+        if not self.reporter:
+            return
+        kwargs = dict(self.params)
+
+        while self.is_running:
+            update_dot_count += 1
+            show_dot = update_dot_count % 4
+            kwargs["refresh"] = "".join(["."] * show_dot)
+            self.reporter.add_report_line(
+                self.segment,
+                self.tag_name,
+                self.content,
+                "RUNNING",
+                **kwargs
+            )
+            time.sleep(self.interval)
+
+    def start(self):
+        if not self.future or self.future.done():
+            self.is_running = True
+            self.future = self.executor.submit(self._update_status)
+
+    def stop(self):
+        self.is_running = False
+        if self.future:
+            self.future.done()
+        self.executor.shutdown(wait=True)

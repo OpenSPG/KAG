@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, Optional
 
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import LLMClient
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.one_hop_graph import KgGraph
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
     FlowComponent,
 )
@@ -43,9 +44,26 @@ class KgConstrainRetrieverWithOpenSPG(KGConstrainRetrieverABC):
         return self.break_flag
 
     def break_judge(self, logic_nodes: List[LogicNode], **kwargs):
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         for logic_node in logic_nodes:
             if logic_node.get_fl_node_result().spo:
+                if reporter:
+                    reporter.add_report_line(
+                        "thinker",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{self.name}",
+                        "finsh",
+                        "FINISH",
+                        component_name=self.name
+                    )
                 continue
             self.break_flag = False
+            if reporter:
+                reporter.add_report_line(
+                    "thinker",
+                    f"begin_sub_kag_retriever_{logic_node.sub_query}_{self.name}",
+                    "next_finish",
+                    "FINISH",
+                    component_name=self.name
+                )
             return
         self.break_flag = True
