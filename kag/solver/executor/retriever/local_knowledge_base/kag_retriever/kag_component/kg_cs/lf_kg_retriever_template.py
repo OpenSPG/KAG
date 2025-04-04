@@ -59,6 +59,7 @@ class KgRetrieverTemplate:
         graph_data: KgGraph = None,
         **kwargs,
     ) -> KgGraph:
+        component_name = kwargs.get("name", "")
         kg_graph = graph_data or KgGraph()
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         for logic_node in logic_nodes:
@@ -68,17 +69,19 @@ class KgRetrieverTemplate:
                 if reporter:
                     reporter.add_report_line(
                         "thinker",
-                        f"begin_sub_kag_retriever_{logic_node.sub_query}",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         logic_node.sub_query,
                         "FINISH",
+                        component_name = component_name
                     )
                 select_rel = self._retrieved_on_graph(kg_graph, logic_node)
                 if reporter:
                     reporter.add_report_line(
                         "thinker",
-                        f"end_sub_kag_retriever_{logic_node.sub_query}",
+                        f"end_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         select_rel,
                         "FINISH",
+                        component_name = component_name
                     )
                 logic_node.get_fl_node_result().spo = select_rel
                 if select_rel and kwargs.get("is_exact_match", False):

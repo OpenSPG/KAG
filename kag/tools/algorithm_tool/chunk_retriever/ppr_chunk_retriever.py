@@ -253,14 +253,15 @@ class PprChunkRetriever(ToolABC):
         ner_maps = {}
         ner_start_time = time.time()
         logger.info(f"Extracting candidate entities using NER for queries: {queries}")
-
+        start_entity_maps = {}
+        for e in matched_entities:
+            e_id = f"{e.biz_id}_{e.type}"
+            start_entity_maps[e_id] = e
         def process_query(ner_query):
             """Process a single query in parallel."""
             candidate_entities = self.ner.invoke(ner_query, **kwargs)
             for candidate_entity in candidate_entities:
                 query_type = candidate_entity.get_entity_first_type_or_un_std()
-                if query_type not in self.schema_helper.node_en_zh.keys():
-                    query_type = "Others"
 
                 ner_id = f"{candidate_entity.entity_name}_{query_type}"
                 if ner_id not in ner_maps:
@@ -269,13 +270,14 @@ class PprChunkRetriever(ToolABC):
                         "query": ner_query,
                         "query_type": query_type,
                     }
-                ner_others = f"{candidate_entity.entity_name}_Others"
-                if ner_others not in ner_maps:
-                    ner_maps[ner_id] = {
-                        "candidate": candidate_entity,
-                        "query": ner_query,
-                        "query_type": "Others",
-                    }
+                if query_type != "Others":
+                    ner_others = f"{candidate_entity.entity_name}_Others"
+                    if ner_others not in ner_maps:
+                        ner_maps[ner_others] = {
+                            "candidate": candidate_entity,
+                            "query": ner_query,
+                            "query_type": "Others",
+                        }
             # Use ThreadPoolExecutor to parallelize NER processing
 
         with ThreadPoolExecutor() as executor:
@@ -316,7 +318,12 @@ class PprChunkRetriever(ToolABC):
         # Flatten the results and extend matched_entities
         for result in results:
             if result:
-                matched_entities.extend(result)
+                for r in result:
+                    e_id = f"{r.biz_id}_{r.type}"
+                    if e_id in start_entity_maps:
+                        continue
+                    start_entity_maps[e_id] = r
+                    matched_entities.append(r)
 
         logger.info(
             f"Entity linking completed in {time.time() - el_start_time:.2f} seconds. Found {len(matched_entities)} unique entities."

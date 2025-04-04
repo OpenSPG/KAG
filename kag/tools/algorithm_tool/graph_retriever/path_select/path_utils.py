@@ -1,5 +1,7 @@
 import logging
+import time
 from typing import List
+import concurrent.futures
 
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
@@ -60,8 +62,12 @@ def generate_gql_spo_element(
 
 def run_gql(graph_api, spg_gql, **kwargs) -> List[OneHopGraphData]:
     try:
+        start_time = time.time()
         fat_table = graph_api.execute_dsl(spg_gql, **kwargs)
+        logger.info(f"run gql cost {time.time() - start_time}")
+        start_time = time.time()
         one_graph_map = graph_api.convert_spo_to_one_graph(fat_table)
+        logger.info(f"convert_spo_to_one_graph cost {time.time() - start_time}")
         res = list(one_graph_map.values())
         if len(res) > 0:
             return res
@@ -69,3 +75,32 @@ def run_gql(graph_api, spg_gql, **kwargs) -> List[OneHopGraphData]:
         # Log the error or handle it appropriately
         logger.debug(f"An error occurred in recall_spo_by_spg_gql: {e}", exc_info=True)
     return []
+
+def recall_one_hop_graph_by_entities(graph_api, heads: List[EntityData], tails: List[EntityData]):
+    one_hop_graph_list = []
+    start_time = time.time()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        map_dict = {"s": heads, "o": tails}
+        for k, v in map_dict.items():
+            if len(v) == 0:
+                continue
+            try:
+                futures = [
+                    executor.submit(graph_api.get_entity_one_hop, entity)
+                    for entity in v
+                ]
+                results = [
+                    future.result()
+                    for future in concurrent.futures.as_completed(futures)
+                ]
+                for r in results:
+                    if r is None:
+                        continue
+                    r.s_alias_name = k
+                    one_hop_graph_list.append(r)
+            except Exception as e:
+                logger.debug(
+                    f"An error occurred in recall_one_hop_graph: {e}", exc_info=True
+                )
+    logger.info(f"recall_one_hop_graph cost {time.time() - start_time}")
+    return one_hop_graph_list

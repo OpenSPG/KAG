@@ -18,8 +18,7 @@ from kag.tools.search_api.search_api_abc import SearchApiABC
 from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import (
-    generate_gql_spo_element,
-    run_gql,
+    recall_one_hop_graph_by_entities,
 )
 
 logger = logging.getLogger()
@@ -64,20 +63,8 @@ class FuzzyOneHopSelect(PathSelect):
     def recall_graph_data_from_knowledge_base(
         self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData]
     ) -> List[OneHopGraphData]:
-        (
-            gql_header_labels,
-            _,
-            gql_tail_labels,
-            where_gql,
-            params,
-        ) = generate_gql_spo_element(n, heads, tails, self.schema_helper)
+        return recall_one_hop_graph_by_entities(self.graph_api, heads=heads, tails=tails)
 
-        spg_gql = f"""
-        MATCH (s:{gql_header_labels})-[p:rdf_expand()]->(o:{gql_tail_labels})
-        WHERE {' and '.join(where_gql)}
-        RETURN s,p,o,s.id,o.id
-        """
-        return run_gql(self.graph_api, spg_gql, **params)
 
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_un_std()
@@ -218,12 +205,13 @@ class FuzzyOneHopSelect(PathSelect):
         tails: List[EntityData],
         **kwargs,
     ) -> List[RelationData]:
+        begin_time = time.time()
         one_hop_graph_list = self.recall_graph_data_from_knowledge_base(
             spo, heads, tails
         )
         start_time = time.time()
         selected_rels = self.match_spo(spo, one_hop_graph_list)
-        logger.debug(
-            f"_exact_match_spo cost={time.time() - start_time} selected_rels={len(selected_rels)}"
+        logger.info(
+            f"_fuzzy_match_spo total cost={time.time() - begin_time} cost={time.time() - start_time} selected_rels={len(selected_rels)}"
         )
         return selected_rels

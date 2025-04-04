@@ -196,6 +196,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
     def invoke(
         self, query, logic_nodes: List[LogicNode], graph_data: KgGraph, **kwargs
     ) -> List[ChunkData]:
+        component_name = self.name
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         sub_queries = []
         sub_chunks = []
@@ -214,9 +215,10 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             if reporter:
                 reporter.add_report_line(
                     "thinker",
-                    f"begin_sub_kag_retriever_{logic_node.sub_query}",
+                    f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     logic_node.sub_query,
                     "FINISH",
+                    component_name=component_name
                 )
             rewrite_queries = self._rewrite_sub_query_with_history_qa(
                 history=used_lf,

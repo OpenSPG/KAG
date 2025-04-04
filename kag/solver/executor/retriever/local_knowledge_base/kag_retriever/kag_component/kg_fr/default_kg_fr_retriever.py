@@ -23,14 +23,14 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
             {"type": "fuzzy_one_hop_select"}
         )
         self.entity_linking = entity_linking or EntityLinking.from_config(
-            {"type": "default_entity_linking", "recognition_threshold": 0.8}
+            {"type": "default_entity_linking", "recognition_threshold": 0.8, "exclude_types": ["Chunk"]}
         )
         self.template = KgRetrieverTemplate(
             path_select=self.path_select, entity_linking=self.entity_linking
         )
 
     def invoke(self, query: str, logic_nodes: List[LogicNode], **kwargs) -> KgGraph:
-        return self.template.invoke(query=query, logic_nodes=logic_nodes, **kwargs)
+        return self.template.invoke(query=query, logic_nodes=logic_nodes, name=self.name, **kwargs)
 
     def is_break(self):
         return self.break_flag

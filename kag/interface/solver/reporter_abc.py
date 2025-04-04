@@ -11,7 +11,7 @@ class ReporterABC(Registrable):
         self._running = True
         self._monitor_task_coroutine = None
 
-    def add_report_line(self, segment, tag_name, content, status):
+    def add_report_line(self, segment, tag_name, content, status, **kwargs):
         raise NotImplementedError()
 
     def do_report(self):

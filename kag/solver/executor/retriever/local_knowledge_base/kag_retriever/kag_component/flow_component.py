@@ -7,7 +7,7 @@ from kag.interface.solver.model.one_hop_graph import RetrievedData
 class FlowComponent(Registrable):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = kwargs.get("name", "")
+        self.name = kwargs.get("type", "")
         self.result: Optional[List[RetrievedData]] = None
         self.break_flag = False
 
