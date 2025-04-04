@@ -18,7 +18,7 @@ async def chat_loop(client):
             from kag.interface import Task
 
             task = Task("mcp", arguments={"query": query})
-            response = await client.ainvoke(task)
+            response = await client.ainvoke(query=query, task=task, context=None)
             print("\n" + response)
 
         except Exception as e:
