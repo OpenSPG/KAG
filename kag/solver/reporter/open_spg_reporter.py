@@ -118,6 +118,10 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "检索信息不足以回答，需要继续检索",
                 "en": "Insufficient information retrieved to answer, need to continue retrieving",
             },
+            "retrieved_finish": {
+                "zh": "检索信息已足够回答问题，尝试基于信息进行总结",
+                "en": "Sufficient information retrieved to answer the question, attempting to summarize based on the information",
+            },
             "not found": {
                 "en": "Not found",
                 "zh": "未找到"
