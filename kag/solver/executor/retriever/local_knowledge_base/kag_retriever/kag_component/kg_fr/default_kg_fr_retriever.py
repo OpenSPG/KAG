@@ -49,7 +49,7 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
                     reporter.add_report_line(
                         "thinker",
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{self.name}",
-                        "finsh",
+                        "finish",
                         "FINISH",
                         component_name=self.name
                     )
