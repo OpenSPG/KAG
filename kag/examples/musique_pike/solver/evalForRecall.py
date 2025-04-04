@@ -150,7 +150,7 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     start_time = time.time()
-    filePath = "/kag/examples/musique_pike/solver/results/new_baseline/both_B1_res.json"
+    filePath = "./results/Ex1_res.json"
     # filePath = "./data/musique_qa_train.json"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)

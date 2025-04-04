@@ -23,6 +23,8 @@ from kag.solver.retriever.atomic_question_retriever import AtomicQuestionRetriev
 from kag.solver.retriever.exact_kg_retriever import ExactKgRetriever
 from kag.solver.retriever.fuzzy_kg_retriever import FuzzyKgRetriever
 from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
+from kag.interface import PromptABC
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
@@ -38,6 +40,7 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         merger: LFSubQueryResMerger,
         force_chunk_retriever: bool = False,
         llm_client: LLMClient = None,
+        decomposition_prompt: PromptABC = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -66,6 +69,10 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         self.params["force_chunk_retriever"] = force_chunk_retriever
         self.params["llm_module"] = llm_client
 
+        self.decomposition_prompt = decomposition_prompt
+        biz_scene = KAG_PROJECT_CONF.biz_scene
+        if self.decomposition_prompt is None:
+            self.decomposition_prompt = init_prompt_with_fallback("decomposition_query", biz_scene)
         # Generate
         self.generator = LFSubGenerator(llm_client=llm_client)
 
@@ -305,9 +312,61 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             sub_query_with_history_qa = sub_query
         return sub_query_with_history_qa
 
-    def execute(self, query, lf_nodes: List[LFPlan], **kwargs) -> LFExecuteResult:
-        self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
+    def atomic_queries_decomposition(self, query: str, history_context: List[str], **kwargs):
+        try:
+            atomic_queries = self.llm_client.invoke(
+                {"query": query, "context": history_context},
+                self.decomposition_prompt,
+                with_except=False
+            )
+            return atomic_queries
+        except Exception as e:
+            print(f"Error in atomic_queries_decomposition: {str(e)}")
+            return []
 
+    def execute_with_aq(self, query, lf_nodes: List[LFPlan], max_iteration = 1, **kwargs) -> LFExecuteResult:
+        iteration_count =0
+        history_context = []
+        while iteration_count < max_iteration:
+            atomic_queries = self.atomic_queries_decomposition(query, "#".join(history_context))
+            if not atomic_queries or not isinstance(atomic_queries, list):
+                print("Warning: atomic_queries_decomposition failed to generate. Returning empty list.")
+                atomic_queries = []
+            self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
+            iteration_count += 1
+            chosen_chunk = []
+            for atomic_query in atomic_queries:
+                doc_retrieved = self.atomic_question_retriever.recall_chunk_with_atomic_question(
+                    queries=[query, atomic_query],
+                    kwargs=self.params
+                )
+                chosen_chunk.extend(doc_retrieved)
+
+            sorted_docs = sorted(chosen_chunk, key=lambda x: float(x.split("#")[-1]), reverse=True)
+            pure_chunks = ["#".join(item.split("#")[:-1]) for item in sorted_docs]
+            top_docs = []
+            for item in pure_chunks:
+                if item not in top_docs:  # 检查是否已经添加过该值
+                    top_docs.append(item)
+                if len(top_docs) == 5:  # 如果已经收集到5个不重复值，停止
+                    break
+            history_context.extend(top_docs)
+
+        generated_answer = self.generator.generate_sub_answer(query, [], history_context, [])
+
+        result = LFExecuteResult()
+        result.kg_exact_solved_answer = generated_answer
+        result.recall_docs = history_context
+
+        return result
+
+    def execute(self, query, lf_nodes: List[LFPlan], **kwargs) -> LFExecuteResult:
+        # execute_with_aq_flag = True
+        execute_with_aq_flag = False
+        max_iteration = 5
+
+        if execute_with_aq_flag:
+            return self.execute_with_aq(query, lf_nodes, max_iteration)
         process_info = {"kg_solved_answer": []}
         kg_graph = KgGraph()
         history = []

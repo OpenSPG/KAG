@@ -129,7 +129,7 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     start_time = time.time()
-    filePath = "/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique_pike/solver/data/musique_qa_100.json"
+    filePath = "./data/musique_qa_100.json"
     # filePath = "./data/musique_qa_train.json"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         os.path.abspath(os.path.dirname(__file__)), f"musique_res_{start_time}.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=30, upperLimit=10000
+        qaFilePath, resFilePath, threadNum=1, upperLimit=10000
     )
 
     total_metrics["cost"] = time.time() - start_time

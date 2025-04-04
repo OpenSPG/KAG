@@ -1,18 +1,18 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key: key
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
+  base_url:
+  api_key: sk-b0506de6c53a4a6f9452c0fbc6665095
+  model: qwen2.5-72b-instruct
   type: maas
 
 chat_llm: &chat_llm
-  api_key: key
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
+  base_url:
+  api_key: sk-b0506de6c53a4a6f9452c0fbc6665095
+  model: qwen2.5-72b-instruct
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key:
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -157,7 +157,6 @@ atomic_question_retriever: &atomic_question_retriever
   llm_client: *chat_llm
   recall_num: 10
   rerank_topk: 10
-  max_iterations: 5
   match_threshold: 0.5
 
 kag_solver_pipeline:
@@ -184,6 +183,9 @@ kag_solver_pipeline:
         type: default_lf_sub_query_res_merger # kag.solver.execute.default_sub_query_merger.DefaultLFSubQueryResMerger
         vectorize_model: *vectorize_model
         chunk_retriever: *chunk_retriever
+      decomposition_prompt:
+        type: default_decomposition_query
+      max_iterations: 5
   generator:
     type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
