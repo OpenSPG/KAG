@@ -183,6 +183,11 @@ class KAGConfigMgr:
     def all_config(self):
         return copy.deepcopy(self.config)
 
+    def update_conf(self, configs: dict):
+        for k,v in configs.items():
+            if k not in self.config:
+                self.config[k] = v
+
 
 
 KAG_CONFIG = KAGConfigMgr()
