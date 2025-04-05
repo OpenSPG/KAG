@@ -55,6 +55,13 @@ class KgConstrainRetrieverWithOpenSPG(KGConstrainRetrieverABC):
                         "FINISH",
                         component_name=self.name
                     )
+                    reporter.add_report_line(
+                        "thinker",
+                        f"end_sub_kag_retriever_{logic_node.sub_query}",
+                        logic_node.get_fl_node_result().spo,
+                        "FINISH",
+                        component_name=self.name
+                    )
                 continue
             self.break_flag = False
             if reporter:

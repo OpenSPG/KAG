@@ -140,14 +140,6 @@ class KgRetrieverTemplate:
                     select_rel = self._retrieved_on_graph(kg_graph, logic_node)
                     if reporter:
                         dot_refresh.stop()
-                        if select_rel:
-                            reporter.add_report_line(
-                                "thinker",
-                                f"end_sub_kag_retriever_{logic_node.sub_query}",
-                                select_rel,
-                                "FINISH",
-                                component_name=component_name
-                            )
                     logic_node.get_fl_node_result().spo = select_rel
                     if select_rel:
                         if kwargs.get("is_exact_match", False):
@@ -156,23 +148,6 @@ class KgRetrieverTemplate:
                             kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
                             kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
                             kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
-                        else:
-                            summary = self.generate_sub_answer(
-                                question=logic_node.sub_query,
-                                knowledge_graph=select_rel,
-                                history_qa=get_history_qa(used_lf),
-                                reporter=reporter,
-                                segment_name="thinker",
-                                tag_name=f"kg_retriever_summary_{logic_node.sub_query}_{component_name}",
-                            )
-                            logic_node.get_fl_node_result().summary = summary
-                            if summary:
-                                kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name,
-                                                            f"Q:{logic_node.sub_query} A:{summary}")
-                                kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name,
-                                                            f"Q:{logic_node.sub_query} A:{summary}")
-                                kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name,
-                                                            f"Q:{logic_node.sub_query} A:{summary}")
 
                 except Exception as e:
                     if reporter:
