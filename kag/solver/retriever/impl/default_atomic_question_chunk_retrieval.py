@@ -60,7 +60,7 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         match_threshold: float = 0.5,
         pagerank_weight: float = 0.5,
         max_iteration: int = 1,
-        recall_num: int = 10,
+        recall_num: int = 8,
         rerank_topk: int = 10,
         reranker_model_path: str = None,
         vectorize_model: Vectorizer = None,
@@ -302,7 +302,7 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
             logger.info(f"No entities matched for {queries}")
         return matched_entities
 
-    def match_atomic_questions(self, queries: List[str], top_k: int = 5):
+    def match_atomic_questions(self, queries: List[str], top_k: int = 16):
         """
         Match entities based on the provided queries.
 
@@ -324,7 +324,10 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
                 for idx, item in enumerate(typed_nodes):
                     if typed_nodes[idx]["score"] > self.match_threshold:
                         scores[item["node"]["id"]]=item["score"]
-        query_sim_doc_cache.put(queries[1], scores)
+        if len(queries) == 1:
+            query_sim_doc_cache.put(queries[0], scores)
+        else:
+            query_sim_doc_cache.put(queries[1], scores)
         if not len(scores):
             logger.info(f"No entities matched for {queries}")
         return scores
@@ -533,9 +536,7 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         Returns:
         - list: A list containing the top_k most relevant documents.
         """
-        atomic_question_nums = self.recall_num * 20
-        if atomic_question_nums == 0:
-            return []
+        atomic_question_nums = 16
         cur_matched = self.match_atomic_questions(queries,atomic_question_nums)
         sorted_scores = sorted(
             cur_matched.items(), key=lambda item: item[1], reverse=True
@@ -590,25 +591,26 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
 
                 nodes = cached_map[f"{doc_id}_{atomic_question_label}"].out_relations['source']
                 for node in nodes:
-
                     node_dict = node.end_entity.prop.origin_prop_map
                     matched_docs.append(
                         f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
                     )
-                    hits_docs.add(node_dict["name"])
+                    hits_docs.add(f"{node_dict['name']}#{node_dict['content']}")
+                    if len(hits_docs) == top_k:
+                        break
             except Exception as e:
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
         # query = "\n".join(queries)
-        query = queries[1]
+        query = queries[0] if len(queries) == 1 else queries[1]
         try:
             text_matched = self.search_api.search_text(
                 query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
             )
             if text_matched:
                 for item in text_matched:
-                    title = item["node"]["name"]
+                    title = f"{item['node']['name']}#{item['node']['content']}"
                     if title not in hits_docs:
                         if len(matched_docs) > 0:
                             matched_docs.pop()
@@ -650,7 +652,7 @@ class DefaultAtomicQuestionChunkRetriever(AtomicQuestionChunkRetriever):
         match_threshold: float = 0.5,
         pagerank_weight: float = 0.5,
         max_iterations: int = 1,
-        recall_num: int = 10,
+        recall_num: int = 8,
         rerank_topk: int = 10,
         reranker_model_path: str = None,
         vectorize_model: VectorizeModelABC = None,

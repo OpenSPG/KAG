@@ -14,7 +14,7 @@ from kag.solver.tools.search_api.search_api_abc import SearchApiABC
 class AtomicQuestionRetriever(KagBaseModule, ABC):
     def __init__(
         self,
-        recall_num: int = 10,
+        recall_num: int = 8,
         rerank_topk: int = 10,
         graph_api: GraphApiABC = None,
         search_api: SearchApiABC = None,

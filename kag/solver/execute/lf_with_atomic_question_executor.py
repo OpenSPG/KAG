@@ -75,6 +75,7 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             self.decomposition_prompt = init_prompt_with_fallback("decomposition_query", biz_scene)
         # Generate
         self.generator = LFSubGenerator(llm_client=llm_client)
+        self.llm_client = llm_client
 
         self.merger: LFSubQueryResMerger = merger
 
@@ -279,12 +280,12 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         )
         if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
             # if not found answer in kg, we retrieved atomic_question then transfer to chunk to answer.
-            # res = self._execute_chunk_answer(
-            #     req_id, query, lf, process_info, kg_graph, history, res
-            # )
-            res = self._execute_atomic_question_answer_with_embedding(
+            res = self._execute_chunk_answer(
                 req_id, query, lf, process_info, kg_graph, history, res
             )
+            # res = self._execute_atomic_question_answer_with_embedding(
+            #     req_id, query, lf, process_info, kg_graph, history, res
+            # )
             # res = self._execute_atomic_question_answer_with_ppr(
             #     req_id, query, lf, process_info, kg_graph, history, res
             # )
@@ -314,12 +315,14 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
 
     def atomic_queries_decomposition(self, query: str, history_context: List[str], **kwargs):
         try:
-            atomic_queries = self.llm_client.invoke(
-                {"query": query, "context": history_context},
-                self.decomposition_prompt,
-                with_except=False
-            )
-            return atomic_queries
+            while True:
+                atomic_queries = self.llm_client.invoke(
+                    {"query": query, "context": history_context},
+                    self.decomposition_prompt,
+                    with_except=False
+                )
+                if isinstance(atomic_queries, List):
+                    return atomic_queries
         except Exception as e:
             print(f"Error in atomic_queries_decomposition: {str(e)}")
             return []
@@ -329,15 +332,12 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         history_context = []
         while iteration_count < max_iteration:
             atomic_queries = self.atomic_queries_decomposition(query, "#".join(history_context))
-            if not atomic_queries or not isinstance(atomic_queries, list):
-                print("Warning: atomic_queries_decomposition failed to generate. Returning empty list.")
-                atomic_queries = []
             self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
             iteration_count += 1
             chosen_chunk = []
             for atomic_query in atomic_queries:
                 doc_retrieved = self.atomic_question_retriever.recall_chunk_with_atomic_question(
-                    queries=[query, atomic_query],
+                    queries=[atomic_query],
                     kwargs=self.params
                 )
                 chosen_chunk.extend(doc_retrieved)
@@ -346,9 +346,9 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             pure_chunks = ["#".join(item.split("#")[:-1]) for item in sorted_docs]
             top_docs = []
             for item in pure_chunks:
-                if item not in top_docs:  # 检查是否已经添加过该值
+                if item not in top_docs:
                     top_docs.append(item)
-                if len(top_docs) == 5:  # 如果已经收集到5个不重复值，停止
+                if len(top_docs) == 10:
                     break
             history_context.extend(top_docs)
 
