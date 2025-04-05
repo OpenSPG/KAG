@@ -260,6 +260,18 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
                 if reporter:
                     dot_refresh.stop()
+                    reporter.add_report_line(
+                        "thinker",
+                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                        "finish",
+                        "FINISH",
+                        component_name=component_name,
+                        chunk_num = len(chunks),
+                        nodes_num = len(entities),
+                        edges_num = len(selected_rel),
+                        desc="retrieved_info_digest"
+                    )
+
                     matched_graph = match_spo + selected_rel
                     reporter.add_report_line(
                         "thinker",
@@ -267,13 +279,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                         matched_graph if matched_graph else "finish",
                         "FINISH",
                     )
-                    reporter.add_report_line(
-                        "thinker",
-                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        "finish",
-                        "FINISH",
-                        component_name=component_name
-                    )
+
 
                 summary = self.generate_summary(
                     query=logic_node.sub_query,
