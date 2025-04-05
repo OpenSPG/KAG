@@ -80,9 +80,8 @@ class LLMGenerator(GeneratorABC):
                         }
                     )
         rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
-        total_reference_source = graph_data + rerank_chunks
         refer_data = to_reference_list(
-            prefix_id=0, retrieved_datas=total_reference_source
+            prefix_id=0, retrieved_datas=rerank_chunks
         )
         content_json = {"step": results}
         if rerank_chunks:
