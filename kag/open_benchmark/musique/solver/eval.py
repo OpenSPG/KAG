@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -26,10 +25,17 @@ class EvaForMusique(EvalQa):
 
     def do_recall_eval(self, sample, references):
         eva_obj = Evaluate()
-        paragraph_support_idx_set = [idx["paragraph_support_idx"] for idx in sample["question_decomposition"]]
+        paragraph_support_idx_set = [
+            idx["paragraph_support_idx"] for idx in sample["question_decomposition"]
+        ]
         golds = []
         for idx in paragraph_support_idx_set:
-            golds.append(eva_obj.generate_id(sample['paragraphs'][idx]['title'], sample['paragraphs'][idx]['paragraph_text']))
+            golds.append(
+                eva_obj.generate_id(
+                    sample["paragraphs"][idx]["title"],
+                    sample["paragraphs"][idx]["paragraph_text"],
+                )
+            )
         return eva_obj.recall_top(predictionlist=references, goldlist=golds)
 
     def do_metrics_eval(self, predictions: List[str], golds: List[str]):
@@ -39,10 +45,19 @@ class EvaForMusique(EvalQa):
 
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
+    import_modules_from_path("./executors")
+
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()
     args = parser.parse_args()
-    qa_file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file}")
-    do_main(qa_file_path=qa_file_path, thread_num=args.thread_num, upper_limit=args.upper_limit,
-            collect_file=args.res_file, eval_obj=EvaForMusique())
+    qa_file_path = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file}"
+    )
+    do_main(
+        qa_file_path=qa_file_path,
+        thread_num=args.thread_num,
+        upper_limit=args.upper_limit,
+        collect_file=args.res_file,
+        eval_obj=EvaForMusique(),
+    )
