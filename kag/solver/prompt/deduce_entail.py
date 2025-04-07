@@ -12,7 +12,7 @@ class DeduceEntail(PromptABC):
         "根据提供的信息，请首先判断是否能够直接回答指令“$instruction”。如果可以直接回答，请直接回复答案，"
         "无需解释；如果不能直接回答但存在关联信息，请总结其中与指令“$instruction”相关的关键信息，并明确解释为何与指令相关；"
         "如果没有任何相关信息，直接回复“无相关信息”无需解释。"
-        "注意，只能根据输入的信息进行推断，不允许进行任何假设"
+        "注意，只能根据输入的信息进行推断，不允许进行任何假设, 并且输出推理过程"
         "\n【信息】：“$memory”\n请确保所提供的信息直接准确地来自检索文档，不允许任何自身推测。"
     )
     template_en = (
@@ -22,7 +22,7 @@ class DeduceEntail(PromptABC):
         " if you cannot answer directly but there is related information, "
         "summarize the key information related to the instruction '$instruction' "
         "and clearly explain why it is related; "
-        "if there is no relevant information, simply reply 'No relevant information' without explanation."
+        "if there is no relevant information, simply reply 'No relevant information' without explanation. and output the reasoning process"
         "\n[Information]: '$memory'"
         "\nEnsure that the information provided comes directly and accurately from the retrieved document, "
         "without any speculation."
