@@ -623,6 +623,15 @@ class KgGraph(RetrievedData):
         self.answered_alias = {}
         self.alias_set = []
 
+    def has_alias(self, alias_name):
+        if alias_name in self.answered_alias:
+            return True
+        if alias_name in self.nodes_alias:
+            return True
+        if alias_name in self.edge_alias:
+            return True
+        return False
+
     def add_answered_alias(self, alias, value):
         if alias in self.answered_alias:
             self.answered_alias[alias].append(value)

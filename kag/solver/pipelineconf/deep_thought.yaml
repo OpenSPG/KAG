@@ -34,6 +34,9 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
 
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
+
 
 py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor
@@ -51,6 +54,7 @@ kag_solver_pipeline:
   executors:
     - *kag_hybrid_executor_conf
     - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
     - *kag_output_executor_conf
   generator:
     type: llm_generator
