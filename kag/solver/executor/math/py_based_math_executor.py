@@ -94,11 +94,12 @@ class PyBasedMathExecutor(ExecutorABC):
                 content_l = []
             contents = []
             for c in content_l:
-                values = kg_graph.get_answered_alias(c)
-                if values is not None:
-                    c = str(values)
-                elif values == "":
-                    continue
+                if kg_graph.has_alias(c):
+                    values = kg_graph.get_answered_alias(c)
+                    if values:
+                        c = str(values)
+                    else:
+                        continue
                 contents.append(c)
             contents = "\n".join(contents) if contents else ""
         else:
@@ -136,6 +137,7 @@ class PyBasedMathExecutor(ExecutorABC):
                     context.variables_graph.add_answered_alias(logic_node.alias_name, rst)
                 return result
             error = f"code:\n{code}\nerror:\n{error}"
+        context.variables_graph.add_answered_alias(logic_node.alias_name, error)
         task.update_result(error)
 
         self.report_content(

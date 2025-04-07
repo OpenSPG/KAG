@@ -409,19 +409,20 @@ class PprChunkRetriever(ToolABC):
             rel.from_entity = entity
             rel.end_entity = ppr_node
             relation_datas.append(rel)
-        for chunk in chunk_docs:
-            entity = chunk_to_Node(chunk)
-            rel = RelationData.from_dict(json_dict={
-                "__to_id__": entity.biz_id,
-                "__to_id_type__": entity.type,
-                "__from_id__": ppr_node.biz_id,
-                "__from_id_type__": ppr_node.type,
-                "__label__": "end",
-                "score": entity.score
-            }, schema=self.schema_helper)
-            rel.from_entity = ppr_node
-            rel.end_entity = entity
-            relation_datas.append(rel)
+        if matched_entities:
+            for chunk in chunk_docs:
+                entity = chunk_to_Node(chunk)
+                rel = RelationData.from_dict(json_dict={
+                    "__to_id__": entity.biz_id,
+                    "__to_id_type__": entity.type,
+                    "__from_id__": ppr_node.biz_id,
+                    "__from_id_type__": ppr_node.type,
+                    "__label__": "end",
+                    "score": entity.score
+                }, schema=self.schema_helper)
+                rel.from_entity = ppr_node
+                rel.end_entity = entity
+                relation_datas.append(rel)
         return relation_datas
 
     def schema(self):
