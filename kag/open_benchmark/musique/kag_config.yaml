@@ -120,6 +120,11 @@ mock_code_executor: &mock_code_executor_conf
   llm: *openie_llm
 
 
+reasoner: &reasoner_conf
+  type: evidence_based_reasoner
+  llm: *chat_llm
+  retriever: *kag_hybrid_executor_conf
+
 
 kag_solver_pipeline:
   type: kag_static_pipeline
