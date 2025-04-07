@@ -49,12 +49,40 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         """
     default_case_zh = """"cases": [
             {
+                "query": "你是谁",
+                "answer": "Step1:输出自己的相关介绍\nAction1:Output(`你是谁`)"
+            },
+            {
                 "query": "吴京是谁",
-                "answer": "Step1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)\nOutput:输出s1\nAction2:output(s1)"
+                "answer": "Step1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)\nStep2:输出s1\nAction2:output(s1)"
+            },
+            {
+                "query": "张三是张四的爸爸，张二是张三的爸爸，哪么张二和张四是什么关系",
+                "answer": "Step1: 推断张二和张四的关系\nAction1:Deduce(op=entailment,content=[`张三是张四的爸爸`, `张二是张三的爸爸`],target=`张二和张四是什么关系`)->res\nStep2:输出res\nAction2:output(res)"
             },
             {
                 "query": "30+6加上华为创始人在2024年的年龄是多少",
                 "answer": "Step1:30+6 等于多少？\nAction1:Math(content=[], target=`30+6等于多少`)->math1\nStep2:华为创始人是谁？\nAction2:Retrieval(s=s2:企业[`华为`],p=p2:创始人,o=o2)\nStep3:华为创始人出生在什么年份？\nAction3:Retrieval(s=o2,p=p3:出生年份,o=o3)\nStep4:30+6的结果与华为创始人在2024年的年龄相加是多少？\nAction4:Math(content=[`math1`,`o3`], target=`30+6的结果与华为创始人在2024年的年龄相加是多少？`)->math4\nStep5:输出math4\nAction5:output(math4)"
+            },
+            {
+                "query": "C罗在2011年效力的运动队中，哪一支成立时间最晚？",
+                "answer": "Step1：C罗在2011年效力于哪些运动队？\nAction1：Retrieval(s=s1:球员[`C罗`], p=p1:2011年效力于, o=o1:运动队)\nStep2：这些队伍的成立年份分别是？\nAction2：Retrieval(s=o1, p=p2:成立年份, o=o2:年份)\nStep3：哪支队伍成立最晚？\nAction3：Math(content=[`o2`], target=`成立时间最晚的球队`)->math3"
+            },
+            {
+                "query": "发表《心理治疗整合期刊》的协会首任主席是谁？",
+                "answer": "Step1：哪家协会出版《心理治疗整合期刊》？\nAction1：Retrieval(s=s1:出版物[`心理治疗整合期刊`], p=p1:出版机构, o=o1:协会)\nStep2：该协会的首任主席是谁？\nAction2：Retrieval(s=o1, p=p2:首任主席, o=o2:人物)"
+            },
+            {
+                "query": "波卡洪塔斯丘所在州何时加入美国？",
+                "answer": "Step1：波卡洪塔斯丘位于哪个州？\nAction1：Retrieval(s=s1:历史遗址[`波卡洪塔斯丘`], p=p1:所在地, o=o1:州)\nStep2：该州何时成为美国的一部分？\nAction2：Retrieval(s=o1, p=p2:加入美国年份, o=o2:日期)"
+            },
+            {
+                "query": "两次龙卷风爆发中哪次致死人数更多？",
+                "answer": "Step1：第一次龙卷风爆发是哪个事件？\nAction1：Retrieval(s=s1:事件[`龙卷风爆发`], p=p1:第一次事件, o=o1:事件)\nStep2：第二次龙卷风爆发是哪个事件？\nAction2：Retrieval(s=s2:事件[`龙卷风爆发`], p=p2:第二次事件, o=o2:事件)\nStep3：第一次事件的死亡人数？\nAction3：Retrieval(s=s1, p=p3:致死人数, o=o3:数字)\nStep4：第二次事件的死亡人数？\nAction4：Retrieval(s=s2, p=p4:致死人数, o=o4:数字)\nStep5：比较两次事件的死亡人数\nAction5：Math(content=[`o3`,`o4`], target=`致死人数更多的事件`)->math5"
+            },
+            {
+                "query": "电影《Aas Ka Panchhi》和《Phoolwari》哪部更早上映？",
+                "answer": "Step1：《Aas Ka Panchhi》的上映时间是？\nAction1：Retrieval(s=s1:作品[`Aas Ka Panchhi`], p=p1:上映时间, o=o1:日期)\nStep2：《Phoolwari》的上映时间是？\nAction2：Retrieval(s=s2:作品[`Phoolwari`], p=p2:上映时间, o=o2:日期)\nStep3：比较两部电影的上映时间\nAction3：Math(content=[`o1`,`o2`], target=`更早上映的电影`)->math5"
             }
             ],"""
 
@@ -87,6 +115,10 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
             {
                 "query": "Which sports team for which Cristiano Ronaldo played in 2011 was founded last ?",
                 "answer": "Step1:Which Sports Teams Cristiano Ronaldo Played for in 2011 ?\nAction1:Retrieval(s=s1:Player[`Cristiano Ronaldo`],p=p1:PlayedForIn2011Year,o=o1:SportsTeam)\nStep2:In which year were these teams established ?\nAction2:Retrieval(s=o1,p=p2:FoundationYear,o=o2:Year)\nStep3:Which team was founded last ?\nAction3:Math(content=[`o2`], target=`Which team was founded last?`)->math3"
+            },
+            {
+                "query": "John is Mike's father, and James is John's father. What is the relationship between James and Mike?",
+                "answer": "Step1: Infer the relationship between James and Mike\nAction1:Deduce(op=entailment,content=[`John is Mike's father`, `James is John's father`],target=`What is the relationship between James and Mike?`)->res\nStep2:output deduce answer\nAction2:output(res)"
             },
             {
                 "query": "Who was the first president of the association which published Journal of Psychotherapy Integration?",

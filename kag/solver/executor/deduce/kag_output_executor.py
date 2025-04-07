@@ -4,10 +4,12 @@ import logging
 
 from typing import Any, Optional
 
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetNode
 from kag.interface import ExecutorABC, LLMClient, PromptABC, Context
 from kag.interface.solver.reporter_abc import ReporterABC
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
@@ -27,7 +29,7 @@ class KagOutputExecutor(ExecutorABC):
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.summary_prompt = summary_prompt
+        self.summary_prompt = summary_prompt or init_prompt_with_fallback("output_question", KAG_PROJECT_CONF.biz_scene)
 
     @property
     def output_types(self):
@@ -60,14 +62,26 @@ class KagOutputExecutor(ExecutorABC):
         result = context.variables_graph.get_answered_alias(logic_node.alias_name.alias_name)
         if isinstance(result, list):
             result = "\n".join(result)
-        self.report_content(
-            reporter,
-            "thinker",
-            f"{task_query}_output",
-            "finish",
-            "FINISH",
-            step=task.name
-        )
+        if not result:
+            dep_context = []
+            for p in task.parents:
+                dep_context.append(task.get_task_context())
+            result = self.llm_module.invoke({
+                "question": query,
+                "context": dep_context
+            }, self.summary_prompt,
+                with_json_parse=False,
+                segment_name="thinker",
+                tag_name = f"{task_query}_output", **kwargs)
+        else:
+            self.report_content(
+                reporter,
+                "thinker",
+                f"{task_query}_output",
+                "finish",
+                "FINISH",
+                step=task.name
+            )
         task.update_result(result)
 
     def schema(self) -> dict:
