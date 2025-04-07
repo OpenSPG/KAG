@@ -212,7 +212,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             logger.info(
                 f"`{query}` Processing logic node with sub-query: {logic_node.sub_query}"
             )
-            dot_refresh = DotRefresher(reporter=reporter, segment="thinker",
+            dot_refresh = DotRefresher(reporter=reporter, segment=kwargs.get("segment_name", "thinker"),
                                        tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                                        content="executing", params={
                     "component_name": component_name
@@ -220,14 +220,14 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
 
             if reporter:
                 reporter.add_report_line(
-                    "thinker",
+                    kwargs.get("segment_name", "thinker"),
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     logic_node.sub_query,
                     "INIT",
                     component_name=component_name
                 )
                 reporter.add_report_line(
-                    "thinker",
+                    kwargs.get("segment_name", "thinker"),
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     "executing",
                     "RUNNING",
@@ -261,7 +261,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 if reporter:
                     dot_refresh.stop()
                     reporter.add_report_line(
-                        "thinker",
+                        kwargs.get("segment_name", "thinker"),
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         "finish",
                         "FINISH",
@@ -274,7 +274,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
 
                     matched_graph = match_spo + selected_rel
                     reporter.add_report_line(
-                        "thinker",
+                        kwargs.get("segment_name", "thinker"),
                         f"end_sub_kag_retriever_{logic_node.sub_query}",
                         matched_graph if matched_graph else "finish",
                         "FINISH",
@@ -287,7 +287,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     chunks=chunks,
                     history=used_lf,
                     reporter=reporter,
-                    segment_name="thinker",
+                    segment_name=kwargs.get("segment_name", "thinker"),
                     tag_name=f"rc_retriever_summary_{logic_node.sub_query}",
                 )
                 logger.info(f"`{query}` subq: {logic_node.sub_query} answer:{summary}")
@@ -306,7 +306,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 if reporter:
                     dot_refresh.stop()
                     reporter.add_report_line(
-                        "thinker",
+                        kwargs.get("segment_name", "thinker"),
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         f"failed: reason={e}",
                         "ERROR",

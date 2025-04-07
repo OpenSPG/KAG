@@ -68,7 +68,6 @@ class KagDeduceExecutor(ExecutorABC):
             prompt,
             with_json_parse=False,
             with_except=True,
-            segment_name="thinker",
             tag_name=f"{sub_query}_deduce_{op}",
             **kwargs
         )
@@ -83,17 +82,19 @@ class KagDeduceExecutor(ExecutorABC):
             "thinker",
             f"{task_query}_begin_task",
             task_query,
-            "FINISH",
-            step=task.name
+            "INIT",
+            step=task.name,
+            overwrite=False,
         )
         if not logic_node or not isinstance(logic_node, DeduceNode):
             self.report_content(
                 reporter,
-                "thinker",
+                f"{task_query}_begin_task",
                 f"{task_query}_deduce",
                 "not implement!",
                 "FINISH",
-                step=task.name
+                step=task.name,
+                overwrite=False,
             )
             return
 
@@ -118,12 +119,22 @@ class KagDeduceExecutor(ExecutorABC):
         result = []
         final_if_answered = False
         for op in logic_node.ops:
-            if_answered, answer = self.call_op(task_query, contents, op, **kwargs)
+            if_answered, answer = self.call_op(task_query, contents, op, segment_name=f"{task_query}_begin_task", **kwargs)
             result.append(answer)
             final_if_answered = if_answered or final_if_answered
         res = ";".join(result)
         context.variables_graph.add_answered_alias(logic_node.alias_name, res)
         task.update_result(res)
+
+        self.report_content(
+            reporter,
+            "thinker",
+            f"{task_query}_begin_task",
+            "finish",
+            "FINISH",
+            step=task.name,
+            overwrite = False,
+        )
 
 
     def schema(self) -> dict:
