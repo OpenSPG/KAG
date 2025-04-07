@@ -107,7 +107,12 @@ class PyBasedMathExecutor(ExecutorABC):
 
 
         self.report_content(
-            reporter, "thinker", f"{task_query}_begin_math_executor_{task.id}", task_query, "FINISH"
+            reporter,
+            "thinker",
+            f"{task_query}_begin_task",
+            task_query,
+            "FINISH",
+            step=task.name
         )
 
         parent_results = []
