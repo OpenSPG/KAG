@@ -183,6 +183,10 @@ class KgRetrieverTemplate:
             head_entities: List[EntityData],
             tail_entities: List[EntityData],
     ):
+        kg_graph.nodes_alias.append(logic_node.s.alias_name)
+        kg_graph.nodes_alias.append(logic_node.o.alias_name)
+        kg_graph.edge_alias.append(logic_node.p.alias_name)
+
         selected_relations = self.path_select.invoke(
             query=logic_node.sub_query,
             spo=logic_node,
@@ -192,9 +196,6 @@ class KgRetrieverTemplate:
         predicate = logic_node.p.alias_name
         if selected_relations:
             kg_graph.edge_map[predicate] = selected_relations
-            kg_graph.nodes_alias.append(logic_node.s.alias_name)
-            kg_graph.nodes_alias.append(logic_node.o.alias_name)
-            kg_graph.edge_alias.append(logic_node.p.alias_name)
 
         return selected_relations
 

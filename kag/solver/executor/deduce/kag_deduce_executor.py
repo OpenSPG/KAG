@@ -106,11 +106,12 @@ class KagDeduceExecutor(ExecutorABC):
             content_l = []
         contents = []
         for c in content_l:
-            values = kg_graph.get_answered_alias(c)
-            if values is not None:
-                c = str(values)
-            elif values == "":
-                continue
+            if kg_graph.has_alias(c):
+                values = kg_graph.get_answered_alias(c)
+                if values:
+                    c = str(values)
+                else:
+                    continue
             contents.append(c)
         contents = "\n".join(contents) if contents else ""
 
@@ -121,9 +122,7 @@ class KagDeduceExecutor(ExecutorABC):
             result.append(answer)
             final_if_answered = if_answered or final_if_answered
         res = ";".join(result)
-        if final_if_answered:
-            context.variables_graph.add_answered_alias(logic_node.alias_name, res)
-
+        context.variables_graph.add_answered_alias(logic_node.alias_name, res)
         task.update_result(res)
 
 
