@@ -10,9 +10,12 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import asyncio
-import copy
 import logging
 import json
+import os
+
+import yaml
+
 from kag.interface import SolverPipelineABC
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
@@ -21,59 +24,21 @@ from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
 
 logger = logging.getLogger()
 
-math_executor_conf = {"type": "py_code_based_math_executor", "llm": "{llm}"}
-kag_hybrid_executor_conf = {
-    "type": "kag_hybrid_executor",
-    "lf_rewriter": {
-        "llm_client": "{llm}",
-        "lf_trans_prompt": {"type": "default_spo_retriever_decompose"},
-        "vectorize_model": "{vectorize_model}",
-        "type": "kag_spo_lf",
-    },
-    "flow": "kg_cs->kg_fr->rc\n",
-}
-executors = []
-default_pipeline_template = {
-    "generator": {
-        "llm_client": "{llm}",
-        "type": "llm_generator",
-        "generated_prompt": {"type": "default_refer_generator_prompt"},
-    },
-    "type": "kag_static_pipeline",
-    "planner": {
-        "plan_prompt": {"type": "default_lf_static_planning"},
-        "rewrite_prompt": {"type": "default_query_rewrite"},
-        "type": "kag_static_planner",
-        "llm": "{llm}",
-    },
-}
-
-
-default_naive_rag_pipeline = {
-    "type": "naive_rag_pipeline",
-    "executors": [
-        {
-            "type": "chunk_retrieved_executor",
-            "top_k": 10,
-            "retriever": {"type": "vector_chunk_retriever"},
-        }
-    ],
-    "generator": {
-        "type": "llm_generator",
-        "llm_client": "{llm}",
-        "generated_prompt": {"type": "default_refer_generator_prompt"},
-    },
-}
-
+def get_all_placeholders(config, placeholders):
+    if isinstance(config, dict):
+        for key, value in config.items():
+            get_all_placeholders(value, placeholders)
+    elif isinstance(config, list):
+        return [get_all_placeholders(item, placeholders) for item in config]
+    elif isinstance(config, str):
+        if config.startswith("{") and config.endswith("}"):
+            placeholder = config[1:-1]  # 去掉花括号
+            placeholders.append(placeholder)
+        return config
+    else:
+        return config
 
 def replace_placeholders(config, replacements):
-    """
-    替换配置字典中花括号 {} 中的变量。
-
-    :param config: 需要替换的配置字典
-    :param replacements: 一个字典，键是占位符名称，值是要替换的内容
-    :return: 替换后的配置字典
-    """
     if isinstance(config, dict):
         return {
             key: replace_placeholders(value, replacements)
@@ -93,33 +58,61 @@ def replace_placeholders(config, replacements):
         return config
 
 
-async def qa(task_id, query, project_id, host_addr, params={}):
-    thinking_enabled = params.get("thinking_enabled", True)
-    if isinstance(thinking_enabled, str):
-        thinking_enabled = True if thinking_enabled.lower() == "true" else False
-    print(
-        f"qa(task_id={task_id}, query={query}, project_id={project_id}, thinking_enabled={thinking_enabled}, params={params})"
-    )
-    reporter: OpenSPGReporter = OpenSPGReporter(
-        task_id=task_id,
-        host_addr=host_addr,
-        project_id=project_id,
-        thinking_enabled=thinking_enabled,
-    )
-    await reporter.start()
-    try:
-        if thinking_enabled:
-            default_conf = dict(default_pipeline_template)
-            default_conf["executors"] = [math_executor_conf, kag_hybrid_executor_conf]
-            pipeline_name = "kag_solver_pipeline"
-        else:
-            default_conf = dict(default_naive_rag_pipeline)
-            pipeline_name = "naive_rag_pipeline"
+def load_yaml_files_from_conf_dir():
 
-        mcp_servers = params.get("mcpServers", None)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    conf_dir = os.path.join(current_dir, 'pipelineconf')
+
+
+    if not os.path.exists(conf_dir) or not os.path.isdir(conf_dir):
+        raise FileNotFoundError(f"The 'conf' directory does not exist at {conf_dir}")
+
+
+    yaml_data = {}
+
+
+    for filename in os.listdir(conf_dir):
+        if filename.endswith('.yml') or filename.endswith('.yaml'):
+            file_path = os.path.join(conf_dir, filename)
+            with open(file_path, 'r', encoding='utf-8') as file:
+
+                yaml_content = yaml.safe_load(file)
+                yaml_data[yaml_content["pipeline_name"]] = yaml_content
+
+    return yaml_data
+
+def get_pipeline_conf(use_pipeline_name, config):
+    pipeline_name = "kag_solver_pipeline"
+    conf_map = load_yaml_files_from_conf_dir()
+    if use_pipeline_name not in conf_map:
+        raise RuntimeError(f"Pipeline configuration not found for pipeline_name: {use_pipeline_name}")
+
+    placeholders = []
+    get_all_placeholders(conf_map[use_pipeline_name], placeholders)
+    placeholders = list(set(placeholders))
+    placeholders_replacement_map = {}
+    for placeholder in placeholders:
+        value = config.get(placeholder)
+        backup_key = None
+        if value is None:
+            if "llm" in placeholder:
+                backup_key = "llm"
+            if "vectorizer" in placeholder:
+                backup_key = "vectorizer"
+            if backup_key:
+                value = config.get(backup_key)
+        if value is None:
+            raise RuntimeError(f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config.")
+        value["enable_check"] = False
+        placeholders_replacement_map[placeholder] = value
+    default_pipeline_conf = replace_placeholders(conf_map[use_pipeline_name], placeholders_replacement_map)
+    default_solver_pipeline = default_pipeline_conf[pipeline_name]
+
+    if use_pipeline_name == "mcp_pipeline":
+        mcp_servers = config.get("mcpServers", None)
         mcp_executors = []
         if mcp_servers is not None:
-            mcp_servers = json.loads(mcp_servers)
             for mcp_name, mcp_conf in mcp_servers.items():
                 desc = mcp_conf["description"]
                 env = mcp_conf["env"]
@@ -131,30 +124,41 @@ async def qa(task_id, query, project_id, host_addr, params={}):
                         "name": mcp_name,
                         "description": desc,
                         "env": env,
-                        "llm": "{llm}",
+                        "llm": config.get("llm"),
                     }
                 )
-        if mcp_executors:
-            default_conf["executors"] += mcp_executors
+        else:
+            raise RuntimeError("mcpServers not found in config.")
+        default_solver_pipeline["executors"] = mcp_executors
 
-        placeholder_config = {}
-        llm = KAG_CONFIG.all_config.get("llm", None)
-        if llm:
-            llm["stream"] = True
-            placeholder_config["llm"] = llm
-        vectorize_model = KAG_CONFIG.all_config.get("vectorize_model", None)
-        if vectorize_model:
-            placeholder_config["vectorize_model"] = vectorize_model
+    # update KAG_CONFIG
+    KAG_CONFIG.update_conf(default_pipeline_conf)
+    return default_solver_pipeline
 
-        default_pipeline = replace_placeholders(default_conf, placeholder_config)
-
-        conf = copy.deepcopy(KAG_CONFIG.all_config.get(pipeline_name, default_pipeline))
-        logger.error(f"pipeline conf: \n{conf}")
-        pipeline = SolverPipelineABC.from_config(conf)
+async def qa(task_id, query, project_id, host_addr, params={}):
+    use_pipeline = params.get("usePipeline", "think_pipeline")
+    qa_config = params.get("config", KAG_CONFIG.all_config)
+    if isinstance(qa_config, str):
+        qa_config = json.loads(qa_config)
+    print(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
+    thinking_enabled = use_pipeline == "think_pipeline"
+    print(
+        f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
+    )
+    reporter: OpenSPGReporter = OpenSPGReporter(
+        task_id=task_id,
+        host_addr=host_addr,
+        project_id=project_id,
+        thinking_enabled=thinking_enabled,
+    )
+    await reporter.start()
+    try:
+        pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+        logger.error(f"pipeline conf: \n{pipeline_config}")
+        pipeline = SolverPipelineABC.from_config(pipeline_config)
 
         answer = await pipeline.ainvoke(query, reporter=reporter)
     except Exception as e:
-        answer = None
         logger.warning(
             f"An exception occurred while processing query: {query}. Error: {str(e)}",
             exc_info=True,
@@ -208,12 +212,12 @@ if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
     init_kag_config(
-        "4000003", "http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887"
+        "4000003", "http://antspg-gz00b-006000004163.sa128-sqa.alipay.net:8887"
     )
     res = SolverMain().invoke(
         4000003,
         6100031,
-        "周润发的dad是做什么的",
+        "随机生成两个100000到200000之间的素数并计算它们的乘积",
         "4700026",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",

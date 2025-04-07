@@ -105,6 +105,18 @@ class Task(Registrable):
         """
         self.result = result
 
+    def get_task_context(self):
+        """Generates a dictionary representation of the task's context."""
+        result = {}
+        if self.thought:
+            result["thought"] = self.thought
+        if self.result:
+            result["result"] = str(self.result)
+
+        if result:
+            result["task"] = self.arguments.get("query", "")
+        return result
+
     def __str__(self):
         """Generates a string representation of the task.
 
