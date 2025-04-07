@@ -120,23 +120,22 @@ mock_code_executor: &mock_code_executor_conf
   llm: *openie_llm
 
 
+
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
     type: kag_static_planner
     llm: *chat_llm
     plan_prompt:
-      type: default_static_planning
+      type: retriever_static_planning
     rewrite_prompt:
       type: default_query_rewrite
   executors:
-  - *kag_hybrid_executor_conf
-  - *mock_math_executor_conf
-  - *mock_code_executor_conf
+    - *reasoner_conf
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: resp_simple
+#------------kag-solver configuration end----------------#
+
 
 #------------kag-solver configuration end----------------#
