@@ -397,6 +397,9 @@ class OpenSPGReporter(ReporterABC):
             )
             if status != "FINISH":
                 break
+        think = f"<think>{think}"
+        if is_finished:
+            think += "</think>"
         return think, thinker_cost, graph_list
 
     def process_answer(self, answer_reports):
@@ -455,104 +458,6 @@ class OpenSPGReporter(ReporterABC):
 
     def generate_report_data(self):
         return self.generate_report_data_pro()
-        # processed_report_record = []
-        # report_to_spg_data = {
-        #     "task_id": self.task_id,
-        #     "content": {"answer": "", "reference": [], "thinker": ""},
-        # }
-        # status = ""
-        # segment_name = ""
-        # thinker_cost = 0.0
-        # graph_list = []
-        # for report_id in self.report_record:
-        #     if report_id in processed_report_record:
-        #         continue
-        #     report_data = self.report_stream_data[report_id]
-        #     segment_name = report_data["segment"]
-        #     tag_template = self.get_tag_template(report_data["tag_name"])
-        #     report_time = report_data["time"]
-        #     content = report_data["content"]
-        #     params = report_data.get("params", {})
-        #     # replace word
-        #     kwargs = {}
-        #     for k,v in params.items():
-        #         kwargs[k] = self.get_word_template(v, params)
-        #
-        #     if segment_name == "thinker" and self.thinking_enabled:
-        #         if report_to_spg_data["content"][segment_name] == "":
-        #             report_to_spg_data["content"][segment_name] = "<think>"
-        #         report_content = f"{content}"
-        #         if "planning" in report_data["tag_name"]:
-        #             report_content = report_content.replace("`", "\`")
-        #
-        #         if (
-        #                 isinstance(content, list)
-        #                 and content
-        #                 and isinstance(content[0], RelationData)
-        #         ):
-        #             graph_id = f"graph_{generate_random_string(3)}"
-        #             graph_list.append(_convert_spo_to_graph(graph_id, content))
-        #             report_content = f"""<div class={graph_id}></div>"""
-        #
-        #         report_content = self.get_word_template(report_content, params)
-        #         if tag_template:
-        #             report_to_spg_data["content"][
-        #                 segment_name
-        #             ] += tag_template.format(content=str(report_content), **kwargs)
-        #         else:
-        #             report_to_spg_data["content"][segment_name] += str(report_content)
-        #
-        #         report_to_spg_data["content"][segment_name] += "\n\n"
-        #         thinker_start_time = self.report_segment_time.get(
-        #             segment_name, {"start_time": time.time()}
-        #         )["start_time"]
-        #         thinker_cost = (
-        #             report_time - thinker_start_time
-        #             if report_time > thinker_start_time
-        #             else 0.0
-        #         )
-        #
-        #     elif segment_name == "answer":
-        #         if report_to_spg_data["content"]["thinker"] and not report_to_spg_data["content"]["thinker"].endswith("</think>"):
-        #             report_to_spg_data["content"]["thinker"] += "</think>"
-        #         report_to_spg_data["content"][segment_name] = content
-        #     elif segment_name == "reference":
-        #         if isinstance(content, KAGRetrievedResponse):
-        #             refer_list = content.to_reference_list()
-        #             ref_doc_set = generate_ref_doc_set(
-        #                 report_data["tag_name"], "chunk", refer_list
-        #             )
-        #             for ref in report_to_spg_data["content"]["reference"]:
-        #                 merged_data = merge_ref_doc_set(ref, ref_doc_set)
-        #                 if merged_data:
-        #                     ref.info = merged_data.info
-        #                     break
-        #             else:
-        #                 report_to_spg_data["content"]["reference"].append(ref_doc_set)
-        #
-        #         else:
-        #             logger.warning(f"Unknown reference type {type(content)}")
-        #             continue
-        #     elif segment_name == "generator_reference_all":
-        #         ref_doc_set = generate_ref_doc_set(
-        #             report_data["tag_name"], "chunk", content
-        #         )
-        #         report_to_spg_data["content"]["reference"] = [ref_doc_set]
-        #     status = report_data["status"]
-        #     processed_report_record.append(report_id)
-        #     if status != "FINISH":
-        #         break
-        # if status == "FINISH":
-        #     if segment_name != "answer":
-        #         status = "RUNNING"
-        # content = StreamData(
-        #     answer=report_to_spg_data["content"]["answer"],
-        #     reference=report_to_spg_data["content"]["reference"],
-        #     think=report_to_spg_data["content"]["thinker"],
-        #     subgraph=graph_list,
-        #     metrics=Metrics(think_cost=thinker_cost),
-        # )
-        # return content, status, Metrics(think_cost=thinker_cost)
 
     def __str__(self):
         return "\n".join(
