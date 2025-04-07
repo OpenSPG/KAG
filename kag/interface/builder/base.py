@@ -35,6 +35,13 @@ class BuilderComponentData:
             return getattr(input_object, "hash_key")
         return generate_hash_id(input_object)
 
+    def to_dict(self):
+        if hasattr(self.data, "to_dict"):
+            return self.data.to_dict()
+        raise NotImplementedError(
+            f"data type {type(self.data)} do not implemente method `to_dict`."
+        )
+
 
 @Registrable.register("builder")
 class BuilderComponent(Component, Registrable):
@@ -165,7 +172,6 @@ class BuilderComponent(Component, Registrable):
     async def ainvoke(
         self, input: Input, **kwargs
     ) -> List[Union[Output, BuilderComponentData]]:
-
         if not isinstance(input, BuilderComponentData):
             input = BuilderComponentData(input)
 
