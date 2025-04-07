@@ -84,8 +84,6 @@ class LLMGenerator(GeneratorABC):
             prefix_id=0, retrieved_datas=rerank_chunks
         )
         content_json = {"step": results}
-        if rerank_chunks:
-            content_json["reference"] = refer_data
         content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if reporter:
             reporter.add_report_line("generator", "input", content_json, "FINISH")
@@ -99,7 +97,7 @@ class LLMGenerator(GeneratorABC):
                 "generator_reference_graphs", "graph", graph_data, "FINISH"
             )
         return self.llm_client.invoke(
-            {"query": query, "content": content},
+            {"query": query, "content": content, "ref": refer_data},
             self.generated_prompt,
             segment_name="answer",
             tag_name="Final Answer",
