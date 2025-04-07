@@ -210,7 +210,7 @@ if __name__ == "__main__":
         os.path.abspath(os.path.dirname(__file__)), f"musique_res_{start_time}.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=36, upperLimit=10000
+        qaFilePath, resFilePath, threadNum=24, upperLimit=10000
     )
     # total_metrics = evaObj.QaAndEvaluate(
     #     qaFilePath, resFilePath, upperLimit=10000

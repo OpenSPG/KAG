@@ -143,22 +143,33 @@ class EvaForMusique:
             "recall_all": recall_all
         }
 
-
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
     delay_run(hours=0)
     evaObj = EvaForMusique()
 
-    start_time = time.time()
-    filePath = "./results/Ex1_res.json"
-    # filePath = "./data/musique_qa_train.json"
+    current_script_dir = os.path.abspath(os.path.dirname(__file__))  # 当前脚本所在目录
 
-    qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
-    file_name_without_ext, file_ext = os.path.splitext(os.path.basename(filePath))
+    for file_name in os.listdir(current_script_dir):  # 遍历脚本所在目录
+        if file_name.endswith("_res.json"):  # 筛选符合条件的文件
+            file_name_without_ext = file_name.replace("_res.json", "")  # 提取文件前缀
+            recall_file_name = f"{file_name_without_ext}_recall.json"  # 目标文件名
 
-    resFilePath = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), f"{file_name_without_ext}_{start_time}.json"
-    )
-    evaObj.evalForRecall(qaFilePath, resFilePath)
+            # 构建目标文件路径
+            recall_file_path = os.path.join(current_script_dir, recall_file_name)
 
+            # 如果结果文件已存在，跳过处理，避免重复处理
+            if os.path.exists(recall_file_path):
+                print(f"跳过文件: {file_name} -> 已存在处理结果 {recall_file_name}")
+                continue
+
+            # 构建输入文件路径
+            file_path = os.path.join(current_script_dir, file_name)
+
+            # 执行处理逻辑，将结果保存到 recall 文件
+            try:
+                evaObj.evalForRecall(file_path, recall_file_path)
+                print(f"文件处理成功: {file_name} -> {recall_file_name}")
+            except Exception as e:
+                print(f"文件处理失败: {file_path}, 错误: {e}")
 

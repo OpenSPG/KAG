@@ -280,12 +280,13 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         )
         if not self._judge_sub_answered(res.sub_answer) or self.force_chunk_retriever:
             # if not found answer in kg, we retrieved atomic_question then transfer to chunk to answer.
-            res = self._execute_chunk_answer(
-                req_id, query, lf, process_info, kg_graph, history, res
-            )
             # res = self._execute_atomic_question_answer_with_embedding(
             #     req_id, query, lf, process_info, kg_graph, history, res
             # )
+            res = self._execute_chunk_answer(
+                req_id, query, lf, process_info, kg_graph, history, res
+            )
+
             # res = self._execute_atomic_question_answer_with_ppr(
             #     req_id, query, lf, process_info, kg_graph, history, res
             # )
@@ -329,36 +330,54 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
 
     def execute_with_aq(self, query, lf_nodes: List[LFPlan], max_iteration = 1, **kwargs) -> LFExecuteResult:
         iteration_count =0
-        history_context = []
+        process_info = {"kg_solved_answer": []}
+        history = []
+        kg_graph = KgGraph()
         while iteration_count < max_iteration:
+            history_context = [
+                h.res.sub_answer
+                for h in history
+                if "i don't know" not in h.res.sub_answer.lower()
+            ]
             atomic_queries = self.atomic_queries_decomposition(query, "#".join(history_context))
+            if len(atomic_queries) == 0:
+                break
             self._create_report_pipeline(kwargs.get("report_tool", None), query, lf_nodes)
             iteration_count += 1
             chosen_chunk = []
             for atomic_query in atomic_queries:
-                doc_retrieved = self.atomic_question_retriever.recall_chunk_with_atomic_question(
-                    queries=[atomic_query],
-                    kwargs=self.params
+                lf = LFPlan(atomic_query,[])
+                req_id = generate_random_string(10)
+                res = self._execute_spo_answer(
+                    req_id, query, lf, process_info, kg_graph, history
                 )
-                chosen_chunk.extend(doc_retrieved)
+                lf.res = res
+                # update node state information
+                self._update_sub_question_status(
+                    report_tool=kwargs.get("report_tool", None),
+                    req_id=req_id,
+                    index=iteration_count,
+                    status=ReporterIntermediateProcessTool.STATE.RUNNING,
+                    plan=lf,
+                    kg_graph=kg_graph,
+                )
+                res = self._execute_atomic_question_answer_with_embedding(
+                    req_id, query, lf, process_info, kg_graph, history, res
+                )
+                history.append(lf)
+                self._update_sub_question_status(
+                    report_tool=kwargs.get("report_tool", None),
+                    req_id=req_id,
+                    index=iteration_count,
+                    status=ReporterIntermediateProcessTool.STATE.FINISH,
+                    plan=lf,
+                    kg_graph=kg_graph,
+                )
 
-            sorted_docs = sorted(chosen_chunk, key=lambda x: float(x.split("#")[-1]), reverse=True)
-            pure_chunks = ["#".join(item.split("#")[:-1]) for item in sorted_docs]
-            top_docs = []
-            for item in pure_chunks:
-                if item not in top_docs:
-                    top_docs.append(item)
-                if len(top_docs) == 10:
-                    break
-            history_context.extend(top_docs)
-
-        generated_answer = self.generator.generate_sub_answer(query, [], history_context, [])
-
-        result = LFExecuteResult()
-        result.kg_exact_solved_answer = generated_answer
-        result.recall_docs = history_context
-
-        return result
+        res = self.merger.merge(query, history)
+        res.retrieved_kg_graph = kg_graph
+        res.kg_exact_solved_answer = "\n".join(process_info["kg_solved_answer"])
+        return res
 
     def execute(self, query, lf_nodes: List[LFPlan], **kwargs) -> LFExecuteResult:
         # execute_with_aq_flag = True

@@ -12,8 +12,8 @@ chat_llm: &chat_llm
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key:
-  base_url: https://api.siliconflow.cn/v1/
+  api_key: sk-krunlbqxmpmnvmobwydvuazjinlzlrkbpscrdmbulajjljml
+  base_url:
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
@@ -155,7 +155,7 @@ chunk_retriever: &chunk_retriever
 atomic_question_retriever: &atomic_question_retriever
   type: default_atomic_question_chunk_retriever # kag.solver.retriever.impl.default_atomic_question_retriever.DefaultAtomicQueryRetriever
   llm_client: *chat_llm
-  recall_num: 10
+  recall_num: 8
   rerank_topk: 10
   match_threshold: 0.5
 

@@ -592,12 +592,14 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
                 nodes = cached_map[f"{doc_id}_{atomic_question_label}"].out_relations['source']
                 for node in nodes:
                     node_dict = node.end_entity.prop.origin_prop_map
-                    matched_docs.append(
-                        f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
-                    )
-                    hits_docs.add(f"{node_dict['name']}#{node_dict['content']}")
-                    if len(hits_docs) == top_k:
-                        break
+                    docs_content = f"{node_dict['name']}#{node_dict['content']}"
+                    if docs_content not in hits_docs:
+
+                        matched_docs.append(
+                            f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                        )
+                        hits_docs.add(docs_content)
+
             except Exception as e:
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
