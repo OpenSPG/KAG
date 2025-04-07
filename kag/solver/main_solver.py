@@ -84,10 +84,6 @@ def load_yaml_files_from_conf_dir():
 
 def get_pipeline_conf(use_pipeline_name, config):
     pipeline_name = "kag_solver_pipeline"
-    # conf = KAG_CONFIG.all_config.get(pipeline_name)
-    # if conf:
-    #     print(f"use pipeline conf: \n{conf}")
-    #     return conf
     conf_map = load_yaml_files_from_conf_dir()
     if use_pipeline_name not in conf_map:
         raise RuntimeError(f"Pipeline configuration not found for pipeline_name: {use_pipeline_name}")
@@ -108,9 +104,10 @@ def get_pipeline_conf(use_pipeline_name, config):
                 value = config.get(backup_key)
         if value is None:
             raise RuntimeError(f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config.")
+        value["enable_check"] = False
         placeholders_replacement_map[placeholder] = value
     default_pipeline_conf = replace_placeholders(conf_map[use_pipeline_name], placeholders_replacement_map)
-    default_solver_pipeline = default_pipeline_conf["kag_solver_pipeline"]
+    default_solver_pipeline = default_pipeline_conf[pipeline_name]
 
     if use_pipeline_name == "mcp_pipeline":
         mcp_servers = config.get("mcpServers", None)
@@ -220,7 +217,7 @@ if __name__ == "__main__":
     res = SolverMain().invoke(
         4000003,
         6100031,
-        "周杰伦2007年作品",
+        "随机生成两个100000到200000之间的素数并计算它们的乘积",
         "4700026",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",
