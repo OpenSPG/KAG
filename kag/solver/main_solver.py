@@ -141,6 +141,8 @@ def get_pipeline_conf(use_pipeline_name, config):
 async def qa(task_id, query, project_id, host_addr, params={}):
     use_pipeline = params.get("usePipeline", "think_pipeline")
     qa_config = params.get("config", KAG_CONFIG.all_config)
+    if isinstance(qa_config, str):
+        qa_config = json.loads(qa_config)
     print(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
     print(
@@ -218,7 +220,7 @@ if __name__ == "__main__":
     res = SolverMain().invoke(
         4000003,
         6100031,
-        "成都蚂蚁C空间周围一公里内的火锅店有哪些",
+        "周杰伦2007年作品",
         "4700026",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",
