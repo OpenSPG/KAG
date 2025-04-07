@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 
+
 from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.interface.solver.reporter_abc import ReporterABC
@@ -103,6 +104,26 @@ class SafeDict(dict):
     def __missing__(self, key):
         return ''
 
+
+def generate_content(tpl, datas, content_params, graph_list):
+    if (
+            isinstance(datas, list)
+            and datas
+            and isinstance(datas[0], RelationData)
+    ):
+        graph_id = f"graph_{generate_random_string(3)}"
+        graph_list.append(_convert_spo_to_graph(graph_id, datas))
+        return f"""<div class={graph_id}></div>"""
+    if tpl:
+        format_params = {
+            "content": datas
+        }
+        format_params.update(content_params)
+        return tpl.format_map(SafeDict(format_params))
+    return str(datas)
+
+
+
 @ReporterABC.register("open_spg_reporter")
 class OpenSPGReporter(ReporterABC):
     def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
@@ -115,6 +136,7 @@ class OpenSPGReporter(ReporterABC):
         self.report_stream_data = {}
         self.report_segment_time = {}
         self.report_record = []
+        self.report_sub_segment = {}
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
         self.word_mapping = {
             "retrieved_info_digest": {
@@ -134,8 +156,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "未找到"
             },
             "executing": {
-                "en": "Executing{refresh}",
-                "zh": "执行中{refresh}"
+                "en": "Executing...",
+                "zh": "执行中..."
             },
             "finish": {
                 "en": "Finish",
@@ -159,17 +181,19 @@ class OpenSPGReporter(ReporterABC):
                 "en": "## Rethinking question using LLM\n--------- \n{content}",
                 "zh": "## 正在使用LLM重思考问题\n--------- \n{content}",
             },
-            "Final Answer": {
-                "en": "## Generating final answer\n--------- \n{content}",
-                "zh": "## 正在生成最终答案\n--------- \n{content}",
-            },
             "Iterative planning": {
                 "en": "## Iterative planning\n--------- \n{content}",
                 "zh": "## 正在思考当前步骤\n--------- \n{content}",
             },
             "Static planning": {
-                "en": "## Global planning\n--------- \n{content}",
-                "zh": "## 正在思考全局步骤\n--------- \n{content}",
+                "en": """
+<step status="{status}" title="Global planning">
+{content}
+</step>""",
+                "zh": """
+<step status="{status}" title="思考全局步骤">
+{content}
+</step>""",
             },
             "begin_sub_kag_retriever": {
                 "en": "**Starting {component_name}** {content} {desc}",
@@ -180,70 +204,78 @@ class OpenSPGReporter(ReporterABC):
                 "zh": " {content}",
             },
             "rc_retriever_rewrite": {
-                "en": "#### Rewriting chunk retriever query\n--------- \nRewritten question:\n{content}",
-                "zh": "#### 正在根据依赖问题重写检索子问题\n--------- \n重写问题为：\n{content}",
+                "en": """
+<step status="{status}" title="Rewriting chunk retriever query">
+Rewritten question:\n{content}
+</step>""",
+                "zh": """
+<step status="{status}" title="正在根据依赖问题重写检索子问题">
+重写问题为：\n{content}
+</step>""",
             },
             "rc_retriever_summary": {
-                "en": "#### Summarizing retrieved documents\n{content}",
-                "zh": "#### 正在对文档进行总结\n{content}",
+                "en": "Summarizing retrieved documents\n{content}",
+                "zh": "正在对文档进行总结\n{content}",
             },
             "kg_retriever_summary": {
-                "en": "#### Summarizing retrieved graph\n{content}",
-                "zh": "#### 正在对召回的知识进行总结\n{content}",
+                "en": "Summarizing retrieved graph\n{content}",
+                "zh": "正在对召回的知识进行总结\n{content}",
             },
             "retriever_summary": {
-                "en": "#### Summarizing retrieved documents\n{content}",
-                "zh": "#### 正在对文档进行总结\n{content}",
+                "en": "Summarizing retrieved documents\n{content}",
+                "zh": "正在对文档进行总结\n{content}",
             },
             "begin_task": {
-                "en": "--------- \n### Starting Task {step}: {content}",
-                "zh": "--------- \n### 正在执行 {step}: {content}",
+                "en": """
+<step status="{status}" title="Starting Task {step}">
+{content}
+</step>""",
+                "zh": """
+<step status="{status}" title="执行 {step}">
+{content}
+</step>""",
             },
             "logic_node": {
-                "en": """#### Translate query to logic form expression
---------- 
+                "en": """Translate query to logic form expression
+
+
 ```json
 {content}
 ```""",
-                "zh": """#### 将query转换成逻辑形式表达
---------- 
+                "zh": """将query转换成逻辑形式表达
+
+
 ```json
 {content}
 ```""",
             },
             "kag_retriever_result": {
-                "en": "### Retrieved documents\n--------- \n{content}",
-                "zh": "### 检索到的文档\n--------- \n{content}",
-            },
-            "end_task": {
-                "en": "### Task completed",
-                "zh": "### 执行结束",
+                "en": "Retrieved documents\n\n{content}",
+                "zh": "检索到的文档\n\n{content}",
             },
             "failed_kag_retriever": {
-                "en": """### KAG retriever failed
---------- 
+                "en": """KAG retriever failed
+
+
 ```json
 {content}
 ```
 """,
                 "zh": """KAG检索失败
---------- 
+
+
 ```json
 {content}
 ```
                 """,
             },
-            "begin_math_executor": {
-                "en": "### Starting math executor\n--------- \n{content}",
-                "zh": "### 正在执行计算\n--------- \n{content}",
-            },
             "end_math_executor": {
-                "en": "### Math executor completed\n{content}",
-                "zh": "### 计算结束\n{content}",
+                "en": "Math executor completed\n{content}",
+                "zh": "计算结束\n{content}",
             },
             "code_generator": {
-                "en": "#### Generating code\n--------- \n{content}",
-                "zh": "#### 正在生成代码\n--------- \n{content}",
+                "en": "Generating code\n \n{content}",
+                "zh": "正在生成代码\n \n{content}",
             }
         }
 
@@ -255,22 +287,63 @@ class OpenSPGReporter(ReporterABC):
             self.client = None
 
     def add_report_line(self, segment, tag_name, content, status, **kwargs):
-        report_id = f"{segment}_{tag_name}"
-        self.report_stream_data[report_id] = {
+        is_overwrite = kwargs.get("overwrite", True)
+        report_id = tag_name
+        params = {}
+        for k, v in kwargs.items():
+            params[k] = self.get_word_template(v, kwargs)
+        report_content = content
+        if isinstance(report_content, str):
+            report_content = self.get_word_template(report_content, params)
+
+        step_status = "success"
+        if status not in ["FINISH", "ERROR"]:
+            step_status = "loading"
+        params["status"] = step_status
+
+
+        if is_overwrite or report_id not in self.report_stream_data or (not isinstance(report_content, str)):
+            tag_template = self.get_tag_template(tag_name)
+            self.report_stream_data[report_id] = {
             "segment": segment,
+            "report_id": report_id,
+            "content": report_content,
+            "report_time": time.time(),
+            "kwargs": params,
+            "tag_template": tag_template,
             "tag_name": tag_name,
-            "content": content,
-            "status": status,
-            "params": kwargs,
             "time": time.time(),
+            "status": status,
         }
-        self.report_record.append(report_id)
-        if segment not in self.report_segment_time:
-            with self._lock:
+        else:
+            self.report_stream_data[report_id]["status"] = status
+            self.report_stream_data[report_id]["kwargs"] = params
+            self.report_stream_data[report_id]["time"] = time.time()
+            self.report_stream_data[report_id]["content"] += f"\n\n{report_content}"
+
+        parent_segment_report = self.report_stream_data.get(segment, None)
+
+        if segment in self.report_sub_segment:
+            if tag_name not in self.report_sub_segment[segment]:
+                self.report_sub_segment[segment].append(tag_name)
+                if parent_segment_report:
+                    parent_segment_report["content"] += f"\n\n<tag_name>{report_id}</tag_name>"
+        else:
+            self.report_sub_segment[segment] = [tag_name]
+            if parent_segment_report:
+                parent_segment_report["content"] += f"\n\n<tag_name>{report_id}</tag_name>"
+        with self._lock:
+            self.report_record.append(report_id)
+            if segment not in self.report_segment_time:
+
                 if segment not in self.report_segment_time:
                     self.report_segment_time[segment] = {
                         "start_time": time.time(),
                     }
+
+
+
+
 
     def do_report(self):
         if not self.client:
@@ -319,37 +392,18 @@ class OpenSPGReporter(ReporterABC):
         answer_reports = []
         reference_reports = []
 
-
         for report_id in self.report_record:
             if report_id in processed_report_record:
                 continue
             processed_report_record.append(report_id)
             report_data = self.report_stream_data[report_id]
             segment_name = report_data["segment"]
-            tag_template = self.get_tag_template(report_data["tag_name"])
-            report_time = report_data["time"]
-            content = report_data["content"]
-            params = report_data.get("params", {})
-            # replace word
-            kwargs = {}
-            for k, v in params.items():
-                kwargs[k] = self.get_word_template(v, params)
-            report_record_data = {
-                "segment": segment_name,
-                "report_id": report_id,
-                "content": content,
-                "report_time": report_time,
-                "kwargs": kwargs,
-                "tag_template": tag_template,
-                "tag_name": report_data["tag_name"],
-                "status": report_data["status"]
-            }
             if segment_name == "thinker":
-                think_reports.append(report_record_data)
+                think_reports.append(report_data)
             elif segment_name == "answer":
-                answer_reports.append(report_record_data)
+                answer_reports.append(report_data)
             elif segment_name in ["reference", "generator_reference_all"]:
-                reference_reports.append(report_record_data)
+                reference_reports.append(report_data)
         return think_reports, answer_reports, reference_reports
 
     def process_think(self, think_reports, is_finished):
@@ -364,29 +418,22 @@ class OpenSPGReporter(ReporterABC):
             kwargs = report_data.get("kwargs", {})
             status = report_data["status"]
             report_content = f"{content}"
-            if "planning" in report_data["tag_name"]:
-                report_content = report_content.replace("`", "\`")
 
-            if (
-                    isinstance(content, list)
-                    and content
-                    and isinstance(content[0], RelationData)
-            ):
-                graph_id = f"graph_{generate_random_string(3)}"
-                graph_list.append(_convert_spo_to_graph(graph_id, content))
-                report_content = f"""<div class={graph_id}></div>"""
+            report_content = generate_content(tag_template, report_content, kwargs, graph_list)
+            sub_segments = self.report_sub_segment.get(report_data["report_id"], [])
+            for sub_segment in sub_segments:
+                sub_segment_data = self.report_stream_data.get(sub_segment, None)
+                if not sub_segment_data:
+                    continue
+                tpl = sub_segment_data["tag_template"]
+                sub_content = sub_segment_data["content"]
+                sub_kwargs = sub_segment_data.get("kwargs", {})
 
-            report_content = self.get_word_template(report_content, kwargs)
-            if tag_template:
-                params = {
-                    "content": report_content
-                }
-                params.update(kwargs)
-                think += tag_template.format_map(SafeDict(params))
-            else:
-                think += str(report_content)
+                sub_segment_report = generate_content(tpl=tpl, datas=sub_content, content_params=sub_kwargs, graph_list=graph_list)
+                tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
+                report_content = report_content.replace(tag_replace_str, sub_segment_report)
 
-            think += "\n\n"
+            think += report_content + "\n\n"
             thinker_start_time = self.report_segment_time.get(
                 segment_name, {"start_time": time.time()}
             )["start_time"]
@@ -442,7 +489,8 @@ class OpenSPGReporter(ReporterABC):
     def generate_report_data_pro(self):
         think_reports, answer_reports, reference_reports = self.extra_segment_report()
         answer, status = self.process_answer(answer_reports)
-        think, thinker_cost, graph_list = self.process_think(think_reports, status!="INIT")
+        think, thinker_cost, graph_list = self.process_think(think_reports,
+                                                             is_finished=status != "INIT")
         reference = self.process_reference(reference_reports)
 
         content = StreamData(

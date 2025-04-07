@@ -46,16 +46,18 @@ class KagOutputExecutor(ExecutorABC):
             "thinker",
             f"{task_query}_begin_task",
             task_query,
-            "FINISH",
+            "INIT",
+            overwrite=False,
             step=task.name
         )
         if not logic_node or not isinstance(logic_node, GetNode):
             self.report_content(
                 reporter,
-                "thinker",
+                f"{task_query}_begin_task",
                 f"{task_query}_output",
                 "not implement!",
                 "FINISH",
+                overwrite=False,
                 step=task.name
             )
             return
@@ -63,7 +65,7 @@ class KagOutputExecutor(ExecutorABC):
         if context.variables_graph.has_alias(logic_node.alias_name.alias_name):
             result = context.variables_graph.get_answered_alias(logic_node.alias_name.alias_name)
             if isinstance(result, list):
-                result = "\n".join(result)
+                result = str(result)
         if not result:
             dep_context = []
             for p in task.parents:
@@ -73,15 +75,16 @@ class KagOutputExecutor(ExecutorABC):
                 "context": dep_context
             }, self.summary_prompt,
                 with_json_parse=False,
-                segment_name="thinker",
+                segment_name=f"{task_query}_begin_task",
                 tag_name = f"{task_query}_output", **kwargs)
         else:
             self.report_content(
                 reporter,
-                "thinker",
+                f"{task_query}_begin_task",
                 f"{task_query}_output",
                 "finish",
                 "FINISH",
+                overwrite=False,
                 step=task.name
             )
         task.update_result(result)
