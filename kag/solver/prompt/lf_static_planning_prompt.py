@@ -47,44 +47,44 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
           }
         ],
         """
-    default_case_zh = """"cases": [
-            {
-                "query": "你是谁",
-                "answer": "Step1:输出自己的相关介绍\nAction1:Output(`你是谁`)"
-            },
-            {
-                "query": "吴京是谁",
-                "answer": "Step1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)\nStep2:输出s1\nAction2:output(s1)"
-            },
-            {
-                "query": "张三是张四的爸爸，张二是张三的爸爸，哪么张二和张四是什么关系",
-                "answer": "Step1: 推断张二和张四的关系\nAction1:Deduce(op=entailment,content=[`张三是张四的爸爸`, `张二是张三的爸爸`],target=`张二和张四是什么关系`)->res\nStep2:输出res\nAction2:output(res)"
-            },
-            {
-                "query": "30+6加上华为创始人在2024年的年龄是多少",
-                "answer": "Step1:30+6 等于多少？\nAction1:Math(content=[], target=`30+6等于多少`)->math1\nStep2:华为创始人是谁？\nAction2:Retrieval(s=s2:企业[`华为`],p=p2:创始人,o=o2)\nStep3:华为创始人出生在什么年份？\nAction3:Retrieval(s=o2,p=p3:出生年份,o=o3)\nStep4:30+6的结果与华为创始人在2024年的年龄相加是多少？\nAction4:Math(content=[`math1`,`o3`], target=`30+6的结果与华为创始人在2024年的年龄相加是多少？`)->math4\nStep5:输出math4\nAction5:output(math4)"
-            },
-            {
-                "query": "C罗在2011年效力的运动队中，哪一支成立时间最晚？",
-                "answer": "Step1：C罗在2011年效力于哪些运动队？\nAction1：Retrieval(s=s1:球员[`C罗`], p=p1:2011年效力于, o=o1:运动队)\nStep2：这些队伍的成立年份分别是？\nAction2：Retrieval(s=o1, p=p2:成立年份, o=o2:年份)\nStep3：哪支队伍成立最晚？\nAction3：Math(content=[`o2`], target=`成立时间最晚的球队`)->math3"
-            },
-            {
-                "query": "发表《心理治疗整合期刊》的协会首任主席是谁？",
-                "answer": "Step1：哪家协会出版《心理治疗整合期刊》？\nAction1：Retrieval(s=s1:出版物[`心理治疗整合期刊`], p=p1:出版机构, o=o1:协会)\nStep2：该协会的首任主席是谁？\nAction2：Retrieval(s=o1, p=p2:首任主席, o=o2:人物)"
-            },
-            {
-                "query": "波卡洪塔斯丘所在州何时加入美国？",
-                "answer": "Step1：波卡洪塔斯丘位于哪个州？\nAction1：Retrieval(s=s1:历史遗址[`波卡洪塔斯丘`], p=p1:所在地, o=o1:州)\nStep2：该州何时成为美国的一部分？\nAction2：Retrieval(s=o1, p=p2:加入美国年份, o=o2:日期)"
-            },
-            {
-                "query": "两次龙卷风爆发中哪次致死人数更多？",
-                "answer": "Step1：第一次龙卷风爆发是哪个事件？\nAction1：Retrieval(s=s1:事件[`龙卷风爆发`], p=p1:第一次事件, o=o1:事件)\nStep2：第二次龙卷风爆发是哪个事件？\nAction2：Retrieval(s=s2:事件[`龙卷风爆发`], p=p2:第二次事件, o=o2:事件)\nStep3：第一次事件的死亡人数？\nAction3：Retrieval(s=s1, p=p3:致死人数, o=o3:数字)\nStep4：第二次事件的死亡人数？\nAction4：Retrieval(s=s2, p=p4:致死人数, o=o4:数字)\nStep5：比较两次事件的死亡人数\nAction5：Math(content=[`o3`,`o4`], target=`致死人数更多的事件`)->math5"
-            },
-            {
-                "query": "电影《Aas Ka Panchhi》和《Phoolwari》哪部更早上映？",
-                "answer": "Step1：《Aas Ka Panchhi》的上映时间是？\nAction1：Retrieval(s=s1:作品[`Aas Ka Panchhi`], p=p1:上映时间, o=o1:日期)\nStep2：《Phoolwari》的上映时间是？\nAction2：Retrieval(s=s2:作品[`Phoolwari`], p=p2:上映时间, o=o2:日期)\nStep3：比较两部电影的上映时间\nAction3：Math(content=[`o1`,`o2`], target=`更早上映的电影`)->math5"
-            }
-            ],"""
+    default_case_zh = [
+    {
+        "query": "你是谁",
+        "answer": "首先需要直接输出系统的基本介绍\n```\nStep1:输出自己的相关介绍\nAction1:Output(`你是谁`)\n```"
+    },
+    {
+        "query": "吴京是谁",
+        "answer": "首先需要检索公众人物'吴京'的基本信息\n```\nStep1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)\n```\n根据检索结果输出吴京的简介\n```\nStep2:输出s1\nAction2:output(s1)\n```"
+    },
+    {
+        "query": "张三是张四的爸爸，张二是张三的爸爸，哪么张二和张四是什么关系",
+        "answer": "首先需要根据已知的家庭关系推断张二和张四的亲属关系\n```\nStep1: 推断张二和张四的关系\nAction1:Deduce(op=entailment,content=[`张三是张四的爸爸`, `张二是张三的爸爸`],target=`张二和张四是什么关系`)->res\n```\n最后输出推断结果\n```\nStep2:输出res\nAction2:output(res)\n```"
+    },
+    {
+        "query": "30+6加上华为创始人在2024年的年龄是多少",
+        "answer": "首先需要解决数学问题30+6\n```\nStep1:30+6 等于多少？\nAction1:Math(content=[], target=`30+6等于多少`)->math1\n```\n确定华为的创始人是谁\n```\nStep2:华为创始人是谁？\nAction2:Retrieval(s=s2:企业[`华为`],p=p2:创始人,o=o2)\n```\n获取创始人出生年份\n```\nStep3:华为创始人出生在什么年份？\nAction3:Retrieval(s=o2,p=p3:出生年份,o=o3)\n```\n将数学结果与年龄相加\n```\nStep4:30+6的结果与华为创始人在2024年的年龄相加是多少？\nAction4:Math(content=[`math1`,`o3`], target=`30+6的结果与华为创始人在2024年的年龄相加是多少？`)->math4\n```\n输出最终结果\n```\nStep5:输出math4\nAction5:output(math4)\n```"
+    },
+    {
+        "query": "C罗在2011年效力的运动队中，哪一支成立时间最晚？",
+        "answer": "首先需要查询C罗在2011年的效力球队\n```\nStep1：C罗在2011年效力于哪些运动队？\nAction1：Retrieval(s=s1:球员[`C罗`], p=p1:2011年效力于, o=o1:运动队)\n```\n获取这些球队的成立年份\n```\nStep2：这些队伍的成立年份分别是？\nAction2：Retrieval(s=o1, p=p2:成立年份, o=o2:年份)\n```\n比较成立时间并选择最晚的\n```\nStep3：哪支队伍成立最晚？\nAction3：Math(content=[`o2`], target=`成立时间最晚的球队`)->math3\n```"
+    },
+    {
+        "query": "发表《心理治疗整合期刊》的协会首任主席是谁？",
+        "answer": "首先需要确定期刊的出版机构\n```\nStep1：哪家协会出版《心理治疗整合期刊》？\nAction1：Retrieval(s=s1:出版物[`心理治疗整合期刊`], p=p1:出版机构, o=o1:协会)\n```\n查询该协会的首任主席\n```\nStep2：该协会的首任主席是谁？\nAction2：Retrieval(s=o1, p=p2:首任主席, o=o2:人物)\n```"
+    },
+    {
+        "query": "波卡洪塔斯丘所在州何时加入美国？",
+        "answer": "首先需要定位波卡洪塔斯丘的地理位置\n```\nStep1：波卡洪塔斯丘位于哪个州？\nAction1：Retrieval(s=s1:历史遗址[`波卡洪塔斯丘`], p=p1:所在地, o=o1:州)\n```\n查询该州加入美国的时间\n```\nStep2：该州何时成为美国的一部分？\nAction2：Retrieval(s=o1, p=p2:加入美国年份, o=o2:日期)\n```"
+    },
+    {
+        "query": "两次龙卷风爆发中哪次致死人数更多？",
+        "answer": "首先需要确定两次龙卷风事件\n```\nStep1：第一次龙卷风爆发是哪个事件？\nAction1：Retrieval(s=s1:事件[`龙卷风爆发`], p=p1:第一次事件, o=o1:事件)\n```\n获取第二次事件信息\n```\nStep2：第二次龙卷风爆发是哪个事件？\nAction2：Retrieval(s=s2:事件[`龙卷风爆发`], p=p2:第二次事件, o=o2:事件)\n```\n分别查询死亡人数\n```\nStep3：第一次事件的死亡人数？\nAction3：Retrieval(s=s1, p=p3:致死人数, o=o3:数字)\n```\n```\nStep4：第二次事件的死亡人数？\nAction4：Retrieval(s=s2, p=p4:致死人数, o=o4:数字)\n```\n比较死亡人数并确定更多的一方\n```\nStep5：比较两次事件的死亡人数\nAction5：Math(content=[`o3`,`o4`], target=`致死人数更多的事件`)->math5\n```"
+    },
+    {
+        "query": "电影《Aas Ka Panchhi》和《Phoolwari》哪部更早上映？",
+        "answer": "首先需要查询《Aas Ka Panchhi》的上映时间\n```\nStep1：《Aas Ka Panchhi》的上映时间是？\nAction1：Retrieval(s=s1:作品[`Aas Ka Panchhi`], p=p1:上映时间, o=o1:日期)\n```\n查询《Phoolwari》的上映时间\n```\nStep2：《Phoolwari》的上映时间是？\nAction2：Retrieval(s=s2:作品[`Phoolwari`], p=p2:上映时间, o=o2:日期)\n```\n比较两部电影的上映时间\n```\nStep3：比较两部电影的上映时间\nAction3：Math(content=[`o1`,`o2`], target=`更早上映的电影`)->math5\n```"
+    }
+]
 
     instruct_en = """    "instruction": "",
         "function_description": "functionName is operator name;the function format is functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
@@ -111,41 +111,43 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
           }
         ],"""
 
-    default_case_en = """"cases": [
-            {
-                "query": "Which sports team for which Cristiano Ronaldo played in 2011 was founded last ?",
-                "answer": "Step1:Which Sports Teams Cristiano Ronaldo Played for in 2011 ?\nAction1:Retrieval(s=s1:Player[`Cristiano Ronaldo`],p=p1:PlayedForIn2011Year,o=o1:SportsTeam)\nStep2:In which year were these teams established ?\nAction2:Retrieval(s=o1,p=p2:FoundationYear,o=o2:Year)\nStep3:Which team was founded last ?\nAction3:Math(content=[`o2`], target=`Which team was founded last?`)->math3"
-            },
-            {
-                "query": "John is Mike's father, and James is John's father. What is the relationship between James and Mike?",
-                "answer": "Step1: Infer the relationship between James and Mike\nAction1:Deduce(op=entailment,content=[`John is Mike's father`, `James is John's father`],target=`What is the relationship between James and Mike?`)->res\nStep2:output deduce answer\nAction2:output(res)"
-            },
-            {
-                "query": "Who was the first president of the association which published Journal of Psychotherapy Integration?",
-                "answer": "Step1:Which association that publishes the Journal of Psychotherapy Integration ?\nAction1:Retrieval(s=s1:Player[`Psychotherapy Integration`],p=p1:Publish,o=o1:Association)\nStep2:Who was the first president of that specific association?\nAction2:Retrieval(s=o1,p=p2:FirstPresident,o=o2:Person)"
-            },
-            {
-                "query": "When did the state where Pocahontas Mounds is located become part of the United States?",
-                "answer": "Step1:Which State Where Pocahontas Mounds is Located ?\nAction1:Retrieval(s=s1:HistoricalSite[`Pocahontas Mounds`], p=p1:LocatedIn, o=o1:State)\nStep2:When did this state become a part of the United States ？\nAction2:Retrieval(s=o1, p=p2:YearOfBecamingPartofTheUnitedStates, o=o2:Date)"
-            },
-            {
-                "query": "Which of the two tornado outbreaks killed the most people?",
-                "answer": "Step1:Which is the first tornado outbreaks ?\nAction1:Retrieval(s=s1:Event[`Tornado Outbreak`], p=p1:TheFirst, o=o1:Event)\nStep2:Which is the second tornado outbreaks ?\nAction2:Retrieval(s=s2:Event[`Tornado Outbreak`], p=p2:TheSecond, o=o2:Event)\nStep3:How many people died in the first tornado outbreak ?\nAction3:Retrieval(s=s1, p=p3:KilledPeopleNumber, o=o3:Number)\nStep4:How many people died in the second tornado outbreak ?\nAction4:Retrieval(s=s2, p=p4:KilledPeopleNumber, o=o4:Number)\nStep5:To compare the death toll between two tornado outbreaks to determine which one had more fatalities.\nAction5:Math(content[`o3`,`o4`], target=`Which one had more fatalities?`)->math5"
-            },
-            {
-                "query": "Which film was released first, Aas Ka Panchhi or Phoolwari?",
-                "answer": "Step1:When was Aas Ka Panchhi released ?\nAction1:Retrieval(s=s1:Work[`Aas Ka Panchhi`], p=p1:ReleaseTime, o=o1:Date)\nStep2:When was Phoolwari released ?\nAction2:Retrieval(s=s2:Work[`Phoolwari`], p=p2:ReleaseTime, o=o2:Date)\nStep3:Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier ?\nAction3:Math(content=[`o1`,`o2`], target=`Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier?`)->math5"
-            }
-        ],"""
+    default_case_en = [
+    {
+        "query": "Which sports team for which Cristiano Ronaldo played in 2011 was founded last ?",
+        "answer": "First, retrieve the sports teams Cristiano Ronaldo played for in 2011\n```\nStep1:Which Sports Teams Cristiano Ronaldo Played for in 2011 ?\nAction1:Retrieval(s=s1:Player[`Cristiano Ronaldo`],p=p1:PlayedForIn2011Year,o=o1:SportsTeam)\n```\nNext, obtain the foundation years of these teams\n```\nStep2:In which year were these teams established ?\nAction2:Retrieval(s=o1,p=p2:FoundationYear,o=o2:Year)\n```\nFinally, determine the team founded last by comparing years\n```\nStep3:Which team was founded last ?\nAction3:Math(content=[`o2`], target=`Which team was founded last?`)->math3\n```"
+    },
+    {
+        "query": "John is Mike's father, and James is John's father. What is the relationship between James and Mike?",
+        "answer": "First, infer relationships based on familial connections\n```\nStep1: Infer the relationship between James and Mike\nAction1:Deduce(op=entailment,content=[`John is Mike's father`, `James is John's father`],target=`What is the relationship between James and Mike?`)->res\n```\nOutput the deduced result\n```\nStep2:output deduce answer\nAction2:output(res)\n```"
+    },
+    {
+        "query": "Who was the first president of the association which published Journal of Psychotherapy Integration?",
+        "answer": "First, identify the association publishing the *Journal of Psychotherapy Integration*\n```\nStep1:Which association that publishes the Journal of Psychotherapy Integration ?\nAction1:Retrieval(s=s1:Player[`Psychotherapy Integration`],p=p1:Publish,o=o1:Association)\n```\nThen retrieve the association's first president\n```\nStep2:Who was the first president of that specific association?\nAction2:Retrieval(s=o1,p=p2:FirstPresident,o=o2:Person)\n```"
+    },
+    {
+        "query": "When did the state where Pocahontas Mounds is located become part of the United States?",
+        "answer": "First, locate the state where *Pocahontas Mounds* is situated\n```\nStep1:Which State Where Pocahontas Mounds is Located ?\nAction1:Retrieval(s=s1:HistoricalSite[`Pocahontas Mounds`], p=p1:LocatedIn, o=o1:State)\n```\nNext, retrieve the state's admission year to the U.S.\n```\nStep2:When did this state become a part of the United States ？\nAction2:Retrieval(s=o1, p=p2:YearOfBecamingPartofTheUnitedStates, o=o2:Date)\n```"
+    },
+    {
+        "query": "Which of the two tornado outbreaks killed the most people?",
+        "answer": "First, identify the two tornado outbreaks\n```\nStep1:Which is the first tornado outbreaks ?\nAction1:Retrieval(s=s1:Event[`Tornado Outbreak`], p=p1:TheFirst, o=o1:Event)\n```\nConfirm the second event details\n```\nStep2:Which is the second tornado outbreaks ?\nAction2:Retrieval(s=s2:Event[`Tornado Outbreak`], p=p2:TheSecond, o=o2:Event)\n```\nRetrieve casualties from first outbreak\n```\nStep3:How many people died in the first tornado outbreak ?\nAction3:Retrieval(s=s1, p=p3:KilledPeopleNumber, o=o3:Number)\n```\nRetrieve casualties from second outbreak\n```\nStep4:How many people died in the second tornado outbreak ?\nAction4:Retrieval(s=s2, p=p4:KilledPeopleNumber, o=o4:Number)\n```\nCompare fatality numbers between events\n```\nStep5:To compare the death toll between two tornado outbreaks to determine which one had more fatalities.\nAction5:Math(content[`o3`,`o4`], target=`Which one had more fatalities?`)->math5\n```"
+    },
+    {
+        "query": "Which film was released first, Aas Ka Panchhi or Phoolwari?",
+        "answer": "First, retrieve *Aas Ka Panchhi*'s release date\n```\nStep1:When was Aas Ka Panchhi released ?\nAction1:Retrieval(s=s1:Work[`Aas Ka Panchhi`], p=p1:ReleaseTime, o=o1:Date)\n```\nNext, retrieve *Phoolwari*'s release information\n```\nStep2:When was Phoolwari released ?\nAction2:Retrieval(s=s2:Work[`Phoolwari`], p=p2:ReleaseTime, o=o2:Date)\n```\nCompare release dates to determine earliest\n```\nStep3:Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier ?\nAction3:Math(content=[`o1`,`o2`], target=`Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier?`)->math5\n```"
+    }
+]
+
 
     def __init__(self, **kwargs):
         self.template_zh = f"""
             {{
                 {self.instruct_zh}
-                {self.default_case_zh}
-                "output_format": "only output `Step`, `Action` and `Output` content. Do not output json format, use string",
+                "cases": {self.default_case_zh},
+                "output_format": "使用字符串格式输出",
                 "tips": [
-                    " Each `Step` must contain exactly one `Action` or `Output`",
+                    "输出每一步的Step和Action前可以增加一些思考说明，类似’首先...其次...最后...‘",
+                    "Each `Step` must contain exactly one `Action` or `Output`",
                     "Each step is an indivisible atomic question, please re-split accordingly.",
                     "Output also needs to be a separate step."
                 ],
@@ -154,9 +156,9 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 """
         self.template_en = f"""
             {{
-                {self.instruct_en}
-                {self.default_case_en}
-                "output_format": "Only start with output words in answer, for examples: `Step`, `Action`, `Output` content. Do not output json format, use string",
+                {self.instruct_en},
+                "cases": {self.default_case_en},
+                "output_format": "Do not output json format, use string",
                 "tips": [
                     " Each `Step` must contain exactly one `Action` or `Output`",
                     "Each step is an indivisible atomic question, please re-split accordingly.",

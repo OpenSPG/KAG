@@ -47,7 +47,7 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
             if logic_node.get_fl_node_result().summary:
                 if reporter:
                     reporter.add_report_line(
-                        "thinker",
+                        f"{kwargs.get('query')}_begin_task",
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{self.name}",
                         "retrieved_finish",
                         "FINISH",
@@ -57,7 +57,7 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
             self.break_flag = False
             if reporter:
                 reporter.add_report_line(
-                    "thinker",
+                    f"{kwargs.get('query')}_begin_task",
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{self.name}",
                     "next_finish",
                     "FINISH",

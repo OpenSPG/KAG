@@ -111,8 +111,9 @@ class PyBasedMathExecutor(ExecutorABC):
             "thinker",
             f"{task_query}_begin_task",
             task_query,
-            "FINISH",
-            step=task.name
+            "INIT",
+            step=task.name,
+            overwrite=False,
         )
 
         parent_results = []
@@ -128,7 +129,7 @@ class PyBasedMathExecutor(ExecutorABC):
 
         while tries > 0:
             tries -= 1
-            rst, error, code = self.run_once(task_query, parent_results, error, segment_name="thinker", tag_name=f"{task_query}_code_generator", **kwargs)
+            rst, error, code = self.run_once(task_query, parent_results, error, segment_name=f"{task_query}_begin_task", tag_name=f"{task_query}_code_generator", **kwargs)
             if rst is not None:
                 result = f"""
                     ```{code}```
@@ -136,7 +137,16 @@ class PyBasedMathExecutor(ExecutorABC):
                     """
                 task.update_result(result)
                 self.report_content(
-                    reporter, "thinker", f"{task_query}_end_math_executor_{task.id}", rst, "FINISH"
+                    reporter, f"{task_query}_begin_task", f"{task_query}_end_math_executor_{task.id}", rst, "FINISH"
+                )
+                self.report_content(
+                    reporter,
+                    "thinker",
+                    f"{task_query}_begin_task",
+                    "finish",
+                    "FINISH",
+                    step=task.name,
+                    overwrite=False,
                 )
                 if logic_node and isinstance(logic_node, MathNode):
                     context.variables_graph.add_answered_alias(logic_node.alias_name, rst)
@@ -146,7 +156,16 @@ class PyBasedMathExecutor(ExecutorABC):
         task.update_result(error)
 
         self.report_content(
-            reporter, "thinker", f"{task_query}_end_math_executor_{task.id}", task.result, "FINISH"
+            reporter, f"{task_query}_begin_task", f"{task_query}_end_math_executor_{task.id}", task.result, "FINISH"
+        )
+        self.report_content(
+            reporter,
+            "thinker",
+            f"{task_query}_begin_task",
+            "finish",
+            "FINISH",
+            step=task.name,
+            overwrite=False,
         )
 
     def schema(self):
