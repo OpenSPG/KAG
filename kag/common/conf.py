@@ -77,10 +77,6 @@ class KAGGlobalConf:
             setattr(self, k, v)
         self._extra = kwargs
 
-        print(
-            f"Done initialize project config with host addr {self.host_addr} and project_id {self.project_id}"
-        )
-
 
 def _closest_cfg(
     path: Union[str, os.PathLike] = ".",
@@ -214,9 +210,4 @@ def init_env(config_file: str = None):
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
         if dump_flag is not None and dump_flag.strip() == "1":
-            print(f"{msg}:")
             pprint.pprint(KAG_CONFIG.all_config, indent=2)
-        else:
-            print(
-                f"{msg}: set {KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG}=1 to dump config"
-            )
