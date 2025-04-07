@@ -31,7 +31,11 @@ def collect_reader_outputs(data):
     subgraphs = []
 
     def collect(data):
-        if isinstance(data, Chunk):
+        from kag.interface.builder.base import BuilderComponentData
+
+        if isinstance(data, BuilderComponentData):
+            chunks.append(data)
+        elif isinstance(data, Chunk):
             chunks.append(data)
         elif isinstance(data, SubGraph):
             subgraphs.append(data)
@@ -117,6 +121,7 @@ class SPGServerBridge:
         host_addr="http://127.0.0.1:8887",
     ):
         from kag.solver.main_solver import SolverMain
+
         if isinstance(args, str):
             args = json.loads(args)
         params = args.get("args", {})
@@ -128,7 +133,7 @@ class SPGServerBridge:
             query=query,
             is_report=is_report,
             host_addr=host_addr,
-            params=params
+            params=params,
         )
 
 
