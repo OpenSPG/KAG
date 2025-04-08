@@ -61,11 +61,10 @@ class KagOutputExecutor(ExecutorABC):
                 step=task.name
             )
             return
-        result = ""
-        if context.variables_graph.has_alias(logic_node.alias_name.alias_name):
-            result = context.variables_graph.get_answered_alias(logic_node.alias_name.alias_name)
-            if isinstance(result, list):
-                result = str(result)
+        result = []
+        for alias in logic_node.alias_name_set:
+            if context.variables_graph.has_alias(alias.alias_name):
+                result.append(context.variables_graph.get_answered_alias(alias.alias_name))
         if not result:
             dep_context = []
             for p in task.parents:
