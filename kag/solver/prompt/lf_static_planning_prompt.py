@@ -15,6 +15,7 @@ import re
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import get_now
 from kag.interface import PromptABC, Task
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
@@ -27,7 +28,7 @@ logger = logging.getLogger()
 
 @PromptABC.register("default_lf_static_planning")
 class RetrieverLFStaticPlanningPrompt(PromptABC):
-    instruct_zh = """"instruction": "你是一个规划专家，根据function中的算子来规划问题",
+    instruct_zh = """"instruction": "你是一个规划专家，你的任务是根据function中的算子来规划问题",
         "function": [
           {
               "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`], p.prop=`value`, s.prop=`value`, o.prop=`value`)",
@@ -82,7 +83,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     }
 ]
 
-    instruct_en = """    "instruction": "You are a planning expert who designs plans based on the operators in the function.",
+    instruct_en = """"instruction": "You are a planning expert who designs plans based on the operators in the function.",
         "function_description": "functionName is operator name;the function format is functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
         "function": [
           {
@@ -138,6 +139,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     def __init__(self, **kwargs):
         self.template_zh = f"""
             {{
+                "time": "今天是{get_now(language='zh')}"
                 {self.instruct_zh}
                 "cases": {json.dumps(self.default_case_zh, ensure_ascii=False, indent=2)},
                 "output_format": "使用markdown格式输出，开头不需要输出'```markdown'",
@@ -153,6 +155,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 """
         self.template_en = f"""
             {{
+                "time": "Today is {get_now(language='en')}"
                 {self.instruct_en},
                 "cases":  {json.dumps(self.default_case_en, ensure_ascii=False, indent=2)},
                 "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
