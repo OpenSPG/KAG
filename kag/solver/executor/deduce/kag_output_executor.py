@@ -53,8 +53,8 @@ class KagOutputExecutor(ExecutorABC):
         if not logic_node or not isinstance(logic_node, GetNode):
             self.report_content(
                 reporter,
+                "thinker",
                 f"{task_query}_begin_task",
-                f"{task_query}_output",
                 "not implement!",
                 "FINISH",
                 overwrite=False,
@@ -77,16 +77,15 @@ class KagOutputExecutor(ExecutorABC):
                 with_json_parse=False,
                 segment_name=f"{task_query}_begin_task",
                 tag_name = f"{task_query}_output", **kwargs)
-        else:
-            self.report_content(
-                reporter,
-                f"{task_query}_begin_task",
-                f"{task_query}_output",
-                "finish",
-                "FINISH",
-                overwrite=False,
-                step=task.name
-            )
+        self.report_content(
+            reporter,
+            "thinker",
+            f"{task_query}_begin_task",
+            "finish",
+            "FINISH",
+            overwrite=False,
+            step=task.name
+        )
         task.update_result(result)
 
     def schema(self) -> dict:
