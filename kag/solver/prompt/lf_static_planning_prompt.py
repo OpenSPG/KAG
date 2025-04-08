@@ -49,10 +49,6 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         """
     default_case_zh = [
     {
-        "query": "你是谁",
-        "answer": "首先需要直接输出系统的基本介绍\n```\nStep1:输出自己的相关介绍\nAction1:Output(`你是谁`)\n```"
-    },
-    {
         "query": "吴京是谁",
         "answer": "首先需要检索公众人物'吴京'的基本信息\n```\nStep1:查询吴京\nAction1:Retrieval(s=s1:公众人物[`吴京`], p=p1, o=o1)\n```\n根据检索结果输出吴京的简介\n```\nStep2:输出s1\nAction2:output(s1)\n```"
     },
@@ -66,23 +62,23 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     },
     {
         "query": "C罗在2011年效力的运动队中，哪一支成立时间最晚？",
-        "answer": "首先需要查询C罗在2011年的效力球队\n```\nStep1：C罗在2011年效力于哪些运动队？\nAction1：Retrieval(s=s1:球员[`C罗`], p=p1:2011年效力于, o=o1:运动队)\n```\n获取这些球队的成立年份\n```\nStep2：这些队伍的成立年份分别是？\nAction2：Retrieval(s=o1, p=p2:成立年份, o=o2:年份)\n```\n比较成立时间并选择最晚的\n```\nStep3：哪支队伍成立最晚？\nAction3：Math(content=[`o2`], target=`成立时间最晚的球队`)->math3\n```"
+        "answer": "首先需要查询C罗在2011年的效力球队\n```\nStep1:C罗在2011年效力于哪些运动队？\nAction1:Retrieval(s=s1:球员[`C罗`], p=p1:2011年效力于, o=o1:运动队)\n```\n获取这些球队的成立年份\n```\nStep2:这些队伍的成立年份分别是？\nAction2:Retrieval(s=o1, p=p2:成立年份, o=o2:年份)\n```\n比较成立时间并选择最晚的\n```\nStep3:哪支队伍成立最晚？\nAction3:Math(content=[`o2`], target=`成立时间最晚的球队`)->math3\n```"
     },
     {
         "query": "发表《心理治疗整合期刊》的协会首任主席是谁？",
-        "answer": "首先需要确定期刊的出版机构\n```\nStep1：哪家协会出版《心理治疗整合期刊》？\nAction1：Retrieval(s=s1:出版物[`心理治疗整合期刊`], p=p1:出版机构, o=o1:协会)\n```\n查询该协会的首任主席\n```\nStep2：该协会的首任主席是谁？\nAction2：Retrieval(s=o1, p=p2:首任主席, o=o2:人物)\n```"
+        "answer": "首先需要确定期刊的出版机构\n```\nStep1:哪家协会出版《心理治疗整合期刊》？\nAction1:Retrieval(s=s1:出版物[`心理治疗整合期刊`], p=p1:出版机构, o=o1:协会)\n```\n查询该协会的首任主席\n```\nStep2:该协会的首任主席是谁？\nAction2:Retrieval(s=o1, p=p2:首任主席, o=o2:人物)\n```"
     },
     {
         "query": "波卡洪塔斯丘所在州何时加入美国？",
-        "answer": "首先需要定位波卡洪塔斯丘的地理位置\n```\nStep1：波卡洪塔斯丘位于哪个州？\nAction1：Retrieval(s=s1:历史遗址[`波卡洪塔斯丘`], p=p1:所在地, o=o1:州)\n```\n查询该州加入美国的时间\n```\nStep2：该州何时成为美国的一部分？\nAction2：Retrieval(s=o1, p=p2:加入美国年份, o=o2:日期)\n```"
+        "answer": "首先需要定位波卡洪塔斯丘的地理位置\n```\nStep1:波卡洪塔斯丘位于哪个州？\nAction1:Retrieval(s=s1:历史遗址[`波卡洪塔斯丘`], p=p1:所在地, o=o1:州)\n```\n查询该州加入美国的时间\n```\nStep2:该州何时成为美国的一部分？\nAction2:Retrieval(s=o1, p=p2:加入美国年份, o=o2:日期)\n```"
     },
     {
         "query": "两次龙卷风爆发中哪次致死人数更多？",
-        "answer": "首先需要确定两次龙卷风事件\n```\nStep1：第一次龙卷风爆发是哪个事件？\nAction1：Retrieval(s=s1:事件[`龙卷风爆发`], p=p1:第一次事件, o=o1:事件)\n```\n获取第二次事件信息\n```\nStep2：第二次龙卷风爆发是哪个事件？\nAction2：Retrieval(s=s2:事件[`龙卷风爆发`], p=p2:第二次事件, o=o2:事件)\n```\n分别查询死亡人数\n```\nStep3：第一次事件的死亡人数？\nAction3：Retrieval(s=s1, p=p3:致死人数, o=o3:数字)\n```\n```\nStep4：第二次事件的死亡人数？\nAction4：Retrieval(s=s2, p=p4:致死人数, o=o4:数字)\n```\n比较死亡人数并确定更多的一方\n```\nStep5：比较两次事件的死亡人数\nAction5：Math(content=[`o3`,`o4`], target=`致死人数更多的事件`)->math5\n```"
+        "answer": "首先需要确定两次龙卷风事件\n```\nStep1:第一次龙卷风爆发是哪个事件？\nAction1:Retrieval(s=s1:事件[`龙卷风爆发`], p=p1:第一次事件, o=o1:事件)\n```\n获取第二次事件信息\n```\nStep2:第二次龙卷风爆发是哪个事件？\nAction2:Retrieval(s=s2:事件[`龙卷风爆发`], p=p2:第二次事件, o=o2:事件)\n```\n分别查询死亡人数\n```\nStep3:第一次事件的死亡人数？\nAction3:Retrieval(s=s1, p=p3:致死人数, o=o3:数字)\n```\n```\nStep4:第二次事件的死亡人数？\nAction4:Retrieval(s=s2, p=p4:致死人数, o=o4:数字)\n```\n比较死亡人数并确定更多的一方\n```\nStep5:比较两次事件的死亡人数\nAction5:Math(content=[`o3`,`o4`], target=`致死人数更多的事件`)->math5\n```"
     },
     {
         "query": "电影《Aas Ka Panchhi》和《Phoolwari》哪部更早上映？",
-        "answer": "首先需要查询《Aas Ka Panchhi》的上映时间\n```\nStep1：《Aas Ka Panchhi》的上映时间是？\nAction1：Retrieval(s=s1:作品[`Aas Ka Panchhi`], p=p1:上映时间, o=o1:日期)\n```\n查询《Phoolwari》的上映时间\n```\nStep2：《Phoolwari》的上映时间是？\nAction2：Retrieval(s=s2:作品[`Phoolwari`], p=p2:上映时间, o=o2:日期)\n```\n比较两部电影的上映时间\n```\nStep3：比较两部电影的上映时间\nAction3：Math(content=[`o1`,`o2`], target=`更早上映的电影`)->math5\n```"
+        "answer": "首先需要查询《Aas Ka Panchhi》的上映时间\n```\nStep1:《Aas Ka Panchhi》的上映时间是？\nAction1:Retrieval(s=s1:作品[`Aas Ka Panchhi`], p=p1:上映时间, o=o1:日期)\n```\n查询《Phoolwari》的上映时间\n```\nStep2:《Phoolwari》的上映时间是？\nAction2:Retrieval(s=s2:作品[`Phoolwari`], p=p2:上映时间, o=o2:日期)\n```\n比较两部电影的上映时间\n```\nStep3:比较两部电影的上映时间\nAction3:Math(content=[`o1`,`o2`], target=`更早上映的电影`)->math5\n```"
     }
 ]
 
@@ -196,7 +192,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     def parse_steps(self, response):
         logger.debug(f"logic form:{response}")
         _output_string = response.replace("：", ":")
-        _output_string = response.strip()
+        _output_string = _output_string.strip()
         sub_querys = []
         logic_forms = []
         current_sub_query = ""
