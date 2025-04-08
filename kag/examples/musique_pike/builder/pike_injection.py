@@ -30,7 +30,7 @@ def AtomicQuestionChunkInjection(file_path):
     from kag.common.conf import KAG_CONFIG
 
     runner = BuilderChainRunner.from_config(
-        KAG_CONFIG.all_config["kag_pike_chunk_injection_pipeline"]
+        KAG_CONFIG.all_config["kag_atomic_chunk_injection_pipeline"]
     )
     runner.invoke(file_path)
 

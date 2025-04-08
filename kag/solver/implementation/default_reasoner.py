@@ -58,7 +58,7 @@ class DefaultReasoner(KagReasonerABC):
         - history_log: A dictionary containing the history of QA pairs and re-ranked documents.
         """
         # logic form planing
-        lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question)
-
+        # lf_nodes: List[LFPlan] = self.lf_planner.lf_planing(question)
+        lf_nodes: List[LFPlan] = []
         # logic form execution
         return self.lf_executor.execute(question, lf_nodes, **kwargs)

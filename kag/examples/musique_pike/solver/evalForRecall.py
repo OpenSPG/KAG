@@ -48,12 +48,10 @@ class EvaForMusique:
         for sample in data:
             results = []
             try:
-                subquerys = sample['traceLog']
+                onc_query_log = sample['traceLog']
                 count += 1
-                for item in subquerys:
-                    question = item['sub question']
-                for q in item['sub question']:
-                    doc_retrieved = q['doc_retrieved']
+                for item in onc_query_log:
+                    doc_retrieved = item['recall docs']
                     real = []
                     for i in doc_retrieved:
                         real.append(self.processing_phrases(i.split('#')[2]))
@@ -64,14 +62,16 @@ class EvaForMusique:
                 )
 
             all_keys = results[0].keys() if results else []
-            max_values = {key: float('-inf') for key in all_keys}
+            avg_values = {key: float('0') for key in all_keys}
             for obj in results:
                 for key in obj:
-                    max_values[key] = max(max_values[key], obj[key])
+                    avg_values[key] = avg_values[key] + obj[key]
+            for key in avg_values:
+                avg_values[key] = avg_values[key]/len(results)
             final_result.append(
                 {
                     **sample,
-                    "recall":max_values
+                    "recall":avg_values
                 }
             )
         total_recall = {"recall_top3": 0, "recall_top5": 0, "recall_all": 0}
@@ -83,7 +83,7 @@ class EvaForMusique:
                     total_recall[param] += value
         result_recall = {**total_recall}
         for inx, value in  total_recall.items():
-            result_recall[f"{inx}_rate"] = (value*100)/count
+            result_recall[inx] = (value*100)/count
         result_recall["process_num"] = count
 
         with open(resFilePath, "w") as f:
@@ -107,7 +107,6 @@ class EvaForMusique:
                Returns:
                dict: Dictionary containing recall for top-3, top-5, and all predictions.
                """
-        # predictionlist = self.convert_chunk_data_2_str(predictionlist)
         # Split predictions into lists of top-3 and top-5
         top3_predictions = predictionlist[:3]
         top5_predictions = predictionlist[:5]
@@ -149,6 +148,7 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     current_script_dir = os.path.abspath(os.path.dirname(__file__))  # 当前脚本所在目录
+    # current_script_dir = '/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique_pike/solver/results/4_7_result'
 
     for file_name in os.listdir(current_script_dir):  # 遍历脚本所在目录
         if file_name.endswith("_res.json"):  # 筛选符合条件的文件

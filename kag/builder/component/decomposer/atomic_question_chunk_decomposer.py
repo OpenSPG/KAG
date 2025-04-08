@@ -84,15 +84,8 @@ class AtomicQuestionChunkDecomposer(DecomposerABC):
         decomposition_result = self.llm.invoke(
             {"input": passage}, self.decomposition_prompt, with_except=False
         )
-        output = []
-        for item in decomposition_result:
-            question = item.get("question", None)
-            answer = item.get("answer", None)
-            output.append({
-                "question":question,
-                "answer":answer
-            })
-        return output
+
+        return decomposition_result
 
     @staticmethod
     def assemble_sub_graph_with_chunk(sub_graph: SubGraph, chunk: Chunk):
@@ -132,8 +125,7 @@ class AtomicQuestionChunkDecomposer(DecomposerABC):
         """
 
         for qa in atomic_question:
-            question = qa["question"]
-            answer = qa["answer"]
+            question = qa
             sub_graph.add_node(
                 generate_hash_id(question),
                 question,
@@ -142,7 +134,6 @@ class AtomicQuestionChunkDecomposer(DecomposerABC):
                     "id": question,
                     "name": question,
                     "content": f"{question}",
-                    "answer": answer
                 },
             )
 

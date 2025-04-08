@@ -12,8 +12,8 @@ chat_llm: &chat_llm
   type: maas
 
 vectorize_model: &vectorize_model
-  api_key: sk-krunlbqxmpmnvmobwydvuazjinlzlrkbpscrdmbulajjljml
-  base_url:
+  api_key:
+  base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
@@ -63,7 +63,7 @@ kag_builder_pipeline:
 #------------kag-builder configuration end----------------#
 
 #------------pike atomic question injection start----------------#
-kag_pike_chunk_injection_pipeline:
+kag_atomic_chunk_injection_pipeline:
   chain:
     type: pike_chunk_injection_chain # kag.builder.default_chain.PikeChunkInjectionChain
     decomposer:
@@ -88,7 +88,7 @@ kag_pike_chunk_injection_pipeline:
     type: musique_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
 #------------pike atomic query injection end----------------#
 
-#------------pike atomic question injection start----------------#
+#------------pike atomic question spo injection start----------------#
 graph_api_for_decomposer: &graph_api_for_decomposer
   type: openspg_graph_api
 
@@ -159,6 +159,24 @@ atomic_question_retriever: &atomic_question_retriever
   rerank_topk: 10
   match_threshold: 0.5
 
+atomic_query_executor: &atomic_query_executor
+  type: lf_with_atomic_question_executor # kag.solver.execute.default_lf_executor.LFWithAtomicQuestionExecutor
+  llm_client: *chat_llm
+  force_chunk_retriever: true
+  exact_kg_retriever: *exact_kg_retriever
+  fuzzy_kg_retriever: *fuzzy_kg_retriever
+  chunk_retriever: *chunk_retriever
+  atomic_question_retriever: *atomic_question_retriever
+  merger:
+    type: default_lf_sub_query_res_merger # kag.solver.execute.default_sub_query_merger.DefaultLFSubQueryResMerger
+    vectorize_model: *vectorize_model
+    chunk_retriever: *chunk_retriever
+  atomic_query_decomposition_prompt:
+    type: atomic_query_decomposition_prompt
+  atomic_question_selection_prompt:
+    type: atomic_question_selection_prompt
+  max_iterations: 5
+
 kag_solver_pipeline:
   memory:
     type: default_memory # kag.solver.implementation.default_memory.DefaultMemory
@@ -171,21 +189,7 @@ kag_solver_pipeline:
       type: default_lf_planner # kag.solver.plan.default_lf_planner.DefaultLFPlanner
       llm_client: *chat_llm
       vectorize_model: *vectorize_model
-    lf_executor:
-      type: lf_with_atomic_question_executor # kag.solver.execute.default_lf_executor.LFWithAtomicQuestionExecutor
-      llm_client: *chat_llm
-      force_chunk_retriever: true
-      exact_kg_retriever: *exact_kg_retriever
-      fuzzy_kg_retriever: *fuzzy_kg_retriever
-      chunk_retriever: *chunk_retriever
-      atomic_question_retriever: *atomic_question_retriever
-      merger:
-        type: default_lf_sub_query_res_merger # kag.solver.execute.default_sub_query_merger.DefaultLFSubQueryResMerger
-        vectorize_model: *vectorize_model
-        chunk_retriever: *chunk_retriever
-      decomposition_prompt:
-        type: default_decomposition_query
-      max_iterations: 5
+    lf_executor: *atomic_query_executor
   generator:
     type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm

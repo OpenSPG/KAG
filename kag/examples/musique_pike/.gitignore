@@ -1,4 +1,5 @@
 ckpt/
-/solver/musique_res_*.json
-/solver/musique_metrics_*.json
+/solver/B*_res.json
+/solver/B*_metrics.json
+/solver/B*_recall.json
 /solver/results

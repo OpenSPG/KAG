@@ -595,6 +595,29 @@ def copy_one_hop_graph_data(other: OneHopGraphData, alias_name: str):
     ret.out_relations = other.out_relations
     return ret
 
+class AtomRetrievalInfo:
+    def __init__(self, atomic_query:str, atomic:str, title:str, content:str, chunk_id:str, score:float):
+        self.atomic_query = atomic_query
+        self.atomic = atomic
+        self.title = title
+        self.content = content
+        self.chunk_id = chunk_id
+        self.score = score
+
+    def to_dict(self):
+        return {
+            "content": str(self.content),
+            "title": str(self.title),
+            "chunk_id": str(self.chunk_id),
+            "score": str(self.score)
+        }
+
+    def __repr__(self):
+        return f"AtomRetrievalInfo(content={self.content}, title={self.title}, chunk_id={self.chunk_id}, score={self.score})"
+
+    def __str__(self):
+        return self.content
+
 
 class KgGraph:
     def __init__(self):

@@ -302,7 +302,7 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
             logger.info(f"No entities matched for {queries}")
         return matched_entities
 
-    def match_atomic_questions(self, queries: List[str], top_k: int = 16):
+    def match_atomic_questions(self, atomic_query: str, top_k: int = 16):
         """
         Match entities based on the provided queries.
 
@@ -311,23 +311,21 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         :return: A tuple containing a list of matched entities and their scores.
         """
         scores = {}
-        for query in queries:
-            query = processing_phrases(query)
-            typed_nodes = self.search_api.search_vector(
-                label=self.schema.get_label_within_prefix("AtomicQuestion"),
-                property_key="content",
-                query_vector=self.vectorize_model.vectorize(query),
-                topk=top_k,
-            )
 
-            if len(typed_nodes) != 0:
-                for idx, item in enumerate(typed_nodes):
-                    if typed_nodes[idx]["score"] > self.match_threshold:
-                        scores[item["node"]["id"]]=item["score"]
-        if len(queries) == 1:
-            query_sim_doc_cache.put(queries[0], scores)
-        else:
-            query_sim_doc_cache.put(queries[1], scores)
+        query = processing_phrases(atomic_query)
+        typed_nodes = self.search_api.search_vector(
+            label=self.schema.get_label_within_prefix("AtomicQuestion"),
+            property_key="content",
+            query_vector=self.vectorize_model.vectorize(query),
+            topk=top_k,
+        )
+
+        if len(typed_nodes) != 0:
+            for idx, item in enumerate(typed_nodes):
+                if typed_nodes[idx]["score"] > self.match_threshold:
+                    node = item["node"]
+                    scores[f"#{node['id']}#{node['name']}#{node['content']}"]=item["score"]
+        query_sim_doc_cache.put(atomic_query, scores)
         if not len(scores):
             logger.info(f"No entities matched for {queries}")
         return scores
@@ -538,19 +536,19 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         """
         atomic_question_nums = 16
         cur_matched = self.match_atomic_questions(queries,atomic_question_nums)
-        sorted_scores = sorted(
+        sorted_atomic_docs = sorted(
             cur_matched.items(), key=lambda item: item[1], reverse=True
         )
-        logger.debug(f"sorted_scores: {sorted_scores}")
+        logger.debug(f"sorted_scores: {sorted_atomic_docs}")
 
         # for idx,item in enumerate(sorted_scores):
         #     print(f"number{idx}: {item}")
 
-        output = self.get_all_docs_by_related_atomic_question(queries, sorted_scores, self.recall_num)
+        matched_docs, atomic_chunk_pairs = self.get_all_docs_by_related_atomic_question(queries, sorted_atomic_docs, self.recall_num)
 
-        return output
+        return matched_docs, atomic_chunk_pairs
 
-    def get_all_docs_by_related_atomic_question(self, queries: List[str], atomic_question_ids: list, top_k: int):
+    def get_all_docs_by_related_atomic_question(self, queries: List[str], atomic_question_docs: list, top_k: int):
         """
         Retrieve a list of documents based on their IDs.
 
@@ -564,21 +562,20 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
         """
 
         matched_docs = []
+        atomic_chunk_pairs = []
         hits_docs = set()
-        counter = 0
-        for doc_id in atomic_question_ids:
-            # if counter == top_k:
-            if len(hits_docs) == top_k:
-                break
-            if isinstance(doc_id, tuple):
-                doc_score = doc_id[1]
-                doc_id = doc_id[0]
+
+        for doc in atomic_question_docs:
+            if isinstance(doc, tuple):
+                score = doc[1]
+                atomic_question_node = doc[0]
             else:
-                doc_score = atomic_question_ids[doc_id]
-            counter += 1
+                score = atomic_question_docs[atomic_question_node]
+
             try:
                 atomic_question_label = self.schema.get_label_within_prefix('AtomicQuestion')
                 chunk_label = self.schema.get_label_within_prefix(CHUNK_TYPE)
+                doc_id = atomic_question_node.split("#")[1]
                 s_id_param = generate_gql_id_params([doc_id])
                 dsl_query = f"""
                     MATCH (s:`{atomic_question_label}`)-[p:rdf_expand()]-(o:`{chunk_label}`)
@@ -592,11 +589,19 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
                 nodes = cached_map[f"{doc_id}_{atomic_question_label}"].out_relations['source']
                 for node in nodes:
                     node_dict = node.end_entity.prop.origin_prop_map
-                    docs_content = f"{node_dict['name']}#{node_dict['content']}"
+                    atomic_chunk_pairs.append({
+                        "atomic_question_id": atomic_question_node.split("#")[1],
+                        "atomic_question_name": atomic_question_node.split("#")[2],
+                        "atomic_question_content": atomic_question_node.split("#")[3],
+                        "chunk_id": node_dict['id'],
+                        "chunk_name":node_dict['name'],
+                        "chunk_content": node_dict['content'],
+                        "score": score
+                    })
+                    docs_content = f"{node_dict['name']}#{node_dict['content']}#{node_dict['id']}"
                     if docs_content not in hits_docs:
-
                         matched_docs.append(
-                            f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+                            f"#{node_dict['name']}#{node_dict['content']}#{node_dict['id']}#{score}"
                         )
                         hits_docs.add(docs_content)
 
@@ -605,28 +610,9 @@ class AtomicQuestionChunkRetriever(AtomicQuestionRetriever):
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
         # query = "\n".join(queries)
-        query = queries[0] if len(queries) == 1 else queries[1]
-        try:
-            text_matched = self.search_api.search_text(
-                query, [self.schema.get_label_within_prefix(CHUNK_TYPE)], topk=1
-            )
-            if text_matched:
-                for item in text_matched:
-                    title = f"{item['node']['name']}#{item['node']['content']}"
-                    if title not in hits_docs:
-                        if len(matched_docs) > 0:
-                            matched_docs.pop()
-                        else:
-                            logger.warning(f"{query} matched docs is empty")
-                        matched_docs.append(
-                            f'#{item["node"]["name"]}#{item["node"]["content"]}#{item["score"]}'
-                        )
-                        break
-        except Exception as e:
-            logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         logger.debug(f"matched_docs: {matched_docs}")
 
-        return matched_docs
+        return matched_docs[:top_k], atomic_chunk_pairs
 
     def rerank_docs(self, queries: List[str], passages: List[str]):
         """

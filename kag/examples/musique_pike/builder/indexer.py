@@ -16,7 +16,7 @@ from kag.builder.runner import BuilderChainRunner
 logger = logging.getLogger(__name__)
 
 
-def buildKB(file_path):
+def run_pipeline(file_path):
     from kag.common.conf import KAG_CONFIG
 
     runner = BuilderChainRunner.from_config(
@@ -30,4 +30,4 @@ if __name__ == "__main__":
     import_modules_from_path(".")
     file_path = "./data/musique_corpus.json"
 
-    buildKB(file_path)
+    run_pipeline(file_path)

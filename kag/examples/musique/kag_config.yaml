@@ -63,7 +63,7 @@ kag_builder_pipeline:
 #------------kag-builder configuration end----------------#
 
 #------------pike atomic question injection start----------------#
-kag_pike_chunk_injection_pipeline:
+kag_atomic_chunk_injection_pipeline:
   chain:
     type: pike_chunk_injection_chain # kag.builder.default_chain.PikeChunkInjectionChain
     decomposer:
