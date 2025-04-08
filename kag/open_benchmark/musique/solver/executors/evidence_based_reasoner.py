@@ -33,7 +33,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         self.llm = llm
         self.memory_graph_path = memory_graph_path
         self.vectorize_model = vectorize_model
-        self.memory_graph = MemoryGraph(
+        self.memory_graph = MemoryGraph.from_ckpt(
             KAG_PROJECT_CONF.namespace, memory_graph_path, vectorize_model
         )
         self.ner = Ner(self.llm)

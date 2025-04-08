@@ -23,7 +23,7 @@ from kag.interface.solver.model.one_hop_graph import (
     RelationData,
     OneHopGraphData,
 )
-
+from kag.common.checkpointer import CheckpointerManager
 from kag.tools.graph_api.model.table_model import TableData
 from knext.schema.client import CHUNK_TYPE
 
@@ -43,7 +43,37 @@ class MemoryGraph:
         self._graph_store_lock = filelock.FileLock(self._graph_store_lock_path)
         self._backend_graph = None
         self._vectorizer = vectorizer
+
         self.init_graph()
+
+    @staticmethod
+    def from_ckpt(namespace, ckpt_dir, vectorizer):
+        graph_pickle = os.path.join(ckpt_dir, "graph")
+        if os.path.exists(graph_pickle):
+            print(f"Found existing graph file {graph_pickle}")
+            return MemoryGraph(namespace, graph_pickle, vectorizer)
+
+        checkpointer = CheckpointerManager.get_checkpointer(
+            {
+                "type": "zodb",
+                "ckpt_dir": ckpt_dir,
+                "rank": 0,
+                "world_size": 1,
+            }
+        )
+        print("Loading graph from checkpoint...")
+        tmp = MemoryGraph(namespace, graph_pickle, vectorizer)
+        keys = checkpointer.keys()
+        cnt = 0
+        for k in keys:
+            graph = checkpointer.read_from_ckpt(k)
+            for item in graph:
+                tmp.upsert_subgraph(item.to_dict())
+            cnt += 1
+            if cnt % 500 == 0:
+                print(f"Done load {cnt}/{len(keys)} records from ckpt...")
+        tmp.flush()
+        return tmp
 
     @property
     def graph_store_lock(self):
