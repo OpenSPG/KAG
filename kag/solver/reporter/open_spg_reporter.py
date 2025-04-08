@@ -113,7 +113,7 @@ def generate_content(tpl, datas, content_params, graph_list):
     ):
         graph_id = f"graph_{generate_random_string(3)}"
         graph_list.append(_convert_spo_to_graph(graph_id, datas))
-        return f"""<div class={graph_id}></div>"""
+        return f"""<graph id={graph_id}></graph>"""
     if tpl:
         format_params = {
             "content": datas
@@ -147,6 +147,10 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "检索信息不足以回答，需要继续检索",
                 "en": "Insufficient information retrieved to answer, need to continue retrieving",
             },
+            "next_retrieved_finish": {
+                "zh": "检索的子图中共有 {edges_num} 条边和问题相关，还需进行chunk检索",
+                "en": "There are {edges_num} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed."
+            },
             "retrieved_finish": {
                 "zh": "检索信息已足够回答问题，尝试基于信息进行总结",
                 "en": "Sufficient information retrieved to answer the question, attempting to summarize based on the information",
@@ -178,12 +182,18 @@ class OpenSPGReporter(ReporterABC):
         }
         self.tag_mapping = {
             "Rewrite query": {
-                "en": "## Rethinking question using LLM\n--------- \n{content}",
-                "zh": "## 正在使用LLM重思考问题\n--------- \n{content}",
+                "en": "Rethinking question using LLM\n--------- \n{content}",
+                "zh": "正在使用LLM重思考问题\n--------- \n{content}",
             },
             "Iterative planning": {
-                "en": "## Iterative planning\n--------- \n{content}",
-                "zh": "## 正在思考当前步骤\n--------- \n{content}",
+                "en": """
+<step status="{status}" title="Global planning">
+{content}
+</step>""",
+                "zh": """
+<step status="{status}" title="思考当前步骤">
+{content}
+</step>""",
             },
             "Static planning": {
                 "en": """
@@ -210,20 +220,20 @@ Rewritten question:\n{content}
 </step>""",
                 "zh": """
 <step status="{status}" title="正在根据依赖问题重写检索子问题">
-重写问题为：\n{content}
+重写问题为：\n\n{content}
 </step>""",
             },
             "rc_retriever_summary": {
-                "en": "Summarizing retrieved documents\n{content}",
-                "zh": "正在对文档进行总结\n{content}",
+                "en": "Summarizing retrieved documents\n\n{content}",
+                "zh": "正在对文档进行总结\n\n{content}",
             },
             "kg_retriever_summary": {
-                "en": "Summarizing retrieved graph\n{content}",
-                "zh": "正在对召回的知识进行总结\n{content}",
+                "en": "Summarizing retrieved graph\n\n{content}",
+                "zh": "正在对召回的知识进行总结\n\n{content}",
             },
             "retriever_summary": {
-                "en": "Summarizing retrieved documents\n{content}",
-                "zh": "正在对文档进行总结\n{content}",
+                "en": "Summarizing retrieved documents\n\n{content}",
+                "zh": "正在对文档进行总结\n\n{content}",
             },
             "begin_task": {
                 "en": """
@@ -270,8 +280,8 @@ Rewritten question:\n{content}
                 """,
             },
             "end_math_executor": {
-                "en": "Math executor completed\n{content}",
-                "zh": "计算结束\n{content}",
+                "en": "Math executor completed\n\n{content}",
+                "zh": "计算结束\n\n{content}",
             },
             "code_generator": {
                 "en": "Generating code\n \n{content}",

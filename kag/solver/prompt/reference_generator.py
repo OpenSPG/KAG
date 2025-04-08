@@ -19,6 +19,8 @@ class ReferGeneratorPrompt(PromptABC):
         "\n给定的引用信息：'$ref'\n问题：'$query'"
         """
 示例1：
+任务过程上下文：
+根据常识岳父是妻子的爸爸，所以需要首先找到张三的妻子，然后找到妻子的爸爸
 给定的引用信息：'
 reference：
 [
@@ -26,14 +28,21 @@ reference：
     "content": "张三 妻子 王五",
     "document_name": "张三介绍",
     "id": "chunk:1_1"
+},
+{
+    "content": "王五 父亲 王四",
+    "document_name": "张三介绍",
+    "id": "chunk:1_2"
 }
 ]'
-问题：'张三的妻子是谁？'
+问题：'张三的岳父是谁？'
 
-张三的妻子是王五[chunk:1_1]
+张三的妻子是王五<reference id="chunk:1_1"></reference>，而王五的父亲是王四<reference id="chunk:1_2"></reference>，所以张三的岳父是王四
 
 示例2：
-给定的引用信息：'经过计算器计算，9.2比9.1要大'
+任务过程上下文：
+'经过计算器计算，9.2比9.1要大'
+给定的引用信息：''
 问题：'9.1和9.2谁大?'
 
 9.2大
@@ -51,6 +60,7 @@ Given references: '$ref'
 Question: '$query'
 
 Example 1:
+Task Process Context: Based on common knowledge, the father-in-law is the father of one's spouse. Therefore, we first need to find Zhang San's (John's) spouse, and then find the father of the spouse.
 Given references:
 reference:
 [
@@ -58,17 +68,22 @@ reference:
         "content": "John's wife is Mary",
         "document_name": "Introduction to John",
         "id": "chunk:1_1"
+    },
+    {
+        "content": "Mary's father is Robert",
+        "document_name": "Introduction to John",
+        "id": "chunk:1_2"
     }
 ]
-Question: 'Who is John's wife?'
+Question: 'Who is John's father-in-law?'
 
-John's wife is Mary [chunk:1_1].
+John's wife is Mary <reference id="chunk:1_1"></reference>, and Mary's father is Robert <reference id="chunk:1_2"></reference>. Therefore, John's father-in-law is Robert.
 
 Example 2:
-Given references: 'After calculation by the calculator, 9.2 is greater than 9.1.'
+Task Process Context: 'After calculation by the calculator, 9.2 is greater than 9.1.'
+Given references: ''
 Question: 'Which is larger, 9.1 or 9.2?'
-
-9.2 is larger."""
+Answer: 9.2 is larger."""
     )
 
     @property
