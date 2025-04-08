@@ -206,8 +206,8 @@ class OpenSPGReporter(ReporterABC):
 </step>""",
             },
             "begin_sub_kag_retriever": {
-                "en": "**Starting {component_name}** {content} {desc}",
-                "zh": "**执行{component_name}** {content} {desc}",
+                "en": "Starting {component_name} {content} {desc}",
+                "zh": "执行{component_name} {content} {desc}",
             },
             "end_sub_kag_retriever": {
                 "en": " {content}",
