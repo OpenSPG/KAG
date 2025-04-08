@@ -335,6 +335,7 @@ class KagHybridExecutor(ExecutorABC):
                 tag_id,
                 "finish",
                 "FINISH",
+                step=task.name,
                 overwrite=False
             )
         except Exception as e:
@@ -348,6 +349,7 @@ class KagHybridExecutor(ExecutorABC):
                 tag_id,
                 f"{self.schema().get('name')} executed failed {e}",
                 "ERROR",
+                step=task.name,
                 overwrite=False
             )
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")

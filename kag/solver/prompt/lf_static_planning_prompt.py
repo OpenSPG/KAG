@@ -9,7 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+import json
 import logging
 import re
 from typing import List
@@ -27,7 +27,7 @@ logger = logging.getLogger()
 
 @PromptABC.register("default_lf_static_planning")
 class RetrieverLFStaticPlanningPrompt(PromptABC):
-    instruct_zh = """"instruction": "",
+    instruct_zh = """"instruction": "你是一个规划专家，根据function中的算子来规划问题",
         "function": [
           {
               "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`], p.prop=`value`, s.prop=`value`, o.prop=`value`)",
@@ -86,7 +86,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     }
 ]
 
-    instruct_en = """    "instruction": "",
+    instruct_en = """    "instruction": "You are a planning expert who designs plans based on the operators in the function.",
         "function_description": "functionName is operator name;the function format is functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
         "function": [
           {
@@ -143,13 +143,14 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         self.template_zh = f"""
             {{
                 {self.instruct_zh}
-                "cases": {self.default_case_zh},
-                "output_format": "使用字符串格式输出",
+                "cases": {json.dumps(self.default_case_zh, ensure_ascii=False, indent=2)},
+                "output_format": "使用markdown格式输出，开头不需要输出'```markdown'",
                 "tips": [
-                    "输出每一步的Step和Action前可以增加一些思考说明，类似’首先...其次...最后...‘",
+                    "输出每一步的Step和Action前可以增加一些思路输出，类似’首先...其次...最后...‘",
                     "Each `Step` must contain exactly one `Action` or `Output`",
                     "Each step is an indivisible atomic question, please re-split accordingly.",
                     "Output also needs to be a separate step."
+                    "Step和Action内容需要使用代码风格输出"
                 ],
                 "query": "$query"
             }}   
@@ -157,12 +158,14 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         self.template_en = f"""
             {{
                 {self.instruct_en},
-                "cases": {self.default_case_en},
-                "output_format": "Do not output json format, use string",
+                "cases":  {json.dumps(self.default_case_en, ensure_ascii=False, indent=2)},
+                "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
                 "tips": [
-                    " Each `Step` must contain exactly one `Action` or `Output`",
-                    "Each step is an indivisible atomic question, please re-split accordingly.",
-                    "Output also needs to be a separate step."
+                    "Before outputting each Step and Action, you can add some thought process, such as 'First... Then... Finally...'", 
+                    "Each Step must contain exactly one Action or Output", 
+                    "Each step should be an indivisible atomic question; please re-split accordingly.", 
+                    "Output also needs to be a separate step.", 
+                    "Content for Step and Action should be output in code style"
                 ],
                 "query": "$query"
             }}   

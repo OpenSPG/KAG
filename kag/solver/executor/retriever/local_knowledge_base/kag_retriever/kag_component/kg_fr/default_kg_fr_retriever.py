@@ -59,9 +59,11 @@ class KgFreeRetrieverWithOpenSPG(KGFreeRetrieverABC):
                 reporter.add_report_line(
                     f"{kwargs.get('query')}_begin_task",
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{self.name}",
-                    "next_finish",
+                    "next_retrieved_finish",
                     "FINISH",
-                    component_name=self.name
+                    edges_num=len(logic_node.get_fl_node_result().spo),
+                    component_name=self.name,
+
                 )
             return
         self.break_flag = True
