@@ -10,7 +10,7 @@ chat_llm: &chat_llm
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
-  stream: True
+  stream: true
 
 ner_llm: &ner_llm
   type: maas
@@ -62,7 +62,8 @@ kag_builder_pipeline:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
       vectorize_model: *vectorize_model
     writer:
-      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+      type: memory_graph_writer # kag.builder.component.writer.kg_writer.KGWriter
+      graph_store_path: /root/src/KAG/kag/open_benchmark/musique/graph_data
   num_threads_per_chain: 2
   num_chains: 10
   scanner:
@@ -73,7 +74,7 @@ kag_builder_pipeline:
 search_api: &search_api
   type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
-graph_api: &graph_api
+graph_api:
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 
@@ -111,20 +112,13 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
   flow: |
     kg_cs->kg_fr->rc
 
-mock_math_executor: &mock_math_executor_conf
-  type: mock_math_executor
-  llm: *openie_llm
-
-mock_code_executor: &mock_code_executor_conf
-  type: mock_code_executor
-  llm: *openie_llm
 
 
 reasoner: &reasoner_conf
   type: evidence_based_reasoner
   llm: *chat_llm
-  retriever: *kag_hybrid_executor_conf
-
+  memory_graph_path: /root/src/KAG/kag/open_benchmark/musique/graph_data/graph
+  vectorize_model: *vectorize_model
 
 kag_solver_pipeline:
   type: kag_static_pipeline
@@ -140,7 +134,6 @@ kag_solver_pipeline:
   generator:
     type: llm_generator_with_thought
     llm_client: *chat_llm
-#------------kag-solver configuration end----------------#
 
 
 #------------kag-solver configuration end----------------#

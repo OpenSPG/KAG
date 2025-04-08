@@ -43,7 +43,7 @@ class MemoryGraphWriter(SinkWriterABC):
             **kwargs: Additional keyword arguments passed to the superclass.
         """
         super().__init__(**kwargs)
-        self._g = MemoryGraph(graph_store_path, None)
+        self._g = MemoryGraph(KAG_PROJECT_CONF.namespace, graph_store_path, None)
 
     @property
     def input_types(self) -> Type[Input]:
