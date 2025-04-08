@@ -7,12 +7,14 @@ from kag.interface import PromptABC
 @PromptABC.register("default_self_cognition")
 class SelfCognitionPrompt(PromptABC):
 
-    template_zh = """判断输入的问题“$question”是否是自我认知类问题。
+    template_zh = """你是一个AI助手，你的任务是判断输入的问题“$question”是否是自我认知类问题。
+扩展要求：和自我认识相关的扩展问题也算，例如”你的官网是什么“
 要求：
 直接告诉“是”或者“否”
 """
 
-    template_en = """Determine whether the input question “$question” is a self-awareness question.
+    template_en = """You are an AI assistant. Your task is to determine whether the input question “$question” is a self-awareness question.
+Extended Requirements: Questions related to self-recognition are also considered, such as "What is your website?"
 Requirements:
 Directly answer “Yes” or “No”."""
 
