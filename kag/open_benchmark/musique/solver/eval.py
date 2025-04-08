@@ -3,10 +3,13 @@ import logging
 import os
 from typing import List
 
+from kag.interface import SolverPipelineABC
+from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, do_main, running_paras
+from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +20,21 @@ class EvaForMusique(EvalQa):
     """
 
     def __init__(self, solver_pipeline_name="kag_solver_pipeline"):
-        super().__init__(task_name="musique", solver_pipeline_name=solver_pipeline_name)
+        self.solver_pipeline_name = solver_pipeline_name
+        self.task_name = "musique"
+        self.pipeline = SolverPipelineABC.from_config(
+            KAG_CONFIG.all_config[self.solver_pipeline_name]
+        )
+
+    async def qa(self, query, gold):
+        reporter: TraceLogReporter = TraceLogReporter()
+
+        answer = await self.pipeline.ainvoke(query, reporter=reporter, gold=gold)
+
+        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
+
+        info, status = reporter.generate_report_data()
+        return answer, {"info": info.to_dict(), "status": status}
 
     def load_data(self, file_path):
         with open(file_path, "r") as f:

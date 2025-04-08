@@ -11,14 +11,11 @@
 # or implied.
 import json
 import logging
-import asyncio
-from typing import Type, Dict, List, Union
+from typing import Type, List
 
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
-from kag.interface.builder.base import BuilderComponentData
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.graphstore.memory_graph import MemoryGraph
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -33,17 +30,6 @@ class MemoryGraphWriter(SinkWriterABC):
     This class inherits from SinkWriterABC and provides the functionality to write SubGraphs
     to a Knowledge Graph storage system. It supports operations like upsert and delete.
     """
-
-    def __init__(self, graph_store_path: str, **kwargs):
-        """
-        Initializes the KGWriter with the specified project ID.
-
-        Args:
-            project_id (int): The ID of the project associated with the KG. Defaults to None.
-            **kwargs: Additional keyword arguments passed to the superclass.
-        """
-        super().__init__(**kwargs)
-        self._g = MemoryGraph(KAG_PROJECT_CONF.namespace, graph_store_path, None)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -107,89 +93,4 @@ class MemoryGraphWriter(SinkWriterABC):
             List[Output]: A list of output objects (currently always [None]).
         """
         input = self.standarlize_graph(input)
-        logger.debug(f"final graph to write: {input}")
-        self._g.upsert_subgraph(input.to_dict())
-        self._g.flush()
         return [input]
-
-    def invoke(
-        self, input: Input, **kwargs
-    ) -> List[Union[Output, BuilderComponentData]]:
-        if isinstance(input, BuilderComponentData):
-            input_data = input.data
-            input_key = input.hash_key
-        else:
-            input_data = input
-            input_key = None
-        if self.inherit_input_key:
-            output_key = input_key
-        else:
-            output_key = None
-
-        write_ckpt = kwargs.get("write_ckpt", True)
-        if write_ckpt and self.checkpointer:
-            # found existing data in checkpointer
-            if input_key and self.checkpointer.exists(input_key):
-                return []
-            # not found
-            output = self._invoke(input_data, **kwargs)
-            # We only record the data key to avoid embeddings from taking up too much disk space.
-            if input_key:
-                self.checkpointer.write_to_ckpt(input_key, input_key)
-            return [BuilderComponentData(x, output_key) for x in output]
-        else:
-            output = self._invoke(input_data, **kwargs)
-            return [BuilderComponentData(x, output_key) for x in output]
-
-    async def ainvoke(
-        self, input: Input, **kwargs
-    ) -> List[Union[Output, BuilderComponentData]]:
-        if not isinstance(input, BuilderComponentData):
-            input = BuilderComponentData(input)
-
-        input_data = input.data
-        input_key = input.hash_key
-
-        if self.inherit_input_key:
-            output_key = input_key
-        else:
-            output_key = None
-        write_ckpt = kwargs.get("write_ckpt", True)
-        if write_ckpt and self.checkpointer:
-            # found existing data in checkpointer
-            if input_key and self.checkpointer.exists(input_key):
-                output = await asyncio.to_thread(
-                    lambda: self.checkpointer.read_from_ckpt(input_key)
-                )
-
-                if output is not None:
-                    return [BuilderComponentData(x, output_key) for x in output]
-
-            # not found
-            output = await self._ainvoke(input_data, **kwargs)
-            if input_key:
-                await asyncio.to_thread(
-                    lambda: self.checkpointer.write_to_ckpt(input_key, input_key)
-                )
-            return [BuilderComponentData(x, output_key) for x in output]
-
-        else:
-            output = await self._ainvoke(input_data, **kwargs)
-            return [BuilderComponentData(x, output_key) for x in output]
-
-    def _handle(self, input: Dict, alter_operation: str, **kwargs):
-        """
-        The calling interface provided for SPGServer.
-
-        Args:
-            input (Dict): The input dictionary representing the subgraph to operate on.
-            alter_operation (str): The type of operation to perform (Upsert or Delete).
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            None: This method currently returns None.
-        """
-        _input = self.input_types.from_dict(input)
-        _output = self.invoke(_input, alter_operation)  # noqa
-
-        return None
