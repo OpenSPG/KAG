@@ -1,6 +1,7 @@
 from typing import List
 import logging
 
+from kag.common.utils import get_now
 from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 @PromptABC.register("default_refer_generator_prompt")
 class ReferGeneratorPrompt(PromptABC):
     template_zh = (
+        f"你是一个信息分析专家，今天是{get_now(language='zh')}。"
         "基于给定的引用信息回答问题。"
         "\n输出答案，如果答案中存在引用信息，则需要reference的id字段，如果不是检索结果，则不需要标记引用"
         "\n输出时，不需要重复输出参考文献"
@@ -49,6 +51,7 @@ reference：
 """
     )
     template_en = (
+        f"You are an information analysis expert, today is {get_now(language='en')}."
 """Answer the question based on the given references.
 If the answer contains referenced information, include the `id` field from the reference. If it is not a retrieved result, no citation marker is needed.
 Do not repeat the references when outputting the answer.
