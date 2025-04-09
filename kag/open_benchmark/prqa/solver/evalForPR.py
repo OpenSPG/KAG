@@ -47,8 +47,9 @@ type_tools = [{
 }]
 
 
-def write_response_to_txt(question, response, output_file):
+def write_response_to_txt(question_id, question, response, output_file):
     with open(output_file, 'a', encoding='utf-8') as output:
+        output.write(f"序号：{question_id}\n")
         output.write(f"问题: {question}\n")
         output.write(f"答案: {response}\n")
         output.write("\n")
@@ -356,7 +357,8 @@ class EnhancedQuestionProcessor:
             "请按照以下步骤完成：",
             "1. **提取逻辑链条**：逐步分析路径数据中与问题相关的关键信息",
             "2. **确定问题目标**：明确问题需要获取的核心信息",
-            "3. **组织答案**：用简洁自然的中文回答，包含必要细节(如果有多个答案，请全部回答出来)"
+            "3. **组织答案**：用简洁自然的中文回答，包含必要细节(如果有多个答案，请全部回答出来)",
+            "只用最精简的结果给出答案，不要分析步骤的内容，多个答案时用顿号'、'隔开，除此之外不要有冗余字符"
         ]
         return '\n'.join(prompt_lines)
 
@@ -396,9 +398,11 @@ class EnhancedQuestionProcessor:
     def handle_item(self, item, output_file):
         """ 并行处理单个问题的完整逻辑 """
         question = item.get("question")
+        question_id = item.get("id")
         try:
             response = self.process_question(question)
             write_response_to_txt(
+                question_id=question_id,
                 question=question,
                 response=response,
                 output_file=output_file
@@ -407,6 +411,7 @@ class EnhancedQuestionProcessor:
         except Exception as e:
             logger.error(f"处理问题失败: {question} - {str(e)}")
             write_response_to_txt(
+                question_id=question_id,
                 question=question,
                 response=f"处理失败: {str(e)}",
                 output_file=output_file
@@ -415,9 +420,11 @@ class EnhancedQuestionProcessor:
     def process_all_items_single(self, test_data, output_file):
         for item in test_data:
             question = item.get("question")
+            question_id = item.get("id")
             try:
                 response = self.process_question(question)
                 write_response_to_txt(
+                    question_id=question_id,
                     question=question,
                     response=response,
                     output_file=output_file
@@ -425,6 +432,7 @@ class EnhancedQuestionProcessor:
             except Exception as e:
                 logger.error(f"处理问题失败: {question} - {str(e)}")
                 write_response_to_txt(
+                    question_id=question_id,
                     question=question,
                     response=f"处理失败: {str(e)}",
                     output_file=output_file
@@ -445,7 +453,7 @@ if __name__ == "__main__":
     with open("./data/test.json", 'r', encoding='utf-8') as f:
         test_data = json.load(f)
 
-    processor.process_all_items_single(test_data, output_file='./solver/data/result.txt')
+    processor.process_all_items_single(test_data, output_file='./data/result.txt')
     # processor.process_all_items_parallel(test_data,
     #                                      output_file='./solver/data/result.txt',
     #                                      max_workers=5)
