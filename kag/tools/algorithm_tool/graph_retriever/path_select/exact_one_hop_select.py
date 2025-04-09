@@ -21,7 +21,7 @@ from kag.tools.search_api.search_api_abc import SearchApiABC
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import (
     run_gql,
-    generate_gql_spo_element, recall_one_hop_graph_by_entities,
+    generate_gql_spo_element,
 )
 
 logger = logging.getLogger()
@@ -99,7 +99,7 @@ class ExactOneHopSelect(PathSelect):
         except Exception as e:
             logger.warning(f"recall_by_spg_gql failed {e},", exc_info=True)
 
-        return recall_one_hop_graph_by_entities(self.graph_api, heads=heads, tails=tails)
+        return []
 
     def _std_best_p_with_value_and_p_name(
         self, n: GetSPONode, one_graph: OneHopGraphData

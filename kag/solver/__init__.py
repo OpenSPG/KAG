@@ -1,3 +1,4 @@
+from kag.solver.executor.deduce.kag_deduce_executor import KagDeduceExecutor
 from kag.solver.executor.deduce.kag_output_executor import KagOutputExecutor
 from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor import (
     ChunkRetrievedExecutor,
@@ -10,10 +11,14 @@ from kag.solver.pipeline.kag_static_pipeline import KAGStaticPipeline
 
 from kag.solver.pipeline.naive_rag_pipeline import NaiveRAGPipeline
 from kag.solver.pipeline.naive_generation_pipeline import NaiveGenerationPipeline
+from kag.solver.pipeline.self_cognition_pipeline import SelfCognitionPipeline
 from kag.solver.planner.kag_iterative_planner import KAGIterativePlanner
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
+from kag.solver.prompt import DeduceChoice, DeduceEntail, DeduceExtractor, DeduceJudge, DeduceMutiChoice
+from kag.solver.prompt.output_question import OutputQuestionPrompt
 
 from kag.solver.prompt.reference_generator import ReferGeneratorPrompt
+from kag.solver.prompt.self_cognition import SelfCognitionPrompt
 
 from kag.solver.prompt.static_planning_prompt import (
     DefaultStaticPlanningPrompt,
@@ -35,13 +40,21 @@ __all__ = [
     "KAGIterativePipeline",
     "KAGStaticPipeline",
     "NaiveRAGPipeline",
+    "SelfCognitionPipeline",
     "NaiveGenerationPipeline",
     "KAGIterativePlanner",
     "KAGStaticPlanner",
     "DefaultIterativePlanningPrompt",
     "DefaultStaticPlanningPrompt",
+    "SelfCognitionPrompt",
     "ReferGeneratorPrompt",
     "QueryRewritePrompt",
+    "OutputQuestionPrompt",
+    "DeduceChoice",
+    "DeduceEntail",
+    "DeduceExtractor",
+    "DeduceJudge",
+    "DeduceMutiChoice",
     "PyBasedMathExecutor",
     "McpExecutor",
     "FinishExecutor",
@@ -49,6 +62,8 @@ __all__ = [
     "KagHybridExecutor",
     "ChunkRetrievedExecutor",
     "KagOutputExecutor",
+    "SelfCognExecutor",
+    "KagDeduceExecutor",
     "MockMathExecutor",
     "MockGenerator",
     "LLMGenerator",
