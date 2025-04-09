@@ -50,7 +50,7 @@ class EvidenceBasedReasoner(ExecutorABC):
             label="Entity",
             property_key="name",
             query_vector=query_entity_vector,
-            top_k=1,
+            topk=1,
         )
         for top_entity in top_entities:
             top_entity = top_entity[0]
