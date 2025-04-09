@@ -32,9 +32,9 @@ class EvaForMusique(EvalQa):
             golds.append(eva_obj.generate_id(sample['paragraphs'][idx]['title'], sample['paragraphs'][idx]['paragraph_text']))
         return eva_obj.recall_top(predictionlist=references, goldlist=golds)
 
-    def do_metrics_eval(self, predictions: List[str], golds: List[str]):
+    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
         eva_obj = Evaluate()
-        return eva_obj.getBenchMark(predictions, golds)
+        return eva_obj.getBenchMark(questionList, predictions, golds)
 
 
 if __name__ == "__main__":

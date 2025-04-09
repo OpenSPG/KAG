@@ -1,4 +1,5 @@
 import logging
+import time
 
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
@@ -34,6 +35,59 @@ class TraceLogReporter(OpenSPGReporter):
 
     def do_report(self):
         return self.generate_report_data()
+
+    def add_report_line(self, segment, tag_name, content, status, **kwargs):
+        is_overwrite = kwargs.get("overwrite", True)
+        report_id = tag_name
+        params = kwargs
+        report_content = content
+
+        step_status = "success"
+        if status not in ["FINISH", "ERROR"]:
+            step_status = "loading"
+        params["status"] = step_status
+
+
+        if is_overwrite or report_id not in self.report_stream_data or (not isinstance(report_content, str)):
+            tag_template = self.get_tag_template(tag_name)
+            self.report_stream_data[report_id] = {
+            "segment": segment,
+            "report_id": report_id,
+            "content": report_content,
+            "report_time": time.time(),
+            "kwargs": params,
+            "tag_template": tag_template,
+            "tag_name": tag_name,
+            "time": time.time(),
+            "status": status,
+        }
+        else:
+            self.report_stream_data[report_id]["status"] = status
+            self.report_stream_data[report_id]["kwargs"] = params
+            self.report_stream_data[report_id]["time"] = time.time()
+            self.report_stream_data[report_id]["content"] += f"{report_content}"
+
+        parent_segment_report = self.report_stream_data.get(segment, None)
+
+        if isinstance(self.report_stream_data[report_id]["content"], str):
+            if segment in self.report_sub_segment:
+                if tag_name not in self.report_sub_segment[segment]:
+                    self.report_sub_segment[segment].append(tag_name)
+                    if parent_segment_report:
+                        parent_segment_report["content"] += self.report_stream_data[report_id]["content"] +"\r\n"
+            else:
+                self.report_sub_segment[segment] = [tag_name]
+                if parent_segment_report:
+                    parent_segment_report["content"] += self.report_stream_data[report_id]["content"] +"\r\n"
+        with self._lock:
+            self.report_record.append(report_id)
+            if segment not in self.report_segment_time:
+
+                if segment not in self.report_segment_time:
+                    self.report_segment_time[segment] = {
+                        "start_time": time.time(),
+                    }
+
 
     def generate_report_data(self):
         processed_report_record = []
