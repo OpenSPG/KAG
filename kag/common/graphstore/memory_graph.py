@@ -15,7 +15,7 @@ import re
 import numpy as np
 import torch
 from typing import Dict, List
-
+from tqdm import tqdm
 import filelock
 
 from kag.interface.solver.model.one_hop_graph import (
@@ -43,7 +43,7 @@ class MemoryGraph:
         self._graph_store_lock = filelock.FileLock(self._graph_store_lock_path)
         self._backend_graph = None
         self._vectorizer = vectorizer
-
+        self._emb_cache = {}
         self.init_graph()
 
     @staticmethod
@@ -64,14 +64,55 @@ class MemoryGraph:
         print("Loading graph from checkpoint...")
         tmp = MemoryGraph(namespace, graph_pickle, vectorizer)
         keys = checkpointer.keys()
-        cnt = 0
-        for k in keys:
-            graph = checkpointer.read_from_ckpt(k)
-            for item in graph:
-                tmp.upsert_subgraph(item.to_dict())
-            cnt += 1
-            if cnt % 500 == 0:
-                print(f"Done load {cnt}/{len(keys)} records from ckpt...")
+        node_id_map = {}
+        node_attr_map = {}
+        edge_map = {}
+        n_nodes = 0
+        n_edges = 0
+        for k in tqdm(
+            keys,
+            total=len(keys),
+            desc="Loading",
+            position=0,
+        ):
+            graphs = checkpointer.read_from_ckpt(k)
+            for graph in graphs:
+                for node in graph.nodes:
+                    if node.id not in node_id_map:
+                        node_id_map[node.id] = n_nodes
+                        node_attr_map[node.id] = node
+                        n_nodes += 1
+
+        for k in tqdm(
+            keys,
+            total=len(keys),
+            desc="Loading",
+            position=0,
+        ):
+            graphs = checkpointer.read_from_ckpt(k)
+            for graph in graphs:
+                for edge in graph.edges:
+                    if edge.from_id in node_id_map and edge.to_id in node_id_map:
+                        edge_map[n_edges] = (
+                            node_id_map[edge.from_id],
+                            node_id_map[edge.to_id],
+                        )
+                        n_edges += 1
+
+                # tmp.upsert_subgraph(item.to_dict())
+
+        print(f"there are {len(node_id_map)} nodes and {len(edge_map)} edges")
+
+        tmp._backend_graph.add_vertices(len(node_id_map))
+        for node_key, node in node_attr_map.items():
+            node_index = node_id_map[node_key]
+            tmp._backend_graph.vs[node_index].update_attributes(
+                node.properties,
+                id=node.id,
+                name=node.name,
+                label=node.label,
+            )
+        tmp._backend_graph.add_edges(edge_map.values())
         tmp.flush()
         return tmp
 
@@ -303,12 +344,16 @@ class MemoryGraph:
         :param kwargs: other optional arguments
         """
 
-        def batch_cosine_similarity(v, M):
-            v_norm = torch.norm(v, dim=1, keepdim=True)
-            M_norms = torch.norm(M, dim=1, keepdim=True)
-            dot_product = torch.matmul(M, v.T)
-            norm_product = torch.matmul(v_norm, M_norms.T)
-            return dot_product / norm_product.T
+        def batch_cosine_similarity(v, M, require_norm=False):
+            if require_norm:
+                v_norm = torch.norm(v, dim=1, keepdim=True)
+                M_norms = torch.norm(M, dim=1, keepdim=True)
+                dot_product = torch.matmul(M, v.T)
+                norm_product = torch.matmul(v_norm, M_norms.T)
+                return dot_product / norm_product.T
+
+            else:
+                return torch.matmul(M, v.T)
 
         if label == "Entity":
             nodes = self._backend_graph.vs
@@ -319,18 +364,24 @@ class MemoryGraph:
                 return []
 
         vector_field_name = self._get_vector_field_name(property_key)
-        vectors = nodes.get_attribute_values(vector_field_name)
-        filtered_nodes = []
-        filtered_vectors = []
-        for node, vector in zip(nodes, vectors):
-            if vector is not None:
-                filtered_nodes.append(node)
-                filtered_vectors.append(vector)
-
+        emb_cache_key = f"{label}-{vector_field_name}"
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        filtered_vectors = torch.tensor(filtered_vectors, dtype=torch.float32).to(
-            device
-        )
+        if emb_cache_key in self._emb_cache:
+            filtered_nodes, filtered_vectors = self._emb_cache[emb_cache_key]
+        else:
+            vectors = nodes.get_attribute_values(vector_field_name)
+            filtered_nodes = []
+            filtered_vectors = []
+            for node, vector in zip(nodes, vectors):
+                if vector is not None:
+                    filtered_nodes.append(node)
+                    filtered_vectors.append(vector)
+
+            filtered_vectors = torch.tensor(filtered_vectors, dtype=torch.float32).to(
+                device
+            )
+            self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
+
         query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
         cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
@@ -341,7 +392,7 @@ class MemoryGraph:
         for idx in range(query_vector.shape[0]):
             items = []
             for index, score in zip(top_indices[:, idx], top_values[:, idx]):
-                node = nodes[index.item()]
+                node = filtered_nodes[index.item()]
                 node_attributes = node.attributes()
                 items.append({"node": node_attributes, "score": score.item()})
             output.append(items)
@@ -420,12 +471,18 @@ class MemoryGraph:
             update_edge_attributes(edge, arc)
         old_num_edges = len(self._backend_graph.es)
         fresh_edges = []
+        filtered_arcs = []
         for arc in fresh_arcs:
-            source = self._backend_graph.vs.find(id=arc["from"])
-            target = self._backend_graph.vs.find(id=arc["to"])
-            fresh_edges.append((source, target))
+            try:
+                source = self._backend_graph.vs.find(id=arc["from"])
+                target = self._backend_graph.vs.find(id=arc["to"])
+                fresh_edges.append((source, target))
+                filtered_arcs.append(arc)
+            except:
+                print(f"incorrect edge {arc}")
+                continue
         self._backend_graph.add_edges(fresh_edges)
-        for k, arc in enumerate(fresh_arcs):
+        for k, arc in enumerate(filtered_arcs):
             edge = self._backend_graph.es[old_num_edges + k]
             update_edge_attributes(edge, arc)
 
