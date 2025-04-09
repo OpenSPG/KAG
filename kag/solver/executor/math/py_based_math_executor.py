@@ -131,27 +131,31 @@ class PyBasedMathExecutor(ExecutorABC):
             tries -= 1
             rst, error, code = self.run_once(task_query, parent_results, error, segment_name=f"{task_query}_begin_task", tag_name=f"{task_query}_code_generator", **kwargs)
             if rst is not None:
-                result = f"""
-                    ```{code}```
-                    code result:{rst}
-                    """
-                task.update_result(result)
-                self.report_content(
-                    reporter, f"{task_query}_begin_task", f"{task_query}_end_math_executor_{task.id}", rst, "FINISH"
-                )
-                self.report_content(
-                    reporter,
-                    "thinker",
-                    f"{task_query}_begin_task",
-                    "finish",
-                    "FINISH",
-                    step=task.name,
-                    overwrite=False,
-                )
-                if logic_node and isinstance(logic_node, MathNode):
-                    context.variables_graph.add_answered_alias(logic_node.alias_name, rst)
-                return result
+                if "i don't know" not in rst.lower():
+                    result = f"""
+                        ```{code}```
+                        code result:{rst}
+                        """
+                    task.update_result(result)
+                    self.report_content(
+                        reporter, f"{task_query}_begin_task", f"{task_query}_end_math_executor_{task.id}", rst, "FINISH"
+                    )
+                    self.report_content(
+                        reporter,
+                        "thinker",
+                        f"{task_query}_begin_task",
+                        "finish",
+                        "FINISH",
+                        step=task.name,
+                        overwrite=False,
+                    )
+                    if logic_node and isinstance(logic_node, MathNode):
+                        context.variables_graph.add_answered_alias(logic_node.alias_name, rst)
+                    return result
+
+                error = f"Please retry with: Best-effort code generation using analogous implementations or educated-guess fallbacks where needed."
             error = f"code:\n{code}\nerror:\n{error}"
+
         context.variables_graph.add_answered_alias(logic_node.alias_name, error)
         task.update_result(error)
 
