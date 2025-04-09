@@ -6,16 +6,28 @@ from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
 from .evaUtils import compute_rouge
+from ..config import get_default_chat_llm_config
 from ..utils import processing_phrases
 
+from enum import Enum
+
+from ...interface import LLMClient
+
+
+class MetricType(Enum):
+    EM_F1 = "em_f1"
+    LLM = "llm"
+    ROUGE_L = "rouge-l"
+    SIMILARITY = "similarity"
 
 class Evaluate:
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
 
-    def __init__(self, embedding_factory="text-embedding-ada-002"):
+    def __init__(self, embedding_factory="text-embedding-ada-002", metrics: list=None):
         self.embedding_factory = embedding_factory
+        self.metrics = metrics or  [MetricType.EM_F1, MetricType.LLM]
     def generate_id(self, title, content):
         return processing_phrases(f"{title}\n{content}").replace("\n", "")
 
@@ -34,7 +46,9 @@ class Evaluate:
         #
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
-        return 0.0
+        return {
+            "similarity": 0.0
+        }
 
     def compute_rouge(self, predictionlist: List[str], goldlist: List[str]):
         rouge_scores = compute_rouge(predictionlist, goldlist)
@@ -90,8 +104,7 @@ class Evaluate:
             "recall_all": recall_all
         }
 
-
-    def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
+    def getEmAndF1(self, predictionlist: List[str], goldlist: List[str]):
         """
         Calculates and returns evaluation metrics between predictions and ground truths.
 
@@ -119,12 +132,24 @@ class Evaluate:
         # Calculate average EM and F1 scores
         total_metrics["em"] /= len(predictionlist)
         total_metrics["f1"] /= len(predictionlist)
+        return total_metrics
 
-        # Call method to calculate answer similarity
-        total_metrics["answer_similarity"] = self.evaForSimilarity(
-            predictionlist, goldlist
-        )
-
+    def getBenchMark(self,questionlist: List[str], predictionlist: List[str], goldlist: List[str]):
+        total_metrics = {}
+        for metric in self.metrics:
+            if metric == MetricType.EM_F1:
+                total_metrics.update(self.getEmAndF1(predictionlist, goldlist))
+            if metric == MetricType.LLM:
+                llm_conf = get_default_chat_llm_config()
+                llm_conf["enable_check"] = False
+                llm_client = LLMClient.from_config(
+                    llm_conf
+                )
+                total_metrics.update(self.getLLMBenchMark(llm_client, questionlist, predictionlist, goldlist))
+            if metric == MetricType.ROUGE_L:
+                total_metrics.update(self.compute_rouge(predictionlist, goldlist))
+            if metric == MetricType.SIMILARITY:
+                total_metrics.update(self.evaForSimilarity(predictionlist, goldlist))
         # Return evaluation metrics dictionary
         return total_metrics
 
@@ -163,7 +188,7 @@ class Evaluate:
                 hits += 1
 
         # Calculate consistency
-        total_metrics["consistency"] = float(hits) / len(predictionlist)
+        total_metrics["LLM-Accuracy"] = float(hits) / len(predictionlist)
         return total_metrics
 
     def getSummarizationMetrics(
