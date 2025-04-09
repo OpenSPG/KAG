@@ -287,7 +287,11 @@ class GetNode(LogicNode):
 
     @staticmethod
     def parse_node(input_str):
+        input_str = input_str.strip()
+        input_str = input_str.replace("[", "")
+        input_str = input_str.replace("]", "")
         input_args = input_str.split(",")
+        input_args = [e.strip().strip("`") for e in input_args]
         return GetNode(
             "Output",
             {

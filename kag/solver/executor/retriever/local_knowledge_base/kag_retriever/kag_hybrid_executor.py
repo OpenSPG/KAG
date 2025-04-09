@@ -245,6 +245,7 @@ class KagHybridExecutor(ExecutorABC):
         logger.info(f"Initializing response container for task: {task_query}")
         start_time = time.time()  # 添加开始时间记录
         kag_response = initialize_response(task)
+        tag_id = f"{task_query}_begin_task"
 
         try:
 
@@ -258,10 +259,11 @@ class KagHybridExecutor(ExecutorABC):
             self.report_content(
                 reporter,
                 "thinker",
-                f"{task_query}_begin_task",
-                task_query,
-                "FINISH",
-                step=task.name
+                tag_id,
+                f"{task_query}\n",
+                "INIT",
+                step=task.name,
+                overwrite=False
             )
             if not logic_node:
                 logic_nodes = self._convert_to_logical_form(
@@ -288,7 +290,7 @@ class KagHybridExecutor(ExecutorABC):
 
             logger.info(f"Executing KAGFlow for task: {task_query}")
             start_time = time.time()  # 添加开始时间记录
-            graph_data, retrieved_datas = flow.execute(reporter=reporter)
+            graph_data, retrieved_datas = flow.execute(reporter=reporter, segment_name=tag_id)
             kag_response.graph_data = graph_data
             if graph_data:
                 context.variables_graph.merge_kg_graph(graph_data)
@@ -327,6 +329,15 @@ class KagHybridExecutor(ExecutorABC):
                 f"Results stored in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
             logger.info(f"Completed storing results for task: {task_query}")
+            self.report_content(
+                reporter,
+                "thinker",
+                tag_id,
+                "finish",
+                "FINISH",
+                step=task.name,
+                overwrite=False
+            )
         except Exception as e:
             logger.warning(
                 f"{self.schema().get('name')} executed failed {e}", exc_info=True
@@ -335,9 +346,11 @@ class KagHybridExecutor(ExecutorABC):
             self.report_content(
                 reporter,
                 "thinker",
-                f"{task_query}_failed_kag_retriever",
+                tag_id,
                 f"{self.schema().get('name')} executed failed {e}",
-                "RUNNING",
+                "ERROR",
+                step=task.name,
+                overwrite=False
             )
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")
 
