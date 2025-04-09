@@ -72,7 +72,7 @@ class MemoryGraph:
         for k in tqdm(
             keys,
             total=len(keys),
-            desc="Loading",
+            desc="Loading Nodes",
             position=0,
         ):
             graphs = checkpointer.read_from_ckpt(k)
@@ -86,7 +86,7 @@ class MemoryGraph:
         for k in tqdm(
             keys,
             total=len(keys),
-            desc="Loading",
+            desc="Loading Edges",
             position=0,
         ):
             graphs = checkpointer.read_from_ckpt(k)
@@ -104,7 +104,12 @@ class MemoryGraph:
         print(f"there are {len(node_id_map)} nodes and {len(edge_map)} edges")
 
         tmp._backend_graph.add_vertices(len(node_id_map))
-        for node_key, node in node_attr_map.items():
+        for node_key, node in tqdm(
+            node_attr_map.items(),
+            total=len(node_attr_map),
+            desc="Loading Node Attr",
+            position=0,
+        ):
             node_index = node_id_map[node_key]
             tmp._backend_graph.vs[node_index].update_attributes(
                 node.properties,
