@@ -92,15 +92,15 @@ class LLMGenerator(GeneratorABC):
         content_json = {"step": results}
         content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if reporter:
-            reporter.add_report_line("generator", "input", content_json, "FINISH")
+            reporter.add_report_line("generator", "final_generator_input", content_json, "FINISH")
             reporter.add_report_line(
-                "generator_reference", "reference", rerank_chunks, "FINISH"
+                "generator_reference", "reference_chunk", rerank_chunks, "FINISH"
             )
             reporter.add_report_line(
-                "generator_reference_all", "reference", refer_data, "FINISH"
+                "generator_reference_all", "reference_ref_format", refer_data, "FINISH"
             )
             reporter.add_report_line(
-                "generator_reference_graphs", "graph", graph_data, "FINISH"
+                "generator_reference_graphs", "reference_graph", graph_data, "FINISH"
             )
         refer_data_str = json.dumps(refer_data, ensure_ascii=False, indent=2)
 

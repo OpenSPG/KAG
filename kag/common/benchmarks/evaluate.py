@@ -174,7 +174,7 @@ class Evaluate:
         dict: Dictionary containing EM, F1 score, and answer similarity.
         """
         # Initialize total metrics
-        total_metrics = {"consistency": 0.0}
+        total_metrics = {}
         llm_judger = LLMJudger(llm=llm_client)
 
         # llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
