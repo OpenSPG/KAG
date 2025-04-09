@@ -260,7 +260,7 @@ class KagHybridExecutor(ExecutorABC):
                 reporter,
                 "thinker",
                 tag_id,
-                task_query,
+                f"{task_query}\n",
                 "INIT",
                 step=task.name,
                 overwrite=False
