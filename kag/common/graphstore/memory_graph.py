@@ -14,9 +14,9 @@ import os
 import re
 import numpy as np
 import torch
+import igraph as ig
 from typing import Dict, List
 from tqdm import tqdm
-import filelock
 
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
@@ -29,7 +29,7 @@ from knext.schema.client import CHUNK_TYPE
 
 
 class MemoryGraph:
-    def __init__(self, namespace, graph_store_path, vectorizer):
+    def __init__(self, namespace, ckpt_dir, vectorizer):
         """
         Initialize the MemoryGraph instance.
 
@@ -37,34 +37,33 @@ class MemoryGraph:
         :param vectorizer: vectorizer, to turn strings into vectors
         """
         self.namespace = namespace
+        self.ckpt_dir = ckpt_dir
         self.chunk_label = f"{self.namespace}.{CHUNK_TYPE}"
-        self._graph_store_path = graph_store_path
-        self._graph_store_lock_path = graph_store_path + ".lock"
-        self._graph_store_lock = filelock.FileLock(self._graph_store_lock_path)
-        self._backend_graph = None
         self._vectorizer = vectorizer
         self._emb_cache = {}
-        self.init_graph()
+        self.from_ckpt()
 
-    @staticmethod
-    def from_ckpt(namespace, ckpt_dir, vectorizer):
-        graph_pickle = os.path.join(ckpt_dir, "graph")
-        if os.path.exists(graph_pickle):
-            print(f"Found existing graph file {graph_pickle}")
-            return MemoryGraph(namespace, graph_pickle, vectorizer)
+    def from_ckpt(self):
+        graph_pickle = os.path.join(self.ckpt_dir, "graph")
+        if os.path.isfile(graph_pickle):
+            self._backend_graph = ig.Graph.Read(graph_pickle, "picklez")
+            return
+        else:
+            self._backend_graph = ig.Graph(directed=False)
 
         checkpointer = CheckpointerManager.get_checkpointer(
             {
                 "type": "zodb",
-                "ckpt_dir": ckpt_dir,
+                "ckpt_dir": self.ckpt_dir,
                 "rank": 0,
                 "world_size": 1,
             }
         )
         print("Loading graph from checkpoint...")
-        tmp = MemoryGraph(namespace, graph_pickle, vectorizer)
         keys = checkpointer.keys()
-        node_id_map = {}
+        self.name2id = {}
+        self.id2name = {}
+        self.chunk_ids = set()
         node_attr_map = {}
         edge_map = {}
         n_nodes = 0
@@ -78,9 +77,12 @@ class MemoryGraph:
             graphs = checkpointer.read_from_ckpt(k)
             for graph in graphs:
                 for node in graph.nodes:
-                    if node.id not in node_id_map:
-                        node_id_map[node.id] = n_nodes
+                    if node.id not in self.name2id:
+                        self.name2id[node.id] = n_nodes
+                        self.id2name[n_nodes] = node.id
                         node_attr_map[node.id] = node
+                        if node.label == self.chunk_label:
+                            self.chunk_ids.add(n_nodes)
                         n_nodes += 1
 
         for k in tqdm(
@@ -92,59 +94,32 @@ class MemoryGraph:
             graphs = checkpointer.read_from_ckpt(k)
             for graph in graphs:
                 for edge in graph.edges:
-                    if edge.from_id in node_id_map and edge.to_id in node_id_map:
+                    if edge.from_id in self.name2id and edge.to_id in self.name2id:
                         edge_map[n_edges] = (
-                            node_id_map[edge.from_id],
-                            node_id_map[edge.to_id],
+                            self.name2id[edge.from_id],
+                            self.name2id[edge.to_id],
                         )
                         n_edges += 1
 
                 # tmp.upsert_subgraph(item.to_dict())
 
-        print(f"there are {len(node_id_map)} nodes and {len(edge_map)} edges")
+        print(f"there are {len(self.name2id)} nodes and {len(edge_map)} edges")
 
-        tmp._backend_graph.add_vertices(len(node_id_map))
+        self._backend_graph.add_vertices(len(self.name2id))
         for node_key, node in tqdm(
             node_attr_map.items(),
             total=len(node_attr_map),
             desc="Loading Node Attr",
             position=0,
         ):
-            node_index = node_id_map[node_key]
-            tmp._backend_graph.vs[node_index].update_attributes(
+            node_index = self.name2id[node_key]
+            self._backend_graph.vs[node_index].update_attributes(
                 node.properties,
                 id=node.id,
                 name=node.name,
                 label=node.label,
             )
-        tmp._backend_graph.add_edges(edge_map.values())
-        tmp.flush()
-        return tmp
-
-    @property
-    def graph_store_lock(self):
-        return self._graph_store_lock
-
-    def init_graph(self):
-        """
-        Initialize the MemoryGraph instance from storage file
-        """
-        import igraph as ig
-
-        with self._graph_store_lock:
-            if os.path.isfile(self._graph_store_path):
-                self._backend_graph = ig.Graph.Read(self._graph_store_path, "picklez")
-            else:
-                self._backend_graph = ig.Graph(directed=True)
-        self.name2id = {}
-        self.id2name = {}
-        self.chunk_ids = set()
-        for idx in range(self._backend_graph.vcount()):
-            node = self._backend_graph.vs[idx]
-            self.name2id[node["id"]] = idx
-            self.id2name[idx] = node["id"]
-            if node["label"] == self.chunk_label:
-                self.chunk_ids.add(idx)
+        self._backend_graph.add_edges(edge_map.values())
 
     def get_entity(self, biz_id, label, **kwargs) -> EntityData:
         """
@@ -491,9 +466,8 @@ class MemoryGraph:
             edge = self._backend_graph.es[old_num_edges + k]
             update_edge_attributes(edge, arc)
 
-    def flush(self):
-        """
-        Flush the memory graph to disk file.
-        """
-        with self._graph_store_lock:
-            self._backend_graph.write(self._graph_store_path, "picklez")
+    # def flush(self):
+    #     """
+    #     Flush the memory graph to disk file.
+    #     """
+    #     self._backend_graph.write(self._graph_store_path, "picklez")
