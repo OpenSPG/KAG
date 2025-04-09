@@ -237,31 +237,45 @@ class MemoryGraph:
         return scores
 
     def ppr_chunk_retrieval(self, start_nodes, topk=10, **kwargs):
-        ppr_scores = np.array(self.calculate_pagerank_scores(start_nodes, **kwargs))
+        try:
+            ppr_scores = np.array(self.calculate_pagerank_scores(start_nodes, **kwargs))
 
-        mask = np.ones(self._backend_graph.vcount()) * (-float("inf"))
-        for chunk_id in self.chunk_ids:
-            mask[chunk_id] = 0
-        ppr_scores = ppr_scores + mask
-        topk = min(topk, len(self.chunk_ids))
-        top_indices = np.argsort(ppr_scores)[-topk:]
-        output = []
-        for idx in top_indices[::-1]:
-            output.append(
-                {
-                    "score": ppr_scores[idx],
-                    "node": self._backend_graph.vs[idx].attributes(),
-                }
-            )
-        return output
+            mask = np.ones(self._backend_graph.vcount()) * (-float("inf"))
+            for chunk_id in self.chunk_ids:
+                mask[chunk_id] = 0
+            ppr_scores = ppr_scores + mask
+            topk = min(topk, len(self.chunk_ids))
+            top_indices = np.argsort(ppr_scores)[-topk:]
+            output = []
+            for idx in top_indices[::-1]:
+                output.append(
+                    {
+                        "score": ppr_scores[idx],
+                        "node": self._backend_graph.vs[idx].attributes(),
+                    }
+                )
+            return output
+        except:
+            import traceback
+
+            print("Failed to run PPR chunk retrieval return [], detail info:")
+            traceback.print_exc()
+            return []
 
     def dpr_chunk_retrieval(self, query_vector, topk=10, **kwargs):
-        query_vector = np.array(query_vector)
-        if len(query_vector.shape) == 1:
-            query_vector = query_vector.reshape(1, -1)
-        return self.batch_vector_search(
-            self.chunk_label, "content", query_vector, topk=topk, **kwargs
-        )[0]
+        try:
+            query_vector = np.array(query_vector)
+            if len(query_vector.shape) == 1:
+                query_vector = query_vector.reshape(1, -1)
+            return self.batch_vector_search(
+                self.chunk_label, "content", query_vector, topk=topk, **kwargs
+            )[0]
+        except:
+            import traceback
+
+            print("Failed to run DPR chunk retrieval return [], detail info:")
+            traceback.print_exc()
+            return []
 
     def vector_search(self, label, property_key, query_vector: list, topk=10, **kwargs):
         """
