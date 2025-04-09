@@ -63,7 +63,7 @@ class KagDeduceExecutor(ExecutorABC):
             op = "entailment"
         prompt = self.prompt_mapping.get(op, self.deduce_entail_prompt)
 
-        if_answered, answer = self.llm_module.invoke(
+        return self.llm_module.invoke(
             {"instruction": sub_query, "memory": contents},
             prompt,
             with_json_parse=False,
@@ -71,7 +71,6 @@ class KagDeduceExecutor(ExecutorABC):
             tag_name=f"{sub_query}_deduce_{op}",
             **kwargs
         )
-        return {"if_answered": if_answered, "answer": answer}
 
     def invoke(self, query: str, task: Any, context: Context, **kwargs):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
@@ -81,7 +80,7 @@ class KagDeduceExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_begin_task",
-            task_query,
+            f"{task_query}\n",
             "INIT",
             step=task.name,
             overwrite=False,
@@ -97,7 +96,7 @@ class KagDeduceExecutor(ExecutorABC):
                 overwrite=False,
             )
             return
-
+        deduce_query = f"{task_query}\ntarget:{logic_node.target}"
         kg_graph = context.variables_graph
         content = logic_node.content
         try:
@@ -119,11 +118,11 @@ class KagDeduceExecutor(ExecutorABC):
         result = []
         final_if_answered = False
         for op in logic_node.ops:
-            if_answered, answer = self.call_op(task_query, contents, op, segment_name=f"{task_query}_begin_task", **kwargs)
+            if_answered, answer = self.call_op(deduce_query, contents, op, segment_name=f"{task_query}_begin_task", **kwargs)
             result.append(answer)
             final_if_answered = if_answered or final_if_answered
         res = ";".join(result)
-        context.variables_graph.add_answered_alias(logic_node.alias_name, res)
+        context.variables_graph.add_answered_alias(logic_node.alias_name, f"{task_query}\n{res}")
         task.update_result(res)
 
         self.report_content(

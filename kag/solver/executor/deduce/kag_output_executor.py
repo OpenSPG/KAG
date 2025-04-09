@@ -64,7 +64,7 @@ class KagOutputExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_begin_task",
-            task_query,
+            f"{task_query}\n",
             "INIT",
             overwrite=False,
             step=task.name
@@ -95,14 +95,6 @@ class KagOutputExecutor(ExecutorABC):
                 with_json_parse=False,
                 segment_name=f"{task_query}_begin_task",
                 tag_name = f"{task_query}_output", **kwargs)
-        else:
-            self.report_content(
-                reporter,
-                f"{task_query}_begin_task",
-                f"{task_query}_output",
-                convert_result_2_md(result, is_top=True),
-                "FINISH",
-            )
         self.report_content(
             reporter,
             "thinker",

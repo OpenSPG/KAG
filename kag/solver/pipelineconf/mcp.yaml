@@ -14,6 +14,7 @@ kag_solver_pipeline:
     type: llm_generator
     llm_client: "{chat_llm}"
     generated_prompt:
-      type: default_refer_generator_prompt
+      type: default_without_refer_generator_prompt
+
 
 #------------kag-solver configuration end----------------#
