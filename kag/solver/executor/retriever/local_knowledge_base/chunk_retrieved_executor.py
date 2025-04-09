@@ -40,6 +40,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
             f"{task_query}_begin_kag_retriever",
             task_query,
             "FINISH",
+            overwrite=False,
         )
         retrieved_result = self.retriever.invoke(query=task_query, top_k=self.top_k)
 
@@ -64,7 +65,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
         )
 
         self.report_content(
-            reporter, "thinker", f"{task_query}_end_kag_retriever", f"{len(chunk_datas)}", "FINISH"
+            reporter, f"{task_query}_begin_kag_retriever", f"{task_query}_end_kag_retriever", f"{len(chunk_datas)}", "FINISH"
         )
 
         # Log the end of the retrieval process and calculate the duration
@@ -73,11 +74,6 @@ class ChunkRetrievedExecutor(ExecutorABC):
         kag_response.summary = "retrieved by local knowledgebase"
         store_results(task, kag_response)
 
-    def report_content(self, reporter, segment, tag_id, content, status):
-        if reporter:
-            reporter.add_report_line(
-                segment, f"{self.schema().get('name')}\n{tag_id}", content, status
-            )
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

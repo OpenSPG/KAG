@@ -37,6 +37,7 @@ class LLMClient(Registrable):
     ):
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
+        self.enable_check = kwargs.get("enable_check", True)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
     def __call__(self, prompt: Union[str, dict, list], **kwargs) -> str:
@@ -330,6 +331,8 @@ class LLMClient(Registrable):
         return results
 
     def check(self):
+        if not self.enable_check:
+            return
         from kag.common.conf import KAG_PROJECT_CONF
 
         if (

@@ -1,15 +1,36 @@
-
+import json
 import logging
 
 
 from typing import Any, Optional
 
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetNode
 from kag.interface import ExecutorABC, LLMClient, PromptABC, Context
 from kag.interface.solver.reporter_abc import ReporterABC
+from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
+
+
+def convert_result_2_md(result, is_top=False):
+    if isinstance(result, str):
+        return result
+    if isinstance(result, list):
+        out = []
+        for r in result:
+            if is_top:
+                out.append(f"- {convert_result_2_md(result=r)}")
+            else:
+                out.append(f"、{convert_result_2_md(result=r)}")
+        return "\n".join(out)
+    if isinstance(result, dict):
+        return f"""```json
+    {json.dumps(result, ensure_ascii=False, indent=2)}
+    ```"""
+    else:
+        return str(result)
 
 
 @ExecutorABC.register("kag_output_executor")
@@ -27,7 +48,7 @@ class KagOutputExecutor(ExecutorABC):
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.summary_prompt = summary_prompt
+        self.summary_prompt = summary_prompt or init_prompt_with_fallback("output_question", KAG_PROJECT_CONF.biz_scene)
 
     @property
     def output_types(self):
@@ -43,32 +64,48 @@ class KagOutputExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_begin_task",
-            task_query,
-            "FINISH",
+            f"{task_query}\n",
+            "INIT",
+            overwrite=False,
             step=task.name
         )
         if not logic_node or not isinstance(logic_node, GetNode):
             self.report_content(
                 reporter,
                 "thinker",
-                f"{task_query}_output",
+                f"{task_query}_begin_task",
                 "not implement!",
                 "FINISH",
+                overwrite=False,
                 step=task.name
             )
             return
-        result = context.variables_graph.get_answered_alias(logic_node.alias_name.alias_name)
-        if isinstance(result, list):
-            result = "\n".join(result)
+        result = []
+        for alias in logic_node.alias_name_set:
+            if context.variables_graph.has_alias(alias.alias_name):
+                result.append(context.variables_graph.get_answered_alias(alias.alias_name))
+        if not result:
+            dep_context = []
+            for p in task.parents:
+                dep_context.append(p.get_task_context())
+            result = self.llm_module.invoke({
+                "question": query,
+                "context": dep_context
+            }, self.summary_prompt,
+                with_json_parse=False,
+                segment_name=f"{task_query}_begin_task",
+                tag_name = f"{task_query}_output", **kwargs)
         self.report_content(
             reporter,
             "thinker",
-            f"{task_query}_output",
+            f"{task_query}_begin_task",
             "finish",
             "FINISH",
+            overwrite=False,
             step=task.name
         )
         task.update_result(result)
+
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

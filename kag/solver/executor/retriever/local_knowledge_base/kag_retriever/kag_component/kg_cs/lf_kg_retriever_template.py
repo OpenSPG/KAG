@@ -100,6 +100,7 @@ class KgRetrieverTemplate:
             graph_data: KgGraph = None,
             **kwargs,
     ) -> KgGraph:
+        segment_name = kwargs.get("segment_name", "thinker")
         component_name = kwargs.get("name", "")
         kg_graph = graph_data or KgGraph()
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
@@ -113,7 +114,7 @@ class KgRetrieverTemplate:
                 if logic_node.get_fl_node_result().spo:
                     continue
 
-                dot_refresh = DotRefresher(reporter=reporter, segment="thinker",
+                dot_refresh = DotRefresher(reporter=reporter, segment=segment_name,
                                            tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                                            content="executing", params={
                         "component_name": component_name
@@ -121,14 +122,14 @@ class KgRetrieverTemplate:
 
                 if reporter:
                     reporter.add_report_line(
-                        "thinker",
+                        segment_name,
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         logic_node.sub_query,
                         "INIT",
                         component_name=component_name
                     )
                     reporter.add_report_line(
-                        "thinker",
+                        segment_name,
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         "executing",
                         "RUNNING",
@@ -153,7 +154,7 @@ class KgRetrieverTemplate:
                     if reporter:
                         dot_refresh.stop()
                         reporter.add_report_line(
-                            "thinker",
+                            segment_name,
                             f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                             f"failed: reason={e}",
                             "ERROR",
@@ -183,6 +184,10 @@ class KgRetrieverTemplate:
             head_entities: List[EntityData],
             tail_entities: List[EntityData],
     ):
+        kg_graph.nodes_alias.append(logic_node.s.alias_name)
+        kg_graph.nodes_alias.append(logic_node.o.alias_name)
+        kg_graph.edge_alias.append(logic_node.p.alias_name)
+
         selected_relations = self.path_select.invoke(
             query=logic_node.sub_query,
             spo=logic_node,
@@ -192,9 +197,6 @@ class KgRetrieverTemplate:
         predicate = logic_node.p.alias_name
         if selected_relations:
             kg_graph.edge_map[predicate] = selected_relations
-            kg_graph.nodes_alias.append(logic_node.s.alias_name)
-            kg_graph.nodes_alias.append(logic_node.o.alias_name)
-            kg_graph.edge_alias.append(logic_node.p.alias_name)
 
         return selected_relations
 
