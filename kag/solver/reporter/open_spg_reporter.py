@@ -220,8 +220,8 @@ class OpenSPGReporter(ReporterABC):
 </step>""",
             },
             "begin_sub_kag_retriever": {
-                "en": "Starting {component_name} {content} {desc}",
-                "zh": "执行{component_name} {content} {desc}",
+                "en": "Starting {component_name}: {content} {desc}.",
+                "zh": "执行{component_name}: {content} {desc}。",
             },
             "end_sub_kag_retriever": {
                 "en": " {content}",
@@ -306,8 +306,8 @@ Rewritten question:\n{content}
                 "zh": "计算结束\n\n{content}",
             },
             "code_generator": {
-                "en": "Generating code\n \n{content}",
-                "zh": "正在生成代码\n \n{content}",
+                "en": "Generating code\n \n{content}\n",
+                "zh": "正在生成代码\n \n{content}\n",
             }
         }
 
@@ -334,6 +334,8 @@ Rewritten question:\n{content}
             }
             format_params.update(content_params)
             datas = tpl.format_map(SafeDict(format_params))
+        elif str(datas).strip() != '':
+            datas = str(datas) + ("." if KAG_PROJECT_CONF.language == "en" else "。")
         if "planning" in report_id:
             datas = process_planning(str(datas))
         return str(datas)
@@ -346,7 +348,6 @@ Rewritten question:\n{content}
             params[k] = self.get_word_template(v, kwargs)
         report_content = content
         if isinstance(report_content, str):
-            report_content = report_content.strip()
             report_content = self.get_word_template(report_content, params)
 
         step_status = "success"
@@ -372,7 +373,7 @@ Rewritten question:\n{content}
             self.report_stream_data[report_id]["status"] = status
             self.report_stream_data[report_id]["kwargs"] = params
             self.report_stream_data[report_id]["time"] = time.time()
-            self.report_stream_data[report_id]["content"] += f"\n\n{report_content}"
+            self.report_stream_data[report_id]["content"] += f"{report_content}"
 
         parent_segment_report = self.report_stream_data.get(segment, None)
 
@@ -380,11 +381,11 @@ Rewritten question:\n{content}
             if tag_name not in self.report_sub_segment[segment]:
                 self.report_sub_segment[segment].append(tag_name)
                 if parent_segment_report:
-                    parent_segment_report["content"] += f"\n\n<tag_name>{report_id}</tag_name>"
+                    parent_segment_report["content"] += f"<tag_name>{report_id}</tag_name>"
         else:
             self.report_sub_segment[segment] = [tag_name]
             if parent_segment_report:
-                parent_segment_report["content"] += f"\n\n<tag_name>{report_id}</tag_name>"
+                parent_segment_report["content"] += f"<tag_name>{report_id}</tag_name>"
         with self._lock:
             self.report_record.append(report_id)
             if segment not in self.report_segment_time:
