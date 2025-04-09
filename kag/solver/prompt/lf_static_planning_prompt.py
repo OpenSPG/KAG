@@ -103,7 +103,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
           },
           {
               "functionName": "Output",
-              "function_decl:aration": "Output(A,B,...)",
+              "function_declaration": "Output(A,B,...)",
               "description": "Directly output A, B, ... as answers, where A and B are variable names referring to previous retrieval or calculation results."
           }
         ],"""

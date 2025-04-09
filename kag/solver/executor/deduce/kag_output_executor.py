@@ -1,4 +1,4 @@
-
+import json
 import logging
 
 
@@ -12,6 +12,25 @@ from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
+
+
+def convert_result_2_md(result, is_top=False):
+    if isinstance(result, str):
+        return result
+    if isinstance(result, list):
+        out = []
+        for r in result:
+            if is_top:
+                out.append(f"- {convert_result_2_md(result=r)}")
+            else:
+                out.append(f"、{convert_result_2_md(result=r)}")
+        return "\n".join(out)
+    if isinstance(result, dict):
+        return f"""```json
+    {json.dumps(result, ensure_ascii=False, indent=2)}
+    ```"""
+    else:
+        return str(result)
 
 
 @ExecutorABC.register("kag_output_executor")
@@ -68,7 +87,7 @@ class KagOutputExecutor(ExecutorABC):
         if not result:
             dep_context = []
             for p in task.parents:
-                dep_context.append(task.get_task_context())
+                dep_context.append(p.get_task_context())
             result = self.llm_module.invoke({
                 "question": query,
                 "context": dep_context
@@ -76,6 +95,14 @@ class KagOutputExecutor(ExecutorABC):
                 with_json_parse=False,
                 segment_name=f"{task_query}_begin_task",
                 tag_name = f"{task_query}_output", **kwargs)
+        else:
+            self.report_content(
+                reporter,
+                f"{task_query}_begin_task",
+                f"{task_query}_output",
+                convert_result_2_md(result, is_top=True),
+                "FINISH",
+            )
         self.report_content(
             reporter,
             "thinker",
@@ -86,6 +113,7 @@ class KagOutputExecutor(ExecutorABC):
             step=task.name
         )
         task.update_result(result)
+
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling
