@@ -121,6 +121,8 @@ class MemoryGraph:
             )
         self._backend_graph.add_edges(edge_map.values())
 
+        CheckpointerManager.close()
+
     def get_entity(self, biz_id, label, **kwargs) -> EntityData:
         """
         Get data of the specified entity.
