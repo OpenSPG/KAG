@@ -12,12 +12,14 @@
 import json
 from typing import Optional
 
+from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import GeneratorABC, LLMClient, PromptABC
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KAGRetrievedResponse,
     to_reference_list,
 )
+from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
@@ -28,6 +30,7 @@ class LLMGenerator(GeneratorABC):
         llm_client: LLMClient,
         generated_prompt: PromptABC,
         chunk_reranker: RerankByVector = None,
+        enable_ref = False,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -38,7 +41,10 @@ class LLMGenerator(GeneratorABC):
                 "type": "rerank_by_vector",
             }
         )
-
+        if enable_ref:
+            self.with_out_ref_prompt = init_prompt_with_fallback("without_refer_generator_prompt", KAG_PROJECT_CONF.biz_scene)
+            self.with_ref_prompt = init_prompt_with_fallback("refer_generator_prompt", KAG_PROJECT_CONF.biz_scene)
+        self.enable_ref = enable_ref
     def invoke(self, query, context, **kwargs):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         results = []
@@ -84,8 +90,6 @@ class LLMGenerator(GeneratorABC):
             prefix_id=0, retrieved_datas=rerank_chunks
         )
         content_json = {"step": results}
-        if rerank_chunks:
-            content_json["reference"] = refer_data
         content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if reporter:
             reporter.add_report_line("generator", "input", content_json, "FINISH")
@@ -98,11 +102,31 @@ class LLMGenerator(GeneratorABC):
             reporter.add_report_line(
                 "generator_reference_graphs", "graph", graph_data, "FINISH"
             )
+        refer_data_str = json.dumps(refer_data, ensure_ascii=False, indent=2)
+
+        if not self.enable_ref:
+            return self.llm_client.invoke(
+                {"query": query, "content": content, "ref": refer_data_str},
+                self.generated_prompt,
+                segment_name="answer",
+                tag_name="Final Answer",
+                with_json_parse=False,
+                **kwargs
+            )
+        if len(refer_data):
+            return self.llm_client.invoke(
+                {"query": query, "content": content, "ref": refer_data_str},
+                self.with_ref_prompt,
+                segment_name="answer",
+                tag_name="Final Answer",
+                with_json_parse=False,
+                **kwargs
+            )
         return self.llm_client.invoke(
-            {"query": query, "content": content},
-            self.generated_prompt,
-            segment_name="answer",
-            tag_name="Final Answer",
-            with_json_parse=False,
-            **kwargs
-        )
+                {"query": query, "content": content},
+                self.with_out_ref_prompt,
+                segment_name="answer",
+                tag_name="Final Answer",
+                with_json_parse=False,
+                **kwargs
+            )
