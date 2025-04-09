@@ -25,9 +25,9 @@ class EvaForHotPotQa(EvalQa):
         with open(file_path, "r") as f:
             return json.load(f)
 
-    def do_metrics_eval(self, predictions: List[str], golds: List[str]):
+    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
         eva_obj = Evaluate()
-        return eva_obj.getBenchMark(predictions, golds)
+        return eva_obj.getBenchMark(questionList, predictions, golds)
 
 
 if __name__ == "__main__":

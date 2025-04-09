@@ -47,7 +47,7 @@ class EvalQa:
                 prediction, trace_log = await self.qa(query=question, gold=gold)
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
-            metrics = self.do_metrics_eval([prediction], [gold])
+            metrics = self.do_metrics_eval([question],[prediction], [gold])
             recall_metrics = self.do_recall_eval(
                 sample, trace_log["info"].get("reference", [])
             )
@@ -61,7 +61,7 @@ class EvalQa:
             )
             return None
 
-    def do_metrics_eval(self, predictions: List[str], golds: List[str]):
+    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
         raise NotImplementedError("do_eval need implement")
 
     def do_recall_eval(self, sample, references):
