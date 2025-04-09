@@ -38,7 +38,7 @@ class AffairQaDemo:
                 prediction = self.qa(question)
 
                 evaObj = Evaluate()
-                metrics = evaObj.getBenchMark([prediction], [gold])
+                metrics = evaObj.getBenchMark([question], [prediction], [gold])
                 return sample_idx, sample_id, prediction, metrics
             except Exception as e:
                 import traceback

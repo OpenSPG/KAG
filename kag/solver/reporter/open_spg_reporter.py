@@ -430,7 +430,7 @@ Rewritten question:\n{content}
             if name in word:
                 template = self.word_mapping[name][KAG_PROJECT_CONF.language]
                 if "{" in template:
-                    template = template.format(**params)
+                    template = template.format_map(SafeDict(params))
                 return template
         return word
     def get_tag_template(self, tag_name):
