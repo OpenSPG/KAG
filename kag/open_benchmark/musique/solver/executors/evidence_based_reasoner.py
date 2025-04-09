@@ -33,14 +33,13 @@ class EvidenceBasedReasoner(ExecutorABC):
         self.llm = llm
         self.memory_graph_path = memory_graph_path
         self.vectorize_model = vectorize_model
-        self.memory_graph = MemoryGraph.from_ckpt(
+        self.memory_graph = MemoryGraph(
             KAG_PROJECT_CONF.namespace, memory_graph_path, vectorize_model
         )
         self.ner = Ner(self.llm)
 
     def retrieve_docs(self, query: str, topk: int = 10):
         candidate_entities = self.ner.invoke(query)
-        print(f"candidate_entities = {candidate_entities}")
         matched_entities = []
         query_entities = []
         for entity in candidate_entities:
@@ -65,7 +64,7 @@ class EvidenceBasedReasoner(ExecutorABC):
 
             traceback.print_exc()
             ppr_chunks = []
-        print(f"num ppr chunks: {len(ppr_chunks)}")
+        # print(f"num ppr chunks: {len(ppr_chunks)}")
         try:
             query_vector = self.vectorize_model.vectorize(query)
             dpr_chunks = self.memory_graph.dpr_chunk_retrieval(query_vector, topk)
@@ -75,7 +74,7 @@ class EvidenceBasedReasoner(ExecutorABC):
             traceback.print_exc()
             dpr_chunks = []
 
-        print(f"num dpr chunks: {len(dpr_chunks)}")
+        # print(f"num dpr chunks: {len(dpr_chunks)}")
         merged = {}
         for idx, chunk in enumerate(ppr_chunks):
             chunk_attr = chunk["node"]
