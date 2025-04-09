@@ -67,7 +67,7 @@ def send_cypher_messages_deepseek(messages):
 def send_type_messages_deepseek(messages):
     client = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
 
-    response = client.acall.chat.completions.create(
+    response = client.client.chat.completions.create(
         model=client.model,
         messages=messages,
         tools=type_tools
