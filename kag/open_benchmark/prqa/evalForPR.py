@@ -1,6 +1,7 @@
 import concurrent.futures
 import json
 import logging
+import os
 import re
 from typing import List, Dict
 
@@ -53,6 +54,23 @@ def write_response_to_txt(question_id, question, response, output_file):
         output.write(f"问题: {question}\n")
         output.write(f"答案: {response}\n")
         output.write("\n")
+
+
+def parse_result_file_to_json(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+
+    result = {"PeopleRelationshipsQA": []}
+    for line in lines:
+        if line.startswith("序号："):
+            current_id = line.split("序号：")[1].strip()
+
+        elif line.startswith("答案:"):
+            current_answers = line.split("答案:")[1].strip()
+            answers_list = [answer.strip() for answer in current_answers.split("、")]
+            result["PeopleRelationshipsQA"].append({current_id: answers_list})
+
+    return result
 
 
 def send_cypher_messages_deepseek(messages):
@@ -450,10 +468,17 @@ if __name__ == "__main__":
     llm_client = LLMClient.from_config(KAG_CONFIG.all_config["openie_llm"])
     processor = EnhancedQuestionProcessor(llm_client)
 
-    with open("./data/test.json", 'r', encoding='utf-8') as f:
+    with open("./solver/data/test.json", 'r', encoding='utf-8') as f:
         test_data = json.load(f)
 
-    processor.process_all_items_single(test_data, output_file='./data/result.txt')
+    processor.process_all_items_single(test_data, output_file='./solver/data/result.txt')
     # processor.process_all_items_parallel(test_data,
     #                                      output_file='./solver/data/result.txt',
     #                                      max_workers=5)
+
+    base_dir = os.path.dirname(__file__)
+    file_path = os.path.join(base_dir, "solver/data/result.txt")
+    parsed_result = parse_result_file_to_json(file_path)
+    output_path = os.path.join(base_dir, "solver/data/prediction_result.json")
+    with open(output_path, 'w', encoding='utf-8') as outfile:
+        json.dump(parsed_result, outfile, ensure_ascii=False, indent=4)
