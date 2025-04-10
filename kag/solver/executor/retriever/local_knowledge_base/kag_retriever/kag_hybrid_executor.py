@@ -47,7 +47,8 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
             refer_id += 1
 
         if isinstance(rd, KgGraph):
-            for spo in rd.get_all_spo():
+            spo_set = list(set(rd.get_all_spo()))
+            for spo in spo_set:
                 refer_docs.append(
                     {
                         "id": f"chunk:{prefix_id}_{refer_id}",

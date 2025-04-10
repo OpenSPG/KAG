@@ -145,7 +145,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "output_format": "使用markdown格式输出，开头不需要输出'```markdown'",
                 "tips": [
                     "输出每一步的Step和Action前可以增加一些思路输出，类似’首先...其次...最后...‘",
-                    "Each `Step` must contain exactly one `Action` or `Output`",
+                    "Each `Step` must contain exactly one `Action`",
                     "Each step is an indivisible atomic question, please re-split accordingly.",
                     "Output also needs to be a separate step."
                     "Step和Action内容需要使用代码风格输出"
@@ -161,7 +161,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
                 "tips": [
                     "Before outputting each Step and Action, you can add some thought process, such as 'First... Then... Finally...'", 
-                    "Each Step must contain exactly one Action or Output", 
+                    "Each Step must contain exactly one Action", 
                     "Each step should be an indivisible atomic question; please re-split accordingly.", 
                     "Output also needs to be a separate step.", 
                     "Content for Step and Action should be output in code style",
@@ -209,8 +209,6 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                     current_sub_query = current_sub_query.strip()
                     if current_sub_query == "":
                         raise RuntimeError(f"{line} is not step query")
-            elif line.startswith("Output"):
-                sub_querys.append("output")
             elif line.startswith("Action"):
                 logic_forms_regex = re.search("Action\d+:(.*)", line)
                 if logic_forms_regex:
