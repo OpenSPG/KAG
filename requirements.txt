@@ -55,5 +55,3 @@ pyvis
 aiofiles
 mcp==1.6.0
 httpx
-torch
-igraph
