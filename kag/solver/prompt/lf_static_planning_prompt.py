@@ -164,7 +164,8 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                     "Each Step must contain exactly one Action or Output", 
                     "Each step should be an indivisible atomic question; please re-split accordingly.", 
                     "Output also needs to be a separate step.", 
-                    "Content for Step and Action should be output in code style"
+                    "Content for Step and Action should be output in code style",
+                    "Step and Action/Output must be on a separate line and in the format XXX: YYY"
                 ],
                 "query": "$query"
             }}   
@@ -205,6 +206,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 if sub_querys_regex is not None:
                     sub_querys.append(sub_querys_regex.group(1))
                     current_sub_query = sub_querys_regex.group(1)
+                    current_sub_query = current_sub_query.strip()
                     if current_sub_query == "":
                         raise RuntimeError(f"{line} is not step query")
             elif line.startswith("Output"):
