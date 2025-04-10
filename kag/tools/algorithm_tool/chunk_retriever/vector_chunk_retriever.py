@@ -40,6 +40,9 @@ class VectorChunkRetriever(ToolABC):
             scores = chunk_cached_by_query_map.get(query)
             if scores and len(scores) > top_k:
                 return scores
+            if not query:
+                logger.error(f"chunk query is emtpy", exc_info=True)
+                return {}
             query_vector = self.vectorize_model.vectorize(query)
             top_k_docs = self.search_api.search_vector(
                 label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
