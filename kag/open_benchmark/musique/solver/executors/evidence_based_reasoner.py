@@ -129,7 +129,9 @@ class EvidenceBasedReasoner(ExecutorABC):
             if score > 0.7:
                 matched_entities.append(top_entity["node"])
         try:
-            ppr_chunks = self.memory_graph.ppr_chunk_retrieval(matched_entities, topk)
+            ppr_chunks = self.memory_graph.ppr_chunk_retrieval(
+                matched_entities, topk * 20
+            )
         except:
             import traceback
 
@@ -138,7 +140,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         # print(f"num ppr chunks: {len(ppr_chunks)}")
         try:
             query_vector = self.vectorize_model.vectorize(query)
-            dpr_chunks = self.memory_graph.dpr_chunk_retrieval(query_vector, topk)
+            dpr_chunks = self.memory_graph.dpr_chunk_retrieval(query_vector, topk * 20)
         except Exception as e:
             import traceback
 
@@ -151,31 +153,8 @@ class EvidenceBasedReasoner(ExecutorABC):
             sorted_chunks = ppr_chunks
         else:
             sorted_chunks = self.weightd_merge(ppr_chunks, dpr_chunks)
-        # merged = {}
-        # for idx, chunk in enumerate(ppr_chunks):
-        #     chunk_attr = chunk["node"]
-        #     if chunk_attr["id"] in merged:
-        #         score = merged[chunk["id"]][0]
-        #         score += 1 / (idx + 1)
-        #         merged[chunk_attr["id"]] = (score, chunk_attr)
-        #     else:
-        #         score = 1 / (idx + 1)
-        #         merged[chunk_attr["id"]] = (score, chunk_attr)
-
-        # for idx, chunk in enumerate(dpr_chunks):
-        #     chunk_attr = chunk["node"]
-        #     if chunk_attr["id"] in merged:
-        #         score = merged[chunk_attr["id"]][0]
-        #         score += 1 / (idx + 1)
-        #         merged[chunk_attr["id"]] = (score, chunk_attr)
-        #     else:
-        #         score = 1 / (idx + 1)
-        #         merged[chunk_attr["id"]] = (score, chunk_attr)
-
-        # sorted_chunks = sorted(merged.values(), key=lambda x: -x[0])
-
         output = []
-        for score, chunk in sorted_chunks:
+        for score, chunk in sorted_chunks[:topk]:
             output.append(
                 ChunkData(
                     chunk["content"],
