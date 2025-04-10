@@ -482,8 +482,6 @@ class MemoryGraph:
             edge = self._backend_graph.es[old_num_edges + k]
             update_edge_attributes(edge, arc)
 
-    # def flush(self):
-    #     """
-    #     Flush the memory graph to disk file.
-    #     """
-    #     self._backend_graph.write(self._graph_store_path, "picklez")
+    def dump(self):
+        graph_pickle = os.path.join(self.ckpt_dir, "graph")
+        self._backend_graph.write(graph_pickle, "picklez")
