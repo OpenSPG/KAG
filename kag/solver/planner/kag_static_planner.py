@@ -81,11 +81,17 @@ class KAGStaticPlanner(PlannerABC):
 
         Has the question been successfully answered? You output should only be "Yes" or "No".
         """
+        try:
+            response = await self.llm.acall(prompt=finish_prompt)
+            if response.strip().lower() == "yes":
+                return True
+            return False
+        except Exception as e:
+            print(f"Failed to run finish_judger, info: {e}")
+            import traceback
 
-        response = await self.llm.acall(prompt=finish_prompt)
-        if response.strip().lower() == "yes":
+            traceback.print_exc()
             return True
-        return False
 
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
