@@ -17,6 +17,7 @@ import torch
 import igraph as ig
 from typing import Dict, List
 from tqdm import tqdm
+from threading import Lock
 
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
@@ -29,11 +30,24 @@ from knext.schema.client import CHUNK_TYPE
 
 
 class MemoryGraph:
-    def __init__(self, namespace, ckpt_dir, vectorizer):
+    _instances = {}
+    _lock = Lock()
+
+    def __new__(cls, namespace, ckpt_dir, vectorizer):
+        path = ckpt_dir
+        with cls._lock:
+            if path not in cls._instances:
+                instance = super(MemoryGraph, cls).__new__(cls)
+                instance._initialize(namespace, ckpt_dir, vectorizer)
+                cls._instances[path] = instance
+            return cls._instances[path]
+
+    def _initialize(self, namespace, ckpt_dir, vectorizer):
         """
         Initialize the MemoryGraph instance.
 
-        :param graph_store_path: path of the memory graph storage file
+        :param namespace: namespace of the memory graph
+        :param ckpt_dir: directory of the checkpoint files
         :param vectorizer: vectorizer, to turn strings into vectors
         """
         self.namespace = namespace
@@ -42,6 +56,7 @@ class MemoryGraph:
         self._vectorizer = vectorizer
         self._emb_cache = {}
         self.from_ckpt()
+
 
     def from_ckpt(self):
         self.name2id = {}
