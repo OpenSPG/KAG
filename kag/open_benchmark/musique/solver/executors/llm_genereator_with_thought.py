@@ -71,4 +71,6 @@ NOTE:
         if "Answer: " not in response:
             raise ValueError(f"no answer found in response: {response}")
         answer = response.split("Answer:")[1].strip()
+        if "UNKNOWN" in answer:
+            return None
         return answer

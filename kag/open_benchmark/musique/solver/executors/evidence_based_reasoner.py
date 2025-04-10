@@ -12,6 +12,7 @@
 # flake8: noqa
 
 import json
+from typing import List
 from kag.interface import (
     ExecutorABC,
     LLMClient,
@@ -38,43 +39,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         )
         self.ner = Ner(self.llm)
 
-    def retrieve_docs(self, query: str, topk: int = 10):
-        candidate_entities = self.ner.invoke(query)
-        matched_entities = []
-        query_entities = []
-        for entity in candidate_entities:
-            query_entities.append(entity.entity_name)
-        query_entity_vector = self.vectorize_model.vectorize(query_entities)
-
-        top_entities = self.memory_graph.batch_vector_search(
-            label="Entity",
-            property_key="name",
-            query_vector=query_entity_vector,
-            topk=1,
-        )
-        for top_entity in top_entities:
-            top_entity = top_entity[0]
-            score = top_entity["score"]
-            if score > 0.7:
-                matched_entities.append(top_entity["node"])
-        try:
-            ppr_chunks = self.memory_graph.ppr_chunk_retrieval(matched_entities, topk)
-        except:
-            import traceback
-
-            traceback.print_exc()
-            ppr_chunks = []
-        # print(f"num ppr chunks: {len(ppr_chunks)}")
-        try:
-            query_vector = self.vectorize_model.vectorize(query)
-            dpr_chunks = self.memory_graph.dpr_chunk_retrieval(query_vector, topk)
-        except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            dpr_chunks = []
-
-        # print(f"num dpr chunks: {len(dpr_chunks)}")
+    def rrf_merge(self, ppr_chunks: List, dpr_chunks: List):
         merged = {}
         for idx, chunk in enumerate(ppr_chunks):
             chunk_attr = chunk["node"]
@@ -97,6 +62,116 @@ class EvidenceBasedReasoner(ExecutorABC):
                 merged[chunk_attr["id"]] = (score, chunk_attr)
 
         sorted_chunks = sorted(merged.values(), key=lambda x: -x[0])
+        return sorted_chunks
+
+    def weightd_merge(self, ppr_chunks: List, dpr_chunks: List, alpha: float = 0.5):
+        def min_max_normalize(chunks):
+            scores = []
+            for chunk in chunks:
+                score = chunk["score"]
+                scores.append(score)
+            max_score = max(scores)
+            min_score = min(scores)
+            for chunk in chunks:
+                score = chunk["score"]
+                score = (score - min_score) / (max_score - min_score)
+                chunk["score"] = score
+
+        min_max_normalize(ppr_chunks)
+        min_max_normalize(dpr_chunks)
+
+        ppr_scores = [x["score"] for x in ppr_chunks]
+        dpr_scores = [x["score"] for x in dpr_chunks]
+        print(f"new_ppr_scores: {ppr_scores}")
+        print(f"new_dpr_scores: {dpr_scores}")
+        merged = {}
+        for chunk in ppr_chunks:
+            chunk_attr = chunk["node"]
+            if chunk_attr["id"] in merged:
+                score = merged[chunk_attr["id"]][0]
+                score += chunk["score"] * alpha
+                merged[chunk_attr["id"]] = (score, chunk_attr)
+            else:
+                score = chunk["score"] * alpha
+                merged[chunk_attr["id"]] = (score, chunk_attr)
+
+        for chunk in dpr_chunks:
+            chunk_attr = chunk["node"]
+            if chunk_attr["id"] in merged:
+                score = merged[chunk_attr["id"]][0]
+                score += chunk["score"] * (1 - alpha)
+                merged[chunk_attr["id"]] = (score, chunk_attr)
+            else:
+                score = chunk["score"] * (1 - alpha)
+                merged[chunk_attr["id"]] = (score, chunk_attr)
+
+        sorted_chunks = sorted(merged.values(), key=lambda x: -x[0])
+        return sorted_chunks
+
+    def retrieve_docs(self, query: str, topk: int = 10):
+        candidate_entities = self.ner.invoke(query)
+        matched_entities = []
+        query_entities = []
+        for entity in candidate_entities:
+            query_entities.append(entity.entity_name)
+        query_entity_vector = self.vectorize_model.vectorize(query_entities)
+
+        top_entities = self.memory_graph.batch_vector_search(
+            label="Entity",
+            property_key="name",
+            query_vector=query_entity_vector,
+            topk=1,
+        )
+        for top_entity in top_entities:
+            top_entity = top_entity[0]
+            score = top_entity["score"]
+            if score > 0.1:
+                matched_entities.append(top_entity["node"])
+        try:
+            ppr_chunks = self.memory_graph.ppr_chunk_retrieval(matched_entities, topk)
+        except:
+            import traceback
+
+            traceback.print_exc()
+            ppr_chunks = []
+        # print(f"num ppr chunks: {len(ppr_chunks)}")
+        try:
+            query_vector = self.vectorize_model.vectorize(query)
+            dpr_chunks = self.memory_graph.dpr_chunk_retrieval(query_vector, topk)
+        except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+            dpr_chunks = []
+
+        if len(ppr_chunks) == 0:
+            sorted_chunks = dpr_chunks
+        elif len(dpr_chunks) == 0:
+            sorted_chunks = ppr_chunks
+        else:
+            sorted_chunks = self.weightd_merge(ppr_chunks, dpr_chunks)
+        # merged = {}
+        # for idx, chunk in enumerate(ppr_chunks):
+        #     chunk_attr = chunk["node"]
+        #     if chunk_attr["id"] in merged:
+        #         score = merged[chunk["id"]][0]
+        #         score += 1 / (idx + 1)
+        #         merged[chunk_attr["id"]] = (score, chunk_attr)
+        #     else:
+        #         score = 1 / (idx + 1)
+        #         merged[chunk_attr["id"]] = (score, chunk_attr)
+
+        # for idx, chunk in enumerate(dpr_chunks):
+        #     chunk_attr = chunk["node"]
+        #     if chunk_attr["id"] in merged:
+        #         score = merged[chunk_attr["id"]][0]
+        #         score += 1 / (idx + 1)
+        #         merged[chunk_attr["id"]] = (score, chunk_attr)
+        #     else:
+        #         score = 1 / (idx + 1)
+        #         merged[chunk_attr["id"]] = (score, chunk_attr)
+
+        # sorted_chunks = sorted(merged.values(), key=lambda x: -x[0])
 
         output = []
         for score, chunk in sorted_chunks:

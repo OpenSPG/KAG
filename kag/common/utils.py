@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+# flake8: noqa
 import datetime
 import random
 import re
@@ -23,6 +24,7 @@ import uuid
 
 import requests
 import importlib
+import numpy as np
 from typing import Tuple
 from pathlib import Path
 
@@ -303,18 +305,28 @@ class RateLimiterManger:
         return self.limiter_map[name]
 
 
-def get_now(language='zh'):
-    if language == 'zh':
-        days_of_week = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+def get_now(language="zh"):
+    if language == "zh":
+        days_of_week = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
         date_format = "%Y年%m月%d日"
-    elif language == 'en':
-        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    elif language == "en":
+        days_of_week = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
         date_format = "%Y-%m-%d"
     else:
-        raise ValueError("Unsupported language. Please use 'zh' for Chinese or 'en' for English.")
+        raise ValueError(
+            "Unsupported language. Please use 'zh' for Chinese or 'en' for English."
+        )
 
     today = datetime.datetime.now()
-    return today.strftime(date_format) + ' (' + days_of_week[today.weekday()] + ')'
+    return today.strftime(date_format) + " (" + days_of_week[today.weekday()] + ")"
 
 
 def generate_random_string(bit=8):
@@ -395,9 +407,14 @@ def extract_content_target(input_string):
         target = None
     return content, target
 
+
 def generate_unique_message_key(message):
     unique_id = uuid.uuid5(uuid.NAMESPACE_URL, str(message))
     timestamp = int(time.time() * 1000)  # 获取当前时间戳（毫秒级）
     # unique_id = uuid.uuid4().hex  # 生成一个UUID并转换为十六进制字符串
     async_message_key = f"KAG_{timestamp}_{unique_id}"
     return async_message_key
+
+
+def rrf_score(length, r: int = 1):
+    return np.array([1 / (r + i) for i in range(length)])
