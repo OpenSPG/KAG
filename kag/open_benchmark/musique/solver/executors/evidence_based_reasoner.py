@@ -20,7 +20,7 @@ from kag.interface import (
     VectorizeModelABC,
 )
 from kag.interface.solver.model.one_hop_graph import ChunkData
-from kag.common.graphstore.memory_graph import MemoryGraph
+
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.tools.algorithm_tool.ner import Ner
 
@@ -33,6 +33,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         self.llm = llm
         self.memory_graph_path = memory_graph_path
         self.vectorize_model = vectorize_model
+        from kag.common.graphstore.memory_graph import MemoryGraph
         self.memory_graph = MemoryGraph(
             KAG_PROJECT_CONF.namespace, memory_graph_path, vectorize_model
         )

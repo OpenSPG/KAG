@@ -111,7 +111,14 @@ class Task(Registrable):
         if self.thought:
             result["thought"] = self.thought
         if self.result:
-            result["result"] = str(self.result)
+            if isinstance(self.result, str):
+                result["result"] = self.result
+            elif hasattr(self.result, "summary"):
+                summary = getattr(self.result, "summary", "")
+                if summary and "i don't know" not in summary.lower():
+                    result["result"] = summary
+            else:
+                result["result"] = str(self.result)
 
         if result:
             result["task"] = self.arguments.get("query", "")
