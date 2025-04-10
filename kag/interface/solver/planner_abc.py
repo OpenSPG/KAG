@@ -35,8 +35,15 @@ class Task(Registrable):
         result (Any): Final output of the task execution.
     """
 
-    def __init__(self, executor: str, arguments: dict, parents: List = None, children: List = None, id: str = None,
-                 **kwargs):
+    def __init__(
+        self,
+        executor: str,
+        arguments: dict,
+        parents: List = None,
+        children: List = None,
+        id: str = None,
+        **kwargs,
+    ):
         """Represents an executable task that can be processed by an executor.
 
         Attributes:
@@ -52,7 +59,7 @@ class Task(Registrable):
         super().__init__(**kwargs)
         self.executor = executor
         self.arguments = arguments
-        self.thought = kwargs.get('thought', '')
+        self.thought = kwargs.get("thought", "")
         self.status = TaskStatus.PENDING
         if id is None:
             self.id = str(uuid.uuid4())
@@ -165,7 +172,13 @@ class Task(Registrable):
 
         task_map = {}
         for task_order, task_info in task_dag.items():
-            task = Task(task_info["executor"], task_info["arguments"], id=task_order, thought=task_info.get('thought', ''), name=task_info.get('name', None))
+            task = Task(
+                task_info["executor"],
+                task_info["arguments"],
+                id=task_order,
+                thought=task_info.get("thought", ""),
+                name=task_info.get("name", None),
+            )
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]
@@ -182,6 +195,7 @@ class PlannerABC(Registrable):
     Planners are responsible for creating Directed Acyclic Graphs (DAGs) of tasks
     based on user query.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -262,4 +276,7 @@ class PlannerABC(Registrable):
             True if the planner uses static task decomposition, False if iteratively.
         """
 
+        return True
+
+    async def finish_judger(self, query: str, answer: str):
         return True
