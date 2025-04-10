@@ -13,6 +13,10 @@ from kag.examples.utils import delay_run
 from kag.solver.logic.solver_pipeline import SolverPipeline
 
 from kag.common.checkpointer import CheckpointerManager
+from kag.solver.utils import init_prompt_with_fallback
+from kag.interface import LLMClient
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAG_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +27,9 @@ class EvaForMusique:
     """
 
     def __init__(self):
-        pass
+        biz_scene = KAG_PROJECT_CONF.biz_scene
+        self.accuracy_prompt = init_prompt_with_fallback("llm_accuracy_judge", biz_scene)
+        self.llm_client = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
 
     """
         parallel qa from knowledge base
@@ -45,7 +51,7 @@ class EvaForMusique:
             data = json.load(f)
         count = 0
         final_result = []
-        for sample in data:
+        for sample in tqdm(data,"eval data"):
             results = []
             try:
                 onc_query_log = sample['traceLog']
@@ -68,20 +74,34 @@ class EvaForMusique:
                     avg_values[key] = avg_values[key] + obj[key]
             for key in avg_values:
                 avg_values[key] = avg_values[key]/len(results)
+
+            llm_accuracy = self.llm_client.invoke(
+                {"question": sample["question"], "gold":sample["answer"], "prediction": sample.get("prediction","")},
+                self.accuracy_prompt,
+                with_json_parse=False,
+                with_except=False
+            )
+
             final_result.append(
                 {
                     **sample,
-                    "recall":avg_values
+                    "recall":avg_values,
+                    "accuracy": 1 if llm_accuracy else 0
                 }
             )
-        total_recall = {"recall_top3": 0, "recall_top5": 0, "recall_all": 0}
 
+        total_recall = {"recall_top3": 0, "recall_top5": 0, "recall_all": 0}
+        total_accuracy = 0
         for obj in final_result:
             recall = obj.get("recall", {})
+            total_accuracy += obj.get("accuracy",0)
             for param, value in recall.items():
                 if param in total_recall:
                     total_recall[param] += value
-        result_recall = {**total_recall}
+        result_recall = {
+            "LLM Accuracy": total_accuracy,
+            **total_recall
+        }
         for inx, value in  total_recall.items():
             result_recall[inx] = (value*100)/count
         result_recall["process_num"] = count

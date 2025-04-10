@@ -202,7 +202,7 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     start_time = time.time()
-    experience_desc = "B12_pikeplanR5_em_V2" #data_planner_retrieval
+    experience_desc = "B12_both_V3" #data_planner_retrieval
     filePath = "./data/musique_qa_dev.json"
     # filePath = "./data/musique_qa_train.json"
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         os.path.abspath(os.path.dirname(__file__)), f"{experience_desc}_res.json"
     )
     total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=16, upperLimit=10000
+        qaFilePath, resFilePath, threadNum=36, upperLimit=10000
     )
     # total_metrics = evaObj.QaAndEvaluate(
     #     qaFilePath, resFilePath, upperLimit=10000

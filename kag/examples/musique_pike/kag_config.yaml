@@ -13,7 +13,6 @@ chat_llm: &chat_llm
 
 vectorize_model: &vectorize_model
   api_key:
-  base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
