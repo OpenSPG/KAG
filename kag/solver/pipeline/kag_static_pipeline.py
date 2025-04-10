@@ -148,8 +148,8 @@ class KAGStaticPipeline(SolverPipelineABC):
                         "result": task.result,
                     }
                 )
-            finised = await self.planner.finish_judger(query, answer)
-            if not finised:
+            finished = await self.planner.finish_judger(query, answer)
+            if not finished:
                 if num_retry == 0:
                     print(
                         f"{red}Failed to answer quesion: {query}\nTasks:{task_info}\n{reset}"
