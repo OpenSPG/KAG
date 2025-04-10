@@ -50,47 +50,18 @@ class LLMGenerator(GeneratorABC):
         results = []
         rerank_queries = []
         chunks = []
-        graph_data = []
+        graph_data = context.variables_graph
         for task in context.gen_task(False):
             if isinstance(task.result, KAGRetrievedResponse) and self.chunk_reranker:
                 rerank_queries.append(task.arguments["query"])
-                if task.result.graph_data:
-                    graph_data.append(task.result.graph_data)
                 chunks.append(task.result.chunk_datas)
-                if (
-                    "i don't know" in task.result.summary.lower()
-                    or task.result.summary == ""
-                ):
-                    continue
-                results.append(
-                    {
-                        "task": task.arguments.get("query", ""),
-                        "thought": task.thought,
-                        "result": task.result.summary,
-                    }
-                )
-            else:
-                if task.result:
-                    results.append(
-                        {
-                            "task": task.arguments.get("query", ""),
-                            "thought": task.thought,
-                            "result": task.result,
-                        }
-                    )
-                else:
-                    results.append(
-                        {
-                            "task": task.arguments.get("query", ""),
-                            "thought": task.thought,
-                        }
-                    )
+            results.append(task.get_task_context())
+
         rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
         refer_data = to_reference_list(
             prefix_id=0, retrieved_datas=rerank_chunks
         )
         content_json = {"step": results}
-        content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if reporter:
             reporter.add_report_line("generator", "final_generator_input", content_json, "FINISH")
             reporter.add_report_line(
@@ -102,11 +73,14 @@ class LLMGenerator(GeneratorABC):
             reporter.add_report_line(
                 "generator_reference_graphs", "reference_graph", graph_data, "FINISH"
             )
-        refer_data_str = json.dumps(refer_data, ensure_ascii=False, indent=2)
 
+        if len(refer_data) and (not self.enable_ref):
+            content_json["reference"] = refer_data
+        content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if not self.enable_ref:
+
             return self.llm_client.invoke(
-                {"query": query, "content": content, "ref": refer_data_str},
+                {"query": query, "content": content},
                 self.generated_prompt,
                 segment_name="answer",
                 tag_name="Final Answer",
@@ -114,6 +88,8 @@ class LLMGenerator(GeneratorABC):
                 **kwargs
             )
         if len(refer_data):
+            refer_data_str = json.dumps(refer_data, ensure_ascii=False, indent=2)
+            content = json.dumps(content_json, ensure_ascii=False, indent=2)
             return self.llm_client.invoke(
                 {"query": query, "content": content, "ref": refer_data_str},
                 self.with_ref_prompt,
