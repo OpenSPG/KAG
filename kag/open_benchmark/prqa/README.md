@@ -58,7 +58,7 @@ Execute [evalForPR.py](evalForPR.py) in the [solver](./solver) directory to gene
 cd solver && python evalForPR.py && cd ..
 ```
 
-Generated answers are saved to `./solver/data/prediction_result.json`.
+Generated answers are saved to `./solver/data/result.txt`.
 
 Execute answer evaluation and F1/EM calculation process:
 ```bash
