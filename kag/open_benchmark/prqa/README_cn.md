@@ -51,23 +51,20 @@ cd builder && python indexer.py && cd ..
 
 ### Step 6：执行 QA 任务
 
-在 [solver](./solver) 目录执行 [evalForPR.py](./solver/evalForPR.py) 生成答案并计算 EM 和 F1 指标。
+首先在 [evalForPR.py](evalForPR.py) 代码的main函数中填入neo4j的用户名和密码
+
+在 [solver](./solver) 目录执行 [evalForPR.py](evalForPR.py) 生成答案并计算 EM 和 F1 指标。
 
 ```bash
 cd solver && python evalForPR.py && cd ..
 ```
 
-生成的答案被保存至 ``./solver/data/result.txt``.
+生成的答案被保存至 ``./solver/data/prediction_result.json``.
 
 执行答案判断及F1和EM计算过程：
 ```bash
-python ./evaluate.py --qa_file ./solver/data/result.txt
+python ./evaluator.py
 ```
-
-执行正确率计算：
-```bash
-python ./count_correct.py --result_file ./evaluation_results_x.json
-``` 
 
 ### Step 7：（可选）清理
 

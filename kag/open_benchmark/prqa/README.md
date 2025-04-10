@@ -50,23 +50,19 @@ cd builder && python indexer.py && cd ..
 ```
 
 ### Step 6: Execute QA Task
+First fill in the main function of the [evalForPR.py](evalForPR.py) code with the neo4j user name and password 
 
-Execute [evalForPR.py](./solver/evalForPR.py) in the [solver](./solver) directory to generate answers and calculate EM and F1 metrics.
+Execute [evalForPR.py](evalForPR.py) in the [solver](./solver) directory to generate answers and calculate EM and F1 metrics.
 
 ```bash
 cd solver && python evalForPR.py && cd ..
 ```
 
-Generated answers are saved to `./solver/data/result.txt`.
+Generated answers are saved to `./solver/data/prediction_result.json`.
 
 Execute answer evaluation and F1/EM calculation process:
 ```bash
-python ./evaluate.py --qa_file ./solver/data/result.txt
-```
-
-Calculate accuracy:
-```bash
-python ./count_correct.py --result_file ./evaluation_results_x.json
+python ./evaluator.py
 ```
 
 ### Step 7: (Optional) Cleanup
