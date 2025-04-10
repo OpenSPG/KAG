@@ -13,6 +13,7 @@ from kag.interface.common.prompt import PromptABC
 from kag.interface.common.llm_client import LLMClient
 
 from kag.interface.common.vectorize_model import VectorizeModelABC, EmbeddingVector
+from kag.interface.common.rerank_model import RerankModelABC
 from kag.interface.builder.scanner_abc import ScannerABC
 from kag.interface.builder.reader_abc import ReaderABC
 from kag.interface.builder.splitter_abc import SplitterABC
@@ -47,6 +48,7 @@ __all__ = [
     "PromptABC",
     "LLMClient",
     "VectorizeModelABC",
+    "RerankModelABC",
     "EmbeddingVector",
     "ScannerABC",
     "ReaderABC",
