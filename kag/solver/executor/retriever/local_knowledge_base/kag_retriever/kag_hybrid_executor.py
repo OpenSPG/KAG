@@ -191,7 +191,7 @@ class KagHybridExecutor(ExecutorABC):
         return KAGRetrievedResponse
 
     @retry(stop=stop_after_attempt(3))
-    def generate_answer(self, question: str, docs: [], history_qa=[], **kwargs):
+    def generate_answer(self, tag_id, question: str, docs: [], history_qa=[], **kwargs):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
 
@@ -217,7 +217,7 @@ class KagHybridExecutor(ExecutorABC):
             with_json_parse=False,
             with_except=True,
             tag_name=f"kag_hybrid_retriever_summary_{question}",
-            segment_name="thinker",
+            segment_name=tag_id,
             **kwargs,
         )
         logger.debug(
@@ -227,13 +227,14 @@ class KagHybridExecutor(ExecutorABC):
             return llm_output
         return "I don't know"
 
-    def generate_summary(self, query, chunks, history, **kwargs):
+    def generate_summary(self, tag_id, query, chunks, history, **kwargs):
         if not chunks:
             return ""
         history_qa = get_history_qa(history)
         if len(history) == 1 and len(history_qa) == 1:
             return history[0].get_fl_node_result().summary
         return self.generate_answer(
+            tag_id=tag_id,
             question=query, docs=chunks, history_qa=history_qa, **kwargs
         )
 
@@ -247,6 +248,7 @@ class KagHybridExecutor(ExecutorABC):
         start_time = time.time()  # 添加开始时间记录
         kag_response = initialize_response(task)
         tag_id = f"{task_query}_begin_task"
+        flow_query = task_query if logic_node is None else logic_node.sub_query
 
         try:
 
@@ -261,14 +263,13 @@ class KagHybridExecutor(ExecutorABC):
                 reporter,
                 "thinker",
                 tag_id,
-                f"{task_query}\n",
+                f"{flow_query}\n",
                 "INIT",
-                step=task.name,
-                overwrite=False
+                step=task.name
             )
             if not logic_node:
                 logic_nodes = self._convert_to_logical_form(
-                    task_query, task, reporter=reporter
+                    flow_query, task, reporter=reporter
                 )
             else:
                 logic_nodes = [logic_node]
@@ -280,7 +281,7 @@ class KagHybridExecutor(ExecutorABC):
             start_time = time.time()  # 添加开始时间记录
             flow: KAGFlow = KAGFlow(
                 flow_id=task.id,
-                nl_query=task_query,
+                nl_query=flow_query,
                 lf_nodes=logic_nodes,
                 flow_str=self.flow_str,
                 graph_data=context.variables_graph,
@@ -316,6 +317,7 @@ class KagHybridExecutor(ExecutorABC):
             )
 
             kag_response.summary = self.generate_summary(
+                tag_id=tag_id,
                 query=task_query,
                 chunks=kag_response.to_reference_list(),
                 history=logic_nodes,

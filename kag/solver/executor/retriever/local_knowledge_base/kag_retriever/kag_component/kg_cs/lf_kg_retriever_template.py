@@ -30,15 +30,9 @@ def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
 
 def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
     # Try existing entities in knowledge graph
-    entities = kg_graph.get_entity_by_alias(symbol_entity.alias_name)
+    entities = kg_graph.get_entity_by_alias_without_attr(symbol_entity.alias_name)
     if entities:
-        filter_entities = []
-        for e in entities:
-            if e.type == "Text":
-                continue
-            filter_entities.append(e)
-        if filter_entities:
-            return filter_entities
+        return entities
     # Perform entity linking if possible
     if symbol_entity.entity_name:
         entities = el.invoke(

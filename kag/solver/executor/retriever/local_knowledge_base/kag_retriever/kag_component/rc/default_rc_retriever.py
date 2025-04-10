@@ -245,13 +245,14 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 entities = []
                 selected_rel = []
                 if graph_data is not None:
-                    s_entities = graph_data.get_entity_by_alias(logic_node.s.alias_name)
+                    s_entities = graph_data.get_entity_by_alias_without_attr(logic_node.s.alias_name)
                     if s_entities:
                         entities.extend(s_entities)
-                    o_entities = graph_data.get_entity_by_alias(logic_node.o.alias_name)
+                    o_entities = graph_data.get_entity_by_alias_without_attr(logic_node.o.alias_name)
                     if o_entities:
                         entities.extend(o_entities)
                     selected_rel = graph_data.get_all_spo()
+                    entities = list(set(entities))
                 chunks, match_spo = self.ppr_chunk_retriever_tool.invoke(
                     queries=[query] + rewrite_queries,
                     start_entities=entities,

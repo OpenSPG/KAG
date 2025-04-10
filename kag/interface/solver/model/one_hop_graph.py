@@ -688,6 +688,8 @@ class KgGraph(RetrievedData):
                 )
             else:
                 self.edge_map[e_alias] = other.edge_map[e_alias]
+
+            self.edge_map[e_alias] = list(set(self.edge_map[e_alias]))
         for p in other.query_graph.keys():
             self.query_graph[p] = other.query_graph[p]
         if not wo_intersect:
@@ -711,7 +713,7 @@ class KgGraph(RetrievedData):
                             if s1 == o_alias and rel.from_id == p_rel.end_id:
                                 intersect_rels.append(rel)
                                 break
-                    self.edge_map[p1] = intersect_rels
+                    self.edge_map[p1] = list(set(intersect_rels))
 
     def to_edge_evidence(self):
         edge_map_str = []
@@ -791,7 +793,7 @@ class KgGraph(RetrievedData):
         for k in self.edge_map.keys():
             for d in self.edge_map[k]:
                 all_spo.append(d)
-        return all_spo
+        return list(set(all_spo))
 
     def _graph_to_json(self):
         total_entity_map = {}
@@ -984,6 +986,16 @@ class KgGraph(RetrievedData):
                 res.append((spo["s"], spo["p"], spo["o"]))
         return res
 
+    def get_entity_by_alias_without_attr(self, alias):
+        all_entities = self.get_entity_by_alias(alias)
+        if all_entities is None:
+            return []
+        ret = []
+        for e in all_entities:
+            if e.type in ["attribute", "Text"]:
+                continue
+            ret.append(e)
+        return ret
     def get_entity_by_alias(self, alias):
         if isinstance(alias, Identifier):
             alias = alias.alias_name
