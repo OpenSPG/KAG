@@ -11,11 +11,10 @@
 # or implied.
 # flake8: noqa
 import json
-from kag.interface import GeneratorABC, LLMClient, PromptABC
+from kag.interface import GeneratorABC, LLMClient, ToolABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
-from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
 @GeneratorABC.register("llm_generator_with_thought")
@@ -23,7 +22,7 @@ class LLMGeneratorWithThought(GeneratorABC):
     def __init__(
         self,
         llm_client: LLMClient,
-        chunk_reranker: RerankByVector = None,
+        chunk_reranker: ToolABC = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -39,7 +38,6 @@ class LLMGeneratorWithThought(GeneratorABC):
         chunks = []
         thoughts = []
         for task in context.gen_task(False):
-            print(f"task.result = {task.result}")
             task_result = json.loads(task.result)
             subq = task_result["query"]
             suba = task_result["response"]
