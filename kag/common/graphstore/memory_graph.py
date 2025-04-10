@@ -44,9 +44,19 @@ class MemoryGraph:
         self.from_ckpt()
 
     def from_ckpt(self):
+        self.name2id = {}
+        self.id2name = {}
+        self.chunk_ids = set()
+
         graph_pickle = os.path.join(self.ckpt_dir, "graph")
         if os.path.isfile(graph_pickle):
             self._backend_graph = ig.Graph.Read(graph_pickle, "picklez")
+            for idx in range(self._backend_graph.vcount()):
+                node = self._backend_graph.vs[idx]
+                self.name2id[node["id"]] = idx
+                self.id2name[idx] = node["id"]
+                if node["label"] == self.chunk_label:
+                    self.chunk_ids.add(idx)
             return
         else:
             self._backend_graph = ig.Graph(directed=False)
@@ -61,9 +71,6 @@ class MemoryGraph:
         )
         print("Loading graph from checkpoint...")
         keys = checkpointer.keys()
-        self.name2id = {}
-        self.id2name = {}
-        self.chunk_ids = set()
         node_attr_map = {}
         edge_map = {}
         n_nodes = 0
