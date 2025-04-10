@@ -35,6 +35,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         self.memory_graph_path = memory_graph_path
         self.vectorize_model = vectorize_model
         from kag.common.graphstore.memory_graph import MemoryGraph
+
         self.memory_graph = MemoryGraph(
             KAG_PROJECT_CONF.namespace, memory_graph_path, vectorize_model
         )
@@ -67,6 +68,8 @@ class EvidenceBasedReasoner(ExecutorABC):
 
     def weightd_merge(self, ppr_chunks: List, dpr_chunks: List, alpha: float = 0.5):
         def min_max_normalize(chunks):
+            if len(chunks) == 0:
+                return []
             scores = []
             for chunk in chunks:
                 score = chunk["score"]
@@ -83,8 +86,6 @@ class EvidenceBasedReasoner(ExecutorABC):
 
         ppr_scores = [x["score"] for x in ppr_chunks]
         dpr_scores = [x["score"] for x in dpr_chunks]
-        print(f"new_ppr_scores: {ppr_scores}")
-        print(f"new_dpr_scores: {dpr_scores}")
         merged = {}
         for chunk in ppr_chunks:
             chunk_attr = chunk["node"]
@@ -109,7 +110,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         sorted_chunks = sorted(merged.values(), key=lambda x: -x[0])
         return sorted_chunks
 
-    def retrieve_docs(self, query: str, topk: int = 10):
+    def retrieve_docs(self, query: str, topk: int = 20):
         candidate_entities = self.ner.invoke(query)
         matched_entities = []
         query_entities = []
@@ -146,13 +147,7 @@ class EvidenceBasedReasoner(ExecutorABC):
 
             traceback.print_exc()
             dpr_chunks = []
-
-        if len(ppr_chunks) == 0:
-            sorted_chunks = dpr_chunks
-        elif len(dpr_chunks) == 0:
-            sorted_chunks = ppr_chunks
-        else:
-            sorted_chunks = self.weightd_merge(ppr_chunks, dpr_chunks)
+        sorted_chunks = self.weightd_merge(ppr_chunks, dpr_chunks)
         output = []
         for score, chunk in sorted_chunks[:topk]:
             output.append(
