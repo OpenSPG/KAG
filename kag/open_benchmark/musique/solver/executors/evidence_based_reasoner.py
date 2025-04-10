@@ -35,6 +35,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         self.memory_graph_path = memory_graph_path
         self.vectorize_model = vectorize_model
         from kag.common.graphstore.memory_graph import MemoryGraph
+
         self.memory_graph = MemoryGraph(
             KAG_PROJECT_CONF.namespace, memory_graph_path, vectorize_model
         )
@@ -109,7 +110,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         sorted_chunks = sorted(merged.values(), key=lambda x: -x[0])
         return sorted_chunks
 
-    def retrieve_docs(self, query: str, topk: int = 10):
+    def retrieve_docs(self, query: str, topk: int = 20):
         candidate_entities = self.ner.invoke(query)
         matched_entities = []
         query_entities = []
