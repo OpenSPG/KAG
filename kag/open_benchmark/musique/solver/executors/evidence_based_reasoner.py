@@ -125,7 +125,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         for top_entity in top_entities:
             top_entity = top_entity[0]
             score = top_entity["score"]
-            if score > 0.1:
+            if score > 0.7:
                 matched_entities.append(top_entity["node"])
         try:
             ppr_chunks = self.memory_graph.ppr_chunk_retrieval(matched_entities, topk)
