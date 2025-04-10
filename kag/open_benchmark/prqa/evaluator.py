@@ -1,155 +1,235 @@
-# coding=utf-8
 import json
-import sys
 import os
-import numpy as np
-import time
-import re
-
-# 错误字典，这里只是示例
-error_msg={
-    1: "Bad input file",
-    2: "Wrong input file format",
-}
+import requests
+from typing import List, Dict
+import yaml
+import jieba
+from collections import Counter
+import concurrent.futures
+from tqdm import tqdm
 
 
-def dump_2_json(info, path):
-    with open(path, 'a+') as output_json_file:
-        json.dump(info, output_json_file)
-        output_json_file.write('\n')
+def load_config(config_path: str) -> Dict:
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+    return config
 
 
-def report_error_msg(detail, showMsg, out_p):
-    error_dict=dict()
-    error_dict['errorDetail']=detail
-    error_dict['errorMsg']=showMsg
-    error_dict['score']=0
-    error_dict['scoreJson']={}
-    error_dict['success']=False
-    dump_2_json(error_dict,out_p)
+def normalize_answer(s: str) -> List[str]:
+    """对答案进行标准化处理，包括分词"""
+    # 移除多余空格和换行符
+    s = " ".join(s.split())
+    # 使用结巴分词
+    return [token for token in jieba.cut(s) if token.strip()]
 
 
-def report_score(dataset,score, out_p):
-    result = dict()
-    result['dataset']=dataset
-    result['success']=True
-    result['score'] = score
-
-    # 这里{}里面的score注意保留，但可以增加其他key，比如这样：
-    # result['scoreJson'] = {'score': score, 'aaaa': 0.1}
-    result['scoreJson'] = {'score': score}
-
-    dump_2_json(result,out_p)
+def compute_exact_match(pred_tokens: List[str], answer_tokens: List[str]) -> float:
+    """计算EM分数"""
+    return float(pred_tokens == answer_tokens)
 
 
-def calculate_precision_recall_f1(prediction, label):
-    TP = len(set(prediction)&set(label))
-    FP = len(set(prediction)-set(label))
-    FN = len(set(label)-set(prediction))
-    precision = TP / (TP + FP) if TP + FP != 0 else 0
-    recall = TP / (TP + FN) if TP + FN != 0 else 0
-    f1 = 2 * precision * recall / (precision + recall) if precision + recall != 0 else 0
-    return precision, recall, f1
+def compute_f1(pred_tokens: List[str], answer_tokens: List[str]) -> float:
+    """计算F1分数"""
+    common = Counter(pred_tokens) & Counter(answer_tokens)
+    num_same = sum(common.values())
 
+    if len(pred_tokens) == 0 or len(answer_tokens) == 0:
+        return 0
 
-def is_digit_and_chinese(s):
-    # 正则表达式匹配规则：开始位置有一个或多个数字，后面跟着一个或多个汉字，直到字符串结束
-    pattern = r'^\d+\p{Script=Han}+$'
-    if re.match(pattern, s):
-        return True
-    else:
-        return False
+    precision = num_same / len(pred_tokens)
+    recall = num_same / len(answer_tokens)
 
+    if precision + recall == 0:
+        return 0
 
-def get_score(gold_answer, user_answer,dataset):
-    gold = gold_answer[dataset]
-    submit = user_answer[dataset]
-    # 计算得分
-    precision_list = []
-    recall_list = []
-    f1_list = []
-
-    for k, v in gold.items():
-        label = v
-        if k in submit:
-            prediction = submit[k]
-
-            if label == ['没有'] or label == ['不是'] or label == ['否'] or label == ['无'] or label == ['不同'] or label == ['知识库未提及']: label = ['0']
-            if prediction == ['没有'] or prediction == ['No'] or prediction == ['no'] or prediction == ['否'] or prediction == ['不属于'] or prediction == ['不是'] or prediction == ['不相同'] or prediction == ['No.'] or prediction == ['不同'] or prediction == ['无'] or prediction == ['知识库未提及']: prediction = ['0']
-
-            # 处理 ["数字+单位"] 的情况, 例如 ["1个"]
-            if re.match(r'(\d+).*', label[0])!= None and re.match(r'(\d+).*', prediction[0]) != None:
-                label[0] = re.match(r'(\d+).*', label[0]).group(1)
-                prediction[0] = re.match(r'(\d+).*', prediction[0]).group(1)
-
-            precision, recall, f1 = calculate_precision_recall_f1(prediction, label)
-        else:
-            precision, recall, f1 = 0, 0, 0
-
-        if f1 != 1:
-            print("问题：", k)
-            print("标准答案：", label)
-            print("选手提交：", prediction)
-        precision_list.append(precision)
-        recall_list.append(recall)
-        f1_list.append(f1)
-
-    precision = np.mean(precision_list)
-    recall = np.mean(recall_list)
-    f1 = np.mean(f1_list)
-
+    f1 = 2 * precision * recall / (precision + recall)
     return f1
 
 
-# python evaluator.py user_answer.json out.json
-if __name__=="__main__":
-    '''
-        evaluation  
-    '''
-    base_dir = os.path.dirname(__file__)
-    user_answer_path = os.path.join(base_dir, "solver/data/prediction_result.json")
-    gold_answer_path = os.path.join(base_dir, "solver/data/gold_answer.json")
-    out_path = os.path.join(base_dir, "solver/data/evaluation.json")
+def extract_answer_from_prediction(prediction: str) -> str:
+    """从预测文本中提取答案部分"""
+    # 直接返回整个预测文本
+    return prediction.strip()
 
-    # 标准答案路径
-    with open(gold_answer_path, 'r') as load_f:
-        gold = json.load(load_f)
-    gold_answer = dict()
 
-    for dataset_name, items in gold.items():
-        answer_dict = dict()
-        for item in items:
-            answer_dict.update(item)
-        gold_answer[dataset_name] = answer_dict
-    print(f"Read standard from {gold_answer_path}")
+def evaluate_qa(qa_file: str):
+    # 固定配置
+    api_key = ""
+    base_url = "https://api.deepseek.com/"
+    model = "deepseek-chat"
 
-    # 读取用户答案
-    with open(user_answer_path, 'r') as load_f:
-        user = json.load(load_f)
-    user_answer = dict()
 
-    for dataset_name, items in user.items():
-        answer_dict = dict()
-        for item in items:
-            answer_dict.update(item)
-        user_answer[dataset_name] = answer_dict
-    print(f"Read user submit file from {user_answer_path}")
+    # 读取QA数据
+    with open(qa_file, "r", encoding="utf-8") as f:
+        qa_data = json.load(f)
 
-    f1_list = []
-    dataset = "PeopleRelationshipsQA"
-    try:
-        score = get_score(gold_answer, user_answer, dataset)
-        f1_list.append(score)
-        report_score(dataset, score, out_path)
-    except Exception as e:
-        f1_list.append(0)
-        # 错误类型
-        error_type = type(e).__name__
-        print("Error type:", error_type)
-        # 错误信息
-        error_msg = str(e)
-        print("Error message:", error_msg)
+    total_em = 0
+    total_f1 = 0
+    results = []
 
-        report_error_msg(error_type, error_msg, out_path)
+    # 定义处理单个QA项的函数
+    def process_qa_item(item):
+        # 处理标准答案（可能是列表）
+        if isinstance(item["answer"], list):
+            standard_answer = item["answer"][0]  # 取第一个答案
+        else:
+            standard_answer = item["answer"]
 
-    report_score("Average", sum(f1_list)/len(f1_list), out_path)
+        # 检查是否存在prediction字段
+        if "prediction" not in item:
+            print(f"警告: ID为{item.get('id', '未知')}的数据缺少prediction字段")
+            return None
+
+        # 从预测中提取答案部分
+        predicted_answer = extract_answer_from_prediction(item["prediction"])
+
+        # 标准化答案
+        standard_tokens = normalize_answer(standard_answer)
+        predicted_tokens = normalize_answer(predicted_answer)
+
+        # 计算EM和F1分数
+        em_score = compute_exact_match(predicted_tokens, standard_tokens)
+        f1_score = compute_f1(predicted_tokens, standard_tokens)
+
+        # 构建提示词进行正确性评估
+        prompt = f"""请评估以下问答对的正确性：
+
+问题：{item['question']}
+标准答案：{standard_answer}
+模型预测：{predicted_answer}
+
+请判断模型预测是否与标准答案一致。只需回答"正确"或"错误"，并简要说明理由。"""
+
+        # 调用大模型评估
+        try:
+            evaluation = call_llm(api_key, base_url, model, prompt)
+        except Exception as e:
+            evaluation = f"API调用失败: {str(e)}"
+
+        # 返回结果
+        return {
+            "id": item["id"],
+            "question": item["question"],
+            "standard_answer": standard_answer,
+            "prediction": predicted_answer,
+            "evaluation": evaluation,
+            "em_score": em_score,
+            "f1_score": f1_score,
+        }
+
+    # 使用线程池并发处理
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有任务并显示进度条
+        future_to_item = {
+            executor.submit(process_qa_item, item): item for item in qa_data
+        }
+
+        # 使用tqdm显示进度
+        for future in tqdm(
+                concurrent.futures.as_completed(future_to_item),
+                total=len(qa_data),
+                desc="评估进度",
+        ):
+            result = future.result()
+            if result:
+                results.append(result)
+                total_em += result["em_score"]
+                total_f1 += result["f1_score"]
+
+    # 计算平均分数
+    avg_em = total_em / len(qa_data)
+    avg_f1 = total_f1 / len(qa_data)
+
+    # 添加总体评估结果
+    final_results = {"average_em": avg_em, "average_f1": avg_f1, "details": results}
+
+    # 保存评估结果
+    output_file = f"evaluation_results_{qa_file.split('/')[-1].split('.')[0][-1]}.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(final_results, f, ensure_ascii=False, indent=2)
+
+    print(f"评估完成！结果已保存至 {output_file}")
+    print(f"平均EM分数: {avg_em:.4f}")
+    print(f"平均F1分数: {avg_f1:.4f}")
+
+
+def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    data = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.1,
+    }
+
+    response = requests.post(f"{base_url}chat/completions", headers=headers, json=data)
+    return response.json()["choices"][0]["message"]["content"]
+
+
+def parse_result_file(file_path):
+    result_data = []
+    with open(file_path, "r", encoding="utf-8") as file:
+        content = file.read().strip().split("\n\n")  # 分块处理
+        for block in content:
+            lines = block.strip().split("\n")
+            id_ = lines[0].split(":")[1].strip()  # 提取序号
+            question = lines[1].split(":")[1].strip()  # 提取问题
+            prediction = lines[2].split(":")[1].strip()  # 提取答案
+            result_data.append({
+                "id": id_,
+                "question": question,
+                "prediction": prediction
+            })
+    return result_data
+
+
+def parse_gold_answer_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        gold_answer_data = json.load(file)
+    return gold_answer_data.get("PeopleRelationshipsQA", [])
+
+
+def generate_output_data(result_data, gold_answer_data):
+    output_data = []
+    for result_entry in result_data:
+        id_ = result_entry["id"]
+        question = result_entry["question"]
+        prediction = result_entry["prediction"]
+
+        # 在 gold_answer.json 中寻找对应 answer
+        answer = []
+        for qa_item in gold_answer_data:
+            if id_ in qa_item:
+                answer = qa_item[id_]
+                break
+
+        output_data.append({
+            "id": id_,
+            "question": question,
+            "answer": answer,
+            "prediction": prediction
+        })
+    return output_data
+
+
+if __name__ == "__main__":
+    dir_path = os.path.dirname(__file__)
+    import argparse
+
+    # 文件路径
+    prediction_file_path = os.path.join(dir_path, "solver/data/result.txt")
+    gold_answer_file_path = os.path.join(dir_path, "solver/data/gold_answer.json")
+    output_file_path = os.path.join(dir_path, "solver/data/res1.json")
+    # 主流程
+    result_data = parse_result_file(prediction_file_path)
+    gold_answer_data = parse_gold_answer_file(gold_answer_file_path)
+    output_data = generate_output_data(result_data, gold_answer_data)
+    # 写入 output.json
+    with open(output_file_path, "w", encoding="utf-8") as output_file:
+        json.dump(output_data, output_file, ensure_ascii=False, indent=4)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--qa_file", type=str, default="solver/data/res1.json")
+    args = parser.parse_args()
+    qa_file = os.path.join(dir_path, args.qa_file)
+    evaluate_qa(qa_file)

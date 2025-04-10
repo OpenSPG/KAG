@@ -59,7 +59,7 @@ cd builder && python indexer.py && cd ..
 cd solver && python evalForPR.py && cd ..
 ```
 
-生成的答案被保存至 ``./solver/data/prediction_result.json``.
+生成的答案被保存至 ``./solver/data/result.txt``.
 
 执行答案判断及F1和EM计算过程：
 ```bash
