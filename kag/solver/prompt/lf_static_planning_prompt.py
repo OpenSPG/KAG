@@ -209,8 +209,6 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                     current_sub_query = current_sub_query.strip()
                     if current_sub_query == "":
                         raise RuntimeError(f"{line} is not step query")
-            elif line.startswith("Output"):
-                sub_querys.append("output")
             elif line.startswith("Action"):
                 logic_forms_regex = re.search("Action\d+:(.*)", line)
                 if logic_forms_regex:
