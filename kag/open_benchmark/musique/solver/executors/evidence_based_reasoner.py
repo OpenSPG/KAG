@@ -55,7 +55,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         for top_entity in top_entities:
             top_entity = top_entity[0]
             score = top_entity["score"]
-            if score > 0.9:
+            if score > 0.7:
                 matched_entities.append(top_entity["node"])
         try:
             ppr_chunks = self.memory_graph.ppr_chunk_retrieval(matched_entities, topk)
@@ -112,7 +112,8 @@ class EvidenceBasedReasoner(ExecutorABC):
         return output
 
     async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
-        retrieved_docs = self.retrieve_docs(query)
+        task_query = task.arguments["query"]
+        retrieved_docs = self.retrieve_docs(task_query)
 
         formatted_docs = []
         for doc in retrieved_docs:
@@ -147,7 +148,7 @@ Thought: To determine what {{0.oputput}} (Charlemagne) was later known as, I nee
 2: What was the language from which the last name Sylvester originated during {{0.output}} era?
 Thought: The question asks about the origin of the last name Sylvester during the time of the person {{0.output}}, which was Charlemagne, whose reign was in the Early Middle Ages. The passage about the name Sylvester states that it is derived from Latin. Answer: Latin
 """
-        query = f"{task.id}: {task.arguments['query']}"
+        subquery = f"{task.id}: {task.arguments['query']}"
         subqa = []
         for pt in task.parents:
             subq = f"{pt.id}: {pt.arguments['query']}"
@@ -155,7 +156,7 @@ Thought: The question asks about the origin of the last name Sylvester during th
             suba = str(result["response"])
             subqa.append(f"{subq}\n{suba}")
         subqa = "\n\n".join(subqa)
-        request = f"{system_instruction}\nDocs:\n{formatted_docs}\nQuestions:\n{subqa}\n{query}"
+        request = f"{system_instruction}\nDocs:\n{formatted_docs}\nQuestions:\n{subqa}\n{subquery}"
 
         # print(f"Reasoner request = {request}")
         response = await self.llm.acall(request)
