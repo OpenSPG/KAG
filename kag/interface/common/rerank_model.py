@@ -105,6 +105,9 @@ class RerankModelABC(Registrable):
             try:
                 sorted_idx = self.compute_index(query, passages)
             except Exception as e:
+                import traceback
+
+                traceback.print_exc()
                 logger.warning(
                     f"failed to compute reranked index, fallback to origin rank, info: {e}"
                 )
