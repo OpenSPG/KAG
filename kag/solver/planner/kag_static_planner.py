@@ -73,19 +73,19 @@ class KAGStaticPlanner(PlannerABC):
     async def finish_judger(self, query: str, answer: str):
         finish_prompt = f"""
         # Task
-        Providing a question and its answer: your task is to analyze whether the qa process has completed.
+        Providing a question and its prediction: your task is to analyze whether the qa process has completed.
         # Question
         {query}
         # Prediction
         {answer}
 
-        Has the question been successfully answered? You output should only be "Yes" or "No".
+        Is the prediction indicates insufficient information or not? You output should only be "Yes" or "No".
         """
         try:
             response = await self.llm.acall(prompt=finish_prompt)
             if response.strip().lower() == "yes":
-                return True
-            return False
+                return False
+            return True
         except Exception as e:
             print(f"Failed to run finish_judger, info: {e}")
             import traceback
