@@ -7,12 +7,12 @@ import time
 import logging
 
 from kag.common.conf import KAG_CONFIG
+from kag.common.config import get_default_chat_llm_config
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.one_hop_graph import RetrievedData, KgGraph
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
     FlowComponent,
 )
-
 
 logger = logging.getLogger()
 
@@ -39,17 +39,44 @@ class KAGFlow:
         self.flow_str = flow_str.strip()
         self.graph = nx.DiGraph()
         self.nodes: Dict[str, FlowComponent] = {}
-        self.parse_flow()
         self.graph_data = graph_data
         self.flow_id = flow_id
+
+        self.default_flow_component = {
+            "kg_cs": {
+                "path_select": {
+                    "type": "exact_one_hop_select"
+                },
+                "type": "kg_cs_open_spg"
+            },
+            "kg_fr": {
+                "path_select": {
+                    "llm_client": get_default_chat_llm_config(),
+                    "type": "fuzzy_one_hop_select"
+                },
+                "type": "kg_fr_open_spg"
+            },
+            "rc": {
+                "ppr_chunk_retriever_tool": {
+                    "llm_client": get_default_chat_llm_config(),
+                    "type": "ppr_chunk_retriever"
+                },
+                "reranker": {
+                    "type": "rerank_by_vector"
+                },
+                "type": "rc_open_spg"
+            }
+        }
+        self.parse_flow()
 
     def _add_node(self, node_name: str):
         # Add a node to the graph if it doesn't already exist
         if node_name not in self.nodes:
-            if node_name not in KAG_CONFIG.all_config.keys():
+            if node_name not in KAG_CONFIG.all_config.keys() and node_name not in self.default_flow_component.keys():
                 raise ValueError(f"Unknown node type: {node_name}")
+            component_conf = KAG_CONFIG.all_config.get(node_name, self.default_flow_component.get(node_name))
             self.nodes[node_name] = FlowComponent.from_config(
-                KAG_CONFIG.all_config[node_name]
+                component_conf
             )
 
     def _add_edge(self, src: str, dst: str):

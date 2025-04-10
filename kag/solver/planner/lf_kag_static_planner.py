@@ -10,9 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import re
-from typing import List
+from typing import List, Optional
 
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC
+from kag.interface.solver.reporter_abc import ReporterABC
 
 
 @PlannerABC.register("lf_kag_static_planner")
@@ -63,7 +64,7 @@ class KAGLFStaticPlanner(PlannerABC):
         Returns:
             bool: True if query contains dynamic parameter references (e.g., {{1.output}})
         """
-        return len(task.parents) > 0
+        return task.arguments.get('is_need_rewrite', False)
 
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
@@ -74,7 +75,13 @@ class KAGLFStaticPlanner(PlannerABC):
         Returns:
             str: Rewritten query with resolved dynamic references
         """
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+
         query = task.arguments['query']
+        tag_id = f"{query}_begin_task"
+
+        if reporter:
+            reporter.add_report_line(segment="thinker", tag_name=tag_id, content="", status="INIT", step=task.name, overwrite=False)
         # print(f"Old query: {query}")
         context = self.format_context(task)
         new_query = await self.llm.ainvoke(
@@ -83,7 +90,7 @@ class KAGLFStaticPlanner(PlannerABC):
                 "content": context,
             },
             self.rewrite_prompt,
-            segment_name="thinker",
+            segment_name=tag_id,
             tag_name="Rewrite query",
             with_json_parse=self.rewrite_prompt.is_json_format(),
             **kwargs,
@@ -92,7 +99,6 @@ class KAGLFStaticPlanner(PlannerABC):
         if logic_form_node:
             logic_form_node.sub_query = new_query
             return {
-                "query": new_query,
                 "logic_form_node": logic_form_node
             }
         # print(f"query rewrite context = {context}")
@@ -113,18 +119,25 @@ class KAGLFStaticPlanner(PlannerABC):
             List[Task]: Generated task sequence
         """
         num_iteration = kwargs.get("num_iteration", 0)
+        retry_num = 3
+        while retry_num > 0:
+            try:
+                return self.llm.invoke(
+                    {
+                        "query": query,
+                        "executors": kwargs.get("executors", []),
+                    },
+                    self.plan_prompt,
+                    with_json_parse=self.plan_prompt.is_json_format(),
+                    segment_name="thinker",
+                    tag_name=f"Static planning {num_iteration}",
+                    **kwargs,
+                )
+            except Exception as e:
+                retry_num -= 1
+                if retry_num == 0:
+                    raise e
 
-        return self.llm.invoke(
-            {
-                "query": query,
-                "executors": kwargs.get("executors", []),
-            },
-            self.plan_prompt,
-            with_json_parse=self.plan_prompt.is_json_format(),
-            segment_name="thinker",
-            tag_name=f"Static planning {num_iteration}",
-            **kwargs,
-        )
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.
