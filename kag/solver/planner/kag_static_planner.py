@@ -70,6 +70,23 @@ class KAGStaticPlanner(PlannerABC):
         pattern = r"\{\{\d+\.output\}\}"
         return bool(re.search(pattern, str(query)))
 
+    async def finish_judger(self, query: str, answer: str):
+        finish_prompt = f"""
+        # Task
+        Providing a question and its answer: your task is to analyze whether the qa process has completed.
+        # Question
+        {query}
+        # Prediction
+        {answer}
+
+        Has the question been successfully answered? You output should only be "Yes" or "No".
+        """
+
+        response = await self.llm.acall(prompt=finish_prompt)
+        if response.strip().lower() == "yes":
+            return True
+        return False
+
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
 

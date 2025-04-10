@@ -61,7 +61,7 @@ As an advanced reading comprehension assistant, your task is to answer complex m
 NOTE:
 1. I hope your answer matches the answer exactly, so ENSURE that the answer following "Answer:" is concise, such as 14 May, 1832  or yes. THE SHORTER, THE BETTER!!
 2. If the answer is a date, please provide the full date as much as possible, such as 18 May, 1932.3. Pay attention to the differences in part of speech, such as "Japan" and "Japanese," and provide the accurate format according to the question.
-3. If you believe the provided documents cannot answer the question, response with Answer: UNKNOWN.
+3. If you believe the provided documents cannot answer the question, response with Answer: UNKNOWN. 
 """
 
         prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}Question: {query}"
@@ -69,6 +69,4 @@ NOTE:
         if "Answer: " not in response:
             raise ValueError(f"no answer found in response: {response}")
         answer = response.split("Answer:")[1].strip()
-        if "UNKNOWN" in answer:
-            return None
         return answer
