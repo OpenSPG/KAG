@@ -70,8 +70,8 @@ def evaluate_qa(qa_file: str):
     # 定义处理单个QA项的函数
     def process_qa_item(item):
         # 处理标准答案（可能是列表）
-        if isinstance(item["answer"], list):
-            standard_answer = item["answer"][0]  # 取第一个答案
+        if isinstance(item["answer"], list) and len(item["answer"]) > 0:
+            standard_answer = item["answer"][0]
         else:
             standard_answer = item["answer"]
 
@@ -171,15 +171,23 @@ def parse_result_file(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         content = file.read().strip().split("\n\n")  # 分块处理
         for block in content:
-            lines = block.strip().split("\n")
-            id_ = lines[0].split(":")[1].strip()  # 提取序号
-            question = lines[1].split(":")[1].strip()  # 提取问题
-            prediction = lines[2].split(":")[1].strip()  # 提取答案
-            result_data.append({
-                "id": id_,
-                "question": question,
-                "prediction": prediction
-            })
+            id_ = question = prediction = None
+            for line in block.strip().split("\n"):
+                if line.startswith("序号:"):
+                    id_ = line.split("序号:")[1].strip()
+                elif line.startswith("问题:"):
+                    question = line.split("问题:")[1].strip()
+                elif line.startswith("答案:"):
+                    prediction = line.split("答案:")[1].strip()
+
+            if id_ and question and prediction:
+                result_data.append({
+                    "id": id_,
+                    "question": question,
+                    "prediction": prediction
+                })
+            else:
+                print(f"Skipping block due to missing data:\n{block}")
     return result_data
 
 

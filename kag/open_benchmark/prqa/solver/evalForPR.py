@@ -451,12 +451,12 @@ if __name__ == "__main__":
     llm_client = LLMClient.from_config(KAG_CONFIG.all_config["openie_llm"])
     processor = EnhancedQuestionProcessor(llm_client)
 
-    with open("./solver/data/test.json", 'r', encoding='utf-8') as f:
+    with open("./data/test.json", 'r', encoding='utf-8') as f:
         test_data = json.load(f)
 
-    processor.process_all_items_single(test_data, output_file='./solver/data/result.txt')
+    processor.process_all_items_single(test_data, output_file='./data/result.txt')
     # processor.process_all_items_parallel(test_data,
-    #                                      output_file='./solver/data/result.txt',
+    #                                      output_file='./data/result.txt',
     #                                      max_workers=5)
 
 
