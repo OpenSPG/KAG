@@ -866,7 +866,7 @@ class MarkDownReader(ReaderABC):
                     length_500_list.append(chunk)
                 elif len(chunk.content) <= 500:
                     length_smal_list.append(chunk)
-        return chunks, subgraph
+        return chunks  # , subgraph
 
 
 @ReaderABC.register("yuque")
@@ -915,7 +915,6 @@ class YuequeReader(MarkDownReader):
 
 
 if __name__ == "__main__":
-
     reader = ReaderABC.from_config(
         {
             "type": "md",
