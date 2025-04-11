@@ -35,7 +35,7 @@ class DefaultRewriteSubTaskQueryPrompt(PromptABC):
             "answer": "What is the birth year of Edith Carlmar"
         }
     ],
-    "output_format": "only output re-writed question",
+    "output_format": "Only output rewritten questions and generate all possible as you can",
     "content": "$content",
     "question": "$input"
 }
