@@ -13,16 +13,18 @@
 import os
 import re
 import numpy as np
+import logging
 import torch
 import igraph as ig
 from typing import Dict, List
 from tqdm import tqdm
 from threading import Lock
+logger = logging.getLogger()
 
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     RelationData,
-    OneHopGraphData,
+    OneHopGraphData, Prop,
 )
 from kag.common.checkpointer import CheckpointerManager
 from kag.tools.graph_api.model.table_model import TableData
@@ -204,7 +206,7 @@ class MemoryGraph:
     def _create_entity_from_vertex(vertex, biz_id=None, label=None) -> EntityData:
         attributes = vertex.attributes()
         entity = EntityData()
-        entity.prop = None
+        entity.prop = Prop.from_dict(attributes, None, None)
         entity.biz_id = attributes.get("id", biz_id)
         entity.name = attributes.get("name", "")
         entity.description = attributes.get("description", "")
@@ -219,7 +221,7 @@ class MemoryGraph:
     ) -> RelationData:
         attributes = edge.attributes()
         relation = RelationData()
-        relation.prop = None
+        relation.prop = Prop.from_dict(attributes, None, None)
         relation.from_id = from_entity.biz_id
         relation.end_id = end_entity.biz_id
         relation.from_entity = from_entity
@@ -262,9 +264,12 @@ class MemoryGraph:
         """
         reset_prob = np.zeros(self._backend_graph.vcount())
         for start_node in start_nodes:
-            node_name = start_node["id"]
-            node_id = self.name2id[node_name]
-            reset_prob[node_id] = 1
+            node_name = start_node.get("id", start_node.get("name"))
+            try:
+                node_id = self.name2id[node_name]
+                reset_prob[node_id] = 1
+            except:
+                logger.info(f"name2id is empty {node_name}")
         scores = self._backend_graph.personalized_pagerank(
             vertices=range(self._backend_graph.vcount()),
             damping=kwargs.get("damping", 0.1),
@@ -294,10 +299,7 @@ class MemoryGraph:
                 )
             return output
         except:
-            import traceback
-
-            print("Failed to run PPR chunk retrieval return [], detail info:")
-            traceback.print_exc()
+            logger.info(f"Failed to run PPR chunk retrieval return [], input={start_nodes}", exc_info=True)
             return []
 
     def dpr_chunk_retrieval(self, query_vector, topk=10, **kwargs):
@@ -413,7 +415,8 @@ class MemoryGraph:
                 device
             )
             self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
-
+        if filtered_vectors.numel() == 0:
+            return []
         query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
         cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
@@ -426,6 +429,8 @@ class MemoryGraph:
             for index, score in zip(top_indices[:, idx], top_values[:, idx]):
                 node = filtered_nodes[index.item()]
                 node_attributes = node.attributes()
+                if "__labels__" not in node_attributes:
+                    node_attributes["__labels__"] = list(set([node_attributes.get("label"), "Entity"]))
                 items.append({"node": node_attributes, "score": score.item()})
             output.append(items)
         return output

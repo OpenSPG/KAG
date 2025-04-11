@@ -17,7 +17,7 @@ from kag.tools.graph_api.model.table_model import TableData
 logger = logging.getLogger()
 
 
-@GraphApiABC.register("memory_graph_api", as_default=True)
+@GraphApiABC.register("memory_graph_api")
 class MemoryGraphApi(GraphApiABC):
     def __init__(self, graph_path, vectorize_model=None, **kwargs):
         super().__init__(**kwargs)
@@ -47,7 +47,12 @@ class MemoryGraphApi(GraphApiABC):
     def calculate_pagerank_scores(
         self, target_vertex_type, start_nodes: List[Dict]
     ) -> Dict:
-        return self.graph.calculate_pagerank_scores(start_nodes)
+        ppr_list = self.graph.ppr_chunk_retrieval(start_nodes)
+        ppr_result = {}
+        for node in ppr_list:
+            ppr_result[node["node"]["id"]] = node["score"]
+
+        return ppr_result
 
     def get_entity_prop_by_id(self, biz_id, label) -> Dict:
         entity: EntityData = self.graph.get_entity(biz_id=biz_id, label=label)
