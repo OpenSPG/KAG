@@ -229,9 +229,9 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     def _get_dep_task_id(self, logic_forms):
         all_alias_index_map = {}
         def add_index_map(alias, index):
-            index_set = all_alias_index_map.get(alias, [])
-            index_set.append(index)
-            all_alias_index_map[alias] = index_set
+            if alias in all_alias_index_map.keys():
+                return
+            all_alias_index_map[alias] = index
         for i, logic_form in enumerate(logic_forms):
             if isinstance(logic_form, GetSPONode):
                 add_index_map(logic_form.s.alias_name.alias_name, i)
@@ -242,47 +242,42 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
 
         return all_alias_index_map
 
-    def _get_task_dep(self, logic_node, dep_task):
-        if isinstance(logic_node, GetSPONode) or isinstance(logic_node, GetNode):
-            return None
+    def _get_task_dep(self, index, logic_node, dep_task):
         ret = []
+        def add_dep_by_index(alias_name):
+            alias_index = dep_task[alias_name]
+            if alias_index < index:
+                ret.append(alias_index)
+        if isinstance(logic_node, GetSPONode):
+            add_dep_by_index(logic_node.s.alias_name.alias_name)
+            add_dep_by_index(logic_node.p.alias_name.alias_name)
+            add_dep_by_index(logic_node.o.alias_name.alias_name)
+        if isinstance(logic_node, GetNode):
+            return []
+
         if isinstance(logic_node, MathNode) or isinstance(logic_node, DeduceNode):
             for alias in dep_task.keys():
                 if alias in logic_node.content:
-                    ret.extend(dep_task[alias])
+                    ret.append(dep_task[alias])
         return ret
 
 
     def parse_response(self, response: str, **kwargs):
-        """
- "output": {
-                "0": {
-                    "executor": "Retriever",
-                    "dependent_task_ids": [],
-                    "arguments": {"query": "张学友出演过的电影列表"},
-                },
-                "1": {
-                    "executor": "Retriever",
-                    "dependent_task_ids": [],
-                    "arguments": {"query": "刘德华出演过的电影列表"},
-                },
-            }
-
-        """
         sub_queries, logic_forms = self.parse_steps(response)
         logic_forms = self._parse_lf(sub_queries, logic_forms)
         tasks_dep = {}
         alias_dep = self._get_dep_task_id(logic_forms)
-
         for i, logic_form in enumerate(logic_forms):
-            deps = self._get_task_dep(logic_form, alias_dep)
+            deps = self._get_task_dep(i, logic_form, alias_dep)
             if not deps:
-                deps = [] if i ==0 else [i - 1]
+                task_deps = [] if i ==0 else [i - 1]
+            else:
+                task_deps = deps
 
             tasks_dep[i] = {
                 "name": f"Step{i+1}",
                 "executor": logic_form.operator,
-                "dependent_task_ids": deps,
-                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form},
+                "dependent_task_ids": task_deps,
+                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form, "is_need_rewrite": True if deps else False},
             }
         return Task.create_tasks_from_dag(tasks_dep)

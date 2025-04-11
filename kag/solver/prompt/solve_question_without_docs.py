@@ -13,6 +13,7 @@ class SolveQuestionWithOutDocs(PromptABC):
 3.根据提供的信息生成答案。如果可能有多个答案，请生成所有答案。
 4.如果没有合适的答案，请回答“I don't know”。
 5.给出答案的同时，也给出理由
+6.输出格式不要换行
 历史：
 $history
 知识图：
@@ -28,6 +29,7 @@ Requirement:
 3. Generate answers based on the provided information. If multiple answers are possible, generate all of them.
 4. If there is no suitable answer, answer 'I don't know'.
 5. Provide the answer and also provide the reason.
+6. Output format should not have line breaks.
 history:
 $history
 
