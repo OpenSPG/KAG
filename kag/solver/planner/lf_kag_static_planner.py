@@ -51,6 +51,8 @@ class KAGLFStaticPlanner(PlannerABC):
                 - result: Execution result of the parent task
         """
         def to_str(context):
+            if not context or 'task' not in context:
+                return ""
             return f"""{context['name']}:{context['task']}
 answer: {context['result']}.{context.get('thought', '')}"""
         if not tasks:
@@ -61,7 +63,9 @@ answer: {context['result']}.{context.get('thought', '')}"""
         for task in tasks:
             # get all prvious tasks from context.
             formatted_context.extend(self.format_context(task.parents))
-            formatted_context.append(to_str(task.get_task_context(with_all=True)))
+            res = to_str(task.get_task_context(with_all=True))
+            if res:
+                formatted_context.append(res)
         return formatted_context
 
     def check_require_rewrite(self, task: Task):

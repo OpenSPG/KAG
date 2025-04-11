@@ -84,7 +84,8 @@ class EntityLinking(ToolABC):
             sematic_match_score_map[i[0]] = i[1]
         for node in candis_nodes:
             recall_node_label = get_recall_node_label(node["node"]["__labels__"])
-            if recall_node_label == sematic_type:
+            without_prefix_label = self.schema_helper.get_label_without_prefix(recall_node_label)
+            if without_prefix_label.lower() == sematic_type.lower():
                 node["type_match_score"] = node["score"]
             elif (
                 "semanticType" not in node["node"].keys()
@@ -131,20 +132,23 @@ class EntityLinking(ToolABC):
         # 4. Text search fallback
         # 5. Semantic type re-ranking
         # 6. Final filtering and sorting
-        try:
-            retdata = []
-            if name is None:
-                return retdata
+        retdata = []
+        if name is None:
+            return retdata
 
-            # Determine the query type based on the entity's standard type or set it to "Entity" if not specified
-            query_type = type_name
-            if query_type is None:
-                query_type = "Entity"
-                with_prefix_type = query_type
-            else:
-                with_prefix_type = self.schema_helper.get_label_within_prefix(
-                    query_type
-                )
+        # Determine the query type based on the entity's standard type or set it to "Entity" if not specified
+        query_type = type_name
+        if query_type is None:
+            query_type = "Entity"
+            with_prefix_type = query_type
+        else:
+            with_prefix_type = self.schema_helper.get_label_within_prefix(
+                query_type
+            )
+            if with_prefix_type == query_type:
+                with_prefix_type = "Entity"
+
+        try:
 
             recall_topk = topk_k or self.top_k
 
@@ -209,7 +213,7 @@ class EntityLinking(ToolABC):
 
             if "entity" not in query_type.lower():
                 text_search_start_time = time.time()
-                sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
+                # sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
                 logger.info(
                     f"`{name}`  rerank_sematic_type completed in {time.time() - text_search_start_time:.2f} seconds. Found {len(sorted_nodes)} nodes."
                 )
@@ -238,7 +242,7 @@ class EntityLinking(ToolABC):
 
             return retdata[: self.top_k]
         except Exception as e:
-            logger.error(f"Error in entity_linking: {e}")
+            logger.error(f"Error in entity_linking {query} name={name} type={with_prefix_type}: {e}", exc_info=True)
             return []
 
     def schema(self):
