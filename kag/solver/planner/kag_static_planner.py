@@ -73,13 +73,12 @@ class KAGStaticPlanner(PlannerABC):
     async def finish_judger(self, query: str, answer: str):
         finish_prompt = f"""
         # Task
-        Providing a question and its prediction: your task is to analyze whether the qa process has completed.
-        # Question
-        {query}
-        # Prediction
+        The answer is a response to a question. Please determine whether the content of this answer is invalid, such as  "UNKNOWN", "I don't know" or "Insufficient Information."  \n
+        If the answer is invalid, return "Yes", otherwise, return "No".\n
+        You output should only be "Yes" or "No".\n
+        
+        # Answer\n
         {answer}
-
-        Is the prediction indicates insufficient information or not? You output should only be "Yes" or "No".
         """
         try:
             response = await self.llm.acall(prompt=finish_prompt)
