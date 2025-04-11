@@ -116,6 +116,7 @@ class EvidenceBasedReasoner(ExecutorABC):
         query_entities = []
         for entity in candidate_entities:
             query_entities.append(entity.entity_name)
+        query_entities += self.memory_graph.named_entity_recognition(query)
         query_entity_vector = self.vectorize_model.vectorize(query_entities)
 
         top_entities = self.memory_graph.batch_vector_search(
