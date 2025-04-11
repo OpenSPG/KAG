@@ -15,7 +15,7 @@ class Evaluate:
     def __init__(self, embedding_factory="text-embedding-ada-002"):
         self.embedding_factory = embedding_factory
 
-    def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
+    def evaForSimilarity(self, predictionlist: List[str], goldlist: List[List[str]]):
         """
         evaluate the similarity between prediction and gold #TODO
         """
@@ -32,7 +32,7 @@ class Evaluate:
         # return np.average(score.to_pandas()[['answer_similarity']])
         return 0.0
 
-    def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
+    def getBenchMark(self, predictionlist: List[str], goldlist: List[List[str]]):
         """
         Calculates and returns evaluation metrics between predictions and ground truths.
 
@@ -50,12 +50,18 @@ class Evaluate:
         total_metrics = {"em": 0.0, "f1": 0.0, "answer_similarity": 0.0}
 
         # Iterate over prediction and gold lists to calculate EM and F1 scores
-        for prediction, gold in zip(predictionlist, goldlist):
-            em, f1 = get_em_f1(
-                prediction, gold
-            )  # Call external function to calculate EM and F1
-            total_metrics["em"] += em  # Accumulate EM score
-            total_metrics["f1"] += f1  # Accumulate F1 score
+        for prediction, golds in zip(predictionlist, goldlist):
+            max_em = 0
+            max_f1 = 0
+            for gold in golds:
+                em, f1 = get_em_f1(
+                    prediction, gold
+                )  # Call external function to calculate EM and F1
+                max_em = max(max_em, em)  # Update max EM
+                max_f1 = max(max_f1, f1)  # Update max F1
+
+            total_metrics["em"] += max_em  # Accumulate EM score
+            total_metrics["f1"] += max_f1  # Accumulate F1 score
 
         # Calculate average EM and F1 scores
         total_metrics["em"] /= len(predictionlist)

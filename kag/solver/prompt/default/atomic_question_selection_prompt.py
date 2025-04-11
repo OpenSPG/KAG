@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 @PromptABC.register("atomic_question_selection_prompt")
 class AtomicQuestionSelectionPrompt(PromptABC):
     template_zh = f"""# 任务
- 你的任务是分析所提供的问题的上下文，从给定的问题列表中选择一个对回答指定问题最有帮助，最相关的子问题。避免选择根据给定上下文或你自己的知识已经可以回答的子问题。你只需要输出你觉得最合适的子问题，避免输出任何中间过程。
+ 你的任务是分析所提供的问题的上下文，从给定的问题列表中选择1~3个对回答指定问题最有帮助，最相关的子问题。避免选择根据给定上下文或你自己的知识已经可以回答的子问题。请按照格式直接输出最终json结果，避免输出任何中间过程。
  
  # 输出格式
  请以以下 JSON 格式输出：
  {{
      "thinking": <A string. Your thinking for this selection task.>,
-     "question_idx": <An integer, indicating a sub-question index from 1 to $num_atoms.>
+     "question_idx": <A list of integers, indicating 1~3 sub-questions index from 1 to $num_atoms.>
  }}
  
  # 上下文
@@ -35,13 +35,13 @@ class AtomicQuestionSelectionPrompt(PromptABC):
  # 您的输出："""
 
     template_en = f"""# Task
-  Your task is to analyze the context of the provided question and select a sub-question from the given list of questions that is the most helpful and relevant for answering the given question. Avoid choosing a sub-question that can already be answered based on the given context or your own knowledge. You only need to output the sub-question that you feel is most appropriate and avoid outputting any intermediate processes.
-  
+  Your task is to analyze the context of the provided questions carefully and select 1 to 3 sub-questions from the given list of questions that are most helpful and relevant for answering the given question. Avoid choosing sub-questions that can already be answered based on the given context or your own knowledge. Please follow the format to output the final json result directly and avoid outputting any intermediate processes.
+ 
  # Output Format
  Please output in following JSON format:
  {{
      "thinking": <A string. Your thinking for this selection task.>,
-     "question_idx": <An integer, indicating a sub-question index from 1 to $num_atoms.>
+     "question_idx": <A list of integers, indicating 1~3 sub-questions index from 1 to $num_atoms.>
  }}
  
  # Context
@@ -65,18 +65,18 @@ class AtomicQuestionSelectionPrompt(PromptABC):
             try:
                 rsp = json.loads(rsp.strip('```json').strip('```'))
             except Exception as e:
-                print(f"[AtomQuestionSelectionParser] content to decode: {rsp}")
+                print(f"[AtomQuestionSelectionParser] format error: {rsp}")
                 print(f"Exception: {e}")
                 return "", None
         try:
             thinking: str = rsp["thinking"]
-            question_idx = rsp["question_idx"]
-            if question_idx is not None and question_idx > 0:
-                return thinking, question_idx
+            question_idxs = rsp["question_idx"]
+            if question_idxs is not None:
+                return thinking, question_idxs
             else:
-                return f"failure, {thinking}", None
+                return f"failure, {thinking}", []
         except Exception as e:
-            print(f"[AtomQuestionSelectionParser] content to decode: {response}")
+            print(f"[AtomQuestionSelectionParser] content to decode: {rsp}")
             print(f"Exception: {e}")
-            return "", None
+            return "", []
 

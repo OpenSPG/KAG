@@ -135,6 +135,7 @@ class EvaForMusique:
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
+                gold_aliases = sample["answer_aliases"]
                 if question in ckpt:
                     print(f"found existing answer to question: {question}")
                     prediction, traceLog = ckpt.read_from_ckpt(question)
@@ -143,7 +144,7 @@ class EvaForMusique:
                     ckpt.write_to_ckpt(question, (prediction, traceLog))
 
                 evaObj = Evaluate()
-                metrics = evaObj.getBenchMark([prediction], [gold])
+                metrics = evaObj.getBenchMark([prediction], [[gold] + gold_aliases])
                 return sample_idx, sample_id, prediction, metrics, traceLog
             except Exception as e:
                 import traceback
@@ -202,20 +203,19 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     start_time = time.time()
-    experience_desc = "B12_both_V3" #data_planner_retrieval
+    experience_desc = "B12_pikeR5_em_V3_update_eval" #data_planner_retrieval
     filePath = "./data/musique_qa_dev.json"
-    # filePath = "./data/musique_qa_train.json"
 
     qaFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), filePath)
     resFilePath = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"{experience_desc}_res.json"
     )
-    total_metrics = evaObj.parallelQaAndEvaluate(
-        qaFilePath, resFilePath, threadNum=36, upperLimit=10000
-    )
-    # total_metrics = evaObj.QaAndEvaluate(
-    #     qaFilePath, resFilePath, upperLimit=10000
+    # total_metrics = evaObj.parallelQaAndEvaluate(
+    #     qaFilePath, resFilePath, threadNum=36, upperLimit=10000
     # )
+    total_metrics = evaObj.QaAndEvaluate(
+        qaFilePath, resFilePath, upperLimit=10000
+    )
 
     total_metrics["cost"] = time.time() - start_time
     with open(f"./{experience_desc}_metrics.json", "w") as f:

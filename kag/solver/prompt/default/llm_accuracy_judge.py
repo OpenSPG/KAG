@@ -17,41 +17,44 @@ from kag.interface import PromptABC
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("default_resp_judge")
-class RespJudge(PromptABC):
-    template_zh = (
-        "根据当前已知信息进行判断，不允许进行推理，"
-        "你能否完全并准确地回答这个问题'$instruction'?\n已知信息：'$memory'。"
-        "\n如果你能，请直接回复‘是’\n如果不能且需要更多信息，请直接回复‘否’。"
-    )
-    template_en = (
-        "Judging based solely on the current known information and without allowing for inference, "
-        "are you able to completely and accurately respond to the question '$instruction'? "
-        "\nKnown information: '$memory'. "
-        "\nIf you can, please reply with 'Yes' directly; "
-        "if you cannot and need more information, please reply with 'No' directly."
-    )
+@PromptABC.register("default_llm_accuracy_judge")
+class LlmAccuracyJudge(PromptABC):
+    template_zh = """
+    #任务
+    你的任务是判断给定问题的预测答案是否和该问题的标准答案一致。\n如果一致，请直接回复‘是’\n如果不一致，请直接回复‘否’，不要输出任何无关内容。
+    
+    #问题
+    $question
+    
+    #标准答案
+    $gold
+    
+    #预测答案
+    $predication
+    
+    #你的输出
+    """
+    template_en = """#task
+    Your task is to determine whether the predicted answer to a given question is consistent with the standard answer to that question. \n If it is consistent, please respond directly with 'yes' \n If it is not consistent, please respond directly with 'no' and do not output any irrelevant content.
+    
+    #question
+    $question
+    
+    #Standard answer
+    $gold
+    
+    #Predicted answer
+    $prediction
+    
+    #Your output"""
 
     @property
     def template_variables(self) -> List[str]:
-        return ["memory", "instruction"]
+        return ["question", "gold","prediction"]
 
-    def parse_response_en(self, satisfied_info: str):
-        if satisfied_info[:3] == "Yes":
+    def parse_response(self, satisfied_info: str, **kwargs):
+        if satisfied_info[:3] == "Yes" or satisfied_info[:3] == "yes":
             if_finished = True
         else:
             if_finished = False
         return if_finished
-
-    def parse_response_zh(self, satisfied_info: str):
-        if satisfied_info.startswith("是"):
-            if_finished = True
-        else:
-            if_finished = False
-        return if_finished
-
-    def parse_response(self, response: str, **kwargs):
-        logger.debug("推理器判别:{}".format(response))
-        if self.language == "en":
-            return self.parse_response_en(response)
-        return self.parse_response_zh(response)

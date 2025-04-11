@@ -113,29 +113,29 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
             "kg_answer": "",
         }
         # Execute graph retrieval operations.
-        # for n in lf.lf_nodes:
-        #     if self.retrieval_executor.is_this_op(n):
-        #         self.retrieval_executor.executor(
-        #             query, n, req_id, kg_graph, process_info, self.params
-        #         )
-        #     elif self.deduce_executor.is_this_op(n):
-        #         self.deduce_executor.executor(
-        #             query, n, req_id, kg_graph, process_info, self.params
-        #         )
-        #     elif self.math_executor.is_this_op(n):
-        #         self.math_executor.executor(
-        #             query, n, req_id, kg_graph, process_info, self.params
-        #         )
-        #     elif self.sort_executor.is_this_op(n):
-        #         self.sort_executor.executor(
-        #             query, n, req_id, kg_graph, process_info, self.params
-        #         )
-        #     elif self.output_executor.is_this_op(n):
-        #         self.output_executor.executor(
-        #             query, n, req_id, kg_graph, process_info, self.params
-        #         )
-        #     else:
-        #         logger.warning(f"unknown operator: {n.operator}")
+        for n in lf.lf_nodes:
+            if self.retrieval_executor.is_this_op(n):
+                self.retrieval_executor.executor(
+                    query, n, req_id, kg_graph, process_info, self.params
+                )
+            elif self.deduce_executor.is_this_op(n):
+                self.deduce_executor.executor(
+                    query, n, req_id, kg_graph, process_info, self.params
+                )
+            elif self.math_executor.is_this_op(n):
+                self.math_executor.executor(
+                    query, n, req_id, kg_graph, process_info, self.params
+                )
+            elif self.sort_executor.is_this_op(n):
+                self.sort_executor.executor(
+                    query, n, req_id, kg_graph, process_info, self.params
+                )
+            elif self.output_executor.is_this_op(n):
+                self.output_executor.executor(
+                    query, n, req_id, kg_graph, process_info, self.params
+                )
+            else:
+                logger.warning(f"unknown operator: {n.operator}")
 
 
         res.spo_retrieved = process_info[lf.query].get("spo_retrieved", [])
@@ -321,16 +321,18 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
 
     def atomic_queries_decomposition(self, query: str, history_context: str, **kwargs):
         try:
-            while True:
+            retry_time = 0
+            while retry_time < 3:
                 thinking, atomic_queries = self.llm_client.invoke(
                     {"query": query, "context": history_context},
                     self.atomic_query_decomposition_prompt,
                     with_except=False
                 )
-                if isinstance(atomic_queries, List):
+                retry_time += 1
+                if thinking != "llm error":
                     return thinking, atomic_queries
         except Exception as e:
-            print(f"Error in atomic_queries_decomposition: {str(e)}")
+            print(f"Error in atomic_queries_decomposition: {str(e)} of #{query}#")
             return "llm failure",[]
 
     def recall_atomic_chunk(self, atomic_query):
@@ -342,6 +344,7 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
 
     def atomic_infos_to_context_string(self, chosen_atomic_infos: List[AtomRetrievalInfo], limit: int=80000) -> str:
         context: str = ""
+
         chunk_id_set = set()
         for info in chosen_atomic_infos:
             if info.chunk_id in chunk_id_set:
@@ -359,23 +362,29 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         context = context.strip()
         return context
 
-    def select_suitable_chunk(self, ori_query, atomic_info_candidates, chosen_contexts: List[AtomRetrievalInfo]) -> AtomRetrievalInfo:
+    def select_suitable_chunk(self, ori_query, atomic_info_candidates, chosen_contexts: List[AtomRetrievalInfo]) -> List[AtomRetrievalInfo]:
         num_atomics = len(atomic_info_candidates)
         chosen_context_str = self.atomic_infos_to_context_string(chosen_contexts)
         atomic_list_str = ""
         for i, info in enumerate(atomic_info_candidates):
             atomic_list_str += f"Question {i + 1}: {info.atomic}\n"
 
-        thinking, question_idx = self.llm_client.invoke(
+        thinking, question_idxs = self.llm_client.invoke(
             {"query": ori_query, "num_atoms":num_atomics, "chosen_context": chosen_context_str, "aq_list_str": atomic_list_str},
             self.atomic_question_selection_prompt,
             with_except=False
         )
-        if question_idx is not None and question_idx > 0 and question_idx <= len(atomic_info_candidates):
-            chosen_info = atomic_info_candidates[question_idx - 1]
+        # if question_idx is not None and question_idx > 0 and question_idx <= len(atomic_info_candidates):
+        #     chosen_info = atomic_info_candidates[question_idx - 1]
+        #     return chosen_info
+        chosen_info = []
+        if len(question_idxs):
+            for question_idx in question_idxs:
+                if question_idx > 0 and question_idx <= len(atomic_info_candidates):
+                    chosen_info.append(atomic_info_candidates[question_idx - 1])
             return chosen_info
         else:
-            return None
+            return []
 
     def atomic_info_to_lf_history(self, chosen_contexts: List[AtomRetrievalInfo]) -> List[LFPlan]:
         history = []
@@ -399,7 +408,7 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
         chosen_contexts: List[AtomRetrievalInfo] = []
 
         while iteration_count < max_iteration:
-            chosen_context_str = self.atomic_infos_to_context_string(chosen_contexts) if chosen_contexts else ""
+            chosen_context_str = self.atomic_infos_to_context_string(chosen_contexts) if len(chosen_contexts) > 0 else ""
             # Step 1: Let LLM client provide a decomposition proposal with current context.
             thinking, atomic_queries = self.atomic_queries_decomposition(query, chosen_context_str)
 
@@ -429,40 +438,43 @@ class LFWithAtomicQuestionExecutor(LFExecutorABC):
 
             #Step 3: Choice related history atomic question answer
             chosen_atomic_info = self.select_suitable_chunk(query, atomic_info_candidates, chosen_contexts)
-            chosen_contexts.append(chosen_atomic_info)
+            chosen_contexts.extend(chosen_atomic_info)
 
         history = self.atomic_info_to_lf_history(chosen_contexts)
+        return history
 
         # Last Step: Let LLM client answer the original question with all chosen atom information during the loop above.
-        res = self.merger.merge(query, history)
-        res.retrieved_kg_graph = KgGraph()
-        res.kg_exact_solved_answer = ""
-        return res
+        # res = self.merger.merge(query, history)
+        # res.retrieved_kg_graph = KgGraph()
+        # res.kg_exact_solved_answer = ""
+        # return res
 
     def execute(self, query, lf_nodes: List[LFPlan], **kwargs) -> LFExecuteResult:
         execute_with_aq_flag = True
         # execute_with_aq_flag = False
         max_iteration = 5
+        history = []
 
         if execute_with_aq_flag:
-            return self.execute_with_aq(query, max_iteration)
+            history.extend(self.execute_with_aq(query, max_iteration))
+
         process_info = {"kg_solved_answer": []}
         kg_graph = KgGraph()
-        history = []
         # Process each sub-query.
-        for idx, lf in enumerate(lf_nodes):
-            sub_result = self._execute_lf(
-                req_id=generate_random_string(10),
-                index=idx + 1,
-                query=query,
-                lf=lf,
-                process_info=process_info,
-                kg_graph=kg_graph,
-                history=history,
-                **kwargs,
-            )
-            lf.res = sub_result
-            history.append(lf)
+        # for idx, lf in enumerate(lf_nodes):
+        #     sub_result = self._execute_lf(
+        #         req_id=generate_random_string(10),
+        #         index=idx + 1,
+        #         query=query,
+        #         lf=lf,
+        #         process_info=process_info,
+        #         kg_graph=kg_graph,
+        #         history=history,
+        #         **kwargs,
+        #     )
+        #     lf.res = sub_result
+        #     history.append(lf)
+
         # merge all results
         res = self.merger.merge(query, history)
         res.retrieved_kg_graph = kg_graph

@@ -99,7 +99,7 @@ class EvaForMusique:
                 if param in total_recall:
                     total_recall[param] += value
         result_recall = {
-            "LLM Accuracy": total_accuracy,
+            "LLM Accuracy": (total_accuracy*100)/count,
             **total_recall
         }
         for inx, value in  total_recall.items():
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     evaObj = EvaForMusique()
 
     current_script_dir = os.path.abspath(os.path.dirname(__file__))  # 当前脚本所在目录
-    # current_script_dir = '/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique_pike/solver/results/4_7_result'
+    # current_script_dir = '/Users/laven/Desktop/常识知识图谱/源代码/Semantic_KAG/KAG/dep/KAG/kag/examples/musique_pike/solver/results/4_9_result'
 
     for file_name in os.listdir(current_script_dir):  # 遍历脚本所在目录
         if file_name.endswith("_res.json"):  # 筛选符合条件的文件
@@ -192,4 +192,3 @@ if __name__ == "__main__":
                 print(f"文件处理成功: {file_name} -> {recall_file_name}")
             except Exception as e:
                 print(f"文件处理失败: {file_path}, 错误: {e}")
-

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 @PromptABC.register("atomic_query_decomposition_prompt")
 class AtomicQueryPlanPrompt(PromptABC):
     template_zh = f"""# 任务
-你的任务是分析给定上下文信息，判断是否已经能够回答给出的question。如果不能，请为当前问题提出一组原子性的子问题，这些原子问题能够帮助你更好的回答问题，补全回答问题所需的信息。你需要从不同角度进行思考，并且尽可能的提出多样化的问题。
+你的任务是分析给定上下文信息，随后结合已有上下文信息，为当前问题提出一组原子性的子问题，这些原子问题能够帮助你更好的回答问题。你需要从不同角度进行思考，并且尽可能的提出多样化的问题。
 需要注意的是，原子问题之间尽量避免出现答案的依赖关系。如果已经上下文信息已经可以准确回答问题，sub_questions可以是空列表。
 
 # 输出格式
@@ -56,12 +56,14 @@ $query
         rsp = response
         if isinstance(rsp, str):
             try:
-                rsp = json.loads(rsp.strip('```json').strip('```'))
+                rsp = json.loads(rsp.replace('```json','').replace('```',''))
             except Exception as e:
                 print(f"[QuestionDecompositionParser] content to decode: {rsp}")
                 print(f"Exception: {e}")
-                return "", []
+                return "llm error", []
         if isinstance(rsp, dict) and "sub_questions" in rsp:
             thinking  = rsp["thinking"]
             sub_questions = rsp["sub_questions"]
-        return thinking, sub_questions
+            return thinking, sub_questions
+        else:
+            "", []
