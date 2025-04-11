@@ -51,9 +51,9 @@ cd builder && python indexer.py && cd ..
 
 ### Step 6：执行 QA 任务
 
-首先在 [evalForPR.py](evalForPR.py) 代码的main函数中填入neo4j的用户名和密码
+首先在 [evalForPR.py](solver/evalForPR.py) 代码的main函数中填入neo4j的用户名和密码
 
-在 [solver](./solver) 目录执行 [evalForPR.py](evalForPR.py) 生成答案并计算 EM 和 F1 指标。
+在 [solver](./solver) 目录执行 [evalForPR.py](solver/evalForPR.py) 生成答案
 
 ```bash
 cd solver && python evalForPR.py && cd ..
