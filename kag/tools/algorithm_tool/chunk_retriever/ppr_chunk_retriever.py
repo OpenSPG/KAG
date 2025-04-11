@@ -76,10 +76,10 @@ class PprChunkRetriever(ToolABC):
         )
         self.pagerank_threshold = pagerank_threshold
         self.text_chunk_retriever = text_chunk_retriever or TextChunkRetriever(
-            search_api=search_api
+            search_api=self.search_api
         )
         self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(
-            vectorize_model=self.vectorize_model, search_api=search_api
+            vectorize_model=self.vectorize_model, search_api=self.search_api
         )
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
@@ -109,6 +109,7 @@ class PprChunkRetriever(ToolABC):
                         continue
                     start_node_set.append(
                         {
+                            "id": s.biz_id,
                             "name": s.name,
                             "type": s.type,
                         }
@@ -333,7 +334,7 @@ class PprChunkRetriever(ToolABC):
         if len(matched_entities):
             pagerank_scores = self.calculate_pagerank_scores(matched_entities)
         else:
-            pagerank_scores = []
+            pagerank_scores = {}
         logger.info(
             f"PageRank calculation completed in {time.time() - pagerank_start_time:.2f} seconds."
         )

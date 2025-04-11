@@ -248,7 +248,7 @@ class KagHybridExecutor(ExecutorABC):
         start_time = time.time()  # 添加开始时间记录
         kag_response = initialize_response(task)
         tag_id = f"{task_query}_begin_task"
-        flow_query = task_query if logic_node is None else logic_node.sub_query
+        flow_query = task_query
 
         try:
 

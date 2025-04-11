@@ -3,10 +3,9 @@ from typing import List
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import VectorizeModelABC
 from kag.tools.search_api.search_api_abc import SearchApiABC
-from knext.search.client import SearchClient
 
 
-@SearchApiABC.register("memory_search_api", as_default=True)
+@SearchApiABC.register("memory_search_api")
 class MemorySearchAPI(SearchApiABC):
     def __init__(self, graph_path, vectorize_model=None, **kwargs):
         super().__init__(**kwargs)
@@ -32,6 +31,7 @@ class MemorySearchAPI(SearchApiABC):
         res = self.graph.batch_vector_search(label=label, property_key=property_key, query_vector=[query_vector], topk=topk)
         if res:
             return res[0]
+        return []
 
 if __name__ == "__main__":
     vectorize_model = VectorizeModelABC.from_config({

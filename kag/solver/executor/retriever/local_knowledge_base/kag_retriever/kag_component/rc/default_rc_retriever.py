@@ -190,6 +190,8 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             if len(return_query) == 0:
                 return_query = [sub_query]
             return return_query
+        elif isinstance(sub_query, list):
+            return sub_query
         else:
             return [sub_query]
 
@@ -208,6 +210,8 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             if logic_node.get_fl_node_result().summary:
                 used_lf.append(logic_node)
                 continue
+
+            sub_query_tag = str(logic_node.sub_query)
             # Start processing a new logic node
             logger.info(
                 f"`{query}` Processing logic node with sub-query: {logic_node.sub_query}"
@@ -216,14 +220,14 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             if reporter:
                 reporter.add_report_line(
                     kwargs.get("segment_name", "thinker"),
-                    f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                    f"begin_sub_kag_retriever_{sub_query_tag}_{component_name}",
                     logic_node.sub_query,
                     "INIT",
                     component_name=component_name
                 )
                 reporter.add_report_line(
                     kwargs.get("segment_name", "thinker"),
-                    f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                    f"begin_sub_kag_retriever_{sub_query_tag}_{component_name}",
                     "executing",
                     "RUNNING",
                     component_name=component_name
@@ -232,7 +236,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 history=used_lf,
                 sub_query=logic_node.sub_query,
                 reporter=reporter,
-                tag_name=f"rc_retriever_rewrite_{logic_node.sub_query}",
+                tag_name=f"rc_retriever_rewrite_{sub_query_tag}",
             )
             logger.info(f"`{query}` Rewritten queries: {rewrite_queries}")
             entities = []
@@ -246,8 +250,9 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     entities.extend(o_entities)
                 selected_rel = graph_data.get_all_spo()
                 entities = list(set(entities))
+            queries = list(set([query] + rewrite_queries))
             chunks, match_spo = self.ppr_chunk_retriever_tool.invoke(
-                queries=[query] + rewrite_queries,
+                queries=queries,
                 start_entities=entities,
                 top_k=self.top_k,
             )
@@ -281,7 +286,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 history=used_lf,
                 reporter=reporter,
                 segment_name=kwargs.get("segment_name", "thinker"),
-                tag_name=f"rc_retriever_summary_{logic_node.sub_query}",
+                tag_name=f"rc_retriever_summary_{sub_query_tag}",
             )
             logger.info(f"`{query}` subq: {logic_node.sub_query} answer:{summary}")
             logic_node.get_fl_node_result().summary = summary
