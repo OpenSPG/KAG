@@ -12,14 +12,15 @@ from kag.interface import (
 
 logger = logging.getLogger(__name__)
 
+
 @SolverPipelineABC.register("mcp_pipeline")
 class MCPPipeline(SolverPipelineABC):
     def __init__(
-            self,
-            planner: PlannerABC,
-            executors: List[ExecutorABC],
-            generator: GeneratorABC,
-            max_iteration: int = 10,
+        self,
+        planner: PlannerABC,
+        executors: List[ExecutorABC],
+        generator: GeneratorABC,
+        max_iteration: int = 10,
     ):
         super().__init__()
         self.planner = planner
@@ -41,7 +42,7 @@ class MCPPipeline(SolverPipelineABC):
                 return {"name": server["name"], "desc": server["desc"]}
         return None
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def planning(self, query, context, **kwargs):
         """Generates task plan through LLM-based planning with automatic retry.
 
@@ -61,7 +62,7 @@ class MCPPipeline(SolverPipelineABC):
         )
         return tasks
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def execute_task(self, query, task, context, **kwargs):
         """Executes single task with query rewriting and executor invocation.
 

@@ -57,7 +57,7 @@ class PyBasedMathExecutor(ExecutorABC):
             "expression_builder", KAG_PROJECT_CONF.biz_scene
         )
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def gen_py_code(self, query: str, context: str, error: str, **kwargs):
         return self.llm.invoke(
             {
@@ -67,9 +67,8 @@ class PyBasedMathExecutor(ExecutorABC):
             },
             self.expression_builder,
             with_json_parse=False,
-            **kwargs
+            **kwargs,
         )
-
 
     def run_once(self, query: str, context: str, error: str, **kwargs):
         python_code = self.gen_py_code(query, context, error, **kwargs)
@@ -107,7 +106,6 @@ class PyBasedMathExecutor(ExecutorABC):
             contents = ""
             math_query = task_query
 
-
         self.report_content(
             reporter,
             "thinker",
@@ -128,10 +126,16 @@ class PyBasedMathExecutor(ExecutorABC):
         tries = self.tries
         error = None
 
-
         while tries > 0:
             tries -= 1
-            rst, error, code = self.run_once(math_query, parent_results, error, segment_name=f"{task_query}_begin_task", tag_name=f"{task_query}_code_generator", **kwargs)
+            rst, error, code = self.run_once(
+                math_query,
+                parent_results,
+                error,
+                segment_name=f"{task_query}_begin_task",
+                tag_name=f"{task_query}_code_generator",
+                **kwargs,
+            )
             if rst is not None:
                 if "i don't know" not in rst.lower():
                     result = f"""```python
@@ -141,7 +145,11 @@ class PyBasedMathExecutor(ExecutorABC):
                         """
                     task.update_result(result)
                     self.report_content(
-                        reporter, f"{task_query}_begin_task", f"{task_query}_end_math_executor_{task.id}", rst, "FINISH"
+                        reporter,
+                        f"{task_query}_begin_task",
+                        f"{task_query}_end_math_executor_{task.id}",
+                        rst,
+                        "FINISH",
                     )
                     self.report_content(
                         reporter,
@@ -153,7 +161,9 @@ class PyBasedMathExecutor(ExecutorABC):
                         overwrite=False,
                     )
                     if logic_node and isinstance(logic_node, MathNode):
-                        context.variables_graph.add_answered_alias(logic_node.alias_name, rst)
+                        context.variables_graph.add_answered_alias(
+                            logic_node.alias_name, rst
+                        )
                     return result
                 if tries > 0:
                     error = f"Please retry with: Best-effort code generation using analogous implementations or educated-guess fallbacks where needed."
@@ -170,7 +180,11 @@ error:
         task.update_result(error)
 
         self.report_content(
-            reporter, f"{task_query}_begin_task", f"{task_query}_end_math_executor_{task.id}", error, "FINISH"
+            reporter,
+            f"{task_query}_begin_task",
+            f"{task_query}_end_math_executor_{task.id}",
+            error,
+            "FINISH",
         )
         self.report_content(
             reporter,

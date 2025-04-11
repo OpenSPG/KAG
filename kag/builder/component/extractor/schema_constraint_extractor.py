@@ -124,7 +124,11 @@ class SchemaConstraintExtractor(ExtractorABC):
                 output.append(item)
         return output
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def named_entity_recognition(self, passage: str):
         """
         Performs named entity recognition on a given text passage.
@@ -136,7 +140,11 @@ class SchemaConstraintExtractor(ExtractorABC):
         ner_result = self._named_entity_recognition_llm(passage)
         return self._named_entity_recognition_process(passage, ner_result)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def anamed_entity_recognition(self, passage: str):
         """
         Performs named entity recognition on a given text passage.
@@ -148,7 +156,11 @@ class SchemaConstraintExtractor(ExtractorABC):
         ner_result = await self._anamed_entity_recognition_llm(passage)
         return self._named_entity_recognition_process(passage, ner_result)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
         """
         Performs named entity standardization on a given text passage and entities.
@@ -166,7 +178,11 @@ class SchemaConstraintExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def anamed_entity_standardization(self, passage: str, entities: List[Dict]):
         """
         Performs named entity standardization on a given text passage and entities.
@@ -184,7 +200,11 @@ class SchemaConstraintExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def relations_extraction(self, passage: str, entities: List[Dict]):
         """
         Performs relation extraction on a given text passage and entities.
@@ -206,7 +226,11 @@ class SchemaConstraintExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def arelations_extraction(self, passage: str, entities: List[Dict]):
         """
         Performs relation extraction on a given text passage and entities.
@@ -228,7 +252,11 @@ class SchemaConstraintExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def event_extraction(self, passage: str):
         """
         Performs event extraction on a given text passage.
@@ -244,7 +272,11 @@ class SchemaConstraintExtractor(ExtractorABC):
             return []
         return self.llm.invoke({"input": passage}, self.event_prompt, with_except=False)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def aevent_extraction(self, passage: str):
         """
         Performs event extraction on a given text passage.
