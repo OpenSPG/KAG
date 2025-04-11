@@ -188,8 +188,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "检索结果:{content}",
             },
             "Rewrite query": {
-                "en": "Rethinking question using LLM\n--------- \n{content}",
-                "zh": "正在使用LLM重思考问题\n--------- \n{content}",
+                "en": "Rethinking question using LLM: {content}",
+                "zh": "根据依赖问题重写子问题: {content}",
             },
             "Iterative planning": {
                 "en": """
@@ -242,16 +242,16 @@ Rewritten question:\n{content}
 </step>""",
             },
             "rc_retriever_summary": {
-                "en": "Summarizing retrieved documents\n\n{content}",
-                "zh": "正在对文档进行总结\n\n{content}",
+                "en": "Summarizing retrieved documents,{content}",
+                "zh": "对文档进行总结，{content}",
             },
             "kg_retriever_summary": {
-                "en": "Summarizing retrieved graph\n\n{content}",
-                "zh": "正在对召回的知识进行总结\n\n{content}",
+                "en": "Summarizing retrieved graph,{content}",
+                "zh": "对召回的知识进行总结，{content}",
             },
             "retriever_summary": {
-                "en": "Summarizing retrieved documents\n\n{content}",
-                "zh": "正在对文档进行总结\n\n{content}",
+                "en": "Summarizing retrieved documents,{content}",
+                "zh": "对文档进行总结，{content}",
             },
             "begin_task": {
                 "en": """

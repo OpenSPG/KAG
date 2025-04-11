@@ -45,12 +45,12 @@ py_code_based_math_executor: &py_code_based_math_executor_conf
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: kag_static_planner
+    type: lf_kag_static_planner
     llm: "{chat_llm}"
     plan_prompt:
       type: default_lf_static_planning
     rewrite_prompt:
-      type: default_query_rewrite
+      type: default_rewrite_sub_task_query
   executors:
     - *kag_hybrid_executor_conf
     - *py_code_based_math_executor_conf

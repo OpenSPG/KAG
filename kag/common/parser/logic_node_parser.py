@@ -517,6 +517,8 @@ class ParseLogicForm:
                 sub_query = sub_querys[i]
             else:
                 sub_query = None
+            if not sub_query:
+                raise RuntimeError(f"sub query is empty {sub_query} {input_str}")
             logic_node = self.parse_logic_form(
                 input_str, parsed_cached_map, sub_query=sub_query, query=question
             )
