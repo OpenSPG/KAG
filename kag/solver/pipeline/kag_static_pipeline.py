@@ -95,7 +95,7 @@ class KAGStaticPipeline(SolverPipelineABC):
         """
         if self.planner.check_require_rewrite(task):
             task.update_memory("origin_arguments", task.arguments)
-            updated_args = await self.planner.query_rewrite(task, **kwargs)
+            updated_args = await self.planner.query_rewrite(task, query=query, **kwargs)
             task.arguments.update(updated_args)
         executor = self.select_executor(task.executor)
         if executor:

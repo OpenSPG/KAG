@@ -246,7 +246,7 @@ class PprChunkRetriever(ToolABC):
             f"Starting invoke method with queries: {queries}, start_entities: {start_entities}, top_k: {top_k}"
         )
 
-        chunk_nums = top_k * 2
+        chunk_nums = top_k * 20
         matched_entities = start_entities
         if start_entities is None:
             matched_entities = []

@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import json
 import re
 from typing import List, Optional
 
@@ -38,7 +39,7 @@ class KAGLFStaticPlanner(PlannerABC):
         self.plan_prompt = plan_prompt
         self.rewrite_prompt = rewrite_prompt
 
-    def format_context(self, task: Task):
+    def format_context(self, tasks: List[Task]):
         """Formats parent task execution context into a structured dictionary.
 
         Args:
@@ -49,10 +50,18 @@ class KAGLFStaticPlanner(PlannerABC):
                 - action: Executor and arguments used
                 - result: Execution result of the parent task
         """
+        def to_str(context):
+            return f"""{context['name']}:{context['task']}
+answer: {context['result']}.{context.get('thought', '')}"""
+        if not tasks:
+            return []
         formatted_context = []
-        # get all prvious tasks from context.
-        for parent_task in task.parents:
-            formatted_context.append(parent_task.get_task_context())
+        if isinstance(tasks, Task):
+            tasks = [tasks]
+        for task in tasks:
+            # get all prvious tasks from context.
+            formatted_context.extend(self.format_context(task.parents))
+            formatted_context.append(to_str(task.get_task_context(with_all=True)))
         return formatted_context
 
     def check_require_rewrite(self, task: Task):
@@ -83,11 +92,15 @@ class KAGLFStaticPlanner(PlannerABC):
         if reporter:
             reporter.add_report_line(segment="thinker", tag_name=tag_id, content="", status="INIT", step=task.name, overwrite=False)
         # print(f"Old query: {query}")
-        context = self.format_context(task)
+        deps_context = self.format_context(task.parents)
+        context = {
+            "target question": kwargs.get("query"),
+            "history_qa": deps_context,
+        }
         new_query = await self.llm.ainvoke(
             {
                 "input": query,
-                "content": context,
+                "content": json.dumps(context, indent=2, ensure_ascii=False),
             },
             self.rewrite_prompt,
             segment_name=tag_id,

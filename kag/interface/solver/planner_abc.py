@@ -112,7 +112,7 @@ class Task(Registrable):
         """
         self.result = result
 
-    def get_task_context(self):
+    def get_task_context(self, with_all=False):
         """Generates a dictionary representation of the task's context."""
         result = {}
         if self.thought:
@@ -122,13 +122,16 @@ class Task(Registrable):
                 result["result"] = self.result
             elif hasattr(self.result, "summary"):
                 summary = getattr(self.result, "summary", "")
-                if summary and "i don't know" not in summary.lower():
+                if summary and (with_all or "i don't know" not in summary.lower()):
                     result["result"] = summary
             else:
                 result["result"] = str(self.result)
 
         if result:
             result["task"] = self.arguments.get("query", "")
+
+        if self.name:
+            result["name"] = self.name
         return result
 
     def __str__(self):
