@@ -47,6 +47,7 @@ class MemoryGraph:
         self.name2id = {}
         self.id2name = {}
         self.chunk_ids = set()
+        self.entity_ids = set()
 
         graph_pickle = os.path.join(self.ckpt_dir, "graph")
         if os.path.isfile(graph_pickle):
@@ -57,6 +58,8 @@ class MemoryGraph:
                 self.id2name[idx] = node["id"]
                 if node["label"] == self.chunk_label:
                     self.chunk_ids.add(idx)
+                else:
+                    self.entity_ids.add(idx)
             return
         else:
             self._backend_graph = ig.Graph(directed=False)
@@ -90,6 +93,8 @@ class MemoryGraph:
                         node_attr_map[node.id] = node
                         if node.label == self.chunk_label:
                             self.chunk_ids.add(n_nodes)
+                        else:
+                            self.entity_ids.add(n_nodes)
                         n_nodes += 1
 
         for k in tqdm(
@@ -221,6 +226,15 @@ class MemoryGraph:
         :return: query result data as TableData
         """
         raise NotImplementedError
+
+    def named_entity_recognition(self, query: str):
+        output = []
+        query = query.lower()
+        for idx in self.entity_ids:
+            node = self._backend_graph.vs[idx]
+            if len(node["name"]) > 8 and node["name"].lower() in query:
+                output.append(node["name"])
+        return output
 
     def calculate_pagerank_scores(self, start_nodes: List[Dict], **kwargs) -> Dict:
         """
