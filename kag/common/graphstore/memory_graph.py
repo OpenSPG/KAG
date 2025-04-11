@@ -57,7 +57,6 @@ class MemoryGraph:
         self._emb_cache = {}
         self.from_ckpt()
 
-
     def from_ckpt(self):
         self.name2id = {}
         self.id2name = {}
@@ -123,12 +122,13 @@ class MemoryGraph:
                 for edge in graph.edges:
                     if edge.from_id in self.name2id and edge.to_id in self.name2id:
                         edge_map[n_edges] = (
-                            self.name2id[edge.from_id],
-                            self.name2id[edge.to_id],
+                            (
+                                self.name2id[edge.from_id],
+                                self.name2id[edge.to_id],
+                            ),
+                            edge,
                         )
                         n_edges += 1
-
-                # tmp.upsert_subgraph(item.to_dict())
 
         print(f"there are {len(self.name2id)} nodes and {len(edge_map)} edges")
 
@@ -146,7 +146,23 @@ class MemoryGraph:
                 name=node.name,
                 label=node.label,
             )
-        self._backend_graph.add_edges(edge_map.values())
+
+        edges = []
+        for idx in range(n_edges):
+            edges.append(edge_map[idx][0])
+        self._backend_graph.add_edges(edges)
+        for idx in range(n_edges):
+            edge = self._backend_graph.es[idx]
+            a = edge_map[idx][1]
+            edge.update_attributes(
+                a.properties,
+                id=a.id,
+                label=a.label,
+                from_id=a.from_id,
+                from_type=a.from_type,
+                to_id=a.to_id,
+                to_type=a.to_type,
+            )
 
         CheckpointerManager.close()
 
