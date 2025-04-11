@@ -16,14 +16,24 @@ ner_tool_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 
 @ToolABC.register("ner")
 class Ner(ToolABC):
-    def __init__(self, llm_module, ner_prompt: PromptABC = None, std_prompt: PromptABC = None, with_semantic = False):
+    def __init__(
+        self,
+        llm_module,
+        ner_prompt: PromptABC = None,
+        std_prompt: PromptABC = None,
+        with_semantic=False,
+    ):
         super().__init__()
-        self.ner_prompt = ner_prompt or init_prompt_with_fallback("question_ner", KAG_PROJECT_CONF.biz_scene)
-        self.std_prompt = std_prompt or init_prompt_with_fallback("std", KAG_PROJECT_CONF.biz_scene)
+        self.ner_prompt = ner_prompt or init_prompt_with_fallback(
+            "question_ner", KAG_PROJECT_CONF.biz_scene
+        )
+        self.std_prompt = std_prompt or init_prompt_with_fallback(
+            "std", KAG_PROJECT_CONF.biz_scene
+        )
         self.llm_module = llm_module
         self.with_semantic = with_semantic
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def named_entity_recognition(self, query: str):
         """
         Perform named entity recognition.
@@ -37,9 +47,11 @@ class Ner(ToolABC):
         Returns:
         The result returned by the service client, with the type and format depending on the used service.
         """
-        return self.llm_module.invoke({"input": query}, self.ner_prompt, with_json_parse=True)
+        return self.llm_module.invoke(
+            {"input": query}, self.ner_prompt, with_json_parse=True
+        )
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def named_entity_standardization(self, query: str, entities: List[Dict]):
         """
         Entity standardization function.
@@ -56,12 +68,14 @@ class Ner(ToolABC):
         - The result of the remote service call, typically standardized named entity information.
         """
         return self.llm_module.invoke(
-            {"input": query, "named_entities": entities}, self.std_prompt, with_json_parse=True
+            {"input": query, "named_entities": entities},
+            self.std_prompt,
+            with_json_parse=True,
         )
 
     @staticmethod
     def append_official_name(
-            source_entities: List[Dict], entities_with_official_name: List[Dict]
+        source_entities: List[Dict], entities_with_official_name: List[Dict]
     ):
         """
         Appends official names to entities.
@@ -116,8 +130,13 @@ class Ner(ToolABC):
             if category.lower() in ["works", "person", "other"]:
                 res.append(SPOEntity(entity_name=entity, un_std_entity_type=category))
             else:
-                res.append(SPOEntity(entity_name=entity, un_std_entity_type=official_name or category))
+                res.append(
+                    SPOEntity(
+                        entity_name=entity, un_std_entity_type=official_name or category
+                    )
+                )
         return res
+
     def schema(self):
         return {
             "name": "ner",
@@ -127,9 +146,9 @@ class Ner(ToolABC):
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The text to analyze for named entities"
+                        "description": "The text to analyze for named entities",
                     }
                 },
-                "required": ["query"]
-            }
+                "required": ["query"],
+            },
         }

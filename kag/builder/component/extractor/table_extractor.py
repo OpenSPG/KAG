@@ -113,7 +113,7 @@ class TableExtractor(ExtractorABC):
         )
         return [sub_graph]
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def _table_context(self, input_table: Chunk):
         # 提取全局信息
         table_context_str = self._get_table_context_str(table_chunk=input_table)
@@ -153,7 +153,7 @@ class TableExtractor(ExtractorABC):
             + after_text
         )
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def _table_extractor(self, input_table: Chunk):
         html_content = markdown.markdown(
             input_table.content, extensions=["markdown.extensions.tables"]

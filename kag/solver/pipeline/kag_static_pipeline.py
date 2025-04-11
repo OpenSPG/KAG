@@ -63,7 +63,7 @@ class KAGStaticPipeline(SolverPipelineABC):
                 return executor
         return None
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def planning(self, query, context, **kwargs):
         """Generates task plan through LLM-based planning with automatic retry.
 
@@ -83,7 +83,7 @@ class KAGStaticPipeline(SolverPipelineABC):
         )
         return tasks
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def execute_task(self, query, task, context, **kwargs):
         """Executes single task with query rewriting and executor invocation.
 

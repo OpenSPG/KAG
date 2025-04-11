@@ -224,7 +224,7 @@ class BatchVectorizer(VectorizerABC):
                     vec_meta[type_name].append(get_vector_field_name(prop_name))
         return vec_meta
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def _generate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
         """
         Generates embedding vectors for the nodes in the input SubGraph.
@@ -255,7 +255,7 @@ class BatchVectorizer(VectorizerABC):
             node.properties.update(new_properties)
         return input_subgraph
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def _agenerate_embedding_vectors(self, input_subgraph: SubGraph) -> SubGraph:
         """
         Generates embedding vectors for the nodes in the input SubGraph.
