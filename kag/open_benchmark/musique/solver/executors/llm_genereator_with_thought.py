@@ -12,6 +12,7 @@
 # flake8: noqa
 import json
 from kag.interface import GeneratorABC, LLMClient, ToolABC
+from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
