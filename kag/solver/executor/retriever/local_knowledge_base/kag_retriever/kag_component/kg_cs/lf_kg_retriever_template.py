@@ -7,8 +7,9 @@ from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import \
-    get_history_qa
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import (
+    get_history_qa,
+)
 from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
@@ -53,7 +54,9 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs):
+    def __init__(
+        self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs
+    ):
         super().__init__(**kwargs)
         self.path_select = path_select
         self.entity_linking = entity_linking
@@ -62,9 +65,9 @@ class KgRetrieverTemplate:
         )
         self.llm_module = llm_module
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def generate_sub_answer(
-            self, question: str, knowledge_graph: [], history_qa=[], **kwargs
+        self, question: str, knowledge_graph: [], history_qa=[], **kwargs
     ):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
@@ -94,11 +97,11 @@ class KgRetrieverTemplate:
         return ""
 
     def invoke(
-            self,
-            query: str,
-            logic_nodes: List[LogicNode],
-            graph_data: KgGraph = None,
-            **kwargs,
+        self,
+        query: str,
+        logic_nodes: List[LogicNode],
+        graph_data: KgGraph = None,
+        **kwargs,
     ) -> KgGraph:
         segment_name = kwargs.get("segment_name", "thinker")
         component_name = kwargs.get("name", "")
@@ -110,15 +113,16 @@ class KgRetrieverTemplate:
                 used_lf.append(logic_node)
                 continue
             if isinstance(logic_node, GetSPONode):
-
                 if logic_node.get_fl_node_result().spo:
                     continue
 
-                dot_refresh = DotRefresher(reporter=reporter, segment=segment_name,
-                                           tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                                           content="executing", params={
-                        "component_name": component_name
-                    })
+                dot_refresh = DotRefresher(
+                    reporter=reporter,
+                    segment=segment_name,
+                    tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                    content="executing",
+                    params={"component_name": component_name},
+                )
 
                 if reporter:
                     reporter.add_report_line(
@@ -126,14 +130,14 @@ class KgRetrieverTemplate:
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         logic_node.sub_query,
                         "INIT",
-                        component_name=component_name
+                        component_name=component_name,
                     )
                     reporter.add_report_line(
                         segment_name,
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         "executing",
                         "RUNNING",
-                        component_name=component_name
+                        component_name=component_name,
                     )
 
                     dot_refresh.start()
@@ -146,9 +150,15 @@ class KgRetrieverTemplate:
                         if kwargs.get("is_exact_match", False):
                             logic_node.get_fl_node_result().summary = str(select_rel)
                             # updated alias with spo
-                            kg_graph.add_answered_alias(logic_node.s.alias_name.alias_name, select_rel)
-                            kg_graph.add_answered_alias(logic_node.p.alias_name.alias_name, select_rel)
-                            kg_graph.add_answered_alias(logic_node.o.alias_name.alias_name, select_rel)
+                            kg_graph.add_answered_alias(
+                                logic_node.s.alias_name.alias_name, select_rel
+                            )
+                            kg_graph.add_answered_alias(
+                                logic_node.p.alias_name.alias_name, select_rel
+                            )
+                            kg_graph.add_answered_alias(
+                                logic_node.o.alias_name.alias_name, select_rel
+                            )
 
                 except Exception as e:
                     if reporter:
@@ -158,13 +168,12 @@ class KgRetrieverTemplate:
                             f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                             f"failed: reason={e}",
                             "ERROR",
-                            component_name=component_name
+                            component_name=component_name,
                         )
 
         return kg_graph
 
     def _retrieved_on_graph(self, kg_graph: KgGraph, logic_node: GetSPONode):
-
         _store_lf_node_structure(kg_graph, logic_node)
         head_entities = self._find_head_entities(kg_graph, logic_node)
         tail_entities = self._find_tail_entities(kg_graph, logic_node)
@@ -178,11 +187,11 @@ class KgRetrieverTemplate:
         )
 
     def _retrieve_relations(
-            self,
-            kg_graph: KgGraph,
-            logic_node: GetSPONode,
-            head_entities: List[EntityData],
-            tail_entities: List[EntityData],
+        self,
+        kg_graph: KgGraph,
+        logic_node: GetSPONode,
+        head_entities: List[EntityData],
+        tail_entities: List[EntityData],
     ):
         kg_graph.nodes_alias.append(logic_node.s.alias_name)
         kg_graph.nodes_alias.append(logic_node.o.alias_name)
@@ -201,7 +210,7 @@ class KgRetrieverTemplate:
         return selected_relations
 
     def _find_tail_entities(
-            self, kg_graph: KgGraph, logic_node: GetSPONode
+        self, kg_graph: KgGraph, logic_node: GetSPONode
     ) -> List[EntityData]:
         """Find tails entities for path selection
 
@@ -217,7 +226,7 @@ class KgRetrieverTemplate:
         )
 
     def _find_head_entities(
-            self, kg_graph: KgGraph, logic_node: GetSPONode
+        self, kg_graph: KgGraph, logic_node: GetSPONode
     ) -> List[EntityData]:
         """Find heads entities for path selection
 
