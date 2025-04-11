@@ -50,9 +50,9 @@ cd builder && python indexer.py && cd ..
 ```
 
 ### Step 6: Execute QA Task
-First fill in the main function of the [evalForPR.py](evalForPR.py) code with the neo4j user name and password 
+First fill in the main function of the [evalForPR.py](solver/evalForPR.py) code with the neo4j user name and password 
 
-Execute [evalForPR.py](evalForPR.py) in the [solver](./solver) directory to generate answers and calculate EM and F1 metrics.
+Execute [evalForPR.py](solver/evalForPR.py) in the [solver](./solver) directory to generate answers
 
 ```bash
 cd solver && python evalForPR.py && cd ..
