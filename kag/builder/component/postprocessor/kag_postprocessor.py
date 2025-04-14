@@ -100,7 +100,7 @@ class KAGPostProcessor(PostProcessorABC):
                 valid_edges.append(edge)
         return SubGraph(nodes=valid_nodes, edges=valid_edges)
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def _entity_link(
         self, graph: SubGraph, property_key: str = "name", labels: List[str] = None
     ):

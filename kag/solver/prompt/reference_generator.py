@@ -1,6 +1,7 @@
 from typing import List
 import logging
 
+from kag.common.utils import get_now
 from kag.interface import PromptABC
 
 logger = logging.getLogger(__name__)
@@ -9,10 +10,11 @@ logger = logging.getLogger(__name__)
 @PromptABC.register("default_refer_generator_prompt")
 class ReferGeneratorPrompt(PromptABC):
     template_zh = (
+        f"你是一个信息分析专家，今天是{get_now(language='zh')}。"
         "基于给定的引用信息回答问题。"
         "\n输出答案，如果答案中存在引用信息，则需要reference的id字段，如果不是检索结果，则不需要标记引用"
         "\n输出时，不需要重复输出参考文献"
-        '\n引用要求，使用类似<reference id="chunk:1_2"></reference>表示，所引用的符号必须在reference中的id存在，否者不给出引用'
+        '\n引用要求，使用类似<reference id="chunk:1_2"></reference>表示'
         "\n如果根据引用信息无法回答，则使用模型内的知识回答，但是必须通过合适的方式提示用户，是基于检索内容还是引用文档"
         "\n输出语调要求通顺，不要有机械感"
         "\n任务过程上下文信息：'$content'"
@@ -39,16 +41,10 @@ reference：
 
 张三的妻子是王五<reference id="chunk:1_1"></reference>，而王五的父亲是王四<reference id="chunk:1_2"></reference>，所以张三的岳父是王四
 
-示例2：
-任务过程上下文：
-'经过计算器计算，9.2比9.1要大'
-给定的引用信息：''
-问题：'9.1和9.2谁大?'
-
-9.2大
 """
     )
     template_en = (
+        f"You are an information analysis expert, today is {get_now(language='en')}."
 """Answer the question based on the given references.
 If the answer contains referenced information, include the `id` field from the reference. If it is not a retrieved result, no citation marker is needed.
 Do not repeat the references when outputting the answer.
@@ -78,12 +74,7 @@ reference:
 Question: 'Who is John's father-in-law?'
 
 John's wife is Mary <reference id="chunk:1_1"></reference>, and Mary's father is Robert <reference id="chunk:1_2"></reference>. Therefore, John's father-in-law is Robert.
-
-Example 2:
-Task Process Context: 'After calculation by the calculator, 9.2 is greater than 9.1.'
-Given references: ''
-Question: 'Which is larger, 9.1 or 9.2?'
-Answer: 9.2 is larger."""
+"""
     )
 
     @property

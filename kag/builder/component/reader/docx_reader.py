@@ -253,7 +253,7 @@ class DocxReader(ReaderABC):
                 elif elem.tag.endswith("noBreakHyphen"):  # Non-breaking hyphen
                     text += "-"
                 elif elem.tag.endswith("softHyphen"):  # Soft hyphen
-                    text += "\u00AD"
+                    text += "\u00ad"
                 elif elem.tag.endswith("sym"):  # Symbol
                     if "char" in elem.attrib:
                         text += elem.attrib["char"]
@@ -805,7 +805,7 @@ class DocxReader(ReaderABC):
             print(f"Content: {chunk.content}")
             if chunk.parent_content:
                 print(f"Parent Content: {chunk.parent_content}")
-        return chunks, subgraph
+        return chunks
 
 
 if __name__ == "__main__":
