@@ -152,9 +152,8 @@ class KAGStaticPipeline(SolverPipelineABC):
             if not finished:
                 if num_retry == 0:
                     print(
-                        f"{red}Failed to answer quesion: {query}\nTasks:{task_info}\n{reset}"
+                        f"{red}Failed to answer quesion: {query}\nTasks:{task_info}\n{reset}\n{answer}"
                     )
-                    answer = "UNKNOWN"
                 else:
                     num_retry -= 1
                     continue
