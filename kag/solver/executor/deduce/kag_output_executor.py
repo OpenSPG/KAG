@@ -1,4 +1,4 @@
-
+import json
 import logging
 
 
@@ -12,6 +12,25 @@ from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
+
+
+def convert_result_2_md(result, is_top=False):
+    if isinstance(result, str):
+        return result
+    if isinstance(result, list):
+        out = []
+        for r in result:
+            if is_top:
+                out.append(f"- {convert_result_2_md(result=r)}")
+            else:
+                out.append(f"、{convert_result_2_md(result=r)}")
+        return "\n".join(out)
+    if isinstance(result, dict):
+        return f"""```json
+    {json.dumps(result, ensure_ascii=False, indent=2)}
+    ```"""
+    else:
+        return str(result)
 
 
 @ExecutorABC.register("kag_output_executor")
@@ -45,7 +64,7 @@ class KagOutputExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_begin_task",
-            task_query,
+            f"{task_query}\n",
             "INIT",
             overwrite=False,
             step=task.name
@@ -61,15 +80,14 @@ class KagOutputExecutor(ExecutorABC):
                 step=task.name
             )
             return
-        result = ""
-        if context.variables_graph.has_alias(logic_node.alias_name.alias_name):
-            result = context.variables_graph.get_answered_alias(logic_node.alias_name.alias_name)
-            if isinstance(result, list):
-                result = str(result)
+        result = []
+        for alias in logic_node.alias_name_set:
+            if context.variables_graph.has_alias(alias.alias_name):
+                result.append(context.variables_graph.get_answered_alias(alias.alias_name))
         if not result:
             dep_context = []
             for p in task.parents:
-                dep_context.append(task.get_task_context())
+                dep_context.append(p.get_task_context())
             result = self.llm_module.invoke({
                 "question": query,
                 "context": dep_context
@@ -87,6 +105,7 @@ class KagOutputExecutor(ExecutorABC):
             step=task.name
         )
         task.update_result(result)
+
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

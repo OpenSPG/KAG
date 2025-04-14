@@ -135,7 +135,11 @@ class SchemaFreeExtractor(ExtractorABC):
                 output.append(item)
         return output
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def named_entity_recognition(self, passage: str):
         """
         Performs named entity recognition on a given text passage.
@@ -147,7 +151,11 @@ class SchemaFreeExtractor(ExtractorABC):
         ner_result = self._named_entity_recognition_llm(passage)
         return self._named_entity_recognition_process(passage, ner_result)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def anamed_entity_recognition(self, passage: str):
         """
         Performs named entity recognition on a given text passage.
@@ -159,7 +167,11 @@ class SchemaFreeExtractor(ExtractorABC):
         ner_result = await self._anamed_entity_recognition_llm(passage)
         return self._named_entity_recognition_process(passage, ner_result)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def named_entity_standardization(self, passage: str, entities: List[Dict]):
         """
         Standardizes named entities.
@@ -177,7 +189,11 @@ class SchemaFreeExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def anamed_entity_standardization(self, passage: str, entities: List[Dict]):
         """
         Standardizes named entities.
@@ -195,7 +211,11 @@ class SchemaFreeExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def triples_extraction(self, passage: str, entities: List[Dict]):
         """
         Extracts triples (subject-predicate-object structures) from a given text passage based on identified entities.
@@ -211,7 +231,11 @@ class SchemaFreeExtractor(ExtractorABC):
             with_except=False,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def atriples_extraction(self, passage: str, entities: List[Dict]):
         """
         Extracts triples (subject-predicate-object structures) from a given text passage based on identified entities.
