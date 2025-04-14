@@ -18,6 +18,7 @@ from kag.solver.prompt.deduce_multi_choice import DeduceMutiChoice
 from kag.solver.prompt.expression_builder import ExpressionBuildr
 from kag.solver.prompt.lf_static_planning_prompt import RetrieverLFStaticPlanningPrompt
 from kag.solver.prompt.logic_form_plan import LogicFormPlanPrompt
+from kag.solver.prompt.multi_hop_generator import MultiHopGeneratorPrompt
 from kag.solver.prompt.question_ner import QuestionNER
 from kag.solver.prompt.resp_extractor import RespExtractor
 from kag.solver.prompt.resp_generator import RespGenerator
@@ -47,6 +48,7 @@ from kag.solver.prompt.thought_iterative_planning_prompt import (
 from kag.solver.prompt.sub_question_summary import SubQuestionSummary
 from kag.solver.prompt.summary_question import SummaryQuestionWithOutSPO
 from kag.solver.prompt.mcp_tool_call import MCPToolCallPrompt
+from kag.solver.prompt.thought_then_answer import ThoughtThenAnswerPrompt
 from kag.solver.prompt.without_reference_generator import WithOutReferGeneratorPrompt
 
 __all__ = [
@@ -78,6 +80,8 @@ __all__ = [
     "SummaryQuestionWithOutSPO",
     "RetrieverLFStaticPlanningPrompt",
     "MCPToolCallPrompt",
-    "WithOutReferGeneratorPrompt"
+    "WithOutReferGeneratorPrompt",
+    "ThoughtThenAnswerPrompt",
+    "MultiHopGeneratorPrompt"
 ]
 

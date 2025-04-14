@@ -17,13 +17,12 @@ from kag.interface.solver.model.one_hop_graph import (
     RetrievedData,
     KgGraph,
 )
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import get_history_qa
 from kag.solver.utils import init_prompt_with_fallback
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_rewriter import (
     KAGLFRewriter,
 )
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import (
-    get_history_qa,
-)
+
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_flow import (
     KAGFlow,
 )
@@ -85,6 +84,13 @@ class KAGRetrievedResponse(ExecutorResponse):
 
     __repr__ = __str__
 
+    def get_chunk_list(self):
+        res = []
+        for c in self.chunk_datas:
+            res.append(f"{c.content}")
+        if len(res)==0:
+            return to_reference_list(self.task_id, [self.graph_data])
+        return res
     def to_reference_list(self):
         """
         {
@@ -185,6 +191,10 @@ class KagHybridExecutor(ExecutorABC):
             get_default_chat_llm_config()
         )
 
+        self.flow: KAGFlow = KAGFlow(
+            flow_str=self.flow_str,
+        )
+
     @property
     def output_types(self):
         """Output type specification for executor responses"""
@@ -248,7 +258,7 @@ class KagHybridExecutor(ExecutorABC):
         start_time = time.time()  # 添加开始时间记录
         kag_response = initialize_response(task)
         tag_id = f"{task_query}_begin_task"
-        flow_query = task_query
+        flow_query = logic_node.sub_query if logic_node else task_query
 
         try:
 
@@ -278,21 +288,21 @@ class KagHybridExecutor(ExecutorABC):
             )
 
             logger.info(f"Creating KAGFlow for task: {task_query}")
-            start_time = time.time()  # 添加开始时间记录
-            flow: KAGFlow = KAGFlow(
-                flow_id=task.id,
-                nl_query=flow_query,
-                lf_nodes=logic_nodes,
-                flow_str=self.flow_str,
-                graph_data=context.variables_graph,
-            )
+            start_time = time.time()
+
             logger.info(
                 f"KAGFlow created in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
 
             logger.info(f"Executing KAGFlow for task: {task_query}")
-            start_time = time.time()  # 添加开始时间记录
-            graph_data, retrieved_datas = flow.execute(reporter=reporter, segment_name=tag_id)
+            start_time = time.time()
+            graph_data, retrieved_datas = self.flow.execute(
+                flow_id=task.id,
+                nl_query=flow_query,
+                lf_nodes=logic_nodes,
+                executor_task=task,
+                reporter=reporter,
+                segment_name=tag_id)
             kag_response.graph_data = graph_data
             if graph_data:
                 context.variables_graph.merge_kg_graph(graph_data)
@@ -315,11 +325,10 @@ class KagHybridExecutor(ExecutorABC):
             logger.info(
                 f"Logic nodes processed in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
-
             kag_response.summary = self.generate_summary(
                 tag_id=tag_id,
                 query=task_query,
-                chunks=kag_response.to_reference_list(),
+                chunks=kag_response.get_chunk_list(),
                 history=logic_nodes,
                 **kwargs,
             )

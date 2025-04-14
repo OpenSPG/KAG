@@ -283,3 +283,37 @@ class PlannerABC(Registrable):
 
     async def finish_judger(self, query: str, answer: str):
         return True
+
+
+def format_task_dep_context(tasks: List[Task], is_recu=True):
+    """Formats parent task execution context into a structured dictionary.
+
+    Args:
+        task (Task): Current task whose parent context needs formatting
+
+    Returns:
+        dict: Mapping of parent task IDs to their execution details containing:
+            - action: Executor and arguments used
+            - result: Execution result of the parent task
+    """
+    def to_str(context):
+        if not context or 'task' not in context:
+            return ""
+        return f"""{context['name']}:{context['task']}
+{context['result']}.{context.get('thought', '')}"""
+    if not tasks:
+        return []
+    formatted_context = []
+    if isinstance(tasks, Task):
+        tasks = [tasks]
+    for task in tasks:
+        # get all prvious tasks from context.
+        if is_recu:
+            formatted_context.extend(format_task_dep_context(task.parents, is_recu))
+        res = to_str(task.get_task_context(with_all=True))
+
+        if res:
+            if res in formatted_context:
+                continue
+            formatted_context.append(res)
+    return list(set(formatted_context))

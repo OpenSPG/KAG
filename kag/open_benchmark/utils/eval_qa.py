@@ -44,6 +44,7 @@ class EvalQa:
                 print(f"found existing answer to question: {question}")
                 prediction, trace_log = ckpt.read_from_ckpt(question)
             else:
+                print(f"processing answer to question: {question}")
                 prediction, trace_log = await self.qa(query=question, gold=gold)
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))

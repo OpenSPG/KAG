@@ -88,8 +88,8 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         "function": [
           {
               "functionName": "Retrieval",
-              "function_declaration": "Retrieval(s=s_alias:type[name], p=p_alias:edge, o=o_alias:type[name], p.prop=value, s.prop=value, o.prop=value)",
-               "description": "Retrieval information according to SPO. 's' represents the subject, 'o' represents the object, and they are denoted as variable_name:entity_type[entity_name]. The entity name is an optional parameter and should be provided when there is a specific entity to query. 'p' represents the predicate, which can be a relationship or attribute, denoted as variable_name:edge_type_or_attribute_type. Each variable is assigned a unique variable name, which is used for reference in subsequent mentions. Note that 's', 'p', and 'o' should not appear repeatedly within the same expression; only one set of SPO should be queried at a time. When a variable is a reference to a previously mentioned variable name, the variable name must match the previously mentioned variable name, and only the variable name needs to be provided; the entity type is only given when it is first introduced. And 's.prop', 'o.prop', 'p.prop' represent the properties of subject, object and edge. the subject (s), predicate (p), and object (o) should not repeatedly appear multiple times within the same expression.Constraints can be applied specifically to the predicate (p) for more targeted querying. For multi-hop queries, each hop necessitates a separate retrieval operation. When a current variable references a previously mentioned variable, the variable name must be identical to the one it represents, and only the variable name needs to be stated. The entity type and name should be provided only upon the first mention of the variable; Note Use camelCase for types. Enclose strings in square brackets with backticks to avoid conflicts with keywords."
+              "function_declaration": "Retrieval(s=s_alias:type[name], p=p_alias:edge, o=o_alias:type[name])",
+               "description": "For text information retrieval, retrieve information based on spo. The elements s, p, and o cannot appear multiple times in the same expression. Constrained queries can be performed on s, p, and o. Multi-hop retrieval involves performing multiple retrievals. When referencing a variable from the current context to a prior one, the variable name must match the referenced variable name exactly, and only the variable name needs to be provided; the entity type and name are given only when first referenced."
           },
           {
               "functionName": "Math",
@@ -161,7 +161,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
                 "tips": [
                     "Before outputting each Step and Action, you can add some thought process, such as 'First... Then... Finally...'", 
-                    "Each Step must contain exactly one Action", 
+                    "Each Step only contain one Action", 
                     "Each step should be an indivisible atomic question; please re-split accordingly.", 
                     "Output also needs to be a separate step.", 
                     "Content for Step and Action should be output in code style",
@@ -266,18 +266,12 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         sub_queries, logic_forms = self.parse_steps(response)
         logic_forms = self._parse_lf(sub_queries, logic_forms)
         tasks_dep = {}
-        alias_dep = self._get_dep_task_id(logic_forms)
         for i, logic_form in enumerate(logic_forms):
-            deps = self._get_task_dep(i, logic_form, alias_dep)
-            if not deps:
-                task_deps = [] if i ==0 else [i - 1]
-            else:
-                task_deps = deps
-
+            task_deps = [] if i == 0 else [i - 1]
             tasks_dep[i] = {
                 "name": f"Step{i+1}",
                 "executor": logic_form.operator,
                 "dependent_task_ids": task_deps,
-                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form, "is_need_rewrite": True if deps else False},
+                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form, "is_need_rewrite": (False if isinstance(logic_form, GetNode) else True)},
             }
         return Task.create_tasks_from_dag(tasks_dep)

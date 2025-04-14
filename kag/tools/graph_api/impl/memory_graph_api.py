@@ -45,13 +45,12 @@ class MemoryGraphApi(GraphApiABC):
         raise NotImplementedError()
 
     def calculate_pagerank_scores(
-        self, target_vertex_type, start_nodes: List[Dict]
+        self, target_vertex_type, start_nodes: List[Dict], top_k=10
     ) -> Dict:
-        ppr_list = self.graph.ppr_chunk_retrieval(start_nodes)
+        ppr_list = self.graph.ppr_chunk_retrieval(start_nodes, topk=top_k)
         ppr_result = {}
         for node in ppr_list:
             ppr_result[node["node"]["id"]] = node["score"]
-
         return ppr_result
 
     def get_entity_prop_by_id(self, biz_id, label) -> Dict:
