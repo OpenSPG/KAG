@@ -56,7 +56,14 @@ class Evaluate:
         average_rouge_l = sum(rouge_ls) / len(rouge_ls)
         return {"rouge-L": average_rouge_l}
     def convert_chunk_data_2_str(self, predictionlist: list):
-        return [processing_phrases(chunk_data["content"]).replace("\n", "") for chunk_data in predictionlist]
+        ret = []
+        for chunk_data in predictionlist:
+            content = chunk_data["content"]
+            for i in range(0, 10):
+                content = content.replace(f"_split_{i}", "")
+            content = processing_phrases(content).replace("\n", "")
+            ret.append(content)
+        return ret
     def recall_top(self, predictionlist: list, goldlist: List[str]):
         """
                Calculate recall for top-3, top-5, and all predictions.
