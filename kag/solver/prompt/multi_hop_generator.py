@@ -24,7 +24,11 @@ NOTE:
 3. I hope your answer matches the answer exactly, so ENSURE that the answer following "Answer:" is concise, such as 14 May, 1832  or yes. THE SHORTER, THE BETTER!!
 4. If the answer is a date, please provide the full date as much as possible, such as 18 May, 1932.3. Pay attention to the differences in part of speech, such as "Japan" and "Japanese," and provide the accurate format according to the question.
 5. If you believe the provided documents cannot answer the question, response with Answer: UNKNOWN.
-
+6. output format use json, like
+{
+    "thought": "xxxxx",
+    "answer": "yyyyy"
+}
 $content
 
 $query
@@ -35,7 +39,10 @@ $query
     def template_variables(self) -> List[str]:
         return ["content", "query"]
 
-    def parse_response(self, response: str, **kwargs):
-        if "Answer: " not in response:
+    def is_json_format(self):
+        return True
+    def parse_response(self, response: dict, **kwargs):
+
+        if "answer" not in response.keys():
             raise ValueError(f"no answer found in response: {response}")
-        return response.split("Answer:")[1].strip()
+        return response["answer"]
