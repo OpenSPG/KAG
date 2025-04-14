@@ -323,17 +323,36 @@ class PprChunkRetriever(ToolABC):
 
         pagerank_start_time = time.time()
         if len(matched_entities):
-            pagerank_scores = self.calculate_pagerank_scores(matched_entities, top_k=top_k * 20)
+            pagerank_res = self.calculate_pagerank_scores(matched_entities, top_k=top_k * 20)
         else:
-            pagerank_scores = {}
+            pagerank_res = {}
         logger.info(
             f"PageRank calculation completed in {time.time() - pagerank_start_time:.2f} seconds."
         )
+        pagerank_scores = {}
+        is_need_get_doc = False
+        for k,v in pagerank_res.items():
+            if isinstance(v, float):
+                pagerank_scores[k] = v
+                is_need_get_doc = True
+            else:
+                pagerank_scores[k] = v['score']
 
         sorted_scores = sorted(
             pagerank_scores.items(), key=lambda item: item[1], reverse=True
         )
-        matched_docs = self.get_all_docs_by_id(queries, sorted_scores, top_k * 20)
+        if is_need_get_doc:
+            matched_docs = self.get_all_docs_by_id(queries, sorted_scores, top_k * 20)
+        else:
+            matched_docs = []
+            for doc_id, score in sorted_scores:
+                node = pagerank_res[doc_id]["node"]
+                matched_docs.append(ChunkData(
+                    content=node["content"].replace("_split_0", ""),
+                    title=node["name"].replace("_split_0", ""),
+                    chunk_id=doc_id,
+                    score=score,
+                ))
         return matched_docs, self._convert_relation_datas(chunk_docs=matched_docs, matched_entities=matched_entities[:top_k])
 
     def _convert_relation_datas(self, chunk_docs, matched_entities):
