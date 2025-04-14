@@ -365,6 +365,7 @@ class KagHybridExecutor(ExecutorABC):
                 overwrite=False
             )
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")
+            raise e
 
         logger.info(f"{task_query} end kag hybrid executor")
 
