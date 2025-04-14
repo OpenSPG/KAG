@@ -85,11 +85,12 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         dpr_queries = list(set(dpr_queries))
 
         sim_scores = {}
-
+        doc_maps = {}
         with ThreadPoolExecutor() as executor:
             sim_result = list(executor.map(self.recall_query, dpr_queries))
             for query_sim_scores in sim_result:
                 for doc_id, node in query_sim_scores.items():
+                    doc_maps[doc_id] = node
                     score = node["score"]
                     if doc_id not in sim_scores:
                         sim_scores[doc_id] = score
@@ -98,7 +99,14 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         sorted_scores = sorted(
             sim_scores.items(), key=lambda item: item[1], reverse=True
         )
-        matched_chunks = get_all_docs_by_id(sorted_scores, graph_api=self.graph_api, schema_helper=self.schema_helper)
+        matched_chunks = []
+        for doc_id, doc_score in sorted_scores:
+            matched_chunks.append(ChunkData(
+            content=doc_maps[doc_id]["content"].replace("_split_0", ""),
+            title=doc_maps[doc_id]["name"].replace("_split_0", ""),
+            chunk_id=doc_id,
+            score=doc_score,
+        ))
         return matched_chunks
 
 
