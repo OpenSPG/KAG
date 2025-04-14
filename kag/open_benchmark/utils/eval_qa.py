@@ -49,16 +49,25 @@ class EvalQa:
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
 
-            metrics = self.do_metrics_eval([question],[prediction], [gold])
+            metrics = await asyncio.to_thread(
+                lambda: self.do_metrics_eval([question], [prediction], [gold])
+            )
             gold_aliases = sample.get("answer_aliases", [])
 
             def compare_metrics(metrics1, metrics2):
                 ret_metrics = {}
                 for key in metrics1:
-                    ret_metrics[key] = metrics1[key] if metrics2[key] < metrics1[key] else metrics2[key]
+                    ret_metrics[key] = (
+                        metrics1[key]
+                        if metrics2[key] < metrics1[key]
+                        else metrics2[key]
+                    )
                 return ret_metrics
+
             for gold_alias in gold_aliases:
-                updated_metrics = self.do_metrics_eval([question], [prediction], [gold_alias])
+                updated_metrics = await asyncio.to_thread(
+                    lambda: self.do_metrics_eval([question], [prediction], [gold_alias])
+                )
                 metrics = compare_metrics(metrics, updated_metrics)
 
             recall_metrics = self.do_recall_eval(
@@ -74,7 +83,9 @@ class EvalQa:
             )
             return None
 
-    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
+    def do_metrics_eval(
+        self, questionList: List[str], predictions: List[str], golds: List[str]
+    ):
         raise NotImplementedError("do_eval need implement")
 
     def do_recall_eval(self, sample, references):
