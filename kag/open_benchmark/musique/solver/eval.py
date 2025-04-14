@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -22,14 +23,14 @@ class EvaForMusique(EvalQa):
     def __init__(self, solver_pipeline_name="kag_solver_pipeline"):
         self.solver_pipeline_name = solver_pipeline_name
         self.task_name = "musique"
-        self.pipeline = SolverPipelineABC.from_config(
-            KAG_CONFIG.all_config[self.solver_pipeline_name]
-        )
+
 
     async def qa(self, query, gold):
         reporter: TraceLogReporter = TraceLogReporter()
-
-        answer = await self.pipeline.ainvoke(query, reporter=reporter, gold=gold)
+        pipeline = SolverPipelineABC.from_config(
+            KAG_CONFIG.all_config[self.solver_pipeline_name]
+        )
+        answer = await pipeline.ainvoke(query, reporter=reporter, gold=gold)
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
 
@@ -78,3 +79,5 @@ if __name__ == "__main__":
         collect_file=args.res_file,
         eval_obj=EvaForMusique(),
     )
+    # obj = EvaForMusique()
+    # res = asyncio.run(obj.qa("When did the party that hold the majority in the House of Reps take control of the branch that approves members of the American cabinet?", ""))

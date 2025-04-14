@@ -42,27 +42,51 @@ class KAGFlow:
 
         self.default_flow_component = {
             "kg_cs": {
-                "path_select": {
-                    "type": "exact_one_hop_select"
-                },
-                "type": "kg_cs_open_spg"
+              "type": "kg_cs_open_spg",
+              "path_select": {
+                "type": "exact_one_hop_select"
+              },
+              "entity_linking": {
+                "type": "entity_linking",
+                "recognition_threshold": 0.9,
+                "exclude_types": [
+                  "Chunk"
+                ]
+              }
             },
             "kg_fr": {
-                "path_select": {
-                    "llm_client": get_default_chat_llm_config(),
-                    "type": "fuzzy_one_hop_select"
-                },
-                "type": "kg_fr_open_spg"
+              "type": "kg_fr_open_spg",
+              "top_k": 20,
+              "path_select": {
+                "type": "fuzzy_one_hop_select",
+                "llm_client": get_default_chat_llm_config()
+              },
+              "ppr_chunk_retriever_tool": {
+                "type": "ppr_chunk_retriever",
+                "llm_client": get_default_chat_llm_config()
+              },
+              "entity_linking": {
+                "type": "entity_linking",
+                "recognition_threshold": 0.8,
+                "exclude_types": [
+                  "Chunk"
+                ]
+              }
             },
             "rc": {
-                "ppr_chunk_retriever_tool": {
-                    "llm_client": get_default_chat_llm_config(),
-                    "type": "ppr_chunk_retriever"
+              "type": "rc_open_spg",
+              "vector_chunk_retriever": {
+                "type": "vector_chunk_retriever",
+              },
+              "top_k": 20
+            },
+            "kag_merger": {
+                "type": "kg_merger",
+                "top_k": 20,
+                "llm_module": get_default_chat_llm_config(),
+                "summary_prompt": {
+                    "type": "default_thought_then_answer"
                 },
-                "reranker": {
-                    "type": "rerank_by_vector"
-                },
-                "type": "rc_open_spg"
             }
         }
         graph, nodes = self.parse_flow()
