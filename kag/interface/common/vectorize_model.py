@@ -91,7 +91,7 @@ class VectorizeModelABC(Registrable):
             message = "the embedding service is not available"
             raise RuntimeError(message) from ex
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def vectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
@@ -110,7 +110,7 @@ class VectorizeModelABC(Registrable):
         message = "abstract method vectorize is not implemented"
         raise NotImplementedError(message)
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def avectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:

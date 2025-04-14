@@ -68,7 +68,7 @@ class KAGIterativePipeline(SolverPipelineABC):
                 return executor
         return None
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     async def planning(self, query, context, **kwargs):
         """Perform planning phase to determine next execution step.
 
@@ -113,7 +113,9 @@ class KAGIterativePipeline(SolverPipelineABC):
         context: Context = Context()
         while num_iteration < self.max_iteration:
             num_iteration += 1
-            task, executor = await self.planning(query, context, num_iteration=num_iteration, **kwargs)
+            task, executor = await self.planning(
+                query, context, num_iteration=num_iteration, **kwargs
+            )
             context.append_task(task)
             if executor == self.finish_executor:
                 break

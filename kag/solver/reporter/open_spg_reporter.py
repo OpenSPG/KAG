@@ -105,23 +105,25 @@ class SafeDict(dict):
         return ''
 
 
-def generate_content(tpl, datas, content_params, graph_list):
-    if (
-            isinstance(datas, list)
-            and datas
-            and isinstance(datas[0], RelationData)
-    ):
-        graph_id = f"graph_{generate_random_string(3)}"
-        graph_list.append(_convert_spo_to_graph(graph_id, datas))
-        return f"""<graph id={graph_id}></graph>"""
-    if tpl:
-        format_params = {
-            "content": datas
-        }
-        format_params.update(content_params)
-        return tpl.format_map(SafeDict(format_params))
-    return str(datas)
+def process_planning(think_str):
+    result = []
+    lines = think_str.split("\n")
+    for l in lines:
+        strip_line = l.strip()
+        if strip_line == "```":
+            continue
 
+        if strip_line.lower().startswith("step"):
+            result.append(f"- {strip_line}")
+            continue
+        if strip_line.lower().startswith("action"):
+            result.append("```logical-form-chain")
+            result.append(strip_line)
+            result.append("```")
+            continue
+
+        result.append(strip_line)
+    return "\n".join(result)
 
 
 @ReporterABC.register("open_spg_reporter")
@@ -164,8 +166,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "执行中..."
             },
             "finish": {
-                "en": "Finish",
-                "zh": "完成"
+                "en": "",
+                "zh": ""
             },
             "rc": {
                 "en": "Raw Chunk Retrieve",
@@ -181,6 +183,10 @@ class OpenSPGReporter(ReporterABC):
             }
         }
         self.tag_mapping = {
+            "Graph Show": {
+                "en": "Retrieved Data:{content}",
+                "zh": "检索结果:{content}",
+            },
             "Rewrite query": {
                 "en": "Rethinking question using LLM\n--------- \n{content}",
                 "zh": "正在使用LLM重思考问题\n--------- \n{content}",
@@ -188,26 +194,34 @@ class OpenSPGReporter(ReporterABC):
             "Iterative planning": {
                 "en": """
 <step status="{status}" title="Global planning">
+
 {content}
+
 </step>""",
                 "zh": """
 <step status="{status}" title="思考当前步骤">
+
 {content}
+
 </step>""",
             },
             "Static planning": {
                 "en": """
 <step status="{status}" title="Global planning">
+
 {content}
+
 </step>""",
                 "zh": """
 <step status="{status}" title="思考全局步骤">
+
 {content}
+
 </step>""",
             },
             "begin_sub_kag_retriever": {
-                "en": "Starting {component_name} {content} {desc}",
-                "zh": "执行{component_name} {content} {desc}",
+                "en": "Starting {component_name}: {content} {desc}.",
+                "zh": "执行{component_name}: {content} {desc}。",
             },
             "end_sub_kag_retriever": {
                 "en": " {content}",
@@ -216,11 +230,15 @@ class OpenSPGReporter(ReporterABC):
             "rc_retriever_rewrite": {
                 "en": """
 <step status="{status}" title="Rewriting chunk retriever query">
+
 Rewritten question:\n{content}
+
 </step>""",
                 "zh": """
 <step status="{status}" title="正在根据依赖问题重写检索子问题">
+
 重写问题为：\n\n{content}
+
 </step>""",
             },
             "rc_retriever_summary": {
@@ -238,11 +256,15 @@ Rewritten question:\n{content}
             "begin_task": {
                 "en": """
 <step status="{status}" title="Starting Task {step}">
+
 {content}
+
 </step>""",
                 "zh": """
 <step status="{status}" title="执行 {step}">
+
 {content}
+
 </step>""",
             },
             "logic_node": {
@@ -284,8 +306,8 @@ Rewritten question:\n{content}
                 "zh": "计算结束\n\n{content}",
             },
             "code_generator": {
-                "en": "Generating code\n \n{content}",
-                "zh": "正在生成代码\n \n{content}",
+                "en": "Generating code\n \n{content}\n",
+                "zh": "正在生成代码\n \n{content}\n",
             }
         }
 
@@ -295,6 +317,28 @@ Rewritten question:\n{content}
             )
         else:
             self.client = None
+
+    def generate_content(self, report_id, tpl, datas, content_params, graph_list):
+        if (
+                isinstance(datas, list)
+                and datas
+                and isinstance(datas[0], RelationData)
+        ):
+            graph_id = f"graph_{generate_random_string(3)}"
+            graph_list.append(_convert_spo_to_graph(graph_id, datas))
+            tpl = self.get_tag_template("Graph Show")
+            datas = f"""<graph id={graph_id}></graph>"""
+        if tpl:
+            format_params = {
+                "content": datas
+            }
+            format_params.update(content_params)
+            datas = tpl.format_map(SafeDict(format_params))
+        elif str(datas).strip() != '':
+            datas = str(datas) + ("." if KAG_PROJECT_CONF.language == "en" else "。")
+        if "planning" in report_id:
+            datas = process_planning(str(datas))
+        return str(datas)
 
     def add_report_line(self, segment, tag_name, content, status, **kwargs):
         is_overwrite = kwargs.get("overwrite", True)
@@ -329,7 +373,7 @@ Rewritten question:\n{content}
             self.report_stream_data[report_id]["status"] = status
             self.report_stream_data[report_id]["kwargs"] = params
             self.report_stream_data[report_id]["time"] = time.time()
-            self.report_stream_data[report_id]["content"] += f"\n\n{report_content}"
+            self.report_stream_data[report_id]["content"] += f"{report_content}"
 
         parent_segment_report = self.report_stream_data.get(segment, None)
 
@@ -337,11 +381,11 @@ Rewritten question:\n{content}
             if tag_name not in self.report_sub_segment[segment]:
                 self.report_sub_segment[segment].append(tag_name)
                 if parent_segment_report:
-                    parent_segment_report["content"] += f"\n\n<tag_name>{report_id}</tag_name>"
+                    parent_segment_report["content"] += f"<tag_name>{report_id}</tag_name>"
         else:
             self.report_sub_segment[segment] = [tag_name]
             if parent_segment_report:
-                parent_segment_report["content"] += f"\n\n<tag_name>{report_id}</tag_name>"
+                parent_segment_report["content"] += f"<tag_name>{report_id}</tag_name>"
         with self._lock:
             self.report_record.append(report_id)
             if segment not in self.report_segment_time:
@@ -386,7 +430,7 @@ Rewritten question:\n{content}
             if name in word:
                 template = self.word_mapping[name][KAG_PROJECT_CONF.language]
                 if "{" in template:
-                    template = template.format(**params)
+                    template = template.format_map(SafeDict(params))
                 return template
         return word
     def get_tag_template(self, tag_name):
@@ -423,13 +467,14 @@ Rewritten question:\n{content}
         for report_data in think_reports:
             segment_name = report_data["segment"]
             tag_template = report_data["tag_template"]
+            report_id = report_data["report_id"]
             report_time = report_data["report_time"]
             content = report_data["content"]
             kwargs = report_data.get("kwargs", {})
             status = report_data["status"]
             report_content = f"{content}"
 
-            report_content = generate_content(tag_template, report_content, kwargs, graph_list)
+            report_content = self.generate_content(report_id, tag_template, report_content, kwargs, graph_list)
             sub_segments = self.report_sub_segment.get(report_data["report_id"], [])
             for sub_segment in sub_segments:
                 sub_segment_data = self.report_stream_data.get(sub_segment, None)
@@ -439,7 +484,7 @@ Rewritten question:\n{content}
                 sub_content = sub_segment_data["content"]
                 sub_kwargs = sub_segment_data.get("kwargs", {})
 
-                sub_segment_report = generate_content(tpl=tpl, datas=sub_content, content_params=sub_kwargs, graph_list=graph_list)
+                sub_segment_report = self.generate_content(report_id=report_id, tpl=tpl, datas=sub_content, content_params=sub_kwargs, graph_list=graph_list)
                 tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
                 report_content = report_content.replace(tag_replace_str, sub_segment_report)
 

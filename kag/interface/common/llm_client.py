@@ -39,7 +39,11 @@ class LLMClient(Registrable):
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
         self.enable_check = kwargs.get("enable_check", True)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def __call__(self, prompt: Union[str, dict, list], **kwargs) -> str:
         """
         Perform inference on the given prompt and return the result.
@@ -55,7 +59,11 @@ class LLMClient(Registrable):
         """
         raise NotImplementedError
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def acall(self, prompt: Union[str, dict, list], **kwargs) -> str:
         """
         Perform inference on the given prompt and return the result asynchronously.
@@ -71,7 +79,11 @@ class LLMClient(Registrable):
         """
         return self(prompt, **kwargs)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     def call_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.
@@ -99,7 +111,11 @@ class LLMClient(Registrable):
             return res
         return json_result
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=10, max=60))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
     async def acall_with_json_parse(self, prompt: Union[str, dict, list], **kwargs):
         """
         Perform inference on the given prompt and attempt to parse the result as JSON.

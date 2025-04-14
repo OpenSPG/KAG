@@ -89,7 +89,7 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             "solve_question_without_spo", KAG_PROJECT_CONF.biz_scene
         )
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def generate_sub_answer(
         self, question: str, knowledge_graph: [], docs: [], history_qa=[], **kwargs
     ):
@@ -143,7 +143,11 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             return ""
         history_qa = get_history_qa(history)
         return self.generate_sub_answer(
-            question=query, knowledge_graph=graph, docs=chunks, history_qa=history_qa, **kwargs
+            question=query,
+            knowledge_graph=graph,
+            docs=chunks,
+            history_qa=history_qa,
+            **kwargs,
         )
 
     def _rewrite_sub_query_with_history_qa(
@@ -212,11 +216,13 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
             logger.info(
                 f"`{query}` Processing logic node with sub-query: {logic_node.sub_query}"
             )
-            dot_refresh = DotRefresher(reporter=reporter, segment=kwargs.get("segment_name", "thinker"),
-                                       tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                                       content="executing", params={
-                    "component_name": component_name
-                })
+            dot_refresh = DotRefresher(
+                reporter=reporter,
+                segment=kwargs.get("segment_name", "thinker"),
+                tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
+                content="executing",
+                params={"component_name": component_name},
+            )
 
             if reporter:
                 reporter.add_report_line(
@@ -224,14 +230,14 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     logic_node.sub_query,
                     "INIT",
-                    component_name=component_name
+                    component_name=component_name,
                 )
                 reporter.add_report_line(
                     kwargs.get("segment_name", "thinker"),
                     f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                     "executing",
                     "RUNNING",
-                    component_name=component_name
+                    component_name=component_name,
                 )
                 dot_refresh.start()
             try:
@@ -266,10 +272,10 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                         "finish",
                         "FINISH",
                         component_name=component_name,
-                        chunk_num = len(chunks),
-                        nodes_num = len(entities),
-                        edges_num = len(selected_rel),
-                        desc="retrieved_info_digest"
+                        chunk_num=len(chunks),
+                        nodes_num=len(entities),
+                        edges_num=len(selected_rel),
+                        desc="retrieved_info_digest",
                     )
 
                     matched_graph = match_spo + selected_rel
@@ -279,7 +285,6 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                         matched_graph if matched_graph else "finish",
                         "FINISH",
                     )
-
 
                 summary = self.generate_summary(
                     query=logic_node.sub_query,
@@ -293,9 +298,15 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                 logger.info(f"`{query}` subq: {logic_node.sub_query} answer:{summary}")
                 logic_node.get_fl_node_result().summary = summary
                 if summary and "i don't know" not in summary.lower():
-                    graph_data.add_answered_alias(logic_node.s.alias_name.alias_name, summary)
-                    graph_data.add_answered_alias(logic_node.p.alias_name.alias_name, summary)
-                    graph_data.add_answered_alias(logic_node.o.alias_name.alias_name, summary)
+                    graph_data.add_answered_alias(
+                        logic_node.s.alias_name.alias_name, summary
+                    )
+                    graph_data.add_answered_alias(
+                        logic_node.p.alias_name.alias_name, summary
+                    )
+                    graph_data.add_answered_alias(
+                        logic_node.o.alias_name.alias_name, summary
+                    )
 
                 logic_node.get_fl_node_result().sub_question = rewrite_queries
                 logic_node.get_fl_node_result().chunks = chunks
@@ -310,9 +321,11 @@ class RCRetrieverOnOpenSPG(RCRetrieverABC):
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
                         f"failed: reason={e}",
                         "ERROR",
-                        component_name=component_name
+                        component_name=component_name,
                     )
-                logger.error(f"`{query}` subq: {logic_node.sub_query} error:{e}", exc_info=True)
+                logger.error(
+                    f"`{query}` subq: {logic_node.sub_query} error:{e}", exc_info=True
+                )
 
         return self.reranker.invoke(
             query=query, sub_queries=sub_queries, sub_question_chunks=sub_chunks

@@ -474,7 +474,7 @@ class PDFReader(ReaderABC):
 
             # get outline
             try:
-                outlines = self.document.get_outlines()
+                outlines = self.document.get_outlines()  # noqa
             except Exception as e:
                 logger.warning(f"loading PDF file: {e}")
                 self.outline_flag = False
@@ -494,7 +494,7 @@ class PDFReader(ReaderABC):
                         chunks.append(chunk)
 
             else:
-                split_words = []
+                split_words = []  # noqa
 
                 page_contents = []
 
@@ -522,9 +522,7 @@ class PDFReader(ReaderABC):
                 )
                 chunks, subgraph = self.convert_finel_content_to_chunks(final_content)
 
-            return chunks, subgraph if "subgraph" in locals() else SubGraph(
-                nodes=[], edges=[]
-            )
+            return chunks
 
         except Exception as e:
             raise RuntimeError(f"Error loading PDF file: {e}")

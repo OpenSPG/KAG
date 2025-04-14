@@ -189,7 +189,7 @@ class KagHybridExecutor(ExecutorABC):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def generate_answer(self, question: str, docs: [], history_qa=[], **kwargs):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
@@ -248,7 +248,6 @@ class KagHybridExecutor(ExecutorABC):
         tag_id = f"{task_query}_begin_task"
 
         try:
-
             logger.info(
                 f"Response container initialized in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
@@ -260,10 +259,10 @@ class KagHybridExecutor(ExecutorABC):
                 reporter,
                 "thinker",
                 tag_id,
-                task_query,
+                f"{task_query}\n",
                 "INIT",
                 step=task.name,
-                overwrite=False
+                overwrite=False,
             )
             if not logic_node:
                 logic_nodes = self._convert_to_logical_form(
@@ -290,7 +289,9 @@ class KagHybridExecutor(ExecutorABC):
 
             logger.info(f"Executing KAGFlow for task: {task_query}")
             start_time = time.time()  # 添加开始时间记录
-            graph_data, retrieved_datas = flow.execute(reporter=reporter, segment_name=tag_id)
+            graph_data, retrieved_datas = flow.execute(
+                reporter=reporter, segment_name=tag_id
+            )
             kag_response.graph_data = graph_data
             if graph_data:
                 context.variables_graph.merge_kg_graph(graph_data)
@@ -336,7 +337,7 @@ class KagHybridExecutor(ExecutorABC):
                 "finish",
                 "FINISH",
                 step=task.name,
-                overwrite=False
+                overwrite=False,
             )
         except Exception as e:
             logger.warning(
@@ -350,7 +351,7 @@ class KagHybridExecutor(ExecutorABC):
                 f"{self.schema().get('name')} executed failed {e}",
                 "ERROR",
                 step=task.name,
-                overwrite=False
+                overwrite=False,
             )
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")
 

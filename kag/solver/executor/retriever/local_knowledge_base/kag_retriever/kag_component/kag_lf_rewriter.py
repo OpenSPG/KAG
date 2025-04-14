@@ -62,7 +62,7 @@ class KAGGetSpoLF(KAGLFRewriter):
             schema=self.schema_helper, schema_retrieval=self.std_schema
         )
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def _trans_query_to_logic_form(
         self, query: str, context: str, reporter
     ) -> List[GetSPONode]:

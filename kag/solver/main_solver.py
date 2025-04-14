@@ -153,11 +153,17 @@ async def qa(task_id, query, project_id, host_addr, params={}):
     )
     await reporter.start()
     try:
-        pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
-        logger.error(f"pipeline conf: \n{pipeline_config}")
-        pipeline = SolverPipelineABC.from_config(pipeline_config)
-
-        answer = await pipeline.ainvoke(query, reporter=reporter)
+        # self cognition
+        self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
+        self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
+        self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+        if not self_cognition_res:
+            pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+            logger.error(f"pipeline conf: \n{pipeline_config}")
+            pipeline = SolverPipelineABC.from_config(pipeline_config)
+            answer = await pipeline.ainvoke(query, reporter=reporter)
+        else:
+            answer = self_cognition_res
     except Exception as e:
         logger.warning(
             f"An exception occurred while processing query: {query}. Error: {str(e)}",
@@ -216,8 +222,8 @@ if __name__ == "__main__":
     )
     res = SolverMain().invoke(
         4000003,
-        6100031,
-        "随机生成两个100000到200000之间的素数并计算它们的乘积",
+        6900001,
+        "你的特色是什么",
         "4700026",
         True,
         host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",

@@ -61,5 +61,6 @@ kag_solver_pipeline:
     llm_client: "{chat_llm}"
     generated_prompt:
       type: default_refer_generator_prompt
+    enable_ref: true
 
 #------------kag-solver configuration end----------------#

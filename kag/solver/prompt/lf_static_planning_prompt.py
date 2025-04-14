@@ -15,6 +15,7 @@ import re
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.utils import get_now
 from kag.interface import PromptABC, Task
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
@@ -27,11 +28,11 @@ logger = logging.getLogger()
 
 @PromptABC.register("default_lf_static_planning")
 class RetrieverLFStaticPlanningPrompt(PromptABC):
-    instruct_zh = """"instruction": "你是一个规划专家，根据function中的算子来规划问题",
+    instruct_zh = """"instruction": "你是一个规划专家，你的任务是根据function中的算子来规划问题",
         "function": [
           {
               "function_declaration": "Retrieval(s=s_alias:entity_type[`entity_name`], p=p_alias:edge_type, o=o_alias:entity_type[`entity_name`], p.prop=`value`, s.prop=`value`, o.prop=`value`)",
-              "description": "根据spo检索信息，s、p、o不能在同一表达式中反复多次出现，可对s、p、o进行带约束查询；多跳则进行多次检索。当前变量引用前文变量时，变量名必须和指代的变量名一致，且只需给出变量名，实体类型及名称仅在首次引用时给定。prop为被约束的属性名,属性约束的值`value`可以是文本、常数，也可以引用前面函数中的变量名"
+              "description": "用于文本信息检索，根据spo检索信息，s、p、o不能在同一表达式中反复多次出现，可对s、p、o进行带约束查询；多跳则进行多次检索。当前变量引用前文变量时，变量名必须和指代的变量名一致，且只需给出变量名，实体类型及名称仅在首次引用时给定。prop为被约束的属性名,属性约束的值`value`可以是文本、常数，也可以引用前面函数中的变量名"
           },
           {
               "function_declaration": "Math(content=[`XXX` or `o_alias/s_alias`], target=`XXX`)->math_alias",
@@ -82,7 +83,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     }
 ]
 
-    instruct_en = """    "instruction": "You are a planning expert who designs plans based on the operators in the function.",
+    instruct_en = """"instruction": "You are a planning expert who designs plans based on the operators in the function.",
         "function_description": "functionName is operator name;the function format is functionName(arg_name1=arg_value1,[args_name2=arg_value2, args_name3=arg_value3]),括号中为参数，被[]包含的参数为可选参数，未被[]包含的为必选参数",
         "function": [
           {
@@ -102,7 +103,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
           },
           {
               "functionName": "Output",
-              "function_decl:aration": "Output(A,B,...)",
+              "function_declaration": "Output(A,B,...)",
               "description": "Directly output A, B, ... as answers, where A and B are variable names referring to previous retrieval or calculation results."
           }
         ],"""
@@ -138,6 +139,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     def __init__(self, **kwargs):
         self.template_zh = f"""
             {{
+                "time": "今天是{get_now(language='zh')}"
                 {self.instruct_zh}
                 "cases": {json.dumps(self.default_case_zh, ensure_ascii=False, indent=2)},
                 "output_format": "使用markdown格式输出，开头不需要输出'```markdown'",
@@ -153,6 +155,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 """
         self.template_en = f"""
             {{
+                "time": "Today is {get_now(language='en')}"
                 {self.instruct_en},
                 "cases":  {json.dumps(self.default_case_en, ensure_ascii=False, indent=2)},
                 "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
@@ -161,7 +164,8 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                     "Each Step must contain exactly one Action or Output", 
                     "Each step should be an indivisible atomic question; please re-split accordingly.", 
                     "Output also needs to be a separate step.", 
-                    "Content for Step and Action should be output in code style"
+                    "Content for Step and Action should be output in code style",
+                    "Step and Action/Output must be on a separate line and in the format XXX: YYY"
                 ],
                 "query": "$query"
             }}   
@@ -202,6 +206,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 if sub_querys_regex is not None:
                     sub_querys.append(sub_querys_regex.group(1))
                     current_sub_query = sub_querys_regex.group(1)
+                    current_sub_query = current_sub_query.strip()
                     if current_sub_query == "":
                         raise RuntimeError(f"{line} is not step query")
             elif line.startswith("Output"):

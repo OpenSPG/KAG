@@ -47,7 +47,7 @@ class EvaFor2wiki(EvalQa):
                 prediction, trace_log = await self.qa(query=question, gold=gold)
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
-            metrics = self.do_metrics_eval([prediction], [gold])
+            metrics = self.do_metrics_eval([question], [prediction], [gold])
             return sample_idx, prediction, metrics, trace_log
         except Exception as e:
             import traceback
@@ -61,9 +61,9 @@ class EvaFor2wiki(EvalQa):
         with open(file_path, "r") as f:
             return json.load(f)
 
-    def do_metrics_eval(self, predictions: List[str], golds: List[str]):
+    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
         eva_obj = Evaluate()
-        return eva_obj.getBenchMark(predictions, golds)
+        return eva_obj.getBenchMark(questionList, predictions, golds)
 
     def do_recall_eval(self, sample, references):
         eva_obj = Evaluate()
