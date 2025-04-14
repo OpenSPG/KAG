@@ -148,7 +148,10 @@ class KAGStaticPipeline(SolverPipelineABC):
                         "result": task.result,
                     }
                 )
-            finished = await self.planner.finish_judger(query, answer)
+            if "unknown" in answer.lower():
+                finished = False
+            else:
+                finished = await self.planner.finish_judger(query, answer)
             if not finished:
                 if num_retry == 0:
                     print(
