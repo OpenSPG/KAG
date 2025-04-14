@@ -281,11 +281,8 @@ class MemoryGraph:
         reset_prob = np.zeros(self._backend_graph.vcount())
         for start_node in start_nodes:
             node_name = start_node.get("id", start_node.get("name"))
-            try:
-                node_id = self.name2id[node_name]
-                reset_prob[node_id] = 1
-            except:
-                logger.info(f"name2id is empty {node_name}")
+            node_id = self.name2id[node_name]
+            reset_prob[node_id] = 1
         scores = self._backend_graph.personalized_pagerank(
             vertices=range(self._backend_graph.vcount()),
             damping=kwargs.get("damping", 0.1),

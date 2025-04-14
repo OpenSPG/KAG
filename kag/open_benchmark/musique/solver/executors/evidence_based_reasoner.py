@@ -217,6 +217,8 @@ Thought: The question asks about the origin of the last name Sylvester during th
 
         memory = KAGRetrievedResponse()
         memory.chunk_datas = retrieved_docs
+        memory.summary = response
+        memory.retrieved_task = str(task)
         task.update_memory("retriever", memory)
         task.result = json.dumps(
             {"query": task.arguments["query"], "response": response}, ensure_ascii=False
