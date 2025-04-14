@@ -7,11 +7,11 @@ from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import \
-    get_history_qa
+
 from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
-
+import  logging
+logger = logging.getLogger()
 
 def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
     """Store logical node structure in knowledge graph
@@ -154,6 +154,7 @@ class KgRetrieverTemplate:
                             "ERROR",
                             component_name=component_name
                         )
+                    logger.info(f"_retrieved_on_graph failed {e}", exc_info=True)
 
         return kg_graph
 

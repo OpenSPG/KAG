@@ -63,6 +63,8 @@ class RerankByVector(ToolABC):
             queries = [queries]
         if len(chunks) == 0:
             return []
+        if len(queries) == 1 and len(chunks) ==1:
+            return chunks[0]
         flat_chunks = _flat_passages_set(chunks)
         queries = list(set(queries))
         rank_scores = np.array([1 / (1 + i) for i in range(len(flat_chunks))])

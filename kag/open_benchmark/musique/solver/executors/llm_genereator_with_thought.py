@@ -11,7 +11,10 @@
 # or implied.
 # flake8: noqa
 import json
+from typing import Optional
+
 from kag.interface import GeneratorABC, LLMClient, ToolABC
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
@@ -38,12 +41,17 @@ class LLMGeneratorWithThought(GeneratorABC):
         rerank_queries = []
         chunks = []
         thoughts = []
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+
         for task in context.gen_task(False):
             task_result = json.loads(task.result)
             subq = task_result["query"]
             suba = task_result["response"]
             thoughts.append(f"Sub-Query: {subq}\n{suba}")
             retrieved_docs = task.memory.get("retriever")
+            if retrieved_docs and reporter:
+                reporter.add_report_line("reference", f"steps_{task.id}", retrieved_docs, "FINISH")
+
             if retrieved_docs and self.chunk_reranker:
                 rerank_queries.append(task.arguments["query"])
                 chunks.append(retrieved_docs.chunk_datas)
@@ -56,6 +64,11 @@ class LLMGeneratorWithThought(GeneratorABC):
         refer_data = [f"Title:{x['document_name']}\n{x['content']}" for x in refer_data]
         refer_data = "\n\n".join(refer_data)
         thoughts = "\n\n".join(thoughts)
+
+        if reporter:
+            reporter.add_report_line(
+                "generator_reference", "reference_chunk", rerank_chunks, "FINISH"
+            )
 
         system_instruction = """
 As an advanced reading comprehension assistant, your task is to answer complex multi-hop questions based on the context I provide. The context I offer includes two parts: a set of documents that are helpful for answering the question, and a step-by-step breakdown of the question along with an analytical thought process. Please combine these two parts of the context to answer the question. Your response start after "Thought: ", where you will methodically break down the reasoning process step by step, illustrating how you arrive at conclusions. Conclude with "Answer: " to present a concise, definitive response, devoid of additional elaborations.\n

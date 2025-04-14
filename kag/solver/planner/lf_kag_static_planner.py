@@ -14,6 +14,7 @@ import re
 from typing import List, Optional
 
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC
+from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
 
 
@@ -39,34 +40,27 @@ class KAGLFStaticPlanner(PlannerABC):
         self.plan_prompt = plan_prompt
         self.rewrite_prompt = rewrite_prompt
 
-    def format_context(self, tasks: List[Task]):
-        """Formats parent task execution context into a structured dictionary.
+    async def finish_judger(self, query: str, answer: str):
+        finish_prompt = f"""
+        # Task
+        The answer is a response to a question. Please determine whether the content of this answer is invalid, such as  "UNKNOWN", "I don't know" or "Insufficient Information."  \n
+        If the answer is invalid, return "Yes", otherwise, return "No".\n
+        You output should only be "Yes" or "No".\n
 
-        Args:
-            task (Task): Current task whose parent context needs formatting
-
-        Returns:
-            dict: Mapping of parent task IDs to their execution details containing:
-                - action: Executor and arguments used
-                - result: Execution result of the parent task
+        # Answer\n
+        {answer}
         """
-        def to_str(context):
-            if not context or 'task' not in context:
-                return ""
-            return f"""{context['name']}:{context['task']}
-answer: {context['result']}.{context.get('thought', '')}"""
-        if not tasks:
-            return []
-        formatted_context = []
-        if isinstance(tasks, Task):
-            tasks = [tasks]
-        for task in tasks:
-            # get all prvious tasks from context.
-            formatted_context.extend(self.format_context(task.parents))
-            res = to_str(task.get_task_context(with_all=True))
-            if res:
-                formatted_context.append(res)
-        return formatted_context
+        try:
+            response = await self.llm.acall(prompt=finish_prompt)
+            if response.strip().lower() == "yes":
+                return False
+            return True
+        except Exception as e:
+            print(f"Failed to run finish_judger, info: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return True
 
     def check_require_rewrite(self, task: Task):
         """Determines if query rewriting is needed based on parameter patterns.
@@ -96,7 +90,7 @@ answer: {context['result']}.{context.get('thought', '')}"""
         if reporter:
             reporter.add_report_line(segment="thinker", tag_name=tag_id, content="", status="INIT", step=task.name, overwrite=False)
         # print(f"Old query: {query}")
-        deps_context = self.format_context(task.parents)
+        deps_context = format_task_dep_context(task.parents)
         context = {
             "target question": kwargs.get("query"),
             "history_qa": deps_context,
@@ -116,6 +110,7 @@ answer: {context['result']}.{context.get('thought', '')}"""
         if logic_form_node:
             logic_form_node.sub_query = new_query
             return {
+                "rewrite_query": new_query,
                 "logic_form_node": logic_form_node
             }
         # print(f"query rewrite context = {context}")
