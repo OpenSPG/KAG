@@ -4,26 +4,33 @@ openie_llm: &openie_llm
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
-
+  enable_check: False
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
-  stream: true
+  enable_check: False
 
 ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-7b-instruct-1m
-
+  enable_check: False
+llm: &llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: key
+  model: qwen2.5-72b-instruct
+  enable_check: False
 vectorize_model: &vectorize_model
   api_key: key
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
+  enable_check: False
 vectorizer: *vectorize_model
 
 log:
@@ -62,8 +69,7 @@ kag_builder_pipeline:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
       vectorize_model: *vectorize_model
     writer:
-      type: memory_graph_writer # kag.builder.component.writer.kg_writer.KGWriter
-      graph_store_path: /root/src/KAG/kag/open_benchmark/musique/graph_data
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 2
   num_chains: 10
   scanner:
@@ -71,35 +77,73 @@ kag_builder_pipeline:
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
-search_api: &search_api
-  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
-graph_api:
-  type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+search_api: &search_api
+  type: memory_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+  graph_path: /root/src/KAG/kag/open_benchmark/musique/graph_data
+  vectorize_model: *vectorize_model
+
+graph_api: &graph_api
+  type: memory_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+  graph_path: /root/src/KAG/kag/open_benchmark/musique/graph_data
+  vectorize_model: *vectorize_model
 
 
 kg_cs:
   type: kg_cs_open_spg
   path_select:
     type: exact_one_hop_select
+    graph_api: *graph_api
+    search_api: *search_api
+  entity_linking:
+    type: entity_linking
+    graph_api: *graph_api
+    search_api: *search_api
+    recognition_threshold: 0.9
+    exclude_types:
+      - "Chunk"
 
 kg_fr:
   type: kg_fr_open_spg
+  top_k: 20
   path_select:
     type: fuzzy_one_hop_select
     llm_client: *chat_llm
-
-rc:
-  type: rc_open_spg
+    graph_api: *graph_api
+    search_api: *search_api
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
     llm_client: *ner_llm
-    vector_chunk_retriever:
-      type: vector_chunk_retriever
-      vectorize_model: *vectorize_model
-      search_api: *search_api
-  reranker:
-    type: rerank_by_vector
+    graph_api: *graph_api
+    search_api: *search_api
+  entity_linking:
+    type: entity_linking
+    graph_api: *graph_api
+    search_api: *search_api
+    recognition_threshold: 0.8
+    exclude_types:
+      - "Chunk"
+
+rc:
+  type: rc_open_spg
+  vector_chunk_retriever:
+    type: vector_chunk_retriever
+    vectorize_model: *vectorize_model
+    search_api: *search_api
+  graph_api: *graph_api
+  search_api: *search_api
+  vectorize_model: *vectorize_model
+  top_k: 20
+
+kag_merger:
+  type: kg_merger
+  top_k: 20
+  llm_module: *chat_llm
+  summary_prompt:
+    type: default_thought_then_answer
+  vectorize_model: *vectorize_model
+  graph_api: *graph_api
+  search_api: *search_api
 
 kag_hybrid_executor: &kag_hybrid_executor_conf
   type: kag_hybrid_executor
@@ -110,30 +154,35 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
       type: default_spo_retriever_decompose
     vectorize_model: *vectorize_model
   flow: |
-    kg_cs->kg_fr->rc
+    kg_cs->kg_fr->kag_merger;rc->kag_merger
 
+kag_output_executor: &kag_output_executor_conf
+  type: kag_output_executor
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
 
-
-reasoner: &reasoner_conf
-  type: evidence_based_reasoner
-  llm: *chat_llm
-  memory_graph_path: /root/src/KAG/kag/open_benchmark/musique/graph_data/graph
-  vectorize_model: *vectorize_model
+py_code_based_math_executor: &py_code_based_math_executor_conf
+  type: py_code_based_math_executor
+  llm: *openie_llm
 
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: kag_static_planner
+    type: lf_kag_static_planner
     llm: *chat_llm
     plan_prompt:
-      type: retriever_static_planning
+      type: default_lf_static_planning
     rewrite_prompt:
-      type: default_query_rewrite
+      type: default_rewrite_sub_task_query
   executors:
-    - *reasoner_conf
+    - *kag_hybrid_executor_conf
+    - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
+    - *kag_output_executor_conf
   generator:
-    type: llm_generator_with_thought
+    type: llm_generator
     llm_client: *chat_llm
-
+    generated_prompt:
+      type: default_multi_hop_generator
 
 #------------kag-solver configuration end----------------#
