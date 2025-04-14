@@ -304,10 +304,12 @@ class MemoryGraph:
             top_indices = np.argsort(ppr_scores)[-topk:]
             output = []
             for idx in top_indices[::-1]:
+                node_attributes = self._backend_graph.vs[idx].attributes()
+                node_attributes["__labels__"] = [node_attributes.pop("label")]
                 output.append(
                     {
                         "score": ppr_scores[idx],
-                        "node": self._backend_graph.vs[idx].attributes(),
+                        "node": node_attributes,
                     }
                 )
             return output
