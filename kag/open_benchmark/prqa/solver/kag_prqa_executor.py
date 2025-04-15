@@ -204,7 +204,8 @@ class PrqaExecutor(ExecutorABC):
                 logger.error(f"记录处理异常: {str(e)}")
         return processed
 
-    def process_path_result(self, path_data: List[Dict]) -> List[str]:
+    @staticmethod
+    def process_path_result(path_data: List[Dict]) -> List[str]:
         """安全处理包含多层结构的路径数据"""
         all_sentences = []
         try:
@@ -263,39 +264,6 @@ class PrqaExecutor(ExecutorABC):
             return ["路径解析失败，请检查数据格式"]
 
         return all_sentences
-
-    def post_process(self, raw_data: List, question: str) -> str:
-        """后处理生成自然语言回答"""
-        if not raw_data:
-            return "未找到相关信息"
-
-        prompt = self.build_analysis_prompt(raw_data, question)
-        return self.llm(prompt)
-
-    def build_analysis_prompt(self, data: List, question: str) -> str:
-        """构建分析提示词"""
-        prompt_lines = [
-            "从以下路径关系中分析问题：",
-            *self.format_analysis_data(data),
-            f"\n分析问题：“{question}”的答案",
-            "请按照以下步骤完成：",
-            "1. **提取逻辑链条**：逐步分析路径数据中与问题相关的关键信息",
-            "2. **确定问题目标**：明确问题需要获取的核心信息",
-            "3. **组织答案**：用简洁自然的中文回答，包含必要细节(如果有多个答案，请全部回答出来)",
-            "只用最精简的结果给出答案，不要分析步骤的内容，多个答案时用顿号'、'隔开，除此之外不要有冗余字符"
-        ]
-        return '\n'.join(prompt_lines)
-
-    @staticmethod
-    def format_analysis_data(data: List) -> List[str]:
-        """格式化分析数据"""
-        formatted = []
-        for item in data:
-            if isinstance(item, str):
-                formatted.append(item)
-            elif isinstance(item, dict):
-                formatted.append(json.dumps(item, ensure_ascii=False))
-        return formatted
 
     def get_relationships(self) -> str:
         cypher = "CALL db.relationshipTypes()"
