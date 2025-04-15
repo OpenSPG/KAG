@@ -33,37 +33,37 @@ class EvidenceBasedReasoner(ExecutorABC):
         retrieved_docs = []
         if hasattr(retrieve_task.result, "chunk_datas"):
             retrieved_docs.extend(retrieve_task.result.chunk_datas)
-            retrieved_docs = "\n\n".join([x.content for x in retrieved_docs])
+            retrieved_docs = "\\n\\n".join([x.content for x in retrieved_docs])
         else:
             retrieved_docs = str(retrieve_task.result)
 
         system_instruction = """
-As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
-        
-Docs:
-Sylvester
-Sylvester is a name derived from the Latin adjective silvestris meaning ``wooded ''or`` wild'', which derives from the noun silva meaning ``woodland ''. Classical Latin spells this with i. In Classical Latin y represented a separate sound distinct from i, not a native Latin sound but one used in transcriptions of foreign words. After the Classical period y came to be pronounced as i. Spellings with Sylv - in place of Silv - date from after the Classical period.
+作为一名精通解决复杂多跳问题的专家，我需要您的协助来处理一个多跳问题。该问题已被分解为多个直接的单跳查询，其中每个问题可能依赖于先前问题的回答，即问题主体可能包含诸如 "{{i.output}}" 之类的内容，这表示第 i 个子问题的答案。我将为您提供关于如何处理这些初步问题的见解，或者提供答案本身，这些对于准确解决问题至关重要。此外，我将提供与当前问题相关的文本摘录，建议您仔细阅读并彻底理解。请以 "思考过程: " 开始您的回答，在此处您将概述得出结论的逐步思考过程。以 "答案: " 结束，提供一个清晰、准确的回答，无需任何额外评论。
 
-Stanton Township, Champaign County, Illinois
-Stanton Township is a township in Champaign County, Illinois, USA. As of the 2010 census, its population was 505 and it contained 202 housing units.
+文档:
+西尔维斯特
+西尔维斯特是一个源自拉丁语形容词 silvestris 的名字，意为“树木繁茂的”或“野生的”，该形容词源自名词 silva，意为“林地”。古典拉丁语中拼写为 i。在古典拉丁语中，y 代表一个与 i 不同的独立发音，不是拉丁语本土发音，而是用于转写外来词。古典时期之后，y 开始发音为 i。用 Sylv- 代替 Silv- 的拼写方式出现在古典时期之后。
 
-
-Montebello, New York
-Montebello (Italian: "Beautiful mountain") is an incorporated village in the town of Ramapo, Rockland County, New York, United States. It is located north of Suffern, east of Hillburn, south of Wesley Hills, and west of Airmont. The population was 4,526 at the 2010 census
-
-Erik Hort
-Erik Hort (born February 16, 1987 in Montebello, New York) is an American soccer player who is currently a Free Agent.
+伊利诺伊州香槟县斯坦顿镇
+斯坦顿镇是美国伊利诺伊州香槟县的一个镇。根据 2010 年人口普查，其人口为 505 人，拥有 202 个住房单元。
 
 
-Questions:
-0: Who was crowned emperor of the west in 800 CE?
-Thought: One of the provided passage on Charlemagne indicates that he was crowned Holy Roman Emperor in 800. Answer: Charlemagne.
+纽约州蒙蒂贝洛
+蒙蒂贝洛（意大利语：“美丽的山”）是美国纽约州罗克兰县拉马波镇的一个建制村。它位于萨芬以北，希尔本以东，韦斯利希尔斯以南，艾尔蒙特以西。根据 2010 年人口普查，人口为 4,526 人。
 
-1: What was {{0.output}} later known as?
-Thought: To determine what {{0.oputput}} (Charlemagne) was later known as, I need to review the provided passage about Charlemagne. The passage indicates that Charlemagne was also known as "Charles the Great." Answer: Charles the Great
+埃里克·霍特
+埃里克·霍特（1987 年 2 月 16 日出生于纽约州蒙蒂贝洛）是一名美国足球运动员，目前是自由球员。
 
-2: What was the language from which the last name Sylvester originated during {{0.output}} era?
-Thought: The question asks about the origin of the last name Sylvester during the time of the person {{0.output}}, which was Charlemagne, whose reign was in the Early Middle Ages. The passage about the name Sylvester states that it is derived from Latin. Answer: Latin
+
+问题:
+0: 公元 800 年谁被加冕为西罗马帝国皇帝？
+思考过程: 提供的关于查理曼的段落表明他于 800 年被加冕为神圣罗马帝国皇帝。 答案: 查理曼。
+
+1: {{0.output}} 后来以什么名字著称？
+思考过程: 要确定 {{0.output}} (查理曼) 后来以什么名字著称，我需要回顾提供的关于查理曼的段落。该段落表明查理曼也被称为“查理大帝”。 答案: 查理大帝
+
+2: 在 {{0.output}} 时代，姓氏 Sylvester 起源于哪种语言？
+思考过程: 问题询问在 {{0.output}}（即查理曼，其统治时期为中世纪早期）时代姓氏 Sylvester 的起源。关于 Sylvester 这个名字的段落指出它源自拉丁语。 答案: 拉丁语
 """
         query = f"{task.id}: {task.arguments['query']}"
         subqa = []
@@ -77,6 +77,7 @@ Thought: The question asks about the origin of the last name Sylvester during th
 
         # print(f"Reasoner request = {request}")
         response = await self.llm.acall(request)
+        response = response+ "请结合信息等其他信息获取答案！"
         # print(f"Reasoner response = {response}")
         task.update_memory("retriever", retrieve_task.result)
         task.result = json.dumps(

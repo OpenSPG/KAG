@@ -170,11 +170,6 @@
         "source": "./kg.txt"
     },
     {
-        "id": "438",
-        "question": "哪部作品是《感化院》的主要演员Attilla Borlan的代表作，且这部作品由Attilla Borlan主演？",
-        "source": "./kg.txt"
-    },
-    {
         "id": "456",
         "question": "维京王国的主要演员的搭档有哪些代表作品",
         "source": "./kg.txt"

@@ -1,186 +1,89 @@
-import json
+import logging
 import os
-import requests
-from typing import List, Dict
-import yaml
-import jieba
-from collections import Counter
-import concurrent.futures
-from tqdm import tqdm
+from kag.common.conf import KAG_CONFIG
+from kag.common.registry import import_modules_from_path
+from kag.common.benchmarks.evaluate import Evaluate
+from kag.interface.common.llm_client import LLMClient
+import logging
+import json
+import re
+from typing import List, Dict, Any
+import argparse
 
-
-def load_config(config_path: str) -> Dict:
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-    return config
-
-
-def normalize_answer(s: str) -> List[str]:
-    """对答案进行标准化处理，包括分词"""
-    # 移除多余空格和换行符
-    s = " ".join(s.split())
-    # 使用结巴分词
-    return [token for token in jieba.cut(s) if token.strip()]
-
-
-def compute_exact_match(pred_tokens: List[str], answer_tokens: List[str]) -> float:
-    """计算EM分数"""
-    return float(pred_tokens == answer_tokens)
-
-
-def compute_f1(pred_tokens: List[str], answer_tokens: List[str]) -> float:
-    """计算F1分数"""
-    common = Counter(pred_tokens) & Counter(answer_tokens)
-    num_same = sum(common.values())
-
-    if len(pred_tokens) == 0 or len(answer_tokens) == 0:
-        return 0
-
-    precision = num_same / len(pred_tokens)
-    recall = num_same / len(answer_tokens)
-
-    if precision + recall == 0:
-        return 0
-
-    f1 = 2 * precision * recall / (precision + recall)
-    return f1
+logger = logging.getLogger(__name__)
 
 
 def extract_answer_from_prediction(prediction: str) -> str:
-    """从预测文本中提取答案部分"""
-    # 直接返回整个预测文本
-    return prediction.strip()
+    """Placeholder: Extracts answer from prediction string."""
+    if isinstance(prediction, str) and "答案:" in prediction:
+        parts = prediction.split("答案:")
+        if len(parts) > 1:
+            return parts[-1].strip()
+    return str(prediction).strip()
 
 
-def evaluate_qa(qa_file: str):
-    # 固定配置
-    api_key = ""
-    base_url = "https://api.deepseek.com/"
-    model = "deepseek-chat"
+class PrqaEvaluate(Evaluate):
+    def run_qa_evaluation(self, qa_data: List[Dict[str, Any]], llm_client: LLMClient) -> Dict[str, Any]:
+        """
+        Runs the complete evaluation for PRQA data using inherited Evaluate methods.
+        Expects qa_data to contain 'question', 'prediction', 'answer'.
+        """
+        questions = []
+        predictions_extracted = []
+        gold_answers = []
 
+        logger.info(f"Starting comprehensive evaluation for {len(qa_data)} QA pairs.")
 
-    # 读取QA数据
-    with open(qa_file, "r", encoding="utf-8") as f:
-        qa_data = json.load(f)
+        valid_pairs = 0
+        for item in qa_data:
+            if "prediction" not in item or item["prediction"] is None:
+                logger.warning(f"ID {item.get('id', 'N/A')} missing prediction, skipping evaluation.")
+                continue
+            if "answer" not in item or item["answer"] is None:
+                logger.warning(f"ID {item.get('id', 'N/A')} missing answer, skipping evaluation.")
+                continue
+            if "question" not in item or item["question"] is None:
+                logger.warning(f"ID {item.get('id', 'N/A')} missing question, skipping evaluation.")
+                continue
 
-    total_em = 0
-    total_f1 = 0
-    results = []
+            questions.append(item["question"])
+            predictions_extracted.append(extract_answer_from_prediction(item["prediction"]))
+            ans = item["answer"]
+            gold_answers.append(str(ans[0]) if isinstance(ans, list) else str(ans))
+            valid_pairs += 1
 
-    # 定义处理单个QA项的函数
-    def process_qa_item(item):
-        # 处理标准答案（可能是列表）
-        if isinstance(item["answer"], list) and len(item["answer"]) > 0:
-            standard_answer = item["answer"][0]
+        if not predictions_extracted:
+            logger.error("No valid predictions found to evaluate.")
+            return {"error": "No valid data for evaluation"}
+
+        # --- Calculate Metrics using inherited methods ---
+        logger.info("Calculating EM/F1 metrics...")
+        em_f1_sim_metrics = self.getBenchMark(predictions_extracted, gold_answers)
+
+        logger.info("Calculating ROUGE metrics...")
+        rouge_metrics = self.compute_rouge(predictions_extracted, gold_answers)
+
+        logger.info("Calculating LLM Consistency metrics...")
+        if llm_client:
+            llm_metrics = self.getLLMBenchMark(llm_client, questions, predictions_extracted, gold_answers)
         else:
-            standard_answer = item["answer"]
+            logger.warning("LLMClient not provided, skipping LLM Consistency check.")
+            llm_metrics = {"consistency": "N/A"}
 
-        # 检查是否存在prediction字段
-        if "prediction" not in item:
-            print(f"警告: ID为{item.get('id', '未知')}的数据缺少prediction字段")
-            return None
-
-        # 从预测中提取答案部分
-        predicted_answer = extract_answer_from_prediction(item["prediction"])
-
-        # 标准化答案
-        standard_tokens = normalize_answer(standard_answer)
-        predicted_tokens = normalize_answer(predicted_answer)
-
-        # 计算EM和F1分数
-        em_score = compute_exact_match(predicted_tokens, standard_tokens)
-        f1_score = compute_f1(predicted_tokens, standard_tokens)
-
-        # 构建提示词进行正确性评估
-        prompt = f"""请评估以下问答对的正确性：
-
-问题：{item['question']}
-标准答案：{standard_answer}
-模型预测：{predicted_answer}
-
-请判断模型预测是否与标准答案一致。只需回答"正确"或"错误"，并简要说明理由。"""
-
-        # 调用大模型评估
-        try:
-            evaluation = call_llm(api_key, base_url, model, prompt)
-        except Exception as e:
-            evaluation = f"API调用失败: {str(e)}"
-
-        # 返回结果
-        return {
-            "id": item["id"],
-            "question": item["question"],
-            "standard_answer": standard_answer,
-            "prediction": predicted_answer,
-            "evaluation": evaluation,
-            "em_score": em_score,
-            "f1_score": f1_score,
+        # --- Aggregate Results ---
+        final_results = {
+            "average_em": em_f1_sim_metrics.get("em", 0.0),
+            "average_f1": em_f1_sim_metrics.get("f1", 0.0),
+            "average_rouge_l": rouge_metrics.get("rouge-L", 0.0),
+            "llm_consistency": llm_metrics.get("consistency", 0.0),
+            "average_similarity": em_f1_sim_metrics.get("answer_similarity", 0.0),
+            "total_pairs_evaluated": valid_pairs,
         }
 
-    # 使用线程池并发处理
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        # 提交所有任务并显示进度条
-        future_to_item = {
-            executor.submit(process_qa_item, item): item for item in qa_data
-        }
-
-        # 使用tqdm显示进度
-        for future in tqdm(
-                concurrent.futures.as_completed(future_to_item),
-                total=len(qa_data),
-                desc="评估进度",
-        ):
-            result = future.result()
-            if result:
-                results.append(result)
-                total_em += result["em_score"]
-                total_f1 += result["f1_score"]
-
-    # 计算平均分数
-    avg_em = total_em / len(qa_data)
-    avg_f1 = total_f1 / len(qa_data)
-
-    # 添加总体评估结果
-    final_results = {"average_em": avg_em, "average_f1": avg_f1, "details": results}
-
-    # 保存评估结果
-    output_file = f"evaluation_results_{qa_file.split('/')[-1].split('.')[0][-1]}.json"
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(final_results, f, ensure_ascii=False, indent=2)
-
-    print(f"评估完成！结果已保存至 {output_file}")
-    print(f"平均EM分数: {avg_em:.4f}")
-    print(f"平均F1分数: {avg_f1:.4f}")
+        logger.info(f"Comprehensive evaluation completed. Results: {final_results}")
+        return final_results
 
 
-def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-
-    data = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.1,
-    }
-
-    response = requests.post(f"{base_url}chat/completions", headers=headers, json=data)
-    return response.json()["choices"][0]["message"]["content"]
-
-
-# def parse_result_file(file_path):
-#     result_data = []
-#     with open(file_path, "r", encoding="utf-8") as file:
-#         content = file.read().strip().split("\n\n")  # 分块处理
-#         for block in content:
-#             lines = block.strip().split("\n")
-#             id_ = lines[0].split(":")[1].strip()  # 提取序号
-#             question = lines[1].split(":")[1].strip()  # 提取问题
-#             prediction = lines[2].split(":")[1].strip()  # 提取答案
-#             result_data.append({
-#                 "id": id_,
-#                 "question": question,
-#                 "prediction": prediction
-#             })
-#     return result_data
 def parse_result_file(file_path):
     result_data = []
     with open(file_path, "r", encoding="utf-8") as file:
@@ -239,22 +142,42 @@ def generate_output_data(result_data, gold_answer_data):
 
 if __name__ == "__main__":
     dir_path = os.path.dirname(__file__)
-    import argparse
 
-    # 文件路径
     prediction_file_path = os.path.join(dir_path, "solver/data/result.txt")
     gold_answer_file_path = os.path.join(dir_path, "solver/data/gold_answer.json")
-    output_file_path = os.path.join(dir_path, "solver/data/res1.json")
-    # 主流程
+    data_file_path = os.path.join(dir_path, "solver/data/res.json")
+    output_file_path = os.path.join(dir_path, "solver/data/evaluation_results.json")
+
     result_data = parse_result_file(prediction_file_path)
     gold_answer_data = parse_gold_answer_file(gold_answer_file_path)
     output_data = generate_output_data(result_data, gold_answer_data)
-    # 写入 output.json
-    with open(output_file_path, "w", encoding="utf-8") as output_file:
+
+    with open(data_file_path, "w", encoding="utf-8") as output_file:
         json.dump(output_data, output_file, ensure_ascii=False, indent=4)
 
+    # --- Step 1: Load Existing Data with Predictions ---
+    with open(data_file_path, "r", encoding="utf-8") as f:
+        qa_data_with_predictions = json.load(f)
+
+    # --- Step 2: Perform Comprehensive Evaluation ---
+    llm_config = KAG_CONFIG.all_config["chat_llm"]
+    llm_client_for_eval = LLMClient.from_config(llm_config)
+
+    evaluator = PrqaEvaluate()
+    # Run the comprehensive evaluation
+    final_metrics = evaluator.run_qa_evaluation(
+        qa_data=qa_data_with_predictions,
+        llm_client=llm_client_for_eval
+    )
+
+    # --- Step 3: Print and Save Final Metrics ---
+    print("\n--- Final Evaluation Metrics ---")
+    print(json.dumps(final_metrics, indent=4, ensure_ascii=False))
+    # Determine output summary filename based on input filename
     parser = argparse.ArgumentParser()
     parser.add_argument("--qa_file", type=str, default="solver/data/res1.json")
     args = parser.parse_args()
     qa_file = os.path.join(dir_path, args.qa_file)
-    evaluate_qa(qa_file)
+
+    with open(output_file_path, "w", encoding="utf-8") as f:
+        json.dump(final_metrics, f, ensure_ascii=False, indent=4)

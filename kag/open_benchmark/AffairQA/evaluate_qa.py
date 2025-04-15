@@ -8,6 +8,9 @@ from collections import Counter
 import concurrent.futures
 from tqdm import tqdm
 
+from kag.common.conf import KAG_CONFIG
+from kag.interface.common.llm_client import LLMClient
+
 
 def load_config(config_path: str) -> Dict:
     with open(config_path, "r") as f:
@@ -58,6 +61,8 @@ def evaluate_qa(qa_file: str):
     base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/"
     model = "qwen-max-latest"
 
+    llm_config = KAG_CONFIG.all_config["chat_llm"]
+    llm_client = LLMClient.from_config(llm_config)
     # 读取QA数据
     with open(qa_file, "r", encoding="utf-8") as f:
         qa_data = json.load(f)
@@ -101,7 +106,7 @@ def evaluate_qa(qa_file: str):
 
         # 调用大模型评估
         try:
-            evaluation = call_llm(api_key, base_url, model, prompt)
+            evaluation = llm_client(prompt)
         except Exception as e:
             evaluation = f"API调用失败: {str(e)}"
 
@@ -170,7 +175,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--qa_file", type=str, default="solver/data/res1.json")
+    parser.add_argument("--qa_file", type=str, default="solver/data/res19.json")
     args = parser.parse_args()
     qa_file = os.path.join(dir_path, args.qa_file)
     evaluate_qa(qa_file)
