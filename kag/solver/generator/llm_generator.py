@@ -64,7 +64,7 @@ class LLMGenerator(GeneratorABC):
                 with_json_parse=self.generated_prompt.is_json_format(),
                 **kwargs
             )
-        if len(refer_data):
+        if refer_data and len(refer_data):
             refer_data_str = json.dumps(refer_data, ensure_ascii=False, indent=2)
             return self.llm_client.invoke(
                 {"query": query, "content": content, "ref": refer_data_str},
@@ -111,7 +111,6 @@ class LLMGenerator(GeneratorABC):
             reporter.add_report_line(
                 "generator_reference_graphs", "reference_graph", graph_data, "FINISH"
             )
-        refer_data = [f"Title:{x['document_name']}\n{x['content']}" for x in refer_data]
 
         if len(refer_data) and (not self.enable_ref):
             content_json["reference"] = refer_data
@@ -119,6 +118,7 @@ class LLMGenerator(GeneratorABC):
 
         content = json.dumps(content_json, ensure_ascii=False, indent=2)
         if not self.enable_ref:
+            refer_data = [f"Title:{x['document_name']}\n{x['content']}" for x in refer_data]
             refer_data = "\n\n".join(refer_data)
             thoughts = "\n\n".join(results)
             content = f"""

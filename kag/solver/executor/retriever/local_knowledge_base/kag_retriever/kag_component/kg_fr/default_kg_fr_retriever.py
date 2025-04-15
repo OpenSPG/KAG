@@ -4,7 +4,7 @@ from typing import List, Optional
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import LLMClient, Task
 from kag.interface.solver.base_model import LogicNode
-from kag.interface.solver.model.one_hop_graph import KgGraph, RetrievedData
+from kag.interface.solver.model.one_hop_graph import RetrievedData
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import \
     FlowComponentTask, FlowComponent
@@ -30,6 +30,7 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
                  ppr_chunk_retriever_tool: PprChunkRetriever = None,
                  top_k=10,**kwargs):
         super().__init__(**kwargs)
+        self.name = "kg_fr"
         self.llm = llm or LLMClient.from_config(
             get_default_chat_llm_config()
         )
@@ -84,13 +85,14 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
         )
 
         logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
+        cur_task.logical_node.get_fl_node_result().spo = match_spo
         cur_task.logical_node.get_fl_node_result().chunks = chunks
         cur_task.logical_node.get_fl_node_result().sub_question = ppr_sub_query
         if reporter:
             reporter.add_report_line(
                 kwargs.get("segment_name", "thinker"),
                 f"begin_sub_kag_retriever_{cur_task.logical_node.sub_query}_{self.name}",
-                "finish",
+                "",
                 "FINISH",
                 component_name=self.name,
                 chunk_num=len(chunks),
