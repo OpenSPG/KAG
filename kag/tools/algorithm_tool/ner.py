@@ -124,16 +124,14 @@ class Ner(ToolABC):
         for item in ner_list:
             entity = item.get("name", "")
             category = item.get("category", "")
-            official_name = item.get("official_name", "")
-            if not entity or not (category or official_name):
+            official_name = item.get("official_name", entity)
+            if not entity or not official_name:
                 continue
             if category.lower() in ["works", "person", "other"]:
                 res.append(SPOEntity(entity_name=entity, un_std_entity_type=category))
             else:
                 res.append(
-                    SPOEntity(
-                        entity_name=entity, un_std_entity_type=official_name or category
-                    )
+                    SPOEntity(entity_name=official_name, un_std_entity_type=category)
                 )
         return res
 

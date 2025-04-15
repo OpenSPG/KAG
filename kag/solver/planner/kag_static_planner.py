@@ -70,6 +70,28 @@ class KAGStaticPlanner(PlannerABC):
         pattern = r"\{\{\d+\.output\}\}"
         return bool(re.search(pattern, str(query)))
 
+    async def finish_judger(self, query: str, answer: str):
+        finish_prompt = f"""
+        # Task
+        The answer is a response to a question. Please determine whether the content of this answer is invalid, such as  "UNKNOWN", "I don't know" or "Insufficient Information."  \n
+        If the answer is invalid, return "Yes", otherwise, return "No".\n
+        You output should only be "Yes" or "No".\n
+        
+        # Answer\n
+        {answer}
+        """
+        try:
+            response = await self.llm.acall(prompt=finish_prompt)
+            if response.strip().lower() == "yes":
+                return False
+            return True
+        except Exception as e:
+            print(f"Failed to run finish_judger, info: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return True
+
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
 
