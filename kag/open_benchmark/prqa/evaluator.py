@@ -166,12 +166,29 @@ def call_llm(api_key: str, base_url: str, model: str, prompt: str) -> str:
     return response.json()["choices"][0]["message"]["content"]
 
 
+# def parse_result_file(file_path):
+#     result_data = []
+#     with open(file_path, "r", encoding="utf-8") as file:
+#         content = file.read().strip().split("\n\n")  # 分块处理
+#         for block in content:
+#             lines = block.strip().split("\n")
+#             id_ = lines[0].split(":")[1].strip()  # 提取序号
+#             question = lines[1].split(":")[1].strip()  # 提取问题
+#             prediction = lines[2].split(":")[1].strip()  # 提取答案
+#             result_data.append({
+#                 "id": id_,
+#                 "question": question,
+#                 "prediction": prediction
+#             })
+#     return result_data
 def parse_result_file(file_path):
     result_data = []
     with open(file_path, "r", encoding="utf-8") as file:
         content = file.read().strip().split("\n\n")  # 分块处理
         for block in content:
+
             id_ = question = prediction = None
+
             for line in block.strip().split("\n"):
                 if line.startswith("序号:"):
                     id_ = line.split("序号:")[1].strip()

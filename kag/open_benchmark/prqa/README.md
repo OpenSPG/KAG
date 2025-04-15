@@ -25,6 +25,9 @@ Update the generation model configurations `openie_llm` and `chat_llm`, and the 
 
 You need to set the correct `api_key`. If you're using a different model provider and model name than the defaults, you'll also need to update `base_url` and `model`.
 
+Update `prqa_executor` of kag-solver configuration in [kag_config.yaml](./kag_config.yaml)
+
+You need to configure the neo4j username and password
 ### Step 3: Initialize Project
 
 First, initialize the project.
