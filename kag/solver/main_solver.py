@@ -13,6 +13,8 @@ import asyncio
 import logging
 import json
 import os
+import re
+import copy
 
 import yaml
 
@@ -83,7 +85,7 @@ def load_yaml_files_from_conf_dir():
     return yaml_data
 
 def get_pipeline_conf(use_pipeline_name, config):
-    pipeline_name = "kag_solver_pipeline"
+    pipeline_name = "solver_pipeline"
     conf_map = load_yaml_files_from_conf_dir()
     if use_pipeline_name not in conf_map:
         raise RuntimeError(f"Pipeline configuration not found for pipeline_name: {use_pipeline_name}")
@@ -135,6 +137,10 @@ def get_pipeline_conf(use_pipeline_name, config):
     KAG_CONFIG.update_conf(default_pipeline_conf)
     return default_solver_pipeline
 
+def is_chinese(text):
+    chinese_pattern = re.compile(r'[\u4e00-\u9fff]+')
+    return bool(chinese_pattern.search(text))
+
 async def qa(task_id, query, project_id, host_addr, params={}):
     use_pipeline = params.get("usePipeline", "think_pipeline")
     qa_config = params.get("config", KAG_CONFIG.all_config)
@@ -153,12 +159,21 @@ async def qa(task_id, query, project_id, host_addr, params={}):
     )
     await reporter.start()
     try:
+        if is_chinese(query):
+            KAG_PROJECT_CONF.language = "zh"
+        else:
+            KAG_PROJECT_CONF.language = "en"
+
+        custom_pipeline_conf = copy.deepcopy(KAG_CONFIG.all_config.get("solver_pipeline", None))
         # self cognition
         self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
         self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
         self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
         if not self_cognition_res:
-            pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+            if custom_pipeline_conf:
+                pipeline_config = custom_pipeline_conf
+            else:
+                pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
             logger.error(f"pipeline conf: \n{pipeline_config}")
             pipeline = SolverPipelineABC.from_config(pipeline_config)
             answer = await pipeline.ainvoke(query, reporter=reporter)
@@ -218,15 +233,15 @@ if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
     init_kag_config(
-        "4000003", "http://antspg-gz00b-006000004163.sa128-sqa.alipay.net:8887"
+        "4200041", "http://127.0.0.1:8887"
     )
     res = SolverMain().invoke(
-        4000003,
-        6900001,
-        "你的特色是什么",
+        4200041,
+        6300136,
+        "Talk about Jay Zhou",
         "4700026",
         True,
-        host_addr="http://antspg-gz00b-006002021225.sa128-sqa.alipay.net:8887",
+        host_addr="http://127.0.0.1:8887",
     )
     print("*" * 80)
     print("The Answer is: ", res)
