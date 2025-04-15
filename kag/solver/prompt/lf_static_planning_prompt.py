@@ -88,8 +88,8 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         "function": [
           {
               "functionName": "Retrieval",
-              "function_declaration": "Retrieval(s=s_alias:type[name], p=p_alias:edge, o=o_alias:type[name], p.prop=value, s.prop=value, o.prop=value)",
-               "description": "Retrieval information according to SPO. 's' represents the subject, 'o' represents the object, and they are denoted as variable_name:entity_type[entity_name]. The entity name is an optional parameter and should be provided when there is a specific entity to query. 'p' represents the predicate, which can be a relationship or attribute, denoted as variable_name:edge_type_or_attribute_type. Each variable is assigned a unique variable name, which is used for reference in subsequent mentions. Note that 's', 'p', and 'o' should not appear repeatedly within the same expression; only one set of SPO should be queried at a time. When a variable is a reference to a previously mentioned variable name, the variable name must match the previously mentioned variable name, and only the variable name needs to be provided; the entity type is only given when it is first introduced. And 's.prop', 'o.prop', 'p.prop' represent the properties of subject, object and edge. the subject (s), predicate (p), and object (o) should not repeatedly appear multiple times within the same expression.Constraints can be applied specifically to the predicate (p) for more targeted querying. For multi-hop queries, each hop necessitates a separate retrieval operation. When a current variable references a previously mentioned variable, the variable name must be identical to the one it represents, and only the variable name needs to be stated. The entity type and name should be provided only upon the first mention of the variable; Note Use camelCase for types. Enclose strings in square brackets with backticks to avoid conflicts with keywords."
+              "function_declaration": "Retrieval(s=s_alias:type[name], p=p_alias:edge, o=o_alias:type[name])",
+               "description": "For text information retrieval, retrieve information based on spo. The elements s, p, and o cannot appear multiple times in the same expression. Constrained queries can be performed on s, p, and o. Multi-hop retrieval involves performing multiple retrievals. When referencing a variable from the current context to a prior one, the variable name must match the referenced variable name exactly, and only the variable name needs to be provided; the entity type and name are given only when first referenced."
           },
           {
               "functionName": "Math",
@@ -111,27 +111,27 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     default_case_en = [
     {
         "query": "Which sports team for which Cristiano Ronaldo played in 2011 was founded last ?",
-        "answer": "First, retrieve the sports teams Cristiano Ronaldo played for in 2011\n```\nStep1:Which Sports Teams Cristiano Ronaldo Played for in 2011 ?\nAction1:Retrieval(s=s1:Player[`Cristiano Ronaldo`],p=p1:PlayedForIn2011Year,o=o1:SportsTeam)\n```\nNext, obtain the foundation years of these teams\n```\nStep2:In which year were these teams established ?\nAction2:Retrieval(s=o1,p=p2:FoundationYear,o=o2:Year)\n```\nFinally, determine the team founded last by comparing years\n```\nStep3:Which team was founded last ?\nAction3:Math(content=[`o2`], target=`Which team was founded last?`)->math3\n```"
+        "answer": "First, retrieve the sports teams Cristiano Ronaldo played for in 2011\n```\nStep1:Which Sports Teams Cristiano Ronaldo Played for in 2011 ?\nAction1:Retrieval(s=s1:Player[`Cristiano Ronaldo`],p=p1:PlayedForIn2011Year,o=o1:SportsTeam)\n```\nNext, obtain the foundation years of these teams\n```\nStep2: What are the foundation years of the teams retrieved in Step1?\nAction2:Retrieval(s=o1,p=p2:FoundationYear,o=o2:Year)\n```\nFinally, determine the team founded last by comparing years\n```\nStep3:Which team has the most recent foundation year based on Step2's results?\nAction3:Math(content=[`o2`], target=`Which team was founded last?`)->math3\n```"
     },
     {
         "query": "John is Mike's father, and James is John's father. What is the relationship between James and Mike?",
-        "answer": "First, infer relationships based on familial connections\n```\nStep1: Infer the relationship between James and Mike\nAction1:Deduce(op=entailment,content=[`John is Mike's father`, `James is John's father`],target=`What is the relationship between James and Mike?`)->res\n```\nOutput the deduced result\n```\nStep2:output deduce answer\nAction2:output(res)\n```"
+        "answer": "First, infer the relationship between James and Mike\n```\nStep1: What is the familial relationship between James and Mike?\nAction1:Deduce(op=entailment,content=[`John is Mike's father`, `James is John's father`],target=`What is the relationship between James and Mike?`)->res\n```\nOutput the deduced result\n```\nStep2:What is the final answer from the relationship deduction by Step1?\nAction2:output(res)\n```"
     },
     {
         "query": "Who was the first president of the association which published Journal of Psychotherapy Integration?",
-        "answer": "First, identify the association publishing the *Journal of Psychotherapy Integration*\n```\nStep1:Which association that publishes the Journal of Psychotherapy Integration ?\nAction1:Retrieval(s=s1:Player[`Psychotherapy Integration`],p=p1:Publish,o=o1:Association)\n```\nThen retrieve the association's first president\n```\nStep2:Who was the first president of that specific association?\nAction2:Retrieval(s=o1,p=p2:FirstPresident,o=o2:Person)\n```"
+        "answer": "First, identify the association publishing the Journal of Psychotherapy Integration\n```\nStep1:Which association publishes the Journal of Psychotherapy Integration?\nAction1:Retrieval(s=s1:Player[`Psychotherapy Integration`],p=p1:Publish,o=o1:Association)\n```\nNext, retrieve the first president of this association\n```\nStep2: Who was the first president of the association retrieved in Step1?\nAction2:Retrieval(s=o1,p=p2:FirstPresident,o=o2:Person)\n```"
     },
     {
         "query": "When did the state where Pocahontas Mounds is located become part of the United States?",
-        "answer": "First, locate the state where *Pocahontas Mounds* is situated\n```\nStep1:Which State Where Pocahontas Mounds is Located ?\nAction1:Retrieval(s=s1:HistoricalSite[`Pocahontas Mounds`], p=p1:LocatedIn, o=o1:State)\n```\nNext, retrieve the state's admission year to the U.S.\n```\nStep2:When did this state become a part of the United States ？\nAction2:Retrieval(s=o1, p=p2:YearOfBecamingPartofTheUnitedStates, o=o2:Date)\n```"
+        "answer": "First, locate the state where *Pocahontas Mounds* is situated\n```\nStep1:Which State Where Pocahontas Mounds is Located ?\nAction1:Retrieval(s=s1:HistoricalSite[`Pocahontas Mounds`], p=p1:LocatedIn, o=o1:State)\n```\nNext, retrieve the state's admission year to the U.S.\n```\nStep2:What year was the state retrieved in Step1 admitted to the U.S.?\nAction2:Retrieval(s=o1, p=p2:StatehoodYear, o=o2:Date)\n```"
     },
     {
         "query": "Which of the two tornado outbreaks killed the most people?",
-        "answer": "First, identify the two tornado outbreaks\n```\nStep1:Which is the first tornado outbreaks ?\nAction1:Retrieval(s=s1:Event[`Tornado Outbreak`], p=p1:TheFirst, o=o1:Event)\n```\nConfirm the second event details\n```\nStep2:Which is the second tornado outbreaks ?\nAction2:Retrieval(s=s2:Event[`Tornado Outbreak`], p=p2:TheSecond, o=o2:Event)\n```\nRetrieve casualties from first outbreak\n```\nStep3:How many people died in the first tornado outbreak ?\nAction3:Retrieval(s=s1, p=p3:KilledPeopleNumber, o=o3:Number)\n```\nRetrieve casualties from second outbreak\n```\nStep4:How many people died in the second tornado outbreak ?\nAction4:Retrieval(s=s2, p=p4:KilledPeopleNumber, o=o4:Number)\n```\nCompare fatality numbers between events\n```\nStep5:To compare the death toll between two tornado outbreaks to determine which one had more fatalities.\nAction5:Math(content[`o3`,`o4`], target=`Which one had more fatalities?`)->math5\n```"
+        "answer": "First, identify the two tornado outbreaks\n```\nStep1:Which is the first tornado outbreaks ?\nAction1:Retrieval(s=s1:Event[`Tornado Outbreak`], p=p1:TheFirst, o=o1:Event)\n```\nConfirm the second event details\n```\nStep2:Which is the second tornado outbreaks ?\nAction2:Retrieval(s=s2:Event[`Tornado Outbreak`], p=p2:TheSecond, o=o2:Event)\n```\nRetrieve casualties from first outbreak\n```\nStep3:How many people died in the first tornado outbreak retrieved in Step1?\nAction3:Retrieval(s=s1, p=p3:KilledPeopleNumber, o=o3:Number)\n```\nRetrieve casualties from second outbreak\n```\nStep4:How many people died in the second tornado outbreak retrieved in Step2?\nAction4:Retrieval(s=s2, p=p4:KilledPeopleNumber, o=o4:Number)\n```\nCompare fatality numbers between events\n```\nStep5:To compare the death toll between two tornado outbreaks to determine which one had more fatalities.\nAction5:Math(content[`o3`,`o4`], target=`Which one had more fatalities?`)->math5\n```"
     },
     {
         "query": "Which film was released first, Aas Ka Panchhi or Phoolwari?",
-        "answer": "First, retrieve *Aas Ka Panchhi*'s release date\n```\nStep1:When was Aas Ka Panchhi released ?\nAction1:Retrieval(s=s1:Work[`Aas Ka Panchhi`], p=p1:ReleaseTime, o=o1:Date)\n```\nNext, retrieve *Phoolwari*'s release information\n```\nStep2:When was Phoolwari released ?\nAction2:Retrieval(s=s2:Work[`Phoolwari`], p=p2:ReleaseTime, o=o2:Date)\n```\nCompare release dates to determine earliest\n```\nStep3:Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier ?\nAction3:Math(content=[`o1`,`o2`], target=`Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier?`)->math5\n```"
+        "answer": "First, retrieve *Aas Ka Panchhi*'s release date\n```\nStep1:When was Aas Ka Panchhi released ?\nAction1:Retrieval(s=s1:Work[`Aas Ka Panchhi`], p=p1:ReleaseTime, o=o1:Date)\n```\nNext, retrieve *Phoolwari*'s release information\n```\nStep2:When was Phoolwari released ?\nAction2:Retrieval(s=s2:Work[`Phoolwari`], p=p2:ReleaseTime, o=o2:Date)\n```\nCompare release dates to determine earliest\n```\nStep3:Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier ? based by retrieved in Step1 and Step2\nAction3:Math(content=[`o1`,`o2`], target=`Comparing the release dates of Aas Ka Panchi and Phoolwari, who came earlier?`)->math5\n```"
     }
 ]
 
@@ -145,7 +145,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "output_format": "使用markdown格式输出，开头不需要输出'```markdown'",
                 "tips": [
                     "输出每一步的Step和Action前可以增加一些思路输出，类似’首先...其次...最后...‘",
-                    "Each `Step` must contain exactly one `Action` or `Output`",
+                    "Each `Step` must contain exactly one `Action`",
                     "Each step is an indivisible atomic question, please re-split accordingly.",
                     "Output also needs to be a separate step."
                     "Step和Action内容需要使用代码风格输出"
@@ -161,7 +161,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
                 "tips": [
                     "Before outputting each Step and Action, you can add some thought process, such as 'First... Then... Finally...'", 
-                    "Each Step must contain exactly one Action or Output", 
+                    "Each Step only contain one Action", 
                     "Each step should be an indivisible atomic question; please re-split accordingly.", 
                     "Output also needs to be a separate step.", 
                     "Content for Step and Action should be output in code style",
@@ -209,8 +209,6 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                     current_sub_query = current_sub_query.strip()
                     if current_sub_query == "":
                         raise RuntimeError(f"{line} is not step query")
-            elif line.startswith("Output"):
-                sub_querys.append("output")
             elif line.startswith("Action"):
                 logic_forms_regex = re.search("Action\d+:(.*)", line)
                 if logic_forms_regex:
@@ -231,9 +229,9 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     def _get_dep_task_id(self, logic_forms):
         all_alias_index_map = {}
         def add_index_map(alias, index):
-            index_set = all_alias_index_map.get(alias, [])
-            index_set.append(index)
-            all_alias_index_map[alias] = index_set
+            if alias in all_alias_index_map.keys():
+                return
+            all_alias_index_map[alias] = index
         for i, logic_form in enumerate(logic_forms):
             if isinstance(logic_form, GetSPONode):
                 add_index_map(logic_form.s.alias_name.alias_name, i)
@@ -244,47 +242,39 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
 
         return all_alias_index_map
 
-    def _get_task_dep(self, logic_node, dep_task):
-        if isinstance(logic_node, GetSPONode) or isinstance(logic_node, GetNode):
-            return None
+    def _get_task_dep(self, index, logic_node, dep_task):
         ret = []
+        def add_dep_by_index(alias_name):
+            alias_index = dep_task[alias_name]
+            if alias_index < index:
+                ret.append(alias_index)
+        if isinstance(logic_node, GetSPONode):
+            add_dep_by_index(logic_node.s.alias_name.alias_name)
+            add_dep_by_index(logic_node.p.alias_name.alias_name)
+            add_dep_by_index(logic_node.o.alias_name.alias_name)
+        if isinstance(logic_node, GetNode):
+            return []
+
         if isinstance(logic_node, MathNode) or isinstance(logic_node, DeduceNode):
             for alias in dep_task.keys():
                 if alias in logic_node.content:
-                    ret.extend(dep_task[alias])
+                    ret.append(dep_task[alias])
         return ret
 
 
     def parse_response(self, response: str, **kwargs):
-        """
- "output": {
-                "0": {
-                    "executor": "Retriever",
-                    "dependent_task_ids": [],
-                    "arguments": {"query": "张学友出演过的电影列表"},
-                },
-                "1": {
-                    "executor": "Retriever",
-                    "dependent_task_ids": [],
-                    "arguments": {"query": "刘德华出演过的电影列表"},
-                },
-            }
-
-        """
         sub_queries, logic_forms = self.parse_steps(response)
         logic_forms = self._parse_lf(sub_queries, logic_forms)
         tasks_dep = {}
-        alias_dep = self._get_dep_task_id(logic_forms)
-
         for i, logic_form in enumerate(logic_forms):
-            deps = self._get_task_dep(logic_form, alias_dep)
-            if not deps:
-                deps = [] if i ==0 else [i - 1]
-
+            task_deps = [] if i == 0 else [i - 1]
+            is_need_rewrite = True
+            if isinstance(logic_form, GetNode) or len(tasks_dep) == 0:
+                is_need_rewrite = False
             tasks_dep[i] = {
                 "name": f"Step{i+1}",
                 "executor": logic_form.operator,
-                "dependent_task_ids": deps,
-                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form},
+                "dependent_task_ids": task_deps,
+                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form, "is_need_rewrite": is_need_rewrite},
             }
         return Task.create_tasks_from_dag(tasks_dep)

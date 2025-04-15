@@ -129,7 +129,7 @@ class KagDeduceExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_begin_task",
-            "finish",
+            "",
             "FINISH",
             step=task.name,
             overwrite = False,

@@ -17,13 +17,12 @@ from kag.interface.solver.model.one_hop_graph import (
     RetrievedData,
     KgGraph,
 )
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import get_history_qa
 from kag.solver.utils import init_prompt_with_fallback
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_rewriter import (
     KAGLFRewriter,
 )
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import (
-    get_history_qa,
-)
+
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_flow import (
     KAGFlow,
 )
@@ -47,7 +46,8 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
             refer_id += 1
 
         if isinstance(rd, KgGraph):
-            for spo in rd.get_all_spo():
+            spo_set = list(set(rd.get_all_spo()))
+            for spo in spo_set:
                 refer_docs.append(
                     {
                         "id": f"chunk:{prefix_id}_{refer_id}",
@@ -83,6 +83,14 @@ class KAGRetrievedResponse(ExecutorResponse):
         return self.to_string()
 
     __repr__ = __str__
+
+    def get_chunk_list(self):
+        res = []
+        for c in self.chunk_datas:
+            res.append(f"{c.content}")
+        if len(res)==0:
+            return to_reference_list(self.task_id, [self.graph_data])
+        return res
 
     def to_reference_list(self):
         """
@@ -184,13 +192,17 @@ class KagHybridExecutor(ExecutorABC):
             get_default_chat_llm_config()
         )
 
+        self.flow: KAGFlow = KAGFlow(
+            flow_str=self.flow_str,
+        )
+
     @property
     def output_types(self):
         """Output type specification for executor responses"""
         return KAGRetrievedResponse
 
-    @retry(stop=stop_after_attempt(3), reraise=True)
-    def generate_answer(self, question: str, docs: [], history_qa=[], **kwargs):
+    @retry(stop=stop_after_attempt(3))
+    def generate_answer(self, tag_id, question: str, docs: [], history_qa=[], **kwargs):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
 
@@ -216,7 +228,7 @@ class KagHybridExecutor(ExecutorABC):
             with_json_parse=False,
             with_except=True,
             tag_name=f"kag_hybrid_retriever_summary_{question}",
-            segment_name="thinker",
+            segment_name=tag_id,
             **kwargs,
         )
         logger.debug(
@@ -226,13 +238,14 @@ class KagHybridExecutor(ExecutorABC):
             return llm_output
         return "I don't know"
 
-    def generate_summary(self, query, chunks, history, **kwargs):
+    def generate_summary(self, tag_id, query, chunks, history, **kwargs):
         if not chunks:
             return ""
         history_qa = get_history_qa(history)
         if len(history) == 1 and len(history_qa) == 1:
             return history[0].get_fl_node_result().summary
         return self.generate_answer(
+            tag_id=tag_id,
             question=query, docs=chunks, history_qa=history_qa, **kwargs
         )
 
@@ -246,6 +259,7 @@ class KagHybridExecutor(ExecutorABC):
         start_time = time.time()  # 添加开始时间记录
         kag_response = initialize_response(task)
         tag_id = f"{task_query}_begin_task"
+        flow_query = logic_node.sub_query if logic_node else task_query
 
         try:
             logger.info(
@@ -259,14 +273,14 @@ class KagHybridExecutor(ExecutorABC):
                 reporter,
                 "thinker",
                 tag_id,
-                f"{task_query}\n",
+                f"{flow_query}\n",
                 "INIT",
                 step=task.name,
                 overwrite=False,
             )
             if not logic_node:
                 logic_nodes = self._convert_to_logical_form(
-                    task_query, task, reporter=reporter
+                    flow_query, task, reporter=reporter
                 )
             else:
                 logic_nodes = [logic_node]
@@ -275,23 +289,21 @@ class KagHybridExecutor(ExecutorABC):
             )
 
             logger.info(f"Creating KAGFlow for task: {task_query}")
-            start_time = time.time()  # 添加开始时间记录
-            flow: KAGFlow = KAGFlow(
-                flow_id=task.id,
-                nl_query=task_query,
-                lf_nodes=logic_nodes,
-                flow_str=self.flow_str,
-                graph_data=context.variables_graph,
-            )
+            start_time = time.time()
+
             logger.info(
                 f"KAGFlow created in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
 
             logger.info(f"Executing KAGFlow for task: {task_query}")
-            start_time = time.time()  # 添加开始时间记录
-            graph_data, retrieved_datas = flow.execute(
-                reporter=reporter, segment_name=tag_id
-            )
+            start_time = time.time()
+            graph_data, retrieved_datas = self.flow.execute(
+                flow_id=task.id,
+                nl_query=flow_query,
+                lf_nodes=logic_nodes,
+                executor_task=task,
+                reporter=reporter,
+                segment_name=tag_id)
             kag_response.graph_data = graph_data
             if graph_data:
                 context.variables_graph.merge_kg_graph(graph_data)
@@ -314,10 +326,10 @@ class KagHybridExecutor(ExecutorABC):
             logger.info(
                 f"Logic nodes processed in {time.time() - start_time:.2f} seconds for task: {task_query}"
             )
-
             kag_response.summary = self.generate_summary(
+                tag_id=tag_id,
                 query=task_query,
-                chunks=kag_response.to_reference_list(),
+                chunks=kag_response.get_chunk_list(),
                 history=logic_nodes,
                 **kwargs,
             )
@@ -334,10 +346,10 @@ class KagHybridExecutor(ExecutorABC):
                 reporter,
                 "thinker",
                 tag_id,
-                "finish",
+                "",
                 "FINISH",
                 step=task.name,
-                overwrite=False,
+                overwrite=False
             )
         except Exception as e:
             logger.warning(
@@ -351,9 +363,10 @@ class KagHybridExecutor(ExecutorABC):
                 f"{self.schema().get('name')} executed failed {e}",
                 "ERROR",
                 step=task.name,
-                overwrite=False,
+                overwrite=False
             )
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")
+            raise e
 
         logger.info(f"{task_query} end kag hybrid executor")
 

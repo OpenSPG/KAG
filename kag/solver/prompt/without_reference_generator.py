@@ -12,9 +12,6 @@ class WithOutReferGeneratorPrompt(PromptABC):
     template_zh = (
         f"你是一个信息分析专家，今天是{get_now(language='zh')}。"
         "基于给定的上下文信息回答问题。"
-        "\n输出语调要求通顺，不要有机械感"
-        "\n任务过程上下文信息：'$content'"
-        "\n问题：'$query'"
         """
 示例1：
 任务过程上下文：
@@ -24,20 +21,26 @@ class WithOutReferGeneratorPrompt(PromptABC):
 
 9.2大
 """
+        "\n输出语调要求通顺，不要有机械感, 输出的语言要和问题的语言保持一致"
+        "\n任务过程上下文信息：'$content'"
+        "\n问题：'$query'"
     )
     template_en = (
         f"You are an information analysis expert, today is {get_now(language='en')}."
 """Answer the question based on the given context.
 Do not repeat the references when outputting the answer.
-The tone of the response should be smooth and natural, avoiding any mechanical feel.
-Task process contextual information: '$content'
-Question: '$query'
 
 Example 1:
 Task Process Context: 'After calculation by the calculator, 9.2 is greater than 9.1.'
 Given references: ''
 Question: 'Which is larger, 9.1 or 9.2?'
-Answer: 9.2 is larger."""
+Answer: 9.2 is larger.
+
+The tone of the response should be smooth and natural, avoiding any mechanical feel, and the language of the output should match the language of the question.
+Task process contextual information: '$content'
+Question: '$query'
+
+"""
     )
 
     @property
