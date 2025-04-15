@@ -21,10 +21,13 @@ cd kag/open_benchmark/prqa
 
 ### Step 2：配置模型
 
-更新 [kag_config.yaml](./kag_config.yaml) 中的生成模型配置 ``openie_llm`` 和 ``chat_llm`` 和表示模型配置 ``vectorize_model``。
+更新 [kag_config.yaml](./kag_config.yaml) 中的生成模型配置 ``openie_llm`` 和 ``chat_llm`` 和表示模型配置 ``vectorize_model``
 
 您需要设置正确的 ``api_key``。如果使用的模型供应商和模型名与默认值不同，您还需要更新 ``base_url`` 和 ``model``。
 
+更新 [kag_config.yaml](./kag_config.yaml) 中的 kag-solver configuration 关于 ``prqa_executor`` 中的 neo4j 配置
+
+您需要配置neo4j的用户名和密码
 ### Step 3：初始化项目
 
 先对项目进行初始化。
