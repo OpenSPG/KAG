@@ -47,7 +47,7 @@ class OllamaClient(LLMClient):
             base_url (str): The base URL for the Ollama API.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = f"{base_url}{model}"
 
@@ -158,7 +158,6 @@ class OllamaClient(LLMClient):
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
         if messages is None:
-
             if image_url:
                 messages = [
                     {"role": "system", "content": "you are a helpful assistant"},

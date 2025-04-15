@@ -48,7 +48,7 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
             query_instruction_for_retrieval (str, optional): The query instruction for retrieval. Defaults to None.
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = "local_bge_vectorize_model"
 

@@ -45,7 +45,7 @@ class MAASRerankModel(RerankModelABC):
             ValueError: If base_url or api_key are invalid
         """
 
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = f"{api_key}{base_url}{model}"
 
