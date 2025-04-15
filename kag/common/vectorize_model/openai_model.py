@@ -45,7 +45,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             base_url (str, optional): The base URL for the OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = f"{api_key}{base_url}{model}"
 
@@ -69,7 +69,6 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         """
 
         try:
-
             # Handle empty strings in the input
             if isinstance(texts, list):
                 # Create a map of original indices to track empty strings
