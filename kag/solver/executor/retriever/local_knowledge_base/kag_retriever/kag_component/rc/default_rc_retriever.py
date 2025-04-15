@@ -38,6 +38,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.name = "kg_rc"
         self.top_k = top_k
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
@@ -76,6 +77,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
     def invoke(
         self, cur_task: FlowComponentTask, executor_task: Task, processed_logical_nodes: List[LogicNode], **kwargs
     ) -> List[ChunkData]:
+        segment_name = kwargs.get("segment_name", "thinker")
         component_name = self.name
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         query = executor_task.arguments.get("rewrite_query", executor_task.arguments["query"])
@@ -83,6 +85,15 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         step_sub_query  = generate_step_query(logical_node=logical_node, processed_logical_nodes=processed_logical_nodes)
         dpr_queries = [query, step_sub_query]
         dpr_queries = list(set(dpr_queries))
+
+        if reporter:
+            reporter.add_report_line(
+                segment_name,
+                f"begin_sub_kag_retriever_{cur_task.logical_node.sub_query}_{component_name}",
+                cur_task.logical_node.sub_query,
+                "INIT",
+                component_name=component_name
+            )
 
         sim_scores = {}
         doc_maps = {}
@@ -107,6 +118,17 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
             chunk_id=doc_id,
             score=doc_score,
         ))
+        if reporter:
+            reporter.add_report_line(
+                segment_name,
+                f"begin_sub_kag_retriever_{cur_task.logical_node.sub_query}_{component_name}",
+                "",
+                "FINISH",
+                component_name=component_name,
+                chunk_num=len(matched_chunks),
+                desc="retrieved_doc_digest"
+            )
+
         return matched_chunks
 
 

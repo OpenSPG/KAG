@@ -1,7 +1,8 @@
 import logging
 import time
-from typing import List, Dict
+from typing import List, Dict, Optional
 
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.config import get_default_chat_llm_config
 from kag.common.text_sim_by_vector import TextSimilarity
@@ -65,6 +66,7 @@ class KagMerger(FlowComponent):
                  search_api: SearchApiABC = None,
                  **kwargs):
         super().__init__(**kwargs)
+        self.name = "kag_merger"
         self.top_k = top_k
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
@@ -121,6 +123,18 @@ class KagMerger(FlowComponent):
 
         cur_task.logical_node.get_fl_node_result().chunks = limited_merged_chunks
 
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+
+        if reporter:
+            reporter.add_report_line(
+                kwargs.get("segment_name", "thinker"),
+                f"begin_sub_kag_retriever_{cur_task.logical_node.sub_query}_{self.name}",
+                "",
+                "FINISH",
+                component_name=self.name,
+                chunk_num=len(limited_merged_chunks),
+                desc="kag_merger_digest"
+            )
         # summary
         formatted_docs = []
         for doc in limited_merged_chunks:
@@ -139,8 +153,8 @@ class KagMerger(FlowComponent):
         }, self.summary_prompt,
             with_json_parse=False,
             with_except=True,
-            segment_name=kwargs.get("segment_name", "thinker"),
-            tag_name=f"begin_summary_{cur_task.logical_node.sub_query}_{self.name}"
+            tag_name=f"begin_summary_{cur_task.logical_node.sub_query}_{self.name}",
+            **kwargs
         )
         cur_task.logical_node.get_fl_node_result().summary = summary_response
         return limited_merged_chunks

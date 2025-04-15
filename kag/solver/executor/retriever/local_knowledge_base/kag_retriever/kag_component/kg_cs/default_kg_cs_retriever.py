@@ -20,6 +20,7 @@ from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import Pat
 class KgConstrainRetrieverWithOpenSPG(KagLogicalFormComponent):
     def __init__(self, path_select: PathSelect = None, entity_linking=None, llm:LLMClient = None,**kwargs):
         super().__init__(**kwargs)
+        self.name = "kg_cs"
         self.llm = llm or LLMClient.from_config(
             get_default_chat_llm_config()
         )

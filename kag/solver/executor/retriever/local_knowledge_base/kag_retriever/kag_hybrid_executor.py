@@ -345,7 +345,7 @@ class KagHybridExecutor(ExecutorABC):
                 reporter,
                 "thinker",
                 tag_id,
-                "finish",
+                "",
                 "FINISH",
                 step=task.name,
                 overwrite=False

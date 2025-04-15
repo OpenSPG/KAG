@@ -108,12 +108,6 @@ class KgRetrieverTemplate:
                 if logic_node.get_fl_node_result().spo:
                     continue
 
-                dot_refresh = DotRefresher(reporter=reporter, segment=segment_name,
-                                           tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                                           content="executing", params={
-                        "component_name": component_name
-                    })
-
                 if reporter:
                     reporter.add_report_line(
                         segment_name,
@@ -125,16 +119,13 @@ class KgRetrieverTemplate:
                     reporter.add_report_line(
                         segment_name,
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        "executing",
+                        "task_executing",
                         "RUNNING",
                         component_name=component_name
                     )
 
-                    dot_refresh.start()
                 try:
                     select_rel = self._retrieved_on_graph(kg_graph, logic_node)
-                    if reporter:
-                        dot_refresh.stop()
                     logic_node.get_fl_node_result().spo = select_rel
                     if select_rel:
                         if kwargs.get("is_exact_match", False):
@@ -146,7 +137,6 @@ class KgRetrieverTemplate:
 
                 except Exception as e:
                     if reporter:
-                        dot_refresh.stop()
                         reporter.add_report_line(
                             segment_name,
                             f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
