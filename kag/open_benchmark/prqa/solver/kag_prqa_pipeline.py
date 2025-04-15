@@ -18,14 +18,13 @@ class PrqaPipeline(SolverPipelineABC):
             planner: PlannerABC,
             executor: ExecutorABC,
             generator: GeneratorABC,
-            max_iteration: int = 10,
+            max_retries: int = 3,
     ):
         super().__init__()
         self.planner = planner
         self.executor = executor
         self.generator = generator
-        self.max_iteration = max_iteration
-        self.max_retries = 3
+        self.max_retries = max_retries
 
     def invoke(self, query, **kwargs):
         try:
