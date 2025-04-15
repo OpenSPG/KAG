@@ -24,6 +24,7 @@ import uuid
 
 import requests
 import importlib
+import numpy as np
 from typing import Tuple
 from pathlib import Path
 
@@ -413,3 +414,7 @@ def generate_unique_message_key(message):
     # unique_id = uuid.uuid4().hex  # 生成一个UUID并转换为十六进制字符串
     async_message_key = f"KAG_{timestamp}_{unique_id}"
     return async_message_key
+
+
+def rrf_score(length, r: int = 1):
+    return np.array([1 / (r + i) for i in range(length)])
