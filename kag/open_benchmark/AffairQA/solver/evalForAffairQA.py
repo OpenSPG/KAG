@@ -64,27 +64,11 @@ class AffairQAEvaluate(Evaluate):
 
         # --- Calculate Metrics using inherited methods ---
         logger.info("Calculating EM/F1 metrics...")
-        em_f1_sim_metrics = self.getBenchMark(predictions_extracted, gold_answers)
+        em_f1_sim_metrics = self.getBenchMark(questions,predictions_extracted, gold_answers)
 
-        logger.info("Calculating ROUGE metrics...")
-        rouge_metrics = self.compute_rouge(predictions_extracted, gold_answers)
-
-        logger.info("Calculating LLM Consistency metrics...")
-        if llm_client:
-             llm_metrics = self.getLLMBenchMark(llm_client, questions, predictions_extracted, gold_answers)
-        else:
-             logger.warning("LLMClient not provided, skipping LLM Consistency check.")
-             llm_metrics = {"consistency": "N/A"}
 
         # --- Aggregate Results ---
-        final_results = {
-            "average_em": em_f1_sim_metrics.get("em", 0.0),
-            "average_f1": em_f1_sim_metrics.get("f1", 0.0),
-            "average_rouge_l": rouge_metrics.get("rouge-L", 0.0),
-            "llm_consistency": llm_metrics.get("consistency", 0.0),
-            "average_similarity": em_f1_sim_metrics.get("answer_similarity", 0.0),
-            "total_pairs_evaluated": valid_pairs,
-        }
+        final_results = em_f1_sim_metrics
 
         logger.info(f"Comprehensive evaluation completed. Results: {final_results}")
         return final_results
