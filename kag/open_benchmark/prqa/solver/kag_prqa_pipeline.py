@@ -18,17 +18,16 @@ class PrqaPipeline(SolverPipelineABC):
             planner: PlannerABC,
             executor: ExecutorABC,
             generator: GeneratorABC,
-            max_retries: int = 3,
     ):
         super().__init__()
         self.planner = planner
         self.executor = executor
         self.generator = generator
-        self.max_retries = max_retries
+        self.max_retries = 3
 
     def invoke(self, query, **kwargs):
         try:
-            return self.process_question(question=query, retry_count=3)
+            return self.process_question(question=query)
         except Exception as e:
             logger.error(f"处理问题失败: {query} - {str(e)}")
 
