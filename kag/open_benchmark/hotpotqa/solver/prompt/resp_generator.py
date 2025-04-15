@@ -18,7 +18,8 @@ class RespGenerator(PromptABC):
         "\nOnly give me the answer and do not output any other words."
         "\nThe following are given reference:'$content'\nQuestion: '$query'"
     )
-
+    def is_json_format(self):
+        return False
     @property
     def template_variables(self) -> List[str]:
         return ["query", "content"]
