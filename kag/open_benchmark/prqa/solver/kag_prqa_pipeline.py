@@ -71,7 +71,7 @@ class PrqaPipeline(SolverPipelineABC):
     @staticmethod
     def write_response_to_txt(question_id, question, response, output_file):
         with open(output_file, 'a', encoding='utf-8') as output:
-            output.write(f"序号：{question_id}\n")
+            output.write(f"序号: {question_id}\n")
             output.write(f"问题: {question}\n")
             output.write(f"答案: {response}\n")
             output.write("\n")
