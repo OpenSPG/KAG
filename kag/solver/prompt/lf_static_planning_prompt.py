@@ -268,10 +268,13 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         tasks_dep = {}
         for i, logic_form in enumerate(logic_forms):
             task_deps = [] if i == 0 else [i - 1]
+            is_need_rewrite = True
+            if isinstance(logic_form, GetNode) or len(tasks_dep) == 0:
+                is_need_rewrite = False
             tasks_dep[i] = {
                 "name": f"Step{i+1}",
                 "executor": logic_form.operator,
                 "dependent_task_ids": task_deps,
-                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form, "is_need_rewrite": (False if isinstance(logic_form, GetNode) else True)},
+                "arguments": {"query": logic_form.sub_query, "logic_form_node": logic_form, "is_need_rewrite": is_need_rewrite},
             }
         return Task.create_tasks_from_dag(tasks_dep)

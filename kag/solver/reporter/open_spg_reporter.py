@@ -141,37 +141,33 @@ class OpenSPGReporter(ReporterABC):
         self.report_sub_segment = {}
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
         self.word_mapping = {
+            "kag_merger_digest": {
+                "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息已足够回答问题。",
+                "en": "{chunk_num} documents were output, sufficient information retrieved to answer the question."
+            },
             "retrieved_info_digest": {
-                "zh": "共检索到 {chunk_num} 篇文档，检索的子图中共有 {nodes_num} 个节点和 {edges_num} 条边",
+                "zh": "共检索到 {chunk_num} 篇文档，检索的子图中共有 {nodes_num} 个节点和 {edges_num} 条边。",
                 "en": "In total, {chunk_num} documents were retrieved, with {node_num} nodes and {edge_num} edges in the graph."
             },
+            "retrieved_doc_digest": {
+                "zh": "共检索到{chunk_num}篇文档。",
+                "en": "{chunk_num} documents were retrieved."
+            },
             "next_finish": {
-                "zh": "检索信息不足以回答，需要继续检索",
-                "en": "Insufficient information retrieved to answer, need to continue retrieving",
+                "zh": "检索信息不足以回答，需要继续检索。",
+                "en": "Insufficient information retrieved to answer, need to continue retrieving.",
             },
             "next_retrieved_finish": {
-                "zh": "检索的子图中共有 {edges_num} 条边和问题相关，还需进行chunk检索",
+                "zh": "检索的子图中共有 {edges_num} 条边和问题相关，还需进行chunk检索。",
                 "en": "There are {edges_num} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed."
             },
             "retrieved_finish": {
-                "zh": "检索信息已足够回答问题，尝试基于信息进行总结",
-                "en": "Sufficient information retrieved to answer the question, attempting to summarize based on the information",
+                "zh": "",
+                "en": "",
             },
-            "not found": {
-                "en": "Not found",
-                "zh": "未找到"
-            },
-            "executing": {
+            "task_executing": {
                 "en": "Executing...",
                 "zh": "执行中..."
-            },
-            "finish": {
-                "en": "",
-                "zh": ""
-            },
-            "rc": {
-                "en": "Raw Chunk Retrieve",
-                "zh": "文档层检索"
             },
             "kg_fr": {
                 "en": "Open Information Extraction Graph Retrieve",
@@ -180,16 +176,28 @@ class OpenSPGReporter(ReporterABC):
             "kg_cs": {
                 "en": "SPG Graph Retrieve",
                 "zh": "SPG知识层检索"
+            },
+            "kg_rc": {
+                "en": "RawChunk Retrieve",
+                "zh": "文档检索"
+            },
+            "kag_merger": {
+                "en": "Rerank the documents and take the top {chunk_num},",
+                "zh": "重排序文档，取top {chunk_num}，"
             }
         }
         self.tag_mapping = {
             "Graph Show": {
-                "en": "Retrieved Data:{content}",
-                "zh": "检索结果:{content}",
+                "en": "{content}",
+                "zh": "{content}",
             },
             "Rewrite query": {
                 "en": "Rethinking question using LLM: {content}",
                 "zh": "根据依赖问题重写子问题: {content}",
+            },
+            "language_setting": {
+                "en": "",
+                "zh": "这个是一个中文知识库，我们使用中文进行思考"
             },
             "Iterative planning": {
                 "en": """
@@ -220,8 +228,8 @@ class OpenSPGReporter(ReporterABC):
 </step>""",
             },
             "begin_sub_kag_retriever": {
-                "en": "Starting {component_name}: {content} {desc}.",
-                "zh": "执行{component_name}: {content} {desc}。",
+                "en": "Starting {component_name}: {content} {desc}",
+                "zh": "执行{component_name}: {content} {desc}",
             },
             "end_sub_kag_retriever": {
                 "en": " {content}",
@@ -252,6 +260,10 @@ Rewritten question:\n{content}
             "retriever_summary": {
                 "en": "Summarizing retrieved documents,{content}",
                 "zh": "对文档进行总结，{content}",
+            },
+            "begin_summary": {
+                "en": "Summarizing retrieved information, {content}",
+                "zh": "对检索的信息进行总结, {content}"
             },
             "begin_task": {
                 "en": """
@@ -319,6 +331,7 @@ Rewritten question:\n{content}
             self.client = None
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
+        end_word = ("." if KAG_PROJECT_CONF.language == "en" else "。")
         if (
                 isinstance(datas, list)
                 and datas
@@ -327,7 +340,7 @@ Rewritten question:\n{content}
             graph_id = f"graph_{generate_random_string(3)}"
             graph_list.append(_convert_spo_to_graph(graph_id, datas))
             tpl = self.get_tag_template("Graph Show")
-            datas = f"""<graph id={graph_id}></graph>"""
+            datas = f"""<graph id={graph_id}></graph>{end_word}"""
         if tpl:
             format_params = {
                 "content": datas
@@ -335,7 +348,12 @@ Rewritten question:\n{content}
             format_params.update(content_params)
             datas = tpl.format_map(SafeDict(format_params))
         elif str(datas).strip() != '':
-            datas = str(datas) + ("." if KAG_PROJECT_CONF.language == "en" else "。")
+            output = str(datas).strip()
+            if output != '':
+
+                if output[-1] != end_word:
+                    output += end_word
+            datas = output
         if "planning" in report_id:
             datas = process_planning(str(datas))
         return str(datas)

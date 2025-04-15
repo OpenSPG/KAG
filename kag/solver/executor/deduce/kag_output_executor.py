@@ -99,7 +99,7 @@ class KagOutputExecutor(ExecutorABC):
             reporter,
             "thinker",
             f"{task_query}_begin_task",
-            "finish",
+            "",
             "FINISH",
             overwrite=False,
             step=task.name
