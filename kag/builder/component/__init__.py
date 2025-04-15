@@ -54,6 +54,7 @@ from kag.builder.component.splitter.outline_splitter import OutlineSplitter
 from kag.builder.component.splitter.semantic_splitter import SemanticSplitter
 from kag.builder.component.vectorizer.batch_vectorizer import BatchVectorizer
 from kag.builder.component.writer.kg_writer import KGWriter
+from kag.builder.component.writer.memory_graph_writer import MemoryGraphWriter
 
 
 __all__ = [
@@ -92,4 +93,5 @@ __all__ = [
     "SLSConsumerScanner",
     "NaiveRagExtractor",
     "TableExtractor",
+    "MemoryGraphWriter",
 ]

@@ -3,7 +3,7 @@ pipeline_name: self_cognition_pipeline
 
 #------------kag-solver configuration start----------------#
 
-kag_solver_pipeline:
+solver_pipeline:
   type: self_cognition_pipeline
   self_cogn_tool:
     type: self_cognition
@@ -13,5 +13,6 @@ kag_solver_pipeline:
     llm_client: "{chat_llm}"
     generated_prompt:
       type: default_refer_generator_prompt
+    enable_ref: true
 
 #------------kag-solver configuration end----------------#

@@ -22,6 +22,7 @@ LOCAL_MODEL_MAP = {}
 
 
 @VectorizeModelABC.register("bge")
+@VectorizeModelABC.register("bge_vectorize_model")
 class LocalBGEVectorizeModel(VectorizeModelABC):
     """
     A class that extends the VectorizeModelABC base class.

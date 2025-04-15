@@ -35,8 +35,15 @@ class Task(Registrable):
         result (Any): Final output of the task execution.
     """
 
-    def __init__(self, executor: str, arguments: dict, parents: List = None, children: List = None, id: str = None,
-                 **kwargs):
+    def __init__(
+        self,
+        executor: str,
+        arguments: dict,
+        parents: List = None,
+        children: List = None,
+        id: str = None,
+        **kwargs,
+    ):
         """Represents an executable task that can be processed by an executor.
 
         Attributes:
@@ -52,7 +59,7 @@ class Task(Registrable):
         super().__init__(**kwargs)
         self.executor = executor
         self.arguments = arguments
-        self.thought = kwargs.get('thought', '')
+        self.thought = kwargs.get("thought", "")
         self.status = TaskStatus.PENDING
         if id is None:
             self.id = str(uuid.uuid4())
@@ -105,16 +112,26 @@ class Task(Registrable):
         """
         self.result = result
 
-    def get_task_context(self):
+    def get_task_context(self, with_all=False):
         """Generates a dictionary representation of the task's context."""
         result = {}
         if self.thought:
             result["thought"] = self.thought
         if self.result:
-            result["result"] = str(self.result)
+            if isinstance(self.result, str):
+                result["result"] = self.result
+            elif hasattr(self.result, "summary"):
+                summary = getattr(self.result, "summary", "")
+                if summary and (with_all or "i don't know" not in summary.lower()):
+                    result["result"] = summary
+            else:
+                result["result"] = str(self.result)
 
         if result:
             result["task"] = self.arguments.get("query", "")
+
+        if self.name:
+            result["name"] = self.name
         return result
 
     def __str__(self):
@@ -158,7 +175,13 @@ class Task(Registrable):
 
         task_map = {}
         for task_order, task_info in task_dag.items():
-            task = Task(task_info["executor"], task_info["arguments"], id=task_order, thought=task_info.get('thought', ''), name=task_info.get('name', None))
+            task = Task(
+                task_info["executor"],
+                task_info["arguments"],
+                id=task_order,
+                thought=task_info.get("thought", ""),
+                name=task_info.get("name", None),
+            )
             task_map[task_order] = task
         for task_order, task_info in task_dag.items():
             deps = task_info["dependent_task_ids"]
@@ -175,6 +198,7 @@ class PlannerABC(Registrable):
     Planners are responsible for creating Directed Acyclic Graphs (DAGs) of tasks
     based on user query.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -256,3 +280,40 @@ class PlannerABC(Registrable):
         """
 
         return True
+
+    async def finish_judger(self, query: str, answer: str):
+        return True
+
+
+def format_task_dep_context(tasks: List[Task], is_recu=True):
+    """Formats parent task execution context into a structured dictionary.
+
+    Args:
+        task (Task): Current task whose parent context needs formatting
+
+    Returns:
+        dict: Mapping of parent task IDs to their execution details containing:
+            - action: Executor and arguments used
+            - result: Execution result of the parent task
+    """
+    def to_str(context):
+        if not context or 'task' not in context:
+            return ""
+        return f"""{context['name']}:{context['task']}
+{context['result']}.{context.get('thought', '')}"""
+    if not tasks:
+        return []
+    formatted_context = []
+    if isinstance(tasks, Task):
+        tasks = [tasks]
+    for task in tasks:
+        # get all prvious tasks from context.
+        if is_recu:
+            formatted_context.extend(format_task_dep_context(task.parents, is_recu))
+        res = to_str(task.get_task_context(with_all=True))
+
+        if res:
+            if res in formatted_context:
+                continue
+            formatted_context.append(res)
+    return list(set(formatted_context))

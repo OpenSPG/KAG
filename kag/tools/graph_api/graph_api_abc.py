@@ -63,7 +63,7 @@ class GraphApiABC(Registrable):
 
     @abstractmethod
     def calculate_pagerank_scores(
-        self, target_vertex_type, start_nodes: List[Dict]
+        self, target_vertex_type, start_nodes: List[Dict], top_k=10
     ) -> Dict:
         """
         Calculate and retrieve PageRank scores for the given starting nodes.
