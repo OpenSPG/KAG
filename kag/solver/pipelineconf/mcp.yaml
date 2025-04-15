@@ -1,7 +1,7 @@
 #------------kag-solver configuration start----------------#
 pipeline_name: mcp_pipeline
 
-kag_solver_pipeline:
+solver_pipeline:
   type: kag_static_pipeline
   planner:
     type: kag_static_planner

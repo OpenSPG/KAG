@@ -12,7 +12,7 @@ chunk_retrieved_executor: &chunk_retrieved_executor_conf
     vectorize_model: "{vectorize_model}"
 
 
-kag_solver_pipeline:
+solver_pipeline:
   type: naive_rag_pipeline
   executors:
     - *chunk_retrieved_executor_conf

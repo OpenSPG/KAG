@@ -1,3 +1,4 @@
+import  logging
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt
 
@@ -7,12 +8,11 @@ from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.rc.default_rc_retriever import (
-    get_history_qa,
-)
+
 from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
+logger = logging.getLogger()
 
 def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
     """Store logical node structure in knowledge graph
@@ -31,15 +31,9 @@ def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
 
 def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
     # Try existing entities in knowledge graph
-    entities = kg_graph.get_entity_by_alias(symbol_entity.alias_name)
+    entities = kg_graph.get_entity_by_alias_without_attr(symbol_entity.alias_name)
     if entities:
-        filter_entities = []
-        for e in entities:
-            if e.type == "Text":
-                continue
-            filter_entities.append(e)
-        if filter_entities:
-            return filter_entities
+        return entities
     # Perform entity linking if possible
     if symbol_entity.entity_name:
         entities = el.invoke(
@@ -54,9 +48,7 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(
-        self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs
-    ):
+    def __init__(self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs):
         super().__init__(**kwargs)
         self.path_select = path_select
         self.entity_linking = entity_linking
@@ -67,7 +59,7 @@ class KgRetrieverTemplate:
 
     @retry(stop=stop_after_attempt(3), reraise=True)
     def generate_sub_answer(
-        self, question: str, knowledge_graph: [], history_qa=[], **kwargs
+            self, question: str, knowledge_graph: [], history_qa=[], **kwargs
     ):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.
@@ -116,14 +108,6 @@ class KgRetrieverTemplate:
                 if logic_node.get_fl_node_result().spo:
                     continue
 
-                dot_refresh = DotRefresher(
-                    reporter=reporter,
-                    segment=segment_name,
-                    tag_name=f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                    content="executing",
-                    params={"component_name": component_name},
-                )
-
                 if reporter:
                     reporter.add_report_line(
                         segment_name,
@@ -135,16 +119,13 @@ class KgRetrieverTemplate:
                     reporter.add_report_line(
                         segment_name,
                         f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        "executing",
+                        "task_executing",
                         "RUNNING",
                         component_name=component_name,
                     )
 
-                    dot_refresh.start()
                 try:
                     select_rel = self._retrieved_on_graph(kg_graph, logic_node)
-                    if reporter:
-                        dot_refresh.stop()
                     logic_node.get_fl_node_result().spo = select_rel
                     if select_rel:
                         if kwargs.get("is_exact_match", False):
@@ -162,7 +143,6 @@ class KgRetrieverTemplate:
 
                 except Exception as e:
                     if reporter:
-                        dot_refresh.stop()
                         reporter.add_report_line(
                             segment_name,
                             f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
@@ -170,6 +150,7 @@ class KgRetrieverTemplate:
                             "ERROR",
                             component_name=component_name,
                         )
+                    logger.info(f"_retrieved_on_graph failed {e}", exc_info=True)
 
         return kg_graph
 

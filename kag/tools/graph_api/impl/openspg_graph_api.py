@@ -239,7 +239,7 @@ class OpenSPGGraphApi(GraphApiABC):
         return TableData.from_dict({"header": detail.header, "data": detail.rows})
 
     def calculate_pagerank_scores(
-        self, target_vertex_type, start_nodes: List[Dict]
+        self, target_vertex_type, start_nodes: List[Dict], top_k=10
     ) -> Dict:
         target_vertex_type_with_prefix = self.schema.get_label_within_prefix(
             target_vertex_type
