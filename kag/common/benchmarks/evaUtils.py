@@ -23,7 +23,12 @@ def normalize_answer(s):
     def remove_articles(text):
         return re.sub(r"\b(a|an|the)\b", " ", text)
 
+    def contains_chinese(text):
+        return bool(re.search(r'[\u4e00-\u9fff]', text))
+
     def white_space_fix(text):
+        if contains_chinese(text):
+            return " ".join([char for char in text])
         return " ".join(text.split())
 
     def remove_punc(text):
