@@ -41,7 +41,7 @@ class VectorChunkRetriever(ToolABC):
             if scores and len(scores) > top_k:
                 return scores
             if not query:
-                logger.error(f"chunk query is emtpy", exc_info=True)
+                logger.error("chunk query is emtpy", exc_info=True)
                 return {}
             query_vector = self.vectorize_model.vectorize(query)
             top_k_docs = self.search_api.search_vector(

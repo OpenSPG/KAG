@@ -110,7 +110,7 @@ class Prop:
                 prop.extend_prop_map = basic_info
             except Exception as e:
                 logger.warning(
-                    f"parse basic info failed reasone: {json_dict[ext_attr]}",
+                    f"parse basic info failed reasone: {json_dict[ext_attr]} {e}",
                     exc_info=True,
                 )
         return prop

@@ -234,7 +234,7 @@ class PrqaExecutor(ExecutorABC):
                     if not isinstance(rel, dict):
                         continue
 
-                    rel_id = rel.get("element_id", "").split(":")[-1]
+                    # rel_id = rel.get("element_id", "").split(":")[-1]
                     rel_type = rel.get("type", "未知关系")
                     start_id = rel.get("start_node")
                     end_id = rel.get("end_node")

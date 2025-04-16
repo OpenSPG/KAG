@@ -168,7 +168,6 @@ class PprChunkRetriever(ToolABC):
             )
             if text_matched:
                 for item in text_matched:
-                    title = item["node"]["name"]
                     if item["node"]["id"] not in hits_docs:
                         if len(matched_docs) > 0:
                             matched_docs.pop()

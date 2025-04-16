@@ -1,5 +1,3 @@
-import re
-from string import Template
 from typing import List
 import logging
 
@@ -26,3 +24,6 @@ class RespGenerator(PromptABC):
     def parse_response(self, response: str, **kwargs):
         logger.debug("推理器判别:{}".format(response))
         return response
+
+    def is_json_format(self):
+        return False

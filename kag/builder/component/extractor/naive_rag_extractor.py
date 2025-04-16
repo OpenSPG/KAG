@@ -12,15 +12,13 @@
 import logging
 from typing import Type, List
 
-from kag.interface import LLMClient
 
-from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
+from kag.interface import ExtractorABC, ExternalGraphLoaderABC
 
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.model.sub_graph import SubGraph
 from knext.schema.client import CHUNK_TYPE
 from knext.common.base.runnable import Input, Output
-from knext.schema.client import SchemaClient
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +30,8 @@ class NaiveRagExtractor(ExtractorABC):
     Inherits from the Extractor base class.
 
     Attributes:
-        llm (LLMClient): The large language model client used for text processing.
-        schema (SchemaClient): The schema client used to load the schema for the project.
-        ner_prompt (PromptABC): The prompt used for named entity recognition.
-        std_prompt (PromptABC): The prompt used for named entity standardization.
-        triple_prompt (PromptABC): The prompt used for triple extraction.
-        external_graph (ExternalGraphLoaderABC): The external graph loader used for additional NER.
+        external_graph (ExternalGraphLoaderABC): The external graph loader used for additional named entity recognition.
+        table_extractor (ExtractorABC): The extractor used for processing table data.
     """
 
     def __init__(
@@ -46,14 +40,11 @@ class NaiveRagExtractor(ExtractorABC):
             table_extractor: ExtractorABC = None,
     ):
         """
-        Initializes the KAGExtractor with the specified parameters.
+        Initializes the NaiveRagExtractor with the specified parameters.
 
         Args:
-            llm (LLMClient): The large language model client.
-            ner_prompt (PromptABC, optional): The prompt for named entity recognition. Defaults to None.
-            std_prompt (PromptABC, optional): The prompt for named entity standardization. Defaults to None.
-            triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
-            external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
+            external_graph (ExternalGraphLoaderABC, optional): The external graph loader for additional named entity recognition. Defaults to None.
+            table_extractor (ExtractorABC, optional): The extractor for processing table data. Defaults to None.
         """
         super().__init__()
         self.external_graph = external_graph

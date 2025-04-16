@@ -21,10 +21,9 @@ from kag.common.utils import generate_biz_id_with_type
 from kag.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
 from kag.tools.graph_api.model.table_model import TableData
 from knext.reasoner.client import ReasonerClient
+import knext.common.cache
 
 logger = logging.getLogger()
-
-import knext.common.cache
 entities_query_map = knext.common.cache.LinkCache(maxsize=1000, ttl=3000)
 
 def update_cached_one_hop_rel(rel_dict: dict, rel: RelationData):
