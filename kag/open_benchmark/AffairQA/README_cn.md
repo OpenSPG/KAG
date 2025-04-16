@@ -80,14 +80,9 @@ cd solver && python eval.py && cd ..
 
 生成的答案被保存至 ``./solver/data/res*.json``.
 
-执行答案判断及F1和EM计算过程：
+执行答案判断及F1和EM计算：
 ```bash
-python ./evaluate.py --qa_file ./solver/data/res*.json
-```
-
-执行正确率计算：
-```bash
-python ./count_correct.py --result_file ./evaluation_results_x.json
+python solver/evalForAffairQA.py --input_file {eval 生成的答案}
 ``` 
 
 ### Step 7：（可选）清理

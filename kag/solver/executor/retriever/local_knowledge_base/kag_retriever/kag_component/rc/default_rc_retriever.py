@@ -125,7 +125,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
                 "",
                 "FINISH",
                 component_name=component_name,
-                chunk_num=len(matched_chunks),
+                chunk_num=min(len(matched_chunks), self.top_k),
                 desc="retrieved_doc_digest"
             )
 
