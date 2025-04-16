@@ -9,6 +9,7 @@ from tenacity import stop_after_attempt, retry
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
@@ -276,7 +277,6 @@ class KagHybridExecutor(ExecutorABC):
                 f"{flow_query}\n",
                 "INIT",
                 step=task.name,
-                overwrite=False,
             )
             if not logic_node:
                 logic_nodes = self._convert_to_logical_form(
@@ -336,6 +336,11 @@ class KagHybridExecutor(ExecutorABC):
             logger.info(f"Summary Question {task_query} : {kag_response.summary}")
             # 8. Final storage
             logger.info(f"Storing results for task: {task_query}")
+            if logic_node and isinstance(logic_node, GetSPONode):
+                context.variables_graph.add_answered_alias(logic_node.s.alias_name.alias_name, kag_response.summary)
+                context.variables_graph.add_answered_alias(logic_node.p.alias_name.alias_name, kag_response.summary)
+                context.variables_graph.add_answered_alias(logic_node.o.alias_name.alias_name, kag_response.summary)
+
             start_time = time.time()  # 添加开始时间记录
             store_results(task, kag_response)
             logger.info(

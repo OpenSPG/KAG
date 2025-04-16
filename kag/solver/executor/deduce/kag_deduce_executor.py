@@ -74,21 +74,21 @@ class KagDeduceExecutor(ExecutorABC):
 
     def invoke(self, query: str, task: Any, context: Context, **kwargs):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
-        task_query = task.arguments["query"]
+        tag_id = f"{task.arguments['query']}_begin_task"
+        task_query = task.arguments.get("rewrite_query", task.arguments["query"])
         logic_node = task.arguments.get("logic_form_node", None)
         self.report_content(
             reporter,
             "thinker",
-            f"{task_query}_begin_task",
+            tag_id,
             f"{task_query}\n",
             "INIT",
             step=task.name,
-            overwrite=False,
         )
         if not logic_node or not isinstance(logic_node, DeduceNode):
             self.report_content(
                 reporter,
-                f"{task_query}_begin_task",
+                tag_id,
                 f"{task_query}_deduce",
                 "not implement!",
                 "FINISH",
@@ -96,7 +96,7 @@ class KagDeduceExecutor(ExecutorABC):
                 overwrite=False,
             )
             return
-        deduce_query = f"{task_query}\ntarget:{logic_node.target}"
+        deduce_query = f"{logic_node.sub_query}\ntarget:{logic_node.target}"
         kg_graph = context.variables_graph
         content = logic_node.content
         try:
@@ -109,16 +109,16 @@ class KagDeduceExecutor(ExecutorABC):
             if kg_graph.has_alias(c):
                 values = kg_graph.get_answered_alias(c)
                 if values:
-                    c = str(values)
+                    c = f"{c}={str(values)}"
                 else:
                     continue
             contents.append(c)
-        contents = "\n".join(contents) if contents else ""
+        contents = "input params:\n" + "\n".join(contents) if contents else ""
 
         result = []
         final_if_answered = False
         for op in logic_node.ops:
-            if_answered, answer = self.call_op(deduce_query, contents, op, segment_name=f"{task_query}_begin_task", **kwargs)
+            if_answered, answer = self.call_op(deduce_query, contents, op, segment_name=tag_id, **kwargs)
             result.append(answer)
             final_if_answered = if_answered or final_if_answered
         res = ";".join(result)
@@ -128,7 +128,7 @@ class KagDeduceExecutor(ExecutorABC):
         self.report_content(
             reporter,
             "thinker",
-            f"{task_query}_begin_task",
+            tag_id,
             "",
             "FINISH",
             step=task.name,
