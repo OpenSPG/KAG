@@ -69,6 +69,7 @@ class BuilderComponent(Component, Registrable):
 
         super().__init__(*args, **kwargs)
         self.language = kwargs.get("language", KAG_PROJECT_CONF.language)
+        self.batch_size = int(kwargs.get("batch_size", 1))
         rank = kwargs.get("rank")
         world_size = kwargs.get("world_size")
         if rank is None or world_size is None:
