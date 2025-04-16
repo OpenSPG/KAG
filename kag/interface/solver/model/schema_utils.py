@@ -211,7 +211,7 @@ class SchemaUtils:
         # next(reader)
         node_attributes = {}
         for row in reader:
-            obj, name_zh, name_en, father_en, edge_direction, attributes = (
+            obj, name_zh, name_en, father_en, _, attributes = (
                 row[0],
                 row[1],
                 row[2],
@@ -278,7 +278,7 @@ class SchemaUtils:
         f_node = open(path_node)
         f_edge = open(path_edge)
         for row in csv.DictReader(f_node):
-            name, id = row["name"], row["alias"]
+            name, _ = row["name"], row["alias"]
             self.nodes.add(name)
         for row in csv.DictReader(f_edge):
             name = row["name"]

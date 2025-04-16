@@ -188,37 +188,6 @@ def binary_expr_parse(input_str):
     return {"left_expr": left_expr, "right_expr": right_expr, "op": op}
 
 
-def extract_content_target(input_string):
-    """
-    提取输入字符串中的 content 和 target 部分。
-
-    Args:
-        input_string (str): 包含 content 和 target 的字符串。
-
-    Returns:
-        dict: 包含 'content' 和 'target' 的字典。如果未找到，则对应值为 None。
-    """
-    # 定义正则表达式模式
-    # content 的内容可能包含换行符和特殊字符，所以使用非贪婪模式
-    content_pattern = r"content=\[(.*?)\]"
-    target_pattern = r"target=([^,\]]+)"  # 假设 target 不包含逗号或闭括号
-
-    # 搜索 content
-    content_match = re.search(content_pattern, input_string, re.DOTALL)
-    if content_match:
-        content = content_match.group(1).strip()
-    else:
-        content = None
-
-    # 搜索 target
-    target_match = re.search(target_pattern, input_string)
-    if target_match:
-        target = target_match.group(1).strip().rstrip("'")  # 去除末尾可能的单引号
-    else:
-        target = None
-    return content, target
-
-
 class MathNode(LogicNode):
     def __init__(self, operator, args):
         super().__init__(operator, args)
@@ -535,7 +504,7 @@ class ParseLogicForm:
             if len(search_entity_labels) > 0:
                 return search_entity_labels[0].name
         except Exception as e:
-            logger.warning(f"parse node {type_name} error", exc_info=True)
+            logger.warning(f"parse node {type_name} error {e}", exc_info=True)
         return type_name
 
     def get_edge_type_en_by_name(self, type_name):
