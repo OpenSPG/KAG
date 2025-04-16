@@ -309,11 +309,14 @@ def format_task_dep_context(tasks: List[Task], is_recu=True):
     for task in tasks:
         # get all prvious tasks from context.
         if is_recu:
-            formatted_context.extend(format_task_dep_context(task.parents, is_recu))
+            parent_res = format_task_dep_context(task.parents, is_recu)
+            for p in parent_res:
+                if p not in formatted_context:
+                    formatted_context.append(p)
         res = to_str(task.get_task_context(with_all=True))
 
         if res:
             if res in formatted_context:
                 continue
             formatted_context.append(res)
-    return list(set(formatted_context))
+    return formatted_context
