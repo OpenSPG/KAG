@@ -32,7 +32,7 @@ class SPGAligner(AlignerABC):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.spg_types = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+        self.spg_types = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id).load()
 
     @property
     def input_types(self) -> Type[Input]:

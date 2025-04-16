@@ -62,7 +62,7 @@ class AffairBatchVectorizer(VectorizerABC):
             defaultdict: Metadata for vector fields in the SubGraph.
         """
         vec_meta = defaultdict(list)
-        schema_client = SchemaClient(project_id=self.project_id)
+        schema_client = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=self.project_id)
         spg_types = schema_client.load()
         for type_name, spg_type in spg_types.items():
             for prop_name, prop in spg_type.properties.items():
