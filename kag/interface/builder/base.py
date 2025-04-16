@@ -12,7 +12,7 @@
 
 import os
 import asyncio
-from typing import List, Dict, Any, Union
+from typing import List, Any, Union
 
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
@@ -45,11 +45,28 @@ class BuilderComponentData:
 
 @Registrable.register("builder")
 class BuilderComponent(Component, Registrable):
-    """
-    Abstract base class for all builder component.
+    """Abstract base class for all builder components.
+
+    Provides synchronous/asynchronous processing methods with checkpoint management.
+    Subclasses must implement core processing logic in _invoke and related methods.
+
+    Attributes:
+        language (str): Language configuration for the component.
+        sharding_info (ShardingInfo): Information about distributed sharding.
+        checkpointer (CheckPointer, optional): Checkpoint manager instance if configured.
     """
 
     def __init__(self, *args, **kwargs):
+        """Initializes the builder component with environment configurations.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments. Recognized parameters:
+                language (str): Language configuration (default from KAG_PROJECT_CONF)
+                rank (int): Distributed shard ID (auto-detected if None)
+                world_size (int): Total shard count (auto-detected if None)
+        """
+
         super().__init__(*args, **kwargs)
         self.language = kwargs.get("language", KAG_PROJECT_CONF.language)
         rank = kwargs.get("rank")
@@ -85,39 +102,30 @@ class BuilderComponent(Component, Registrable):
         """
         return "BUILDER"
 
-    def batch(self, inputs: List[Input], **kwargs) -> List[Output]:
-        results = []
-        for input in inputs:
-            results.extend(self.invoke(input, **kwargs))
-        return results
-
-    def _handle(self, input: Dict) -> List[Dict]:
-        _input = self.input_types.from_dict(input) if isinstance(input, dict) else input
-        _output = self.invoke(_input)
-        return [_o.to_dict() for _o in _output if _o]
-
     @property
     def ckpt_subdir(self):
+        """str, optional: Subdirectory path for checkpoint storage. None disables checkpoints."""
         return None
 
     @property
     def inherit_input_key(self):
+        """bool: Flag indicating whether output inherits input's hash key (default True)."""
         return True
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Abstract method to be implemented by subclasses for build component.
+        """Core synchronous processing logic to be implemented by subclasses.
 
         Args:
-            input (Input): The chunk to be split.
-            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+            input (Input): Input data for processing
+            **kwargs: Additional implementation-specific arguments
 
         Returns:
-            List[Output]: A list of smaller chunks resulting from the split operation.
+            List[Output]: Processed output objects
 
         Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
+            NotImplementedError: If subclass doesn't implement this method
         """
+
         raise NotImplementedError(
             f"`invoke` is not currently supported for {self.__class__.__name__}."
         )
@@ -125,6 +133,17 @@ class BuilderComponent(Component, Registrable):
     def invoke(
         self, input: Input, **kwargs
     ) -> List[Union[Output, BuilderComponentData]]:
+        """Synchronous processing entry point with checkpoint management.
+
+        Args:
+            input (Input): Input data (automatically wrapped in BuilderComponentData if needed)
+            **kwargs: Additional parameters:
+                write_ckpt (bool): Enable/disable checkpoint writing (default True)
+
+        Returns:
+            List[Union[Output, BuilderComponentData]]: Processed outputs with metadata
+        """
+
         if not isinstance(input, BuilderComponentData):
             input = BuilderComponentData(input)
 
@@ -132,8 +151,10 @@ class BuilderComponent(Component, Registrable):
         input_key = input.hash_key
 
         if self.inherit_input_key:
+            # The output reuses the key from the input.
             output_key = input_key
         else:
+            # Generate a new key for output.
             output_key = None
 
         write_ckpt = kwargs.get("write_ckpt", True)
@@ -154,24 +175,31 @@ class BuilderComponent(Component, Registrable):
             return [BuilderComponentData(x, output_key) for x in output]
 
     async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        The asynchronous version of `_invoke` which is implemented by wrapping `_invoke` with `asyncio.to_thread` by default.
+        """Asynchronous processing function, defaults to a wrapper for _invoke (runs in separate thread).
 
         Args:
-            input (Input): The chunk to be split.
-            **kwargs: Additional keyword arguments, currently unused but kept for potential future expansion.
+            input (Input): Input data for processing
+            **kwargs: Additional implementation-specific arguments
 
         Returns:
-            List[Output]: A list of smaller chunks resulting from the split operation.
-
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
+            List[Output]: Processed output objects
         """
+
         return await asyncio.to_thread(lambda: self._invoke(input, **kwargs))
 
     async def ainvoke(
         self, input: Input, **kwargs
     ) -> List[Union[Output, BuilderComponentData]]:
+        """Asynchronous processing entry point with checkpoint management.
+
+        Args:
+            input (Input): Input data (automatically wrapped in BuilderComponentData if needed)
+            **kwargs: Additional parameters:
+                write_ckpt (bool): Enable/disable checkpoint writing (default True)
+
+        Returns:
+            List[Union[Output, BuilderComponentData]]: Processed outputs with metadata
+        """
         if not isinstance(input, BuilderComponentData):
             input = BuilderComponentData(input)
 
@@ -204,3 +232,151 @@ class BuilderComponent(Component, Registrable):
         else:
             output = await self._ainvoke(input_data, **kwargs)
             return [BuilderComponentData(x, output_key) for x in output]
+
+    def _batch_invoke(self, input: List[Input], **kwargs) -> List[List[Output]]:
+        """Core batch processing logic to be implemented by subclasses.
+
+        Args:
+            inputs (List[Input]): Batch of input data items
+            **kwargs: Additional parameters (see invoke())
+
+        Returns:
+            List[List[Output]]: List of output lists corresponding to each input item
+        """
+        output = []
+        for item in input:
+            output.append(self._invoke(item))
+        return output
+
+    def batch_invoke(
+        self, input: List[Input], **kwargs
+    ) -> List[List[Union[Output, BuilderComponentData]]]:
+        """Synchronous batch processing with checkpoint management.
+
+        Args:
+            inputs (List[Input]): Batch of input data items
+            **kwargs: Additional parameters (see invoke())
+
+        Returns:
+            List[List[Output]]: List of output lists corresponding to each input item
+        """
+
+        input = [
+            x if isinstance(x, BuilderComponentData) else BuilderComponentData(x)
+            for x in input
+        ]
+
+        input_data = [x.data for x in input]
+        input_keys = [x.hash_key for x in input]
+
+        if self.inherit_input_key:
+            output_keys = input_keys
+        else:
+            output_keys = [None] * len(input_keys)
+
+        result = {}
+        write_ckpt = kwargs.get("write_ckpt", True)
+        not_found = []
+        if write_ckpt and self.checkpointer:
+            for idx, k in enumerate(input_keys):
+                if k and self.checkpointer.exists(k):
+                    output = self.checkpointer.read_from_ckpt(k)
+                    result[idx] = output
+                else:
+                    not_found.append(idx)
+            batched_output = self._batch_invoke([input_data[x] for x in not_found])
+            for idx, output in zip(not_found, batched_output):
+                result[idx] = output
+                if input_keys[idx]:
+                    self.checkpointer.write_to_ckpt(input_keys[idx], output)
+            outputs = []
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+        else:
+            outputs = []
+            result = self._batch_invoke(input_data)
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+
+    async def _abatch_invoke(self, input: List[Input], **kwargs) -> List[List[Output]]:
+        """Asynchronous batch processing logic, defaults to wrapper for _batch_invoke.
+
+        Args:
+            inputs (List[Input]): Batch of input data items
+            **kwargs: Additional parameters (see invoke())
+
+        Returns:
+            List[List[Output]]: List of output lists corresponding to each input item
+        """
+        return await asyncio.to_thread(lambda: self._batch_invoke(input, **kwargs))
+
+    async def abatch_invoke(
+        self, input: List[Input], **kwargs
+    ) -> List[List[Union[Output, BuilderComponentData]]]:
+        """Asynchronous batch processing wrapper for _batch_invoke.
+
+        Args:
+            inputs (List[Input]): Batch of input data items
+            **kwargs: Additional parameters (see invoke())
+
+        Returns:
+            List[List[Output]]: List of output lists corresponding to each input item
+        """
+        input = [
+            x if isinstance(x, BuilderComponentData) else BuilderComponentData(x)
+            for x in input
+        ]
+
+        input_data = [x.data for x in input]
+        input_keys = [x.hash_key for x in input]
+
+        if self.inherit_input_key:
+            output_keys = input_keys
+        else:
+            output_keys = [None] * len(input_keys)
+
+        result = {}
+        write_ckpt = kwargs.get("write_ckpt", True)
+        not_found = []
+        if write_ckpt and self.checkpointer:
+            for idx, k in enumerate(input_keys):
+                if k and self.checkpointer.exists(k):
+                    output = await asyncio.to_thread(
+                        lambda: self.checkpointer.read_from_ckpt(k)
+                    )
+                    result[idx] = output
+                else:
+                    not_found.append(idx)
+            batched_output = await self._abatch_invoke(
+                [input_data[x] for x in not_found]
+            )
+            for idx, output in zip(not_found, batched_output):
+                result[idx] = output
+                if input_keys[idx]:
+                    await asyncio.to_thread(
+                        self.checkpointer.write_to_ckpt(input_keys[idx], output)
+                    )
+            outputs = []
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+        else:
+            outputs = []
+            result = await self._abatch_invoke(input_data)
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
