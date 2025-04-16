@@ -48,7 +48,7 @@ class LocalBGERerankModel(RerankModelABC):
         Raises:
             RuntimeError: If model not found and no download URL provided
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = "local_bge_rerank_model"
         super().__init__(name)

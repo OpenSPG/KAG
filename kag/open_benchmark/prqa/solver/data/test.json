@@ -170,11 +170,6 @@
         "source": "./kg.txt"
     },
     {
-        "id": "438",
-        "question": "哪部作品是《感化院》的主要演员Attilla Borlan的代表作，且这部作品由Attilla Borlan主演？",
-        "source": "./kg.txt"
-    },
-    {
         "id": "456",
         "question": "维京王国的主要演员的搭档有哪些代表作品",
         "source": "./kg.txt"
@@ -717,11 +712,6 @@
     {
         "id": "1520",
         "question": "哪所学校既是《波斯迎亲》作者的毕业院校，又与知名人物蔡亮有关？",
-        "source": "./kg.txt"
-    },
-    {
-        "id": "1533",
-        "question": "《感化院》的主要演员中，他的代表作品除了约阿希姆·科尔为主演外，还有哪些主要演员？",
         "source": "./kg.txt"
     },
     {

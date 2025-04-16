@@ -60,7 +60,7 @@ class OpenAIClient(LLMClient):
             temperature (float, optional): The temperature parameter for the model. Defaults to 0.7.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = f"{api_key}{base_url}{model}"
         super().__init__(name, max_rate, time_period, **kwargs)
@@ -280,7 +280,7 @@ class AzureOpenAIClient(LLMClient):
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = f"{api_key}{base_url}{model}"
         super().__init__(name, max_rate, time_period, **kwargs)
@@ -333,7 +333,6 @@ class AzureOpenAIClient(LLMClient):
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
         if messages is None:
-
             if image_url:
                 messages = [
                     {"role": "system", "content": "you are a helpful assistant"},
