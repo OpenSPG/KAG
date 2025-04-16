@@ -59,15 +59,10 @@ cd solver && python eval.py && cd ..
 
 Generated answers are saved to `./solver/data/res*.json`.
 
-Execute answer evaluation and F1/EM calculation process:
+Execute answer evaluation and F1/EM calculation:
 ```bash
-python ./evaluate.py --qa_file ./solver/data/res*.json
-```
-
-Calculate accuracy:
-```bash
-python ./count_correct.py --result_file ./evaluation_results_x.json
-```
+python solver/evalForAffairQA.py --input_file {eval generation answer}
+``` 
 
 ### Step 7: (Optional) Cleanup
 
