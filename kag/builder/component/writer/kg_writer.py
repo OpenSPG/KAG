@@ -53,7 +53,7 @@ class KGWriter(SinkWriterABC):
             self.project_id = KAG_PROJECT_CONF.project_id
         else:
             self.project_id = project_id
-        self.client = GraphClient(project_id=project_id)
+        self.client = GraphClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=project_id)
         self.delete = delete
 
     @property
