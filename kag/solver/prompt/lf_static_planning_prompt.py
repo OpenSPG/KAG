@@ -266,9 +266,11 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         sub_queries, logic_forms = self.parse_steps(response)
         logic_forms = self._parse_lf(sub_queries, logic_forms)
         tasks_dep = {}
+        alias_dep = self._get_dep_task_id(logic_forms)
         for i, logic_form in enumerate(logic_forms):
+            deps = self._get_task_dep(i, logic_form, alias_dep)
             task_deps = [] if i == 0 else [i - 1]
-            is_need_rewrite = True
+            is_need_rewrite = True if (deps or isinstance(logic_form, GetSPONode)) else False
             if isinstance(logic_form, GetNode) or len(tasks_dep) == 0:
                 is_need_rewrite = False
             tasks_dep[i] = {
