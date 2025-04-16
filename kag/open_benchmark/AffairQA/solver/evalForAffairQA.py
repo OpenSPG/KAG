@@ -8,6 +8,8 @@ import re
 from typing import List, Dict, Any
 import argparse
 
+from kag.interface.common.llm_client import LLMClient
+
 logger = logging.getLogger(__name__)
 
 # Assuming extract_answer_from_prediction is defined somewhere accessible
