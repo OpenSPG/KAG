@@ -66,7 +66,7 @@ class SPGPrompt(PromptABC):
             **kwargs: Additional keyword arguments.
         """
         super().__init__(language=language, **kwargs)
-        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+        self.schema = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id).load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:
             self.spg_types = self.schema

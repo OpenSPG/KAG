@@ -46,7 +46,7 @@ class KAGPostProcessor(PostProcessorABC):
             external_graph (ExternalGraphLoaderABC, optional): An instance of ExternalGraphLoaderABC for external graph-based linking. Defaults to None.
         """
         super().__init__()
-        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+        self.schema = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id).load()
         self.similarity_threshold = similarity_threshold
         self.external_graph = external_graph
         self._init_search()
