@@ -201,6 +201,18 @@ def get_vector_field_name(property_key: str):
     return "_" + name
 
 
+def get_batch_boundaries(M, batch_size):
+    if batch_size <= 0:
+        raise ValueError(f"batch_size must be positive, got {batch_size}")
+
+    boundaries = []
+    for start in range(0, M, batch_size):
+        end = min(start + batch_size, M)
+        boundaries.append((start, end))
+
+    return boundaries
+
+
 def split_list_into_n_parts(lst, n):
     length = len(lst)
     part_size = length // n
