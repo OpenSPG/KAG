@@ -50,7 +50,7 @@ class QuestionNER(PromptABC):
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
         self.schema = (
-            ReasonerClient(project_id=KAG_PROJECT_CONF.project_id)
+            ReasonerClient(project_id=KAG_PROJECT_CONF.project_id, host_addr=KAG_PROJECT_CONF.host_addr, namespace=KAG_PROJECT_CONF.namespace)
             .get_reason_schema()
             .keys()
         )
