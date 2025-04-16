@@ -182,8 +182,8 @@ class OpenSPGReporter(ReporterABC):
                 "zh": "文档检索"
             },
             "kag_merger": {
-                "en": "Rerank the documents and take the top {chunk_num},",
-                "zh": "重排序文档，取top {chunk_num}，"
+                "en": "Rerank the documents and take the top {chunk_num} ",
+                "zh": "重排序文档，取top {chunk_num} "
             }
         }
         self.tag_mapping = {
