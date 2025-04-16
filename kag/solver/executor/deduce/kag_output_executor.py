@@ -66,7 +66,6 @@ class KagOutputExecutor(ExecutorABC):
             f"{task_query}_begin_task",
             f"{task_query}\n",
             "INIT",
-            overwrite=False,
             step=task.name
         )
         if not logic_node or not isinstance(logic_node, GetNode):
