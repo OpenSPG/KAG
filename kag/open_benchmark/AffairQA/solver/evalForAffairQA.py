@@ -3,8 +3,6 @@ import os
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
-from kag.interface.common.llm_client import LLMClient
-import logging
 import json
 import re
 from typing import List, Dict, Any
@@ -16,13 +14,15 @@ logger = logging.getLogger(__name__)
 # or we define a simple version here if needed.
 # For now, let's assume it's available or we just use the raw prediction.
 def extract_answer_from_prediction(prediction: str) -> str:
-    """Placeholder: Extracts answer from prediction string."""
+    """
+    Placeholder: Extracts answer from prediction string.
+    """
     # Implement the actual logic if needed, e.g., splitting by "Answer:"
     if isinstance(prediction, str) and "答案:" in prediction:
-         # Handle case where prediction might have thought process
-         parts = prediction.split("答案:")
-         if len(parts) > 1:
-             return parts[-1].strip()
+        # Handle case where prediction might have thought process
+        parts = prediction.split("答案:")
+        if len(parts) > 1:
+            return parts[-1].strip()
     # Fallback to return the raw prediction if format is unexpected
     return str(prediction).strip()
 

@@ -21,6 +21,7 @@ from typing import Union, Optional
 
 from knext.project.client import ProjectClient
 
+logger = logging.getLogger()
 
 class KAGConstants(object):
     LOCAL_SCHEMA_URL = "http://localhost:8887"
@@ -132,7 +133,7 @@ def load_config(prod: bool = False, config_file: str = None):
         if not validate_config_file(config_file):
             config_file = _closest_cfg()
         if os.path.exists(config_file) and os.path.isfile(config_file):
-            print(f"found config file: {config_file}")
+            logger.info(f"found config file: {config_file}")
             with open(config_file, "r") as reader:
                 config = reader.read()
                 config = Template(config).render(**dict(os.environ))
@@ -165,9 +166,9 @@ class KAGConfigMgr:
     def initialize(self, prod: bool = True, config_file: str = None):
         config = load_config(prod, config_file)
         if self._is_initialized:
-            print("WARN: Reinitialize the KAG configuration.")
-            print(f"original config: {self.config}\n\n")
-            print(f"new config: {config}")
+            logger.info("WARN: Reinitialize the KAG configuration.")
+            logger.info(f"original config: {self.config}\n\n")
+            logger.info(f"new config: {config}")
         self.prod = prod
         self.config = config
         global_config = self.config.get(KAGConstants.PROJECT_CONFIG_KEY, {})
@@ -204,6 +205,7 @@ def init_env(config_file: str = None):
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
+    logger.info(msg)
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:

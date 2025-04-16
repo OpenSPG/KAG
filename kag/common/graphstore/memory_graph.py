@@ -19,7 +19,6 @@ import igraph as ig
 from typing import Dict, List
 from tqdm import tqdm
 from threading import Lock
-logger = logging.getLogger()
 
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
@@ -30,6 +29,7 @@ from kag.common.checkpointer import CheckpointerManager
 from kag.tools.graph_api.model.table_model import TableData
 from knext.schema.client import CHUNK_TYPE
 
+logger = logging.getLogger()
 
 class MemoryGraph:
     _instances = {}

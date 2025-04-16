@@ -11,9 +11,7 @@
 # or implied.
 from typing import Dict, List
 
-import pandas as pd
 from kag.interface import ScannerABC
-from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 
 
