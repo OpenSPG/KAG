@@ -23,6 +23,7 @@ from tenacity import retry, stop_after_attempt
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.parser.logic_node_parser import MathNode
 from kag.interface import LLMClient, ExecutorABC, Task, Context
+from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
@@ -81,7 +82,8 @@ class PyBasedMathExecutor(ExecutorABC):
     def invoke(self, query: str, task: Task, context: Context, **kwargs):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         logic_node = task.arguments.get("logic_form_node", None)
-        task_query = task.arguments["query"]
+        tag_id = f"{task.arguments['query']}_begin_task"
+        task_query = task.arguments.get("rewrite_query", task.arguments["query"])
 
         if logic_node and isinstance(logic_node, MathNode):
             kg_graph = context.variables_graph
@@ -96,12 +98,12 @@ class PyBasedMathExecutor(ExecutorABC):
                 if kg_graph.has_alias(c):
                     values = kg_graph.get_answered_alias(c)
                     if values:
-                        c = str(values)
+                        c = f"{c}={values}"
                     else:
                         continue
                 contents.append(c)
-            contents = "\n".join(contents) if contents else ""
-            math_query = f"{task_query}\n target:{logic_node.target}"
+            contents = "input params:\n"+"\n".join(contents) if contents else ""
+            math_query = f"{logic_node.sub_query}\n target:{logic_node.target}"
         else:
             contents = ""
             math_query = task_query
@@ -109,20 +111,16 @@ class PyBasedMathExecutor(ExecutorABC):
         self.report_content(
             reporter,
             "thinker",
-            f"{task_query}_begin_task",
+            tag_id,
             f"{task_query}\n",
             "INIT",
             step=task.name,
-            overwrite=False,
         )
 
-        parent_results = []
-        for pt in task.parents:
-            parent_results.append(str(pt.result))
-
+        parent_results = format_task_dep_context(task.parents)
         parent_results = "\n".join(parent_results)
 
-        parent_results += "\n" + contents
+        parent_results += "\n\n" + contents
         tries = self.tries
         error = None
 
@@ -132,7 +130,7 @@ class PyBasedMathExecutor(ExecutorABC):
                 math_query,
                 parent_results,
                 error,
-                segment_name=f"{task_query}_begin_task",
+                segment_name=tag_id,
                 tag_name=f"{task_query}_code_generator",
                 **kwargs,
             )
@@ -141,12 +139,11 @@ class PyBasedMathExecutor(ExecutorABC):
                     result = f"""```python
 {code}
 ```
-                        code result:{rst}
-                        """
+code result:{logic_node.alias_name}={rst}"""
                     task.update_result(result)
                     self.report_content(
                         reporter,
-                        f"{task_query}_begin_task",
+                        tag_id,
                         f"{task_query}_end_math_executor_{task.id}",
                         rst,
                         "FINISH",
@@ -154,7 +151,7 @@ class PyBasedMathExecutor(ExecutorABC):
                     self.report_content(
                         reporter,
                         "thinker",
-                        f"{task_query}_begin_task",
+                        tag_id,
                         "",
                         "FINISH",
                         step=task.name,
