@@ -82,11 +82,14 @@ class LLMGeneratorWithThought(GeneratorABC):
         refer_data = refer_data + "\n\n" + refer_data_graph
 
         system_instruction = """
-As an advanced reading comprehension assistant, your task is to answer complex multi-hop questions based on the context I provide. The context I offer includes two parts: a set of documents that are helpful for answering the question, and a step-by-step breakdown of the question along with an analytical thought process. Please combine these two parts of the context to answer the question. Your response start after "Thought: ", where you will methodically break down the reasoning process step by step, illustrating how you arrive at conclusions. Conclude with "Answer: " to present a concise, definitive response, devoid of additional elaborations.\n
-NOTE:
-1. I hope your answer matches the answer exactly, so ENSURE that the answer following "Answer:" is concise, such as 14 May, 1832  or yes. THE SHORTER, THE BETTER!!
-2. If the answer is a date, please provide the full date as much as possible, such as 18 May, 1932.3. Pay attention to the differences in part of speech, such as "Japan" and "Japanese," and provide the accurate format according to the question.
-3. If you believe the provided documents cannot answer the question, response with Answer: UNKNOWN.
+作为高级阅读理解助手，您的任务是根据我提供的上下文来回答复杂的多跳问题。我提供的上下文包括两部分：一组有助于回答问题的文档，以及对问题的逐步分解和分析思考过程。请结合这两部分上下文来回答问题。您的回答应在"思考过程:"之后开始，在这里您将有条不紊地、一步步地分解推理过程，说明您是如何得出结论的。最后以"答案:"结尾，给出一个简洁、明确的回答，无需额外阐述。\n
+注意：
+1. 我希望您的答案与标准答案完全匹配，因此请确保"答案:"后面的回答简洁明了，例如"1832年5月14日"或"是"。越短越好！！
+2. 如果答案是日期，请尽可能提供完整日期，例如"1932年5月18日"。
+3. 请注意词性的差异，例如"日本"和"日本的"，并根据问题的要求提供准确的格式。
+4  不要在意里面是否有暗示你答案存不存在，你需要根据所有的文本自己判断，不要听它告诉你是否有答案。
+5. 如果您认为提供的文档无法回答该问题，请回答"答案: UNKNOWN"。
+6. 尽量以Docs中的内容为准
 """
 
         prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}Question: {query}"
@@ -101,7 +104,18 @@ NOTE:
                 f.write(prompt)
             raise e
 
-        if "Answer: " not in response:
+        if "答案: " not in response and "答案:" not in response and "answer: " not in response and "answer:" not in response:
             raise ValueError(f"no answer found in response: {response}")
-        answer = response.split("Answer:")[1].strip()
+        # Extract answer from response, handling different possible formats
+        if "答案: " in response:
+            answer = response.split("答案: ")[1].strip()
+        elif "答案:" in response:
+            answer = response.split("答案:")[1].strip()
+        elif "answer: " in response:
+            answer = response.split("answer: ")[1].strip()
+        elif "answer:" in response:
+            answer = response.split("answer:")[1].strip()
+        else:
+            # This should not happen due to the check above, but just in case
+            answer = response.strip()
         return answer
