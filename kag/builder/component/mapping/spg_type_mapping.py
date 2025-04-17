@@ -42,8 +42,12 @@ class SPGTypeMapping(MappingABC):
         spg_type_name: str,
         fuse_func: Functor = None,
         property_mapping: Dict = {},
+        **kwargs,
     ):
-        self.schema = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id).load()
+        super().__init__(**kwargs)
+        self.schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         assert (
             spg_type_name in self.schema
         ), f"SPG type [{spg_type_name}] does not exist."
