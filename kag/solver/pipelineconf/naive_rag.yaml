@@ -1,0 +1,27 @@
+#------------project configuration start----------------#
+pipeline_name: default_pipeline
+
+#------------kag-solver configuration start----------------#
+
+
+chunk_retrieved_executor: &chunk_retrieved_executor_conf
+  type: chunk_retrieved_executor
+  top_k: 10
+  retriever:
+    type: vector_chunk_retriever
+    vectorize_model: "{vectorize_model}"
+
+
+solver_pipeline:
+  type: naive_rag_pipeline
+  executors:
+    - *chunk_retrieved_executor_conf
+  generator:
+    type: llm_generator
+    llm_client: "{chat_llm}"
+    generated_prompt:
+      type: default_refer_generator_prompt
+    enable_ref: true
+
+
+#------------kag-solver configuration end----------------#

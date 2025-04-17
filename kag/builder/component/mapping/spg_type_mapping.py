@@ -9,7 +9,6 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from collections import defaultdict
 from typing import Dict, List, Callable
 
 import pandas
@@ -38,14 +37,25 @@ class SPGTypeMapping(MappingABC):
         fuse_op (FuseOpABC, optional): The user-defined fuse operator. Defaults to None.
     """
 
-    def __init__(self, spg_type_name: str, fuse_func: Functor = None):
-        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+    def __init__(
+        self,
+        spg_type_name: str,
+        fuse_func: Functor = None,
+        property_mapping: Dict = None,
+        **kwargs,
+    ):
+        if property_mapping is None:
+            property_mapping = {}
+        super().__init__(**kwargs)
+        self.schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         assert (
             spg_type_name in self.schema
         ), f"SPG type [{spg_type_name}] does not exist."
         self.spg_type = self.schema.get(spg_type_name)
 
-        self.property_mapping: Dict = defaultdict(list)
+        self.property_mapping = property_mapping
         self.link_funcs: Dict = dict()
         self.fuse_func = fuse_func
 
@@ -74,7 +84,7 @@ class SPGTypeMapping(MappingABC):
                 f"Property [{target_name}] does not exist in [{self.spg_type.name}]."
             )
 
-        self.property_mapping[target_name].append(source_name)
+        self.property_mapping[target_name] = source_name
         if link_func is not None:
             self.link_funcs[target_name] = link_func
         return self
@@ -98,10 +108,9 @@ class SPGTypeMapping(MappingABC):
             Dict[str, str]: A mapped record with target names and corresponding values.
         """
         mapped_record = {}
-        for target_name, source_names in self.property_mapping.items():
-            for source_name in source_names:
-                value = record.get(source_name)
-                mapped_record[target_name] = value
+        for target_name, source_name in self.property_mapping.items():
+            value = record.get(source_name)
+            mapped_record[target_name] = value
         return mapped_record
 
     def assemble_sub_graph(self, properties: Dict[str, str]):
@@ -178,7 +187,7 @@ class SPGTypeMapping(MappingABC):
                 )
             father_id = concept_id
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the mapping process on the given input and returns the resulting sub-graphs.
 

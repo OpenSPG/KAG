@@ -23,7 +23,12 @@ def normalize_answer(s):
     def remove_articles(text):
         return re.sub(r"\b(a|an|the)\b", " ", text)
 
+    def contains_chinese(text):
+        return bool(re.search(r"[\u4e00-\u9fff]", text))
+
     def white_space_fix(text):
+        if contains_chinese(text):
+            return " ".join([char for char in text])
         return " ".join(text.split())
 
     def remove_punc(text):
@@ -240,3 +245,14 @@ def compare_summarization_answers(
                 )
                 print(message)
                 return None
+
+
+def compute_rouge(hyps, refs):
+    import jieba
+    from rouge_chinese import Rouge
+
+    assert len(hyps) == len(refs)
+    hyps = [" ".join(jieba.cut(h)) for h in hyps]
+    hyps = [h if h.strip() != "" else "无内容" for h in hyps]
+    refs = [" ".join(jieba.cut(r)) for r in refs]
+    return Rouge().get_scores(hyps, refs)

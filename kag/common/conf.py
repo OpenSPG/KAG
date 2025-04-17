@@ -15,10 +15,13 @@ import logging
 import yaml
 import json
 import pprint
+from jinja2 import Template
 from pathlib import Path
 from typing import Union, Optional
 
 from knext.project.client import ProjectClient
+
+logger = logging.getLogger()
 
 
 class KAGConstants(object):
@@ -33,6 +36,7 @@ class KAGConstants(object):
     KAG_PROJECT_ID_KEY = "id"
     KAG_PROJECT_HOST_ADDR_KEY = "host_addr"
     KAG_LANGUAGE_KEY = "language"
+    KAG_USER_TOKEN_KEY = "user_token"
     KAG_CKPT_DIR_KEY = "checkpoint_path"
     KAG_BIZ_SCENE_KEY = "biz_scene"
     ENV_KAG_PROJECT_ID = "KAG_PROJECT_ID"
@@ -65,7 +69,7 @@ class KAGGlobalConf:
         self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
         self.namespace = kwargs.pop(KAGConstants.KAG_NAMESPACE_KEY, None)
         self.ckpt_dir = kwargs.pop(KAGConstants.KAG_CKPT_DIR_KEY, "ckpt")
-
+        self.user_token = kwargs.pop(KAGConstants.KAG_USER_TOKEN_KEY, None)
         # process configs set to class attr directly
         for k in self._extra.keys():
             if hasattr(self, k):
@@ -74,10 +78,6 @@ class KAGGlobalConf:
         for k, v in kwargs.items():
             setattr(self, k, v)
         self._extra = kwargs
-
-        print(
-            f"Done initialize project config with host addr {self.host_addr} and project_id {self.project_id}"
-        )
 
 
 def _closest_cfg(
@@ -114,6 +114,8 @@ def load_config(prod: bool = False, config_file: str = None):
         host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
         project_client = ProjectClient(host_addr=host_addr, project_id=project_id)
         project = project_client.get_by_id(project_id)
+        if not project:
+            return {}
         config = json.loads(project.config)
         if "project" not in config:
             config["project"] = {
@@ -132,9 +134,10 @@ def load_config(prod: bool = False, config_file: str = None):
         if not validate_config_file(config_file):
             config_file = _closest_cfg()
         if os.path.exists(config_file) and os.path.isfile(config_file):
-            print(f"found config file: {config_file}")
+            logger.info(f"found config file: {config_file}")
             with open(config_file, "r") as reader:
                 config = reader.read()
+                config = Template(config).render(**dict(os.environ))
             return yaml.safe_load(config)
         else:
             return {}
@@ -152,7 +155,11 @@ class KAGConfigMgr:
             log_level = log_conf.get("level", "INFO")
         else:
             log_level = "INFO"
-        logging.basicConfig(level=logging.getLevelName(log_level))
+        logging.basicConfig(
+            level=logging.getLevelName(log_level),
+            format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
         logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
         logging.getLogger("neo4j.io").setLevel(logging.INFO)
         logging.getLogger("neo4j.pool").setLevel(logging.INFO)
@@ -160,9 +167,9 @@ class KAGConfigMgr:
     def initialize(self, prod: bool = True, config_file: str = None):
         config = load_config(prod, config_file)
         if self._is_initialized:
-            print("WARN: Reinitialize the KAG configuration.")
-            print(f"original config: {self.config}\n\n")
-            print(f"new config: {config}")
+            logger.info("WARN: Reinitialize the KAG configuration.")
+            logger.info(f"original config: {self.config}\n\n")
+            logger.info(f"new config: {config}")
         self.prod = prod
         self.config = config
         global_config = self.config.get(KAGConstants.PROJECT_CONFIG_KEY, {})
@@ -173,6 +180,10 @@ class KAGConfigMgr:
     @property
     def all_config(self):
         return copy.deepcopy(self.config)
+
+    def update_conf(self, configs: dict):
+        for k, v in configs.items():
+            self.config[k] = v
 
 
 KAG_CONFIG = KAGConfigMgr()
@@ -194,16 +205,10 @@ def init_env(config_file: str = None):
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
+    logger.info(msg)
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
         if dump_flag is not None and dump_flag.strip() == "1":
-            print(f"{msg}:")
             pprint.pprint(KAG_CONFIG.all_config, indent=2)
-        else:
-            print(
-                f"{msg}: set {KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG}=1 to dump config"
-            )
-    else:
-        print("No config found.")

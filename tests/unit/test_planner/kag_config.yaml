@@ -1,0 +1,50 @@
+
+chat_llm: &chat_llm
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1/
+  model: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+  # model: deepseek-ai/DeepSeek-R1
+  type: maas
+
+
+log:
+  level: INFO
+
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '2'
+  language: zh
+  namespace: Test
+
+
+iterative_solver_pipeline:
+  type: kag_iterative_pipeline
+  planner:
+    type: kag_iterative_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: default_iterative_planning
+  executors:
+  - type: mock_retriever_executor
+  - type: mock_math_executor
+    llm: *chat_llm
+  generator:
+    type: mock_generator
+
+
+static_solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: kag_static_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: default_static_planning
+    rewrite_prompt:
+      type: default_query_rewrite
+  executors:
+  - type: mock_retriever_executor
+  - type: mock_math_executor
+    llm: *chat_llm    
+  generator:
+    type: mock_generator

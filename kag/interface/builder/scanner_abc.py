@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import os
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
@@ -72,7 +73,7 @@ class ScannerABC(BuilderComponent, ABC):
             f"{self.sharding_info.get_rank()}/{self.sharding_info.get_world_size()}"
         )
         msg = (
-            f"There are total {len(data)} data to process, worker "
+            f"[Scanner]: There are total {len(data)} data to process, worker "
             f"{worker} will process range [{start}, {end})"
         )
 
@@ -115,7 +116,14 @@ class ScannerABC(BuilderComponent, ABC):
             local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
-            local_file = os.path.join(local_file_path, os.path.basename(input))
+            # local_file = os.path.join(local_file_path, os.path.basename(input))
+            from urllib.parse import urlparse
+
+            parsed_url = urlparse(input)
+            local_file = os.path.join(
+                local_file_path, os.path.basename(parsed_url.path)
+            )
+
             local_file = download_from_http(input, local_file)
             return local_file
         return input
@@ -134,3 +142,27 @@ class ScannerABC(BuilderComponent, ABC):
             List[Output]: A list of processed results.
         """
         return list(self.generate(input, **kwargs))
+
+    async def ainvoke(self, input: Input, **kwargs) -> List[Output]:
+        """
+        Invokes the component to process input data and return a list of processed results.
+
+        This method generates items from the input source and returns them as a list.
+        TODO: relpace sync read to async read
+        Args:
+            input (Input): The input source to load data from.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Output]: A list of processed results.
+        """
+        await asyncio.to_thread(lambda: lambda: self.invoke(input, **kwargs))
+
+    def size(self, input):
+        if not hasattr(self, "_data_size"):
+            self._data_size = len(self.load_data(input))
+        return self._data_size
+
+    @property
+    def inherit_input_key(self):
+        return False
