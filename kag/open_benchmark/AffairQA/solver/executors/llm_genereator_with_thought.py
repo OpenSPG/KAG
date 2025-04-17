@@ -41,11 +41,14 @@ class LLMGeneratorWithThought(GeneratorABC):
         thoughts = []
         refer_data = ""
         refer_data_graph = context.variables_graph._graph_to_json()
+
         def serialize_object(obj):
             if isinstance(obj, Identifier):
                 return str(obj)
             elif isinstance(obj, dict):
-                return {serialize_object(k): serialize_object(v) for k, v in obj.items()}
+                return {
+                    serialize_object(k): serialize_object(v) for k, v in obj.items()
+                }
             elif isinstance(obj, list):
                 return [serialize_object(item) for item in obj]
             elif isinstance(obj, tuple):
@@ -54,6 +57,7 @@ class LLMGeneratorWithThought(GeneratorABC):
                 return {serialize_object(item) for item in obj}
             else:
                 return obj
+
         refer_data_graph = serialize_object(refer_data_graph)
         # 截断图数据，避免超过长度限制
         refer_data_graph_str = json.dumps(refer_data_graph, ensure_ascii=False)
@@ -82,12 +86,18 @@ class LLMGeneratorWithThought(GeneratorABC):
         except Exception as e:
             # save prompt to file in the same directory
             import os
+
             current_dir = os.path.dirname(os.path.abspath(__file__))
             with open(os.path.join(current_dir, "prompt.txt"), "a") as f:
                 f.write(prompt)
             raise e
 
-        if "答案: " not in response and "答案:" not in response and "answer: " not in response and "answer:" not in response:
+        if (
+            "答案: " not in response
+            and "答案:" not in response
+            and "answer: " not in response
+            and "answer:" not in response
+        ):
             raise ValueError(f"no answer found in response: {response}")
         # Extract answer from response, handling different possible formats
         if "答案: " in response:

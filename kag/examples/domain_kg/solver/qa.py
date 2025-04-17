@@ -6,6 +6,7 @@ from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger()
 
+
 async def qa(query):
     reporter: TraceLogReporter = TraceLogReporter()
     resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["solver_pipeline"])

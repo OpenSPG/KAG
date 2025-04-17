@@ -20,9 +20,9 @@ def extra_relation_candis_types(n: GetSPONode):
     for p_type in p_type_set:
         if p_type.std_entity_type is not None:
             p_label_set.append(p_type.std_entity_type)
-            p_label_str_set.append(f'`{p_type.std_entity_type}`')
+            p_label_str_set.append(f"`{p_type.std_entity_type}`")
         else:
-            p_label_str_set.append(f'`{p_type.un_std_entity_type}`')
+            p_label_str_set.append(f"`{p_type.un_std_entity_type}`")
     return p_label_str_set
 
 
@@ -76,7 +76,10 @@ def run_gql(graph_api, spg_gql, **kwargs) -> List[OneHopGraphData]:
         logger.debug(f"An error occurred in recall_spo_by_spg_gql: {e}", exc_info=True)
     return []
 
-def recall_one_hop_graph_by_entities(graph_api, heads: List[EntityData], tails: List[EntityData]):
+
+def recall_one_hop_graph_by_entities(
+    graph_api, heads: List[EntityData], tails: List[EntityData]
+):
     one_hop_graph_list = []
     start_time = time.time()
     with concurrent.futures.ThreadPoolExecutor() as executor:

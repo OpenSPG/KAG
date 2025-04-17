@@ -41,6 +41,7 @@ class SelfCognitionPipeline(SolverPipelineABC):
         super().__init__()
         self.self_cogn_tool = self_cogn_tool
         self.generator = generator
+
     @retry(stop=stop_after_attempt(3))
     async def planning(self, query, context, **kwargs):
         """Generates task plan through LLM-based planning with automatic retry.

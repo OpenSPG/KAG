@@ -61,7 +61,7 @@ type_messages = [
                     },{
                         "query": "如梦令这首歌的歌曲，它的原唱的前男友有哪些代表作品？",
                         "response": "3"
-                    }]}"""
+                    }]}""",
     }
 ]
 
@@ -82,7 +82,7 @@ path_messages = [
                     }，{
                         "query":"谁是郑伟铭的毕业院校的知名校友，还是钟少珍的学生？",
                         "response":"MATCH p=(startNode)-[*1..3]-(endNode) WHERE startNode.name =~ '郑伟铭' AND endNode.name =~ '钟少珍' RETURN p"
-                    }]}"""
+                    }]}""",
     }
 ]
 
@@ -91,8 +91,7 @@ multi_hop_messages = [
         "role": "system",
         "content": """{ 
             "instruct": "你是一个图数据专家，请参考example将用户请求转成cypher语句,请仔细分析问题是几跳问题，需要的关系类型从如下关系中挑选：\n 
-            需要注意的是除了“合作人”，一般情况下关系“合作”可以理解为“搭档”", 
-            
+            需要注意的是除了“合作人”，一般情况下关系“合作”可以理解为“搭档”",             
             "example":[{ 
                 "query":"赵超的毕业院校，它的知名人物的儿子有哪些?", 
                 "response":"MATCH p=(startNode)-[:毕业院校]->()-[:知名人物]->()-[:儿子]->() WHERE startNode.name = '赵超' RETURN p" 
@@ -105,7 +104,7 @@ multi_hop_messages = [
             }，{
                 "query":"泳娜的丈夫的搭档有哪些搭档?",
                 "response":"MATCH p=(startNode)-[:丈夫]->()-[:搭档]->()-[:搭档]->() WHERE startNode.name = '泳娜' RETURN p" 
-            }]}"""
+            }]}""",
     }
 ]
 
@@ -127,7 +126,6 @@ filter_messages = [
             },{
                 "query":"《感化院》中某位主要演员的搭档和杰克·汤普森有合作过，那么这位搭档的其他搭档还有哪些人？", 
                 "response":"MATCH p=(startNode)-[:主要演员]->()-[:搭档]->(actor)-[:搭档]->() WHERE startNode.name = '感化院' AND '杰克·汤普森' IN [(actor)-[:搭档]->(endNode) | endNode.name] RETURN p" 
-            }]}"""
+            }]}""",
     }
 ]
-

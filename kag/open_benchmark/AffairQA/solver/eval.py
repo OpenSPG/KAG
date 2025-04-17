@@ -19,15 +19,24 @@ class AffairQaDemo:
     """
 
     def qa(self, query):
-        resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
+        resp = SolverPipelineABC.from_config(
+            KAG_CONFIG.all_config["kag_solver_pipeline"]
+        )
         import asyncio
+
         answer = asyncio.run(resp.ainvoke(query))
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer
 
     def parallelQaAndEvaluate(
-        self, qFilePath, aFilePath, resFilePath, threadNum=1, upperLimit=10, qids=None,
+        self,
+        qFilePath,
+        aFilePath,
+        resFilePath,
+        threadNum=1,
+        upperLimit=10,
+        qids=None,
     ):
         def process_sample(data):
             try:
@@ -38,7 +47,7 @@ class AffairQaDemo:
                 prediction = self.qa(question)
 
                 evaObj = Evaluate()
-                metrics = evaObj.getBenchMark([question], [prediction],gold)
+                metrics = evaObj.getBenchMark([question], [prediction], gold)
                 return sample_idx, sample_id, prediction, metrics
             except Exception as e:
                 import traceback
@@ -69,7 +78,9 @@ class AffairQaDemo:
         with ThreadPoolExecutor(max_workers=threadNum) as executor:
             futures = [
                 executor.submit(process_sample, (sample_idx, sample))
-                for sample_idx, sample in enumerate(qaList if upperLimit <= 0 else qaList[:upperLimit])
+                for sample_idx, sample in enumerate(
+                    qaList if upperLimit <= 0 else qaList[:upperLimit]
+                )
             ]
             for future in tqdm(
                 as_completed(futures),

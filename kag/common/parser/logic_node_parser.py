@@ -7,12 +7,14 @@ from kag.interface.solver.base_model import (
     SPORelation,
     Identifier,
     TypeInfo,
-    LogicNode, LFNodeData,
+    LogicNode,
+    LFNodeData,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.utils import extract_content_target
 
 logger = logging.getLogger(__name__)
+
 
 class GetSPONodeData(LFNodeData):
     """Container for retrieved data from a single logical node processing step.
@@ -24,7 +26,7 @@ class GetSPONodeData(LFNodeData):
         spo (List[RelationData]): SPO relations retrieved from knowledge graph
     """
 
-    def __init__(self, sub_question= ""):
+    def __init__(self, sub_question=""):
         super().__init__()
         self.sub_question = sub_question  # Sub-question text
         self.summary = ""  # Generated summary
@@ -38,6 +40,7 @@ class GetSPONodeData(LFNodeData):
             "chunks": [item.to_dict() for item in self.chunks],
             "spo": str(self.spo),
         }
+
     def __str__(self):
         """Generate debug-friendly string representation"""
         output_str = f"sub question: {self.sub_question}"
@@ -51,6 +54,7 @@ class GetSPONodeData(LFNodeData):
             output_str += f"\nretrieved spo:\n{self.spo}"
 
         return output_str
+
     def __repr__(self) -> str:
         """Generate debug-friendly string representation"""
         output_str = f"sub question: {self.sub_question}"
@@ -61,6 +65,7 @@ class GetSPONodeData(LFNodeData):
         if self.summary:
             output_str += f"\nsummary:\n{self.summary}"
         return output_str
+
 
 # get_spg(s, p, o)
 @LogicNode.register("get_spo")
@@ -86,7 +91,6 @@ class GetSPONode(LogicNode):
         params = [f"{k}={str(v)}" for k, v in self.args.items()]
         params_str = ",".join(params)
         return f"{self.operator}({params_str})"
-
 
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")

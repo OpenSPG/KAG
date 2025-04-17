@@ -22,28 +22,38 @@ class KagDeduceExecutor(ExecutorABC):
     """
 
     def __init__(
-            self, llm_module: LLMClient = None,
-            deduce_choice_prompt: PromptABC = None,
-            deduce_entail_prompt: PromptABC = None,
-            deduce_extractor_prompt: PromptABC = None,
-            deduce_judge_prompt: PromptABC = None,
-            deduce_multi_choice_prompt: PromptABC = None,
-            **kwargs
+        self,
+        llm_module: LLMClient = None,
+        deduce_choice_prompt: PromptABC = None,
+        deduce_entail_prompt: PromptABC = None,
+        deduce_extractor_prompt: PromptABC = None,
+        deduce_judge_prompt: PromptABC = None,
+        deduce_multi_choice_prompt: PromptABC = None,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.deduce_choice_prompt = deduce_choice_prompt or init_prompt_with_fallback("deduce_choice",
-                                                                                      KAG_PROJECT_CONF.biz_scene)
-        self.deduce_entail_prompt = deduce_entail_prompt or init_prompt_with_fallback("deduce_entail",
-                                                                                      KAG_PROJECT_CONF.biz_scene)
-        self.deduce_extractor_prompt = deduce_extractor_prompt or init_prompt_with_fallback("deduce_extractor",
-                                                                                            KAG_PROJECT_CONF.biz_scene)
-        self.deduce_judge_prompt = deduce_judge_prompt or init_prompt_with_fallback("deduce_judge",
-                                                                                    KAG_PROJECT_CONF.biz_scene)
-        self.deduce_multi_choice_prompt = deduce_multi_choice_prompt or init_prompt_with_fallback("deduce_multi_choice",
-                                                                                                  KAG_PROJECT_CONF.biz_scene)
+        self.deduce_choice_prompt = deduce_choice_prompt or init_prompt_with_fallback(
+            "deduce_choice", KAG_PROJECT_CONF.biz_scene
+        )
+        self.deduce_entail_prompt = deduce_entail_prompt or init_prompt_with_fallback(
+            "deduce_entail", KAG_PROJECT_CONF.biz_scene
+        )
+        self.deduce_extractor_prompt = (
+            deduce_extractor_prompt
+            or init_prompt_with_fallback("deduce_extractor", KAG_PROJECT_CONF.biz_scene)
+        )
+        self.deduce_judge_prompt = deduce_judge_prompt or init_prompt_with_fallback(
+            "deduce_judge", KAG_PROJECT_CONF.biz_scene
+        )
+        self.deduce_multi_choice_prompt = (
+            deduce_multi_choice_prompt
+            or init_prompt_with_fallback(
+                "deduce_multi_choice", KAG_PROJECT_CONF.biz_scene
+            )
+        )
 
         self.prompt_mapping = {
             "choice": self.deduce_choice_prompt,
@@ -69,7 +79,7 @@ class KagDeduceExecutor(ExecutorABC):
             with_json_parse=False,
             with_except=True,
             tag_name=f"{sub_query}_deduce_{op}",
-            **kwargs
+            **kwargs,
         )
 
     def invoke(self, query: str, task: Any, context: Context, **kwargs):
@@ -118,11 +128,15 @@ class KagDeduceExecutor(ExecutorABC):
         result = []
         final_if_answered = False
         for op in logic_node.ops:
-            if_answered, answer = self.call_op(deduce_query, contents, op, segment_name=tag_id, **kwargs)
+            if_answered, answer = self.call_op(
+                deduce_query, contents, op, segment_name=tag_id, **kwargs
+            )
             result.append(answer)
             final_if_answered = if_answered or final_if_answered
         res = ";".join(result)
-        context.variables_graph.add_answered_alias(logic_node.alias_name, f"{task_query}\n{res}")
+        context.variables_graph.add_answered_alias(
+            logic_node.alias_name, f"{task_query}\n{res}"
+        )
         task.update_result(res)
 
         self.report_content(
@@ -132,9 +146,8 @@ class KagDeduceExecutor(ExecutorABC):
             "",
             "FINISH",
             step=task.name,
-            overwrite = False,
+            overwrite=False,
         )
-
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

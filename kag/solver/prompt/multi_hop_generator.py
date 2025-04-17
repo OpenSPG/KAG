@@ -41,6 +41,7 @@ $query
 
     def is_json_format(self):
         return True
+
     def parse_response(self, response: dict, **kwargs):
 
         if "answer" not in response.keys():

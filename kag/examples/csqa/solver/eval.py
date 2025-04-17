@@ -7,6 +7,8 @@ from kag.open_benchmark.utils.eval_qa import EvalQa, do_main
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger(__name__)
+
+
 class CsQaEvaluator(EvalQa):
     def __init__(self, solver_pipeline_name="solver_pipeline"):
         self.task_name = "musique"
@@ -43,7 +45,9 @@ class CsQaEvaluator(EvalQa):
             questions = json.load(fin)
         return questions
 
-    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
+    def do_metrics_eval(
+        self, questionList: List[str], predictions: List[str], golds: List[str]
+    ):
         return {}
 
 
