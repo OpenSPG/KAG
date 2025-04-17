@@ -35,3 +35,7 @@ class ReaderABC(BuilderComponent, ABC):
     @property
     def ckpt_subdir(self):
         return "reader"
+
+    @property
+    def inherit_input_key(self):
+        return False

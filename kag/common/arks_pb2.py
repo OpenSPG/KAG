@@ -2215,7 +2215,7 @@ InferTensorContents = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_INFERTENSORCONTENTS,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.InferTensorContents)
     ),
 )
@@ -2226,7 +2226,7 @@ Pair = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_PAIR,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.Pair)
     ),
 )
@@ -2237,7 +2237,7 @@ RowKey = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_ROWKEY,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.RowKey)
     ),
 )
@@ -2248,7 +2248,7 @@ PartitionInfo = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_PARTITIONINFO,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.PartitionInfo)
     ),
 )
@@ -2259,7 +2259,7 @@ Item = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_ITEM,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.Item)
     ),
 )
@@ -2270,7 +2270,7 @@ SubItem = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_SUBITEM,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.SubItem)
     ),
 )
@@ -2281,7 +2281,7 @@ SeekPlan = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_SEEKPLAN,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.SeekPlan)
     ),
 )
@@ -2292,7 +2292,7 @@ DumpReqInfo = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_DUMPREQINFO,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.DumpReqInfo)
     ),
 )
@@ -2303,7 +2303,7 @@ ArksRequest = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_ARKSREQUEST,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.ArksRequest)
     ),
 )
@@ -2314,7 +2314,7 @@ ArksResponse = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_ARKSRESPONSE,
-        __module__="arks_pb2"
+        __module__="arks_pb2",
         # @@protoc_insertion_point(class_scope:arks.ArksResponse)
     ),
 )

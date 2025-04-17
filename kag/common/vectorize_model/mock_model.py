@@ -9,6 +9,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import numpy as np
+
 from typing import Union, Iterable
 from kag.interface import VectorizeModelABC, EmbeddingVector
 
@@ -24,6 +25,7 @@ class MockVectorizeModel(VectorizeModelABC):
     def __init__(
         self,
         vector_dimensions: int = None,
+        **kwargs,
     ):
         """
         Initializes the MockVectorizeModel instance.
@@ -31,7 +33,11 @@ class MockVectorizeModel(VectorizeModelABC):
         Args:
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        super().__init__(vector_dimensions)
+        name = kwargs.get("name", None)
+        if not name:
+            name = "mock_vectorize_model"
+
+        super().__init__(name, vector_dimensions)
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]

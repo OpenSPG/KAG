@@ -9,15 +9,202 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import copy
+import asyncio
 import logging
+import json
+import os
+import re
+import copy
 
-from kag.solver.logic.solver_pipeline import SolverPipeline
-from kag.solver.tools.info_processor import ReporterIntermediateProcessTool
+import yaml
+
+from kag.interface import SolverPipelineABC
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
+
 
 logger = logging.getLogger()
+
+
+def get_all_placeholders(config, placeholders):
+    if isinstance(config, dict):
+        for key, value in config.items():
+            get_all_placeholders(value, placeholders)
+    elif isinstance(config, list):
+        return [get_all_placeholders(item, placeholders) for item in config]
+    elif isinstance(config, str):
+        if config.startswith("{") and config.endswith("}"):
+            placeholder = config[1:-1]  # 去掉花括号
+            placeholders.append(placeholder)
+        return config
+    else:
+        return config
+
+
+def replace_placeholders(config, replacements):
+    if isinstance(config, dict):
+        return {
+            key: replace_placeholders(value, replacements)
+            for key, value in config.items()
+        }
+    elif isinstance(config, list):
+        return [replace_placeholders(item, replacements) for item in config]
+    elif isinstance(config, str):
+        if config.startswith("{") and config.endswith("}"):
+            placeholder = config[1:-1]  # 去掉花括号
+            if placeholder in replacements:
+                return replacements[placeholder]
+            else:
+                raise RuntimeError(f"Placeholder '{placeholder}' not found in config.")
+        return config
+    else:
+        return config
+
+
+def load_yaml_files_from_conf_dir():
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    conf_dir = os.path.join(current_dir, "pipelineconf")
+
+    if not os.path.exists(conf_dir) or not os.path.isdir(conf_dir):
+        raise FileNotFoundError(f"The 'conf' directory does not exist at {conf_dir}")
+
+    yaml_data = {}
+
+    for filename in os.listdir(conf_dir):
+        if filename.endswith(".yml") or filename.endswith(".yaml"):
+            file_path = os.path.join(conf_dir, filename)
+            with open(file_path, "r", encoding="utf-8") as file:
+
+                yaml_content = yaml.safe_load(file)
+                yaml_data[yaml_content["pipeline_name"]] = yaml_content
+
+    return yaml_data
+
+
+def get_pipeline_conf(use_pipeline_name, config):
+    pipeline_name = "solver_pipeline"
+    conf_map = load_yaml_files_from_conf_dir()
+    if use_pipeline_name not in conf_map:
+        raise RuntimeError(
+            f"Pipeline configuration not found for pipeline_name: {use_pipeline_name}"
+        )
+
+    placeholders = []
+    get_all_placeholders(conf_map[use_pipeline_name], placeholders)
+    placeholders = list(set(placeholders))
+    placeholders_replacement_map = {}
+    for placeholder in placeholders:
+        value = config.get(placeholder)
+        backup_key = None
+        if value is None:
+            if "llm" in placeholder:
+                backup_key = "llm"
+            if "vectorizer" in placeholder:
+                backup_key = "vectorizer"
+            if backup_key:
+                value = config.get(backup_key)
+        if value is None:
+            raise RuntimeError(
+                f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config."
+            )
+        value["enable_check"] = False
+        placeholders_replacement_map[placeholder] = value
+    default_pipeline_conf = replace_placeholders(
+        conf_map[use_pipeline_name], placeholders_replacement_map
+    )
+    default_solver_pipeline = default_pipeline_conf[pipeline_name]
+
+    if use_pipeline_name == "mcp_pipeline":
+        mcp_servers = config.get("mcpServers", None)
+        mcp_executors = []
+        if mcp_servers is not None:
+            for mcp_name, mcp_conf in mcp_servers.items():
+                desc = mcp_conf["description"]
+                env = mcp_conf["env"]
+                store_path = mcp_conf["store_path"]
+                mcp_executors.append(
+                    {
+                        "type": "mcp_executor",
+                        "store_path": store_path,
+                        "name": mcp_name,
+                        "description": desc,
+                        "env": env,
+                        "llm": config.get("llm"),
+                    }
+                )
+        else:
+            raise RuntimeError("mcpServers not found in config.")
+        default_solver_pipeline["executors"] = mcp_executors
+
+    # update KAG_CONFIG
+    KAG_CONFIG.update_conf(default_pipeline_conf)
+    return default_solver_pipeline
+
+
+def is_chinese(text):
+    chinese_pattern = re.compile(r"[\u4e00-\u9fff]+")
+    return bool(chinese_pattern.search(text))
+
+
+async def qa(task_id, query, project_id, host_addr, params=None):
+    if params is None:
+        params = {}
+    use_pipeline = params.get("usePipeline", "think_pipeline")
+    qa_config = params.get("config", KAG_CONFIG.all_config)
+    if isinstance(qa_config, str):
+        qa_config = json.loads(qa_config)
+    print(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
+    thinking_enabled = use_pipeline == "think_pipeline"
+    print(
+        f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
+    )
+    reporter: OpenSPGReporter = OpenSPGReporter(
+        task_id=task_id,
+        host_addr=host_addr,
+        project_id=project_id,
+        thinking_enabled=thinking_enabled,
+    )
+    await reporter.start()
+    try:
+        if is_chinese(query):
+            KAG_PROJECT_CONF.language = "zh"
+        else:
+            KAG_PROJECT_CONF.language = "en"
+
+        custom_pipeline_conf = copy.deepcopy(
+            KAG_CONFIG.all_config.get("solver_pipeline", None)
+        )
+        # self cognition
+        self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
+        self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
+        self_cognition_res = await self_cognition_pipeline.ainvoke(
+            query, reporter=reporter
+        )
+        if not self_cognition_res:
+            if custom_pipeline_conf:
+                pipeline_config = custom_pipeline_conf
+            else:
+                pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+            logger.error(f"pipeline conf: \n{pipeline_config}")
+            pipeline = SolverPipelineABC.from_config(pipeline_config)
+            answer = await pipeline.ainvoke(query, reporter=reporter)
+        else:
+            answer = self_cognition_res
+    except Exception as e:
+        logger.warning(
+            f"An exception occurred while processing query: {query}. Error: {str(e)}",
+            exc_info=True,
+        )
+        if KAG_PROJECT_CONF.language == "en":
+            answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
+        else:
+            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+        reporter.add_report_line("answer", "error", answer, "ERROR")
+    await reporter.stop()
+    return answer
 
 
 class SolverMain:
@@ -26,93 +213,47 @@ class SolverMain:
         project_id: int,
         task_id: int,
         query: str,
+        session_id: str = "0",
         is_report=True,
         host_addr="http://127.0.0.1:8887",
+        params=None,
     ):
-        # resp
-        report_tool = ReporterIntermediateProcessTool(
-            report_log=is_report,
-            task_id=str(task_id),
-            project_id=str(project_id),
-            host_addr=host_addr,
-            language=KAG_PROJECT_CONF.language,
-        )
-        llm_client = KAG_CONFIG.all_config["llm"]
-        default_pipeline_config = {
-            "max_iterations": 3,
-            "memory": {"type": "default_memory", "llm_client": llm_client},
-            "generator": {
-                "generate_prompt": {"type": "default_resp_generator"},
-                "llm_client": llm_client,
-                "type": "default_generator",
-            },
-            "reasoner": {
-                "lf_executor": {
-                    "chunk_retriever": {
-                        "recall_num": 10,
-                        "rerank_topk": 10,
-                        "type": "default_chunk_retriever",
-                        "llm_client": llm_client,
-                    },
-                    "exact_kg_retriever": {
-                        "el_num": 5,
-                        "graph_api": {"type": "openspg_graph_api"},
-                        "search_api": {"type": "openspg_search_api"},
-                        "type": "default_exact_kg_retriever",
-                        "llm_client": llm_client,
-                    },
-                    "force_chunk_retriever": True,
-                    "fuzzy_kg_retriever": {
-                        "el_num": 5,
-                        "graph_api": {"type": "openspg_graph_api"},
-                        "search_api": {"type": "openspg_search_api"},
-                        "type": "default_fuzzy_kg_retriever",
-                        "llm_client": llm_client,
-                    },
-                    "merger": {
-                        "chunk_retriever": {
-                            "recall_num": 10,
-                            "rerank_topk": 10,
-                            "llm_client": llm_client,
-                            "type": "default_chunk_retriever",
-                        },
-                        "type": "default_lf_sub_query_res_merger",
-                    },
-                    "llm_client": llm_client,
-                    "type": "default_lf_executor",
-                },
-                "lf_planner": {
-                    "type": "default_lf_planner",
-                    "llm_client": llm_client,
-                },
-                "llm_client": llm_client,
-                "type": "default_reasoner",
-            },
-            "reflector": {"type": "default_reflector", "llm_client": llm_client},
-        }
-        conf = copy.deepcopy(
-            KAG_CONFIG.all_config.get("lf_solver_pipeline", default_pipeline_config)
-        )
-        resp = SolverPipeline.from_config(conf)
+        answer = None
+        if params is None:
+            params = {}
         try:
-            answer, trace_log = resp.run(query, report_tool=report_tool)
-            state = ReporterIntermediateProcessTool.STATE.FINISH
-            logger.info(f"{query} answer={answer} tracelog={trace_log}")
+            answer = asyncio.run(
+                qa(
+                    task_id=task_id,
+                    project_id=project_id,
+                    host_addr=host_addr,
+                    query=query,
+                    params=params,
+                )
+            )
+            logger.info(f"{query} answer={answer}")
         except Exception as e:
-            if KAG_PROJECT_CONF.language == "en":
-                answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
-            else:
-                answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
-            state = ReporterIntermediateProcessTool.STATE.ERROR
+            import traceback
+
+            traceback.print_exc()
             logger.warning(
                 f"An exception occurred while processing query: {query}. Error: {str(e)}",
                 exc_info=True,
             )
-        report_tool.report_final_answer(query, answer, state)
         return answer
 
 
 if __name__ == "__main__":
-    res = SolverMain().invoke(300027, 2800106, "who is Jay Zhou", True)
+    from kag.bridge.spg_server_bridge import init_kag_config
+
+    init_kag_config("4200052", "https://spg-pre.alipay.com")
+    res = SolverMain().invoke(
+        4200052,
+        6300299,
+        "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
+        "4700026",
+        True,
+        host_addr="https://spg-pre.alipay.com",
+    )
     print("*" * 80)
     print("The Answer is: ", res)

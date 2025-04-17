@@ -210,7 +210,7 @@ solver
 修改 prompt，实现领域内的 NL2LF 转换。
 
 ```python
-class LogicFormPlanPrompt(PromptOp):
+class LogicFormPlanPrompt(RetrieverLFStaticPlanningPrompt):
     default_case_zh = """"cases": [
         {
             "Action": "张*三是一个赌博App的开发者吗?",
@@ -222,12 +222,16 @@ class LogicFormPlanPrompt(PromptOp):
 在 ``qa.py`` 中组装 solver 代码。
 
 ```python
-def qa(self, query):
-    resp = SolverPipeline()
-    answer, trace_log = resp.run(query)
+async def qa(self, query):
+    reporter: TraceLogReporter = TraceLogReporter()
+    resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["solver_pipeline"])
+    answer = await resp.ainvoke(query, reporter=reporter)
 
     logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
-    return answer, trace_log
+
+    info, status = reporter.generate_report_data()
+    logger.info(f"trace log info: {info.to_dict()}")
+    return answer
 ```
 
 执行 ``qa.py``。

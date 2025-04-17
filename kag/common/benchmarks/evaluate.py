@@ -2,18 +2,38 @@ from typing import List
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
+from .evaUtils import compute_rouge
+from ..config import get_default_chat_llm_config
+from ..utils import processing_phrases
+
+from enum import Enum
+
+from ...interface import LLMClient
+
+
+class MetricType(Enum):
+    EM_F1 = "em_f1"
+    LLM = "llm"
+    ROUGE_L = "rouge-l"
+    SIMILARITY = "similarity"
 
 
 class Evaluate:
-
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
 
-    def __init__(self, embedding_factory="text-embedding-ada-002"):
+    def __init__(
+        self, embedding_factory="text-embedding-ada-002", metrics: list = None
+    ):
         self.embedding_factory = embedding_factory
+        self.metrics = metrics or [MetricType.EM_F1, MetricType.LLM]
+
+    def generate_id(self, title, content):
+        return processing_phrases(f"{title}\n{content}").replace("\n", "")
 
     def evaForSimilarity(self, predictionlist: List[str], goldlist: List[str]):
         """
@@ -30,9 +50,80 @@ class Evaluate:
         #
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
-        return 0.0
+        return {"similarity": 0.0}
 
-    def getBenchMark(self, predictionlist: List[str], goldlist: List[str]):
+    def compute_rouge(self, predictionlist: List[str], goldlist: List[str]):
+        rouge_scores = compute_rouge(predictionlist, goldlist)
+        rouge_ls = [score["rouge-l"]["f"] for score in rouge_scores]
+        average_rouge_l = sum(rouge_ls) / len(rouge_ls)
+        return {"rouge-L": average_rouge_l}
+
+    def convert_chunk_data_2_str(self, predictionlist: list):
+        ret = []
+        for chunk_data in predictionlist:
+            content = chunk_data["content"]
+            for i in range(0, 10):
+                content = content.replace(f"_split_{i}", "")
+            content = processing_phrases(content).replace("\n", "")
+            ret.append(content)
+        return ret
+
+    def recall_top(self, predictionlist: list, goldlist: List[str]):
+        """
+        Calculate recall for top-3, top-5, and all predictions.
+
+        Parameters:
+        predictionlist (List[str]): List of predicted values from the model.
+        goldlist (List[str]): List of actual ground truth values.
+
+        Returns:
+        dict: Dictionary containing recall for top-3, top-5, and all predictions.
+        """
+        predictionlist = self.convert_chunk_data_2_str(predictionlist)
+        # Split predictions into lists of top-3 and top-5
+        top3_predictions = predictionlist[:3]
+        top5_predictions = predictionlist[:5]
+
+        gold_set = set(goldlist)
+        all_set = set(predictionlist)
+        top3_set = set(top3_predictions)
+        top5_set = set(top5_predictions)
+
+        true_positives_top3 = len(gold_set.intersection(top3_set))
+        false_negatives_top3 = len(gold_set - top3_set)
+
+        recall_top3 = (
+            true_positives_top3 / (true_positives_top3 + false_negatives_top3)
+            if (true_positives_top3 + false_negatives_top3) > 0
+            else 0.0
+        )
+
+        # Update counters for top-5
+        true_positives_top5 = len(gold_set.intersection(top5_set))
+        false_negatives_top5 = len(gold_set - top5_set)
+
+        recall_top5 = (
+            true_positives_top5 / (true_positives_top5 + false_negatives_top5)
+            if (true_positives_top5 + false_negatives_top5) > 0
+            else 0.0
+        )
+        # Update counters for all
+        true_positives_all = len(gold_set.intersection(all_set))
+        false_negatives_all = len(gold_set - all_set)
+
+        recall_all = (
+            true_positives_all / (true_positives_all + false_negatives_all)
+            if (true_positives_all + false_negatives_all) > 0
+            else 0.0
+        )
+
+        return {
+            "recall_top3": recall_top3,
+            "recall_top5": recall_top5,
+            "recall_all": recall_all,
+        }
+
+    def getEmAndF1(self, predictionlist: List[str], goldlist: List[str]):
         """
         Calculates and returns evaluation metrics between predictions and ground truths.
 
@@ -60,13 +151,67 @@ class Evaluate:
         # Calculate average EM and F1 scores
         total_metrics["em"] /= len(predictionlist)
         total_metrics["f1"] /= len(predictionlist)
+        return total_metrics
 
-        # Call method to calculate answer similarity
-        total_metrics["answer_similarity"] = self.evaForSimilarity(
-            predictionlist, goldlist
-        )
-
+    def getBenchMark(
+        self, questionlist: List[str], predictionlist: List[str], goldlist: List[str]
+    ):
+        total_metrics = {}
+        for metric in self.metrics:
+            if metric == MetricType.EM_F1:
+                total_metrics.update(self.getEmAndF1(predictionlist, goldlist))
+            if metric == MetricType.LLM:
+                llm_conf = get_default_chat_llm_config()
+                llm_conf["enable_check"] = False
+                llm_client = LLMClient.from_config(llm_conf)
+                total_metrics.update(
+                    self.getLLMBenchMark(
+                        llm_client, questionlist, predictionlist, goldlist
+                    )
+                )
+            if metric == MetricType.ROUGE_L:
+                total_metrics.update(self.compute_rouge(predictionlist, goldlist))
+            if metric == MetricType.SIMILARITY:
+                total_metrics.update(self.evaForSimilarity(predictionlist, goldlist))
         # Return evaluation metrics dictionary
+        return total_metrics
+
+    def getLLMBenchMark(
+        self,
+        llm_client,
+        questionList: List[str],
+        predictionlist: List[str],
+        goldlist: List[str],
+    ):
+        """
+        Calculates and returns evaluation metrics between predictions and ground truths.
+
+        This function evaluates the match between predictions and ground truths by calculating
+        the exact match (EM) and F1 score, as well as answer similarity.
+
+        Parameters:
+        predictionlist (List[str]): List of predicted values from the model.
+        goldlist (List[str]): List of actual ground truth values.
+
+        Returns:
+        dict: Dictionary containing EM, F1 score, and answer similarity.
+        """
+        # Initialize total metrics
+        total_metrics = {}
+        llm_judger = LLMJudger(llm=llm_client)
+
+        # llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
+        # Iterate over prediction and gold lists to calculate EM and F1 scores
+        hits = 0
+        for question, prediction, gold in zip(questionList, predictionlist, goldlist):
+            resposne = llm_judger.judge_by_llm(
+                question=question, prediction=prediction, gold=gold
+            )
+            if resposne.lower() == "true":
+                hits += 1
+
+        # Calculate consistency
+        total_metrics["LLM-Accuracy"] = float(hits) / len(predictionlist)
         return total_metrics
 
     def getSummarizationMetrics(

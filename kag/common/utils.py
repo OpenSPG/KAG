@@ -9,14 +9,22 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+# flake8: noqa
+import datetime
+import random
 import re
+import string
 import sys
 import json
 import hashlib
 import os
 import tempfile
+import time
+import uuid
+
 import requests
 import importlib
+import numpy as np
 from typing import Tuple
 from pathlib import Path
 
@@ -25,6 +33,7 @@ from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
 from tenacity import retry, stop_after_attempt
+from aiolimiter import AsyncLimiter
 
 reset = "\033[0m"
 bold = "\033[1m"
@@ -118,6 +127,10 @@ def load_json(content):
     except json.JSONDecodeError as e:
         substr = content[: e.colno - 1]
         return json.loads(substr)
+
+
+def flatten_2d_list(nested_list):
+    return [item for sublist in nested_list for item in sublist]
 
 
 def split_module_class_name(name: str, text: str) -> Tuple[str, str]:
@@ -227,22 +240,24 @@ def generate_hash_id(value):
         value: The input value to be hashed and abstracted.
 
     Returns:
-        Tuple[str, Any]: A tuple containing the hash ID and the abstracted value.
+        str: A hash ID generated from the input value.
     """
     if isinstance(value, dict):
         sorted_items = sorted(value.items())
         key = str(sorted_items)
     else:
-        key = value
-    if isinstance(key, str):
-        key = key.encode("utf-8")
+        key = str(value)  # Ensure key is a string regardless of input type
+
+    # Encode to bytes for hashing
+    key = key.encode("utf-8")
+
     hasher = hashlib.sha256()
     hasher.update(key)
 
     return hasher.hexdigest()
 
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(3), reraise=True)
 def download_from_http(url: str, dest: str = None) -> str:
     """Downloads a file from an HTTP URL and saves it to a temporary directory.
 
@@ -275,3 +290,131 @@ def download_from_http(url: str, dest: str = None) -> str:
 
     # Return the path of the temporary file
     return temp_file.name
+
+
+class RateLimiterManger:
+    def __init__(self):
+        self.limiter_map = {}
+
+    def get_rate_limiter(
+        self, name: str, max_rate: float = 1000, time_period: float = 1
+    ):
+        if name not in self.limiter_map:
+            limiter = AsyncLimiter(max_rate, time_period)
+            self.limiter_map[name] = limiter
+        return self.limiter_map[name]
+
+
+def get_now(language="zh"):
+    if language == "zh":
+        days_of_week = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        date_format = "%Y年%m月%d日"
+    elif language == "en":
+        days_of_week = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        date_format = "%Y-%m-%d"
+    else:
+        raise ValueError(
+            "Unsupported language. Please use 'zh' for Chinese or 'en' for English."
+        )
+
+    today = datetime.datetime.now()
+    return today.strftime(date_format) + " (" + days_of_week[today.weekday()] + ")"
+
+
+def generate_random_string(bit=8):
+    possible_characters = string.ascii_letters + string.digits
+    random_str = "".join(random.choice(possible_characters) for _ in range(bit))
+    return "gen" + random_str
+
+
+def generate_biz_id_with_type(biz_id, type_name):
+    return f"{biz_id}_{type_name}"
+
+
+def get_p_clean(p):
+    if re.search(".*[\\u4e00-\\u9fa5]+.*", p):
+        p = re.sub("[ \t:：（）“”‘’'\"\[\]\(\)]+?", "", p)
+    else:
+        p = None
+    return p
+
+
+def get_recall_node_label(label_set):
+    for l in label_set:
+        if l != "Entity":
+            return l
+
+
+def node_2_doc(node: dict):
+    prop_set = []
+    for key in node.keys():
+        if key in ["id"]:
+            continue
+        value = node[key]
+        if isinstance(value, list):
+            value = "\n".join(value)
+        else:
+            value = str(value)
+        if key == "name":
+            prop = f"节点名称:{value}"
+        elif key == "description":
+            prop = f"描述:{value}"
+        else:
+            prop = f"{key}:{value}"
+        prop_set.append(prop)
+    return "\n".join(prop_set)
+
+
+def extract_content_target(input_string):
+    """
+    Extract the content and target parts from the input string.
+
+    Args:
+        input_string (str): A string containing content and target.
+
+    Returns:
+        dict: A dictionary containing 'content' and 'target'. If not found, the corresponding value is None.
+    """
+    # Define regex patterns
+    # Content may contain newlines and special characters, so use non-greedy mode
+    content_pattern = r"content=\[(.*?)\]"
+    target_pattern = (
+        r"target=([^,\]]+)"  # Assume target does not contain commas or closing brackets
+    )
+
+    # Search for content
+    content_match = re.search(content_pattern, input_string, re.DOTALL)
+    if content_match:
+        content = content_match.group(1).strip()
+    else:
+        content = None
+
+    # Search for target
+    target_match = re.search(target_pattern, input_string)
+    if target_match:
+        target = (
+            target_match.group(1).strip().rstrip("'")
+        )  # Remove trailing single quote if present
+    else:
+        target = None
+    return content, target
+
+
+def generate_unique_message_key(message):
+    unique_id = uuid.uuid5(uuid.NAMESPACE_URL, str(message))
+    timestamp = int(time.time() * 1000)  # 获取当前时间戳（毫秒级）
+    # unique_id = uuid.uuid4().hex  # 生成一个UUID并转换为十六进制字符串
+    async_message_key = f"KAG_{timestamp}_{unique_id}"
+    return async_message_key
+
+
+def rrf_score(length, r: int = 1):
+    return np.array([1 / (r + i) for i in range(length)])
