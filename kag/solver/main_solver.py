@@ -233,15 +233,15 @@ if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
     init_kag_config(
-        "4200041", "http://127.0.0.1:8887"
+        "4200052", "https://spg-pre.alipay.com"
     )
     res = SolverMain().invoke(
-        4200041,
-        6300136,
-        "Talk about Jay Zhou",
+        4200052,
+        6300299,
+        "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
         "4700026",
         True,
-        host_addr="http://127.0.0.1:8887",
+        host_addr="https://spg-pre.alipay.com",
     )
     print("*" * 80)
     print("The Answer is: ", res)
