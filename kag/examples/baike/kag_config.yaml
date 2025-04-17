@@ -3,26 +3,15 @@ openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
-  model: qwen2.5-72b-instruct
-
-llm:
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-72b-instruct
+  model: qwen2.5-7b-instruct-1m
+  enable_check: false
 
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
-  stream: true
-
-ner_llm: &ner_llm
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-7b-instruct-1m
+  enable_check: false
 
 vectorize_model: &vectorize_model
   api_key: key
@@ -30,6 +19,7 @@ vectorize_model: &vectorize_model
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
+  enable_check: false
 vectorizer: *vectorize_model
 
 
@@ -99,12 +89,12 @@ kg_fr:
     llm_client: *chat_llm
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
-    llm_client: *ner_llm
+    llm_client: *openie_llm
   entity_linking:
     type: entity_linking
     recognition_threshold: 0.8
     exclude_types:
-      - "Chunk"
+      - Chunk
 
 rc:
   type: rc_open_spg
@@ -142,7 +132,7 @@ py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor
   llm: *openie_llm
 
-kag_solver_pipeline:
+solver_pipeline:
   type: kag_static_pipeline
   planner:
     type: kag_static_planner
@@ -161,5 +151,5 @@ kag_solver_pipeline:
     llm_client: *chat_llm
     generated_prompt:
       type: default_refer_generator_prompt
-
+    enable_ref: true
 #------------kag-solver configuration end----------------#
