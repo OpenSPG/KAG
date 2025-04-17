@@ -35,6 +35,7 @@ class SPOMapping(MappingABC):
         o_id_col: str = None,
         sub_property_col: str = None,
         sub_property_mapping: dict = {},
+        **kwargs,
     ):
         """
         Initializes the SPOMapping instance.
@@ -48,7 +49,7 @@ class SPOMapping(MappingABC):
             sub_property_col (str, optional): The column name for sub-properties. Defaults to None.
             sub_property_mapping (dict, optional): A dictionary mapping sub-properties. Defaults to {}.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.s_type_col = s_type_col
         self.s_id_col = s_id_col
         self.p_type_col = p_type_col
