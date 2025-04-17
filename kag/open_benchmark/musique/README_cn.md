@@ -51,10 +51,10 @@ cd builder && python indexer.py && cd ..
 
 ### Step 6：执行 QA 任务
 
-在 [solver](./solver) 目录执行 [evaForMusique.py](./solver/evaForMusique.py) 生成答案并计算 EM 和 F1 指标。
+在 [solver](./solver) 目录执行 [eva.py](./solver/eva.py) 生成答案并计算 EM 和 F1 指标。
 
 ```bash
-cd solver && python evaForMusique.py && cd ..
+cd solver && python eva.py --qa_file ./data/qa_sub.json && cd ..
 ```
 
 生成的答案被保存至 ``./solver/musique_res_*.json``.
@@ -78,5 +78,5 @@ curl http://127.0.0.1:8887/project/api/delete?projectId=1
 
 ### Step 8：（可选）尝试更大的数据集
 
-从 Step 1 重新开始，修改 [indexer.py](./builder/indexer.py) 和 [evaForMusique.py](./solver/evaForMusique.py) 以尝试更大的数据集。
+从 Step 1 重新开始，修改 [indexer.py](./builder/indexer.py) 和 [eva.py](./solver/eva.py) 以尝试更大的数据集。
 

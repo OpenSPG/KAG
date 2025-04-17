@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "--corpus_file",
         type=str,
         help="test file name in /data",
-        default="./data/hotpotqa_sub_corpus.json",
+        default="./data/sub_corpus.json",
     )
 
     args = parser.parse_args()

@@ -38,7 +38,7 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://101.37.68.241:8887
+  host_addr: http://127.0.0.1:8887
   id: '2'
   language: en
   namespace: MuSiQue
@@ -79,14 +79,10 @@ kag_builder_pipeline:
 #------------kag-solver configuration start----------------#
 
 search_api: &search_api
-  type: memory_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
-  graph_path: /root/src/KAG/kag/open_benchmark/musique/graph_data
-  vectorize_model: *vectorize_model
+  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
 graph_api: &graph_api
-  type: memory_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
-  graph_path: /root/src/KAG/kag/open_benchmark/musique/graph_data
-  vectorize_model: *vectorize_model
+  type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 
 kg_cs:

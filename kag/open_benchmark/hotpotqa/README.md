@@ -51,10 +51,10 @@ cd builder && python indexer.py && cd ..
 
 ### Step 6: Execute the QA tasks
 
-Execute [evaForHotpotqa.py](./solver/evaForHotpotqa.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
+Execute [eva.py](./solver/eva.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
 
 ```bash
-cd solver && python evaForMedicine.py && cd ..
+cd solver && python eva.py --qa_file ./data/qa_sub.json && cd ..
 ```
 
 The generated answers are saved to ``./solver/hotpotqa_res_*.json``.
@@ -78,5 +78,5 @@ curl http://127.0.0.1:8887/project/api/delete?projectId=1
 
 ### Step 8: (Optional) Try the larger datasets
 
-Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [evaForHotpotqa.py](./solver/evaForHotpotqa.py) to try the larger datasets.
+Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [eva.py](./solver/eva.py) to try the larger datasets.
 
