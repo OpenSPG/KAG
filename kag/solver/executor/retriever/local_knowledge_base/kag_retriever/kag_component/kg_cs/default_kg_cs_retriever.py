@@ -3,7 +3,7 @@ from typing import List
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import LLMClient, Task
 from kag.interface.solver.base_model import LogicNode
-from kag.interface.solver.model.one_hop_graph import KgGraph
+from kag.interface.solver.model.one_hop_graph import RetrievedData
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import \
     FlowComponentTask, FlowComponent
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_cmponent import \
@@ -36,10 +36,10 @@ class KgConstrainRetrieverWithOpenSPG(KagLogicalFormComponent):
             path_select=self.path_select, entity_linking=self.entity_linking, llm_module=self.llm
         )
 
-    def invoke(self, cur_task: FlowComponentTask, executor_task: Task, processed_logical_nodes: List[LogicNode], **kwargs) -> KgGraph:
+    def invoke(self, cur_task: FlowComponentTask, executor_task: Task, processed_logical_nodes: List[LogicNode], **kwargs) -> List[RetrievedData]:
         query = executor_task.arguments.get("rewrite_query", executor_task.arguments["query"])
-        return self.template.invoke(
+        return [self.template.invoke(
             query=query, logic_nodes=[cur_task.logical_node], graph_data=cur_task.graph_data, is_exact_match=True, name=self.name, **kwargs
-        )
+        )]
 
 

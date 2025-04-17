@@ -240,8 +240,6 @@ class KagHybridExecutor(ExecutorABC):
         return "I don't know"
 
     def generate_summary(self, tag_id, query, chunks, history, **kwargs):
-        if not chunks:
-            return ""
         history_qa = get_history_qa(history)
         if len(history) == 1 and len(history_qa) == 1:
             return history[0].get_fl_node_result().summary
