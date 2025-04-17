@@ -141,7 +141,9 @@ def is_chinese(text):
     chinese_pattern = re.compile(r'[\u4e00-\u9fff]+')
     return bool(chinese_pattern.search(text))
 
-async def qa(task_id, query, project_id, host_addr, params={}):
+async def qa(task_id, query, project_id, host_addr, params=None):
+    if params is None:
+        params = {}
     use_pipeline = params.get("usePipeline", "think_pipeline")
     qa_config = params.get("config", KAG_CONFIG.all_config)
     if isinstance(qa_config, str):

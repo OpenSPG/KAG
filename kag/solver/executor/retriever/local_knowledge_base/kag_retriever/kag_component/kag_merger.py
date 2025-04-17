@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 from typing import List, Dict, Optional
 
@@ -30,7 +31,10 @@ def weightd_merge(chunk1: Dict[str, float], chunk2: Dict[str, float], alpha: flo
         min_score = min(scores)
         ret_docs = {}
         for doc_id, score in chunks.items():
-            score = (score - min_score) / (max_score - min_score)
+            if math.isclose(max_score, min_score, rel_tol=1e-9):
+                score = 1
+            else:
+                score = (score - min_score) / (max_score - min_score)
             ret_docs[doc_id] = score
         return ret_docs
 
@@ -144,17 +148,18 @@ class KagMerger(FlowComponent):
             formatted_docs = [str(rel) for rel in selected_rel]
         deps_context = format_task_dep_context(executor_task.parents)
 
-        summary_query = generate_step_query(logical_node=cur_task.logical_node, processed_logical_nodes=processed_logical_nodes, start_index=len(deps_context))
+        if not cur_task.logical_node.get_fl_node_result().summary:
+            summary_query = generate_step_query(logical_node=cur_task.logical_node, processed_logical_nodes=processed_logical_nodes, start_index=len(deps_context))
 
-        summary_response = self.llm_module.invoke({
-            "cur_question": summary_query,
-            "questions": "\n\n".join(deps_context),
-            "docs":"\n\n".join(formatted_docs)
-        }, self.summary_prompt,
-            with_json_parse=False,
-            with_except=True,
-            tag_name=f"begin_summary_{cur_task.logical_node.sub_query}_{self.name}",
-            **kwargs
-        )
-        cur_task.logical_node.get_fl_node_result().summary = summary_response
+            summary_response = self.llm_module.invoke({
+                "cur_question": summary_query,
+                "questions": "\n\n".join(deps_context),
+                "docs":"\n\n".join(formatted_docs)
+            }, self.summary_prompt,
+                with_json_parse=False,
+                with_except=True,
+                tag_name=f"begin_summary_{cur_task.logical_node.sub_query}_{self.name}",
+                **kwargs
+            )
+            cur_task.logical_node.get_fl_node_result().summary = summary_response
         return limited_merged_chunks

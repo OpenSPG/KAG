@@ -50,7 +50,7 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
             or PprChunkRetriever.from_config(
                 {
                     "type": "ppr_chunk_retriever",
-                    "llm_module": get_default_chat_llm_config(),
+                    "llm_client": get_default_chat_llm_config(),
                 }
             )
         )

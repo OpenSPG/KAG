@@ -5,7 +5,7 @@ from kag.open_benchmark.utils.eval_qa import EvalQa
 
 
 async def qa(query):
-    qa_obj = EvalQa(task_name="baike", solver_pipeline_name="kag_solver_pipeline")
+    qa_obj = EvalQa(task_name="baike", solver_pipeline_name="solver_pipeline")
     answer, trace = await qa_obj.qa(query=query, gold="")
     print(f"{query} is {answer}")
 
