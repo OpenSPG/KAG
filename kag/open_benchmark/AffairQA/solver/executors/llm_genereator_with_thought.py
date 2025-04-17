@@ -39,24 +39,7 @@ class LLMGeneratorWithThought(GeneratorABC):
         rerank_queries = []
         chunks = []
         thoughts = []
-        # for task in context.gen_task(False):
-        #     print(f"task.result = {task.result}")
-        #     task_result = json.loads(task.result)
-        #     subq = task_result["query"]
-        #     suba = task_result["response"]
-        #     thoughts.append(f"Sub-Query: {subq}\n{suba}")
-        #     retrieved_docs = task.memory.get("retriever")
-        #     if retrieved_docs and self.chunk_reranker:
-        #         rerank_queries.append(task.arguments["query"])
-        #         chunks.append(retrieved_docs.chunk_datas)
-        # rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
-        # total_reference_source = rerank_chunks
-        # refer_data = to_reference_list(
-        #     prefix_id=0, retrieved_datas=total_reference_source
-        # )
         refer_data = ""
-        # refer_data = [f"Title:{x['document_name']}\n{x['content']}" for x in refer_data]
-        # refer_data = "\n\n".join(refer_data)
         refer_data_graph = context.variables_graph._graph_to_json()
         def serialize_object(obj):
             if isinstance(obj, Identifier):
