@@ -128,7 +128,7 @@ class ScannerABC(BuilderComponent, ABC):
             return local_file
         return input
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def invoke(self, input: List[Input], **kwargs) -> List[Output]:
         """
         Invokes the component to process input data and return a list of processed results.
 
@@ -141,7 +141,10 @@ class ScannerABC(BuilderComponent, ABC):
         Returns:
             List[Output]: A list of processed results.
         """
-        return list(self.generate(input, **kwargs))
+        output = []
+        for item in input:
+            output.extend(self.generate(item, **kwargs))
+        return output
 
     async def ainvoke(self, input: Input, **kwargs) -> List[Output]:
         """

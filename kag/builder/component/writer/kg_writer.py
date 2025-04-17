@@ -13,7 +13,7 @@ import json
 import logging
 import asyncio
 from enum import Enum
-from typing import Type, Dict, List, Union
+from typing import Type, List, Union
 
 from knext.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
@@ -136,84 +136,208 @@ class KGWriter(SinkWriterABC):
             return [input]
 
     def invoke(
-        self, input: Input, **kwargs
-    ) -> List[Union[Output, BuilderComponentData]]:
-        if isinstance(input, BuilderComponentData):
-            input_data = input.data
-            input_key = input.hash_key
-        else:
-            input_data = input
-            input_key = None
-        if self.inherit_input_key:
-            output_key = input_key
-        else:
-            output_key = None
-
-        write_ckpt = kwargs.get("write_ckpt", True)
-        if write_ckpt and self.checkpointer:
-            # found existing data in checkpointer
-            if input_key and self.checkpointer.exists(input_key):
-                return []
-            # not found
-            output = self._invoke(input_data, **kwargs)
-            # We only record the data key to avoid embeddings from taking up too much disk space.
-            if input_key:
-                self.checkpointer.write_to_ckpt(input_key, input_key)
-            return [BuilderComponentData(x, output_key) for x in output]
-        else:
-            output = self._invoke(input_data, **kwargs)
-            return [BuilderComponentData(x, output_key) for x in output]
-
-    async def ainvoke(
-        self, input: Input, **kwargs
-    ) -> List[Union[Output, BuilderComponentData]]:
-
-        if not isinstance(input, BuilderComponentData):
-            input = BuilderComponentData(input)
-
-        input_data = input.data
-        input_key = input.hash_key
-
-        if self.inherit_input_key:
-            output_key = input_key
-        else:
-            output_key = None
-        write_ckpt = kwargs.get("write_ckpt", True)
-        if write_ckpt and self.checkpointer:
-            # found existing data in checkpointer
-            if input_key and self.checkpointer.exists(input_key):
-                output = await asyncio.to_thread(
-                    lambda: self.checkpointer.read_from_ckpt(input_key)
-                )
-
-                if output is not None:
-                    return [BuilderComponentData(x, output_key) for x in output]
-
-            # not found
-            output = await self._ainvoke(input_data, **kwargs)
-            if input_key:
-                await asyncio.to_thread(
-                    lambda: self.checkpointer.write_to_ckpt(input_key, input_key)
-                )
-            return [BuilderComponentData(x, output_key) for x in output]
-
-        else:
-            output = await self._ainvoke(input_data, **kwargs)
-            return [BuilderComponentData(x, output_key) for x in output]
-
-    def _handle(self, input: Dict, alter_operation: str, **kwargs):
-        """
-        The calling interface provided for SPGServer.
+        self, input: List[Input], **kwargs
+    ) -> List[List[Union[Output, BuilderComponentData]]]:
+        """Synchronous batch processing with checkpoint management.
 
         Args:
-            input (Dict): The input dictionary representing the subgraph to operate on.
-            alter_operation (str): The type of operation to perform (Upsert or Delete).
-            **kwargs: Additional keyword arguments.
+            inputs (List[Input]): Batch of input data items
+            **kwargs: Additional parameters (see invoke())
 
         Returns:
-            None: This method currently returns None.
+            List[List[Output]]: List of output lists corresponding to each input item
         """
-        _input = self.input_types.from_dict(input)
-        _output = self.invoke(_input, alter_operation)  # noqa
 
-        return None
+        input = [
+            x if isinstance(x, BuilderComponentData) else BuilderComponentData(x)
+            for x in input
+        ]
+
+        input_data = [x.data for x in input]
+        input_keys = [x.hash_key for x in input]
+
+        if self.inherit_input_key:
+            output_keys = input_keys
+        else:
+            output_keys = [None] * len(input_keys)
+
+        result = {}
+        write_ckpt = kwargs.get("write_ckpt", True)
+        not_found = []
+        if write_ckpt and self.checkpointer:
+            for idx, k in enumerate(input_keys):
+                if k and self.checkpointer.exists(k):
+                    output = self.checkpointer.read_from_ckpt(k)
+                    result[idx] = output
+                else:
+                    not_found.append(idx)
+            batched_output = self._batch_invoke([input_data[x] for x in not_found])
+            for idx, output in zip(not_found, batched_output):
+                result[idx] = output
+                if input_keys[idx]:
+                    self.checkpointer.write_to_ckpt(input_keys[idx], input_keys[idx])
+            outputs = []
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+        else:
+            outputs = []
+            result = self._batch_invoke(input_data)
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+
+    # def invoke(
+    #     self, input: Input, **kwargs
+    # ) -> List[Union[Output, BuilderComponentData]]:
+    #     if isinstance(input, BuilderComponentData):
+    #         input_data = input.data
+    #         input_key = input.hash_key
+    #     else:
+    #         input_data = input
+    #         input_key = None
+    #     if self.inherit_input_key:
+    #         output_key = input_key
+    #     else:
+    #         output_key = None
+
+    #     write_ckpt = kwargs.get("write_ckpt", True)
+    #     if write_ckpt and self.checkpointer:
+    #         # found existing data in checkpointer
+    #         if input_key and self.checkpointer.exists(input_key):
+    #             return []
+    #         # not found
+    #         output = self._invoke(input_data, **kwargs)
+    #         # We only record the data key to avoid embeddings from taking up too much disk space.
+    #         if input_key:
+    #             self.checkpointer.write_to_ckpt(input_key, input_key)
+    #         return [BuilderComponentData(x, output_key) for x in output]
+    #     else:
+    #         output = self._invoke(input_data, **kwargs)
+    #         return [BuilderComponentData(x, output_key) for x in output]
+
+    async def ainvoke(
+        self, input: List[Input], **kwargs
+    ) -> List[List[Union[Output, BuilderComponentData]]]:
+        """Synchronous batch processing with checkpoint management.
+
+        Args:
+            inputs (List[Input]): Batch of input data items
+            **kwargs: Additional parameters (see invoke())
+
+        Returns:
+            List[List[Output]]: List of output lists corresponding to each input item
+        """
+        input = [
+            x if isinstance(x, BuilderComponentData) else BuilderComponentData(x)
+            for x in input
+        ]
+
+        input_data = [x.data for x in input]
+        input_keys = [x.hash_key for x in input]
+
+        if self.inherit_input_key:
+            output_keys = input_keys
+        else:
+            output_keys = [None] * len(input_keys)
+
+        result = {}
+        write_ckpt = kwargs.get("write_ckpt", True)
+        not_found = []
+        if write_ckpt and self.checkpointer:
+            for idx, k in enumerate(input_keys):
+                if k and self.checkpointer.exists(k):
+                    output = await asyncio.to_thread(
+                        lambda: self.checkpointer.read_from_ckpt(k)
+                    )
+                    result[idx] = output
+                else:
+                    not_found.append(idx)
+            batched_output = await self._abatch_invoke(
+                [input_data[x] for x in not_found]
+            )
+
+            for idx, output in zip(not_found, batched_output):
+                result[idx] = output
+                if input_keys[idx]:
+                    await asyncio.to_thread(
+                        lambda: self.checkpointer.write_to_ckpt(
+                            input_keys[idx], input_keys[idx]
+                        )
+                    )
+            outputs = []
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+        else:
+            outputs = []
+            result = await self._abatch_invoke(input_data)
+            for idx in range(len(input)):
+                output_key = output_keys[idx]
+                outputs.append(
+                    [BuilderComponentData(x, output_key) for x in result[idx]]
+                )
+            return outputs
+
+    # async def ainvoke(
+    #     self, input: Input, **kwargs
+    # ) -> List[Union[Output, BuilderComponentData]]:
+
+    #     if not isinstance(input, BuilderComponentData):
+    #         input = BuilderComponentData(input)
+
+    #     input_data = input.data
+    #     input_key = input.hash_key
+
+    #     if self.inherit_input_key:
+    #         output_key = input_key
+    #     else:
+    #         output_key = None
+    #     write_ckpt = kwargs.get("write_ckpt", True)
+    #     if write_ckpt and self.checkpointer:
+    #         # found existing data in checkpointer
+    #         if input_key and self.checkpointer.exists(input_key):
+    #             output = await asyncio.to_thread(
+    #                 lambda: self.checkpointer.read_from_ckpt(input_key)
+    #             )
+
+    #             if output is not None:
+    #                 return [BuilderComponentData(x, output_key) for x in output]
+
+    #         # not found
+    #         output = await self._ainvoke(input_data, **kwargs)
+    #         if input_key:
+    #             await asyncio.to_thread(
+    #                 lambda: self.checkpointer.write_to_ckpt(input_key, input_key)
+    #             )
+    #         return [BuilderComponentData(x, output_key) for x in output]
+
+    #     else:
+    #         output = await self._ainvoke(input_data, **kwargs)
+    #         return [BuilderComponentData(x, output_key) for x in output]
+
+    # def _handle(self, input: Dict, alter_operation: str, **kwargs):
+    #     """
+    #     The calling interface provided for SPGServer.
+
+    #     Args:
+    #         input (Dict): The input dictionary representing the subgraph to operate on.
+    #         alter_operation (str): The type of operation to perform (Upsert or Delete).
+    #         **kwargs: Additional keyword arguments.
+
+    #     Returns:
+    #         None: This method currently returns None.
+    #     """
+    #     _input = self.input_types.from_dict(input)
+    #     _output = self.invoke(_input, alter_operation)  # noqa
+
+    #     return None

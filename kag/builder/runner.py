@@ -190,7 +190,7 @@ class BuilderChainRunner(Registrable):
         )
         print(msg)
 
-    async def ainvoke(self, input):
+    async def ainvoke(self, input, batch_size: int = 32):
         """
         Processes the input data using the builder chain in parallel and manages checkpoints.
 
@@ -198,65 +198,86 @@ class BuilderChainRunner(Registrable):
             input: The input data to be processed.
         """
 
-        async def process(data, data_id, data_abstract):
-            try:
-                result = await self.chain.ainvoke(data)
-                if result is not None:
-                    info = {}
-                    num_nodes = 0
-                    num_edges = 0
-                    num_subgraphs = 0
-                    for item in result:
-                        if isinstance(item, BuilderComponentData):
-                            item = item.data
-                        if isinstance(item, SubGraph):
-                            num_nodes += len(item.nodes)
-                            num_edges += len(item.edges)
-                            num_subgraphs += 1
+        async def process(batch):
+            items = []
+            item_ids = []
+            item_abstracts = []
+            for item, item_id, item_abstract in batch:
+                items.append(item)
+                item_ids.append(item_id)
+                item_abstracts.append(item_abstract)
 
-                    info = {
-                        "num_nodes": num_nodes,
-                        "num_edges": num_edges,
-                        "num_subgraphs": num_subgraphs,
-                    }
-                    await asyncio.to_thread(
-                        lambda: self.checkpointer.write_to_ckpt(
-                            data_id, {"abstract": data_abstract, "graph_stat": info}
-                        )
+            try:
+                results = await self.chain.ainvoke(items)
+                if results is None or len(results) != len(batch):
+                    raise ValueError("Invalid results encountered!")
+
+                info = {}
+                num_nodes = 0
+                num_edges = 0
+                num_subgraphs = 0
+                for idx in range(len(results)):
+                    item = results[idx]
+                    item_id = item_ids[idx]
+                    item_abstract = item_abstracts[idx]
+                    if isinstance(item, BuilderComponentData):
+                        item = item.data
+                    if isinstance(item, SubGraph):
+                        num_nodes += len(item.nodes)
+                        num_edges += len(item.edges)
+                        num_subgraphs += 1
+
+                info = {
+                    "num_nodes": num_nodes,
+                    "num_edges": num_edges,
+                    "num_subgraphs": num_subgraphs,
+                }
+                await asyncio.to_thread(
+                    lambda: self.checkpointer.write_to_ckpt(
+                        item_id, {"abstract": item_abstract, "graph_stat": info}
                     )
-                return 1
+                )
+                return len(results)
             except Exception:
-                logger.error(f"Failed to process data {data_abstract}, info:")
+                logger.error("Failed to process batch, info:")
                 traceback.print_exc()
                 return 0
 
         async def producer(queue):
+            batch = []
+            checkpointed = 0
             for item in self.scanner.generate(input):
-                await queue.put(item)
+                item_id, item_abstract = generate_hash_id_and_abstract(item)
+                if self.checkpointer.exists(item_id):
+                    checkpointed += 1
+                    continue
+                batch.append((item, item_id, item_abstract))
+                if len(batch) == batch_size:
+                    await queue.put(batch)
+                    batch = []
+            if len(batch) > 0:
+                await queue.put(batch)
+                batch = []
             for _ in range(self.max_concurrency):
                 await queue.put(None)
+            return checkpointed
 
         async def consumer(queue, pbar):
             total = 0
-            checkpointed = 0
             success = 0
             while True:
-                item = await queue.get()
-                if item is None:
+                batch = await queue.get()
+                if batch is None:
                     queue.task_done()
                     break
-                total += 1
-                item_id, item_abstract = generate_hash_id_and_abstract(item)
-                if not self.checkpointer.exists(item_id):
-                    flag = await process(item, item_id, item_abstract)
-                    success += flag
+                total += len(batch)
+                flag = await process(batch)
+                success += flag
 
-                else:
-                    checkpointed += 1
                 pbar.update(1)
                 queue.task_done()
 
-            return total, checkpointed, success
+            return total, success
 
         pbar = tqdm(total=self.scanner.size(input))
         queue = asyncio.Queue(maxsize=self.max_concurrency * 10)
@@ -266,17 +287,16 @@ class BuilderChainRunner(Registrable):
             asyncio.create_task(consumer(queue, pbar))
             for _ in range(self.max_concurrency)
         ]
-        await producer_task
+        checkpointed = await producer_task
         await queue.join()
         results = await asyncio.gather(*consumer_tasks)
 
-        total = sum(t for t, _, _ in results)
-        checkpointed = sum(c for _, c, _ in results)
-        success = sum(s for _, _, s in results)
+        total = sum(t for t, _ in results) + checkpointed
+        success = sum(s for _, s in results)
         pbar.close()
         CheckpointerManager.close()
         msg = (
-            f"{bold}{red}Done process {total} records, with {checkpointed} found in checkpoint, "
+            f"{bold}{red}Done process {total} records, with {checkpointed} found in checkpoint,"
             f"{success} successfully processed and {total-checkpointed-success} failures encountered.\n"
             f"The log file is located at {self.checkpointer._ckpt_file_path}. "
             f"Please access this file to obtain detailed task statistics.{reset}"

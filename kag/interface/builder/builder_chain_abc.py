@@ -10,7 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import asyncio
-from typing import List
+from typing import List, Any, Union
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from kag.common.registry import Registrable
@@ -25,12 +25,12 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
     Each node within the DAG is an instance of BuilderComponent, and the input for each node is processed in parallel.
     """
 
-    def invoke(self, file_path: str, max_workers=10, **kwargs):
+    def invoke(self, inputs: Union[Any, List], max_workers=10, **kwargs):
         """
-        Invokes the builder chain to process the input file.
+        Invokes the builder chain to process the input data.
 
         Args:
-            file_path: The path to the input file to be processed.
+            input: The input data to be processed.
             max_workers (int, optional): The maximum number of threads to use. Defaults to 10.
             **kwargs: Additional keyword arguments.
 
@@ -73,6 +73,8 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
         dag = chain.dag
         import networkx as nx
 
+        if not isinstance(inputs, list):
+            inputs = [inputs]
         nodes = list(nx.topological_sort(dag))
         node_outputs = {}
         # processed_node_names = []
@@ -81,7 +83,7 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
             # processed_node_names.append(node_name)
             predecessors = list(dag.predecessors(node))
             if len(predecessors) == 0:
-                node_input = [file_path]
+                node_input = inputs
                 node_output = execute_node(node, node_input)
             else:
                 node_input = []
@@ -97,196 +99,55 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
 
         return final_output
 
-    def batch_invoke(self, file_paths: List[str], max_workers=10, **kwargs):
+    async def ainvoke(
+        self, inputs: Union[Any, List[Any]], max_concurrency: int = 100, **kwargs
+    ):
         """
-        Invokes the builder chain to process the input file.
-
+        Invokes the builder chain to asynchronously process a batch of input data.
         Args:
-            file_path: The path to the input file to be processed.
-            max_workers (int, optional): The maximum number of threads to use. Defaults to 10.
+            inputs: The input data to be processed.
             **kwargs: Additional keyword arguments.
 
         Returns:
             List: The final output from the builder chain.
         """
 
-        def execute_node(node, inputs: List[str]):
-            """
-            Executes a single node in the builder chain using parallel processing.
-
-            Args:
-                node: The node to be executed.
-                inputs (List[str]): The list of input data for the node.
-
-            Returns:
-                List: The output from the node.
-            """
-            node_name = type(node).__name__.split(".")[-1]
-            with ThreadPoolExecutor(max_workers) as inner_executor:
-                inner_futures = [
-                    inner_executor.submit(node.invoke, inp) for inp in inputs
-                ]
-                result = []
-                from tqdm import tqdm
-
-                for inner_future in tqdm(
-                    as_completed(inner_futures),
-                    total=len(inner_futures),
-                    desc=f"[{node_name}]",
-                    position=1,
-                    leave=False,
-                ):
-                    # for inner_future in as_completed(inner_futures):
-                    ret = inner_future.result()
-                    result.extend(ret)
-                return result
-
-        chain = self.build(**kwargs)
-        dag = chain.dag
-        import networkx as nx
-
-        nodes = list(nx.topological_sort(dag))
-        node_outputs = {}
-        # processed_node_names = []
-        for node in nodes:
-            # node_name = type(node).__name__.split(".")[-1]
-            # processed_node_names.append(node_name)
-            predecessors = list(dag.predecessors(node))
-            if len(predecessors) == 0:
-                node_input = file_paths
-                node_output = execute_node(node, node_input)
-            else:
-                node_input = []
-                for p in predecessors:
-                    node_input.extend(node_outputs[p])
-                node_output = execute_node(node, node_input)
-            node_outputs[node] = node_output
-        output_nodes = [node for node in nodes if dag.out_degree(node) == 0]
-        final_output = []
-        for node in output_nodes:
-            if node in node_outputs:
-                final_output.extend(node_outputs[node])
-
-        return final_output
-
-    async def ainvoke(self, file_path, max_concurrency: int = 100, **kwargs):
-        """
-        Invokes the builder chain to process the input file asynchronously.
-
-        Args:
-            file_path: The path to the input file to be processed.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            List: The final output from the builder chain.
-        """
-
-        async def execute_node(node, inputs: List, semaphore: asyncio.Semaphore):
+        async def execute_node(node, input_data: List):
             """
             Executes a single node in the builder chain asynchronously.
 
             Args:
                 node: The node to be executed.
-                inputs (List[str]): The list of input data for the node.
+                input_data (List): The list of input data for the node.
 
             Returns:
                 List: The output from the node.
             """
 
-            async def ainvoke_with_semaphore(node, item, semaphore):
+            async def ainvoke_with_semaphore(node, items, semaphore):
                 async with semaphore:
-                    return await node.ainvoke(item)
+                    return await node.ainvoke(items)
 
+            batch_size = node.batch_size
+            batchs = get_batch_boundaries(len(input_data), batch_size)
             tasks = []
-            for item in inputs:
+            # The default implementation of `node.ainvoke` will process each data in the batch concurrently.
+            # Therefore, the batch level concurrency is set to `max_concurrency // node.batch_size + 1`.
+            semaphore = asyncio.Semaphore(max_concurrency // node.batch_size + 1)
+            for batch in batchs:
+                start, end = batch
                 task = asyncio.create_task(
-                    ainvoke_with_semaphore(node, item, semaphore)
+                    ainvoke_with_semaphore(node, input_data[start:end], semaphore)
+                )
+                print(
+                    f"{node} task info: batch_size: {batch_size}, semaphore: {semaphore}, data range: {(start, end)}"
                 )
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
             return flatten_2d_list(results)
 
-        chain = self.build(**kwargs)
-        dag = chain.dag
-        import networkx as nx
-
-        # sort nodes in the chain
-        node_generations = list(nx.topological_generations(dag))
-        nodes = flatten_2d_list(node_generations)
-        node_outputs = {}
-        semaphore = asyncio.Semaphore(max_concurrency)
-        for parallel_nodes in node_generations:
-            tasks = []
-            for node in parallel_nodes:
-                predecessors = list(dag.predecessors(node))
-                # collect node inputs from the predecessors
-                if len(predecessors) == 0:
-                    node_input = [file_path]
-                    task = asyncio.create_task(
-                        execute_node(node, node_input, semaphore)
-                    )
-                else:
-                    node_input = []
-                    for p in predecessors:
-                        node_input.extend(node_outputs[p])
-                    task = asyncio.create_task(
-                        execute_node(node, node_input, semaphore)
-                    )
-                tasks.append(task)
-            outputs = await asyncio.gather(*tasks)
-            for node, node_output in zip(parallel_nodes, outputs):
-                node_outputs[node] = node_output
-
-        output_nodes = [node for node in nodes if dag.out_degree(node) == 0]
-        final_output = []
-        for node in output_nodes:
-            if node in node_outputs:
-                final_output.extend(node_outputs[node])
-
-        return final_output
-
-    async def abatch_invoke(
-        self, file_paths: List[str], max_concurrency: int = 100, **kwargs
-    ):
-        """
-        Invokes the builder chain to asynchronously process a batch of input files.
-        Args:
-            file_path: The input file paths to be processed.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            List: The final output from the builder chain.
-        """
-
-        async def execute_node(node, inputs: List):
-            """
-            Executes a single node in the builder chain asynchronously.
-
-            Args:
-                node: The node to be executed.
-                inputs (List[str]): The list of input data for the node.
-
-            Returns:
-                List: The output from the node.
-            """
-
-            async def abatch_invoke_with_semaphore(node, items, semaphore):
-                async with semaphore:
-                    return await node.abatch_invoke(items)
-
-            batch_size = node.batch_size
-            batchs = get_batch_boundaries(len(inputs), batch_size)
-            results = await node.abatch_invoke(inputs)
-
-            tasks = []
-            for batch in batchs:
-                start, end = batch
-                task = asyncio.create_task(
-                    abatch_invoke_with_semaphore(node, inputs[start:end], semaphore)
-                )
-                tasks.append(task)
-            results = await asyncio.gather(*tasks)
-            return flatten_2d_list(flatten_2d_list(results))
+        if not isinstance(inputs, List):
+            inputs = [inputs]
 
         chain = self.build(**kwargs)
         dag = chain.dag
@@ -296,19 +157,18 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
         node_generations = list(nx.topological_generations(dag))
         nodes = flatten_2d_list(node_generations)
         node_outputs = {}
-        semaphore = asyncio.Semaphore(max_concurrency)
         for parallel_nodes in node_generations:
             tasks = []
             for node in parallel_nodes:
                 predecessors = list(dag.predecessors(node))
                 # collect node inputs from the predecessors
                 if len(predecessors) == 0:
-                    node_input = file_paths
+                    node_input = inputs
                     task = asyncio.create_task(execute_node(node, node_input))
                 else:
                     node_input = []
                     for p in predecessors:
-                        node_input.extend(node_outputs[p])
+                        node_input.extend(flatten_2d_list(node_outputs[p]))
                     task = asyncio.create_task(execute_node(node, node_input))
                 tasks.append(task)
             outputs = await asyncio.gather(*tasks)

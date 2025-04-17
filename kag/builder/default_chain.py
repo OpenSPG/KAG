@@ -188,49 +188,60 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                     continue
                 flow_data = execute_node(node, flow_data)
 
-        reader_output = self.reader.invoke(input_data, key=generate_hash_id(input_data))
-        chunks, subgraphs = collect_reader_outputs(reader_output)
+        output = []
+        if not isinstance(input_data, list):
+            input_data = [input_data]
+        for input_item in input_data:
+            reader_output = self.reader.invoke(
+                input_item, key=generate_hash_id(input_data)
+            )
+            chunks, subgraphs = collect_reader_outputs(reader_output)
 
-        if subgraphs:
-            if self.splitter is not None:
-                logger.debug(
-                    "when reader outputs SubGraph, splitter in chain is ignored; you can split chunks in reader"
-                )
-            for subgraph in subgraphs:
-                write_outline_subgraph(subgraph)
-            splitter_output = chunks
-        else:
-            splitter_output = []
-            for chunk in reader_output:
-                splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
-
-        processed_chunk_keys = kwargs.get("processed_chunk_keys", set())
-        filtered_chunks = []
-        processed = 0
-        for chunk in splitter_output:
-            if chunk.hash_key not in processed_chunk_keys:
-                filtered_chunks.append(chunk)
+            if subgraphs:
+                if self.splitter is not None:
+                    logger.debug(
+                        "when reader outputs SubGraph, splitter in chain is ignored; you can split chunks in reader"
+                    )
+                for subgraph in subgraphs:
+                    write_outline_subgraph(subgraph)
+                splitter_output = chunks
             else:
-                processed += 1
-        logger.debug(
-            f"Total chunks: {len(splitter_output)}. Checkpointed: {processed}, Pending: {len(filtered_chunks)}."
-        )
-        result = []
-        with ThreadPoolExecutor(max_workers) as executor:
-            futures = [executor.submit(run_extract, chunk) for chunk in filtered_chunks]
+                splitter_output = []
+                for chunk in reader_output:
+                    splitter_output.extend(
+                        self.splitter.invoke(chunk, key=chunk.hash_key)
+                    )
 
-            from tqdm import tqdm
+            processed_chunk_keys = kwargs.get("processed_chunk_keys", set())
+            filtered_chunks = []
+            processed = 0
+            for chunk in splitter_output:
+                if chunk.hash_key not in processed_chunk_keys:
+                    filtered_chunks.append(chunk)
+                else:
+                    processed += 1
+            logger.debug(
+                f"Total chunks: {len(splitter_output)}. Checkpointed: {processed}, Pending: {len(filtered_chunks)}."
+            )
+            result = []
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [
+                    executor.submit(run_extract, chunk) for chunk in filtered_chunks
+                ]
 
-            for inner_future in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc="KAG Extraction From Chunk",
-                position=1,
-                leave=False,
-            ):
-                ret = inner_future.result()
-                result.extend(ret)
-        return result
+                from tqdm import tqdm
+
+                for inner_future in tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc="KAG Extraction From Chunk",
+                    position=1,
+                    leave=False,
+                ):
+                    ret = inner_future.result()
+                    result.extend(ret)
+            output.append(result)
+        return output
 
 
 @KAGBuilderChain.register("domain_kg_inject_chain")
