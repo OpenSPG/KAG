@@ -101,11 +101,11 @@ class MCPClient:
             }
             for tool in response.tools
         ]
-        if hasattr(self.llm, 'stream'):
+        if hasattr(self.llm, "stream"):
             stream = self.llm.stream
             self.llm.stream = False
         response = await self.llm.acall(messages=messages, tools=available_tools)
-        if hasattr(self.llm, 'stream'):
+        if hasattr(self.llm, "stream"):
             self.llm.stream = stream
         print(f"responses = {response}")
         # process tool call

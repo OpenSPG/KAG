@@ -20,7 +20,9 @@ def extract_answer_from_prediction(prediction: str) -> str:
 
 
 class PrqaEvaluate(Evaluate):
-    def run_qa_evaluation(self, qa_data: List[Dict[str, Any]], llm_client: LLMClient) -> Dict[str, Any]:
+    def run_qa_evaluation(
+        self, qa_data: List[Dict[str, Any]], llm_client: LLMClient
+    ) -> Dict[str, Any]:
         """
         Runs the complete evaluation for PRQA data using inherited Evaluate methods.
         Expects qa_data to contain 'question', 'prediction', 'answer'.
@@ -34,17 +36,25 @@ class PrqaEvaluate(Evaluate):
         valid_pairs = 0
         for item in qa_data:
             if "prediction" not in item or item["prediction"] is None:
-                logger.warning(f"ID {item.get('id', 'N/A')} missing prediction, skipping evaluation.")
+                logger.warning(
+                    f"ID {item.get('id', 'N/A')} missing prediction, skipping evaluation."
+                )
                 continue
             if "answer" not in item or item["answer"] is None:
-                logger.warning(f"ID {item.get('id', 'N/A')} missing answer, skipping evaluation.")
+                logger.warning(
+                    f"ID {item.get('id', 'N/A')} missing answer, skipping evaluation."
+                )
                 continue
             if "question" not in item or item["question"] is None:
-                logger.warning(f"ID {item.get('id', 'N/A')} missing question, skipping evaluation.")
+                logger.warning(
+                    f"ID {item.get('id', 'N/A')} missing question, skipping evaluation."
+                )
                 continue
 
             questions.append(item["question"])
-            predictions_extracted.append(extract_answer_from_prediction(item["prediction"]))
+            predictions_extracted.append(
+                extract_answer_from_prediction(item["prediction"])
+            )
             ans = item["answer"]
             gold_answers.append(str(ans[0]) if isinstance(ans, list) else str(ans))
             valid_pairs += 1
@@ -77,11 +87,9 @@ def parse_result_file(file_path):
                     prediction = line.split("答案:")[1].strip()
 
             if id_ and question and prediction:
-                result_data.append({
-                    "id": id_,
-                    "question": question,
-                    "prediction": prediction
-                })
+                result_data.append(
+                    {"id": id_, "question": question, "prediction": prediction}
+                )
             else:
                 print(f"Skipping block due to missing data:\n{block}")
     return result_data
@@ -107,12 +115,14 @@ def generate_output_data(result_data, gold_answer_data):
                 answer = qa_item[id_]
                 break
 
-        output_data.append({
-            "id": id_,
-            "question": question,
-            "answer": answer,
-            "prediction": prediction
-        })
+        output_data.append(
+            {
+                "id": id_,
+                "question": question,
+                "answer": answer,
+                "prediction": prediction,
+            }
+        )
     return output_data
 
 
@@ -142,8 +152,7 @@ if __name__ == "__main__":
     evaluator = PrqaEvaluate()
     # Run the comprehensive evaluation
     final_metrics = evaluator.run_qa_evaluation(
-        qa_data=qa_data_with_predictions,
-        llm_client=llm_client_for_eval
+        qa_data=qa_data_with_predictions, llm_client=llm_client_for_eval
     )
 
     # --- Step 3: Print and Save Final Metrics ---

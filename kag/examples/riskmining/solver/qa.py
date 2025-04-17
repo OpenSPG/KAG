@@ -26,6 +26,7 @@ class EvaQA:
         logger.info(f"trace log info: {info.to_dict()}")
         return answer
 
+
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
     delay_run(hours=0)

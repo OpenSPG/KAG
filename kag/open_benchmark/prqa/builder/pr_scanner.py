@@ -18,12 +18,12 @@ from knext.common.base.runnable import Input, Output
 @ScannerABC.register("pr_scanner")
 class PRScanner(ScannerABC):
     def __init__(
-            self,
-            header: bool = True,
-            col_names: List[str] = None,
-            col_ids: List[int] = None,
-            rank: int = 0,
-            world_size: int = 1,
+        self,
+        header: bool = True,
+        col_names: List[str] = None,
+        col_ids: List[int] = None,
+        rank: int = 0,
+        world_size: int = 1,
     ):
         super().__init__(rank=rank, world_size=world_size)
         self.header = header

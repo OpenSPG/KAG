@@ -9,6 +9,7 @@ from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
 
+
 def get_history_qa(history: List[LogicNode]):
     history_qa = []
     for idx, lf in enumerate(history):
@@ -22,19 +23,22 @@ def get_history_qa(history: List[LogicNode]):
     return history_qa
 
 
-def generate_step_query(logical_node: GetSPONode, processed_logical_nodes: List[LogicNode], start_index=0):
+def generate_step_query(
+    logical_node: GetSPONode, processed_logical_nodes: List[LogicNode], start_index=0
+):
     sub_queries = []
     index = start_index
     for processed_logical_node in processed_logical_nodes:
         index += 1
         sub_queries.append(
-            f"Step{index}: {processed_logical_node.sub_query}\n{processed_logical_node.get_fl_node_result().summary}")
+            f"Step{index}: {processed_logical_node.sub_query}\n{processed_logical_node.get_fl_node_result().summary}"
+        )
     sub_queries.append(logical_node.sub_query)
     sub_query = "\n".join(sub_queries)
     return sub_query
 
 
-def get_chunks(input_data: List[RetrievedData])-> List[ChunkData]:
+def get_chunks(input_data: List[RetrievedData]) -> List[ChunkData]:
     if not input_data:
         return []
     chunks = []
@@ -69,15 +73,13 @@ def get_all_docs_by_id(doc_ids: List[Tuple[str, float]], graph_api, schema_helpe
             )
             node_dict = dict(node.items())
             return doc_id, ChunkData(
-                    content=node_dict["content"].replace("_split_0", ""),
-                    title=node_dict["name"].replace("_split_0", ""),
-                    chunk_id=doc_id,
-                    score=doc_score,
-                )
-        except Exception as e:
-            logger.warning(
-                f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
+                content=node_dict["content"].replace("_split_0", ""),
+                title=node_dict["name"].replace("_split_0", ""),
+                chunk_id=doc_id,
+                score=doc_score,
             )
+        except Exception as e:
+            logger.warning(f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True)
 
     doc_maps = {}
     with ThreadPoolExecutor() as executor:

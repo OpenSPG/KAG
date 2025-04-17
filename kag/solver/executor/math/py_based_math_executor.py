@@ -102,7 +102,7 @@ class PyBasedMathExecutor(ExecutorABC):
                     else:
                         continue
                 contents.append(c)
-            contents = "input params:\n"+"\n".join(contents) if contents else ""
+            contents = "input params:\n" + "\n".join(contents) if contents else ""
             math_query = f"{logic_node.sub_query}\n target:{logic_node.target}"
         else:
             contents = ""

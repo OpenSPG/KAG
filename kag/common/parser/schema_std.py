@@ -20,7 +20,12 @@ logger = logging.getLogger()
 
 
 class StdSchema(Registrable):
-    def __init__(self, vectorize_model: VectorizeModelABC = None, search_api: SearchApiABC = None, **kwargs):
+    def __init__(
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.schema: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
@@ -53,10 +58,18 @@ class StdSchema(Registrable):
             list of EntityData
         """
 
+
 @StdSchema.register("default_std_schema")
 class DefaultStdSchema(StdSchema):
-    def __init__(self, vectorize_model: VectorizeModelABC = None, search_api: SearchApiABC = None, **kwargs):
-        super().__init__(vectorize_model=vectorize_model, search_api=search_api, **kwargs)
+    def __init__(
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        **kwargs
+    ):
+        super().__init__(
+            vectorize_model=vectorize_model, search_api=search_api, **kwargs
+        )
 
     def retrieval_entity(self, mention_entity: SPOEntity, **kwargs) -> List[EntityData]:
         # 根据mention召回

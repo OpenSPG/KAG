@@ -24,7 +24,7 @@ def normalize_answer(s):
         return re.sub(r"\b(a|an|the)\b", " ", text)
 
     def contains_chinese(text):
-        return bool(re.search(r'[\u4e00-\u9fff]', text))
+        return bool(re.search(r"[\u4e00-\u9fff]", text))
 
     def white_space_fix(text):
         if contains_chinese(text):

@@ -183,6 +183,4 @@ class ExecutorABC(Registrable):
 
     def report_content(self, reporter, segment, tag_id, content, status, **kwargs):
         if reporter:
-            reporter.add_report_line(
-                segment, tag_id, content, status, **kwargs
-            )
+            reporter.add_report_line(segment, tag_id, content, status, **kwargs)

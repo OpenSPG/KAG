@@ -56,6 +56,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
     nodes = {}
     edges = []
     for spo in spo_retrieved:
+
         def get_label(type_en, type_zh):
             type_name = type_zh if KAG_PROJECT_CONF.language == "zh" else type_en
             if not type_name:
@@ -100,9 +101,10 @@ def _convert_kg_graph_to_show_graph(graph_id, kg_graph: KgGraph):
     spo_retrieved = kg_graph.get_all_spo()
     return _convert_spo_to_graph(graph_id, spo_retrieved)
 
+
 class SafeDict(dict):
     def __missing__(self, key):
-        return ''
+        return ""
 
 
 def process_planning(think_str):
@@ -143,15 +145,15 @@ class OpenSPGReporter(ReporterABC):
         self.word_mapping = {
             "kag_merger_digest": {
                 "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息已足够回答问题。",
-                "en": "{chunk_num} documents were output, sufficient information retrieved to answer the question."
+                "en": "{chunk_num} documents were output, sufficient information retrieved to answer the question.",
             },
             "retrieved_info_digest": {
                 "zh": "共检索到 {chunk_num} 篇文档，检索的子图中共有 {nodes_num} 个节点和 {edges_num} 条边。",
-                "en": "In total, {chunk_num} documents were retrieved, with {node_num} nodes and {edge_num} edges in the graph."
+                "en": "In total, {chunk_num} documents were retrieved, with {node_num} nodes and {edge_num} edges in the graph.",
             },
             "retrieved_doc_digest": {
                 "zh": "共检索到{chunk_num}篇文档。",
-                "en": "{chunk_num} documents were retrieved."
+                "en": "{chunk_num} documents were retrieved.",
             },
             "next_finish": {
                 "zh": "检索信息不足以回答，需要继续检索。",
@@ -159,32 +161,23 @@ class OpenSPGReporter(ReporterABC):
             },
             "next_retrieved_finish": {
                 "zh": "检索的子图中共有 {edges_num} 条边和问题相关，还需进行chunk检索。",
-                "en": "There are {edges_num} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed."
+                "en": "There are {edges_num} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed.",
             },
             "retrieved_finish": {
                 "zh": "",
                 "en": "",
             },
-            "task_executing": {
-                "en": "Executing...",
-                "zh": "执行中..."
-            },
+            "task_executing": {"en": "Executing...", "zh": "执行中..."},
             "kg_fr": {
                 "en": "Open Information Extraction Graph Retrieve",
-                "zh": "开放信息抽取层检索"
+                "zh": "开放信息抽取层检索",
             },
-            "kg_cs": {
-                "en": "SPG Graph Retrieve",
-                "zh": "SPG知识层检索"
-            },
-            "kg_rc": {
-                "en": "RawChunk Retrieve",
-                "zh": "文档检索"
-            },
+            "kg_cs": {"en": "SPG Graph Retrieve", "zh": "SPG知识层检索"},
+            "kg_rc": {"en": "RawChunk Retrieve", "zh": "文档检索"},
             "kag_merger": {
                 "en": "Rerank the documents and take the top {chunk_num} ",
-                "zh": "重排序文档，取top {chunk_num} "
-            }
+                "zh": "重排序文档，取top {chunk_num} ",
+            },
         }
         self.tag_mapping = {
             "Graph Show": {
@@ -195,10 +188,7 @@ class OpenSPGReporter(ReporterABC):
                 "en": "Rethinking question using LLM: {content}",
                 "zh": "根据依赖问题重写子问题: {content}",
             },
-            "language_setting": {
-                "en": "",
-                "zh": "这个是一个中文知识库，我们使用中文进行思考"
-            },
+            "language_setting": {"en": "", "zh": "这个是一个中文知识库，我们使用中文进行思考"},
             "Iterative planning": {
                 "en": """
 <step status="{status}" title="Global planning">
@@ -263,7 +253,7 @@ Rewritten question:\n{content}
             },
             "begin_summary": {
                 "en": "Summarizing retrieved information, {content}",
-                "zh": "对检索的信息进行总结, {content}"
+                "zh": "对检索的信息进行总结, {content}",
             },
             "begin_task": {
                 "en": """
@@ -320,7 +310,7 @@ Rewritten question:\n{content}
             "code_generator": {
                 "en": "Generating code\n \n{content}\n",
                 "zh": "正在生成代码\n \n{content}\n",
-            }
+            },
         }
 
         if self.host:
@@ -331,25 +321,19 @@ Rewritten question:\n{content}
             self.client = None
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
-        end_word = ("." if KAG_PROJECT_CONF.language == "en" else "。")
-        if (
-                isinstance(datas, list)
-                and datas
-                and isinstance(datas[0], RelationData)
-        ):
+        end_word = "." if KAG_PROJECT_CONF.language == "en" else "。"
+        if isinstance(datas, list) and datas and isinstance(datas[0], RelationData):
             graph_id = f"graph_{generate_random_string(3)}"
             graph_list.append(_convert_spo_to_graph(graph_id, datas))
             tpl = self.get_tag_template("Graph Show")
             datas = f"""<graph id={graph_id}></graph>{end_word}"""
         if tpl:
-            format_params = {
-                "content": datas
-            }
+            format_params = {"content": datas}
             format_params.update(content_params)
             datas = tpl.format_map(SafeDict(format_params))
-        elif str(datas).strip() != '':
+        elif str(datas).strip() != "":
             output = str(datas).strip()
-            if output != '':
+            if output != "":
 
                 if output[-1] != end_word:
                     output += end_word
@@ -373,20 +357,23 @@ Rewritten question:\n{content}
             step_status = "loading"
         params["status"] = step_status
 
-
-        if is_overwrite or report_id not in self.report_stream_data or (not isinstance(report_content, str)):
+        if (
+            is_overwrite
+            or report_id not in self.report_stream_data
+            or (not isinstance(report_content, str))
+        ):
             tag_template = self.get_tag_template(tag_name)
             self.report_stream_data[report_id] = {
-            "segment": segment,
-            "report_id": report_id,
-            "content": report_content,
-            "report_time": time.time(),
-            "kwargs": params,
-            "tag_template": tag_template,
-            "tag_name": tag_name,
-            "time": time.time(),
-            "status": status,
-        }
+                "segment": segment,
+                "report_id": report_id,
+                "content": report_content,
+                "report_time": time.time(),
+                "kwargs": params,
+                "tag_template": tag_template,
+                "tag_name": tag_name,
+                "time": time.time(),
+                "status": status,
+            }
         else:
             self.report_stream_data[report_id]["status"] = status
             self.report_stream_data[report_id]["kwargs"] = params
@@ -399,7 +386,9 @@ Rewritten question:\n{content}
             if tag_name not in self.report_sub_segment[segment]:
                 self.report_sub_segment[segment].append(tag_name)
                 if parent_segment_report:
-                    parent_segment_report["content"] += f"<tag_name>{report_id}</tag_name>"
+                    parent_segment_report[
+                        "content"
+                    ] += f"<tag_name>{report_id}</tag_name>"
         else:
             self.report_sub_segment[segment] = [tag_name]
             if parent_segment_report:
@@ -412,10 +401,6 @@ Rewritten question:\n{content}
                     self.report_segment_time[segment] = {
                         "start_time": time.time(),
                     }
-
-
-
-
 
     def do_report(self):
         if not self.client:
@@ -430,7 +415,7 @@ Rewritten question:\n{content}
             ret = self.client.reasoner_dialog_report_completions_post(
                 task_stream_request=request
             )
-            if  self.last_report is None:
+            if self.last_report is None:
                 logger.info(f"begin do_report: {request} ret={ret}")
                 self.last_report = request
             if self.last_report.to_dict() == request.to_dict():
@@ -451,6 +436,7 @@ Rewritten question:\n{content}
                     template = template.format_map(SafeDict(params))
                 return template
         return word
+
     def get_tag_template(self, tag_name):
         for name in self.tag_mapping:
             if name in tag_name:
@@ -492,7 +478,9 @@ Rewritten question:\n{content}
             status = report_data["status"]
             report_content = f"{content}"
 
-            report_content = self.generate_content(report_id, tag_template, report_content, kwargs, graph_list)
+            report_content = self.generate_content(
+                report_id, tag_template, report_content, kwargs, graph_list
+            )
             sub_segments = self.report_sub_segment.get(report_data["report_id"], [])
             for sub_segment in sub_segments:
                 sub_segment_data = self.report_stream_data.get(sub_segment, None)
@@ -502,9 +490,17 @@ Rewritten question:\n{content}
                 sub_content = sub_segment_data["content"]
                 sub_kwargs = sub_segment_data.get("kwargs", {})
 
-                sub_segment_report = self.generate_content(report_id=report_id, tpl=tpl, datas=sub_content, content_params=sub_kwargs, graph_list=graph_list)
+                sub_segment_report = self.generate_content(
+                    report_id=report_id,
+                    tpl=tpl,
+                    datas=sub_content,
+                    content_params=sub_kwargs,
+                    graph_list=graph_list,
+                )
                 tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
-                report_content = report_content.replace(tag_replace_str, sub_segment_report)
+                report_content = report_content.replace(
+                    tag_replace_str, sub_segment_report
+                )
 
             think += report_content + "\n\n"
             thinker_start_time = self.report_segment_time.get(
@@ -562,8 +558,9 @@ Rewritten question:\n{content}
     def generate_report_data_pro(self):
         think_reports, answer_reports, reference_reports = self.extra_segment_report()
         answer, status = self.process_answer(answer_reports)
-        think, thinker_cost, graph_list = self.process_think(think_reports,
-                                                             is_finished=status != "INIT")
+        think, thinker_cost, graph_list = self.process_think(
+            think_reports, is_finished=status != "INIT"
+        )
         reference = self.process_reference(reference_reports)
 
         content = StreamData(

@@ -17,16 +17,12 @@ from kag.interface import GeneratorABC, LLMClient
 
 @GeneratorABC.register("kag_prqa_generator")
 class PrqaGenerator(GeneratorABC):
-    def __init__(
-            self,
-            llm: LLMClient,
-            **kwargs
-    ):
+    def __init__(self, llm: LLMClient, **kwargs):
         super().__init__(**kwargs)
         self.llm = llm
 
     def invoke(self, query, context, **kwargs):
-        raw_data = kwargs.get('raw_data')
+        raw_data = kwargs.get("raw_data")
         return self.post_process(raw_data, query)
 
     def post_process(self, raw_data: List, question: str) -> str:
@@ -47,9 +43,9 @@ class PrqaGenerator(GeneratorABC):
             "1. **提取逻辑链条**：逐步分析路径数据中与问题相关的关键信息",
             "2. **确定问题目标**：明确问题需要获取的核心信息",
             "3. **组织答案**：用简洁自然的中文回答，包含必要细节(如果有多个答案，请全部回答出来)",
-            "只用最精简的结果给出答案，不要分析步骤的内容，多个答案时用顿号'、'隔开，除此之外不要有冗余字符; 如果分析后没有问题的对应答案，直接回答'未找到相关信息‘"
+            "只用最精简的结果给出答案，不要分析步骤的内容，多个答案时用顿号'、'隔开，除此之外不要有冗余字符; 如果分析后没有问题的对应答案，直接回答'未找到相关信息‘",
         ]
-        return '\n'.join(prompt_lines)
+        return "\n".join(prompt_lines)
 
     @staticmethod
     def format_analysis_data(data: List) -> List[str]:
