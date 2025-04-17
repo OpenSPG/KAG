@@ -84,7 +84,9 @@ class EntityLinking(ToolABC):
             sematic_match_score_map[i[0]] = i[1]
         for node in candis_nodes:
             recall_node_label = get_recall_node_label(node["node"]["__labels__"])
-            without_prefix_label = self.schema_helper.get_label_without_prefix(recall_node_label)
+            without_prefix_label = self.schema_helper.get_label_without_prefix(
+                recall_node_label
+            )
             if without_prefix_label.lower() == sematic_type.lower():
                 node["type_match_score"] = node["score"]
             elif (
@@ -142,9 +144,7 @@ class EntityLinking(ToolABC):
             query_type = "Entity"
             with_prefix_type = query_type
         else:
-            with_prefix_type = self.schema_helper.get_label_within_prefix(
-                query_type
-            )
+            with_prefix_type = self.schema_helper.get_label_within_prefix(query_type)
             if with_prefix_type == query_type:
                 with_prefix_type = "Entity"
 
@@ -242,7 +242,10 @@ class EntityLinking(ToolABC):
 
             return retdata[: self.top_k]
         except Exception as e:
-            logger.error(f"Error in entity_linking {query} name={name} type={with_prefix_type}: {e}", exc_info=True)
+            logger.error(
+                f"Error in entity_linking {query} name={name} type={with_prefix_type}: {e}",
+                exc_info=True,
+            )
             return []
 
     def schema(self):

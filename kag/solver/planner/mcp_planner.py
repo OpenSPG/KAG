@@ -15,11 +15,11 @@ class McpPlanner(PlannerABC):
     """
 
     def __init__(
-            self,
-            llm: LLMClient,
-            plan_prompt: PromptABC,
-            rewrite_prompt: PromptABC,
-            **kwargs,
+        self,
+        llm: LLMClient,
+        plan_prompt: PromptABC,
+        rewrite_prompt: PromptABC,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm = llm
@@ -43,10 +43,7 @@ class McpPlanner(PlannerABC):
                 "query": query,
                 "mcp_servers": kwargs.get("mcp_servers", []),
             },
-
             segment_name="thinker",
             tag_name=f"Static planning {num_iteration}",
             **kwargs,
         )
-
-

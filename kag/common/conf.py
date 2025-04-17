@@ -23,6 +23,7 @@ from knext.project.client import ProjectClient
 
 logger = logging.getLogger()
 
+
 class KAGConstants(object):
     LOCAL_SCHEMA_URL = "http://localhost:8887"
     DEFAULT_KAG_CONFIG_FILE_NAME = "default_config.yaml"
@@ -156,8 +157,8 @@ class KAGConfigMgr:
             log_level = "INFO"
         logging.basicConfig(
             level=logging.getLevelName(log_level),
-            format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
         logging.getLogger("neo4j.io").setLevel(logging.INFO)
@@ -181,9 +182,8 @@ class KAGConfigMgr:
         return copy.deepcopy(self.config)
 
     def update_conf(self, configs: dict):
-        for k,v in configs.items():
+        for k, v in configs.items():
             self.config[k] = v
-
 
 
 KAG_CONFIG = KAGConfigMgr()

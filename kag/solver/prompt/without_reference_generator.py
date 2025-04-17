@@ -27,7 +27,7 @@ class WithOutReferGeneratorPrompt(PromptABC):
     )
     template_en = (
         f"You are an information analysis expert, today is {get_now(language='en')}."
-"""Answer the question based on the given context.
+        """Answer the question based on the given context.
 Do not repeat the references when outputting the answer.
 
 Example 1:

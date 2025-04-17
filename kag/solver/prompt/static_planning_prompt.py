@@ -52,7 +52,7 @@ class DefaultStaticPlanningPrompt(PromptABC):
                             "optional": False,
                         }
                     },
-                }
+                },
             ],
             "output": {
                 "0": {
@@ -112,7 +112,7 @@ Note:
                             "optional": False,
                         }
                     },
-                }
+                },
             ],
             "output": {
                 "0": {

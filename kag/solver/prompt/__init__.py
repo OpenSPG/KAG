@@ -82,6 +82,5 @@ __all__ = [
     "MCPToolCallPrompt",
     "WithOutReferGeneratorPrompt",
     "ThoughtThenAnswerPrompt",
-    "MultiHopGeneratorPrompt"
+    "MultiHopGeneratorPrompt",
 ]
-

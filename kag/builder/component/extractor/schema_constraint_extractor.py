@@ -61,7 +61,9 @@ class SchemaConstraintExtractor(ExtractorABC):
         """
         super().__init__()
         self.llm = llm
-        self.schema = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id).load()
+        self.schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt
         self.relation_prompt = relation_prompt

@@ -75,7 +75,7 @@ class KAGIterativePlanner(PlannerABC):
             self.plan_prompt,
             segment_name="thinker",
             tag_name=f"Iterative planning {num_iteration}",
-            **kwargs
+            **kwargs,
         )
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:
@@ -100,5 +100,5 @@ class KAGIterativePlanner(PlannerABC):
             self.plan_prompt,
             segment_name="thinker",
             tag_name=f"Iterative planning {num_iteration}",
-            **kwargs
+            **kwargs,
         )

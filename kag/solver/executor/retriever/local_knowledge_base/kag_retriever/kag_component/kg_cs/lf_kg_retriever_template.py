@@ -1,4 +1,4 @@
-import  logging
+import logging
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt
 
@@ -13,6 +13,7 @@ from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 
 logger = logging.getLogger()
+
 
 def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
     """Store logical node structure in knowledge graph
@@ -48,7 +49,9 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs):
+    def __init__(
+        self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs
+    ):
         super().__init__(**kwargs)
         self.path_select = path_select
         self.entity_linking = entity_linking
@@ -59,7 +62,7 @@ class KgRetrieverTemplate:
 
     @retry(stop=stop_after_attempt(3), reraise=True)
     def generate_sub_answer(
-            self, question: str, knowledge_graph: [], history_qa=[], **kwargs
+        self, question: str, knowledge_graph: [], history_qa=[], **kwargs
     ):
         """
         Generates a sub-answer based on the given question, knowledge graph, documents, and history.

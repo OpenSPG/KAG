@@ -27,10 +27,10 @@ class MemoryGraphApi(GraphApiABC):
             KAG_CONFIG.all_config["vectorize_model"]
         )
         from kag.common.graphstore.memory_graph import MemoryGraph
+
         self.graph = MemoryGraph(
             KAG_PROJECT_CONF.namespace, self.memory_graph_path, vectorize_model
         )
-
 
     def get_entity(self, entity: SPOEntity) -> List[EntityData]:
         raise NotImplementedError()
@@ -60,15 +60,25 @@ class MemoryGraphApi(GraphApiABC):
             datas.update(entity.prop.get_properties_map())
         return datas
 
-if __name__ == "__main__":
-    vectorize_model = VectorizeModelABC.from_config({
-        "api_key": "key",
-        "base_url": "https://api.siliconflow.cn/v1/",
-        "model": "BAAI/bge-m3",
-        "type": "openai",
-        "vector_dimensions": 1024
-      })
-    graph_api = MemoryGraphApi(graph_path="KAG/kag/open_benchmark/musique/builder/ckpt/graph", vectorize_model=vectorize_model)
-    out = graph_api.get_entity_one_hop(EntityData(entity_id="408c1110674439a50dd1a107de36f04aa2af1833c8507e9826df695c3dba3f5b", node_type="MuSiQue.Chunk"))
-    print(out)
 
+if __name__ == "__main__":
+    vectorize_model = VectorizeModelABC.from_config(
+        {
+            "api_key": "key",
+            "base_url": "https://api.siliconflow.cn/v1/",
+            "model": "BAAI/bge-m3",
+            "type": "openai",
+            "vector_dimensions": 1024,
+        }
+    )
+    graph_api = MemoryGraphApi(
+        graph_path="KAG/kag/open_benchmark/musique/builder/ckpt/graph",
+        vectorize_model=vectorize_model,
+    )
+    out = graph_api.get_entity_one_hop(
+        EntityData(
+            entity_id="408c1110674439a50dd1a107de36f04aa2af1833c8507e9826df695c3dba3f5b",
+            node_type="MuSiQue.Chunk",
+        )
+    )
+    print(out)
