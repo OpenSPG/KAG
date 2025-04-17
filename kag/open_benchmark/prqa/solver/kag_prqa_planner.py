@@ -26,7 +26,7 @@ type_tools = [{
 
 @PlannerABC.register("kag_prqa_planner")
 class PrqaPlanner(PlannerABC):
-    """mcp planner that generates task plans using LLM with query rewriting capability.
+    """PRQA planner that generates question type using LLM with query capability.
 
     Args:
         llm (LLMClient): Language model client for plan generation

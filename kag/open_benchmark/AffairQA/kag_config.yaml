@@ -77,9 +77,8 @@ kag_builder_pipeline:
 search_api: &search_api
   type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
-graph_api:
+graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
-
 
 kg_cs:
   type: kg_cs_open_spg
@@ -91,9 +90,6 @@ kg_fr:
   path_select:
     type: fuzzy_one_hop_select
     llm_client: *chat_llm
-
-rc:
-  type: rc_open_spg
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
     llm_client: *ner_llm
@@ -101,6 +97,9 @@ rc:
       type: vector_chunk_retriever
       vectorize_model: *vectorize_model
       search_api: *search_api
+
+rc:
+  type: rc_open_spg
   reranker:
     type: rerank_by_vector
 
