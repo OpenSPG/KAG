@@ -22,6 +22,7 @@ LOCAL_MODEL_MAP = {}
 
 
 @VectorizeModelABC.register("bge")
+@VectorizeModelABC.register("bge_vectorize_model")
 class LocalBGEVectorizeModel(VectorizeModelABC):
     """
     A class that extends the VectorizeModelABC base class.
@@ -36,6 +37,7 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
         url: str = None,
         query_instruction_for_retrieval: str = None,
         vector_dimensions: int = None,
+        **kwargs,
     ):
         """
         Initializes the LocalBGEVectorizeModel instance.
@@ -46,7 +48,11 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
             query_instruction_for_retrieval (str, optional): The query instruction for retrieval. Defaults to None.
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        super().__init__(vector_dimensions)
+        name = kwargs.pop("name", None)
+        if not name:
+            name = "local_bge_vectorize_model"
+
+        super().__init__(name, vector_dimensions)
         self.model_path = os.path.expanduser(path)
         self.url = url
         config_path = os.path.join(self.model_path, "config.json")

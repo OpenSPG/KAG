@@ -3,6 +3,8 @@ import json
 import re
 from typing import List, Optional
 
+from kag.common.registry import Registrable
+
 
 class Identifier:
     def __init__(self, alias_name):
@@ -55,7 +57,7 @@ class SPOBase:
         return f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}"
 
     def get_value_list_str(self):
-        return [f"{self.alias_name}.{k}={v}" for k, v in self.value_list]
+        return [f"{self.alias_name}.{v[0]} {v[2]} {v[1]}" for v in self.value_list]
 
     def get_mention_name(self):
         return ""
@@ -322,16 +324,26 @@ class Entity:
         )
 
 
-class LogicNode:
-    def __init__(self, operator, args):
+class LFNodeData:
+    def __init__(self):
+        pass
+
+
+class LogicNode(Registrable):
+    def __init__(self, operator, args, **kwargs):
+        super().__init__(**kwargs)
         self.operator = operator
         self.args = args
         self.sub_query = args.get("sub_query", "")
+        self.lf_node_res: LFNodeData = LFNodeData()
 
     def __repr__(self):
         params = [f"{k}={v}" for k, v in self.args.items()]
         params_str = ",".join(params)
         return f"{self.operator}({params_str})"
+
+    def get_fl_node_result(self):
+        return self.lf_node_res
 
     def to_dict(self):
         return json.loads(self.to_json())
@@ -354,10 +366,13 @@ class SubQueryResult:
     def __init__(self):
         self.sub_query: str = ""
         self.sub_answer: str = ""
+        self.if_answered: bool = False
         self.doc_retrieved: list = []
         self.spo_retrieved: list = []
         self.match_type: str = "fuzzy"
         self.execute_cost: float = 0.0
+        self.is_executed = False
+        self.debug_info = {}
 
     def to_json(self):
         return {
@@ -367,18 +382,27 @@ class SubQueryResult:
             "spo_retrieved": [str(spo) for spo in self.spo_retrieved],
             "match_type": self.match_type,
             "execute_cost": self.execute_cost,
+            "debug_info": self.debug_info,
         }
+
+    def get_qa_pair(self):
+        if self.if_answered:
+            return f"{self.sub_query}\n {self.sub_answer}"
+        return None
 
 
 class LFPlan:
-    def __init__(self, query: str, lf_nodes: List[LogicNode]):
+    def __init__(self, query: str, lf_node: LogicNode, sub_query_type: str):
         self.query: str = query
-        self.lf_nodes: List[LogicNode] = lf_nodes
+        self.rewrite_query: List = [query]
+        self.lf_node: LogicNode = lf_node
+        self.sub_query_type: str = sub_query_type
         self.res: Optional[SubQueryResult] = None
 
     def to_json(self):
         res = {} if self.res is None else self.res.to_json()
-        res["lf_expr"] = [str(n) for n in self.lf_nodes]
+        res["lf_expr"] = str(self.lf_node)
+        res["rewrite_query"] = self.rewrite_query
         return res
 
 
@@ -390,11 +414,36 @@ class LFExecuteResult:
         self.sub_plans: List[LFPlan] = []
         self.retrieved_kg_graph = None
 
-    def get_support_facts(self):
+    def get_succeed_query_and_answer(self):
+        facts = []
+        if len(self.sub_plans) != 0:
+            i = 0
+            for sub_plan in self.sub_plans:
+                sub_res = sub_plan.res
+                if sub_res.if_answered:
+                    facts.append(
+                        f"query{i + 1}:{sub_res.sub_query}. \nanswer:{sub_res.sub_answer}"
+                    )
+                    i += 1
+        return facts
+
+    def get_deduce_failed_step_query(self):
+        for sub_plan in self.sub_plans:
+            sub_res = sub_plan.res
+            if not sub_res.if_answered and sub_plan.sub_query_type in [
+                "math",
+                "deduce",
+            ]:
+                return f"Q:{sub_res.sub_query} A:{sub_res.sub_answer}"
+        return None
+
+    def get_rank_docs(self):
+        return self.rerank_docs
+
+    def get_all_sub_query_and_answer(self):
         facts = []
         failed_sub_query = []
         if len(self.sub_plans) != 0:
-            facts.append("sub query:")
             i = 0
             for sub_plan in self.sub_plans:
                 sub_res = sub_plan.res
@@ -409,10 +458,18 @@ class LFExecuteResult:
                 )
                 i += 1
         if len(failed_sub_query) == len(self.sub_plans) and len(self.rerank_docs) == 0:
-            return ""
+            return []
+        return facts
+
+    def get_support_facts(self):
+        facts = []
+        if len(self.sub_plans) != 0:
+            facts.append("sub query:")
+            facts += self.get_all_sub_query_and_answer()
+
         if len(self.rerank_docs) != 0:
             facts.append("Passages:")
-            facts += self.rerank_docs
+            facts += self.get_rank_docs()
         return "\n".join(facts)
 
     def get_trace_log(self):

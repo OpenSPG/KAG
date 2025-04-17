@@ -40,3 +40,7 @@ class SplitterABC(BuilderComponent, ABC):
     @property
     def ckpt_subdir(self):
         return "splitter"
+
+    @property
+    def inherit_input_key(self):
+        return False
