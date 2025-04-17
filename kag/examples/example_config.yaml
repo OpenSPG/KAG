@@ -30,7 +30,7 @@ project:
   host_addr: http://127.0.0.1:8887
   id: "1"
   language: en
-  namespace: TwoWikiTest
+  namespace: HotpotQA
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
@@ -62,7 +62,7 @@ kag_builder_pipeline:
   num_threads_per_chain: 1
   num_chains: 16
   scanner:
-    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
@@ -72,9 +72,6 @@ search_api: &search_api
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
-chain_vectorizer:
-  type: batch
-  vectorize_model: *vectorize_model
 
 kg_cs:
   type: kg_cs_open_spg
@@ -156,7 +153,7 @@ solver_pipeline:
     - *kag_deduce_executor_conf
     - *kag_output_executor_conf
   generator:
-    type: llm_generator
+    type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
     generated_prompt:
       type: default_refer_generator_prompt
