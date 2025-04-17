@@ -47,7 +47,9 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
             match_config (MatchConfig): The configuration for matching query str to graph nodes.
         """
         super().__init__(match_config)
-        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+        self.schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         for node in nodes:
             if node.label not in self.schema:
                 raise ValueError(

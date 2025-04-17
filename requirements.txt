@@ -14,7 +14,7 @@ certifi==2023.11.17
 urllib3==1.26.16
 python-dateutil==2.8.2
 networkx==3.1
-pydantic==2.5.2
+pydantic
 requests==2.31.0
 setuptools==60.2.0
 psutil
@@ -46,3 +46,12 @@ matplotlib
 PyPDF2
 ruamel.yaml
 json_repair
+gitpython
+docstring_parser
+aiolimiter
+pyodps==0.12.2
+aliyun-log-python-sdk==0.8.8
+pyvis
+aiofiles
+mcp==1.6.0
+httpx

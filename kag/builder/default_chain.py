@@ -24,6 +24,8 @@ from kag.interface import (
 )
 
 from kag.common.utils import generate_hash_id
+from kag.builder.model.chunk import Chunk
+from kag.builder.model.sub_graph import SubGraph
 
 logger = logging.getLogger(__name__)
 
@@ -71,18 +73,6 @@ class DefaultStructuredBuilderChain(KAGBuilderChain):
 
         return chain
 
-    # def get_component_with_ckpts(self):
-    #     return [
-    #         self.mapping,
-    #         self.vectorizer,
-    #         self.writer,
-    #     ]
-
-    # def close_checkpointers(self):
-    #     for node in self.get_component_with_ckpts():
-    #         if node and hasattr(node, "checkpointer"):
-    #             node.checkpointer.close()
-
 
 @KAGBuilderChain.register("unstructured")
 @KAGBuilderChain.register("unstructured_builder_chain")
@@ -95,7 +85,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
     def __init__(
         self,
         reader: ReaderABC,
-        splitter: SplitterABC,
+        splitter: SplitterABC = None,
         extractor: ExtractorABC = None,
         vectorizer: VectorizerABC = None,
         writer: SinkWriterABC = None,
@@ -120,7 +110,16 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         self.writer = writer
 
     def build(self, **kwargs):
-        pass
+        chain = self.reader >> self.splitter
+        if self.extractor:
+            chain = chain >> self.extractor
+        if self.vectorizer:
+            chain = chain >> self.vectorizer
+        if self.post_processor:
+            chain = chain >> self.post_processor
+        if self.writer:
+            chain = chain >> self.writer
+        return chain
 
     def invoke(self, input_data, max_workers=10, **kwargs):
         """
@@ -135,12 +134,33 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             List: The final output from the builder chain.
         """
 
+        def collect_reader_outputs(data):
+            chunks = []
+            subgraphs = []
+
+            def collect(data):
+                if isinstance(data, Chunk):
+                    chunks.append(data)
+                elif isinstance(data, SubGraph):
+                    subgraphs.append(data)
+                elif isinstance(data, (tuple, list)):
+                    for item in data:
+                        collect(item)
+                else:
+                    logger.debug(
+                        f"expect Chunk and SubGraph nested in tuple and list; found {data.__class__}"
+                    )
+
+            collect(data)
+            return chunks, subgraphs
+
         def execute_node(node, node_input, **kwargs):
             if not isinstance(node_input, list):
                 node_input = [node_input]
             node_output = []
             for item in node_input:
-                node_output.extend(node.invoke(item, **kwargs))
+                output = node.invoke(item, **kwargs)
+                node_output.extend(output)
             return node_output
 
         def run_extract(chunk):
@@ -155,13 +175,34 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 if node is None:
                     continue
                 flow_data = execute_node(node, flow_data, key=input_key)
-            return {input_key: flow_data[0]}
+            return flow_data
+
+        def write_outline_subgraph(subgraph):
+            flow_data = [subgraph]
+            for node in [
+                self.vectorizer,
+                self.post_processor,
+                self.writer,
+            ]:
+                if node is None:
+                    continue
+                flow_data = execute_node(node, flow_data)
 
         reader_output = self.reader.invoke(input_data, key=generate_hash_id(input_data))
-        splitter_output = []
+        chunks, subgraphs = collect_reader_outputs(reader_output)
 
-        for chunk in reader_output:
-            splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
+        if subgraphs:
+            if self.splitter is not None:
+                logger.debug(
+                    "when reader outputs SubGraph, splitter in chain is ignored; you can split chunks in reader"
+                )
+            for subgraph in subgraphs:
+                write_outline_subgraph(subgraph)
+            splitter_output = chunks
+        else:
+            splitter_output = []
+            for chunk in reader_output:
+                splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
 
         processed_chunk_keys = kwargs.get("processed_chunk_keys", set())
         filtered_chunks = []
@@ -188,7 +229,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 leave=False,
             ):
                 ret = inner_future.result()
-                result.append(ret)
+                result.extend(ret)
         return result
 
 
