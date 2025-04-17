@@ -43,6 +43,13 @@ cypher_tools = [{
 
 @ExecutorABC.register("kag_prqa_executor")
 class PrqaExecutor(ExecutorABC):
+    """The PRQA executor is used to invoke llm to generate cypher and neo4j to execute cypher statements
+
+    Args:
+       llm (LLMClient): Language model client for plan generation
+       neo4j_user (str): the username of neo4j which is registered in kag_config.yaml
+       neo4j_password (str): the password of neo4j which is registered in kag_config.yaml
+    """
     def __init__(
             self,
             llm: LLMClient,
