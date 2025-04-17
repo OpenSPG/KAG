@@ -38,7 +38,7 @@ class AffairQaDemo:
                 prediction = self.qa(question)
 
                 evaObj = Evaluate()
-                metrics = evaObj.getBenchMark([prediction], [gold])
+                metrics = evaObj.getBenchMark([question], [prediction],gold)
                 return sample_idx, sample_id, prediction, metrics
             except Exception as e:
                 import traceback
@@ -154,9 +154,9 @@ if __name__ == "__main__":
         qFilePath=os.path.join(dir, "data/test.json"),
         aFilePath=os.path.join(dir, "data/AffairQA.json"),
         resFilePath=result_file_path,
-        threadNum=1,
+        threadNum=10,
         upperLimit=-1,
-        qids=['ZJGasStation004'],
+        # qids=['ZJGasStation004'],
         # qids=['ZJGasStation004', 'ZJForestPark031', 'ZJGasStation003', 'ZJGasStation006', 'ZJGasStation007', 'ZJGasStation009', 'ZJForestPark032', 'ZJGasStation023', 'ZJGasStation030', 'ZJGasStation037', 'ZJGasStation033', 'ZJGasStation041', 'ZJGasStation051', 'ZJGasStation044', 'ZJGasStation054', 'ZJHistoricalFigure002', 'ZJHistoricalFigure032', 'ZJMedicalInstitution018', 'ZJMedicalInstitution017', 'ZJMedicalInstitution026', 'ZJMedicalInstitution030', 'ZJMedicalInstitution031', 'ZJMedicalInstitution029', 'ZJNatureReserve005', 'ZJNatureReserve011', 'ZJNatureReserve018', 'ZJNatureReserve022', 'ZJNatureReserve026', 'ZJNatureReserve027', 'ZJNatureReserve037']
     )
     print(res_metrics)

@@ -8,6 +8,8 @@ import re
 from typing import List, Dict, Any
 import argparse
 
+from kag.interface.common.llm_client import LLMClient
+
 logger = logging.getLogger(__name__)
 
 # Assuming extract_answer_from_prediction is defined somewhere accessible
@@ -109,7 +111,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_file",
         type=str,
-        default=os.path.join(dir_path, "data/res19.json"), # Default input
+        default=os.path.join(dir_path, "data/res1.json"), # Default input
         help="Path to the input JSON file containing questions, answers, and predictions (e.g., res1.json)."
     )
     args = parser.parse_args()

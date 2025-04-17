@@ -13,17 +13,26 @@ logger = logging.getLogger()
 
 @SolverPipelineABC.register("kag_prqa_pipeline")
 class PrqaPipeline(SolverPipelineABC):
+    """Pipeline implementing static planning and execution workflow with iterative task processing.
+
+   Args:
+       planner (PlannerABC): Task planning component for generating execution plans
+       executor (ExecutorABC): Available executor instances for task execution
+       generator (GeneratorABC): Result generation component for final answer synthesis
+       max_retries: Maximum number of retries for failed tasks
+   """
     def __init__(
             self,
             planner: PlannerABC,
             executor: ExecutorABC,
             generator: GeneratorABC,
+            max_retries: int = 3
     ):
         super().__init__()
         self.planner = planner
         self.executor = executor
         self.generator = generator
-        self.max_retries = 3
+        self.max_retries = max_retries
 
     def invoke(self, query, **kwargs):
         try:
