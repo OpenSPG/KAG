@@ -1,3 +1,4 @@
+from kag.interface.common.llm_client import LLMClient
 import networkx as nx
 import concurrent.futures
 
@@ -13,10 +14,12 @@ from kag.interface import Task
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.one_hop_graph import RetrievedData, KgGraph
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
-    FlowComponent, FlowComponentTask,
+    FlowComponent,
+    FlowComponentTask,
 )
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_cmponent import \
-    KagLogicalFormComponent
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_cmponent import (
+    KagLogicalFormComponent,
+)
 
 logger = logging.getLogger()
 
@@ -36,85 +39,77 @@ def _merge_graph(graph_data, input_data: List[RetrievedData]):
 
 
 class KAGFlow:
-    def __init__(self, flow_str):
+    def __init__(self, flow_str, llm_client: LLMClient = None):
         # Initialize the KAGFlow with natural language query, logic nodes, and flow string
         self.flow_str = flow_str.strip()
 
         self.default_flow_component = {
             "kg_cs": {
-              "type": "kg_cs_open_spg",
-              "path_select": {
-                "type": "exact_one_hop_select"
-              },
-              "entity_linking": {
-                "type": "entity_linking",
-                "recognition_threshold": 0.9,
-                "exclude_types": [
-                  "Chunk"
-                ]
-              }
+                "type": "kg_cs_open_spg",
+                "path_select": {"type": "exact_one_hop_select"},
+                "entity_linking": {
+                    "type": "entity_linking",
+                    "recognition_threshold": 0.9,
+                    "exclude_types": ["Chunk"],
+                },
             },
             "kg_fr": {
-              "type": "kg_fr_open_spg",
-              "top_k": 20,
-              "path_select": {
-                "type": "fuzzy_one_hop_select",
-                "llm_client": get_default_chat_llm_config()
-              },
-              "ppr_chunk_retriever_tool": {
-                "type": "ppr_chunk_retriever",
-                "llm_client": get_default_chat_llm_config()
-              },
-              "entity_linking": {
-                "type": "entity_linking",
-                "recognition_threshold": 0.8,
-                "exclude_types": [
-                  "Chunk"
-                ]
-              }
+                "type": "kg_fr_open_spg",
+                "top_k": 20,
+                "path_select": {
+                    "type": "fuzzy_one_hop_select",
+                    "llm_client": llm_client.to_config(),
+                },
+                "ppr_chunk_retriever_tool": {
+                    "type": "ppr_chunk_retriever",
+                    "llm_client": llm_client.to_config(),
+                },
+                "entity_linking": {
+                    "type": "entity_linking",
+                    "recognition_threshold": 0.8,
+                    "exclude_types": ["Chunk"],
+                },
             },
             "rc": {
-              "type": "rc_open_spg",
-              "vector_chunk_retriever": {
-                "type": "vector_chunk_retriever",
-              },
-              "top_k": 20
+                "type": "rc_open_spg",
+                "vector_chunk_retriever": {
+                    "type": "vector_chunk_retriever",
+                },
+                "top_k": 20,
             },
             "kag_merger": {
                 "type": "kg_merger",
                 "top_k": 20,
-                "llm_module": get_default_chat_llm_config(),
-                "summary_prompt": {
-                    "type": "default_thought_then_answer"
-                },
-            }
+                "llm_client": llm_client.to_config(),
+                "summary_prompt": {"type": "default_thought_then_answer"},
+            },
         }
         graph, nodes = self.parse_flow()
         self.graph = graph
         self.nodes = nodes
 
-
-
-
     def parse_flow(self):
         execute_graph = nx.DiGraph()
         component_nodes: Dict[str, FlowComponent] = {}
+
         def _add_node(node_name: str):
             # Add a node to the graph if it doesn't already exist
             if node_name not in component_nodes:
-                if node_name not in KAG_CONFIG.all_config.keys() and node_name not in self.default_flow_component.keys():
+                if (
+                    node_name not in KAG_CONFIG.all_config.keys()
+                    and node_name not in self.default_flow_component.keys()
+                ):
                     raise ValueError(f"Unknown node type: {node_name}")
-                component_conf = KAG_CONFIG.all_config.get(node_name, self.default_flow_component.get(node_name))
-                component_nodes[node_name] = FlowComponent.from_config(
-                    component_conf
+                component_conf = KAG_CONFIG.all_config.get(
+                    node_name, self.default_flow_component.get(node_name)
                 )
+                component_nodes[node_name] = FlowComponent.from_config(component_conf)
 
         def _add_edge(src: str, dst: str):
             # Add an edge between two nodes, ensuring both nodes exist in the graph
             _add_node(src)
             _add_node(dst)
             execute_graph.add_edge(src, dst)
-
 
         logger.info(f"Parsing flow string: {self.flow_str}")
         paths = self.flow_str.split(";")
@@ -128,9 +123,7 @@ class KAGFlow:
                 for current_part, next_part in zip(parts, parts[1:]):
                     current_nodes = [n.strip() for n in current_part.split(",")]
                     next_nodes = [n.strip() for n in next_part.split(",")]
-                    logger.info(
-                        f"Adding edges from {current_nodes} to {next_nodes}"
-                    )
+                    logger.info(f"Adding edges from {current_nodes} to {next_nodes}")
 
                     for src in current_nodes:
                         for dst in next_nodes:
@@ -140,7 +133,17 @@ class KAGFlow:
                 logger.info(f" Added node: {path.strip()}")
         return execute_graph, component_nodes
 
-    def execute_node(self,query, flow_id, node_name: str, cur_task: FlowComponentTask, executor_task: Task, node_task_map, processed_logical_nodes: List[LogicNode], **kwargs) -> FlowComponentTask:
+    def execute_node(
+        self,
+        query,
+        flow_id,
+        node_name: str,
+        cur_task: FlowComponentTask,
+        executor_task: Task,
+        node_task_map,
+        processed_logical_nodes: List[LogicNode],
+        **kwargs,
+    ) -> FlowComponentTask:
         logger.info(f"{query} Executing node: {node_name}")
         node = self.nodes[node_name]
         start_time = time.time()
@@ -155,7 +158,9 @@ class KAGFlow:
                 continue
             input_components.append(node_task_map[pre_node])
 
-            if node_task_map[pre_node].is_break() and isinstance(node, KagLogicalFormComponent):
+            if node_task_map[pre_node].is_break() and isinstance(
+                node, KagLogicalFormComponent
+            ):
                 # stop this graph
                 node_task_map[node_name].result = node_task_map[pre_node].result
                 node_task_map[node_name].break_flag = True
@@ -178,9 +183,9 @@ class KAGFlow:
 
         if isinstance(node, FlowComponent):
             res = node.invoke(
-                cur_task = cur_task,
-                executor_task = executor_task,
-                processed_logical_nodes = processed_logical_nodes,
+                cur_task=cur_task,
+                executor_task=executor_task,
+                processed_logical_nodes=processed_logical_nodes,
                 input_components=input_components,
                 flow_id=flow_id,
                 **kwargs,
@@ -198,7 +203,9 @@ class KAGFlow:
         else:
             raise ValueError(f"{query} Unknown node type: {type(node)}")
 
-    def execute(self, flow_id, nl_query, lf_nodes: List[GetSPONode], executor_task, **kwargs) -> Tuple[KgGraph, List[RetrievedData]]:
+    def execute(
+        self, flow_id, nl_query, lf_nodes: List[GetSPONode], executor_task, **kwargs
+    ) -> Tuple[KgGraph, List[RetrievedData]]:
         logger.info(f"{nl_query} Starting KAGFlow execution")
         start_time = time.time()
 
@@ -218,9 +225,7 @@ class KAGFlow:
                 cycles = list(nx.simple_cycles(self.graph))
                 raise ValueError(f"{nl_query} Graph contains cycles: {cycles[0]}")
             topological_order = list(nx.topological_sort(self.graph))
-            logger.info(
-                f"{nl_query} Topological order retrieved: {topological_order}"
-            )
+            logger.info(f"{nl_query} Topological order retrieved: {topological_order}")
         except nx.NetworkXUnfeasible:
             raise ValueError(
                 f"{nl_query} Graph is not a valid Directed Acyclic Graph (DAG)"
@@ -258,15 +263,17 @@ class KAGFlow:
                         node_task_map[cur_task.task_name] = cur_task
                     # Execute current level nodes in parallel
                     futures = {
-                        executor.submit(self.execute_node,
-                                        flow_id=flow_id,
-                                        query=nl_query,
-                                        node_name=node.task_name,
-                                        cur_task=node,
-                                        executor_task=executor_task,
-                                        node_task_map=node_task_map,
-                                        processed_logical_nodes=processed_logical_nodes,
-                                        **kwargs): node
+                        executor.submit(
+                            self.execute_node,
+                            flow_id=flow_id,
+                            query=nl_query,
+                            node_name=node.task_name,
+                            cur_task=node,
+                            executor_task=executor_task,
+                            node_task_map=node_task_map,
+                            processed_logical_nodes=processed_logical_nodes,
+                            **kwargs,
+                        ): node
                         for node in cur_level_tasks
                     }
 
