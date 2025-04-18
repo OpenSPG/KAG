@@ -139,9 +139,6 @@ class KAGBuilderChain(BuilderChainABC, Registrable):
                 task = asyncio.create_task(
                     ainvoke_with_semaphore(node, input_data[start:end], semaphore)
                 )
-                print(
-                    f"{node} task info: batch_size: {batch_size}, semaphore: {semaphore}, data range: {(start, end)}"
-                )
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
             return flatten_2d_list(results)
