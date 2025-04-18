@@ -119,6 +119,7 @@ class SPGServerBridge:
         func_name="invoke",
         is_report=True,
         host_addr="http://127.0.0.1:8887",
+        app_id="",
     ):
         from kag.solver.main_solver import SolverMain
 
@@ -134,6 +135,7 @@ class SPGServerBridge:
             is_report=is_report,
             host_addr=host_addr,
             params=params,
+            app_id=app_id,
         )
 
 
