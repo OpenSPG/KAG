@@ -23,7 +23,6 @@ class EvaForMusique(EvalQa):
         self.solver_pipeline_name = solver_pipeline_name
         self.task_name = "musique"
 
-
     async def qa(self, query, gold):
         reporter: TraceLogReporter = TraceLogReporter()
         pipeline = SolverPipelineABC.from_config(
@@ -55,7 +54,9 @@ class EvaForMusique(EvalQa):
             )
         return eva_obj.recall_top(predictionlist=references, goldlist=golds)
 
-    def do_metrics_eval(self, questionList: List[str], predictions: List[str], golds: List[str]):
+    def do_metrics_eval(
+        self, questionList: List[str], predictions: List[str], golds: List[str]
+    ):
         eva_obj = Evaluate()
         return eva_obj.getBenchMark(questionList, predictions, golds)
 

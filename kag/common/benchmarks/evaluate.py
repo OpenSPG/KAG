@@ -20,14 +20,18 @@ class MetricType(Enum):
     ROUGE_L = "rouge-l"
     SIMILARITY = "similarity"
 
+
 class Evaluate:
     """
     provide evaluation for benchmarks, such as em、f1、answer_similarity, answer_correctness
     """
 
-    def __init__(self, embedding_factory="text-embedding-ada-002", metrics: list=None):
+    def __init__(
+        self, embedding_factory="text-embedding-ada-002", metrics: list = None
+    ):
         self.embedding_factory = embedding_factory
-        self.metrics = metrics or  [MetricType.EM_F1, MetricType.LLM]
+        self.metrics = metrics or [MetricType.EM_F1, MetricType.LLM]
+
     def generate_id(self, title, content):
         return processing_phrases(f"{title}\n{content}").replace("\n", "")
 
@@ -46,15 +50,14 @@ class Evaluate:
         #
         # score = evaluate(dataset, metrics=[answer_similarity], embeddings = embeddings, run_config=run_config)
         # return np.average(score.to_pandas()[['answer_similarity']])
-        return {
-            "similarity": 0.0
-        }
+        return {"similarity": 0.0}
 
     def compute_rouge(self, predictionlist: List[str], goldlist: List[str]):
         rouge_scores = compute_rouge(predictionlist, goldlist)
         rouge_ls = [score["rouge-l"]["f"] for score in rouge_scores]
         average_rouge_l = sum(rouge_ls) / len(rouge_ls)
         return {"rouge-L": average_rouge_l}
+
     def convert_chunk_data_2_str(self, predictionlist: list):
         ret = []
         for chunk_data in predictionlist:
@@ -64,17 +67,18 @@ class Evaluate:
             content = processing_phrases(content).replace("\n", "")
             ret.append(content)
         return ret
+
     def recall_top(self, predictionlist: list, goldlist: List[str]):
         """
-               Calculate recall for top-3, top-5, and all predictions.
+        Calculate recall for top-3, top-5, and all predictions.
 
-               Parameters:
-               predictionlist (List[str]): List of predicted values from the model.
-               goldlist (List[str]): List of actual ground truth values.
+        Parameters:
+        predictionlist (List[str]): List of predicted values from the model.
+        goldlist (List[str]): List of actual ground truth values.
 
-               Returns:
-               dict: Dictionary containing recall for top-3, top-5, and all predictions.
-               """
+        Returns:
+        dict: Dictionary containing recall for top-3, top-5, and all predictions.
+        """
         predictionlist = self.convert_chunk_data_2_str(predictionlist)
         # Split predictions into lists of top-3 and top-5
         top3_predictions = predictionlist[:3]
@@ -88,27 +92,35 @@ class Evaluate:
         true_positives_top3 = len(gold_set.intersection(top3_set))
         false_negatives_top3 = len(gold_set - top3_set)
 
-        recall_top3 = true_positives_top3 / (true_positives_top3 + false_negatives_top3) if (
-                                                                                                        true_positives_top3 + false_negatives_top3) > 0 else 0.0
+        recall_top3 = (
+            true_positives_top3 / (true_positives_top3 + false_negatives_top3)
+            if (true_positives_top3 + false_negatives_top3) > 0
+            else 0.0
+        )
 
         # Update counters for top-5
         true_positives_top5 = len(gold_set.intersection(top5_set))
         false_negatives_top5 = len(gold_set - top5_set)
 
-
-        recall_top5 = true_positives_top5 / (true_positives_top5 + false_negatives_top5) if (
-                                                                                                        true_positives_top5 + false_negatives_top5) > 0 else 0.0
+        recall_top5 = (
+            true_positives_top5 / (true_positives_top5 + false_negatives_top5)
+            if (true_positives_top5 + false_negatives_top5) > 0
+            else 0.0
+        )
         # Update counters for all
         true_positives_all = len(gold_set.intersection(all_set))
         false_negatives_all = len(gold_set - all_set)
 
-        recall_all = true_positives_all / (true_positives_all + false_negatives_all) if (
-                                                                                                    true_positives_all + false_negatives_all) > 0 else 0.0
+        recall_all = (
+            true_positives_all / (true_positives_all + false_negatives_all)
+            if (true_positives_all + false_negatives_all) > 0
+            else 0.0
+        )
 
         return {
             "recall_top3": recall_top3,
             "recall_top5": recall_top5,
-            "recall_all": recall_all
+            "recall_all": recall_all,
         }
 
     def getEmAndF1(self, predictionlist: List[str], goldlist: List[str]):
@@ -141,7 +153,9 @@ class Evaluate:
         total_metrics["f1"] /= len(predictionlist)
         return total_metrics
 
-    def getBenchMark(self,questionlist: List[str], predictionlist: List[str], goldlist: List[str]):
+    def getBenchMark(
+        self, questionlist: List[str], predictionlist: List[str], goldlist: List[str]
+    ):
         total_metrics = {}
         for metric in self.metrics:
             if metric == MetricType.EM_F1:
@@ -149,10 +163,12 @@ class Evaluate:
             if metric == MetricType.LLM:
                 llm_conf = get_default_chat_llm_config()
                 llm_conf["enable_check"] = False
-                llm_client = LLMClient.from_config(
-                    llm_conf
+                llm_client = LLMClient.from_config(llm_conf)
+                total_metrics.update(
+                    self.getLLMBenchMark(
+                        llm_client, questionlist, predictionlist, goldlist
+                    )
                 )
-                total_metrics.update(self.getLLMBenchMark(llm_client, questionlist, predictionlist, goldlist))
             if metric == MetricType.ROUGE_L:
                 total_metrics.update(self.compute_rouge(predictionlist, goldlist))
             if metric == MetricType.SIMILARITY:

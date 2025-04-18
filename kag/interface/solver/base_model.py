@@ -323,9 +323,11 @@ class Entity:
             alias_name=alias.strip(),
         )
 
+
 class LFNodeData:
     def __init__(self):
         pass
+
 
 class LogicNode(Registrable):
     def __init__(self, operator, args, **kwargs):

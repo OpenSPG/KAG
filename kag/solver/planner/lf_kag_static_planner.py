@@ -71,7 +71,7 @@ class KAGLFStaticPlanner(PlannerABC):
         Returns:
             bool: True if query contains dynamic parameter references (e.g., {{1.output}})
         """
-        return task.arguments.get('is_need_rewrite', False)
+        return task.arguments.get("is_need_rewrite", False)
 
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
@@ -84,11 +84,18 @@ class KAGLFStaticPlanner(PlannerABC):
         """
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
 
-        query = task.arguments['query']
+        query = task.arguments["query"]
         tag_id = f"{query}_begin_task"
 
         if reporter:
-            reporter.add_report_line(segment="thinker", tag_name=tag_id, content="", status="INIT", step=task.name, overwrite=False)
+            reporter.add_report_line(
+                segment="thinker",
+                tag_name=tag_id,
+                content="",
+                status="INIT",
+                step=task.name,
+                overwrite=False,
+            )
         # print(f"Old query: {query}")
         deps_context = format_task_dep_context(task.parents)
         context = {
@@ -109,15 +116,10 @@ class KAGLFStaticPlanner(PlannerABC):
         logic_form_node = task.arguments.get("logic_form_node", None)
         if logic_form_node:
             logic_form_node.sub_query = new_query
-            return {
-                "rewrite_query": new_query,
-                "logic_form_node": logic_form_node
-            }
+            return {"rewrite_query": new_query, "logic_form_node": logic_form_node}
         # print(f"query rewrite context = {context}")
         # print(f"New query: {new_query}")
-        return {
-            "query": new_query
-        }
+        return {"query": new_query}
 
     def invoke(self, query, **kwargs) -> List[Task]:
         """Synchronously generates task plan using LLM.
@@ -149,7 +151,6 @@ class KAGLFStaticPlanner(PlannerABC):
                 retry_num -= 1
                 if retry_num == 0:
                     raise e
-
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.

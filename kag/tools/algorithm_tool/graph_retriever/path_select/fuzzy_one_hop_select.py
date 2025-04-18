@@ -63,8 +63,9 @@ class FuzzyOneHopSelect(PathSelect):
     def recall_graph_data_from_knowledge_base(
         self, n: GetSPONode, heads: List[EntityData], tails: List[EntityData]
     ) -> List[OneHopGraphData]:
-        return recall_one_hop_graph_by_entities(self.graph_api, heads=heads, tails=tails)
-
+        return recall_one_hop_graph_by_entities(
+            self.graph_api, heads=heads, tails=tails
+        )
 
     def get_unstd_p_text(self, n: GetSPONode):
         un_std_p = n.p.get_entity_first_type_or_un_std()

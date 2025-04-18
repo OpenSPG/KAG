@@ -45,7 +45,7 @@ reference：
     )
     template_en = (
         f"You are an information analysis expert, today is {get_now(language='en')}."
-"""Answer the question based on the given references.
+        """Answer the question based on the given references.
 If the answer contains referenced information, include the `id` field from the reference. If it is not a retrieved result, no citation marker is needed.
 Do not repeat the references when outputting the answer.
 Citations should be in the format `<reference id="chunk:1_2"></reference>`, and the cited symbol must exist in the `id` field of the references; otherwise, no citation should be provided.

@@ -15,7 +15,13 @@ from kag.solver.pipeline.self_cognition_pipeline import SelfCognitionPipeline
 from kag.solver.planner.kag_iterative_planner import KAGIterativePlanner
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
 from kag.solver.planner.lf_kag_static_planner import KAGLFStaticPlanner
-from kag.solver.prompt import DeduceChoice, DeduceEntail, DeduceExtractor, DeduceJudge, DeduceMutiChoice
+from kag.solver.prompt import (
+    DeduceChoice,
+    DeduceEntail,
+    DeduceExtractor,
+    DeduceJudge,
+    DeduceMutiChoice,
+)
 from kag.solver.prompt.output_question import OutputQuestionPrompt
 
 from kag.solver.prompt.reference_generator import ReferGeneratorPrompt

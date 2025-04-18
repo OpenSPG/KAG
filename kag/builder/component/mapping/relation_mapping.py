@@ -50,7 +50,9 @@ class RelationMapping(MappingABC):
             **kwargs: Additional keyword arguments passed to the parent class constructor.
         """
         super().__init__(**kwargs)
-        schema = SchemaClient(host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id).load()
+        schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"
         assert object_name in schema, f"{object_name} is not a valid SPG type name"
         self.subject_type = schema.get(subject_name)

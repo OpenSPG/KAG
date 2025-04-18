@@ -39,30 +39,16 @@ class LLMGeneratorWithThought(GeneratorABC):
         rerank_queries = []
         chunks = []
         thoughts = []
-        for task in context.gen_task(False):
-            print(f"task.result = {task.result}")
-            task_result = json.loads(task.result)
-            subq = task_result["query"]
-            suba = task_result["response"]
-            thoughts.append(f"Sub-Query: {subq}\n{suba}")
-            retrieved_docs = task.memory.get("retriever")
-            if retrieved_docs and self.chunk_reranker:
-                rerank_queries.append(task.arguments["query"])
-                chunks.append(retrieved_docs.chunk_datas)
-        rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
-        total_reference_source = rerank_chunks
-        refer_data = to_reference_list(
-            prefix_id=0, retrieved_datas=total_reference_source
-        )
-
-        refer_data = [f"Title:{x['document_name']}\n{x['content']}" for x in refer_data]
-        refer_data = "\n\n".join(refer_data)
+        refer_data = ""
         refer_data_graph = context.variables_graph._graph_to_json()
+
         def serialize_object(obj):
             if isinstance(obj, Identifier):
                 return str(obj)
             elif isinstance(obj, dict):
-                return {serialize_object(k): serialize_object(v) for k, v in obj.items()}
+                return {
+                    serialize_object(k): serialize_object(v) for k, v in obj.items()
+                }
             elif isinstance(obj, list):
                 return [serialize_object(item) for item in obj]
             elif isinstance(obj, tuple):
@@ -71,6 +57,7 @@ class LLMGeneratorWithThought(GeneratorABC):
                 return {serialize_object(item) for item in obj}
             else:
                 return obj
+
         refer_data_graph = serialize_object(refer_data_graph)
         # 截断图数据，避免超过长度限制
         refer_data_graph_str = json.dumps(refer_data_graph, ensure_ascii=False)
@@ -99,12 +86,18 @@ class LLMGeneratorWithThought(GeneratorABC):
         except Exception as e:
             # save prompt to file in the same directory
             import os
+
             current_dir = os.path.dirname(os.path.abspath(__file__))
             with open(os.path.join(current_dir, "prompt.txt"), "a") as f:
                 f.write(prompt)
             raise e
 
-        if "答案: " not in response and "答案:" not in response and "answer: " not in response and "answer:" not in response:
+        if (
+            "答案: " not in response
+            and "答案:" not in response
+            and "answer: " not in response
+            and "answer:" not in response
+        ):
             raise ValueError(f"no answer found in response: {response}")
         # Extract answer from response, handling different possible formats
         if "答案: " in response:

@@ -26,6 +26,7 @@ import knext.common.cache
 logger = logging.getLogger()
 entities_query_map = knext.common.cache.LinkCache(maxsize=1000, ttl=3000)
 
+
 def update_cached_one_hop_rel(rel_dict: dict, rel: RelationData):
     rel_set = rel_dict.get(rel.type, [])
     rel_set.append(rel)

@@ -35,9 +35,9 @@ class NaiveRagExtractor(ExtractorABC):
     """
 
     def __init__(
-            self,
-            external_graph: ExternalGraphLoaderABC = None,
-            table_extractor: ExtractorABC = None,
+        self,
+        external_graph: ExternalGraphLoaderABC = None,
+        table_extractor: ExtractorABC = None,
     ):
         """
         Initializes the NaiveRagExtractor with the specified parameters.
