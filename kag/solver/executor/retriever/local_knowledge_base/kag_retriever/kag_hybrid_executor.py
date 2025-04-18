@@ -18,7 +18,9 @@ from kag.interface.solver.model.one_hop_graph import (
     RetrievedData,
     KgGraph,
 )
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import get_history_qa
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import (
+    get_history_qa,
+)
 from kag.solver.utils import init_prompt_with_fallback
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_rewriter import (
     KAGLFRewriter,
@@ -89,7 +91,7 @@ class KAGRetrievedResponse(ExecutorResponse):
         res = []
         for c in self.chunk_datas:
             res.append(f"{c.content}")
-        if len(res)==0:
+        if len(res) == 0:
             return to_reference_list(self.task_id, [self.graph_data])
         return res
 
@@ -181,7 +183,7 @@ class KagHybridExecutor(ExecutorABC):
     """
 
     def __init__(
-        self, flow, lf_rewriter: KAGLFRewriter, llm_module: LLMClient = None, **kwargs
+        self, flow, lf_rewriter: KAGLFRewriter, llm_client: LLMClient = None, **kwargs
     ):
         super().__init__(**kwargs)
         self.lf_rewriter: KAGLFRewriter = lf_rewriter
@@ -189,13 +191,11 @@ class KagHybridExecutor(ExecutorABC):
         self.solve_question_without_spo_prompt = init_prompt_with_fallback(
             "summary_question", KAG_PROJECT_CONF.biz_scene
         )
-        self.llm_module = llm_module or LLMClient.from_config(
+        self.llm_client = llm_client or LLMClient.from_config(
             get_default_chat_llm_config()
         )
 
-        self.flow: KAGFlow = KAGFlow(
-            flow_str=self.flow_str,
-        )
+        self.flow: KAGFlow = KAGFlow(flow_str=self.flow_str, llm_client=self.llm_client)
 
     @property
     def output_types(self):
@@ -246,8 +246,7 @@ class KagHybridExecutor(ExecutorABC):
         if len(history) == 1 and len(history_qa) == 1:
             return history[0].get_fl_node_result().summary
         return self.generate_answer(
-            tag_id=tag_id,
-            question=query, docs=chunks, history_qa=history_qa, **kwargs
+            tag_id=tag_id, question=query, docs=chunks, history_qa=history_qa, **kwargs
         )
 
     def invoke(self, query: str, task: Any, context: Context, **kwargs):
@@ -303,7 +302,8 @@ class KagHybridExecutor(ExecutorABC):
                 lf_nodes=logic_nodes,
                 executor_task=task,
                 reporter=reporter,
-                segment_name=tag_id)
+                segment_name=tag_id,
+            )
             kag_response.graph_data = graph_data
             if graph_data:
                 context.variables_graph.merge_kg_graph(graph_data)
@@ -337,9 +337,15 @@ class KagHybridExecutor(ExecutorABC):
             # 8. Final storage
             logger.info(f"Storing results for task: {task_query}")
             if logic_node and isinstance(logic_node, GetSPONode):
-                context.variables_graph.add_answered_alias(logic_node.s.alias_name.alias_name, kag_response.summary)
-                context.variables_graph.add_answered_alias(logic_node.p.alias_name.alias_name, kag_response.summary)
-                context.variables_graph.add_answered_alias(logic_node.o.alias_name.alias_name, kag_response.summary)
+                context.variables_graph.add_answered_alias(
+                    logic_node.s.alias_name.alias_name, kag_response.summary
+                )
+                context.variables_graph.add_answered_alias(
+                    logic_node.p.alias_name.alias_name, kag_response.summary
+                )
+                context.variables_graph.add_answered_alias(
+                    logic_node.o.alias_name.alias_name, kag_response.summary
+                )
 
             start_time = time.time()  # 添加开始时间记录
             store_results(task, kag_response)
@@ -354,7 +360,7 @@ class KagHybridExecutor(ExecutorABC):
                 "",
                 "FINISH",
                 step=task.name,
-                overwrite=False
+                overwrite=False,
             )
         except Exception as e:
             logger.warning(
@@ -368,7 +374,7 @@ class KagHybridExecutor(ExecutorABC):
                 f"{self.schema().get('name')} executed failed {e}",
                 "ERROR",
                 step=task.name,
-                overwrite=False
+                overwrite=False,
             )
             logger.info(f"Exception occurred for task: {task_query}, error: {e}")
             raise e

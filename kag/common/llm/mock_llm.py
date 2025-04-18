@@ -32,7 +32,7 @@ class MockLLMClient(LLMClient):
         """
         Initializes the MockLLMClient instance.
         """
-        name = kwargs.get("name", None)
+        name = kwargs.pop("name", None)
         if not name:
             name = "mock"
 
