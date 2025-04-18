@@ -64,6 +64,11 @@ KAG 提出了一种逻辑符号引导的混合求解和推理引擎。该引擎�
 
 ## 3.1 最近更新
 
+* 2025.04.17 : 发布KAG 0.7 版本
+  * 我们对框架进行了全面重构。新增了对static和iterative两种任务规划模式的支持，同时实现了更严谨的推理阶段知识分层机制
+  * 我们对产品体验进行了全面优化：在推理阶段新增"简易模式"和"深度推理"双模式，并支持流式推理输出、图索引自动渲染、生成内容关联原始文献等
+  * KAG仓库的一级目录中新增open_benchmark目录，相同基座下对比各种RAG方法实现sota
+  * 提供"轻量级构建"模式,知识构建token 成本降低89%
 * 2025.01.07 : 支持 领域知识注入、领域 schema 自定义、摘要生成类任务支持、可视化图分析查询、schema-constraint模式抽取等
 * 2024.11.21 : 支持 Word 文档上传、知识库删除、模型调用并发度设置、用户体验优化等
 * 2024.10.25 : KAG 首次发布
@@ -163,7 +168,7 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
 
 **GitHub**: <https://github.com/OpenSPG/KAG>
 
-**OpenSPG**: <https://spg.openkg.cn/>
+**官网**: <https://openspg.github.io/v2/docs_ch>
 
 <img src="./_static/images/openspg-qr.png" alt="联系我们：OpenSPG 二维码" width="200">
 
