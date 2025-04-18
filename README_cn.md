@@ -117,7 +117,7 @@ docker compose -f docker-compose.yml up -d
 Default Username: openspg
 Default password: openspg@kag
 ```
-具体使用请参考 [KAG使用(产品模式)](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17#JQH6Y)。
+具体使用请参考 [KAG使用(产品模式)](https://openspg.yuque.com/ndx6g9/docs/zxh5a5dr03945l1x#zZm7i)。
 
 ## 4.2 基于工具包（面向开发者）
 
@@ -151,7 +151,7 @@ Default password: openspg@kag
 
 ### 4.2.3 使用
 
-开发者可以参考 [KAG使用(开发者模式)](https://openspg.yuque.com/ndx6g9/0.6/quzq24g4esal7q17#MRgKi)，基于 KAG 内置的各种组件，实现内置数据集的效果复现 + 新场景的落地。
+开发者可以参考 [KAG使用(开发者模式)](https://openspg.yuque.com/ndx6g9/docs/zxh5a5dr03945l1x#jWr0d)，基于 KAG 内置的各种组件，实现内置数据集的效果复现 + 新场景的落地。
 
 
 # 5. 技术架构
