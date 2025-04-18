@@ -148,7 +148,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "time": "今天是{get_now(language='zh')}"
                 {self.instruct_zh}
                 "cases": {json.dumps(self.default_case_zh, ensure_ascii=False, indent=2)},
-                "output_format": "使用markdown格式输出，开头不需要输出'```markdown'",
+                "output_format": "使用文本格式输出，只输出case中的answer内容，不要在开始输出'```markdown'",
                 "tips": [
                     "输出每一步的Step和Action前可以增加一些思路输出，类似’首先...其次...最后...‘",
                     "Each `Step` must contain exactly one `Action`",
@@ -164,7 +164,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 "time": "Today is {get_now(language='en')}"
                 {self.instruct_en},
                 "cases":  {json.dumps(self.default_case_en, ensure_ascii=False, indent=2)},
-                "output_format": "Output using markdown format, do not print'```markdown' at the beginning",
+                "output_format": "Output the answer content from the case in plain text format, do not print'```markdown' at the beginning",
                 "tips": [
                     "Before outputting each Step and Action, you can add some thought process, such as 'First... Then... Finally...'", 
                     "Each Step only contain one Action", 

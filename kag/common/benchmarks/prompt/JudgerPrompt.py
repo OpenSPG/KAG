@@ -14,6 +14,7 @@ import json
 from typing import List
 from kag.interface import PromptABC
 
+
 @PromptABC.register("judger_prompt")
 class JudgerPrompt(PromptABC):
 

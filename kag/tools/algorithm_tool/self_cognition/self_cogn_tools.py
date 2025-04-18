@@ -20,12 +20,15 @@ from kag.solver.utils import init_prompt_with_fallback
 @ToolABC.register("self_cognition")
 class SelfCognExecutor(ToolABC):
     def __init__(
-        self, llm_module: LLMClient = None, self_cognition_prompt: PromptABC = None):
+        self, llm_module: LLMClient = None, self_cognition_prompt: PromptABC = None
+    ):
         super().__init__()
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.self_cognition_prompt = self_cognition_prompt or init_prompt_with_fallback("self_cognition", KAG_PROJECT_CONF.biz_scene)
+        self.self_cognition_prompt = self_cognition_prompt or init_prompt_with_fallback(
+            "self_cognition", KAG_PROJECT_CONF.biz_scene
+        )
 
         self.docs_zh = [
             "我是基于蚂蚁集团开源的专业领域知识服务框架KAG搭建的问答助手，我擅长逻辑推理、数值计算等任务，可以协助你解答相关问题、提供信息支持或进行数据分析。如果有具体需求，随时告诉我",
@@ -48,9 +51,9 @@ class SelfCognExecutor(ToolABC):
         return "SelfCognition"
 
     def invoke(self, query: str, **kwargs):
-        return self.llm_module.invoke({
-            "question": query
-        }, self.self_cognition_prompt, with_json_parse=False)
+        return self.llm_module.invoke(
+            {"question": query}, self.self_cognition_prompt, with_json_parse=False
+        )
 
     def get_docs(self):
         if KAG_PROJECT_CONF.language == "zh":

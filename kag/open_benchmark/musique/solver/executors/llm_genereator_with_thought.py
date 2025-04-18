@@ -50,7 +50,9 @@ class LLMGeneratorWithThought(GeneratorABC):
             thoughts.append(f"Sub-Query: {subq}\n{suba}")
             retrieved_docs = task.memory.get("retriever")
             if retrieved_docs and reporter:
-                reporter.add_report_line("reference", f"steps_{task.id}", retrieved_docs, "FINISH")
+                reporter.add_report_line(
+                    "reference", f"steps_{task.id}", retrieved_docs, "FINISH"
+                )
 
             if retrieved_docs and self.chunk_reranker:
                 rerank_queries.append(task.arguments["query"])

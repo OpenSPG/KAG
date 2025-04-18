@@ -35,10 +35,16 @@ class EvalQa:
         info, status = reporter.generate_report_data()
         return answer, {"info": info.to_dict(), "status": status}
 
+    def get_question(self, sample):
+        return sample["question"]
+
+    def get_answer(self, sample):
+        return sample["answer"]
+
     async def async_process_sample(self, data):
         sample_idx, sample, ckpt = data
-        question = sample["question"]
-        gold = sample["answer"]
+        question = self.get_question(sample)
+        gold = self.get_answer(sample)
         try:
             if ckpt and question in ckpt:
                 print(f"found existing answer to question: {question}")
@@ -79,7 +85,7 @@ class EvalQa:
             import traceback
 
             logger.warning(
-                f"process sample failed with error:{traceback.print_exc()}\nfor: {sample['question']} {e}"
+                f"process sample failed with error:{traceback.print_exc()}\nfor: {self.get_question(sample)} {e}"
             )
             return None
 

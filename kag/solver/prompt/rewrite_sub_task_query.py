@@ -65,8 +65,10 @@ class DefaultRewriteSubTaskQueryPrompt(PromptABC):
     "notice": "Do not output json format, only output the rewrite question with text and provide the rewritten question as completely as possible without any additional information."
 }
 """
+
     def is_json_format(self):
         return False
+
     @property
     def template_variables(self) -> List[str]:
         return ["content", "input"]

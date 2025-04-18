@@ -12,14 +12,21 @@ from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import ChunkData
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import \
-    FlowComponentTask, FlowComponent
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_cmponent import \
-    KagLogicalFormComponent
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import generate_step_query, \
-    get_all_docs_by_id
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
+    FlowComponentTask,
+    FlowComponent,
+)
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_cmponent import (
+    KagLogicalFormComponent,
+)
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import (
+    generate_step_query,
+    get_all_docs_by_id,
+)
 
-from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import VectorChunkRetriever
+from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
+    VectorChunkRetriever,
+)
 from kag.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.tools.search_api.search_api_abc import SearchApiABC
 
@@ -75,14 +82,22 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         return query_sim_scores
 
     def invoke(
-        self, cur_task: FlowComponentTask, executor_task: Task, processed_logical_nodes: List[LogicNode], **kwargs
+        self,
+        cur_task: FlowComponentTask,
+        executor_task: Task,
+        processed_logical_nodes: List[LogicNode],
+        **kwargs,
     ) -> List[ChunkData]:
         segment_name = kwargs.get("segment_name", "thinker")
         component_name = self.name
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
-        query = executor_task.arguments.get("rewrite_query", executor_task.arguments["query"])
+        query = executor_task.arguments.get(
+            "rewrite_query", executor_task.arguments["query"]
+        )
         logical_node = cur_task.logical_node
-        step_sub_query  = generate_step_query(logical_node=logical_node, processed_logical_nodes=processed_logical_nodes)
+        step_sub_query = generate_step_query(
+            logical_node=logical_node, processed_logical_nodes=processed_logical_nodes
+        )
         dpr_queries = [query, step_sub_query]
         dpr_queries = list(set(dpr_queries))
 
@@ -92,7 +107,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
                 f"begin_sub_kag_retriever_{cur_task.logical_node.sub_query}_{component_name}",
                 cur_task.logical_node.sub_query,
                 "INIT",
-                component_name=component_name
+                component_name=component_name,
             )
 
         sim_scores = {}
@@ -112,12 +127,14 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         )
         matched_chunks = []
         for doc_id, doc_score in sorted_scores:
-            matched_chunks.append(ChunkData(
-            content=doc_maps[doc_id]["content"].replace("_split_0", ""),
-            title=doc_maps[doc_id]["name"].replace("_split_0", ""),
-            chunk_id=doc_id,
-            score=doc_score,
-        ))
+            matched_chunks.append(
+                ChunkData(
+                    content=doc_maps[doc_id]["content"].replace("_split_0", ""),
+                    title=doc_maps[doc_id]["name"].replace("_split_0", ""),
+                    chunk_id=doc_id,
+                    score=doc_score,
+                )
+            )
         if reporter:
             reporter.add_report_line(
                 segment_name,
@@ -126,11 +143,10 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
                 "FINISH",
                 component_name=component_name,
                 chunk_num=min(len(matched_chunks), self.top_k),
-                desc="retrieved_doc_digest"
+                desc="retrieved_doc_digest",
             )
 
         return matched_chunks
-
 
     def is_break(self):
         return self.break_flag
