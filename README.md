@@ -73,6 +73,11 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.1 Latest Updates
 
+* 2025.04.17 : Released KAG 0.7 Version 
+  * First, we refactored the KAG-Solver framework. Added support for two task planning modes, static and iterative, while implementing a more rigorous knowledge layering mechanism for the reasoning phase. 
+  * Second, we optimized the product experience: introduced dual modes—"Simple Mode" and "Deep Reasoning"—during the reasoning phase, along with support for streaming inference output, automatic rendering of graph indexes, and linking generated content to original references. 
+  * Added an open_benchmark directory to the top level of the KAG repository, comparing various RAG methods under the same base to achieve state-of-the-art (SOTA) results. 
+  * Introduced a "Lightweight Build" mode, reducing knowledge construction token costs by 89%.
 * 2025.01.07 : Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, enables schema-constraint mode for extraction, etc.
 * 2024.11.21 : Support Word docs upload, model invoke concurrency setting, User experience optimization, etc.
 * 2024.10.25 : KAG initial release
@@ -172,7 +177,7 @@ kg-solver uses a logical symbol-guided hybrid solving and reasoning engine that 
 
 **GitHub**: <https://github.com/OpenSPG/KAG>
 
-**Website**: <https://spg.openkg.cn/>
+**Website**: <https://openspg.github.io/v2/docs_en>
 
 ## Discord <a href="https://discord.gg/PURG77zhQ7"> <img src="https://img.shields.io/discord/1329648479709958236?style=for-the-badge&logo=discord&label=Discord" alt="Discord"></a>
 
