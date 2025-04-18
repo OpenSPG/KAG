@@ -7,7 +7,12 @@ from typing import List, Dict, Tuple
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.utils import get_recall_node_label
 from kag.interface import ToolABC, VectorizeModelABC, LLMClient
-from kag.interface.solver.model.one_hop_graph import EntityData, ChunkData, RelationData, Prop
+from kag.interface.solver.model.one_hop_graph import (
+    EntityData,
+    ChunkData,
+    RelationData,
+    Prop,
+)
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.common.config import LogicFormConfiguration
@@ -103,7 +108,7 @@ class PprChunkRetriever(ToolABC):
                 scores = self.graph_api.calculate_pagerank_scores(
                     self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
                     start_node_set,
-                    top_k=top_k
+                    top_k=top_k,
                 )
             except Exception as e:
                 logger.error(
@@ -140,11 +145,11 @@ class PprChunkRetriever(ToolABC):
                 )
                 node_dict = dict(node.items())
                 return doc_id, ChunkData(
-                        content=node_dict["content"].replace("_split_0", ""),
-                        title=node_dict["name"].replace("_split_0", ""),
-                        chunk_id=doc_id,
-                        score=doc_score,
-                    )
+                    content=node_dict["content"].replace("_split_0", ""),
+                    title=node_dict["name"].replace("_split_0", ""),
+                    chunk_id=doc_id,
+                    score=doc_score,
+                )
             except Exception as e:
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
@@ -159,7 +164,6 @@ class PprChunkRetriever(ToolABC):
         for doc_id in limit_doc_ids:
             matched_docs.append(doc_maps[doc_id[0]])
             hits_docs.append(doc_maps[doc_id[0]].chunk_id)
-
 
         query = "\n".join(queries)
         try:
@@ -186,7 +190,9 @@ class PprChunkRetriever(ToolABC):
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
         return matched_docs
 
-    def linking_matched_entities(self, queries: List[str], start_entities: List[EntityData], **kwargs):
+    def linking_matched_entities(
+        self, queries: List[str], start_entities: List[EntityData], **kwargs
+    ):
         matched_entities = start_entities
         if start_entities is None:
             matched_entities = []
@@ -229,10 +235,12 @@ class PprChunkRetriever(ToolABC):
 
             query_entity_vector = self.vectorize_model.vectorize(mention)
 
-            top_entities = self.el.search_api.search_vector(label="Entity",
+            top_entities = self.el.search_api.search_vector(
+                label="Entity",
                 property_key="name",
                 query_vector=query_entity_vector,
-                topk=1,)
+                topk=1,
+            )
             for top_entity in top_entities:
                 score = top_entity["score"]
                 if score > 0.7:
@@ -265,8 +273,12 @@ class PprChunkRetriever(ToolABC):
                     matched_entities.append(r)
         return matched_entities
 
-
-    def weightd_merge(self, ppr_chunks: Dict[str, float], dpr_chunks: Dict[str, float], alpha: float = 0.5):
+    def weightd_merge(
+        self,
+        ppr_chunks: Dict[str, float],
+        dpr_chunks: Dict[str, float],
+        alpha: float = 0.5,
+    ):
         def min_max_normalize(chunks):
             if len(chunks) == 0:
                 return {}
@@ -274,7 +286,7 @@ class PprChunkRetriever(ToolABC):
             max_score = max(scores)
             min_score = min(scores)
             ret_docs = {}
-            for doc_id,score in chunks.items():
+            for doc_id, score in chunks.items():
 
                 score = (score - min_score) / (max_score - min_score)
                 ret_docs[doc_id] = score
@@ -300,9 +312,7 @@ class PprChunkRetriever(ToolABC):
             else:
                 merged[doc_id] = score * (1 - alpha)
 
-        sorted_scores = sorted(
-            merged.items(), key=lambda item: item[1], reverse=True
-        )
+        sorted_scores = sorted(merged.items(), key=lambda item: item[1], reverse=True)
         return sorted_scores
 
     def invoke(
@@ -314,7 +324,9 @@ class PprChunkRetriever(ToolABC):
 
         el_start_time = time.time()
 
-        matched_entities = self.linking_matched_entities(queries=queries, start_entities=start_entities, **kwargs)
+        matched_entities = self.linking_matched_entities(
+            queries=queries, start_entities=start_entities, **kwargs
+        )
 
         logger.info(
             f"Entity linking completed in {time.time() - el_start_time:.2f} seconds. Found {len(matched_entities)} unique entities."
@@ -322,7 +334,9 @@ class PprChunkRetriever(ToolABC):
 
         pagerank_start_time = time.time()
         if len(matched_entities):
-            pagerank_res = self.calculate_pagerank_scores(matched_entities, top_k=top_k * 20)
+            pagerank_res = self.calculate_pagerank_scores(
+                matched_entities, top_k=top_k * 20
+            )
         else:
             pagerank_res = {}
         logger.info(
@@ -330,12 +344,12 @@ class PprChunkRetriever(ToolABC):
         )
         pagerank_scores = {}
         is_need_get_doc = False
-        for k,v in pagerank_res.items():
+        for k, v in pagerank_res.items():
             if isinstance(v, float):
                 pagerank_scores[k] = v
                 is_need_get_doc = True
             else:
-                pagerank_scores[k] = v['score']
+                pagerank_scores[k] = v["score"]
 
         sorted_scores = sorted(
             pagerank_scores.items(), key=lambda item: item[1], reverse=True
@@ -346,51 +360,71 @@ class PprChunkRetriever(ToolABC):
             matched_docs = []
             for doc_id, score in sorted_scores:
                 node = pagerank_res[doc_id]["node"]
-                matched_docs.append(ChunkData(
-                    content=node["content"].replace("_split_0", ""),
-                    title=node["name"].replace("_split_0", ""),
-                    chunk_id=doc_id,
-                    score=score,
-                ))
-        return matched_docs, self._convert_relation_datas(chunk_docs=matched_docs, matched_entities=matched_entities[:top_k])
+                matched_docs.append(
+                    ChunkData(
+                        content=node["content"].replace("_split_0", ""),
+                        title=node["name"].replace("_split_0", ""),
+                        chunk_id=doc_id,
+                        score=score,
+                    )
+                )
+        return matched_docs, self._convert_relation_datas(
+            chunk_docs=matched_docs, matched_entities=matched_entities[:top_k]
+        )
 
     def _convert_relation_datas(self, chunk_docs, matched_entities):
         relation_datas = []
+
         def chunk_to_Node(chunk):
             chunk_type = self.schema_helper.get_label_within_prefix("Chunk")
             chunk_type_zh = self.schema_helper.node_en_zh["Chunk"]
-            node = EntityData(entity_id=chunk.chunk_id, name=chunk.title, node_type=chunk_type, node_type_zh=chunk_type_zh)
-            node.prop = Prop.from_dict(json_dict={
-                "name": chunk.title,
-                "content": chunk.content
-            }, label_name=chunk_type, schema=self.schema_helper)
+            node = EntityData(
+                entity_id=chunk.chunk_id,
+                name=chunk.title,
+                node_type=chunk_type,
+                node_type_zh=chunk_type_zh,
+            )
+            node.prop = Prop.from_dict(
+                json_dict={"name": chunk.title, "content": chunk.content},
+                label_name=chunk_type,
+                schema=self.schema_helper,
+            )
             node.score = chunk.score
             return node
+
         # Mock Relation Data
-        ppr_node = EntityData(entity_id="ppr_id", name="PPR compute", node_type="PPR", node_type_zh="PPR")
+        ppr_node = EntityData(
+            entity_id="ppr_id", name="PPR compute", node_type="PPR", node_type_zh="PPR"
+        )
         for entity in matched_entities:
-            rel = RelationData.from_dict(json_dict={
-                "__from_id__": entity.biz_id,
-                "__from_id_type__": entity.type,
-                "__to_id__": ppr_node.biz_id,
-                "__to_id_type__": ppr_node.type,
-                "__label__": "start",
-                "score": entity.score
-            }, schema=self.schema_helper)
+            rel = RelationData.from_dict(
+                json_dict={
+                    "__from_id__": entity.biz_id,
+                    "__from_id_type__": entity.type,
+                    "__to_id__": ppr_node.biz_id,
+                    "__to_id_type__": ppr_node.type,
+                    "__label__": "start",
+                    "score": entity.score,
+                },
+                schema=self.schema_helper,
+            )
             rel.from_entity = entity
             rel.end_entity = ppr_node
             relation_datas.append(rel)
         if matched_entities:
             for chunk in chunk_docs:
                 entity = chunk_to_Node(chunk)
-                rel = RelationData.from_dict(json_dict={
-                    "__to_id__": entity.biz_id,
-                    "__to_id_type__": entity.type,
-                    "__from_id__": ppr_node.biz_id,
-                    "__from_id_type__": ppr_node.type,
-                    "__label__": "end",
-                    "score": entity.score
-                }, schema=self.schema_helper)
+                rel = RelationData.from_dict(
+                    json_dict={
+                        "__to_id__": entity.biz_id,
+                        "__to_id_type__": entity.type,
+                        "__from_id__": ppr_node.biz_id,
+                        "__from_id_type__": ppr_node.type,
+                        "__label__": "end",
+                        "score": entity.score,
+                    },
+                    schema=self.schema_helper,
+                )
                 rel.from_entity = ppr_node
                 rel.end_entity = entity
                 relation_datas.append(rel)

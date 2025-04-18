@@ -3,20 +3,15 @@ openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
-  model: qwen2.5-72b-instruct
+  model: qwen2.5-7b-instruct-1m
+  enable_check: false
 
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
-  stream: true
-
-ner_llm: &ner_llm
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-72b-instruct
+  enable_check: false
 
 vectorize_model: &vectorize_model
   api_key: key
@@ -24,6 +19,7 @@ vectorize_model: &vectorize_model
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
+  enable_check: false
 vectorizer: *vectorize_model
 
 log:
@@ -32,7 +28,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '3'
+  id: "1"
   language: en
   namespace: HotpotQA
 #------------project configuration end----------------#
@@ -77,20 +73,15 @@ graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 
-
 kg_cs:
   type: kg_cs_open_spg
   path_select:
     type: exact_one_hop_select
-    graph_api: *graph_api
-    search_api: *search_api
   entity_linking:
     type: entity_linking
-    graph_api: *graph_api
-    search_api: *search_api
     recognition_threshold: 0.9
     exclude_types:
-      - "Chunk"
+      - Chunk
 
 kg_fr:
   type: kg_fr_open_spg
@@ -98,29 +89,21 @@ kg_fr:
   path_select:
     type: fuzzy_one_hop_select
     llm_client: *chat_llm
-    graph_api: *graph_api
-    search_api: *search_api
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
-    llm_client: *ner_llm
-    graph_api: *graph_api
-    search_api: *search_api
+    llm_client: *openie_llm
   entity_linking:
     type: entity_linking
-    graph_api: *graph_api
-    search_api: *search_api
     recognition_threshold: 0.8
     exclude_types:
-      - "Chunk"
+      - Chunk
+
 
 rc:
   type: rc_open_spg
   vector_chunk_retriever:
     type: vector_chunk_retriever
     vectorize_model: *vectorize_model
-    search_api: *search_api
-  graph_api: *graph_api
-  search_api: *search_api
   vectorize_model: *vectorize_model
   top_k: 20
 
@@ -131,30 +114,31 @@ kag_merger:
   summary_prompt:
     type: default_thought_then_answer
   vectorize_model: *vectorize_model
-  graph_api: *graph_api
-  search_api: *search_api
 
 kag_hybrid_executor: &kag_hybrid_executor_conf
   type: kag_hybrid_executor
   lf_rewriter:
     type: kag_spo_lf
-    llm_client: *openie_llm
+    llm_client: *chat_llm
     lf_trans_prompt:
       type: default_spo_retriever_decompose
     vectorize_model: *vectorize_model
   flow: |
     kg_cs->kg_fr->kag_merger;rc->kag_merger
 
+
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
+
 kag_deduce_executor: &kag_deduce_executor_conf
   type: kag_deduce_executor
 
+
 py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor
-  llm: *openie_llm
+  llm: *chat_llm
 
-kag_solver_pipeline:
+solver_pipeline:
   type: kag_static_pipeline
   planner:
     type: lf_kag_static_planner
@@ -169,9 +153,10 @@ kag_solver_pipeline:
     - *kag_deduce_executor_conf
     - *kag_output_executor_conf
   generator:
-    type: llm_generator
+    type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
     generated_prompt:
-      type: default_multi_hop_generator
-#------------kag-solver configuration end----------------#
+      type: default_refer_generator_prompt
+    enable_ref: true
 
+#------------kag-solver configuration end----------------#

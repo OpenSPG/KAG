@@ -23,13 +23,15 @@ from threading import Lock
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     RelationData,
-    OneHopGraphData, Prop,
+    OneHopGraphData,
+    Prop,
 )
 from kag.common.checkpointer import CheckpointerManager
 from kag.tools.graph_api.model.table_model import TableData
 from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
+
 
 class MemoryGraph:
     _instances = {}
@@ -314,7 +316,10 @@ class MemoryGraph:
                 )
             return output
         except:
-            logger.info(f"Failed to run PPR chunk retrieval return [], input={start_nodes}", exc_info=True)
+            logger.info(
+                f"Failed to run PPR chunk retrieval return [], input={start_nodes}",
+                exc_info=True,
+            )
             return []
 
     def dpr_chunk_retrieval(self, query_vector, topk=10, **kwargs):
@@ -445,7 +450,9 @@ class MemoryGraph:
                 node = filtered_nodes[index.item()]
                 node_attributes = node.attributes()
                 if "__labels__" not in node_attributes:
-                    node_attributes["__labels__"] = list(set([node_attributes.get("label"), "Entity"]))
+                    node_attributes["__labels__"] = list(
+                        set([node_attributes.get("label"), "Entity"])
+                    )
                 items.append({"node": node_attributes, "score": score.item()})
             output.append(items)
         return output

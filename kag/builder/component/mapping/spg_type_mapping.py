@@ -41,9 +41,11 @@ class SPGTypeMapping(MappingABC):
         self,
         spg_type_name: str,
         fuse_func: Functor = None,
-        property_mapping: Dict = {},
+        property_mapping: Dict = None,
         **kwargs,
     ):
+        if property_mapping is None:
+            property_mapping = {}
         super().__init__(**kwargs)
         self.schema = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id

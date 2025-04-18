@@ -7,12 +7,15 @@ from kag.interface.solver.model.schema_utils import SchemaUtils
 
 logger = logging.getLogger()
 
+
 class RetrievedData:
     def __init__(self):
         pass
 
     def to_dict(self):
         raise NotImplementedError("retrieved data")
+
+
 def find_and_extra_prop_objects(text):
     """
     Extracts and parses serialized objects from the given text.
@@ -402,6 +405,7 @@ class RelationData:
         rel.end_type = o.type
         rel.end_entity = o
         return rel
+
 
 class OneHopGraphData:
     def __init__(self, schema, alias_name):
@@ -996,6 +1000,7 @@ class KgGraph(RetrievedData):
                 continue
             ret.append(e)
         return ret
+
     def get_entity_by_alias(self, alias):
         if isinstance(alias, Identifier):
             alias = alias.alias_name
@@ -1024,8 +1029,9 @@ class KgGraph(RetrievedData):
     def to_dict(self):
         return self.to_json()
 
+
 class ChunkData(RetrievedData):
-    def __init__(self, content="", title="",chunk_id="", score=0.0):
+    def __init__(self, content="", title="", chunk_id="", score=0.0):
         super().__init__()
         self.content = content
         self.title = title
@@ -1037,13 +1043,15 @@ class ChunkData(RetrievedData):
             "content": str(self.content),
             "title": str(self.title),
             "chunk_id": str(self.chunk_id),
-            "score": str(self.score)
+            "score": str(self.score),
         }
+
     def __repr__(self):
         return f"ChunkData(content={self.content}, title={self.title}, chunk_id={self.chunk_id}, score={self.score})"
 
     def __str__(self):
         return self.content
+
 
 def parse_entity_relation(one_graph, std_p: str, o_value: EntityData):
     s_entity = one_graph.s
@@ -1051,6 +1059,7 @@ def parse_entity_relation(one_graph, std_p: str, o_value: EntityData):
     if o_value.description is None or o_value.description == "":
         o_value.description = f"{s_entity.name} {std_p} {o_entity.name}"
     return RelationData.from_prop_value(s_entity, std_p, o_entity)
+
 
 def parse_attribute_relation(one_graph, std_p: str, attr_value: str):
     # new a RelationData
@@ -1061,4 +1070,3 @@ def parse_attribute_relation(one_graph, std_p: str, attr_value: str):
     prop_entity.type_zh = "文本"
 
     return parse_entity_relation(one_graph, std_p, prop_entity)
-

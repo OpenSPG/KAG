@@ -7,6 +7,7 @@ from kag.common.registry import Registrable
 
 logger = logging.getLogger()
 
+
 class ReporterABC(Registrable):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -18,7 +19,6 @@ class ReporterABC(Registrable):
 
     def do_report(self):
         raise NotImplementedError()
-
 
     async def start(self):
         self._monitor_task_coroutine = asyncio.create_task(self.do_cycle_report())
@@ -32,6 +32,7 @@ class ReporterABC(Registrable):
         if self._monitor_task_coroutine:
             await self._monitor_task_coroutine
         logging.info("reporter is stop")
+
     async def do_cycle_report(self):
         try:
             while self._running:
@@ -76,11 +77,7 @@ class DotRefresher:
             show_dot = update_dot_count % 4
             kwargs["refresh"] = "".join(["."] * show_dot)
             self.reporter.add_report_line(
-                self.segment,
-                self.tag_name,
-                self.content,
-                "RUNNING",
-                **kwargs
+                self.segment, self.tag_name, self.content, "RUNNING", **kwargs
             )
             time.sleep(self.interval)
 

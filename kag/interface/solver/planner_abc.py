@@ -296,11 +296,13 @@ def format_task_dep_context(tasks: List[Task], is_recu=True):
             - action: Executor and arguments used
             - result: Execution result of the parent task
     """
+
     def to_str(context):
-        if not context or 'task' not in context:
+        if not context or "task" not in context:
             return ""
         return f"""{context['name']}:{context['task']}
 {context['result']}.{context.get('thought', '')}"""
+
     if not tasks:
         return []
     formatted_context = []

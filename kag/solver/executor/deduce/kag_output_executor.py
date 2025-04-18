@@ -48,13 +48,14 @@ class KagOutputExecutor(ExecutorABC):
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.summary_prompt = summary_prompt or init_prompt_with_fallback("output_question", KAG_PROJECT_CONF.biz_scene)
+        self.summary_prompt = summary_prompt or init_prompt_with_fallback(
+            "output_question", KAG_PROJECT_CONF.biz_scene
+        )
 
     @property
     def output_types(self):
         """Output type specification for executor responses"""
         return str
-
 
     def invoke(self, query: str, task: Any, context: Context, **kwargs):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
@@ -66,7 +67,7 @@ class KagOutputExecutor(ExecutorABC):
             f"{task_query}_begin_task",
             f"{task_query}\n",
             "INIT",
-            step=task.name
+            step=task.name,
         )
         if not logic_node or not isinstance(logic_node, GetNode):
             self.report_content(
@@ -76,24 +77,27 @@ class KagOutputExecutor(ExecutorABC):
                 "not implement!",
                 "FINISH",
                 overwrite=False,
-                step=task.name
+                step=task.name,
             )
             return
         result = []
         for alias in logic_node.alias_name_set:
             if context.variables_graph.has_alias(alias.alias_name):
-                result.append(context.variables_graph.get_answered_alias(alias.alias_name))
+                result.append(
+                    context.variables_graph.get_answered_alias(alias.alias_name)
+                )
         if not result:
             dep_context = []
             for p in task.parents:
                 dep_context.append(p.get_task_context())
-            result = self.llm_module.invoke({
-                "question": query,
-                "context": dep_context
-            }, self.summary_prompt,
+            result = self.llm_module.invoke(
+                {"question": query, "context": dep_context},
+                self.summary_prompt,
                 with_json_parse=False,
                 segment_name=f"{task_query}_begin_task",
-                tag_name = f"{task_query}_output", **kwargs)
+                tag_name=f"{task_query}_output",
+                **kwargs,
+            )
         self.report_content(
             reporter,
             "thinker",
@@ -101,10 +105,9 @@ class KagOutputExecutor(ExecutorABC):
             "",
             "FINISH",
             overwrite=False,
-            step=task.name
+            step=task.name,
         )
         task.update_result(result)
-
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

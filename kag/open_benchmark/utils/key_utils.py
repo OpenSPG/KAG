@@ -13,7 +13,7 @@ def read_and_modify_yaml(yml_data, key_to_update, new_value):
     """
 
     # Update the value of the specified key
-    keys = key_to_update.split('.')  # Split nested keys into a list
+    keys = key_to_update.split(".")  # Split nested keys into a list
     current_level = yml_data
     for key in keys[:-1]:
         if key not in current_level:
@@ -48,13 +48,13 @@ if __name__ == "__main__":
         "--yml_file_path",
         type=str,
         help="Path to the modified YAML configuration file",
-        metavar="FILE"
+        metavar="FILE",
     )
     parser.add_argument(
         "--env_json_path",
         type=str,
         help="Path to the modified environment configuration JSON file",
-        metavar="FILE"
+        metavar="FILE",
     )
     args = parser.parse_args()
     env_json_path = args.env_json_path

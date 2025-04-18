@@ -63,7 +63,7 @@ class RerankByVector(ToolABC):
             queries = [queries]
         if len(chunks) == 0:
             return []
-        if len(queries) == 1 and len(chunks) ==1:
+        if len(queries) == 1 and len(chunks) == 1:
             return chunks[0]
         flat_chunks = _flat_passages_set(chunks)
         queries = list(set(queries))

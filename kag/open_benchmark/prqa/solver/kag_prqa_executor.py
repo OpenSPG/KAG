@@ -19,26 +19,30 @@ from neo4j.graph import Path, Node, Relationship
 from kag.common.graphstore.neo4j_graph_store import Neo4jClient
 from kag.interface import ExecutorABC
 from kag.interface import LLMClient
-from kag.open_benchmark.prqa.solver.prompt.prompt_message import path_messages, filter_messages, multi_hop_messages
+from kag.open_benchmark.prqa.solver.prompt.prompt_message import (
+    path_messages,
+    filter_messages,
+    multi_hop_messages,
+)
 
 logger = logging.getLogger()
 
-cypher_tools = [{
-    "type": "function",
-    "function": {
-        "name": "run_cypher_query",
-        "description": "Get subgraph response for provided cypher query",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "cypher_query": {"type": "string"}
+cypher_tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "run_cypher_query",
+            "description": "Get subgraph response for provided cypher query",
+            "parameters": {
+                "type": "object",
+                "properties": {"cypher_query": {"type": "string"}},
+                "required": ["cypher_query"],
+                "additionalProperties": False,
             },
-            "required": ["cypher_query"],
-            "additionalProperties": False
+            "strict": True,
         },
-        "strict": True
     }
-}]
+]
 
 
 @ExecutorABC.register("kag_prqa_executor")
@@ -50,25 +54,20 @@ class PrqaExecutor(ExecutorABC):
        neo4j_user (str): the username of neo4j which is registered in kag_config.yaml
        neo4j_password (str): the password of neo4j which is registered in kag_config.yaml
     """
-    def __init__(
-            self,
-            llm: LLMClient,
-            neo4j_user: str,
-            neo4j_password: str,
-            **kwargs
-    ):
+
+    def __init__(self, llm: LLMClient, neo4j_user: str, neo4j_password: str, **kwargs):
         super().__init__(**kwargs)
         self.llm = llm
         self.neo4j_client = Neo4jClient(
             uri="neo4j://localhost:7687",
             user=neo4j_user,
             password=neo4j_password,
-            database="prqa"
+            database="prqa",
         )
         self.handlers = {
-            'type1': self.handle_type1_path,
-            'type2': self.handle_type2_filter,
-            'type3': self.handle_type3_list
+            "type1": self.handle_type1_path,
+            "type2": self.handle_type2_filter,
+            "type3": self.handle_type3_list,
         }
         relationships_result = self.get_relationships()
         self.update_schema_messages(filter_messages, relationships_result)
@@ -76,9 +75,7 @@ class PrqaExecutor(ExecutorABC):
 
     def send_cypher_messages_deepseek(self, messages):
         response = self.llm.client.chat.completions.create(
-            model=self.llm.model,
-            messages=messages,
-            tools=cypher_tools
+            model=self.llm.model, messages=messages, tools=cypher_tools
         )
         return response.choices[0].message
 
@@ -94,10 +91,7 @@ class PrqaExecutor(ExecutorABC):
 
             else:
                 raise ValueError(f"未知的查询类型: {query_type}")
-            new_message = {
-                "role": "user",
-                "content": str(question)
-            }
+            new_message = {"role": "user", "content": str(question)}
             message_list.append(new_message)
 
             completion_1 = self.send_cypher_messages_deepseek(message_list)
@@ -172,20 +166,34 @@ class PrqaExecutor(ExecutorABC):
                         path_data = {
                             "nodes": [
                                 {
-                                    "element_id": node.element_id if hasattr(node, 'element_id') else None,
+                                    "element_id": node.element_id
+                                    if hasattr(node, "element_id")
+                                    else None,
                                     "labels": list(node.labels),
-                                    "properties": {k: v for k, v in node.items() if k != '_name_vector'}
-                                } for node in value.nodes
+                                    "properties": {
+                                        k: v
+                                        for k, v in node.items()
+                                        if k != "_name_vector"
+                                    },
+                                }
+                                for node in value.nodes
                             ],
                             "relationships": [
                                 {
-                                    "element_id": rel.element_id if hasattr(rel, 'element_id') else None,
+                                    "element_id": rel.element_id
+                                    if hasattr(rel, "element_id")
+                                    else None,
                                     "type": rel.type,
                                     "start_node": rel.start_node.element_id,
                                     "end_node": rel.end_node.element_id,
-                                    "properties": {k: v for k, v in rel.items() if k != '_name_vector'}
-                                } for rel in value.relationships
-                            ]
+                                    "properties": {
+                                        k: v
+                                        for k, v in rel.items()
+                                        if k != "_name_vector"
+                                    },
+                                }
+                                for rel in value.relationships
+                            ],
                         }
                         clean_record[key] = path_data
                     elif isinstance(value, (Node, Relationship)):
@@ -193,15 +201,23 @@ class PrqaExecutor(ExecutorABC):
                             Node: {
                                 "element_id": value.element_id,
                                 "labels": list(value.labels),
-                                "properties": {k: v for k, v in value.items() if k != '_name_vector'}
+                                "properties": {
+                                    k: v
+                                    for k, v in value.items()
+                                    if k != "_name_vector"
+                                },
                             },
                             Relationship: {
                                 "element_id": value.element_id,
                                 "type": value.type,
                                 "start_node": value.start_node.element_id,
                                 "end_node": value.end_node.element_id,
-                                "properties": {k: v for k, v in value.items() if k != '_name_vector'}
-                            }
+                                "properties": {
+                                    k: v
+                                    for k, v in value.items()
+                                    if k != "_name_vector"
+                                },
+                            },
                         }[type(value)]
                         clean_record[key] = element_type
                     else:
@@ -233,7 +249,11 @@ class PrqaExecutor(ExecutorABC):
                         continue
 
                     props = node.get("properties", {})
-                    node_name = props.get("name") or props.get("title") or f"未知节点_{node_id[-4:]}"
+                    node_name = (
+                        props.get("name")
+                        or props.get("title")
+                        or f"未知节点_{node_id[-4:]}"
+                    )
                     node_map[node_id] = node_name
 
                 seen_relationships = set()
@@ -246,8 +266,12 @@ class PrqaExecutor(ExecutorABC):
                     start_id = rel.get("start_node")
                     end_id = rel.get("end_node")
 
-                    start_name = node_map.get(start_id, f"未知起点_{start_id[-4:]}" if start_id else "完全未知起点")
-                    end_name = node_map.get(end_id, f"未知终点_{end_id[-4:]}" if end_id else "完全未知终点")
+                    start_name = node_map.get(
+                        start_id, f"未知起点_{start_id[-4:]}" if start_id else "完全未知起点"
+                    )
+                    end_name = node_map.get(
+                        end_id, f"未知终点_{end_id[-4:]}" if end_id else "完全未知终点"
+                    )
                     rel_signature = f"{start_id}-{rel_type}->{end_id}"
 
                     if rel_signature not in seen_relationships:
@@ -286,10 +310,9 @@ class PrqaExecutor(ExecutorABC):
     @staticmethod
     def update_schema_messages(messages, relationships_str):
         for message in messages:
-            if message['role'] == 'system':
-                message['content'] = message['content'].replace(
-                    "需要的关系类型从如下关系中挑选：",
-                    f"需要的关系类型从如下关系中挑选：{relationships_str}"
+            if message["role"] == "system":
+                message["content"] = message["content"].replace(
+                    "需要的关系类型从如下关系中挑选：", f"需要的关系类型从如下关系中挑选：{relationships_str}"
                 )
 
         return messages
