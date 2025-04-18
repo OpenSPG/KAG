@@ -14,7 +14,7 @@ import logging
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 
 from kag.interface import LLMClient
-from typing import Callable, Optional
+from typing import Callable, Optional, List, Dict, Union, Any
 
 
 from kag.interface.solver.reporter_abc import ReporterABC
@@ -77,7 +77,9 @@ class OpenAIClient(LLMClient):
             f"Initialize OpenAIClient with rate limit {max_rate} every {time_period}s"
         )
 
-    def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
+    def __call__(
+        self, prompt: Union[str, List[str], List[Dict], List[List[Dict]]], **kwargs
+    ) -> Union[str, List[str]]:
         """
         Executes a model request when the object is called and returns the result.
 
@@ -93,6 +95,7 @@ class OpenAIClient(LLMClient):
         tag_name = kwargs.get("tag_name", None)
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        image_url = kwargs.get("image_url", None)
         if messages is None:
             if image_url:
                 messages = [
@@ -158,7 +161,9 @@ class OpenAIClient(LLMClient):
 
         return rsp
 
-    async def acall(self, prompt: str = "", image_url: str = None, **kwargs):
+    async def acall(
+        self, prompt: Union[str, List[str], List[Dict], List[List[Dict]]], **kwargs
+    ) -> Union[Any, List[Any]]:
         """
         Executes a model request when the object is called and returns the result.
 
@@ -182,6 +187,7 @@ class OpenAIClient(LLMClient):
 
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        image_url = kwargs.get("image_url", None)
         if messages is None:
             if image_url:
                 messages = [
@@ -319,7 +325,9 @@ class AzureOpenAIClient(LLMClient):
             f"Initialize AzureOpenAIClient with rate limit {max_rate} every {time_period}s"
         )
 
-    def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
+    def __call__(
+        self, prompt: Union[str, List[str], List[Dict], List[List[Dict]]], **kwargs
+    ) -> Union[Any, List[Any]]:
         """
         Executes a model request when the object is called and returns the result.
 
@@ -332,6 +340,7 @@ class AzureOpenAIClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        image_url = kwargs.get("image_url", None)
         if messages is None:
             if image_url:
                 messages = [
@@ -363,7 +372,9 @@ class AzureOpenAIClient(LLMClient):
 
         return rsp
 
-    async def acall(self, prompt: str = "", image_url: str = None, **kwargs):
+    async def acall(
+        self, prompt: Union[str, List[str], List[Dict], List[List[Dict]]], **kwargs
+    ) -> Union[Any, List[Any]]:
         """
         Executes a model request when the object is called and returns the result.
 
@@ -376,6 +387,7 @@ class AzureOpenAIClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        image_url = kwargs.get("image_url", None)
         if messages is None:
             if image_url:
                 messages = [
