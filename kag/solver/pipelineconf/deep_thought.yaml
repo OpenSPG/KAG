@@ -101,4 +101,7 @@ solver_pipeline:
       vectorize_model: "{vectorize_model}"
     enable_ref: true
 
+llm: "{chat_llm}"
+vectorize_model: "{vectorize_model}"
+
 #------------kag-solver configuration end----------------#
