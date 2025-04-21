@@ -154,9 +154,9 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     qa_config = params.get("config")
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
-    print(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
+    logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
-    print(
+    logger.info(
         f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
     )
     reporter: OpenSPGReporter = OpenSPGReporter(
@@ -204,7 +204,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         if KAG_PROJECT_CONF.language == "en":
             answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
         else:
-            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。with qa_config={qa_config},pipeline_config={pipeline_config}"
         reporter.add_report_line("answer", "error", answer, "ERROR")
     await reporter.stop()
     return answer
@@ -366,14 +366,90 @@ if __name__ == "__main__":
             },
         },
     }
+    params = {
+        "config": {
+            "chat": {
+                "ename": "think_pipeline",
+                "thinking_enabled": True,
+                "cname": "推理问答",
+                "logo": "/img/logo/modal_2.png",
+                "description": "基于蚂蚁集团开源的专业领域知识服务框架KAG搭建的问答模板，擅长逻辑推理、数值计算等任务，可以协助解答相关问题、提供信息支持或进行数据分析",
+                "id": 2,
+            },
+            "kb": [
+                {
+                    "vectorizer": {
+                        "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
+                        "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
+                        "base_url": "https://api.siliconflow.cn/v1",
+                        "source_type": "custom",
+                        "model": "BAAI/bge-m3",
+                        "modelType": "embedding",
+                        "type": "openai",
+                        "enable_check": False,
+                    },
+                    # "vectorizer": {
+                    #     "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
+                    #     "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
+                    #     "vector_dimensions": "768",
+                    #     "base_url": "https://api.siliconflow.cn/v1",
+                    #     "source_type": "custom",s
+                    #     "model": "netease-youdao/bce-embedding-base_v1",
+                    #     "modelType": "embedding",
+                    #     "type": "openai",
+                    # },
+                    "visibility": "PUBLIC_READ",
+                    "name": "田常测试1",
+                    "namespace": "TcTest1",
+                    "description": "",
+                    "graph_store": {
+                        "database": "tctest1",
+                        "password": "neo4j@openspg",
+                        "uri": "neo4j://6.3.176.118:7687",
+                        "user": "neo4j",
+                    },
+                    "id": 5800002,
+                    "tag": "LOCAL",
+                    "label": "田常测试1",
+                    "value": 5800002,
+                    "prompt": {"language": "zh"},
+                }
+            ],
+            "language": "zh",
+            "llm": {
+                "visibility": "PUBLIC_READ",
+                "modelId": "1d9ea66f5ae443a0b1a8151502a34ee9@deepseek-chat",
+                "provider": "DeepSeek",
+                "api_key": "sk-5539c76668f44a27adbae3dbb17bfb3b",
+                "stream": "False",
+                "name": "deepseek-chat",
+                "base_url": "https://api.deepseek.com/beta",
+                "temperature": 0.7,
+                "model": "deepseek-chat",
+                "modelType": "chat",
+                "type": "maas",
+                "enable_check": False,
+            },
+            "vectorize_model": {
+                "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
+                "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
+                "base_url": "https://api.siliconflow.cn/v1",
+                "source_type": "custom",
+                "model": "BAAI/bge-m3",
+                "modelType": "embedding",
+                "type": "openai",
+                "enable_check": False,
+            },
+        }
+    }
     res = SolverMain().invoke(
         4200052,
         7700089,
         # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
-        "你能干什么",
+        "肝硬化的原因都有哪些呢",
         "4700026",
         True,
-        host_addr="http://antspg-gz00b-006003080066.sa128-sqa.alipay.net:8887",
+        host_addr="http://6.1.194.17:8080",
         params=params,
     )
     print("*" * 80)

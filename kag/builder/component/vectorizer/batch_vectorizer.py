@@ -22,6 +22,9 @@ from kag.interface import VectorizerABC, VectorizeModelABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import IndexTypeEnum
 from knext.common.base.runnable import Input, Output
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingVectorPlaceholder(object):
@@ -85,7 +88,13 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
-            embeddings.extend(vectorizer.vectorize(texts[start:end]))
+            result = vectorizer.vectorize(texts[start:end])
+            if result is not None:
+                embeddings.extend(result)
+            else:
+                logger.info(
+                    f"Warning: vectorizer returned None for texts: {texts[start:end]}"
+                )
         return embeddings
 
     async def _agenerate_vectors(self, vectorizer, text_batch, batch_size=32):
