@@ -81,7 +81,7 @@ class KAGFlow:
             "kag_merger": {
                 "type": "kg_merger",
                 "top_k": 20,
-                "llm_client": llm_client.to_config(),
+                "llm_module": llm_client.to_config(),
                 "summary_prompt": {"type": "default_thought_then_answer"},
             },
         }
