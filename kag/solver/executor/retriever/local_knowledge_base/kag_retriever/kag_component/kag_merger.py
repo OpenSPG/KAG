@@ -139,7 +139,7 @@ class KagMerger(FlowComponent):
                 "FINISH",
                 component_name=self.name,
                 chunk_num=len(limited_merged_chunks),
-                desc="kag_merger_digest",
+                desc=("kag_merger_digest" if len(limited_merged_chunks) > 0 else "kag_merger_digest_failed"),
             )
         # summary
         formatted_docs = []

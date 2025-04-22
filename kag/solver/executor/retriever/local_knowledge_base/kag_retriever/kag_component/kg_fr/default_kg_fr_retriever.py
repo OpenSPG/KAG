@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 
 from kag.common.config import get_default_chat_llm_config
-from kag.interface import LLMClient, Task
+from kag.interface import LLMClient, Task, ToolABC
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.one_hop_graph import RetrievedData
 from kag.interface.solver.reporter_abc import ReporterABC
@@ -37,12 +37,12 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
         path_select: PathSelect = None,
         entity_linking=None,
         llm: LLMClient = None,
-        ppr_chunk_retriever_tool: PprChunkRetriever = None,
+        ppr_chunk_retriever_tool: ToolABC = None,
         top_k=10,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.name = "kg_fr"
+        self.name = kwargs.get("name", "kg_fr")
         self.llm = llm or LLMClient.from_config(get_default_chat_llm_config())
         self.path_select = path_select or PathSelect.from_config(
             {"type": "fuzzy_one_hop_select"}
@@ -122,7 +122,7 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
         )
 
         logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
-        cur_task.logical_node.get_fl_node_result().spo = match_spo
+        cur_task.logical_node.get_fl_node_result().spo = match_spo + selected_rel
         cur_task.logical_node.get_fl_node_result().chunks = chunks
         cur_task.logical_node.get_fl_node_result().sub_question = ppr_sub_query
         if reporter:
