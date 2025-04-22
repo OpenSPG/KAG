@@ -70,6 +70,7 @@ class KAGFlow:
                     "recognition_threshold": 0.8,
                     "exclude_types": ["Chunk"],
                 },
+                "llm": llm_client.to_config(),
             },
             "rc": {
                 "type": "rc_open_spg",
