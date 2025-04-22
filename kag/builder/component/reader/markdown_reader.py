@@ -624,13 +624,13 @@ class MarkDownReader(ReaderABC):
                     table_content = convert_table_to_markdown(
                         table["headers"], table["data"]
                     )
-                    table_chunk = Chunk(
-                        id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                        parent_id=current_output.id,
-                        name=f"{full_title} / Table {i+1}",
-                        content=table_content,
-                        type=ChunkTypeEnum.Table,
-                        metadata={
+                    table_chunk_args = {
+                        "id": f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                        "parent_id": current_output.id,
+                        "name": f"{full_title} / Table {i+1}",
+                        "content": table_content,
+                        "type": ChunkTypeEnum.Table,
+                        "metadata": {
                             # "table_data": table,
                             "before_text": table.get("context", {}).get(
                                 "before_text", ""
@@ -639,8 +639,15 @@ class MarkDownReader(ReaderABC):
                                 "after_text", ""
                             ),
                         },
-                        file_name=os.path.basename(id),
-                    )
+                    }
+                    try:
+                        table_chunk_args["file_name"] = os.path.basename(id)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to get basename from id: {id}. Error: {e}"
+                        )
+
+                    table_chunk = Chunk(**table_chunk_args)
                     outputs.append(table_chunk)
                     all_tables.append(table)
 
@@ -650,13 +657,13 @@ class MarkDownReader(ReaderABC):
                     table_content = convert_table_to_markdown(
                         table["headers"], table["data"]
                     )
-                    table_chunk = Chunk(
-                        id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                        parent_id=current_output.id,
-                        name=f"{full_title} / Table {i+1}",
-                        content=table_content,
-                        type=ChunkTypeEnum.Table,
-                        metadata={
+                    table_chunk_args = {
+                        "id": f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                        "parent_id": current_output.id,
+                        "name": f"{full_title} / Table {i+1}",
+                        "content": table_content,
+                        "type": ChunkTypeEnum.Table,
+                        "metadata": {
                             # "table_data": table,
                             "before_text": table.get("context", {}).get(
                                 "before_text", ""
@@ -665,8 +672,15 @@ class MarkDownReader(ReaderABC):
                                 "after_text", ""
                             ),
                         },
-                        file_name=os.path.basename(id),
-                    )
+                    }
+                    try:
+                        table_chunk_args["file_name"] = os.path.basename(id)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to get basename from id: {id}. Error: {e}"
+                        )
+
+                    table_chunk = Chunk(**table_chunk_args)
                     outputs.append(table_chunk)
                     all_tables.append(table)
 
@@ -745,13 +759,13 @@ class MarkDownReader(ReaderABC):
                         table_content = convert_table_to_markdown(
                             table["headers"], table["data"]
                         )
-                        table_chunk = Chunk(
-                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                            parent_id=current_output.id,
-                            name=f"{full_title} / Table {i+1}",
-                            content=table_content,
-                            type=ChunkTypeEnum.Table,
-                            metadata={
+                        table_chunk_args = {
+                            "id": f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                            "parent_id": current_output.id,
+                            "name": f"{full_title} / Table {i+1}",
+                            "content": table_content,
+                            "type": ChunkTypeEnum.Table,
+                            "metadata": {
                                 # "table_data": table,
                                 "before_text": table.get("context", {}).get(
                                     "before_text", ""
@@ -760,8 +774,15 @@ class MarkDownReader(ReaderABC):
                                     "after_text", ""
                                 ),
                             },
-                            file_name=os.path.basename(id),
-                        )
+                        }
+                        try:
+                            table_chunk_args["file_name"] = os.path.basename(id)
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to get basename from id: {id}. Error: {e}"
+                            )
+
+                        table_chunk = Chunk(**table_chunk_args)
                         outputs.append(table_chunk)
                         all_tables.append(table)
 
@@ -771,13 +792,13 @@ class MarkDownReader(ReaderABC):
                         table_content = convert_table_to_markdown(
                             table["headers"], table["data"]
                         )
-                        table_chunk = Chunk(
-                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                            parent_id=current_output.id,
-                            name=f"{full_title} / Table {i+1}",
-                            content=table_content,
-                            type=ChunkTypeEnum.Table,
-                            metadata={
+                        table_chunk_args = {
+                            "id": f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
+                            "parent_id": current_output.id,
+                            "name": f"{full_title} / Table {i+1}",
+                            "content": table_content,
+                            "type": ChunkTypeEnum.Table,
+                            "metadata": {
                                 # "table_data": table,
                                 "before_text": table.get("context", {}).get(
                                     "before_text", ""
@@ -786,8 +807,15 @@ class MarkDownReader(ReaderABC):
                                     "after_text", ""
                                 ),
                             },
-                            file_name=os.path.basename(id),
-                        )
+                        }
+                        try:
+                            table_chunk_args["file_name"] = os.path.basename(id)
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to get basename from id: {id}. Error: {e}"
+                            )
+
+                        table_chunk = Chunk(**table_chunk_args)
                         outputs.append(table_chunk)
                         all_tables.append(table)
 
