@@ -150,8 +150,9 @@ def is_chinese(text):
 
 
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
-    use_pipeline = params.get("usePipeline", "think_pipeline")
     qa_config = params.get("config")
+    logger.info(f"qa_config = {qa_config}")
+    use_pipeline = qa_config.get("chat", {}).get("ename", "think_pipeline")
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
@@ -254,202 +255,15 @@ if __name__ == "__main__":
     # init_kag_config(
     #     "4200052", "https://spg-pre.alipay.com"
     # )
-    params = {
-        "usePipeline": "think_pipeline",
-        "config": {
-            "chat": {
-                "ename": "default_pipeline",
-                "cname": "简单问答",
-                "logo": "/img/logo/modal_1.png",
-                "description": "这是KAG的简单问答模板，不支持深度思考和联网搜索",
-                "id": 1,
-            },
-            "kb": [
-                {
-                    "mcp_servers": {},
-                    "vectorizer": {
-                        "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
-                        "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
-                        "vector_dimensions": "768",
-                        "base_url": "https://api.siliconflow.cn/v1",
-                        "source_type": "custom",
-                        "model": "netease-youdao/bce-embedding-base_v1",
-                        "modelType": "embedding",
-                        "type": "openai",
-                    },
-                    "visibility": "PRIVATE",
-                    "name": "测试构建",
-                    "namespace": "Nmt",
-                    "description": "",
-                    "graph_store": {
-                        "database": "nmt",
-                        "password": "neo4j@openspg",
-                        "uri": "neo4j://6.3.176.118:7687",
-                        "user": "neo4j",
-                    },
-                    "id": 5500004,
-                    "tag": "LOCAL",
-                    "label": "测试构建",
-                    "value": 5500004,
-                    "prompt": {"language": "zh"},
-                }
-            ],
-            "language": "en",
-            "llm": {
-                "visibility": "PUBLIC_READ",
-                "modelId": "1d9ea66f5ae443a0b1a8151502a34ee9@deepseek-chat",
-                "provider": "DeepSeek",
-                "api_key": "sk-5539c76668f44a27adbae3dbb17bfb3b",
-                "stream": "False",
-                "name": "deepseek-chat",
-                "base_url": "https://api.deepseek.com/beta",
-                "temperature": 0.7,
-                "model": "deepseek-chat",
-                "modelType": "chat",
-                "type": "maas",
-            },
-        },
-    }
-    params = {
-        "usePipeline": "default_pipeline",
-        "config": {
-            "chat": {
-                "ename": "think_pipeline",
-                "cname": "简单问答",
-                "logo": "/img/logo/modal_1.png",
-                "description": "这是KAG的简单问答模板，不支持深度思考和联网搜索",
-                "id": 1,
-            },
-            "kb": [
-                {
-                    "mcp_servers": {},
-                    "vectorizer": {
-                        "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
-                        "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
-                        "vector_dimensions": "768",
-                        "base_url": "https://api.siliconflow.cn/v1",
-                        "source_type": "custom",
-                        "model": "netease-youdao/bce-embedding-base_v1",
-                        "modelType": "embedding",
-                        "type": "openai",
-                    },
-                    "visibility": "PRIVATE",
-                    "name": "测试构建",
-                    "namespace": "Nmt",
-                    "description": "",
-                    "graph_store": {
-                        "database": "nmt",
-                        "password": "neo4j@openspg",
-                        "uri": "neo4j://6.3.176.118:7687",
-                        "user": "neo4j",
-                    },
-                    "id": 5500004,
-                    "tag": "LOCAL",
-                    "label": "测试构建",
-                    "value": 5500004,
-                    "prompt": {"language": "zh"},
-                }
-            ],
-            "language": "zh",
-            "llm": {
-                "visibility": "PUBLIC_READ",
-                "modelId": "1d9ea66f5ae443a0b1a8151502a34ee9@deepseek-chat",
-                "provider": "DeepSeek",
-                "api_key": "sk-5539c76668f44a27adbae3dbb17bfb3b",
-                "stream": "False",
-                "name": "deepseek-chat",
-                "base_url": "https://api.deepseek.com/beta",
-                "temperature": 0.7,
-                "model": "deepseek-chat",
-                "modelType": "chat",
-                "type": "maas",
-            },
-        },
-    }
-    params = {
-        "config": {
-            "chat": {
-                "ename": "think_pipeline",
-                "thinking_enabled": True,
-                "cname": "推理问答",
-                "logo": "/img/logo/modal_2.png",
-                "description": "基于蚂蚁集团开源的专业领域知识服务框架KAG搭建的问答模板，擅长逻辑推理、数值计算等任务，可以协助解答相关问题、提供信息支持或进行数据分析",
-                "id": 2,
-            },
-            "kb": [
-                {
-                    "vectorizer": {
-                        "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
-                        "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
-                        "base_url": "https://api.siliconflow.cn/v1",
-                        "source_type": "custom",
-                        "model": "BAAI/bge-m3",
-                        "modelType": "embedding",
-                        "type": "openai",
-                        "enable_check": False,
-                    },
-                    # "vectorizer": {
-                    #     "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
-                    #     "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
-                    #     "vector_dimensions": "768",
-                    #     "base_url": "https://api.siliconflow.cn/v1",
-                    #     "source_type": "custom",s
-                    #     "model": "netease-youdao/bce-embedding-base_v1",
-                    #     "modelType": "embedding",
-                    #     "type": "openai",
-                    # },
-                    "visibility": "PUBLIC_READ",
-                    "name": "田常测试1",
-                    "namespace": "TcTest1",
-                    "description": "",
-                    "graph_store": {
-                        "database": "tctest1",
-                        "password": "neo4j@openspg",
-                        "uri": "neo4j://6.3.176.118:7687",
-                        "user": "neo4j",
-                    },
-                    "id": 5800002,
-                    "tag": "LOCAL",
-                    "label": "田常测试1",
-                    "value": 5800002,
-                    "prompt": {"language": "zh"},
-                }
-            ],
-            "language": "zh",
-            "llm": {
-                "visibility": "PUBLIC_READ",
-                "modelId": "1d9ea66f5ae443a0b1a8151502a34ee9@deepseek-chat",
-                "provider": "DeepSeek",
-                "api_key": "sk-5539c76668f44a27adbae3dbb17bfb3b",
-                "stream": "False",
-                "name": "deepseek-chat",
-                "base_url": "https://api.deepseek.com/beta",
-                "temperature": 0.7,
-                "model": "deepseek-chat",
-                "modelType": "chat",
-                "type": "maas",
-                "enable_check": False,
-            },
-            "vectorize_model": {
-                "modelId": "117b7298ac174c3d979574b66d2a76d9@BAAI/bge-m3",
-                "api_key": "sk-omwqjedsfukilijdqtrbfunsuaslauuyxtamspgyylhlgdih",
-                "base_url": "https://api.siliconflow.cn/v1",
-                "source_type": "custom",
-                "model": "BAAI/bge-m3",
-                "modelType": "embedding",
-                "type": "openai",
-                "enable_check": False,
-            },
-        }
-    }
+
     res = SolverMain().invoke(
         4200052,
         7700089,
         # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
-        "肝硬化的原因都有哪些呢",
+        "鱼骨图有什么用法",
         "4700026",
         True,
-        host_addr="http://6.1.194.17:8080",
+        host_addr="http://6.1.212.241:8887",
         params=params,
     )
     print("*" * 80)
