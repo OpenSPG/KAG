@@ -76,9 +76,7 @@ class KagMerger(FlowComponent):
         top_k,
         llm_module: LLMClient = None,
         summary_prompt: PromptABC = None,
-        vector_chunk_retriever: VectorChunkRetriever = None,
         vectorize_model: VectorizeModelABC = None,
-        search_api: SearchApiABC = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -95,22 +93,6 @@ class KagMerger(FlowComponent):
             KAG_CONFIG.all_config["vectorize_model"]
         )
         self.text_similarity = TextSimilarity(vectorize_model)
-
-        self.search_api = search_api or SearchApiABC.from_config(
-            {"type": "openspg_search_api"}
-        )
-        self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(
-            vectorize_model=self.vectorize_model, search_api=self.search_api
-        )
-
-    def recall_query(self, query):
-        sim_scores_start_time = time.time()
-        """Process a single query for similarity scores in parallel."""
-        query_sim_scores = self.vector_chunk_retriever.invoke(query, self.top_k * 20)
-        logger.info(
-            f"`{query}` Similarity scores calculation completed in {time.time() - sim_scores_start_time:.2f} seconds."
-        )
-        return query_sim_scores
 
     def invoke(
         self,
