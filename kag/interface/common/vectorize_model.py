@@ -128,4 +128,4 @@ class VectorizeModelABC(Registrable):
         """
 
         async with self.limiter:
-            await asyncio.to_thread(lambda: self.vectorize(texts))
+            return await asyncio.to_thread(lambda: self.vectorize(texts))
