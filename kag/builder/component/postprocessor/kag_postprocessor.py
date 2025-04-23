@@ -46,7 +46,9 @@ class KAGPostProcessor(PostProcessorABC):
             external_graph (ExternalGraphLoaderABC, optional): An instance of ExternalGraphLoaderABC for external graph-based linking. Defaults to None.
         """
         super().__init__()
-        self.schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+        self.schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         self.similarity_threshold = similarity_threshold
         self.external_graph = external_graph
         self._init_search()
@@ -100,7 +102,7 @@ class KAGPostProcessor(PostProcessorABC):
                 valid_edges.append(edge)
         return SubGraph(nodes=valid_nodes, edges=valid_edges)
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def _entity_link(
         self, graph: SubGraph, property_key: str = "name", labels: List[str] = None
     ):
