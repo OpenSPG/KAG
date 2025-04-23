@@ -25,7 +25,6 @@ from openai import NotFoundError
 @Command.register("submit_builder_job")
 class BuilderJobSubmit(Command):
     def add_to_parser(self, subparsers: argparse._SubParsersAction):
-
         parser = subparsers.add_parser(
             "builder", help="Submit distributed builder jobs to cluster"
         )
@@ -76,6 +75,13 @@ class BuilderJobSubmit(Command):
             "Will be executed as: python <entry_script>",
         )
 
+        parser.add_argument(
+            "--index_url",
+            type=str,
+            default=None,
+            help="Base URL of the Python Package Index. \n",
+        )
+
         parser.add_argument("--image", type=str, help="Worker image.")
         parser.add_argument("--pool", type=str, help="Worker resource pool.")
 
@@ -91,6 +97,13 @@ class BuilderJobSubmit(Command):
             type=int,
             default=0,
             help="GPUs per worker. Requires NVIDIA CUDA-enabled cluster. \n",
+        )
+
+        parser.add_argument(
+            "--gpu_type",
+            type=str,
+            default=None,
+            help="GPU type. Requires NVIDIA CUDA-enabled cluster. \n",
         )
 
         parser.add_argument(
@@ -158,8 +171,12 @@ class BuilderJobSubmit(Command):
             f"git clone {args.git_url} {work_dir}",
             f"cd {work_dir}",
             f"git checkout {args.commit_id}",
-            "/openspg_venv/bin/pip3.8 install -e . -i https://artifacts.antgroup-inc.cn/artifact/repositories/simple-dev/",
         ]
+        if args.index_url:
+            cmds.append(f"pip install -e . -i {args.index_url}")
+        else:
+            cmds.append("pip install -e .")
+
         if args.validity_check:
             BuilderJobSubmit.validity_check(args)
         if args.init_script is not None:
@@ -175,7 +192,6 @@ class BuilderJobSubmit(Command):
 
         envs = {}
         if args.env:
-
             kvs = args.env.split(",")
             for kv in kvs:
                 key, value = kv.split("=")
@@ -195,6 +211,9 @@ class BuilderJobSubmit(Command):
             "workerStorage": args.storage * 1024,
             "envs": envs,
         }
+        if args.num_gpus > 0 and args.gpu_type:
+            req["workerGpuType"] = args.gpu_type
+
         if args.image:
             req["image"] = args.image
         if args.pool:
