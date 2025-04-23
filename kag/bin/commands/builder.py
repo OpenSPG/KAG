@@ -100,6 +100,13 @@ class BuilderJobSubmit(Command):
         )
 
         parser.add_argument(
+            "--gpu_type",
+            type=str,
+            default=None,
+            help="GPU type. Requires NVIDIA CUDA-enabled cluster. \n",
+        )
+
+        parser.add_argument(
             "--num_cpus", type=int, default=8, help="CPU cores per worker."
         )
 
@@ -204,6 +211,9 @@ class BuilderJobSubmit(Command):
             "workerStorage": args.storage * 1024,
             "envs": envs,
         }
+        if args.num_gpus > 0 and args.gpu_type:
+            req["workerGpuType"] = args.gpu_type
+
         if args.image:
             req["image"] = args.image
         if args.pool:
