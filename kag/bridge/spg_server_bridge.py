@@ -66,28 +66,42 @@ class SPGServerBridge:
         return output
 
     def run_reader(self, config, input_data):
-        if isinstance(config, str):
-            config = json.loads(config)
-        scanner_config = config["scanner"]
-        reader_config = config["reader"]
-        scanner = interface.ScannerABC.from_config(scanner_config)
-        reader = interface.ReaderABC.from_config(reader_config)
-        chunks = []
-        for data in scanner.generate(input_data):
-            reader_output = reader.invoke(data, write_ckpt=False)
-            chunk, _ = collect_reader_outputs(reader_output)
-            chunks += chunk
-        return [x.to_dict() for x in chunks]
+        try:
+            if isinstance(config, str):
+                config = json.loads(config)
+            scanner_config = config["scanner"]
+            reader_config = config["reader"]
+            scanner = interface.ScannerABC.from_config(scanner_config)
+            reader = interface.ReaderABC.from_config(reader_config)
+            chunks = []
+            for data in scanner.generate(input_data):
+                reader_output = reader.invoke(data, write_ckpt=False)
+                chunk, _ = collect_reader_outputs(reader_output)
+                chunks += chunk
+            return [x.to_dict() for x in chunks]
+        except Exception as e:
+            import traceback
+
+            msg = f"Failed to run Reader with config {config}, detail info:\n{traceback.format_exc()}"
+            logger.error(f"===================\n{msg}===================")
+            raise e
 
     def run_component(self, component_name, component_config, input_data):
-        if isinstance(component_config, str):
-            component_config = json.loads(component_config)
+        try:
+            if isinstance(component_config, str):
+                component_config = json.loads(component_config)
 
-        cls = getattr(interface, component_name)
-        instance = cls.from_config(component_config)
-        if hasattr(instance.input_types, "from_dict"):
-            input_data = instance.input_types.from_dict(input_data)
-        return [x.to_dict() for x in instance.invoke(input_data, write_ckpt=False)]
+            cls = getattr(interface, component_name)
+            instance = cls.from_config(component_config)
+            if hasattr(instance.input_types, "from_dict"):
+                input_data = instance.input_types.from_dict(input_data)
+            return [x.to_dict() for x in instance.invoke(input_data, write_ckpt=False)]
+        except Exception as e:
+            import traceback
+
+            msg = f"Failed to run component {component_name} with config {component_config}, detail info:\n{traceback.format_exc()}"
+            logger.error(f"===================\n{msg}===================")
+            raise e
 
     def run_llm_config_check(self, llm_config):
         from kag.common.llm.llm_config_checker import LLMConfigChecker
