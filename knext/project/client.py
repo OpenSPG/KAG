@@ -52,10 +52,13 @@ class ProjectClient(Client):
         return None
 
     def get_by_id(self, project_id: str):
-        projects = self._rest_client.project_get()
-        for project in projects:
-            if str(project.id) == str(project_id):
-                return project
+        try:
+            projects = self._rest_client.project_get()
+            for project in projects:
+                if str(project.id) == str(project_id):
+                    return project
+        except Exception as e:
+            print(e)
         return None
 
     def create(self, name: str, namespace: str, config: str, desc: str = None, auto_schema=False):

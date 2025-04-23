@@ -12,7 +12,7 @@
 import pprint
 import copy
 from typing import Dict, List, Any
-
+from kag.common.utils import generate_hash_id
 from kag.builder.model.spg_record import SPGRecord
 from knext.schema.client import BASIC_TYPES
 from knext.schema.model.base import BaseSpgType
@@ -30,6 +30,10 @@ class Node(object):
         self.label = label
         self.properties = properties
         self.id = _id
+
+    @property
+    def hash_key(self):
+        return generate_hash_id(f"{self.id}{self.name}{self.label}")
 
     @classmethod
     def from_spg_record(cls, idx, spg_record: SPGRecord):
@@ -96,6 +100,12 @@ class Edge(object):
             _id = id(self)
         self.id = _id
 
+    @property
+    def hash_key(self):
+        return generate_hash_id(
+            f"{self.from_id}{self.from_type}{self.to_id}{self.to_type}{self.label}{self.id}"
+        )
+
     @classmethod
     def from_spg_record(
         cls,
@@ -160,10 +170,25 @@ class SubGraph(object):
         self.nodes = nodes
         self.edges = edges
 
+    def get_node_by_id(self, id):
+        for n in self.nodes:
+            if n.id == id:
+                return n
+        return None
+
     def add_node(self, id: str, name: str, label: str, properties=None):
         if not properties:
             properties = dict()
-        self.nodes.append(Node(_id=id, name=name, label=label, properties=properties))
+        store_node = self.get_node_by_id(id)
+        if not store_node:
+            self.nodes.append(
+                Node(_id=id, name=name, label=label, properties=properties)
+            )
+            return self
+        if store_node and properties is not None:
+            update_prop = dict(properties)
+            update_prop.update(store_node.properties if store_node.properties else {})
+            store_node.properties = update_prop
         return self
 
     def add_edge(
@@ -234,3 +259,9 @@ class SubGraph(object):
             nodes=[Node.from_dict(node) for node in input["resultNodes"]],
             edges=[Edge.from_dict(edge) for edge in input["resultEdges"]],
         )
+
+    @property
+    def hash_key(self):
+        keys = [x.hash_key for x in self.nodes] + [x.hash_key for x in self.edges]
+        keys.sort()
+        return generate_hash_id("".join(keys))
