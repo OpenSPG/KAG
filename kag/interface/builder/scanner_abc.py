@@ -156,7 +156,7 @@ class ScannerABC(BuilderComponent, ABC):
         Returns:
             List[Output]: A list of processed results.
         """
-        await asyncio.to_thread(lambda: lambda: self.invoke(input, **kwargs))
+        return await asyncio.to_thread(lambda: lambda: self.invoke(input, **kwargs))
 
     def size(self, input):
         if not hasattr(self, "_data_size"):
