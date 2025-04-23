@@ -12,10 +12,13 @@
 import io
 import os
 import tarfile
+
 import requests
 import logging
+import asyncio
 
 from tenacity import retry, stop_after_attempt
+from kag.common.rate_limiter import RATE_LIMITER_MANGER
 from kag.common.registry import Registrable
 from typing import Union, Iterable
 
@@ -29,7 +32,13 @@ class VectorizeModelABC(Registrable):
     An abstract base class that defines the interface for converting text into embedding vectors.
     """
 
-    def __init__(self, vector_dimensions: int = None):
+    def __init__(
+        self,
+        name: str,
+        vector_dimensions: int = None,
+        max_rate: float = 1000,
+        time_period: float = 1,
+    ):
         """
         Initializes the VectorizeModelABC instance.
 
@@ -37,6 +46,7 @@ class VectorizeModelABC(Registrable):
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
         self._vector_dimensions = vector_dimensions
+        self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
 
     def _download_model(self, path, url):
         """
@@ -81,7 +91,7 @@ class VectorizeModelABC(Registrable):
             message = "the embedding service is not available"
             raise RuntimeError(message) from ex
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), reraise=True)
     def vectorize(
         self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
@@ -99,3 +109,23 @@ class VectorizeModelABC(Registrable):
         """
         message = "abstract method vectorize is not implemented"
         raise NotImplementedError(message)
+
+    @retry(stop=stop_after_attempt(3), reraise=True)
+    async def avectorize(
+        self, texts: Union[str, Iterable[str]]
+    ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
+        """
+        Vectorizes text(s) into embedding vector(s).
+
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+        """
+
+        async with self.limiter:
+            return await asyncio.to_thread(lambda: self.vectorize(texts))

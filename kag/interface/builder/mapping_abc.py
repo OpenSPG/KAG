@@ -9,12 +9,12 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from abc import ABC, abstractmethod
-from typing import List, Dict
+
+from abc import ABC
+from typing import Dict
 
 from kag.interface.builder.base import BuilderComponent
 from kag.builder.model.sub_graph import SubGraph
-from knext.common.base.runnable import Input, Output
 
 
 class MappingABC(BuilderComponent, ABC):
@@ -32,21 +32,10 @@ class MappingABC(BuilderComponent, ABC):
     def output_types(self):
         return SubGraph
 
-    @abstractmethod
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
-        """
-        Abstract method to be implemented by subclasses. It processes the input and returns a list of outputs.
+    @property
+    def ckpt_subdir(self):
+        return "mapping"
 
-        Args:
-            input (Input): The input to be processed.
-            **kwargs: Additional keyword arguments.
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
-
-        Returns:
-            List[Output]: A list of outputs corresponding to the processed input.
-        """
-        raise NotImplementedError(
-            f"`invoke` is not currently supported for {self.__class__.__name__}."
-        )
+    @property
+    def inherit_input_key(self):
+        return True

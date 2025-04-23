@@ -28,3 +28,7 @@ class PostProcessorABC(BuilderComponent):
     @property
     def output_types(self):
         return SubGraph
+
+    @property
+    def inherit_input_key(self):
+        return True

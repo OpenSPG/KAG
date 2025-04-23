@@ -11,12 +11,14 @@
 # or implied.
 import json
 import logging
+import asyncio
 from enum import Enum
-from typing import Type, Dict, List
+from typing import Type, Dict, List, Union
 
 from knext.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
+from kag.interface.builder.base import BuilderComponentData
 from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
@@ -38,7 +40,7 @@ class KGWriter(SinkWriterABC):
     to a Knowledge Graph storage system. It supports operations like upsert and delete.
     """
 
-    def __init__(self, project_id: int = None, **kwargs):
+    def __init__(self, project_id: int = None, delete: bool = False, **kwargs):
         """
         Initializes the KGWriter with the specified project ID.
 
@@ -51,7 +53,10 @@ class KGWriter(SinkWriterABC):
             self.project_id = KAG_PROJECT_CONF.project_id
         else:
             self.project_id = project_id
-        self.client = GraphClient(project_id=project_id)
+        self.client = GraphClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=project_id
+        )
+        self.delete = delete
 
     @property
     def input_types(self) -> Type[Input]:
@@ -98,7 +103,7 @@ class KGWriter(SinkWriterABC):
 
         return graph
 
-    def invoke(
+    def _invoke(
         self,
         input: Input,
         alter_operation: str = AlterOperationEnum.Upsert,
@@ -116,15 +121,87 @@ class KGWriter(SinkWriterABC):
         Returns:
             List[Output]: A list of output objects (currently always [None]).
         """
+        if self.delete:
+            self.client.write_graph(
+                sub_graph=input.to_dict(),
+                operation=AlterOperationEnum.Delete,
+                lead_to_builder=lead_to_builder,
+            )
+        else:
+            input = self.standarlize_graph(input)
+            logger.debug(f"final graph to write: {input}")
+            self.client.write_graph(
+                sub_graph=input.to_dict(),
+                operation=alter_operation,
+                lead_to_builder=lead_to_builder,
+            )
+            return [input]
 
-        input = self.standarlize_graph(input)
-        logger.debug(f"final graph to write: {input}")
-        self.client.write_graph(
-            sub_graph=input.to_dict(),
-            operation=alter_operation,
-            lead_to_builder=lead_to_builder,
-        )
-        return [input]
+    def invoke(
+        self, input: Input, **kwargs
+    ) -> List[Union[Output, BuilderComponentData]]:
+        if isinstance(input, BuilderComponentData):
+            input_data = input.data
+            input_key = input.hash_key
+        else:
+            input_data = input
+            input_key = None
+        if self.inherit_input_key:
+            output_key = input_key
+        else:
+            output_key = None
+
+        write_ckpt = kwargs.get("write_ckpt", True)
+        if write_ckpt and self.checkpointer:
+            # found existing data in checkpointer
+            if input_key and self.checkpointer.exists(input_key):
+                return []
+            # not found
+            output = self._invoke(input_data, **kwargs)
+            # We only record the data key to avoid embeddings from taking up too much disk space.
+            if input_key:
+                self.checkpointer.write_to_ckpt(input_key, input_key)
+            return [BuilderComponentData(x, output_key) for x in output]
+        else:
+            output = self._invoke(input_data, **kwargs)
+            return [BuilderComponentData(x, output_key) for x in output]
+
+    async def ainvoke(
+        self, input: Input, **kwargs
+    ) -> List[Union[Output, BuilderComponentData]]:
+
+        if not isinstance(input, BuilderComponentData):
+            input = BuilderComponentData(input)
+
+        input_data = input.data
+        input_key = input.hash_key
+
+        if self.inherit_input_key:
+            output_key = input_key
+        else:
+            output_key = None
+        write_ckpt = kwargs.get("write_ckpt", True)
+        if write_ckpt and self.checkpointer:
+            # found existing data in checkpointer
+            if input_key and self.checkpointer.exists(input_key):
+                output = await asyncio.to_thread(
+                    lambda: self.checkpointer.read_from_ckpt(input_key)
+                )
+
+                if output is not None:
+                    return [BuilderComponentData(x, output_key) for x in output]
+
+            # not found
+            output = await self._ainvoke(input_data, **kwargs)
+            if input_key:
+                await asyncio.to_thread(
+                    lambda: self.checkpointer.write_to_ckpt(input_key, input_key)
+                )
+            return [BuilderComponentData(x, output_key) for x in output]
+
+        else:
+            output = await self._ainvoke(input_data, **kwargs)
+            return [BuilderComponentData(x, output_key) for x in output]
 
     def _handle(self, input: Dict, alter_operation: str, **kwargs):
         """

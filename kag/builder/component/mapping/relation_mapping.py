@@ -20,6 +20,7 @@ from kag.interface import MappingABC
 
 
 @MappingABC.register("relation")
+@MappingABC.register("relation_mapping")
 class RelationMapping(MappingABC):
     """
     A class that extends the MappingABC class.
@@ -49,7 +50,9 @@ class RelationMapping(MappingABC):
             **kwargs: Additional keyword arguments passed to the parent class constructor.
         """
         super().__init__(**kwargs)
-        schema = SchemaClient(project_id=KAG_PROJECT_CONF.project_id).load()
+        schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"
         assert object_name in schema, f"{object_name} is not a valid SPG type name"
         self.subject_type = schema.get(subject_name)
@@ -102,10 +105,7 @@ class RelationMapping(MappingABC):
             self
         """
 
-        if target_name in self.property_mapping:
-            self.property_mapping[target_name].append(source_name)
-        else:
-            self.property_mapping[target_name] = [source_name]
+        self.property_mapping[target_name] = source_name
         return self
 
     @property
@@ -131,10 +131,9 @@ class RelationMapping(MappingABC):
             s_id = record.get(self.src_id_field or "srcId")
             o_id = record.get(self.dst_id_field or "dstId")
             sub_properties = {}
-            for target_name, source_names in self.property_mapping.items():
-                for source_name in source_names:
-                    value = record.get(source_name)
-                    sub_properties[target_name] = value
+            for target_name, source_name in self.property_mapping.items():
+                value = record.get(source_name)
+                sub_properties[target_name] = value
         else:
             s_id = record.pop(self.src_id_field or "srcId")
             o_id = record.pop(self.dst_id_field or "dstId")
@@ -151,7 +150,7 @@ class RelationMapping(MappingABC):
 
         return sub_graph
 
-    def invoke(self, input: Input, **kwargs) -> List[Output]:
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
         Invokes the assembly process to create a subgraph from the input data.
 
