@@ -152,9 +152,9 @@ def is_chinese(text):
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     qa_config = params.get("config")
     logger.info(f"qa_config = {qa_config}")
-    use_pipeline = qa_config.get("chat", {}).get("ename", "think_pipeline")
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
+    use_pipeline = qa_config["chat"]["ename"]
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
     logger.info(
@@ -255,7 +255,6 @@ if __name__ == "__main__":
     # init_kag_config(
     #     "4200052", "https://spg-pre.alipay.com"
     # )
-
     res = SolverMain().invoke(
         4200052,
         7700089,
