@@ -132,4 +132,4 @@ class RerankModelABC(Registrable):
             List[str]: Reranked passages in descending order of combined scores
         """
         async with self.limiter:
-            await asyncio.to_thread(lambda: self.rerank(queries, passages))
+            return await asyncio.to_thread(lambda: self.rerank(queries, passages))
