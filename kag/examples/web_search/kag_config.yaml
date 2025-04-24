@@ -1,0 +1,16 @@
+#------------project configuration start----------------#
+mcp_executor:
+  type: mcp_executor
+  store_path: ./web_search.py
+  name: web_search_mcp
+  description: Web search mcp, which provides an interface tool for searching the entire web
+
+
+log:
+  level: INFO
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '8'
+  language: zh
+  namespace: Web_Search_MCP
