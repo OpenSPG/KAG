@@ -591,8 +591,12 @@ class DocxReader(ReaderABC):
             """Remove empty nodes and return whether this node should be kept"""
             # First clean children
             node.children = [child for child in node.children if clean_node(child)]
-            # Keep node if it has content or non-empty children
-            return bool(node.content.strip() or node.children)
+            # Keep node if it has content, non-empty children, or a meaningful title
+            return bool(
+                node.content.strip()
+                or node.children
+                or (node.title and node.title != "root")
+            )
 
         root.children = [child for child in root.children if clean_node(child)]
 
@@ -810,7 +814,9 @@ class DocxReader(ReaderABC):
 
 if __name__ == "__main__":
     reader = ReaderABC.from_config({"type": "docx_reader"})
-    chunks, subgraph = reader.invoke("/Users/zhangxinhong.zxh/Downloads/测试样例文件.docx")
+    chunks = reader.invoke(
+        "/Users/zhangxinhong.zxh/Downloads/default.docx", write_ckpt=False
+    )
     print("Extracted chunks:")
     for chunk in chunks:
         print(f"\nChunk: {chunk.name}")
