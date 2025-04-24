@@ -143,6 +143,10 @@ class OpenSPGReporter(ReporterABC):
         self.report_sub_segment = {}
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
         self.word_mapping = {
+            "kag_merger_digest_failed": {
+                "zh": "未检索到相关信息。",
+                "en": "No relevant information was found.",
+            },
             "kag_merger_digest": {
                 "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息已足够回答问题。",
                 "en": "{chunk_num} documents were output, sufficient information retrieved to answer the question.",
