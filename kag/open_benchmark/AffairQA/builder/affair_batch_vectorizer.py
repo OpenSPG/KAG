@@ -10,7 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 from collections import defaultdict
-from typing import List
+from typing import List, Optional
 from kag.builder.component.vectorizer.batch_vectorizer import EmbeddingVectorGenerator
 from tenacity import stop_after_attempt, retry
 
@@ -39,7 +39,12 @@ class AffairBatchVectorizer(VectorizerABC):
         batch_size (int): The size of the batches in which to process the nodes.
     """
 
-    def __init__(self, vectorize_model: VectorizeModelABC, batch_size: int = 32):
+    def __init__(
+        self,
+        vectorize_model: VectorizeModelABC,
+        batch_size: int = 32,
+        disable_generation: Optional[List[str]] = None,
+    ):
         """
         Initializes the BatchVectorizer with the specified vectorization model and batch size.
 
@@ -53,6 +58,7 @@ class AffairBatchVectorizer(VectorizerABC):
         self.vec_meta = self._init_vec_meta()
         self.vectorize_model = vectorize_model
         self.batch_size = batch_size
+        self.disable_generation = disable_generation
 
     def _init_vec_meta(self):
         """
@@ -95,7 +101,9 @@ class AffairBatchVectorizer(VectorizerABC):
             properties.update(node.properties)
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
-        generator = EmbeddingVectorGenerator(self.vectorize_model, self.vec_meta)
+        generator = EmbeddingVectorGenerator(
+            self.vectorize_model, self.vec_meta, self.disable_generation
+        )
         generator.batch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(
             node_list, node_batch

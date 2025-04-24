@@ -351,6 +351,7 @@ def get_recall_node_label(label_set):
     for l in label_set:
         if l != "Entity":
             return l
+    return "Entity"
 
 
 def node_2_doc(node: dict):
