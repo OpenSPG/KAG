@@ -810,16 +810,3 @@ class DocxReader(ReaderABC):
             if chunk.parent_content:
                 print(f"Parent Content: {chunk.parent_content}")
         return chunks
-
-
-if __name__ == "__main__":
-    reader = ReaderABC.from_config({"type": "docx_reader"})
-    chunks = reader.invoke(
-        "/Users/zhangxinhong.zxh/Downloads/default.docx", write_ckpt=False
-    )
-    print("Extracted chunks:")
-    for chunk in chunks:
-        print(f"\nChunk: {chunk.name}")
-        print(f"Content: {chunk.content}")
-        if chunk.parent_content:
-            print(f"Parent Content: {chunk.parent_content}")
