@@ -45,7 +45,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.name = "kg_rc"
+        self.name = kwargs.get("name", "kg_rc")
         self.top_k = top_k
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
