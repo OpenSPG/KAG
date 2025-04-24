@@ -93,9 +93,16 @@ class SPGServerBridge:
 
             cls = getattr(interface, component_name)
             instance = cls.from_config(component_config)
-            if hasattr(instance.input_types, "from_dict"):
-                input_data = instance.input_types.from_dict(input_data)
-            return [x.to_dict() for x in instance.invoke(input_data, write_ckpt=False)]
+            if not isinstance(input_data, list):
+                input_data = [input_data]
+            output = []
+            for item in input_data:
+                if hasattr(instance.input_types, "from_dict"):
+                    item = instance.input_types.from_dict(item)
+                output.extend(
+                    [x.to_dict() for x in instance.invoke(item, write_ckpt=False)]
+                )
+            return output
         except Exception as e:
             import traceback
 
