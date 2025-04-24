@@ -37,9 +37,13 @@ class EvaForMusique(EvalQa):
     def get_supporing_facts(self, sample):
         paragraphs = sample["paragraphs"]
         supporing_facts = []
+        non_supporting_facts= []
         for paragraph in paragraphs:
             if paragraph["is_supporting"] == True:
                 supporing_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
+            else:
+                non_supporting_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
+        supporing_facts.extend(non_supporting_facts[:2])
         return supporing_facts
 
     def load_data(self, file_path):

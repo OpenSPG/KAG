@@ -138,7 +138,7 @@ class Evaluate:
         dict: Dictionary containing EM, F1 score, and answer similarity.
         """
         # Initialize total metrics
-        total_metrics = {"em": 0.0, "f1": 0.0, "answer_similarity": 0.0}
+        total_metrics = {"em": 0.0, "f1": 0.0}
 
         # Iterate over prediction and gold lists to calculate EM and F1 scores
         for prediction, gold in zip(predictionlist, goldlist):
