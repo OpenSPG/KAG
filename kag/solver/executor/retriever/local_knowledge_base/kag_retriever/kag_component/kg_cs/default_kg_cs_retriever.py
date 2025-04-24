@@ -29,7 +29,7 @@ class KgConstrainRetrieverWithOpenSPG(KagLogicalFormComponent):
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.name = "kg_cs"
+        self.name = kwargs.get("name", "kg_cs")
         self.llm = llm or LLMClient.from_config(get_default_chat_llm_config())
         self.path_select = path_select or PathSelect.from_config(
             {"type": "exact_one_hop_select"}
