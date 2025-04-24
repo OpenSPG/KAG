@@ -11,7 +11,18 @@
 # or implied.
 from kag.common.checkpointer.base import CheckPointer, CheckpointerManager
 from kag.common.checkpointer.txt_checkpointer import TxtCheckPointer
-from kag.common.checkpointer.bin_checkpointer import BinCheckPointer
+from kag.common.checkpointer.bin_checkpointer import (
+    BinCheckPointer,
+    ZODBCheckPointer,
+    DiskCacheCheckPointer,
+)
 
 
-__all__ = ["CheckPointer", "CheckpointerManager", "TxtCheckPointer", "BinCheckPointer"]
+__all__ = [
+    "CheckPointer",
+    "CheckpointerManager",
+    "TxtCheckPointer",
+    "BinCheckPointer",
+    "ZODBCheckPointer",
+    "DiskCacheCheckPointer",
+]

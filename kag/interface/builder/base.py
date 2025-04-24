@@ -12,8 +12,10 @@
 
 import os
 import asyncio
-from typing import List, Dict, Any, Union
-
+import concurrent
+import copy
+from typing import List, Any, Union
+from functools import partial
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
@@ -61,19 +63,28 @@ class BuilderComponent(Component, Registrable):
             world_size = get_world_size(1)
         self.sharding_info = ShardingInfo(shard_id=rank, shard_count=world_size)
 
-        if self.ckpt_subdir:
-            self.ckpt_dir = os.path.join(KAG_PROJECT_CONF.ckpt_dir, self.ckpt_subdir)
+        self._checkpointer_initialized = False
 
-            self.checkpointer: CheckPointer = CheckpointerManager.get_checkpointer(
-                {
-                    "type": "zodb",
-                    "ckpt_dir": self.ckpt_dir,
-                    "rank": rank,
-                    "world_size": world_size,
-                }
-            )
-        else:
-            self.checkpointer = None
+    @property
+    def checkpointer(self):
+        if not self._checkpointer_initialized:
+            if self.ckpt_subdir:
+                self.ckpt_dir = os.path.join(
+                    KAG_PROJECT_CONF.ckpt_dir, self.ckpt_subdir
+                )
+                self._checkpointer: CheckPointer = CheckpointerManager.get_checkpointer(
+                    {
+                        "type": "diskcache",
+                        "ckpt_dir": self.ckpt_dir,
+                        "rank": self.sharding_info.get_rank(),
+                        "world_size": self.sharding_info.get_world_size(),
+                    }
+                )
+
+            else:
+                self._checkpointer = None
+            self._checkpointer_initialized = True
+        return self._checkpointer
 
     @property
     def type(self):
@@ -85,16 +96,13 @@ class BuilderComponent(Component, Registrable):
         """
         return "BUILDER"
 
-    def batch(self, inputs: List[Input], **kwargs) -> List[Output]:
-        results = []
-        for input in inputs:
-            results.extend(self.invoke(input, **kwargs))
-        return results
+    @property
+    def input_types(self) -> Input:
+        return str
 
-    def _handle(self, input: Dict) -> List[Dict]:
-        _input = self.input_types.from_dict(input) if isinstance(input, dict) else input
-        _output = self.invoke(_input)
-        return [_o.to_dict() for _o in _output if _o]
+    @property
+    def output_types(self) -> Output:
+        return str
 
     @property
     def ckpt_subdir(self):
@@ -204,3 +212,125 @@ class BuilderComponent(Component, Registrable):
         else:
             output = await self._ainvoke(input_data, **kwargs)
             return [BuilderComponentData(x, output_key) for x in output]
+
+
+class MPBuilderComponentWrapper(BuilderComponent):
+    """Multiprocessing wrapper for CPU-bound BuilderComponent instances.
+
+    This class wraps a BuilderComponent to execute its _invoke method in a
+    separate process using a ProcessPoolExecutor. This is suitable for CPU-bound
+    operations that can benefit from parallel execution.
+
+    Attributes:
+        max_workers (int): Maximum number of parallel worker processes.
+        _executor (ProcessPoolExecutor): Process pool for parallel task execution.
+        _obj (BuilderComponent): Wrapped component instance for main process access.
+    """
+
+    def __init__(
+        self, component_config: dict, max_workers: int = os.cpu_count(), **kwargs
+    ):
+        """Initialize multiprocessing wrapper.
+
+        Args:
+            component_config (dict): Configuration dictionary for the wrapped component.
+            max_workers (int, optional): Maximum number of parallel workers. Defaults to CPU count.
+            **kwargs: Additional keyword arguments for base class initialization.
+
+        """
+        self.max_workers = max_workers
+        component_config = dict(component_config)
+        self._executor = concurrent.futures.ProcessPoolExecutor(
+            max_workers=self.max_workers,
+            initializer=MPBuilderComponentWrapper._init_worker,
+            initargs=(
+                self.get_cls(),
+                component_config,
+            ),
+        )
+
+        self._obj = self.get_cls().from_config(copy.deepcopy(component_config))
+        super().__init__(**kwargs)
+
+    def get_cls(self):
+        """Abstract method to get the class of component to be wrapped.
+
+        Returns:
+            type: Class reference of the component to be parallelized.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
+        raise NotImplementedError("get_cls not implemented yet.")
+
+    @staticmethod
+    def _init_worker(cls, component_config):
+        """Worker process initializer.
+
+        Args:
+            cls (type): Component class from get_cls()
+            component_config (dict): Configuration for component instantiation
+
+        Creates:
+            PROCESS_COMPONENT (BuilderComponent): Component instance in worker process
+        """
+        global PROCESS_COMPONENT
+        PROCESS_COMPONENT = cls.from_config(copy.deepcopy(component_config))
+
+    @staticmethod
+    def _invoke_in_worker(input, **kwargs):
+        """Execute component processing in worker process.
+
+        Args:
+            input (Input): Input data for processing
+            **kwargs: Additional arguments for component._invoke()
+
+        Returns:
+            List[Output]: Processing results from worker process
+        """
+        result = PROCESS_COMPONENT._invoke(input, **kwargs)
+        return result
+
+    def _invoke(self, input: Input, **kwargs) -> List[Output]:
+        """Synchronous execution wrapper.
+
+        Args:
+            input (Input): Input data for processing
+            **kwargs: Additional arguments for component._invoke()
+
+        Returns:
+            List[Output]: Processing results from worker process
+        """
+        future = self._executor.submit(partial(self._invoke_in_worker, input, **kwargs))
+        return future.result()
+
+    async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
+        """Asynchronous execution wrapper.
+
+        Args:
+            input (Input): Input data for processing
+            **kwargs: Additional arguments for component._invoke()
+
+        Returns:
+            List[Output]: Processing results from worker process
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            self._executor, partial(self._invoke_in_worker, input, **kwargs)
+        )
+
+    @property
+    def input_types(self) -> Input:
+        return self._obj.input_types
+
+    @property
+    def output_types(self) -> Output:
+        return self._obj.output_types
+
+    @property
+    def ckpt_subdir(self):
+        return self._obj.ckpt_subdir
+
+    @property
+    def inherit_input_key(self):
+        return self._obj.inherit_input_key
