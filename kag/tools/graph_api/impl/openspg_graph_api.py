@@ -173,7 +173,6 @@ class OpenSPGGraphApi(GraphApiABC):
         dsl_query = f"""
         MATCH (s:`{entity.type}`)-[p:rdf_expand()]-(o:Entity)
         WHERE s.id in $sid
-        )
         RETURN s,p,o,s.id,o.id
         """
         s_biz_id_with_type_name = generate_biz_id_with_type(entity.biz_id, entity.type)
