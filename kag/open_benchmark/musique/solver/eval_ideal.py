@@ -10,7 +10,7 @@ from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, do_main, running_paras
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter
-
+from kag.interface import LLMClient
 logger = logging.getLogger(__name__)
 
 
@@ -23,20 +23,24 @@ class EvaForMusique(EvalQa):
         self.solver_pipeline_name = solver_pipeline_name
         self.task_name = "musique"
 
-    def get_supporing_facts(self, sample):
-        return ""
-
     async def qa(self, query, supporting_facts, gold):
-        reporter: TraceLogReporter = TraceLogReporter()
-        pipeline = SolverPipelineABC.from_config(
-            KAG_CONFIG.all_config[self.solver_pipeline_name]
-        )
-        answer = await pipeline.ainvoke(query, reporter=reporter, gold=gold)
+        promt = f"""
+            "Answer the question based on the given reference.Only give me the answer and do not output any other words."
+            "\nThe following are given reference:{supporting_facts} \nQuestion: {query}"
+            """
 
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
+        llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
+        result = llm.__call__(promt)
+        trace_log = {"info":{"prompt": promt}}
+        return result, trace_log
 
-        info, status = reporter.generate_report_data()
-        return answer, {"info": info.to_dict(), "status": status}
+    def get_supporing_facts(self, sample):
+        paragraphs = sample["paragraphs"]
+        supporing_facts = []
+        for paragraph in paragraphs:
+            if paragraph["is_supporting"] == True:
+                supporing_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
+        return supporing_facts
 
     def load_data(self, file_path):
         with open(file_path, "r") as f:

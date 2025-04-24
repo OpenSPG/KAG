@@ -44,6 +44,7 @@ class EvalQa:
     async def async_process_sample(self, data):
         sample_idx, sample, ckpt = data
         question = self.get_question(sample)
+        supporting_facts = self.get_supporing_facts(sample)
         gold = self.get_answer(sample)
         try:
             if ckpt and question in ckpt:
@@ -51,7 +52,7 @@ class EvalQa:
                 prediction, trace_log = ckpt.read_from_ckpt(question)
             else:
                 print(f"processing answer to question: {question}")
-                prediction, trace_log = await self.qa(query=question, gold=gold)
+                prediction, trace_log = await self.qa(query=question, supporting_facts = supporting_facts, gold=gold)
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
 
