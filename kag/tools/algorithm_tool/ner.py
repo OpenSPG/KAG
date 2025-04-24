@@ -6,7 +6,7 @@ from typing import List, Dict
 from tenacity import stop_after_attempt, retry
 
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.interface import ToolABC, PromptABC
+from kag.interface import ToolABC, PromptABC, LLMClient
 from kag.interface.solver.base_model import SPOEntity
 from kag.solver.utils import init_prompt_with_fallback
 
@@ -18,7 +18,7 @@ ner_tool_cache = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 class Ner(ToolABC):
     def __init__(
         self,
-        llm_module,
+        llm_module: LLMClient,
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         with_semantic=False,
