@@ -11,6 +11,7 @@ from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, do_main, running_paras
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 from kag.interface import LLMClient
+import random
 logger = logging.getLogger(__name__)
 
 
@@ -43,8 +44,11 @@ class EvaForMusique(EvalQa):
                 supporing_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
             else:
                 non_supporting_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
-        non_supporting_facts[:10].extend(supporing_facts)
-        return supporing_facts
+
+        reslist = non_supporting_facts[:10]
+        reslist.extend(supporing_facts)
+        # random.shuffle(reslist)
+        return reslist
 
     def load_data(self, file_path):
         with open(file_path, "r") as f:
