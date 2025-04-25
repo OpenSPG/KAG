@@ -52,8 +52,9 @@ class EvalQa:
                 prediction, trace_log = ckpt.read_from_ckpt(question)
             else:
                 print(f"processing answer to question: {question}")
-                prediction, trace_log = await self.qa(query=question, supporting_facts = supporting_facts, gold=gold)
-                if ckpt:
+                prediction, trace_log = await self.qa(question, gold, supporting_facts)
+
+            if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
 
             metrics = await asyncio.to_thread(

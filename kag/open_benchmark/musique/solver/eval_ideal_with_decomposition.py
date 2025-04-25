@@ -15,7 +15,7 @@ import random
 logger = logging.getLogger(__name__)
 
 
-class EvaForMusique(EvalQa):
+class EvaForMusiqueWithDecomposition(EvalQa):
     """
     init for kag client
     """
@@ -24,30 +24,67 @@ class EvaForMusique(EvalQa):
         self.solver_pipeline_name = solver_pipeline_name
         self.task_name = "musique"
 
-    async def qa(self, query, gold, supporting_facts = None):
-        promt = f"""
-            "Answer the question based on the given reference.Only give me the answer and do not output any other words."
-            "\nThe following are given reference:{supporting_facts} \nQuestion: {query}"
-            """
-
+    async def qa(self, query, gold, sub_question_items = None):
         llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
-        result = llm.__call__(promt)
-        trace_log = {"info":{"prompt": promt}}
+
+        tmp_res_dict = {}
+        result = None
+        index = 1
+        for sub_question_item in sub_question_items:
+            sub_question_idx = sub_question_item["key"]
+            sub_question = sub_question_item["value"]["sub_question"]
+
+            sub_question_supporing_paragraph = sub_question_item["value"]["supporing_paragraph"]
+            if "#1" in sub_question:
+                sub_answer = tmp_res_dict["#1"]
+                sub_question = sub_question.replace("#1", sub_answer)
+            elif "#2" in sub_question:
+                sub_answer = tmp_res_dict["#2"]
+                sub_question = sub_question.replace("#2", sub_answer)
+            elif "#3" in sub_question:
+                sub_answer = tmp_res_dict["#3"]
+                sub_question = sub_question.replace("#3", sub_answer)
+
+            promt = f"""
+                "Answer the question based on the given reference.Only give me the answer and do not output any other words."
+                "\nThe following are given reference:{sub_question_supporing_paragraph} \nQuestion: {sub_question}"
+                """
+
+            sub_prediction = llm.__call__(promt)
+            key = f"#{index}"
+            tmp_res_dict[key] = sub_prediction
+            sub_question_item["value"]["sub_prediction"] = sub_prediction
+            index += 1
+            result = sub_prediction
+
+        trace_log = {"info":{"trace": sub_question_items}}
         return result, trace_log
 
     def get_supporing_facts(self, sample):
         paragraphs = sample["paragraphs"]
-        supporing_facts = []
-        non_supporting_facts= []
+        supporting_facts = {}
         for paragraph in paragraphs:
             if paragraph["is_supporting"] == True:
-                supporing_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
-            else:
-                non_supporting_facts.append({"title":paragraph["title"], "content":paragraph["paragraph_text"]})
+                idx = paragraph["idx"]
+                title = paragraph["title"]
+                content = paragraph["paragraph_text"]
+                supporting_facts[idx] = f"{title}\n{content}"
 
-        reslist = non_supporting_facts[:10]
-        reslist.extend(supporing_facts)
-        random.shuffle(reslist)
+        reslist = []
+        question_decomposition_list = sample["question_decomposition"]
+        index = 0
+        for question_decomposition in question_decomposition_list:
+            sub_question = question_decomposition["question"]
+            sub_answer = question_decomposition["answer"]
+            paragraph_support_idx = question_decomposition["paragraph_support_idx"]
+            supporing_paragraph = supporting_facts[paragraph_support_idx]
+
+            key = f"#{index}"
+            index += 1
+
+            value = {"sub_question":sub_question, "supporing_paragraph": supporing_paragraph, "sub_answer": sub_answer}
+            reslist.append({"key":key, "value":value})
+
         return reslist
 
     def load_data(self, file_path):
@@ -92,7 +129,7 @@ if __name__ == "__main__":
         thread_num=args.thread_num,
         upper_limit=args.upper_limit,
         collect_file=args.res_file,
-        eval_obj=EvaForMusique(),
+        eval_obj=EvaForMusiqueWithDecomposition(),
     )
     # obj = EvaForMusique()
     # res = asyncio.run(obj.qa("When did the party that hold the majority in the House of Reps take control of the branch that approves members of the American cabinet?", ""))
