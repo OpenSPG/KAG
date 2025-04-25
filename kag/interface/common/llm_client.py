@@ -103,7 +103,9 @@ class LLMClient(Registrable):
         _start = res.find("```json")
         if _end != -1 and _start != -1:
             if _end == _start:
-                logger.error(f"response is not intact, please set max_tokens. res={res}")
+                logger.error(
+                    f"response is not intact, please set max_tokens. res={res}"
+                )
                 return res
             json_str = res[_start + len("```json") : _end].strip()
         else:
@@ -138,7 +140,9 @@ class LLMClient(Registrable):
         _start = res.find("```json")
         if _end != -1 and _start != -1:
             if _end == _start:
-                logger.error(f"response is not intact, please set max_tokens. res={res}")
+                logger.error(
+                    f"response is not intact, please set max_tokens. res={res}"
+                )
                 return res
             json_str = res[_start + len("```json") : _end].strip()
         else:
