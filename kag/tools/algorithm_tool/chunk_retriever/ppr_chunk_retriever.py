@@ -369,7 +369,7 @@ class PprChunkRetriever(ToolABC):
                     )
                 )
         return matched_docs, self._convert_relation_datas(
-            chunk_docs=matched_docs, matched_entities=matched_entities[:top_k]
+            chunk_docs=matched_docs[:top_k], matched_entities=matched_entities
         )
 
     def _convert_relation_datas(self, chunk_docs, matched_entities):

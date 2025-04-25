@@ -12,7 +12,7 @@
 from typing import Dict, List, Callable
 
 import pandas
-
+from tenacity import retry, stop_after_attempt, wait_exponential
 from knext.schema.client import BASIC_TYPES
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
@@ -47,17 +47,25 @@ class SPGTypeMapping(MappingABC):
         if property_mapping is None:
             property_mapping = {}
         super().__init__(**kwargs)
+        self.init_schema(spg_type_name)
+        self.spg_type = self.schema.get(spg_type_name)
+
+        self.property_mapping = property_mapping
+        self.link_funcs: Dict = dict()
+        self.fuse_func = fuse_func
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=10, max=60),
+        reraise=True,
+    )
+    def init_schema(self, spg_type_name):
         self.schema = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
         ).load()
         assert (
             spg_type_name in self.schema
         ), f"SPG type [{spg_type_name}] does not exist."
-        self.spg_type = self.schema.get(spg_type_name)
-
-        self.property_mapping = property_mapping
-        self.link_funcs: Dict = dict()
-        self.fuse_func = fuse_func
 
     def add_property_mapping(
         self,
