@@ -47,7 +47,7 @@ class EvaForMusique(EvalQa):
 
         reslist = non_supporting_facts[:10]
         reslist.extend(supporing_facts)
-        # random.shuffle(reslist)
+        random.shuffle(reslist)
         return reslist
 
     def load_data(self, file_path):
