@@ -36,14 +36,20 @@ class EvaForMusiqueWithDecomposition(EvalQa):
 
             sub_question_supporing_paragraph = sub_question_item["value"]["supporing_paragraph"]
             if "#1" in sub_question:
-                sub_answer = tmp_res_dict["#1"]
-                sub_question = sub_question.replace("#1", sub_answer)
-            elif "#2" in sub_question:
-                sub_answer = tmp_res_dict["#2"]
-                sub_question = sub_question.replace("#2", sub_answer)
-            elif "#3" in sub_question:
-                sub_answer = tmp_res_dict["#3"]
-                sub_question = sub_question.replace("#3", sub_answer)
+                pre_question_prediction = tmp_res_dict["#1"]
+                sub_question = sub_question.replace("#1", pre_question_prediction)
+            if "#2" in sub_question:
+                pre_question_prediction = tmp_res_dict["#2"]
+                sub_question = sub_question.replace("#2", pre_question_prediction)
+            if "#3" in sub_question:
+                pre_question_prediction = tmp_res_dict["#3"]
+                sub_question = sub_question.replace("#3", pre_question_prediction)
+            if "#4" in sub_question:
+                pre_question_prediction = tmp_res_dict["#4"]
+                sub_question = sub_question.replace("#4", pre_question_prediction)
+            if "#5" in sub_question:
+                pre_question_prediction = tmp_res_dict["#5"]
+                sub_question = sub_question.replace("#5", pre_question_prediction)
 
             promt = f"""
                 "Answer the question based on the given reference.Only give me the answer and do not output any other words."
@@ -54,6 +60,7 @@ class EvaForMusiqueWithDecomposition(EvalQa):
             key = f"#{index}"
             tmp_res_dict[key] = sub_prediction
             sub_question_item["value"]["sub_prediction"] = sub_prediction
+            sub_question_item["value"]["sub_question"] = sub_question
             index += 1
             result = sub_prediction
 
@@ -72,7 +79,7 @@ class EvaForMusiqueWithDecomposition(EvalQa):
 
         reslist = []
         question_decomposition_list = sample["question_decomposition"]
-        index = 0
+        index = 1
         for question_decomposition in question_decomposition_list:
             sub_question = question_decomposition["question"]
             sub_answer = question_decomposition["answer"]
