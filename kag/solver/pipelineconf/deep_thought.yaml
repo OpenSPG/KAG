@@ -44,7 +44,7 @@ rc:
 
 kag_merger:
   type: kg_merger
-  top_k: 20
+  top_k: 15
   llm_module: "{chat_llm}"
   summary_prompt:
     type: default_thought_then_answer
