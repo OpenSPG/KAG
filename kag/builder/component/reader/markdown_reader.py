@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright 2023 OpenSPG Authors
 #
@@ -12,12 +13,12 @@
 
 import os
 import io
+import re
 
 import markdown
 from bs4 import BeautifulSoup, Tag
 
 import logging
-import re
 import requests
 import pandas as pd
 from typing import List, Dict, Tuple
@@ -320,6 +321,11 @@ class MarkDownReader(ReaderABC):
     ) -> Tuple[
         List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]
     ]:
+        # 1. 移除标题行行首的空格 (例如 " # Title" -> "# Title")
+        content = re.sub(r"^\s+(#+\s)", r"\1", content, flags=re.MULTILINE)
+        # 2. 在标题行前确保有空行 (处理非文件开头，且前面不是空行的标题)
+        content = re.sub(r"(?<=[^\n])\n(#+\s)", r"\n\n\1", content)
+
         # Convert Markdown to HTML with additional extensions for lists
         html = markdown.markdown(
             content, extensions=["tables", "nl2br", "sane_lists", "fenced_code"]
@@ -918,18 +924,9 @@ if __name__ == "__main__":
     reader = ReaderABC.from_config(
         {
             "type": "md",
-            "length_splitter": {
-                "type": "length_splitter",
-                "split_length": 250,
-                "window_length": 50,
-                "strict_length": True,
-            },
+            "cut_depth": 1,
         }
     )
-    file_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/tests/unit/builder/data/finance1.md"
-    chunks, subgraph = reader.invoke(file_path)
-    dump_chunks(chunks, output_path="./builder/data/chunks.json")
-
-    # visualize_graph(subgraph)
-    assert len(chunks) > 0
-    print(chunks)
+    dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
+    chunks = reader.invoke(file_path, write_ckpt=False)
