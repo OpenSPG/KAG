@@ -321,9 +321,9 @@ class MarkDownReader(ReaderABC):
     ) -> Tuple[
         List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]
     ]:
-        # 1. 移除标题行行首的空格 (例如 " # Title" -> "# Title")
+        # 1. Remove leading spaces from heading lines (e.g., " # Title" -> "# Title")
         content = re.sub(r"^\s+(#+\s)", r"\1", content, flags=re.MULTILINE)
-        # 2. 在标题行前确保有空行 (处理非文件开头，且前面不是空行的标题)
+        # 2. Ensure there's a blank line before heading lines (for headings not at the beginning of the file and not preceded by an empty line)
         content = re.sub(r"(?<=[^\n])\n(#+\s)", r"\n\n\1", content)
 
         # Convert Markdown to HTML with additional extensions for lists
