@@ -27,7 +27,7 @@ from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.writer.kg_writer import KGWriter
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum, dump_chunks
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
@@ -597,7 +597,6 @@ class MarkDownReader(ReaderABC):
             parent_contents = []
 
         current_titles = parent_titles + ([node.title] if node.title != "root" else [])
-
         # If current node level equals target level, create output
         if node.level >= self.cut_depth:
             full_title = " / ".join(current_titles)
