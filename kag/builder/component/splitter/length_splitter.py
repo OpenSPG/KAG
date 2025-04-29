@@ -18,6 +18,10 @@ from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 @SplitterABC.register("length")
 @SplitterABC.register("length_splitter")
