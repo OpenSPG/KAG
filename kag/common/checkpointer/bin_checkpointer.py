@@ -14,7 +14,9 @@ import logging
 import transaction
 import threading
 import pickle
+from diskcache import Cache
 import BTrees.OOBTree
+from typing import Any
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
 from kag.common.checkpointer.base import CheckPointer
@@ -215,3 +217,38 @@ class ZODBCheckPointer(CheckPointer):
         with self._lock:
             with self._ckpt.transaction() as conn:
                 return set(conn.root.data.keys())
+
+
+@CheckPointer.register("diskcache")
+class DiskCacheCheckPointer(CheckPointer):
+    def __init__(self, ckpt_dir: str, rank: int = 0, world_size: int = 1):
+        self._lock = threading.Lock()
+        super().__init__(ckpt_dir, rank, world_size)
+
+    def open(self):
+        return Cache(
+            directory=self._ckpt_dir,
+            shards=8,
+            timeout=60,
+            size_limit=1e12,
+            disk_min_file_size=1024**2,
+        )
+
+    def write_to_ckpt(self, key: str, value: Any):
+        self._ckpt.set(key, value, retry=True)
+
+    def read_from_ckpt(self, key: str) -> Any:
+        return self._ckpt.get(key, default=None, retry=True)
+
+    def exists(self, key):
+        return key in self._ckpt
+
+    def size(self):
+        return len(self._ckpt)
+
+    def keys(self):
+        return list(self._ckpt.iterkeys())
+
+    def _close(self):
+        with self._lock:
+            self._ckpt.close()

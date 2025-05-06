@@ -330,7 +330,7 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         # )
         self.processed_chunks = CheckpointerManager.get_checkpointer(
             {
-                "type": "zodb",
+                "type": "diskcache",
                 "ckpt_dir": os.path.join(self.ckpt_dir, "chain"),
                 "rank": self.scanner.sharding_info.get_rank(),
                 "world_size": self.scanner.sharding_info.get_world_size(),

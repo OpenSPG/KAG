@@ -9,20 +9,14 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-from kag.common.checkpointer.base import CheckPointer, CheckpointerManager
-from kag.common.checkpointer.txt_checkpointer import TxtCheckPointer
-from kag.common.checkpointer.bin_checkpointer import (
-    BinCheckPointer,
-    ZODBCheckPointer,
-    DiskCacheCheckPointer,
-)
+
+from kag.interface import ReaderABC
+from kag.interface.builder.base import MPBuilderComponentWrapper
 
 
-__all__ = [
-    "CheckPointer",
-    "CheckpointerManager",
-    "TxtCheckPointer",
-    "BinCheckPointer",
-    "ZODBCheckPointer",
-    "DiskCacheCheckPointer",
-]
+@ReaderABC.register("mp")
+@ReaderABC.register("mp_reader")
+class MPReaderWrapper(MPBuilderComponentWrapper):
+    @staticmethod
+    def get_cls():
+        return ReaderABC
