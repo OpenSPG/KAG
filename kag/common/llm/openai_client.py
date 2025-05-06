@@ -76,6 +76,7 @@ class OpenAIClient(LLMClient):
         logger.debug(
             f"Initialize OpenAIClient with rate limit {max_rate} every {time_period}s"
         )
+        logger.info(f"OpenAIClient max_tokens={self.max_tokens}")
 
     def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """
@@ -117,6 +118,7 @@ class OpenAIClient(LLMClient):
             temperature=self.temperature,
             timeout=self.timeout,
             tools=tools,
+            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -207,6 +209,7 @@ class OpenAIClient(LLMClient):
             temperature=self.temperature,
             timeout=self.timeout,
             tools=tools,
+            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -355,6 +358,7 @@ class AzureOpenAIClient(LLMClient):
             stream=self.stream,
             temperature=self.temperature,
             timeout=self.timeout,
+            max_tokens=self.max_tokens,
         )
         rsp = response.choices[0].message.content
         tool_calls = response.choices[0].message.tool_calls
@@ -400,6 +404,7 @@ class AzureOpenAIClient(LLMClient):
             stream=self.stream,
             temperature=self.temperature,
             timeout=self.timeout,
+            max_tokens=self.max_tokens,
         )
         rsp = response.choices[0].message.content
         tool_calls = response.choices[0].message.tool_calls

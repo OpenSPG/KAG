@@ -16,6 +16,7 @@ import tarfile
 import requests
 import logging
 import asyncio
+import threading
 
 from tenacity import retry, stop_after_attempt
 from kag.common.rate_limiter import RATE_LIMITER_MANGER
@@ -31,6 +32,19 @@ class VectorizeModelABC(Registrable):
     """
     An abstract base class that defines the interface for converting text into embedding vectors.
     """
+
+    _instances = {}
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        key = cls.generate_key(*args, **kwargs)
+
+        if key in cls._instances:
+            return cls._instances[key]
+
+        instance = super().__new__(cls)
+        cls._instances[key] = instance
+        return instance
 
     def __init__(
         self,
@@ -90,6 +104,10 @@ class VectorizeModelABC(Registrable):
         except Exception as ex:
             message = "the embedding service is not available"
             raise RuntimeError(message) from ex
+
+    @classmethod
+    def generate_key(self, cls, *args, **kwargs) -> str:
+        return f"{cls}"
 
     @retry(stop=stop_after_attempt(3), reraise=True)
     def vectorize(
