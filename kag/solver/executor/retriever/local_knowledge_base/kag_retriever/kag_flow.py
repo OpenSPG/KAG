@@ -1,3 +1,4 @@
+from kag.interface.common.llm_client import LLMClient
 import networkx as nx
 import concurrent.futures
 
@@ -38,7 +39,7 @@ def _merge_graph(graph_data, input_data: List[RetrievedData]):
 
 
 class KAGFlow:
-    def __init__(self, flow_str):
+    def __init__(self, flow_str, llm_client: LLMClient = None):
         # Initialize the KAGFlow with natural language query, logic nodes, and flow string
         self.flow_str = flow_str.strip()
 
@@ -51,23 +52,25 @@ class KAGFlow:
                     "recognition_threshold": 0.9,
                     "exclude_types": ["Chunk"],
                 },
+                "llm": llm_client.to_config() if llm_client else None,
             },
             "kg_fr": {
                 "type": "kg_fr_open_spg",
                 "top_k": 20,
                 "path_select": {
                     "type": "fuzzy_one_hop_select",
-                    "llm_client": get_default_chat_llm_config(),
+                    "llm_client": llm_client.to_config(),
                 },
                 "ppr_chunk_retriever_tool": {
                     "type": "ppr_chunk_retriever",
-                    "llm_client": get_default_chat_llm_config(),
+                    "llm_client": llm_client.to_config(),
                 },
                 "entity_linking": {
                     "type": "entity_linking",
                     "recognition_threshold": 0.8,
                     "exclude_types": ["Chunk"],
                 },
+                "llm": llm_client.to_config(),
             },
             "rc": {
                 "type": "rc_open_spg",
@@ -79,7 +82,7 @@ class KAGFlow:
             "kag_merger": {
                 "type": "kg_merger",
                 "top_k": 20,
-                "llm_module": get_default_chat_llm_config(),
+                "llm_module": llm_client.to_config(),
                 "summary_prompt": {"type": "default_thought_then_answer"},
             },
         }

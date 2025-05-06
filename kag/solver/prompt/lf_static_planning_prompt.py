@@ -17,6 +17,7 @@ from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import get_now
 from kag.interface import PromptABC, Task
+from kag.interface.common.vectorize_model import VectorizeModelABC
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
@@ -141,7 +142,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         },
     ]
 
-    def __init__(self, **kwargs):
+    def __init__(self, vectorize_model: VectorizeModelABC = None, **kwargs):
         self.template_zh = f"""
             {{
                 "time": "今天是{get_now(language='zh')}"
@@ -177,6 +178,9 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 """
         super().__init__(**kwargs)
 
+        logger.info(
+            f"KAG_PROJECT_ID: {KAG_PROJECT_CONF.project_id}, KAG_PROJECT_HOST_ADDR: {KAG_PROJECT_CONF.host_addr}"
+        )
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
@@ -186,7 +190,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
             )
         )
 
-        self.std_schema = DefaultStdSchema()
+        self.std_schema = DefaultStdSchema(vectorize_model=vectorize_model)
 
         self.logic_node_parser = ParseLogicForm(
             schema=self.schema_helper, schema_retrieval=self.std_schema

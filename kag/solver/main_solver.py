@@ -106,11 +106,11 @@ def get_pipeline_conf(use_pipeline_name, config):
                 backup_key = "vectorizer"
             if backup_key:
                 value = config.get(backup_key)
-        if value is None:
-            raise RuntimeError(
-                f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config."
-            )
-        value["enable_check"] = False
+        # if value is None:
+        #     raise RuntimeError(
+        #         f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config."
+        #     )
+        # value["enable_check"] = False
         placeholders_replacement_map[placeholder] = value
     default_pipeline_conf = replace_placeholders(
         conf_map[use_pipeline_name], placeholders_replacement_map
@@ -118,7 +118,9 @@ def get_pipeline_conf(use_pipeline_name, config):
     default_solver_pipeline = default_pipeline_conf[pipeline_name]
 
     if use_pipeline_name == "mcp_pipeline":
-        mcp_servers = config.get("mcpServers", None)
+        mcp_servers = config["kb"][0]["mcp_servers"]
+        logger.info(f"mcp_servers = {mcp_servers}")
+        logger.info(f"config = {config}")
         mcp_executors = []
         if mcp_servers is not None:
             for mcp_name, mcp_conf in mcp_servers.items():
@@ -149,16 +151,15 @@ def is_chinese(text):
     return bool(chinese_pattern.search(text))
 
 
-async def qa(task_id, query, project_id, host_addr, params=None):
-    if params is None:
-        params = {}
-    use_pipeline = params.get("usePipeline", "think_pipeline")
-    qa_config = params.get("config", KAG_CONFIG.all_config)
+async def qa(task_id, query, project_id, host_addr, app_id, params={}):
+    qa_config = params.get("config")
+    logger.info(f"qa_config = {qa_config}")
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
-    print(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
+    use_pipeline = qa_config["chat"]["ename"]
+    logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
-    print(
+    logger.info(
         f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
     )
     reporter: OpenSPGReporter = OpenSPGReporter(
@@ -173,6 +174,15 @@ async def qa(task_id, query, project_id, host_addr, params=None):
             KAG_PROJECT_CONF.language = "zh"
         else:
             KAG_PROJECT_CONF.language = "en"
+
+        KAG_PROJECT_CONF.host_addr = host_addr
+        KAG_PROJECT_CONF.project_id = qa_config["kb"][0]["id"]
+        use_pipeline = qa_config["chat"]["ename"]
+
+        try:
+            qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
+        except Exception as e:
+            logger.info(f"vectorize_model not found in config. Error: {str(e)}")
 
         custom_pipeline_conf = copy.deepcopy(
             KAG_CONFIG.all_config.get("solver_pipeline", None)
@@ -201,7 +211,7 @@ async def qa(task_id, query, project_id, host_addr, params=None):
         if KAG_PROJECT_CONF.language == "en":
             answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
         else:
-            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。with qa_config={qa_config},pipeline_config={pipeline_config}"
         reporter.add_report_line("answer", "error", answer, "ERROR")
     await reporter.stop()
     return answer
@@ -217,6 +227,7 @@ class SolverMain:
         is_report=True,
         host_addr="http://127.0.0.1:8887",
         params=None,
+        app_id="",
     ):
         answer = None
         if params is None:
@@ -229,6 +240,7 @@ class SolverMain:
                     host_addr=host_addr,
                     query=query,
                     params=params,
+                    app_id=app_id,
                 )
             )
             logger.info(f"{query} answer={answer}")
@@ -246,14 +258,20 @@ class SolverMain:
 if __name__ == "__main__":
     from kag.bridge.spg_server_bridge import init_kag_config
 
-    init_kag_config("4200052", "https://spg-pre.alipay.com")
+    # init_kag_config(
+    #     "4200052", "https://spg-pre.alipay.com"
+    # )
+    params = {}
     res = SolverMain().invoke(
         4200052,
-        6300299,
-        "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
+        7700089,
+        # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
+        "周杰伦有哪些专辑",
         "4700026",
         True,
-        host_addr="https://spg-pre.alipay.com",
+        # host_addr="http://spg-pre.alipay.com",
+        host_addr="http://antspg-gz00b-006003080066.sa128-sqa.alipay.net:8887",
+        params=params,
     )
     print("*" * 80)
     print("The Answer is: ", res)

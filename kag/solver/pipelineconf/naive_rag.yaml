@@ -21,7 +21,12 @@ solver_pipeline:
     llm_client: "{chat_llm}"
     generated_prompt:
       type: default_refer_generator_prompt
+    chunk_reranker:
+      type: rerank_by_vector
+      vectorize_model: "{vectorize_model}"
     enable_ref: true
 
+llm: "{chat_llm}"
+vectorize_model: "{vectorize_model}"
 
 #------------kag-solver configuration end----------------#

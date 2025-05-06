@@ -183,7 +183,7 @@ class KagHybridExecutor(ExecutorABC):
     """
 
     def __init__(
-        self, flow, lf_rewriter: KAGLFRewriter, llm_module: LLMClient = None, **kwargs
+        self, flow, lf_rewriter: KAGLFRewriter, llm_client: LLMClient = None, **kwargs
     ):
         super().__init__(**kwargs)
         self.lf_rewriter: KAGLFRewriter = lf_rewriter
@@ -191,13 +191,11 @@ class KagHybridExecutor(ExecutorABC):
         self.solve_question_without_spo_prompt = init_prompt_with_fallback(
             "summary_question", KAG_PROJECT_CONF.biz_scene
         )
-        self.llm_module = llm_module or LLMClient.from_config(
+        self.llm_client = llm_client or LLMClient.from_config(
             get_default_chat_llm_config()
         )
 
-        self.flow: KAGFlow = KAGFlow(
-            flow_str=self.flow_str,
-        )
+        self.flow: KAGFlow = KAGFlow(flow_str=self.flow_str, llm_client=self.llm_client)
 
     @property
     def output_types(self):

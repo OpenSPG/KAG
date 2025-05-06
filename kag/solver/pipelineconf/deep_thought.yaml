@@ -5,11 +5,14 @@ kg_cs:
   type: kg_cs_open_spg
   path_select:
     type: exact_one_hop_select
+    vectorize_model: "{vectorize_model}"
   entity_linking:
     type: entity_linking
     recognition_threshold: 0.9
     exclude_types:
       - "Chunk"
+    vectorize_model: "{vectorize_model}"
+  llm: "{chat_llm}"
 
 kg_fr:
   type: kg_fr_open_spg
@@ -17,14 +20,18 @@ kg_fr:
   path_select:
     type: fuzzy_one_hop_select
     llm_client: "{chat_llm}"
+    vectorize_model: "{vectorize_model}"
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
     llm_client: "{ner_llm}"
+    vectorize_model: "{vectorize_model}"
   entity_linking:
     type: entity_linking
     recognition_threshold: 0.8
     exclude_types:
       - "Chunk"
+    vectorize_model: "{vectorize_model}"
+  llm: "{chat_llm}"
 
 
 rc:
@@ -37,7 +44,7 @@ rc:
 
 kag_merger:
   type: kg_merger
-  top_k: 20
+  top_k: 15
   llm_module: "{chat_llm}"
   summary_prompt:
     type: default_thought_then_answer
@@ -53,14 +60,17 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
     vectorize_model: "{vectorize_model}"
   flow: |
     kg_cs->kg_fr->kag_merger;rc->kag_merger
+  llm_client: "{chat_llm}"
     
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
+  llm_module: "{chat_llm}"
+
 
 kag_deduce_executor: &kag_deduce_executor_conf
   type: kag_deduce_executor
-
+  llm_module: "{chat_llm}"
 
 py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor
@@ -73,6 +83,7 @@ solver_pipeline:
     llm: "{chat_llm}"
     plan_prompt:
       type: default_lf_static_planning
+      vectorize_model: "{vectorize_model}"
     rewrite_prompt:
       type: default_rewrite_sub_task_query
   executors:
@@ -85,6 +96,12 @@ solver_pipeline:
     llm_client: "{chat_llm}"
     generated_prompt:
       type: default_refer_generator_prompt
+    chunk_reranker:
+      type: rerank_by_vector
+      vectorize_model: "{vectorize_model}"
     enable_ref: true
+
+llm: "{chat_llm}"
+vectorize_model: "{vectorize_model}"
 
 #------------kag-solver configuration end----------------#
