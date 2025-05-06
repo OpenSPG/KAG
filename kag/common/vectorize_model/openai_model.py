@@ -45,15 +45,17 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             base_url (str, optional): The base URL for the OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        name = kwargs.pop("name", None)
-        if not name:
-            name = f"{api_key}{base_url}{model}"
+        name = self.generate_key(api_key, base_url, model)
 
         super().__init__(name, vector_dimensions, max_rate, time_period)
         self.model = model
         self.timeout = timeout
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.aclient = AsyncOpenAI(api_key=api_key, base_url=base_url)
+
+    @classmethod
+    def generate_key(cls, base_url, api_key, model, *args, **kwargs) -> str:
+        return f"{cls}_{base_url}_{api_key}_{model}"
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]
@@ -177,7 +179,8 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
             azure_deployment: A model deployment, if given sets the base client URL to include `/deployments/{azure_deployment}`.
                 Note: this means you won't be able to use non-deployment endpoints. Not supported with Assistants APIs.
         """
-        super().__init__(vector_dimensions, max_rate, time_period)
+        name = self.generate_key(api_key, base_url, model)
+        super().__init__(name, vector_dimensions, max_rate, time_period)
         self.model = model
         self.timeout = timeout
         self.client = AzureOpenAI(
@@ -198,6 +201,10 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
             azure_ad_token=azure_ad_token,
             azure_ad_token_provider=azure_ad_token_provider,
         )
+
+    @classmethod
+    def generate_key(cls, base_url, api_key, model, *args, **kwargs) -> str:
+        return f"{cls}_{base_url}_{api_key}_{model}"
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]
