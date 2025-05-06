@@ -35,9 +35,15 @@ class StdSchema(Registrable):
                 }
             )
         )
-        self.search_api = search_api or SearchApiABC.from_config(
-            {"type": "openspg_search_api"}
-        )
+        if search_api:
+            if isinstance(search_api, dict):
+                self.search_api = SearchApiABC.from_config(search_api)
+            else:
+                self.search_api = search_api
+        else:
+            self.search_api = SearchApiABC.from_config(
+                {"type": "openspg_search_api"}
+            )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
