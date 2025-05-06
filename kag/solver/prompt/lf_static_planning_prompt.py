@@ -142,7 +142,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         },
     ]
 
-    def __init__(self, vectorize_model: VectorizeModelABC = None, **kwargs):
+    def __init__(self, vectorize_model=None, search_api=None, **kwargs):
         self.template_zh = f"""
             {{
                 "time": "今天是{get_now(language='zh')}"
@@ -190,7 +190,9 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
             )
         )
 
-        self.std_schema = DefaultStdSchema(vectorize_model=vectorize_model)
+        self.std_schema = DefaultStdSchema(
+            vectorize_model=vectorize_model, search_api=search_api
+        )
 
         self.logic_node_parser = ParseLogicForm(
             schema=self.schema_helper, schema_retrieval=self.std_schema
