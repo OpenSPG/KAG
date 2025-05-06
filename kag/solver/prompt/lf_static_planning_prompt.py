@@ -186,7 +186,9 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
             )
         )
 
-        self.std_schema = DefaultStdSchema(vectorize_model=vectorize_model, search_api=search_api)
+        self.std_schema = DefaultStdSchema(
+            vectorize_model=vectorize_model, search_api=search_api
+        )
 
         self.logic_node_parser = ParseLogicForm(
             schema=self.schema_helper, schema_retrieval=self.std_schema
