@@ -36,6 +36,7 @@ class KAGGetSpoLF(KAGLFRewriter):
         llm_client: LLMClient,
         lf_trans_prompt: PromptABC,
         vectorize_model: VectorizeModelABC = None,
+        search_api=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -55,7 +56,7 @@ class KAGGetSpoLF(KAGLFRewriter):
         )
 
         self.std_schema = DefaultStdSchema(
-            vectorize_model=self.vectorize_model, llm_client=llm_client
+            vectorize_model=self.vectorize_model, search_api=search_api
         )
 
         self.logic_node_parser = ParseLogicForm(
