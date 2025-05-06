@@ -79,7 +79,7 @@ def merge_convert_info(
     entity_list = base_schema["entity_list"]
     for entity in entity_list:
         table_name = entity["data_table"]
-        entity_name_set.add(table_name)
+        entity_name_set.add(table_name.lower())
         pk = get_table_pk(mschema, table_name)
         entity["pk"] = pk
 
@@ -91,7 +91,7 @@ def merge_convert_info(
         one_degree_edge["edge_type"] = standardize_name(one_degree_edge["edge_type"])
         subject_table = one_degree_edge["subject_table"]
         object_table = one_degree_edge["object_table"]
-        if subject_table not in entity_name_set and object_table not in entity_name_set:
+        if subject_table.lower() not in entity_name_set and object_table.lower() not in entity_name_set:
             continue
         edge_list.append(one_degree_edge)
     for two_degree_edge in two_degree_edge_list:
@@ -111,6 +111,8 @@ def merge_convert_info(
         edge_type1 = two_degree_edge["edge_type_1"]
         edge_type2 = two_degree_edge["edge_type_2"]
         entity_type = two_degree_edge["entity_type"]
+        if entity_type.lower() in entity_name_set:
+            continue
         edge1 = {
             "type": "concept_edge",
             "edge_type": edge_type1,
@@ -140,6 +142,7 @@ def merge_convert_info(
 
 
 def convert_one_db(bird_path, db_name):
+    schema_info_list = []
     base_schema, mschema = get_graph_base_schema(bird_path=bird_path, db_name=db_name)
     print(json.dumps(base_schema, ensure_ascii=False))
     concept_schema = get_concept_schema(bird_path=bird_path, db_name=db_name)
@@ -167,13 +170,15 @@ def convert_one_db(bird_path, db_name):
     conn = sqlite3.connect(from_db_sqlite, check_same_thread=False)
     for entity in convert_info["entity_list"]:
         table_name = entity["data_table"]
-        convert_node(
+        info = convert_node(
             db_name,
             table_name,
             get_column_list_from_mschema(table_name, mschema),
             conn,
             node_path,
         )
+        info["property_list"] = entity["property_list"]
+        schema_info_list.append(info)
     for edge in convert_info["edge_list"]:
         convert_type = edge["type"]
         table_name = edge["data_table"]
@@ -183,7 +188,7 @@ def convert_one_db(bird_path, db_name):
             p = edge["edge_type"]
             s_column = edge["subject_column"]
             o_column = edge["object_column"]
-            convert_table_edge(
+            info = convert_table_edge(
                 db_name,
                 conn,
                 edge_path,
@@ -195,11 +200,12 @@ def convert_one_db(bird_path, db_name):
                 s_column,
                 o_column,
             )
+            schema_info_list.append(info)
         elif "fk_edge" == convert_type:
             s = f"{edge['subject_table']}.{edge['subject_column']}"
             o = f"{edge['object_table']}.{edge['object_column']}"
             p = edge["edge_type"]
-            convert_fk_edge(
+            info = convert_fk_edge(
                 db_name,
                 conn,
                 edge_path,
@@ -209,12 +215,13 @@ def convert_one_db(bird_path, db_name):
                 o,
                 p,
             )
+            schema_info_list.append(info)
         else:
             s = f"{edge['subject_table']}.{edge['subject_column']}"
             o = edge["object_table"]
             p = edge["edge_type"]
             o_type = edge["entity_type"]
-            convert_concept_edge(
+            infos = convert_concept_edge(
                 db_name,
                 conn,
                 edge_path,
@@ -226,9 +233,11 @@ def convert_one_db(bird_path, db_name):
                 p,
                 o_type,
             )
+            if infos:
+                schema_info_list.extend(infos)
         schema_file = os.path.join(bird_graph_data_path, f"{db_name}.schema.json")
         with open(schema_file, "w", encoding="utf-8") as f:
-            json.dump(convert_info, f, ensure_ascii=False, indent=2)
+            json.dump(schema_info_list, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,8 @@ from kag.examples.bird_graph.table_2_graph.m_schema.func import (
     get_table_pk,
 )
 
+WRITE_FLAG = True
+
 
 def convert_node(
     db_id, table_name: str, columns: list, conn: sqlite3.Connection, node_path: str
@@ -17,11 +19,13 @@ def convert_node(
     """
     转换表节点
     """
-    df, _ = get_df_from_sqlite(conn, table_name, columns)
+    df, pk = get_df_from_sqlite(conn, table_name, columns)
     table_name = table_name.replace(" ", "")
     node_type = f"{db_id}.{table_name}"
     csv_file = os.path.join(node_path, f"{node_type}.csv")
-    df.write_csv(csv_file, include_header=True)
+    if WRITE_FLAG:
+        df.write_csv(csv_file, include_header=True)
+    return {"entity_type": table_name, "pk": pk}
 
 
 def get_df_from_sqlite(conn: sqlite3.Connection, table_name: str, table_column_list):
@@ -79,7 +83,9 @@ def convert_table_edge(
     df = df.rename(mapping={s_column: "s", o_column: "o"}).with_columns(p=pl.lit(p))
     edge_file = f"{db_name}.{s_table}_{p}_{o_table}"
     csv_file = os.path.join(edge_path, f"{edge_file}.csv")
-    df.write_csv(csv_file, include_header=True)
+    if WRITE_FLAG:
+        df.write_csv(csv_file, include_header=True)
+    return {"edge_type": p, "s": s_table, "o": o_table}
 
 
 def convert_fk_edge(
@@ -121,7 +127,9 @@ def convert_fk_edge(
         )
     edge_file = f"{db_name}.{table_name}_{p}_{o_table}"
     csv_file = os.path.join(edge_path, f"{edge_file}.csv")
-    df.write_csv(csv_file, include_header=True)
+    if WRITE_FLAG:
+        df.write_csv(csv_file, include_header=True)
+    return {"edge_type": p, "s": table_name, "o": o_table}
     # print(csv_file)
     # print(df.head(3))
 
@@ -174,7 +182,8 @@ def convert_concept_edge(
         return
     entity_file_name = f"{db_name}.{o_type}"
     csv_file = os.path.join(node_path, f"{entity_file_name}.csv")
-    df.write_csv(csv_file, include_header=True)
+    if WRITE_FLAG:
+        df.write_csv(csv_file, include_header=True)
 
     s_table = s_column.split(".")[0]
     s_column = s_column.split(".")[1]
@@ -184,7 +193,12 @@ def convert_concept_edge(
         conn, table_name, get_column_list_from_mschema(table_name, mschema)
     )
     df = df.select(s=pl.col(pk), p=pl.lit(p), o=pl.col(s_column))
-    df.write_csv(edge_csv_file, include_header=True)
+    if WRITE_FLAG:
+        df.write_csv(edge_csv_file, include_header=True)
+    return [
+        {"entity_type": o_type, "pk": "id"},
+        {"edge_type": p, "s": s_table, "o": o_type},
+    ]
 
 
 def convert_edge(

@@ -12,15 +12,30 @@ PASSWORD = "neo4j@openspg"  # 替换为你的密码
 # 创建驱动实例
 driver = GraphDatabase.driver(URI, auth=(USER, PASSWORD))
 
+DATABASE = "birdgraph"
+
 
 def load_schema(db_name):
+    entity_map = {}
+    edge_map = {}
     with open(
         f"/home/zhenzhi/code/KAG/kag/examples/bird_graph/table_2_graph/bird_dev_graph_dataset/{db_name}.schema.json",
         "r",
         encoding="utf-8",
     ) as f:
         schema_info = json.load(f)
-    return schema_info
+    for info in schema_info:
+        if "entity_type" in info:
+            entity_map[info["entity_type"]] = info
+        else:
+            spo = f"{info['s']}_{info['edge_type']}_{info['o']}"
+            edge_map[spo] = info
+    return entity_map, edge_map
+
+
+def clear_graph():
+    with driver.session(database=DATABASE) as session:
+        session.run("MATCH (n) DETACH DELETE n;")
 
 
 def import_node(db_name, node_type, primary_key):
@@ -32,11 +47,11 @@ CREATE (n:{db_name}_{node_type})
     SET n += filteredRow,
         n.id = filteredRow.{primary_key};
 """
-    with driver.session() as session:
-        session.run(f"MATCH (n:{db_name}_{node_type}) DETACH DELETE n")
+    with driver.session(database=DATABASE) as session:
+        # session.run(f"MATCH (n:{db_name}_{node_type}) DETACH DELETE n")
         session.run(cypher)
         session.run(
-            f"CREATE CONSTRAINT FOR (n:{db_name}_{node_type}) REQUIRE n.id IS UNIQUE;"
+            f"CREATE CONSTRAINT {db_name}_{node_type}_id_unique IF NOT EXISTS FOR (n:{db_name}_{node_type}) REQUIRE n.id IS UNIQUE;"
         )
     print(f"load {node_type} done")
 
@@ -51,7 +66,7 @@ WITH s, o, apoc.map.clean(row, ['s', 'o', 'p'], []) AS properties, row.p AS rela
 CALL apoc.create.relationship(s, relationshipType, properties, o) YIELD rel
 RETURN rel
 """
-    with driver.session() as session:
+    with driver.session(database=DATABASE) as session:
         session.run(f"MATCH ()-[r:{p}]-() DELETE r")
         session.run(cypher)
     print(f"load edge {s}_{p}_{o} done")
@@ -68,14 +83,25 @@ def find_csv_files(directory, db_name):
 
 
 if __name__ == "__main__":
+    clear_graph()
     _graph_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "bird_dev_graph_dataset",
     )
 
+    entity_map, edge_map = load_schema("california_schools")
     _all_nodes = find_csv_files(_graph_path + "/nodes", "california_schools")
     _all_edges = find_csv_files(_graph_path + "/edges", "california_schools")
+    for node in _all_nodes:
+        node_type = os.path.basename(node)
+        node_type = node_type.split(".")[1]
+        info = entity_map[node_type]
+        import_node("california_schools", node_type, info["pk"])
 
-    import_node("california_schools", "schools", "CDSCode")
-    import_node("california_schools", "frpm", "CDSCode")
-    import_edge("california_schools", "frpm", "hasSchoolDetails", "schools")
+    for edge in _all_edges:
+        spo_str = os.path.basename(edge)
+        spo_str = spo_str.split(".")[1]
+        edge_info = edge_map[spo_str]
+        import_edge(
+            "california_schools", edge_info["s"], edge_info["edge_type"], edge_info["o"]
+        )
