@@ -40,7 +40,6 @@ class VectorizeModelABC(Registrable):
         key = cls.generate_key(*args, **kwargs)
 
         if key in cls._instances:
-            print(f"found instance of key {key}")
             return cls._instances[key]
 
         instance = super().__new__(cls)
