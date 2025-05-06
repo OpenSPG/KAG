@@ -424,7 +424,7 @@ Rewritten question:\n{content}
                 self.last_report = request
             if self.last_report.to_dict() == request.to_dict():
                 return
-            logger.info(f"do_report: {request} ret={ret}")
+            logger.info(f"do_report: {content.answer} think={content.think} ret={ret}")
             self.last_report = request
 
         except Exception as e:
