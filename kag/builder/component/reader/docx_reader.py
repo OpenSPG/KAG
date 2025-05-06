@@ -469,119 +469,132 @@ class DocxReader(ReaderABC):
 
         # Process main document body
         for element in doc._body._body:
-            if element.tag.endswith("p"):  # Paragraph
-                para = Paragraph(element, doc)
-                # Get paragraph properties
-                style_name = para.style.name if para.style else "Normal"
+            try:
+                if element.tag.endswith("p"):  # Paragraph
+                    para = Paragraph(element, doc)
+                    # Get paragraph properties
+                    style_name = para.style.name if para.style else "Normal"
 
-                # Determine paragraph type and level
-                heading_level, is_real_heading = self._get_heading_level(para)
-                is_list = bool(para._element.pPr and para._element.pPr.numPr)
+                    # Determine paragraph type and level
+                    heading_level, is_real_heading = self._get_heading_level(para)
+                    is_list = bool(para._element.pPr and para._element.pPr.numPr)
 
-                text = para.text.strip()
+                    text = para.text.strip()
 
-                # Check for footnotes in the paragraph
-                footnotes = []
-                if hasattr(para._element, "xpath"):
-                    for footnote_ref in para._element.xpath(".//w:footnoteReference"):
-                        footnote_id = footnote_ref.get(
-                            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id"
+                    # Check for footnotes in the paragraph
+                    footnotes = []
+                    if hasattr(para._element, "xpath"):
+                        for footnote_ref in para._element.xpath(
+                            ".//w:footnoteReference"
+                        ):
+                            footnote_id = footnote_ref.get(
+                                "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id"
+                            )
+                            if hasattr(doc, "_footnotes") and doc._footnotes:
+                                for footnote in doc._footnotes:
+                                    if footnote.get("id") == footnote_id:
+                                        footnote_text = self._extract_footnote_text(
+                                            footnote
+                                        )
+                                        footnotes.append(
+                                            f"[^{footnote_id}]: {footnote_text}"
+                                        )
+
+                    # Check for comments in the paragraph
+                    comments = []
+                    if hasattr(para._element, "xpath"):
+                        for comment_ref in para._element.xpath(".//w:commentReference"):
+                            comment_id = comment_ref.get(
+                                "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id"
+                            )
+                            if hasattr(doc, "_comments") and doc._comments:
+                                for comment in doc._comments:
+                                    if comment.get("id") == comment_id:
+                                        comment_text = self._extract_comment_text(
+                                            comment
+                                        )
+                                        comments.append(comment_text)
+
+                    if (
+                        not text and not footnotes and not comments
+                    ):  # Skip empty paragraphs
+                        continue
+
+                    # Handle different types of paragraphs
+                    if (
+                        heading_level > 0
+                    ):  # Changed: Remove is_real_heading check to capture more headings
+                        # Save accumulated content before creating new heading
+                        if current_content:
+                            stack[-1].content = "\n".join(current_content)
+                            current_content = []
+
+                        new_node = DocxNode(text, heading_level, node_type="heading")
+                        new_node.properties.update(
+                            {
+                                "style": style_name,
+                                "is_real_heading": str(is_real_heading),
+                            }
                         )
-                        if hasattr(doc, "_footnotes") and doc._footnotes:
-                            for footnote in doc._footnotes:
-                                if footnote.get("id") == footnote_id:
-                                    footnote_text = self._extract_footnote_text(
-                                        footnote
-                                    )
-                                    footnotes.append(
-                                        f"[^{footnote_id}]: {footnote_text}"
-                                    )
 
-                # Check for comments in the paragraph
-                comments = []
-                if hasattr(para._element, "xpath"):
-                    for comment_ref in para._element.xpath(".//w:commentReference"):
-                        comment_id = comment_ref.get(
-                            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id"
-                        )
-                        if hasattr(doc, "_comments") and doc._comments:
-                            for comment in doc._comments:
-                                if comment.get("id") == comment_id:
-                                    comment_text = self._extract_comment_text(comment)
-                                    comments.append(comment_text)
+                        # Find appropriate parent by checking levels
+                        while len(stack) > 1:  # Keep at least root
+                            if stack[-1].level < heading_level or (
+                                stack[-1].level == heading_level
+                                and stack[-1].properties.get("is_real_heading")
+                                == "True"
+                                and is_real_heading is False
+                            ):
+                                break
+                            stack.pop()
 
-                if not text and not footnotes and not comments:  # Skip empty paragraphs
-                    continue
+                        stack[-1].add_child(new_node)
+                        stack.append(new_node)
+                        in_list = False
 
-                # Handle different types of paragraphs
-                if (
-                    heading_level > 0
-                ):  # Changed: Remove is_real_heading check to capture more headings
-                    # Save accumulated content before creating new heading
+                    elif is_list:
+                        list_text = self._extract_list_text(para)
+                        if not in_list:
+                            current_content.append("")  # Add blank line before list
+                        current_content.append(list_text)
+                        # Add footnotes and comments if any
+                        current_content.extend(footnotes)
+                        current_content.extend(comments)
+                        in_list = True
+
+                    else:
+                        # Regular paragraph
+                        para_text = self._extract_paragraph_text(para)
+                        if in_list:
+                            current_content.append("")  # Add blank line after list
+                        current_content.append(para_text)
+                        # Add footnotes and comments if any
+                        current_content.extend(footnotes)
+                        current_content.extend(comments)
+                        in_list = False
+
+                elif element.tag.endswith("tbl"):  # Table
+                    if current_content:
+                        current_content.append("")  # Add blank line before table
+
+                    from docx.table import Table
+
+                    table = Table(element, doc)
+                    table_text = self._extract_table_text(table)
+                    current_content.append(table_text)
+                    current_content.append("")  # Add blank line after table
+                    in_list = False
+
+                elif element.tag.endswith("sectPr"):  # Section break
                     if current_content:
                         stack[-1].content = "\n".join(current_content)
                         current_content = []
-
-                    new_node = DocxNode(text, heading_level, node_type="heading")
-                    new_node.properties.update(
-                        {"style": style_name, "is_real_heading": str(is_real_heading)}
-                    )
-
-                    # Find appropriate parent by checking levels
-                    while len(stack) > 1:  # Keep at least root
-                        if stack[-1].level < heading_level or (
-                            stack[-1].level == heading_level
-                            and stack[-1].properties.get("is_real_heading") == "True"
-                            and is_real_heading is False
-                        ):
-                            break
-                        stack.pop()
-
-                    stack[-1].add_child(new_node)
-                    stack.append(new_node)
-                    in_list = False
-
-                elif is_list:
-                    list_text = self._extract_list_text(para)
-                    if not in_list:
-                        current_content.append("")  # Add blank line before list
-                    current_content.append(list_text)
-                    # Add footnotes and comments if any
-                    current_content.extend(footnotes)
-                    current_content.extend(comments)
-                    in_list = True
-
-                else:
-                    # Regular paragraph
-                    para_text = self._extract_paragraph_text(para)
-                    if in_list:
-                        current_content.append("")  # Add blank line after list
-                    current_content.append(para_text)
-                    # Add footnotes and comments if any
-                    current_content.extend(footnotes)
-                    current_content.extend(comments)
-                    in_list = False
-
-            elif element.tag.endswith("tbl"):  # Table
-                if current_content:
-                    current_content.append("")  # Add blank line before table
-
-                from docx.table import Table
-
-                table = Table(element, doc)
-                table_text = self._extract_table_text(table)
-                current_content.append(table_text)
-                current_content.append("")  # Add blank line after table
-                in_list = False
-
-            elif element.tag.endswith("sectPr"):  # Section break
-                if current_content:
-                    stack[-1].content = "\n".join(current_content)
-                    current_content = []
-                current_content.append(
-                    "\n---\n"
-                )  # Add horizontal rule for section breaks
-
+                    current_content.append(
+                        "\n---\n"
+                    )  # Add horizontal rule for section breaks
+            except Exception as e:
+                print(f"Error processing element: {e}")
+                continue
         # Handle remaining content
         if current_content:
             stack[-1].content = "\n".join(current_content)
@@ -814,14 +827,12 @@ class DocxReader(ReaderABC):
 
 if __name__ == "__main__":
     reader = ReaderABC.from_config({"type": "docx_reader"})
-    dir_path = os.path.dirname(__file__)
-    file_path = os.path.join(
-        dir_path, "../../../../tests/unit/builder/data/default.docx"
+    chunks = reader.invoke(
+        "/Users/zhangxinhong.zxh/Downloads/default.docx", write_ckpt=False
     )
-    chunks = reader.invoke(file_path, write_ckpt=False)
     print("Extracted chunks:")
     for chunk in chunks:
-        print(f"\nChunk: {chunk.data.name}")
-        print(f"Content: {chunk.data.content}")
-        if chunk.data.parent_content:
-            print(f"Parent Content: {chunk.data.parent_content}")
+        print(f"\nChunk: {chunk.name}")
+        print(f"Content: {chunk.content}")
+        if chunk.parent_content:
+            print(f"Parent Content: {chunk.parent_content}")
