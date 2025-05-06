@@ -247,7 +247,7 @@ class DiskCacheCheckPointer(CheckPointer):
         return len(self._ckpt)
 
     def keys(self):
-        return list(self._ckpt.iterkeys)
+        return list(self._ckpt.iterkeys())
 
     def _close(self):
         with self._lock:
