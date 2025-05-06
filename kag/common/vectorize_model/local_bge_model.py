@@ -48,9 +48,7 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
             query_instruction_for_retrieval (str, optional): The query instruction for retrieval. Defaults to None.
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        name = kwargs.pop("name", None)
-        if not name:
-            name = "local_bge_vectorize_model"
+        name = self.generate_key()
 
         super().__init__(name, vector_dimensions)
         self.model_path = os.path.expanduser(path)
@@ -154,7 +152,8 @@ class LocalBGEM3VectorizeModel(VectorizeModelABC):
             url (str, optional): The URL to download the model if not found locally. Defaults to None.
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        super().__init__(vector_dimensions)
+        name = self.generate_key()
+        super().__init__(name, vector_dimensions)
         self.url = url
         self.model_path = os.path.expanduser(path)
         config_path = os.path.join(self.model_path, "config.json")
