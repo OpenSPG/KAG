@@ -40,6 +40,7 @@ class MixReader(ReaderABC):
         docx_reader: DocxReader = None,
         md_reader: MarkDownReader = None,
         dict_reader: DictReader = None,
+        **kwargs,
     ):
         """
         Initializes the MixReader with a mapping of file types to their respective readers.
@@ -51,7 +52,7 @@ class MixReader(ReaderABC):
             md_reader (MarkDownReader, optional): Reader for .md files. Defaults to None.
             dict_reader (DictReader, optional): Reader for dictionary inputs. Defaults to None.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.reader_map = {
             "txt": txt_reader,
             "pdf": pdf_reader,
