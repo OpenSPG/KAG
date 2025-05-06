@@ -103,6 +103,7 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
+            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -179,6 +180,7 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
+            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
