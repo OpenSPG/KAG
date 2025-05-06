@@ -106,7 +106,7 @@ class VectorizeModelABC(Registrable):
             raise RuntimeError(message) from ex
 
     @classmethod
-    def generate_key(self, cls, *args, **kwargs) -> str:
+    def generate_key(cls, *args, **kwargs) -> str:
         return f"{cls}"
 
     @retry(stop=stop_after_attempt(3), reraise=True)
