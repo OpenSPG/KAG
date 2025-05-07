@@ -38,12 +38,30 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
     refer_id = 0
     for rd in retrieved_datas:
         if isinstance(rd, ChunkData):
+            # Clean rd.content: strip outer quotes and unescape '\n' to real newlines
+            raw_content = rd.content
+            if (
+                isinstance(raw_content, str)
+                and raw_content.startswith('"')
+                and raw_content.endswith('"')
+            ):
+                raw_content = raw_content[1:-1]
+            clean_content = raw_content.replace("\\n", "\n")
+            # Clean rd.title similarly
+            raw_title = rd.title
+            if (
+                isinstance(raw_title, str)
+                and raw_title.startswith('"')
+                and raw_title.endswith('"')
+            ):
+                raw_title = raw_title[1:-1]
+            clean_title = raw_title.replace("\\n", "\n")
             refer_docs.append(
                 {
                     "id": f"chunk:{prefix_id}_{refer_id}",
-                    "content": rd.content,
+                    "content": clean_content,
                     "document_id": rd.chunk_id,
-                    "document_name": rd.title,
+                    "document_name": clean_title,
                 }
             )
             refer_id += 1
