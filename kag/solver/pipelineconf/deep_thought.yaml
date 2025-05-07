@@ -61,7 +61,7 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
   flow: |
     kg_cs->kg_fr->kag_merger;rc->kag_merger
   llm_client: "{chat_llm}"
-    
+
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
@@ -83,7 +83,8 @@ solver_pipeline:
     llm: "{chat_llm}"
     plan_prompt:
       type: default_lf_static_planning
-      vectorize_model: "{vectorize_model}"
+      std_schema:
+        type: default_std_schema
     rewrite_prompt:
       type: default_rewrite_sub_task_query
   executors:
