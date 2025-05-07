@@ -25,7 +25,7 @@ import uuid
 import requests
 import importlib
 import numpy as np
-from typing import Tuple
+from typing import Tuple, TypeVar, Optional
 from pathlib import Path
 
 from shutil import copystat, copy2
@@ -419,3 +419,22 @@ def generate_unique_message_key(message):
 
 def rrf_score(length, r: int = 1):
     return np.array([1 / (r + i) for i in range(length)])
+
+
+T = TypeVar("T")
+
+
+def resolve_instance(
+    instance: Optional[Union[T, dict]],
+    default_config: dict,
+    from_config_func,
+    expected_type=None,
+) -> T:
+    if isinstance(instance, dict):
+        return from_config_func(instance)
+    elif instance is None:
+        return from_config_func(default_config)
+    elif expected_type and not isinstance(instance, expected_type):
+        raise TypeError(f"Expected {expected_type}, got {type(instance)}")
+    else:
+        return instance

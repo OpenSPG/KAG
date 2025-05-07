@@ -192,7 +192,10 @@ class OpenSPGReporter(ReporterABC):
                 "en": "Rethinking question using LLM: {content}",
                 "zh": "根据依赖问题重写子问题: {content}",
             },
-            "language_setting": {"en": "", "zh": "这个是一个中文知识库，我们使用中文进行思考"},
+            "language_setting": {
+                "en": "",
+                "zh": "这个是一个中文知识库，我们使用中文进行思考",
+            },
             "Iterative planning": {
                 "en": """
 <step status="{status}" title="Global planning">
@@ -424,7 +427,9 @@ Rewritten question:\n{content}
                 self.last_report = request
             if self.last_report.to_dict() == request.to_dict():
                 return
-            logger.info(f"do_report: {content.answer} think={content.think} ret={ret}")
+            logger.info(
+                f"do_report: {content.answer} think={content.think} status={status_enum} ret={ret}"
+            )
             self.last_report = request
 
         except Exception as e:
