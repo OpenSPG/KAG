@@ -60,7 +60,9 @@ class LocalBGEVectorizeModel(VectorizeModelABC):
                 raise RuntimeError(message)
             logger.info("Model file not found in path, start downloading...")
             self._download_model(self.model_path, self.url)
-        default_chinese_query_instruction_for_retrieval = "为这个句子生成表示以用于向量检索："
+        default_chinese_query_instruction_for_retrieval = (
+            "为这个句子生成表示以用于向量检索："
+        )
         default_english_query_instruction_for_retrieval = (
             "Represent this sentence for searching relevant passages:"
         )

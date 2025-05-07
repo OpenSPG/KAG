@@ -6,6 +6,7 @@ import logging
 from typing import List
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.common.utils import resolve_instance
 from kag.interface import VectorizeModelABC
 from kag.interface.solver.base_model import SPOEntity
 from kag.interface.solver.model.one_hop_graph import (
@@ -35,16 +36,16 @@ class StdSchema(Registrable):
                 }
             )
         )
-        if search_api:
-            if isinstance(search_api, dict):
-                self.search_api = SearchApiABC.from_config(search_api)
-            else:
-                self.search_api = search_api
-        else:
-            self.search_api = SearchApiABC.from_config({"type": "openspg_search_api"})
+        self.search_api = resolve_instance(
+            search_api,
+            default_config={"type": "openspg_search_api"},
+            from_config_func=SearchApiABC.from_config,
+        )
 
-        self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+        self.vectorize_model = resolve_instance(
+            vectorize_model,
+            default_config=KAG_CONFIG.all_config["vectorize_model"],
+            from_config_func=VectorizeModelABC.from_config,
         )
         self.text_similarity = TextSimilarity(vectorize_model)
 
