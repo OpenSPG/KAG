@@ -70,7 +70,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
                 id=entity.to_show_id(KAG_PROJECT_CONF.language),
                 name=entity.get_short_name(),
                 label=get_label(entity.type, entity.type_zh),
-                properties=entity.prop.get_properties_map() if entity.prop else {},
+                properties={},
             )
 
         start_node = _get_node(spo.from_entity)
