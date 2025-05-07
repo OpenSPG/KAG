@@ -203,6 +203,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
             answer = await pipeline.ainvoke(query, reporter=reporter)
         else:
             answer = self_cognition_res
+        reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
     except Exception as e:
         logger.warning(
             f"An exception occurred while processing query: {query}. Error: {str(e)}",
