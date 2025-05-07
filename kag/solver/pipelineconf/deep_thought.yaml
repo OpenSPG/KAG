@@ -73,6 +73,8 @@ solver_pipeline:
     llm: "{chat_llm}"
     plan_prompt:
       type: default_lf_static_planning
+      std_schema:
+        type: default_std_schema
     rewrite_prompt:
       type: default_rewrite_sub_task_query
   executors:
