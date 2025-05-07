@@ -20,6 +20,3 @@ class LogicFormPlanPrompt(RetrieverLFStaticPlanningPrompt):
     ]
 
     default_case_en = default_case_zh
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)

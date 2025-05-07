@@ -40,7 +40,7 @@ class KAGStaticPipeline(SolverPipelineABC):
         planner: PlannerABC,
         executors: List[ExecutorABC],
         generator: GeneratorABC,
-        max_iteration: int = 10,
+        max_iteration: int = 1,
     ):
         super().__init__()
         self.planner = planner
@@ -118,7 +118,8 @@ class KAGStaticPipeline(SolverPipelineABC):
         Returns:
             Final generated answer from the execution context
         """
-        num_retry = 1
+        num_retry = self.max_iteration -1
+        finished = False
         while True:
             context: Context = Context()
             tasks = await self.planning(query, context, **kwargs)
@@ -148,17 +149,21 @@ class KAGStaticPipeline(SolverPipelineABC):
                         "result": task.result,
                     }
                 )
-            if "unknown" in answer.lower():
-                finished = False
-            else:
-                finished = await self.planner.finish_judger(query, answer)
-            if not finished:
-                if num_retry == 0:
+            if num_retry > 0:
+                if "unknown" in answer.lower():
+                    finished = False
+                else:
+                    finished = await self.planner.finish_judger(query, answer)
+            if not finished and self.max_iteration > 1:
+                if num_retry <= 0:
                     print(
                         f"{red}Failed to answer quesion: {query}\nTasks:{task_info}\n{reset}\n{answer}"
                     )
                 else:
                     num_retry -= 1
+                    print(
+                        f"{red}Retry to answer quesion: {query}\nTasks:{task_info}\n{reset}\n{answer}"
+                    )
                     continue
             print(
                 f"{green}Input Query: {query}\n\nTasks:\n\n{task_info}\n\nFinal Answer: {answer}\nGold Answer: {kwargs.get('gold')}{reset}"
