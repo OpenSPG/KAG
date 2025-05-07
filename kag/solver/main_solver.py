@@ -152,11 +152,12 @@ def is_chinese(text):
 
 
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
-    qa_config = params.get("config")
+    qa_config = params.get("config", KAG_CONFIG.all_config)
     logger.info(f"qa_config = {qa_config}")
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
-    use_pipeline = qa_config["chat"]["ename"]
+
+    use_pipeline = qa_config["chat"]["ename"] if "chat" in qa_config.keys() else params.get("usePipeline", "think_pipeline")
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
     logger.info(
@@ -176,13 +177,12 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
             KAG_PROJECT_CONF.language = "en"
 
         KAG_PROJECT_CONF.host_addr = host_addr
-        KAG_PROJECT_CONF.project_id = qa_config["kb"][0]["id"]
-        use_pipeline = qa_config["chat"]["ename"]
-
-        try:
-            qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
-        except Exception as e:
-            logger.info(f"vectorize_model not found in config. Error: {str(e)}")
+        if "kb" in qa_config.keys():
+            KAG_PROJECT_CONF.project_id = qa_config["kb"][0]["id"]
+            try:
+                qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
+            except Exception as e:
+                logger.info(f"vectorize_model not found in config. Error: {str(e)}")
 
         custom_pipeline_conf = copy.deepcopy(
             KAG_CONFIG.all_config.get("solver_pipeline", None)
