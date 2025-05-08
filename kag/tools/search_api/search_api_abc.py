@@ -19,3 +19,7 @@ class SearchApiABC(Registrable):
         self, label, property_key, query_vector, topk=10, ef_search=None, params=None
     ) -> List:
         pass
+
+    @abstractmethod
+    def search_custom(self, custom_query, params=None) -> List:
+        pass

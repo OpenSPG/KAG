@@ -12,7 +12,13 @@
 from knext.common.base.client import Client
 from knext.common.rest import Configuration, ApiClient
 
-from knext.search import rest, TextSearchRequest, VectorSearchRequest, IdxRecord
+from knext.search import (
+    rest,
+    CustomSearchRequest,
+    TextSearchRequest,
+    VectorSearchRequest,
+    IdxRecord,
+)
 
 
 def idx_record_to_dict(record: IdxRecord):
@@ -42,6 +48,13 @@ class SearchClient(Client):
             self._project_id, label, property_key, query_vector, ef_search, topk, params
         )
         records = self._rest_client.search_vector_post(vector_search_request=req)
+        return [idx_record_to_dict(record) for record in records]
+
+    def search_custom(self, custom_query, params=None):
+        if params is None:
+            params = {}
+        req = CustomSearchRequest(self._project_id, custom_query, params)
+        records = self._rest_client.search_custom_post(custom_search_request=req)
         return [idx_record_to_dict(record) for record in records]
 
 
