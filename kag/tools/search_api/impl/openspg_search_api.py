@@ -39,3 +39,9 @@ class OpenSPGSearchAPI(SearchApiABC):
         if res is None:
             return []
         return res
+
+    def search_custom(self, custom_query, params=None) -> List:
+        return self.sc.search_custom(
+            custom_query=custom_query,
+            params=params,
+        )
