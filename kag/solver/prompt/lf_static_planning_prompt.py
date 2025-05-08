@@ -15,7 +15,7 @@ import re
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.utils import get_now
+from kag.common.utils import get_now, resolve_instance
 from kag.interface import PromptABC, Task
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
@@ -27,7 +27,7 @@ from kag.common.parser.logic_node_parser import (
     DeduceNode,
     GetNode,
 )
-from kag.common.parser.schema_std import DefaultStdSchema
+from kag.common.parser.schema_std import StdSchema
 
 logger = logging.getLogger()
 
@@ -141,7 +141,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         },
     ]
 
-    def __init__(self, **kwargs):
+    def __init__(self, std_schema: StdSchema = None, **kwargs):
         self.template_zh = f"""
             {{
                 "time": "今天是{get_now(language='zh')}"
@@ -185,8 +185,11 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 }
             )
         )
-
-        self.std_schema = DefaultStdSchema()
+        self.std_schema = resolve_instance(
+            std_schema,
+            default_config={"type": "default_std_schema"},
+            from_config_func=StdSchema.from_config,
+        )
 
         self.logic_node_parser = ParseLogicForm(
             schema=self.schema_helper, schema_retrieval=self.std_schema

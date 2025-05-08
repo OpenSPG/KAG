@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright 2023 OpenSPG Authors
 #
@@ -12,12 +13,12 @@
 
 import os
 import io
+import re
 
 import markdown
 from bs4 import BeautifulSoup, Tag
 
 import logging
-import re
 import requests
 import pandas as pd
 from typing import List, Dict, Tuple
@@ -26,7 +27,7 @@ from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.writer.kg_writer import KGWriter
 from kag.common.utils import generate_hash_id
 from kag.interface import ReaderABC
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum, dump_chunks
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from knext.common.base.runnable import Output, Input
@@ -320,6 +321,11 @@ class MarkDownReader(ReaderABC):
     ) -> Tuple[
         List[Output], Dict[MarkdownNode, Output], MarkdownNode, Tuple[SubGraph, dict]
     ]:
+        # 1. Remove leading spaces from heading lines (e.g., " # Title" -> "# Title")
+        content = re.sub(r"^\s+(#+\s)", r"\1", content, flags=re.MULTILINE)
+        # 2. Ensure there's a blank line before heading lines (for headings not at the beginning of the file and not preceded by an empty line)
+        content = re.sub(r"(?<=[^\n])\n(#+\s)", r"\n\n\1", content)
+
         # Convert Markdown to HTML with additional extensions for lists
         html = markdown.markdown(
             content, extensions=["tables", "nl2br", "sane_lists", "fenced_code"]
@@ -591,7 +597,6 @@ class MarkDownReader(ReaderABC):
             parent_contents = []
 
         current_titles = parent_titles + ([node.title] if node.title != "root" else [])
-
         # If current node level equals target level, create output
         if node.level >= self.cut_depth:
             full_title = " / ".join(current_titles)
@@ -851,7 +856,7 @@ class MarkDownReader(ReaderABC):
         else:
             raise TypeError(f"Expected file path or Chunk, got {type(input).__name__}")
 
-        chunks, subgraph = self.solve_content(id, basename, content)
+        chunks, subgraph = self.solve_content(str(id), basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
@@ -910,7 +915,7 @@ class YuequeReader(MarkDownReader):
         title = data.get("title", "")
         content = data.get("body", "")
 
-        chunks, subgraph = self.solve_content(id, title, content)
+        chunks, subgraph = self.solve_content(str(id), title, content)
         return chunks
 
 
@@ -918,18 +923,9 @@ if __name__ == "__main__":
     reader = ReaderABC.from_config(
         {
             "type": "md",
-            "length_splitter": {
-                "type": "length_splitter",
-                "split_length": 250,
-                "window_length": 50,
-                "strict_length": True,
-            },
+            "cut_depth": 1,
         }
     )
-    file_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/tests/unit/builder/data/finance1.md"
-    chunks, subgraph = reader.invoke(file_path)
-    dump_chunks(chunks, output_path="./builder/data/chunks.json")
-
-    # visualize_graph(subgraph)
-    assert len(chunks) > 0
-    print(chunks)
+    dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
+    chunks = reader.invoke(file_path, write_ckpt=False)

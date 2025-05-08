@@ -4,6 +4,7 @@ from tenacity import stop_after_attempt, retry
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.registry import Registrable
+from kag.common.utils import resolve_instance
 from kag.interface import LLMClient, PromptABC, VectorizeModelABC
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
@@ -13,6 +14,7 @@ from kag.common.parser.logic_node_parser import (
     ParseLogicForm,
 )
 from kag.common.parser.schema_std import DefaultStdSchema
+from kag.tools.search_api.search_api_abc import SearchApiABC
 
 
 class KAGLFRewriter(Registrable):
@@ -36,6 +38,7 @@ class KAGGetSpoLF(KAGLFRewriter):
         llm_client: LLMClient,
         lf_trans_prompt: PromptABC,
         vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -50,12 +53,21 @@ class KAGGetSpoLF(KAGLFRewriter):
                 }
             )
         )
-        self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+
+        self.search_api = resolve_instance(
+            search_api,
+            default_config={"type": "openspg_search_api"},
+            from_config_func=SearchApiABC.from_config,
+        )
+
+        self.vectorize_model = resolve_instance(
+            vectorize_model,
+            default_config=KAG_CONFIG.all_config["vectorize_model"],
+            from_config_func=VectorizeModelABC.from_config,
         )
 
         self.std_schema = DefaultStdSchema(
-            vectorize_model=self.vectorize_model, llm_client=llm_client
+            vectorize_model=self.vectorize_model, search_api=self.search_api
         )
 
         self.logic_node_parser = ParseLogicForm(
