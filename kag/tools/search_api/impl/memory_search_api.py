@@ -38,6 +38,10 @@ class MemorySearchAPI(SearchApiABC):
             return res[0]
         return []
 
+    def search_custom(self, custom_query, params=None) -> List:
+        message = "search_custom is not implemented for memory graph"
+        raise NotImplementedError(message)
+
 
 if __name__ == "__main__":
     vectorize_model = VectorizeModelABC.from_config(
