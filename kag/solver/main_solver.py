@@ -124,9 +124,9 @@ def get_pipeline_conf(use_pipeline_name, config):
         mcp_executors = []
         if mcp_servers is not None:
             for mcp_name, mcp_conf in mcp_servers.items():
-                desc = mcp_conf["description"]
-                env = mcp_conf["env"]
-                store_path = mcp_conf["store_path"]
+                desc = mcp_conf.get("description", "")
+                env = mcp_conf.get("env", {})
+                store_path = mcp_conf.get("store_path", "")
                 mcp_executors.append(
                     {
                         "type": "mcp_executor",
