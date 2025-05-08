@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional
 
 from kag.common.config import get_default_chat_llm_config
@@ -115,13 +116,14 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
 
         ppr_queries = [query, ppr_sub_query]
         ppr_queries = list(set(ppr_queries))
+        start_time = time.time()
         chunks, match_spo = self.ppr_chunk_retriever_tool.invoke(
             queries=ppr_queries,
             start_entities=entities,
             top_k=self.top_k,
         )
 
-        logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)}")
+        logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)} cost={time.time() - start_time}")
         cur_task.logical_node.get_fl_node_result().spo = match_spo + selected_rel
         cur_task.logical_node.get_fl_node_result().chunks = chunks
         cur_task.logical_node.get_fl_node_result().sub_question = ppr_sub_query
