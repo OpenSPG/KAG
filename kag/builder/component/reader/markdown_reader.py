@@ -856,7 +856,7 @@ class MarkDownReader(ReaderABC):
         else:
             raise TypeError(f"Expected file path or Chunk, got {type(input).__name__}")
 
-        chunks, subgraph = self.solve_content(id, basename, content)
+        chunks, subgraph = self.solve_content(str(id), basename, content)
         length_500_list = []
         length_1000_list = []
         length_5000_list = []
@@ -915,7 +915,7 @@ class YuequeReader(MarkDownReader):
         title = data.get("title", "")
         content = data.get("body", "")
 
-        chunks, subgraph = self.solve_content(id, title, content)
+        chunks, subgraph = self.solve_content(str(id), title, content)
         return chunks
 
 
