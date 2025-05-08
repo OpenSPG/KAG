@@ -54,6 +54,19 @@ class ReporterABC(Registrable):
             self._running = False
 
 
+def do_report(content, status, **kwargs):
+    reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+    segment_name = kwargs.get("segment_name", None)
+    tag_name = kwargs.get("tag_name", None)
+    if reporter:
+        reporter.add_report_line(
+            segment_name,
+            tag_name,
+            content,
+            status=status,
+        )
+
+
 class DotRefresher:
     def __init__(self, reporter, segment, tag_name, content, params, interval=1):
         self.reporter = reporter
