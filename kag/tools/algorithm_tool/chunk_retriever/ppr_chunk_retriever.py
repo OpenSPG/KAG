@@ -131,7 +131,7 @@ class PprChunkRetriever(ToolABC):
         """
         matched_docs = []
         hits_docs = []
-
+        start_time = time.time()
         def process_get_doc_id(doc_id):
             if isinstance(doc_id, tuple):
                 doc_score = doc_id[1]
@@ -164,8 +164,9 @@ class PprChunkRetriever(ToolABC):
         for doc_id in limit_doc_ids:
             matched_docs.append(doc_maps[doc_id[0]])
             hits_docs.append(doc_maps[doc_id[0]].chunk_id)
-
+        logger.info(f"{queries} get_all_docs_by_id cost {time.time() - start_time}s, recall num = {len(doc_ids)} ")
         query = "\n".join(queries)
+        start_time = time.time()
         try:
             text_matched = self.search_api.search_text(
                 query, [self.schema_helper.get_label_within_prefix(CHUNK_TYPE)], topk=1
@@ -188,6 +189,8 @@ class PprChunkRetriever(ToolABC):
                         break
         except Exception as e:
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
+        logger.info(f"{queries} get_all_docs_by_id search text cost {time.time() - start_time}s")
+
         return matched_docs
 
     def linking_matched_entities(
@@ -340,7 +343,7 @@ class PprChunkRetriever(ToolABC):
         else:
             pagerank_res = {}
         logger.info(
-            f"PageRank calculation completed in {time.time() - pagerank_start_time:.2f} seconds."
+            f"PageRank calculation {queries} completed in {time.time() - pagerank_start_time:.2f} seconds."
         )
         pagerank_scores = {}
         is_need_get_doc = False
