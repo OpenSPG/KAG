@@ -8,6 +8,7 @@ import json
 from kag.interface.common.llm_client import LLMClient
 from kag.examples.bird_graph.table_2_graph.m_schema.func import (
     get_m_schema,
+    get_table_fk_map,
     get_tables_m_schema_str,
     get_table_pk,
 )
@@ -88,5 +89,7 @@ if __name__ == "__main__":
         BasehSchemaPrompt,
     )
 
-    graph_base_schema, mschema = get_graph_base_schema(bird_path=_bird_path, db_name=_db_name)
+    graph_base_schema, mschema = get_graph_base_schema(
+        bird_path=_bird_path, db_name=_db_name
+    )
     print(json.dumps(graph_base_schema, ensure_ascii=False))

@@ -5,6 +5,8 @@ from table_2_graph.m_schema.schema_engine import SchemaEngine
 from table_2_graph.m_schema.m_schema import MSchema
 from sqlalchemy import create_engine
 
+import networkx as nx
+
 
 def parse_csv_to_dict(csv_file_path):
     # Initialize an empty dictionary
@@ -77,6 +79,57 @@ def get_m_schema(bird_path: str, db_name: str, with_csv_info=True):
             new_comment = json.dumps(desc, ensure_ascii=False)
             if not old_comment and new_comment:
                 field_info["comment"] = new_comment
+    mschema = special_foreign_key_propagation(mschema)
+    return mschema
+
+
+def get_reachable_nodes(graph, start_node):
+    # 使用广度优先搜索（BFS）找到所有可达节点
+    reachable_nodes = list(nx.bfs_tree(graph, start_node))
+    return reachable_nodes
+
+
+def special_foreign_key_propagation(mschema: MSchema):
+    """
+    解决解决既是主键也是外键的情况下，外键传播的问题
+    """
+
+    g = nx.Graph()
+    old_set = set()
+    new_set = set()
+    for table_name, _ in mschema.tables.items():
+        pk = get_table_pk(table_name=table_name, mschema=mschema)
+        fk_map = get_table_fk_map(table_name=table_name, mschema=mschema)
+        if pk not in fk_map:
+            continue
+        for fk_str in fk_map[pk]:
+            fk_table = fk_str.split(".")[0]
+            fk_column = fk_str.split(".")[1]
+            fk_table_pk = get_table_pk(table_name=fk_table, mschema=mschema)
+            if fk_table_pk == fk_column:
+                s = f"{table_name}.{pk}"
+                o = f"{fk_str}"
+                key = f"{s}_{o}" if s > o else f"{o}_{s}"
+                old_set.add(key)
+                g.add_edge(s, o)
+    for node in g.nodes:
+        r_nodes = get_reachable_nodes(g, node)
+        for r_node in r_nodes:
+            if node == r_node:
+                continue
+            s = node
+            o = r_node
+            key = f"{s}_{o}" if s > o else f"{o}_{s}"
+            new_set.add(key)
+    new_fk_set = new_set - old_set
+    for fk in new_fk_set:
+        fk1 = fk.split("_")[0]
+        fk2 = fk.split("_")[1]
+        fk1_t = fk1.split(".")[0]
+        fk1_c = fk1.split(".")[1]
+        fk2_t = fk2.split(".")[0]
+        fk2_c = fk2.split(".")[1]
+        mschema.add_foreign_key(fk1_t, fk1_c, "main", fk2_t, fk2_c)
     return mschema
 
 

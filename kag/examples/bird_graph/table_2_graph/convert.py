@@ -91,9 +91,14 @@ def merge_convert_info(
         one_degree_edge["edge_type"] = standardize_name(one_degree_edge["edge_type"])
         subject_table = one_degree_edge["subject_table"]
         object_table = one_degree_edge["object_table"]
-        if subject_table.lower() not in entity_name_set and object_table.lower() not in entity_name_set:
+        if (
+            subject_table.lower() not in entity_name_set
+            and object_table.lower() not in entity_name_set
+        ):
             continue
         edge_list.append(one_degree_edge)
+    # 去重
+    two_degree_edge_set = set()
     for two_degree_edge in two_degree_edge_list:
         two_degree_edge["edge_type_1"] = standardize_name(
             two_degree_edge["edge_type_1"]
@@ -113,6 +118,10 @@ def merge_convert_info(
         entity_type = two_degree_edge["entity_type"]
         if entity_type.lower() in entity_name_set:
             continue
+        key1 = table1 + entity_type
+        if key1 in two_degree_edge_set:
+            continue
+        two_degree_edge_set.add(key1)
         edge1 = {
             "type": "concept_edge",
             "edge_type": edge_type1,
@@ -123,6 +132,10 @@ def merge_convert_info(
             "data_table": table1,
             "entity_type": entity_type,
         }
+        key2 = table2 + entity_type
+        if key2 in two_degree_edge_set:
+            continue
+        two_degree_edge_set.add(key2)
         edge2 = {
             "type": "concept_edge",
             "edge_type": edge_type2,
@@ -148,7 +161,8 @@ def convert_one_db(bird_path, db_name):
     concept_schema = get_concept_schema(bird_path=bird_path, db_name=db_name)
     one_degree_edge_list = relation_naming(bird_path, db_name, concept_schema)
     print(json.dumps(one_degree_edge_list, ensure_ascii=False))
-    two_degree_edge_list = concept_naming(bird_path, db_name, concept_schema)
+    #two_degree_edge_list = concept_naming(bird_path, db_name, concept_schema)
+    two_degree_edge_list = []
     print(json.dumps(two_degree_edge_list, ensure_ascii=False))
     convert_info = merge_convert_info(
         base_schema, one_degree_edge_list, two_degree_edge_list, mschema
@@ -235,9 +249,9 @@ def convert_one_db(bird_path, db_name):
             )
             if infos:
                 schema_info_list.extend(infos)
-        schema_file = os.path.join(bird_graph_data_path, f"{db_name}.schema.json")
-        with open(schema_file, "w", encoding="utf-8") as f:
-            json.dump(schema_info_list, f, ensure_ascii=False, indent=2)
+    schema_file = os.path.join(bird_graph_data_path, f"{db_name}.schema.json")
+    with open(schema_file, "w", encoding="utf-8") as f:
+        json.dump(schema_info_list, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":

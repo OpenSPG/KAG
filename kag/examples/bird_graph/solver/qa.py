@@ -1,5 +1,8 @@
+import os
+import json
 import asyncio
 import logging
+
 from kag.examples.utils import delay_run
 
 from kag.common.conf import KAG_CONFIG
@@ -9,8 +12,22 @@ from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger(__name__)
 
+from kag.examples.bird_graph.solver.common import fix_schem
 
-class EvaQA:
+current_file_path = os.path.dirname(os.path.abspath(__file__))
+schema_file = os.path.join(
+    current_file_path,
+    "..",
+    "table_2_graph",
+    "bird_dev_graph_dataset",
+    "california_schools.schema.json",
+)
+with open(schema_file) as f:
+    graph_schema = json.load(f)
+graph_schema = fix_schem(graph_schema, "california_schools")
+
+
+class BirdQA:
     """
     init for kag client
     """
@@ -18,22 +35,29 @@ class EvaQA:
     async def qa(self, query):
         reporter: TraceLogReporter = TraceLogReporter()
         resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["solver_pipeline"])
-        answer = await resp.ainvoke(query, reporter=reporter)
 
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
-
-        info, status = reporter.generate_report_data()
-        logger.info(f"trace log info: {info.to_dict()}")
+        answer = await resp.ainvoke(query, reporter=reporter, graph_schema=graph_schema)
         return answer
 
 
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
-    delay_run(hours=0)
+    import_modules_from_path("./component")
 
-    evaObj = EvaQA()
+    evaObj = BirdQA()
 
-    #print(asyncio.run(evaObj.qa("What is the highest eligible free rate for K-12 students in the schools in Alameda County?")))
-    #print(asyncio.run(evaObj.qa("Please list the lowest three eligible free rates for students aged 5-17 in continuation schools.")))
-    #print(asyncio.run(evaObj.qa("Please list the zip code of all the charter schools in Fresno County Office of Education.")))
-    print(asyncio.run(evaObj.qa("What is the unabbreviated mailing street address of the school with the highest FRPM count for K-12 students?")))
+    # print(asyncio.run(evaObj.qa("What is the highest eligible free rate for K-12 students in the schools in Alameda County?")))
+    # print(asyncio.run(evaObj.qa("Please list the lowest three eligible free rates for students aged 5-17 in continuation schools.")))
+    # print(asyncio.run(evaObj.qa("Please list the zip code of all the charter schools in Fresno County Office of Education.")))
+    # print(asyncio.run(evaObj.qa("What is the unabbreviated mailing street address of the school with the highest FRPM count for K-12 students?")))
+    # print(asyncio.run(evaObj.qa("How many test takers are there at the school/s whose mailing city address is in Fresno?")))
+    # print(asyncio.run(evaObj.qa("What is the unabbreviated mailing street address of the school with the highest FRPM count for K-12 students?")))
+    print(
+        asyncio.run(
+            evaObj.qa(
+                """
+                Which school in Contra Costa has the highest number of test takers?
+                """.strip()
+            )
+        )
+    )

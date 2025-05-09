@@ -78,7 +78,7 @@ if __name__ == "__main__":
                 v = property_name_fix(v)
                 entity_str += f"        {k}({v}): Text\n"
         else:
-            entity_str += "        key_name(主键): Text\n"
+            entity_str += "        entity_name(名称): Text\n"
         if "edge_list" in entity:
             for k, v in entity["edge_list"].items():
                 k = property_name_fix(k)
