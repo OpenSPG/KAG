@@ -567,7 +567,7 @@ class SchemaConstraintExtractor(ExtractorABC):
         passage = title + "\n" + input.content
 
         out = []
-        entities, events = asyncio.gather(
+        entities, events = await asyncio.gather(
             self.anamed_entity_recognition(passage), self.aevent_extraction(passage)
         )
         named_entities = []
@@ -575,7 +575,7 @@ class SchemaConstraintExtractor(ExtractorABC):
             named_entities.append(
                 {"name": entity["name"], "category": entity["category"]}
             )
-        relations, std_entities = asyncio.gather(
+        relations, std_entities = await asyncio.gather(
             self.arelations_extraction(passage, named_entities),
             self.anamed_entity_standardization(passage, named_entities),
         )

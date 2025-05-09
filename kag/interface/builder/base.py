@@ -26,11 +26,11 @@ from kag.common.utils import generate_hash_id
 
 
 class BuilderComponentData:
-    def __init__(self, data: Any, hash_key: str = None):
+    def __init__(self, data: Any, hash_key: str = None, suffix: str = ""):
         self.data = data
         if not hash_key:
             hash_key = self.get_object_hash_key(self.data)
-        self.hash_key = hash_key
+        self.hash_key = f"{hash_key}->{suffix}"
 
     def get_object_hash_key(self, input_object):
         if hasattr(input_object, "hash_key"):
@@ -143,23 +143,26 @@ class BuilderComponent(Component, Registrable):
             output_key = input_key
         else:
             output_key = None
-
+        suffix = type(self).__name__
         write_ckpt = kwargs.get("write_ckpt", True)
         if write_ckpt and self.checkpointer:
             # found existing data in checkpointer
             if input_key and self.checkpointer.exists(input_key):
                 output = self.checkpointer.read_from_ckpt(input_key)
                 if output is not None:
-                    return [BuilderComponentData(x, output_key) for x in output]
+                    return [
+                        BuilderComponentData(x, output_key, suffix=suffix)
+                        for x in output
+                    ]
             # not found
             output = self._invoke(input_data, **kwargs)
             if input_key:
                 self.checkpointer.write_to_ckpt(input_key, output)
-            return [BuilderComponentData(x, output_key) for x in output]
+            return [BuilderComponentData(x, output_key, suffix=suffix) for x in output]
 
         else:
             output = self._invoke(input_data, **kwargs)
-            return [BuilderComponentData(x, output_key) for x in output]
+            return [BuilderComponentData(x, output_key, suffix=suffix) for x in output]
 
     async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -190,6 +193,7 @@ class BuilderComponent(Component, Registrable):
             output_key = input_key
         else:
             output_key = None
+        suffix = type(self).__name__
         write_ckpt = kwargs.get("write_ckpt", True)
         if write_ckpt and self.checkpointer:
             # found existing data in checkpointer
@@ -199,7 +203,10 @@ class BuilderComponent(Component, Registrable):
                 )
 
                 if output is not None:
-                    return [BuilderComponentData(x, output_key) for x in output]
+                    return [
+                        BuilderComponentData(x, output_key, suffix=suffix)
+                        for x in output
+                    ]
 
             # not found
             output = await self._ainvoke(input_data, **kwargs)
@@ -207,11 +214,11 @@ class BuilderComponent(Component, Registrable):
                 await asyncio.to_thread(
                     lambda: self.checkpointer.write_to_ckpt(input_key, output)
                 )
-            return [BuilderComponentData(x, output_key) for x in output]
+            return [BuilderComponentData(x, output_key, suffix=suffix) for x in output]
 
         else:
             output = await self._ainvoke(input_data, **kwargs)
-            return [BuilderComponentData(x, output_key) for x in output]
+            return [BuilderComponentData(x, output_key, suffix=suffix) for x in output]
 
 
 class MPBuilderComponentWrapper(BuilderComponent):
