@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
+from typing import List, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from kag.interface import (
     ReaderABC,
@@ -86,7 +87,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         self,
         reader: ReaderABC,
         splitter: SplitterABC = None,
-        extractor: ExtractorABC = None,
+        extractor: Union[ExtractorABC, List[ExtractorABC]] = None,
         vectorizer: VectorizerABC = None,
         writer: SinkWriterABC = None,
         post_processor: PostProcessorABC = None,
@@ -97,7 +98,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         Args:
             reader (ReaderABC): The reader component to be used.
             splitter (SplitterABC): The splitter component to be used.
-            extractor (ExtractorABC): The extractor component to be used.
+            extractor (Union[ExtractorABC, List[ExtractorABC]]): The extractor component to be used.
             vectorizer (VectorizerABC): The vectorizer component to be used.
             writer (SinkWriterABC): The writer component to be used.
             post_processor (PostProcessorABC, optional): The post-processor component to be used. Defaults to None.

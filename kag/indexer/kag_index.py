@@ -9,7 +9,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-
+from typing import List
 from kag.interface import IndexABC
 
 
@@ -20,17 +20,8 @@ class ChunkIndex(IndexABC):
         return "Chunk with optional text/vector index"
 
     @property
-    def schema(self) -> str:
-        return f"""
-            Chunk: EntityType
-              properties:
-                name:
-                  index: {self._index_type.name}
-                content:
-                  index: {self._index_type.name}
-              relations:
-                relateTo: Doc
-        """
+    def schema(self) -> List[str]:
+        return ["Chunk"]
 
     @property
     def cost(self) -> str:
@@ -44,20 +35,12 @@ class SummaryIndex(IndexABC):
         return "Chunk summary with optional text/vector index"
 
     @property
-    def schema(self) -> str:
-        return f"""
-            Summary: EntityType
-              properties:
-                title:
-                  index: {self._index_type.name}
-              relation:
-                relateTo: Chunk
-                childOf: Summary        
-        """
+    def schema(self) -> List[str]:
+        return ["Summary"]
 
     @property
     def cost(self) -> str:
-        return "high"
+        return "low"
 
 
 @IndexABC.register("event_index")
@@ -67,20 +50,12 @@ class EventIndex(IndexABC):
         return "Chunk event with optional text/vector index"
 
     @property
-    def schema(self) -> str:
-        return f"""
-            Event: EntityType
-              properties:
-                content:
-                  index: {self._index_type.name}
-              relation:
-                relateTo: Chunk
-                relateTo: Event
-        """
+    def schema(self) -> List[str]:
+        return ["Event"]
 
     @property
     def cost(self) -> str:
-        return "high"
+        return "low"
 
 
 @IndexABC.register("atomic_query_index")
@@ -91,19 +66,11 @@ class AtomicQueryIndex(IndexABC):
 
     @property
     def schema(self) -> str:
-        return f"""
-            AtomicQuery: EntityType
-              properties:
-                title:
-                  index: {self._index_type.name}
-              relations:
-                relateTo: Chunk
-                similar: AtomicQuery
-        """
+        return ["AtomicQuery"]
 
     @property
     def cost(self) -> str:
-        return "high"
+        return "low"
 
 
 @IndexABC.register("graph")
@@ -114,17 +81,8 @@ class GraphIndex(IndexABC):
         return ""
 
     @property
-    def schema(self) -> str:
-        return f"""
-            Chunk: EntityType
-              properties:
-                name:
-                  index: {self._index_type.name}
-                content:
-                  index: {self._index_type.name}
-              relations:
-                relateTo: Doc
-        """
+    def schema(self) -> List[str]:
+        return ["Graph"]
 
     @property
     def cost(self) -> str:

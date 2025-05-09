@@ -9,59 +9,39 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+from typing import List
 
-from kag.common.registry import Registrable
-from knext.schema.model.base import IndexTypeEnum
+from knext.schema.client import SchemaClient
 from kag.interface.builder.extractor_abc import ExtractorABC
-from kag.interface.solver.executor_abc import ExecutorABC
+from kag.common.registry import Registrable
+from kag.common.conf import KAG_PROJECT_CONF
+from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
+    KagHybridExecutor as Retriever,
+)
 
 
-class IndexABC(Registrable):
-    """
-    An abstract base class that defines the interface for indices.
-    """
-
-    def __init__(self, index_type: str = "TextAndVector"):
-        if index_type.strip().lower() == IndexTypeEnum.Vector.value.lower():
-            self._index_type = IndexTypeEnum.Vector
-        elif index_type.strip().lower() == IndexTypeEnum.Text.value.lower():
-            self._index_type = IndexTypeEnum.Text
-        elif index_type.strip().lower() == IndexTypeEnum.TextAndVector.value.lower():
-            self._index_type = IndexTypeEnum.TextAndVector
-        else:
-            avaliable_types = list(IndexTypeEnum.__members__.keys())
-            raise ValueError(
-                f"unsupported index type {index_type}, available index types: {avaliable_types}"
-            )
-
-    @property
-    def description(self) -> str:
-        return ""
-
-    @property
-    def schema(self) -> str:
-        return ""
-
-    @property
-    def cost(self) -> str:
-        return ""
-
-
-class IndexerABC(Registrable):
+class KAGIndexManager(Registrable):
     def __init__(
         self,
-        extractor: ExtractorABC,
-        retriever: ExecutorABC,
+        index_builder: List[ExtractorABC],
+        retriever: Retriever,
     ):
-        self.extractor = extractor
+        self.index_builder = index_builder
         self.retriever = retriever
 
         self.indices = {}
-        index_names = self.extractor.input_indices
+        index_names = []
+        for item in self.index_builder:
+            index_names.extend(item.output_indices)
+
         extractor_register_dict = Registrable._registry[ExtractorABC]
         for index_name in index_names:
             cls, _ = extractor_register_dict[index_name]
             self.indices[index_name] = cls()
+
+        self.project_schema = SchemaClient(
+            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+        ).load()
 
     @property
     def description(self) -> str:
@@ -70,6 +50,17 @@ class IndexerABC(Registrable):
 
     @property
     def schema(self) -> str:
+        schema_keys = []
+        for item in self.indices.values():
+            schema_keys.extend(item.schema)
+
+        for schema_key in schema_keys:
+            if schema_key == "Graph":
+                continue
+            if schema_key not in self.project_schema:
+                raise ValueError(
+                    f"index {schema_key} not in project indxe schema, please check your index config."
+                )
         index_schema = [x.schema for x in self.indices.values()]
         return "\n".join(index_schema)
 

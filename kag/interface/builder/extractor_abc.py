@@ -32,10 +32,6 @@ class ExtractorABC(BuilderComponent):
         return SubGraph
 
     @property
-    def ckpt_subdir(self):
-        return "extractor"
-
-    @property
     def inherit_input_key(self):
         return True
 

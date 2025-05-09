@@ -25,6 +25,7 @@ class SpgTypeEnum(str, Enum):
     Basic = "BASIC_TYPE"
     Standard = "STANDARD_TYPE"
     Entity = "ENTITY_TYPE"
+    Index = "INDEX_TYPE"
     Event = "EVENT_TYPE"
     Concept = "CONCEPT_TYPE"
 
