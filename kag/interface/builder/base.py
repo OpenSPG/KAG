@@ -106,7 +106,7 @@ class BuilderComponent(Component, Registrable):
 
     @property
     def ckpt_subdir(self):
-        return None
+        return type(self).__name__
 
     @property
     def inherit_input_key(self):

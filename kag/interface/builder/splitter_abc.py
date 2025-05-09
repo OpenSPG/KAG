@@ -38,9 +38,5 @@ class SplitterABC(BuilderComponent, ABC):
         return Chunk
 
     @property
-    def ckpt_subdir(self):
-        return "splitter"
-
-    @property
     def inherit_input_key(self):
         return False

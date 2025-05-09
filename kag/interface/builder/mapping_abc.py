@@ -33,9 +33,5 @@ class MappingABC(BuilderComponent, ABC):
         return SubGraph
 
     @property
-    def ckpt_subdir(self):
-        return "mapping"
-
-    @property
     def inherit_input_key(self):
         return True

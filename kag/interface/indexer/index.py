@@ -8,3 +8,24 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+
+from typing import List
+from kag.common.registry import Registrable
+
+
+class IndexABC(Registrable):
+    """
+    An abstract base class that defines the interface for indices.
+    """
+
+    @property
+    def description(self) -> str:
+        return ""
+
+    @property
+    def cost(self) -> str:
+        return ""
+
+    @property
+    def schema(self) -> List[str]:
+        return []
