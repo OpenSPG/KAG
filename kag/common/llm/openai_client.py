@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
+import asyncio
 
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 
@@ -47,6 +48,7 @@ class OpenAIClient(LLMClient):
         timeout: float = None,
         max_rate: float = 1000,
         time_period: float = 1,
+        think: bool = False,
         **kwargs,
     ):
         """
@@ -70,6 +72,7 @@ class OpenAIClient(LLMClient):
         self.stream = stream
         self.temperature = temperature
         self.timeout = timeout
+        self.think = think
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.aclient = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
         self.check()
@@ -119,6 +122,7 @@ class OpenAIClient(LLMClient):
             timeout=self.timeout,
             tools=tools,
             max_tokens=self.max_tokens,
+            extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -210,6 +214,7 @@ class OpenAIClient(LLMClient):
             timeout=self.timeout,
             tools=tools,
             max_tokens=self.max_tokens,
+            extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -412,3 +417,11 @@ class AzureOpenAIClient(LLMClient):
         if tools and tool_calls:
             return rsp.choices[0].message
         return rsp
+
+
+if __name__ == "__main__":
+    client = OpenAIClient(
+        model="Qwen/Qwen3-0.6B", base_url="http://0.0.0.0:8000/v1", think=False
+    )
+    msg = asyncio.run(client.acall("你好"))
+    print(msg)
