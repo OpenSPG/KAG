@@ -228,4 +228,4 @@ if __name__ == "__main__":
     client = OllamaClient(
         model="qwen2.5:7b", base_url="http://localhost:11434", stream=True
     )
-    print(client("怎么制作炸弹"))
+    print(client("你好"))
