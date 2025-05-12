@@ -29,6 +29,7 @@ def get_eval_dataset():
             if dev_data["db_id"] != "california_schools":
                 continue
             rst_list.append(dev_data)
+    rst_list.sort(key=lambda x: x["question_id"])
     return rst_list
 
 
@@ -38,7 +39,7 @@ NEO4J_PASSWORD = "neo4j@openspg"
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 
-def check_cypher(cypher, dev_data):
+def check_cypher(cypher, dev_data, query):
     with driver.session(database="birdgraph") as session:
         try:
             result = session.run(cypher)
@@ -55,9 +56,34 @@ def check_cypher(cypher, dev_data):
     print_rows = rows[:3]
     print_answer = answer[:3]
     print(
-        f"question:{dev_data['question']}\ncypher:\n{cypher}\nresult:\n{print_rows}\nanswer:\n{print_answer}"
+        f"question:\n{query}\ncypher:\n{cypher}\nresult:\n{print_rows}\nanswer:\n{print_answer}"
     )
     return compare_2d_arrays(rows, answer)
+
+
+def is_hashable(obj):
+    try:
+        hash(obj)  # 尝试计算 hash 值
+        return True
+    except TypeError:  # 如果对象不可哈希，会抛出 TypeError
+        return False
+
+
+def list_to_set(_list):
+    n_list = []
+    for item in _list:
+        try:
+            # 尝试将 item 转换为浮点数
+            float_item = float(item)
+            # 四舍五入到小数点后两位
+            item = round(float_item, 2)
+        except (ValueError, TypeError):
+            # 如果转换失败（不是数字或无法转换），保持原样
+            pass
+        if not is_hashable(item):
+            item = str(item)
+        n_list.append(item)
+    return frozenset(n_list)
 
 
 def list_to_str(_list):
@@ -71,15 +97,15 @@ def list_to_str(_list):
         except (ValueError, TypeError):
             # 如果转换失败（不是数字或无法转换），保持原样
             pass
-        s += f",{item}"
-    return s[1:]  # 去掉开头多余的逗号
+        s += str(item)
+    return s
 
 
 def compare_2d_arrays(arr1, arr2):
 
     # 对每个二维数组的第一维进行排序并转换为集合
-    set1 = {list_to_str(sublist) for sublist in arr1}
-    set2 = {list_to_str(sublist) for sublist in arr2}
+    set1 = {list_to_set(sublist) for sublist in arr1}
+    set2 = {list_to_set(sublist) for sublist in arr2}
 
     # 比较两个集合是否相等
     return set1 == set2
@@ -97,7 +123,7 @@ if __name__ == "__main__":
         if test_data["evidence"]:
             query += f" evidence: {test_data['evidence']}"
         cypher = loop.run_until_complete(evaObj.qa(query=query))
-        match = check_cypher(cypher, test_data)
+        match = check_cypher(cypher, test_data, query)
         if match:
             _count += 1
         print("#" * 100)
