@@ -77,6 +77,7 @@ def get_all_docs_by_id(doc_ids: List[Tuple[str, float]], graph_api, schema_helpe
                 title=node_dict["name"].replace("_split_0", ""),
                 chunk_id=doc_id,
                 score=doc_score,
+                properties=node_dict
             )
         except Exception as e:
             logger.warning(f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True)

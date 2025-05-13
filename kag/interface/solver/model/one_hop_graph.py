@@ -1031,12 +1031,13 @@ class KgGraph(RetrievedData):
 
 
 class ChunkData(RetrievedData):
-    def __init__(self, content="", title="", chunk_id="", score=0.0):
+    def __init__(self, content="", title="", chunk_id="", score=0.0, properties=None):
         super().__init__()
         self.content = content
         self.title = title
         self.chunk_id = chunk_id
         self.score = score
+        self.properties = properties if properties else {}
 
     def to_dict(self):
         return {
