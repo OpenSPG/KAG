@@ -1,0 +1,110 @@
+# -*- coding: utf-8 -*-
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
+
+import knext.common.cache
+import logging
+
+from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.interface import RetrieverABC, VectorizeModelABC, ChunkData, RetrieverOutput
+from kag.interface.solver.model.schema_utils import SchemaUtils
+from kag.common.config import LogicFormConfiguration
+from kag.common.tools.search_api.search_api_abc import SearchApiABC
+
+from knext.schema.client import CHUNK_TYPE
+
+logger = logging.getLogger()
+chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
+
+
+@RetrieverABC.register("vector_chunk_retriever")
+class VectorChunkRetriever(RetrieverABC):
+    def __init__(
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        top_k: int = 10,
+        **kwargs,
+    ):
+        self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
+            KAG_CONFIG.all_config["vectorize_model"]
+        )
+        self.search_api = search_api or SearchApiABC.from_config(
+            {"type": "openspg_search_api"}
+        )
+        self.schema_helper: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
+        super().__init__(top_k, **kwargs)
+
+    def invoke(self, query, **kwargs) -> RetrieverOutput:
+        top_k = kwargs.get("top_k", self.top_k)
+        try:
+            cached = chunk_cached_by_query_map.get(query)
+            if cached and len(cached.chunks) > top_k:
+                return cached
+            if not query:
+                logger.error("chunk query is emtpy", exc_info=True)
+                return {}
+            query_vector = self.vectorize_model.vectorize(query)
+            top_k_docs = self.search_api.search_vector(
+                label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+                property_key="content",
+                query_vector=query_vector,
+                topk=top_k,
+            )
+            chunks = []
+            for item in top_k_docs:
+                chunks.append(
+                    ChunkData(
+                        content=item["node"]["content"],
+                        title=item["node"]["name"],
+                        chunk_id=item["node"]["id"],
+                        score=item["score"],
+                    )
+                )
+            out = RetrieverOutput(chunks=chunks)
+            chunk_cached_by_query_map.put(query, out)
+            return out
+
+        except Exception as e:
+            logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
+            return RetrieverOutput()
+
+    def schema(self):
+        return {
+            "name": "vector_chunk_retriever",
+            "description": "Retrieve relevant text chunks from document store using vector similarity search",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search query for retrieving relevant text chunks",
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Number of top results to return",
+                        "default": 5,
+                    },
+                },
+                "required": ["query"],
+            },
+        }
+
+    @property
+    def input_indices(self):
+        return ["chunk"]

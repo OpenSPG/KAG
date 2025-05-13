@@ -3,6 +3,7 @@ from kag.solver.executor.deduce.kag_output_executor import KagOutputExecutor
 from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor import (
     ChunkRetrievedExecutor,
 )
+from kag.solver.executor.retriever.kag_hybrid_retriever import KAGHybridRetriever
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KagHybridExecutor,
 )
@@ -68,6 +69,7 @@ __all__ = [
     "McpExecutor",
     "FinishExecutor",
     "MockRetrieverExecutor",
+    "KAGHybridRetriever",
     "KagHybridExecutor",
     "ChunkRetrievedExecutor",
     "KagOutputExecutor",
@@ -82,4 +84,6 @@ __all__ = [
 from kag.solver.prompt.thought_iterative_planning_prompt import (
     DefaultIterativePlanningPrompt,
 )
-from kag.tools.algorithm_tool.self_cognition.self_cogn_tools import SelfCognExecutor
+from kag.common.tools.algorithm_tool.self_cognition.self_cogn_tools import (
+    SelfCognExecutor,
+)

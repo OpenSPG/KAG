@@ -27,7 +27,7 @@ from kag.interface.solver.model.one_hop_graph import (
     Prop,
 )
 from kag.common.checkpointer import CheckpointerManager
-from kag.tools.graph_api.model.table_model import TableData
+from kag.common.tools.graph_api.model.table_model import TableData
 from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()

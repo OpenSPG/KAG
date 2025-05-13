@@ -20,7 +20,9 @@ from kag.interface import (
     Context,
     Task,
 )
-from kag.tools.algorithm_tool.self_cognition.self_cogn_tools import SelfCognExecutor
+from kag.common.tools.algorithm_tool.self_cognition.self_cogn_tools import (
+    SelfCognExecutor,
+)
 
 logger = logging.getLogger(__name__)
 
