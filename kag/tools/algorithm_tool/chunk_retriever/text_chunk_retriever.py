@@ -2,6 +2,7 @@ import logging
 from typing import Dict
 
 from kag.common.conf import KAG_PROJECT_CONF
+from kag.interface.solver.model.one_hop_graph import ChunkData
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
 from kag.tools.search_api.search_api_abc import SearchApiABC
@@ -36,14 +37,25 @@ class TextChunkRetriever(ToolABC):
                 query_string=query,
                 topk=top_k,
             )
-            scores = {
-                item["node"]["id"]: {
-                    "score": item["score"],
-                    "content": item["node"]["content"],
-                    "name": item["node"]["name"],
+            if len(top_k_docs) == 0:
+                return dict()
+            if isinstance(top_k_docs[0], ChunkData):
+                scores = {}
+                for c in top_k_docs:
+                    scores[c.chunk_id] = {
+                        "score":c.score,
+                        "name": c.title,
+                        "content": c.content
+                    }
+            else:
+                scores = {
+                    item["node"]["id"]: {
+                        "score": item["score"],
+                        "content": item["node"]["content"],
+                        "name": item["node"]["name"],
+                    }
+                    for item in top_k_docs
                 }
-                for item in top_k_docs
-            }
         except Exception as e:
             scores = dict()
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
