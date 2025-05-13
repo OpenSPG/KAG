@@ -185,10 +185,14 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
                 qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
             except Exception as e:
                 logger.info(f"vectorize_model not found in config. Error: {str(e)}")
-
-        custom_pipeline_conf = copy.deepcopy(
-            KAG_CONFIG.all_config.get("solver_pipeline", None)
-        )
+        if use_pipeline in KAG_CONFIG.all_config.keys():
+            custom_pipeline_conf = copy.deepcopy(
+                KAG_CONFIG.all_config.get(use_pipeline, None)
+            )
+        else:
+            custom_pipeline_conf = copy.deepcopy(
+                KAG_CONFIG.all_config.get("solver_pipeline", None)
+            )
         # self cognition
         self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
         self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
