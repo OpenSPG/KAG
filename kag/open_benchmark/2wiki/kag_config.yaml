@@ -1,24 +1,24 @@
 openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
+  api_key: sk-
   model: qwen2.5-72b-instruct
 
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
+  api_key: sk-
   model: qwen2.5-72b-instruct
   stream: True
 
 ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
+  api_key: sk-
   model: qwen2.5-72b-instruct
 
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key: sk-
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -37,18 +37,34 @@ project:
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
+e1: &e1
+  type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  llm: *openie_llm
+  ner_prompt:
+    type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
+  std_prompt:
+    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+  triple_prompt:
+    type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+
+e2: &e2
+  type: schema_constraint_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  llm: *openie_llm
+  ner_prompt:
+    type: spg_entity # kag.builder.prompt.default.ner.OpenIENERPrompt
+  std_prompt:
+    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+  relation_prompt:
+    type: spg_relation
+  event_prompt:
+    type: spg_event # kag.builder.prompt.default.triple.OpenIETriplePrompt
+
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-      llm: *openie_llm
-      ner_prompt:
-        type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
-      std_prompt:
-        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-      triple_prompt:
-        type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+      - *e1
+      - *e2
     reader:
       type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
