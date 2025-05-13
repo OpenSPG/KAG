@@ -56,14 +56,16 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
             ):
                 raw_title = raw_title[1:-1]
             clean_title = raw_title.replace("\\n", "\n")
-            refer_docs.append(
-                {
+            refer_doc = {
                     "id": f"chunk:{prefix_id}_{refer_id}",
                     "content": clean_content,
                     "document_id": rd.chunk_id,
                     "document_name": clean_title,
                 }
-            )
+            for k,v in rd.properties.items():
+                if k not in refer_doc:
+                    refer_doc[k] = str(v)
+            refer_docs.append(refer_doc)
             refer_id += 1
 
         if isinstance(rd, KgGraph):

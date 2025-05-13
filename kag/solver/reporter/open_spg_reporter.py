@@ -13,9 +13,6 @@ from kag.interface.solver.model.one_hop_graph import (
     RelationData,
 )
 from kag.common.utils import generate_random_string
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
-    KAGRetrievedResponse,
-)
 from knext.common.rest import ApiClient, Configuration
 from knext.reasoner import ReasonerApi
 from knext.reasoner.rest.models import TaskStreamRequest
@@ -42,6 +39,7 @@ def generate_ref_doc_set(tag_name, ref_type, retrieved_data_list: list, refer_id
                 content=d["content"],
                 document_id=d["document_id"],
                 document_name=d["document_name"],
+                url=d.get("url", None)
             )
     for refer_id in refer_ids:
         if refer_id in refer_doc_maps:
