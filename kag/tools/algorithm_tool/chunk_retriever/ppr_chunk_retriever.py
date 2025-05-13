@@ -149,6 +149,7 @@ class PprChunkRetriever(ToolABC):
                     title=node_dict["name"].replace("_split_0", ""),
                     chunk_id=doc_id,
                     score=doc_score,
+                    properties=node_dict
                 )
             except Exception as e:
                 logger.warning(
@@ -184,6 +185,7 @@ class PprChunkRetriever(ToolABC):
                                 title=item["node"]["name"],
                                 chunk_id=item["node"]["id"],
                                 score=item["score"],
+                                properties=item["node"]
                             )
                         )
                         break
@@ -369,6 +371,7 @@ class PprChunkRetriever(ToolABC):
                         title=node["name"].replace("_split_0", ""),
                         chunk_id=doc_id,
                         score=score,
+                        properties=node
                     )
                 )
         return matched_docs, self._convert_relation_datas(

@@ -214,7 +214,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         if KAG_PROJECT_CONF.language == "en":
             answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
         else:
-            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。with qa_config={qa_config},pipeline_config={pipeline_config}"
+            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
         reporter.add_report_line("answer", "error", answer, "ERROR")
     finally:
         await reporter.stop()
