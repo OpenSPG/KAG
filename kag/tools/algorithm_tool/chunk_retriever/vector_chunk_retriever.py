@@ -50,14 +50,11 @@ class VectorChunkRetriever(ToolABC):
                 query_vector=query_vector,
                 topk=top_k,
             )
-            scores = {
-                item["node"]["id"]: {
-                    "score": item["score"],
-                    "content": item["node"]["content"],
-                    "name": item["node"]["name"],
-                }
-                for item in top_k_docs
-            }
+            scores = {}
+            for item in top_k_docs:
+                node_data = dict(item["node"])
+                node_data["score"] = item["score"]
+                scores[node_data["id"]] = node_data
             chunk_cached_by_query_map.put(query, scores)
         except Exception as e:
             scores = dict()
