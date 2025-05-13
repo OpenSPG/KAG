@@ -22,7 +22,7 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid
     to_reference_list,
 )
 from kag.solver.utils import init_prompt_with_fallback
-from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
+from kag.common.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
 def to_task_context_str(context):

@@ -22,11 +22,13 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils impo
     generate_step_query,
 )
 
-from kag.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
+from kag.common.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
     PprChunkRetriever,
 )
-from kag.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
-from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
+from kag.common.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
+from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select import (
+    PathSelect,
+)
 
 logger = logging.getLogger()
 
@@ -123,7 +125,9 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
             top_k=self.top_k,
         )
 
-        logger.info(f"`{query}`  Retrieved chunks num: {len(chunks)} cost={time.time() - start_time}")
+        logger.info(
+            f"`{query}`  Retrieved chunks num: {len(chunks)} cost={time.time() - start_time}"
+        )
         cur_task.logical_node.get_fl_node_result().spo = match_spo + selected_rel
         cur_task.logical_node.get_fl_node_result().chunks = chunks
         cur_task.logical_node.get_fl_node_result().sub_question = ppr_sub_query

@@ -15,8 +15,10 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_compon
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kg_cs.lf_kg_retriever_template import (
     KgRetrieverTemplate,
 )
-from kag.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
-from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
+from kag.common.tools.algorithm_tool.graph_retriever.entity_linking import EntityLinking
+from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select import (
+    PathSelect,
+)
 
 
 @FlowComponent.register("kg_cs_open_spg")
