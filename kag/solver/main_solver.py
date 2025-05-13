@@ -169,8 +169,10 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         project_id=project_id,
         thinking_enabled=thinking_enabled,
     )
-    await reporter.start()
+
+    pipeline_config = {}
     try:
+        await reporter.start()
         if is_chinese(query):
             KAG_PROJECT_CONF.language = "zh"
         else:
@@ -214,7 +216,8 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         else:
             answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。with qa_config={qa_config},pipeline_config={pipeline_config}"
         reporter.add_report_line("answer", "error", answer, "ERROR")
-    await reporter.stop()
+    finally:
+        await reporter.stop()
     return answer
 
 

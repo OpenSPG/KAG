@@ -82,7 +82,7 @@ def recall_one_hop_graph_by_entities(
 ):
     one_hop_graph_list = []
     start_time = time.time()
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         map_dict = {"s": heads, "o": tails}
         for k, v in map_dict.items():
             if len(v) == 0:

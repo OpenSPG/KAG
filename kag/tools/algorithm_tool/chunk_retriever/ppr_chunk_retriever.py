@@ -157,7 +157,7 @@ class PprChunkRetriever(ToolABC):
 
         limit_doc_ids = doc_ids[:top_k]
         doc_maps = {}
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=20) as executor:
             doc_res = list(executor.map(process_get_doc_id, limit_doc_ids))
             for d in doc_res:
                 doc_maps[d[0]] = d[1]
@@ -222,7 +222,7 @@ class PprChunkRetriever(ToolABC):
                     }
             # Use ThreadPoolExecutor to parallelize NER processing
 
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=20) as executor:
             executor.map(process_query, queries)
         logger.info(
             f"NER completed in {time.time() - ner_start_time:.2f} seconds. Found {len(ner_maps)} unique entities."
@@ -258,7 +258,7 @@ class PprChunkRetriever(ToolABC):
             return []
 
         # Use ThreadPoolExecutor to parallelize EL processing
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=20) as executor:
             results = list(
                 executor.map(
                     lambda item: process_entity(item[0], item[1]), ner_maps.items()
