@@ -20,6 +20,7 @@ type_tools = [
             },
             "strict": True,
         },
+        "strict": True
     }
 ]
 
@@ -36,12 +37,27 @@ class PrqaPlanner(PlannerABC):
         super().__init__(**kwargs)
         self.llm = llm
 
-    def analyze_question(self, question: str) -> str:
+    def analyze_question(self, question: str, retry_count: int = 0) -> str:
         """问题分类"""
-        new_message = {"role": "user", "content": str(question)}
+        if retry_count != 0:
+            # 遍历查找 type_messages 中的 system instruct 并修改内容
+            for message in type_messages:
+                if message['role'] == 'system':
+                    # 动态修改 instruct 内容
+                    instruct_content = message['content']
+                    if "上一次的判断错误，请重新思考" not in instruct_content:
+                        updated_instruct = (
+                                instruct_content.strip() + "\n上一次的判断错误，请重新思考。"
+                        )
+                        message['content'] = updated_instruct
+                    break  # 修改完成后直接退出循环
+        new_message = {
+            "role": "user",
+            "content": str(question)
+        }
         type_messages.append(new_message)
 
-        completion_1 = self.send_type_messages_deepseek(type_messages)
+        completion_1 = self.send_type_messages(type_messages)
 
         tool = completion_1.tool_calls[0]
         args = json.loads(tool.function.arguments)
@@ -60,8 +76,11 @@ class PrqaPlanner(PlannerABC):
             )
             return ""
 
-    def send_type_messages_deepseek(self, messages):
+    def send_type_messages(self, messages):
         response = self.llm.client.chat.completions.create(
-            model=self.llm.model, messages=messages, tools=type_tools
+            model=self.llm.model,
+            messages=messages,
+            tools=type_tools,
+            tool_choice={"type": "function", "function": {"name": "get_handle_type"}}
         )
         return response.choices[0].message
