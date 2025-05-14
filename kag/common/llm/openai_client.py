@@ -421,7 +421,11 @@ class AzureOpenAIClient(LLMClient):
 
 if __name__ == "__main__":
     client = OpenAIClient(
-        model="Qwen/Qwen3-0.6B", base_url="http://0.0.0.0:8000/v1", think=False
+        model="Qwen3-235B-A22B",
+        base_url="https://antchat.alipay.com/v1",
+        api_key="",
+        think=False,
+        stream=True,
     )
     msg = asyncio.run(client.acall("你好"))
     print(msg)

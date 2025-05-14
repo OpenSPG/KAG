@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+import asyncio
 import logging
 from ollama import Client, AsyncClient
 
@@ -63,6 +64,15 @@ class OllamaClient(LLMClient):
         logger.debug(
             f"Initialize OllamaClient with rate limit {max_rate} every {time_period}s"
         )
+
+    def remove_think_blocks(self, rsp: str):
+        if "<think>" in rsp and "</think>" in rsp:
+            think_start = rsp.find("<think>")
+            think_end = rsp.find("</think>") + len("</think>")
+            rsp = rsp[:think_start] + rsp[think_end:]
+            # Clean up any extra whitespace that might be left
+            rsp = rsp.strip()
+        return rsp
 
     def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """
@@ -118,24 +128,35 @@ class OllamaClient(LLMClient):
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
+            report_enabled = False
+            skip_next_newline = False
 
             for chunk in response:
-                if chunk["message"]["content"] is not None:
-                    rsp += chunk["message"]["content"]
-                    if reporter:
-                        reporter.add_report_line(
-                            segment_name,
-                            tag_name,
-                            rsp,
-                            status="RUNNING",
-                        )
+                content = chunk["message"]["content"]
+                if content is not None:
+                    if report_enabled:
+                        # 如果需要跳过第一个换行
+                        if skip_next_newline:
+                            if content == "\n\n" or content == "\n":
+                                skip_next_newline = False
+                                continue  # 跳过这个换行
+                            else:
+                                skip_next_newline = False  # 不是换行也要关掉标记
+                        rsp += content
+                        if reporter:
+                            reporter.add_report_line(
+                                segment_name,
+                                tag_name,
+                                rsp,
+                                status="RUNNING",
+                            )
+                    else:
+                        if content == "</think>":
+                            report_enabled = True
+                            skip_next_newline = True
         # Remove <think> </think> blocks from the response
-        if "<think>" in rsp and "</think>" in rsp:
-            think_start = rsp.find("<think>")
-            think_end = rsp.find("</think>") + len("</think>")
-            rsp = rsp[:think_start] + rsp[think_end:]
-            # Clean up any extra whitespace that might be left
-            rsp = rsp.strip()
+        rsp = self.remove_think_blocks(rsp)
+
         if reporter:
             reporter.add_report_line(
                 segment_name,
@@ -196,22 +217,38 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
-            rsp = response.message.content
-            tool_calls = response.message.tool_calls
+            rsp = response["message"]["content"]
+            tool_calls = response["message"].get("tool_calls", None)
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
+            report_enabled = False
+            skip_next_newline = False
 
             async for chunk in response:
-                if chunk.message.content is not None:
-                    rsp += chunk.message.content
-                    if reporter:
-                        reporter.add_report_line(
-                            segment_name,
-                            tag_name,
-                            rsp,
-                            status="RUNNING",
-                        )
+                content = chunk["message"]["content"]
+                if content is not None:
+                    if report_enabled:
+                        # 如果需要跳过第一个换行
+                        if skip_next_newline:
+                            if content == "\n\n" or content == "\n":
+                                skip_next_newline = False
+                                continue  # 跳过这个换行
+                            else:
+                                skip_next_newline = False  # 不是换行也要关掉标记
+                        rsp += content
+                        if reporter:
+                            reporter.add_report_line(
+                                segment_name,
+                                tag_name,
+                                rsp,
+                                status="RUNNING",
+                            )
+                    else:
+                        if content == "</think>":
+                            report_enabled = True
+                            skip_next_newline = True
+        rsp = self.remove_think_blocks(rsp)
         if reporter:
             reporter.add_report_line(
                 segment_name,
@@ -226,6 +263,8 @@ class OllamaClient(LLMClient):
 
 if __name__ == "__main__":
     client = OllamaClient(
-        model="qwen2.5:7b", base_url="http://localhost:11434", stream=True
+        model="qwen3:0.6b", base_url="http://localhost:11434", stream=True
     )
+    msg = asyncio.run(client.acall("你好"))
+    print(msg)
     print(client("你好"))
