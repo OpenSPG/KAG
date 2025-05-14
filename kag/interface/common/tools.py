@@ -14,7 +14,7 @@ from kag.common.registry import Registrable
 
 
 class ToolABC(Registrable):
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     def invoke(self, query, **kwargs):
