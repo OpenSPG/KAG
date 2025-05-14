@@ -26,8 +26,9 @@ class TextChunkRetriever(RetrieverABC):
         )
         super().__init__(top_k, **kwargs)
 
-    def invoke(self, query, **kwargs) -> RetrieverOutput:
+    def invoke(self, task, **kwargs) -> RetrieverOutput:
         top_k = kwargs.get("top_k", self.top_k)
+        query = task.arguments["query"]
         try:
             top_k_docs = self.search_api.search_text(
                 label_constraints=[

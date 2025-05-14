@@ -258,9 +258,10 @@ class PprChunkRetriever(RetrieverABC):
                     matched_entities.append(r)
         return matched_entities
 
-    def invoke(self, query: str, **kwargs) -> RetrieverOutput:
+    def invoke(self, task, **kwargs) -> RetrieverOutput:
         el_start_time = time.time()
         top_k = kwargs.get("top_k", self.top_k)
+        query = task.arguments["query"]
         matched_entities = self.linking_matched_entities(query, **kwargs)
 
         logger.info(
