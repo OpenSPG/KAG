@@ -135,13 +135,13 @@ class OllamaClient(LLMClient):
                 content = chunk["message"]["content"]
                 if content is not None:
                     if report_enabled:
-                        # 如果需要跳过第一个换行
+                        # If we need to skip the first newline
                         if skip_next_newline:
                             if content == "\n\n" or content == "\n":
                                 skip_next_newline = False
-                                continue  # 跳过这个换行
+                                continue  # Skip this newline
                             else:
-                                skip_next_newline = False  # 不是换行也要关掉标记
+                                skip_next_newline = False  # Turn off the flag even if it's not a newline
                         rsp += content
                         if reporter:
                             reporter.add_report_line(
@@ -229,13 +229,13 @@ class OllamaClient(LLMClient):
                 content = chunk["message"]["content"]
                 if content is not None:
                     if report_enabled:
-                        # 如果需要跳过第一个换行
+                        # If we need to skip the first newline
                         if skip_next_newline:
                             if content == "\n\n" or content == "\n":
                                 skip_next_newline = False
-                                continue  # 跳过这个换行
+                                continue  # Skip this newline
                             else:
-                                skip_next_newline = False  # 不是换行也要关掉标记
+                                skip_next_newline = False  # Turn off the flag even if it's not a newline
                         rsp += content
                         if reporter:
                             reporter.add_report_line(
