@@ -12,4 +12,4 @@
 # or implied.
 
 
-from kag.interface.common.data import *
+from kag.interface.common.model.retriever_data import *

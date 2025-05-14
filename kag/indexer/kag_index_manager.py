@@ -15,8 +15,8 @@ from knext.schema.client import SchemaClient
 from kag.interface.builder.extractor_abc import ExtractorABC
 from kag.common.registry import Registrable
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
-    KagHybridExecutor as Retriever,
+from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
+    KAGHybridRetrievalExecutor as Retriever,
 )
 
 
