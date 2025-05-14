@@ -103,14 +103,12 @@ r2: &r2
   top_k: 10
 
 retriever_executor: &retriever
-  type: kag_hybrid_retriever
+  type: kag_hybrid_retrieval_executor
   retrievers:
     - *r1
     - *r2
   merger:
     type: kag_merger
-    top_k: 10
-    llm: *chat_llm
       
 
 
