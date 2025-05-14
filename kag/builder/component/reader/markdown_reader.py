@@ -683,7 +683,7 @@ class MarkDownReader(ReaderABC):
             )
 
             # 新增：如果当前节点有内容且不是根节点，单独生成一个chunk
-            if node.content and node.title != "root":
+            if node.content or node.title != "root":
                 full_title = " / ".join(current_titles)
 
                 # Store parent content separately
@@ -697,9 +697,10 @@ class MarkDownReader(ReaderABC):
                     id=f"{generate_hash_id(full_title)}",
                     parent_id=parent_id,
                     name=full_title,
-                    content=node.content,  # 只包含当前节点自身的内容
+                    content=full_title + "\n" + node.content,  # 只包含当前节点自身的内容
                     parent_content=parent_content if self.reserve_meta else "",
                 )
+                parent_id = current_output.id
                 outputs.append(current_output)
                 node_chunk_map[node] = current_output
 
@@ -922,9 +923,10 @@ if __name__ == "__main__":
     reader = ReaderABC.from_config(
         {
             "type": "md",
-            "cut_depth": 1,
+            "cut_depth": 3,
         }
     )
     dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
     chunks = reader.invoke(file_path, write_ckpt=False)
+    print(chunks)
