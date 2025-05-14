@@ -10,4 +10,4 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 # flake8: noqa
-from kag.interface.common.model.chunk import *
+from kag.interface.common.model.doc import *

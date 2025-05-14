@@ -21,8 +21,8 @@ from kag.interface import (
 )
 
 
-@ExecutorABC.register("kag_hybrid_retriever")
-class KAGHybridRetriever(ExecutorABC):
+@ExecutorABC.register("kag_hybrid_retrieval_executor")
+class KAGHybridRetrievalExecutor(ExecutorABC):
     def __init__(
         self,
         retrievers: List[RetrieverABC],
