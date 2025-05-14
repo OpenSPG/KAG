@@ -9,10 +9,11 @@ from kag.common.registry import import_modules_from_path
 
 from kag.examples.bird_graph.solver.qa import BirdQA
 
+from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import Neo4jError
 
 
-def get_eval_dataset():
+def get_eval_dataset(db_name):
     current_path = os.path.dirname(os.path.abspath(__file__))
     dataset_json = os.path.join(
         current_path,
@@ -26,7 +27,7 @@ def get_eval_dataset():
         for line in f:
             # 解析每行 JSON 数据并添加到列表中
             dev_data = json.loads(line.strip())
-            if dev_data["db_id"] != "california_schools":
+            if dev_data["db_id"] != db_name:
                 continue
             rst_list.append(dev_data)
     rst_list.sort(key=lambda x: x["question_id"])
@@ -36,14 +37,14 @@ def get_eval_dataset():
 NEO4J_URI = "bolt://localhost:7687"
 NEO4J_USER = "neo4j"
 NEO4J_PASSWORD = "neo4j@openspg"
-driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 
-def check_cypher(cypher, dev_data, query):
-    with driver.session(database="birdgraph") as session:
+async def check_cypher(cypher, dev_data, query):
+    async with driver.session(database="birdgraph") as session:
         try:
-            result = session.run(cypher)
-            records = [record for record in result]
+            result = await session.run(cypher)
+            records = [record async for record in result]
         except (Neo4jError, ValueError) as e:
             print("cypher run error")
             records = [[]]
@@ -111,19 +112,25 @@ def compare_2d_arrays(arr1, arr2):
     return set1 == set2
 
 
+async def qa_and_check(evaObj, query, db_name, test_data):
+    cypher = await evaObj.qa(query=query, db_name=db_name)
+    match = await check_cypher(cypher, test_data, query)
+    return match
+
+
 if __name__ == "__main__":
     import_modules_from_path("./prompt")
     import_modules_from_path("./component")
 
+    db_name = "california_schools"
     evaObj = BirdQA()
     loop = asyncio.get_event_loop()
     _count = 0
-    for i, test_data in enumerate(get_eval_dataset()):
+    for i, test_data in enumerate(get_eval_dataset(db_name)):
         query = test_data["question"]
         if test_data["evidence"]:
             query += f" evidence: {test_data['evidence']}"
-        cypher = loop.run_until_complete(evaObj.qa(query=query))
-        match = check_cypher(cypher, test_data, query)
+        match = loop.run_until_complete(qa_and_check(evaObj, query, db_name, test_data))
         if match:
             _count += 1
         print("#" * 100)

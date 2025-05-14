@@ -1,4 +1,5 @@
 import re
+from kag.examples.bird_graph.table_2_graph.m_schema.m_schema import MSchema
 import kag.examples.bird_graph.table_2_graph.prompt
 
 
@@ -161,6 +162,7 @@ def convert_one_db(bird_path, db_name):
     concept_schema = get_concept_schema(bird_path=bird_path, db_name=db_name)
     one_degree_edge_list = relation_naming(bird_path, db_name, concept_schema)
     print(json.dumps(one_degree_edge_list, ensure_ascii=False))
+    # 暂时不搞概念边
     #two_degree_edge_list = concept_naming(bird_path, db_name, concept_schema)
     two_degree_edge_list = []
     print(json.dumps(two_degree_edge_list, ensure_ascii=False))
@@ -214,6 +216,7 @@ def convert_one_db(bird_path, db_name):
                 s_column,
                 o_column,
             )
+            info["desc"] = edge.get("desc", "")
             schema_info_list.append(info)
         elif "fk_edge" == convert_type:
             s = f"{edge['subject_table']}.{edge['subject_column']}"
@@ -229,6 +232,7 @@ def convert_one_db(bird_path, db_name):
                 o,
                 p,
             )
+            info["desc"] = edge.get("desc", "")
             schema_info_list.append(info)
         else:
             s = f"{edge['subject_table']}.{edge['subject_column']}"

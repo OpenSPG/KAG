@@ -94,7 +94,7 @@ def relation_naming(bird_path: str, db_name: str, concept_schema_map: dict):
                     with_json_parse=False,
                     with_cache=True,
                 )
-                res = relation_info.pop("reasonable", "false").lower()
+                res = str(relation_info.pop("reasonable", "false")).lower()
                 if "false" == res:
                     continue
                 relation_info["data_table"] = table

@@ -51,7 +51,7 @@ if __name__ == "__main__":
     results = execute_sql(
         "california_schools",
         """
-            SELECT T2.Latitude,T2.City, T1.`Low Grade`, T1.`School Name` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.State = 'CA' and T2.Latitude is not null ORDER BY T2.Latitude ASC LIMIT 1
+        SELECT T2.School, T1.AvgScrWrite, T2.Phone FROM schools AS T2 LEFT JOIN satscores AS T1 ON T2.CDSCode = T1.cds WHERE strftime('%Y', T2.OpenDate) > '1991' OR strftime('%Y', T2.ClosedDate) < '2000'
 
 
 """.strip(),

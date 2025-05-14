@@ -13,6 +13,38 @@ from kag.examples.bird_graph.table_2_graph.m_schema.func import (
 WRITE_FLAG = True
 
 
+def get_datetime_columns(table_column_list):
+    rst_map = {}
+    for column in table_column_list:
+        name = column["name"]
+        column_type = column["type"]
+        if column_type == "DATETIME":
+            rst_map[name] = pl.Datetime
+        elif column_type == "DATE":
+            rst_map[name] = pl.Date
+    return rst_map
+
+
+def get_df_schema(df: pl.DataFrame, table_column_list):
+    result = []
+    datetime_col_map = get_datetime_columns(table_column_list)
+    for col in df.columns:
+        column_data = df[col]
+        column_type = column_data.dtype
+        # 抽样 5 个不同的数据，过滤掉 null
+        sampled_data = column_data.drop_nulls().unique().limit(5).to_list()
+        if col in datetime_col_map:
+            column_type = datetime_col_map[col]
+        result.append(
+            {
+                "column_name": col,
+                "column_type": str(column_type),
+                "sample_data": sampled_data,
+            }
+        )
+    return result
+
+
 def convert_node(
     db_id, table_name: str, columns: list, conn: sqlite3.Connection, node_path: str
 ):
@@ -25,7 +57,7 @@ def convert_node(
     csv_file = os.path.join(node_path, f"{node_type}.csv")
     if WRITE_FLAG:
         df.write_csv(csv_file, include_header=True)
-    return {"entity_type": table_name, "pk": pk}
+    return {"entity_type": table_name, "pk": pk, "schema": get_df_schema(df, columns)}
 
 
 def get_df_from_sqlite(conn: sqlite3.Connection, table_name: str, table_column_list):
@@ -42,9 +74,9 @@ def get_df_from_sqlite(conn: sqlite3.Connection, table_name: str, table_column_l
     def get_table_schema(table_column_list):
         type_map = {
             "INTEGER": pl.Int64,
-            "TEXT": pl.Utf8,
-            "DATETIME": pl.Utf8,
-            "DATE": pl.Utf8,
+            "TEXT": pl.String,
+            "DATETIME": pl.String,
+            "DATE": pl.String,
             "REAL": pl.Float64,
         }
         schema = {}

@@ -31,6 +31,7 @@ class OneDegreeEdgeNamingPrompt(PromptABC):
   "object_table": "关系宾语，输出表名",
   "subject_column": "主语对应的列名",
   "object_column": "宾语对应的列名",
+  "desc": "边关系的完整描述信息",
 }
 ```
 

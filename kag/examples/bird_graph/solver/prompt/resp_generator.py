@@ -17,7 +17,9 @@ class BirdRespGenerator(PromptABC):
 $question
 
 ### 图schema
+```
 $schema
+```
 
 ### 尝试历史
 $history

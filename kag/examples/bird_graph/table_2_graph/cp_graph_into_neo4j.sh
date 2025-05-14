@@ -10,6 +10,7 @@ CONTAINER_TARGET_PATH="/var/lib/neo4j/import"
 
 # Step 1: 拷贝当前目录下的 dir_name 到 /root/dozerdb/logs
 echo "Copying $DIR_NAME to $HOST_TARGET_PATH..."
+sudo rm -rf $HOST_TARGET_PATH/$DIR_NAME
 sudo cp -r "$DIR_NAME" "$HOST_TARGET_PATH/"
 if [ $? -ne 0 ]; then
   echo "Failed to copy $DIR_NAME to $HOST_TARGET_PATH. Exiting."

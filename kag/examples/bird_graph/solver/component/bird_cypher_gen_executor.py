@@ -34,7 +34,6 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_compon
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_flow import (
     KAGFlow,
 )
-from kag.examples.bird_graph.solver.common import fix_schem
 
 from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
@@ -66,19 +65,6 @@ class BirdCypherGenRunner(ExecutorABC):
         NEO4J_PASSWORD = "neo4j@openspg"
         self.driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-        current_file_path = os.path.dirname(os.path.abspath(__file__))
-        schema_file = os.path.join(
-            current_file_path,
-            "..",
-            "..",
-            "table_2_graph",
-            "bird_dev_graph_dataset",
-            "california_schools.schema.json",
-        )
-        with open(schema_file) as f:
-            self.graph_schema = json.load(f)
-        self.graph_schema = fix_schem(self.graph_schema, "california_schools")
-
     def invoke(self, query, task: Task, context: Context, **kwargs):
         try_times = 1
         histroy_list = []
@@ -88,7 +74,7 @@ class BirdCypherGenRunner(ExecutorABC):
             cypher = self.llm_client.invoke(
                 variables={
                     "question": task.arguments["query"],
-                    "schema": str(self.graph_schema),
+                    "schema": str(kwargs.get("graph_schema", "")),
                     "goal": query,
                     "old_cypher": self._get_old_cypher(task.parents),
                     "history": str(histroy_list),

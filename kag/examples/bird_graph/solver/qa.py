@@ -12,19 +12,7 @@ from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
 logger = logging.getLogger(__name__)
 
-from kag.examples.bird_graph.solver.common import fix_schem
-
-current_file_path = os.path.dirname(os.path.abspath(__file__))
-schema_file = os.path.join(
-    current_file_path,
-    "..",
-    "table_2_graph",
-    "bird_dev_graph_dataset",
-    "california_schools.schema.json",
-)
-with open(schema_file) as f:
-    graph_schema = json.load(f)
-graph_schema = fix_schem(graph_schema, "california_schools")
+from kag.examples.bird_graph.solver.common import load_graph_mschema
 
 
 class BirdQA:
@@ -32,11 +20,13 @@ class BirdQA:
     init for kag client
     """
 
-    async def qa(self, query):
+    async def qa(self, query, db_name="california_schools"):
         reporter: TraceLogReporter = TraceLogReporter()
         resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["solver_pipeline"])
 
-        answer = await resp.ainvoke(query, reporter=reporter, graph_schema=graph_schema)
+        answer = await resp.ainvoke(
+            query, reporter=reporter, graph_schema=load_graph_mschema(db_name)
+        )
         return answer
 
 

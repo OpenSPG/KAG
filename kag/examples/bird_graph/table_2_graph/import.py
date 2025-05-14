@@ -33,27 +33,84 @@ def load_schema(db_name):
     return entity_map, edge_map
 
 
+def get_type_map_from_graph_schema(db_name, entity_name):
+    rst_map = {}
+    entity_map, _ = load_schema(db_name)
+    entity_info = entity_map[entity_name]
+    pk = entity_info["pk"]
+    schema = entity_info["schema"]
+    for column_info in schema:
+        name = column_info["column_name"]
+        # if name == pk:
+        #     continue
+        column_type = column_info["column_type"]
+        rst_map[name] = column_type
+    return rst_map
+
+
 def clear_graph():
     with driver.session(database=DATABASE) as session:
         session.run("MATCH (n) DETACH DELETE n;")
 
 
-def import_node(db_name, node_type, primary_key):
-    print(f"start load {node_type}")
+def import_node(db_name, node_type, primary_key, type_map):
+    """
+    Import nodes into the graph database.
+
+    Parameters:
+    - db_name (str): The database name.
+    - node_type (str): The type of the node to import.
+    - primary_key (str): The primary key field for the node.
+    - type_map (dict): A dictionary mapping field names to their types (e.g., "int", "float", "string").
+    """
+    print(f"Start loading {node_type}")
+
+    # Prepare Cypher SET statements for type casting
+    type_casting_statements = []
+    for field, field_type in type_map.items():
+        field_type: str = field_type
+        if field_type.lower().startswith("int"):
+            type_casting_statements.append(
+                f"n.`{field}` = toInteger(filteredRow.`{field}`)"
+            )
+        elif field_type.lower().startswith("float"):
+            type_casting_statements.append(
+                f"n.`{field}` = toFloat(filteredRow.`{field}`)"
+            )
+        elif field_type.lower() == "string":
+            type_casting_statements.append(
+                f"n.`{field}` = toString(filteredRow.`{field}`)"
+            )
+        elif field_type.lower() == "date":
+            type_casting_statements.append(
+                f"n.`{field}` = toString(filteredRow.`{field}`)"
+            )
+        # Optionally handle more types here, if needed
+        else:
+            type_casting_statements.append(
+                f"n.`{field}` = filteredRow.`{field}`"
+            )  # Default: no type casting
+
+    # Combine all SET statements into one string
+    type_casting_cypher = ",\n        ".join(type_casting_statements)
+
+    # Construct the full Cypher query
     cypher = f"""
 LOAD CSV WITH HEADERS FROM 'file:///bird_dev_graph_dataset/nodes/{db_name}.{node_type}.csv' AS row
 WITH apoc.map.clean(row, [], ['null', '', 'NA']) AS filteredRow
 CREATE (n:{db_name}_{node_type})
-    SET n += filteredRow,
-        n.id = filteredRow.{primary_key};
+    SET n.id = toString(filteredRow.`{primary_key}`),
+        {type_casting_cypher}
+RETURN count(n) AS node_count;
 """
     with driver.session(database=DATABASE) as session:
-        # session.run(f"MATCH (n:{db_name}_{node_type}) DETACH DELETE n")
-        session.run(cypher)
+        result = session.run(cypher)
+        record = result.single()
+        loaded_count = record["node_count"] if record else 0
         session.run(
             f"CREATE CONSTRAINT {db_name}_{node_type}_id_unique IF NOT EXISTS FOR (n:{db_name}_{node_type}) REQUIRE n.id IS UNIQUE;"
         )
-    print(f"load {node_type} done")
+    print(f"Loading {node_type} done, count={loaded_count}")
 
 
 def import_edge(db_name, s, p, o):
@@ -64,12 +121,14 @@ MATCH (s:{db_name}_{s} {{id: row.s}})
 MATCH (o:{db_name}_{o} {{id: row.o}})
 WITH s, o, apoc.map.clean(row, ['s', 'o', 'p'], []) AS properties, row.p AS relationshipType
 CALL apoc.create.relationship(s, relationshipType, properties, o) YIELD rel
-RETURN rel
+RETURN COUNT(rel) AS edge_count
 """
+    #print(cypher)
     with driver.session(database=DATABASE) as session:
         session.run(f"MATCH ()-[r:{p}]-() DELETE r")
-        session.run(cypher)
-    print(f"load edge {s}_{p}_{o} done")
+        result = session.run(cypher)
+        edge_count = result.single()["edge_count"]
+    print(f"load edge {s}_{p}_{o} done, count={edge_count}")
 
 
 def find_csv_files(directory, db_name):
@@ -82,6 +141,11 @@ def find_csv_files(directory, db_name):
     return csv_files
 
 
+def get_entity_pk(entity_map, entity_name):
+    info = entity_map[entity_name]
+    return info["pk"]
+
+
 if __name__ == "__main__":
     clear_graph()
     _graph_path = os.path.join(
@@ -89,19 +153,31 @@ if __name__ == "__main__":
         "bird_dev_graph_dataset",
     )
 
-    entity_map, edge_map = load_schema("california_schools")
-    _all_nodes = find_csv_files(_graph_path + "/nodes", "california_schools")
-    _all_edges = find_csv_files(_graph_path + "/edges", "california_schools")
+    db_name = "california_schools"
+
+    entity_map, edge_map = load_schema(db_name)
+    _all_nodes = find_csv_files(_graph_path + "/nodes", db_name)
+    _all_edges = find_csv_files(_graph_path + "/edges", db_name)
     for node in _all_nodes:
         node_type = os.path.basename(node)
         node_type = node_type.split(".")[1]
         info = entity_map[node_type]
-        import_node("california_schools", node_type, info["pk"])
+        import_node(
+            db_name,
+            node_type,
+            info["pk"],
+            get_type_map_from_graph_schema(db_name, node_type),
+        )
 
     for edge in _all_edges:
         spo_str = os.path.basename(edge)
         spo_str = spo_str.split(".")[1]
         edge_info = edge_map[spo_str]
+        s = edge_info["s"]
+        o = edge_info["o"]
         import_edge(
-            "california_schools", edge_info["s"], edge_info["edge_type"], edge_info["o"]
+            db_name,
+            s,
+            edge_info["edge_type"],
+            o,
         )
