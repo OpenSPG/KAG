@@ -560,7 +560,7 @@ Rewritten question:\n{content}
         )
         refer_ids = []
         if answer:
-            refer_ids = extract_ids(answer)
+            refer_ids = list(set(extract_ids(answer)))
         reference = self.process_reference(reference_reports, refer_ids)
 
         content = StreamData(
