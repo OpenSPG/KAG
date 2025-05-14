@@ -34,24 +34,23 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
     def inovke(
         self, query: str, task: Task, context: Context, **kwargs
     ) -> RetrieverOutput:
-        task_query = task.arguments["query"]
         outputs = []
         for retriever in self.retrievers:
-            outputs.append(retriever.invoke(task_query, **kwargs))
+            outputs.append(retriever.invoke(task, **kwargs))
 
-        merged = self.merger.invoke(task_query, outputs, **kwargs)
+        merged = self.merger.invoke(task, outputs, **kwargs)
         return merged
 
     async def ainvoke(
         self, query: str, task: Task, context: Context, **kwargs
     ) -> RetrieverOutput:
-        task_query = task.arguments["query"]
-        print(f"task_query = {task_query}")
-        tasks = []
+        retrieval_tasks = []
         for retriever in self.retrievers:
-            tasks.append(asyncio.create_task(retriever.ainvoke(task_query, **kwargs)))
-        outputs = await asyncio.gather(*tasks)
-        merged = await self.merger.ainvoke(task_query, outputs, **kwargs)
+            retrieval_tasks.append(
+                asyncio.create_task(retriever.ainvoke(task, **kwargs))
+            )
+        outputs = await asyncio.gather(*retrieval_tasks)
+        merged = await self.merger.ainvoke(task, outputs, **kwargs)
         return merged
 
     def schema(self) -> dict:

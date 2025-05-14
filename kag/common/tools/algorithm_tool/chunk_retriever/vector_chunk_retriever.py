@@ -50,7 +50,8 @@ class VectorChunkRetriever(RetrieverABC):
         )
         super().__init__(top_k, **kwargs)
 
-    def invoke(self, query, **kwargs) -> RetrieverOutput:
+    def invoke(self, task, **kwargs) -> RetrieverOutput:
+        query = task.arguments["query"]
         top_k = kwargs.get("top_k", self.top_k)
         try:
             cached = chunk_cached_by_query_map.get(query)
