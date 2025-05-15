@@ -572,19 +572,21 @@ class MarkDownReader(ReaderABC):
                     table_md.append(
                         convert_table_to_markdown(table["headers"], table["data"])
                     )
-            for child in n.children:
-                child_tables, child_table_md = collect_tables(child)
-                tables.extend(child_tables)
-                table_md.extend(child_table_md)
+            # for child in n.children:
+            #     child_tables, child_table_md = collect_tables(child)
+            #     tables.extend(child_tables)
+            #     table_md.extend(child_table_md)
             return tables, table_md
 
         def collect_children_content(n: MarkdownNode):
-            """Collect content from node and its children"""
+            """Collect content from node and its children, including child titles with line breaks"""
             content = []
             if n.content:
                 content.append(n.content)
-            # Process child nodes recursively
+            # Process child nodes recursively, including their titles
             for child in n.children:
+                if child.title:
+                    content.append(f"\n{child.title}\n")
                 content.extend(collect_children_content(child))
             return content
 
@@ -677,7 +679,6 @@ class MarkDownReader(ReaderABC):
         # If current node level is less than target level, continue traversing
         elif node.level < self.cut_depth:
             # Check if any subtree contains target level nodes
-            has_target_level = False
             current_contents = parent_contents + (
                 [node.content] if node.content else []
             )
@@ -705,44 +706,6 @@ class MarkDownReader(ReaderABC):
                 node_chunk_map[node] = current_output
 
                 # 注意：这里不处理表格，因为表格会在下面的代码中处理
-
-            # 继续处理子节点（保持原逻辑不变）
-            for child in node.children:
-                child_outputs, child_map = self._convert_to_outputs(
-                    child, id, parent_id, current_titles, current_contents
-                )
-                if child_outputs:
-                    has_target_level = True
-                    outputs.extend(child_outputs)
-                    node_chunk_map.update(child_map)  # Merge child mappings
-
-            # 原有的逻辑保持不变：如果没有找到目标级别节点，处理当前节点及其子内容
-            if not has_target_level and node.title != "root":
-                full_title = " / ".join(current_titles)
-
-                # Store parent content separately
-                parent_content = (
-                    "\n".join(filter(None, parent_contents))
-                    if parent_contents
-                    else None
-                )
-
-                # Current node's own content and child content
-                current_content = [node.content] if node.content else []
-                for child in node.children:
-                    child_content = collect_children_content(child)
-                    current_content.extend(child_content)
-
-                current_output = Chunk(
-                    id=f"{generate_hash_id(full_title)}",
-                    parent_id=parent_id,
-                    name=full_title,
-                    content="\n".join(filter(None, current_content)),
-                    parent_content=parent_content if self.reserve_meta else "",
-                )
-                outputs.append(current_output)
-                node_chunk_map[node] = current_output  # Add mapping
-
                 # Create separate chunks for tables
                 all_tables = []
                 if node.tables:
@@ -795,6 +758,42 @@ class MarkDownReader(ReaderABC):
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)
+
+            # 继续处理子节点（保持原逻辑不变）
+            for child in node.children:
+                child_outputs, child_map = self._convert_to_outputs(
+                    child, id, parent_id, current_titles, current_contents
+                )
+                if child_outputs:
+                    outputs.extend(child_outputs)
+                    node_chunk_map.update(child_map)  # Merge child mappings
+
+            # # 原有的逻辑保持不变：如果没有找到目标级别节点，处理当前节点及其子内容
+            # if not has_target_level and node.title != "root":
+            #     full_title = " / ".join(current_titles)
+
+            #     # Store parent content separately
+            #     parent_content = (
+            #         "\n".join(filter(None, parent_contents))
+            #         if parent_contents
+            #         else None
+            #     )
+
+            #     # Current node's own content and child content
+            #     current_content = [node.content] if node.content else []
+            #     for child in node.children:
+            #         child_content = collect_children_content(child)
+            #         current_content.extend(child_content)
+
+            #     current_output = Chunk(
+            #         id=f"{generate_hash_id(full_title)}",
+            #         parent_id=parent_id,
+            #         name=full_title,
+            #         content="\n".join(filter(None, current_content)),
+            #         parent_content=parent_content if self.reserve_meta else "",
+            #     )
+            #     outputs.append(current_output)
+            #     node_chunk_map[node] = current_output  # Add mapping
 
         return outputs, node_chunk_map
 
@@ -928,5 +927,8 @@ if __name__ == "__main__":
     )
     dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
+    file_path = (
+        "/Users/zhangxinhong.zxh/Downloads/附件1 10kV～110kV线路保护及辅助装置标准化设计规范 （报批稿）.md"
+    )
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)
