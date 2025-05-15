@@ -172,7 +172,7 @@ def create_project(
 
     if host_addr:
         client = ProjectClient(host_addr=host_addr)
-        project = client.create(name=name, namespace=namespace, config=json.dumps(config))
+        project = client.create(name=name, namespace=namespace, config=config)
 
         if project and project.id:
             project_id = project.id
@@ -252,7 +252,7 @@ def update_project(proj_path):
         sys.exit()
 
     logger.info(f"project id: {env.id}")
-    client.update(id=env.id, config=json.dumps(env._config))
+    client.update(id=env.id, config=env._config)
     click.secho(
         f"Project [{env.name}] with namespace [{env.namespace}] was successfully updated from [{proj_path}].",
         fg="bright_green",

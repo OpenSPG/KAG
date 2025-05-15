@@ -1,15 +1,4 @@
 # coding: utf-8
-# Copyright 2023 OpenSPG Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License. You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License
-# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-# or implied.
-
 
 """
     knext
@@ -44,33 +33,22 @@ class Project(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "id": "str",
-        "name": "str",
-        "description": "str",
-        "namespace": "str",
-        "tenant_id": "str",
-        "config": "str",
+        'id': 'str',
+        'name': 'str',
+        'description': 'str',
+        'namespace': 'str',
+        'tenant_id': 'str'
     }
 
     attribute_map = {
-        "id": "id",
-        "name": "name",
-        "description": "description",
-        "namespace": "namespace",
-        "tenant_id": "tenantId",
-        "config": "config",
+        'id': 'id',
+        'name': 'name',
+        'description': 'description',
+        'namespace': 'namespace',
+        'tenant_id': 'tenantId'
     }
 
-    def __init__(
-        self,
-        id=None,
-        name=None,
-        description=None,
-        namespace=None,
-        tenant_id=None,
-        config=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, id=None, name=None, description=None, namespace=None, tenant_id=None, local_vars_configuration=None):  # noqa: E501
         """Project - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -81,7 +59,6 @@ class Project(object):
         self._description = None
         self._namespace = None
         self._tenant_id = None
-        self._config = None
         self.discriminator = None
 
         if id is not None:
@@ -94,8 +71,6 @@ class Project(object):
             self.namespace = namespace
         if tenant_id is not None:
             self.tenant_id = tenant_id
-        if config is not None:
-            self.config = config
 
     @property
     def id(self):
@@ -201,7 +176,7 @@ class Project(object):
         """
 
         self._tenant_id = tenant_id
-
+    
     @property
     def config(self):
         """Gets the config of this Project.  # noqa: E501
@@ -230,20 +205,18 @@ class Project(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = list(map(
+                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
+                    value
+                ))
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], item[1].to_dict())
+                    if hasattr(item[1], "to_dict") else item,
+                    value.items()
+                ))
             else:
                 result[attr] = value
 
