@@ -1,0 +1,1739 @@
+nohup: ignoring input
+2025-05-15 20:05:33 - INFO - root - found config file: /home/zhenzhi/code/KAG/kag/examples/bird_graph/kag_config.yaml
+2025-05-15 20:05:33 - INFO - root - Done init config from local file
+index:0
+question:
+What is the highest eligible free rate for K-12 students in the schools in Alameda County? evidence: Eligible free rate for K-12 = `Free Meal Count (K-12)` / `Enrollment (K-12)`
+cypher:
+MATCH (frpm:california_schools_frpm)
+WHERE frpm.`County Name` = 'Alameda'
+WITH frpm.`Free Meal Count (K-12)` / frpm.`Enrollment (K-12)` AS eligible_free_rate
+RETURN MAX(eligible_free_rate) AS max_eligible_free_rate_in_alameda_county
+SQL:
+SELECT `Free Meal Count (K-12)` / `Enrollment (K-12)` FROM frpm WHERE `County Name` = 'Alameda' ORDER BY (CAST(`Free Meal Count (K-12)` AS REAL) / `Enrollment (K-12)`) DESC LIMIT 1
+result:1
+[[1.0]]
+answer:1
+[[1.0]]
+####################################################################################################
+process=1,match=1,p=1.0
+####################################################################################################
+index:1
+question:
+Please list the lowest three eligible free rates for students aged 5-17 in continuation schools. evidence: Eligible free rates for students aged 5-17 = `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)`
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE frpm.`Educational Option Type` = 'Continuation School'
+  AND frpm.`Enrollment (Ages 5-17)` > 0
+WITH frpm, school,
+     toFloat(frpm.`Free Meal Count (Ages 5-17)`) / toFloat(frpm.`Enrollment (Ages 5-17)`) AS eligible_free_rate
+WHERE eligible_free_rate IS NOT NULL
+ORDER BY eligible_free_rate ASC
+LIMIT 3
+RETURN school.`School Name` AS SchoolName,
+       frpm.`Free Meal Count (Ages 5-17)` AS FreeMealCount_Ages5_17,
+       frpm.`Enrollment (Ages 5-17)` AS Enrollment_Ages5_17,
+       eligible_free_rate
+SQL:
+SELECT `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)` FROM frpm WHERE `Educational Option Type` = 'Continuation School' AND `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)` IS NOT NULL ORDER BY `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)` ASC LIMIT 3
+result:3
+[[None, 3.0, 69.0, 0.043478260869565216], [None, 5.0, 71.0, 0.07042253521126761], [None, 5.0, 44.0, 0.11363636363636363]]
+answer:3
+[[0.043478260869565216], [0.07042253521126761], [0.11363636363636363]]
+####################################################################################################
+process=2,match=1,p=0.5
+####################################################################################################
+index:2
+question:
+Please list the zip code of all the charter schools in Fresno County Office of Education. evidence: Charter schools refers to `Charter School (Y/N)` = 1 in the table fprm
+cypher:
+MATCH (frpm:california_schools_frpm {`County Name`: 'Fresno', `District Type`: 'County Office of Education (COE)', `Charter School (Y/N)`: 1})
+-[:reportsMealEligibilityFor]->(school:california_schools_schools {CDSCode: frpm.CDSCode})
+RETURN school.`Zip` AS ZipCode
+SQL:
+SELECT T2.Zip FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.`District Name` = 'Fresno County Office of Education' AND T1.`Charter School (Y/N)` = 1
+result:5
+[['93726-5309'], ['93628-9602'], ['93706-2611']]
+answer:5
+[['93726-5309'], ['93628-9602'], ['93706-2611']]
+####################################################################################################
+process=3,match=2,p=0.6666666666666666
+####################################################################################################
+index:3
+question:
+What is the unabbreviated mailing street address of the school with the highest FRPM count for K-12 students?
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE frpm.`School Type` CONTAINS 'K-12'
+WITH frpm, school
+ORDER BY frpm.`FRPM Count (K-12)` DESC
+LIMIT 1
+RETURN school.MailStreet AS UnabbreviatedMailingAddress
+SQL:
+SELECT T2.MailStreet FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode ORDER BY T1.`FRPM Count (K-12)` DESC LIMIT 1
+result:1
+[['1011 Union Street']]
+answer:1
+[['14429 South Downey Avenue']]
+####################################################################################################
+process=4,match=2,p=0.5
+####################################################################################################
+index:4
+question:
+Please list the phone numbers of the direct charter-funded schools that are opened after 2000/1/1. evidence: Charter schools refers to `Charter School (Y/N)` = 1 in the frpm
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.Charter = 1 AND s.FundingType = 'Directly funded' AND s.OpenDate > date('2000-01-01')
+RETURN s.Phone AS PhoneNumber
+SQL:
+SELECT T2.Phone FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.`Charter Funding Type` = 'Directly funded' AND T1.`Charter School (Y/N)` = 1 AND T2.OpenDate > '2000-01-01'
+result:1067
+[[None], ['(510) 596-8901'], [None]]
+answer:751
+[[None], ['(510) 596-8901'], [None]]
+####################################################################################################
+process=5,match=2,p=0.4
+####################################################################################################
+index:5
+question:
+How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual? evidence: Exclusively virtual refers to Virtual = 'F'
+cypher:
+MATCH (school:california_schools_schools {Virtual: 'F'})
+MATCH (sat:california_schools_satscores)
+WHERE sat.cds = school.CDSCode AND sat.AvgScrMath > 400
+RETURN count(DISTINCT school.CDSCode) AS count_exclusively_virtual_math_gt_400
+SQL:
+SELECT COUNT(DISTINCT T2.School) FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.Virtual = 'F' AND T1.AvgScrMath > 400
+result:1
+[[4]]
+answer:1
+[[4]]
+####################################################################################################
+process=6,match=3,p=0.5
+####################################################################################################
+index:6
+question:
+Among the schools with the SAT test takers of over 500, please list the schools that are magnet schools or offer a magnet program. evidence: Magnet schools or offer a magnet program means that Magnet = 1
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.NumTstTakr > 500 AND school.Magnet = 1
+RETURN school.CDSCode AS CDSCode, school.School AS SchoolName
+SQL:
+SELECT T2.School FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.Magnet = 1 AND T1.NumTstTakr > 500
+result:3
+[['19647251935758', 'Millikan High'], ['19647251936947', 'Polytechnic High'], ['30665143037496', 'Troy High']]
+answer:3
+[['Millikan High'], ['Polytechnic High'], ['Troy High']]
+####################################################################################################
+process=7,match=3,p=0.42857142857142855
+####################################################################################################
+index:7
+question:
+What is the phone number of the school that has the highest number of test takers with an SAT score of over 1500?
+cypher:
+MATCH (sat:california_schools_satscores)
+WHERE sat.NumGE1500 IS NOT NULL
+ORDER BY sat.NumGE1500 DESC
+LIMIT 1
+MATCH (school:california_schools_schools {CDSCode: sat.cds})
+RETURN school.Phone AS PhoneNumber
+SQL:
+SELECT T2.Phone FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.NumGE1500 DESC LIMIT 1
+result:1
+[['(213) 241-1000']]
+answer:1
+[['(213) 241-1000']]
+####################################################################################################
+process=8,match=4,p=0.5
+####################################################################################################
+index:8
+question:
+What is the number of SAT test takers of the schools with the highest FRPM count for K-12 students?
+cypher:
+MATCH (f:california_schools_frpm)-[:reportsMealEligibilityFor]->(s:california_schools_schools)<-[:belongsTo]-(sat:california_schools_satscores)
+WITH MAX(f.`FRPM Count (K-12)`) AS maxFRPM
+MATCH (f:california_schools_frpm)-[:reportsMealEligibilityFor]->(s:california_schools_schools)<-[:belongsTo]-(sat:california_schools_satscores)
+WHERE f.`FRPM Count (K-12)` = maxFRPM
+RETURN sum(sat.NumTstTakr) AS total_sat_test_takers
+SQL:
+SELECT NumTstTakr FROM satscores WHERE cds = ( SELECT CDSCode FROM frpm ORDER BY `FRPM Count (K-12)` DESC LIMIT 1 )
+result:1
+[[459]]
+answer:1
+[[459]]
+####################################################################################################
+process=9,match=5,p=0.5555555555555556
+####################################################################################################
+index:9
+question:
+Among the schools with the average score in Math over 560 in the SAT test, how many schools are directly charter-funded?
+cypher:
+MATCH (sat:california_schools_satscores)
+WHERE sat.AvgScrMath > 560
+MATCH (school:california_schools_schools {CDSCode: sat.cds})
+WHERE school.FundingType = 'Directly funded'
+RETURN count(DISTINCT school.CDSCode) AS directly_funded_school_count
+SQL:
+SELECT COUNT(T2.`School Code`) FROM satscores AS T1 INNER JOIN frpm AS T2 ON T1.cds = T2.CDSCode WHERE T1.AvgScrMath > 560 AND T2.`Charter Funding Type` = 'Directly funded'
+result:1
+[[2]]
+answer:1
+[[2]]
+####################################################################################################
+process=10,match=6,p=0.6
+####################################################################################################
+index:10
+question:
+For the school with the highest average score in Reading in the SAT test, what is its FRPM count for students aged 5-17?
+cypher:
+MATCH (sat:california_schools_satscores)
+MATCH (frpm:california_schools_frpm)
+WHERE sat.cds = frpm.CDSCode
+  AND sat.AvgScrRead IS NOT NULL
+ORDER BY sat.AvgScrRead DESC
+LIMIT 1
+RETURN 
+  frpm.`FRPM Count (Ages 5-17)` AS frpmCountAges5To17,
+  sat.sname AS topSchoolName,
+  sat.AvgScrRead AS highestReadingScore
+SQL:
+SELECT T2.`FRPM Count (Ages 5-17)` FROM satscores AS T1 INNER JOIN frpm AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.AvgScrRead DESC LIMIT 1
+result:1
+[[136.0, 'Henry M. Gunn High', 642]]
+answer:1
+[[136.0]]
+####################################################################################################
+process=11,match=6,p=0.5454545454545454
+####################################################################################################
+index:11
+question:
+Please list the codes of the schools with a total enrollment of over 500. evidence: Total enrollment can be represented by `Enrollment (K-12)` + `Enrollment (Ages 5-17)`
+cypher:
+MATCH (frpm:california_schools_frpm)
+WHERE toFloat(frpm.`Enrollment (K-12)`) + toFloat(frpm.`Enrollment (Ages 5-17)`) > 500
+RETURN frpm.CDSCode AS SchoolCode
+SQL:
+SELECT T2.CDSCode FROM schools AS T1 INNER JOIN frpm AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.`Enrollment (K-12)` + T2.`Enrollment (Ages 5-17)` > 500
+result:7806
+[['01100170109835'], ['01100170112607'], ['01100170124172']]
+answer:7806
+[['01100170109835'], ['01100170112607'], ['01100170124172']]
+####################################################################################################
+process=12,match=7,p=0.5833333333333334
+####################################################################################################
+index:12
+question:
+Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17? evidence: Excellence rate = NumGE1500 / NumTstTakr; Eligible free rates for students aged 5-17 = `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)`
+cypher:
+MATCH (sat:california_schools_satscores)-[:reports]->(frpm:california_schools_frpm)
+WHERE sat.NumTstTakr > 0 
+  AND toFloat(sat.NumGE1500) / toFloat(sat.NumTstTakr) > 0.3
+WITH frpm.`Enrollment (Ages 5-17)` AS enrollment, 
+     frpm.`Free Meal Count (Ages 5-17)` AS freeMeals
+WHERE enrollment > 0
+RETURN max(toFloat(freeMeals) / toFloat(enrollment)) AS maxEligibleFreeRate
+SQL:
+SELECT MAX(CAST(T1.`Free Meal Count (Ages 5-17)` AS REAL) / T1.`Enrollment (Ages 5-17)`) FROM frpm AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds WHERE CAST(T2.NumGE1500 AS REAL) / T2.NumTstTakr > 0.3
+result:1
+[[0.9049079754601227]]
+answer:1
+[[0.9049079754601227]]
+####################################################################################################
+process=13,match=8,p=0.6153846153846154
+####################################################################################################
+index:13
+question:
+Please list the phone numbers of the schools with the top 3 SAT excellence rate. evidence: Excellence rate = NumGE1500 / NumTstTakr
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.NumTstTakr > 0
+WITH sat, school, toFloat(sat.NumGE1500) / sat.NumTstTakr AS excellence_rate
+ORDER BY excellence_rate DESC
+LIMIT 3
+RETURN school.School AS SchoolName, school.Phone AS PhoneNumber, excellence_rate AS ExcellenceRate
+SQL:
+SELECT T1.Phone FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds ORDER BY CAST(T2.NumGE1500 AS REAL) / T2.NumTstTakr DESC LIMIT 3
+result:3
+[[None, '(559) 265-3000', None], ['Hume Lake Charter', '(559) 305-7565', None], ['Big Picture Educational Academy', '(559) 420-1234', None]]
+answer:3
+[['(714) 220-3055'], ['(562) 229-7745'], ['(408) 366-7700']]
+####################################################################################################
+process=14,match=8,p=0.5714285714285714
+####################################################################################################
+index:14
+question:
+List the top five schools, by descending order, from the highest to the lowest, the most number of Enrollment (Ages 5-17). Please give their NCES school identification number.
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE frpm.`Enrollment (Ages 5-17)` IS NOT NULL
+RETURN school.NCESSchool AS NCES_School_ID, frpm.`Enrollment (Ages 5-17)` AS Enrollment_Ages_5_17
+ORDER BY Enrollment_Ages_5_17 DESC
+LIMIT 5
+SQL:
+SELECT T1.NCESSchool FROM schools AS T1 INNER JOIN frpm AS T2 ON T1.CDSCode = T2.CDSCode ORDER BY T2.`Enrollment (Ages 5-17)` DESC LIMIT 5
+result:5
+[['11707', 5271.0], ['04653', 4734.0], ['08283', 4718.0]]
+answer:5
+[['11707'], ['04653'], ['08283']]
+####################################################################################################
+process=15,match=8,p=0.5333333333333333
+####################################################################################################
+index:15
+question:
+Which active district has the highest average score in Reading?
+cypher:
+MATCH (scores:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE school.StatusType = 'Active' AND scores.AvgScrRead IS NOT NULL
+RETURN scores.dname AS DistrictName, avg(scores.AvgScrRead) AS AverageReadingScore
+ORDER BY AverageReadingScore DESC
+LIMIT 1
+SQL:
+SELECT T1.District FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds WHERE T1.StatusType = 'Active' ORDER BY T2.AvgScrRead DESC LIMIT 1
+result:1
+[['Santa Cruz County Office of Education', 638.0]]
+answer:1
+[['Palo Alto Unified']]
+####################################################################################################
+process=16,match=8,p=0.5
+####################################################################################################
+index:16
+question:
+How many schools in merged Alameda have number of test takers less than 100?
+cypher:
+MATCH (school:california_schools_schools {County: 'Alameda', StatusType: 'Merged'})
+MATCH (scores:california_schools_satscores)-[:belongsTo]->(school)
+WHERE scores.NumTstTakr < 100
+RETURN count(*) AS school_count
+SQL:
+SELECT COUNT(T1.CDSCode) FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds WHERE T1.StatusType = 'Merged' AND T2.NumTstTakr < 100 AND T1.County = 'Lake'
+result:1
+[[0]]
+answer:1
+[[1]]
+####################################################################################################
+process=17,match=8,p=0.47058823529411764
+####################################################################################################
+index:17
+question:
+Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers. evidence: Valid charter number means the number is not null
+cypher:
+MATCH (satscore:california_schools_satscores {rtype: "S"})
+WHERE satscore.AvgScrWrite > 499
+MATCH (school:california_schools_schools {CDSCode: satscore.cds})
+WHERE school.CharterNum IS NOT NULL
+RETURN school.CharterNum AS CharterNumber, satscore.AvgScrWrite AS WritingScore
+ORDER BY satscore.AvgScrWrite DESC
+SQL:
+SELECT CharterNum, AvgScrWrite, RANK() OVER (ORDER BY AvgScrWrite DESC) AS WritingScoreRank FROM schools AS T1  INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds WHERE T2.AvgScrWrite > 499 AND CharterNum is not null
+result:50
+[['0210', 630], ['0890', 593], ['0290', 582]]
+answer:50
+[['0210', 630, 1], ['0890', 593, 2], ['0290', 582, 3]]
+####################################################################################################
+process=18,match=8,p=0.4444444444444444
+####################################################################################################
+index:18
+question:
+How many schools in Fresno (directly funded) have number of test takers not more than 250?
+cypher:
+MATCH (satscores:california_schools_satscores)-[:belongsTo]->(schools:california_schools_schools)
+WHERE satscores.NumTstTakr <= 250
+  AND schools.City = 'Fresno'
+  AND schools.FundingType = 'Directly funded'
+RETURN COUNT(*) AS school_count
+SQL:
+SELECT COUNT(T1.CDSCode) FROM frpm AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds WHERE T1.`Charter Funding Type` = 'Directly funded' AND T1.`County Name` = 'Fresno' AND T2.NumTstTakr <= 250
+result:1
+[[12]]
+answer:1
+[[14]]
+####################################################################################################
+process=19,match=8,p=0.42105263157894735
+####################################################################################################
+index:19
+question:
+What is the phone number of the school that has the highest average score in Math?
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.AvgScrMath IS NOT NULL
+RETURN school.Phone AS PhoneNumber, sat.AvgScrMath AS MathScore
+ORDER BY MathScore DESC
+LIMIT 1
+SQL:
+SELECT T1.Phone FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds ORDER BY T2.AvgScrMath DESC LIMIT 1
+result:1
+[['(408) 366-7700', 698]]
+answer:1
+[['(408) 366-7700']]
+####################################################################################################
+process=20,match=8,p=0.4
+####################################################################################################
+index:20
+question:
+How many schools in Amador which the Low Grade is 9 and the High Grade is 12?
+cypher:
+MATCH (school:california_schools_schools)-[:reportsMealEligibilityFor]->(frpm:california_schools_frpm)
+WHERE school.County = "Amador" AND frpm.`Low Grade` = "9" AND frpm.`High Grade` = "12"
+RETURN COUNT(*) AS school_count
+SQL:
+SELECT COUNT(T1.`School Name`) FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.County = 'Amador' AND T1.`Low Grade` = 9 AND T1.`High Grade` = 12
+result:1
+[[0]]
+answer:1
+[[3]]
+####################################################################################################
+process=21,match=8,p=0.38095238095238093
+####################################################################################################
+index:21
+question:
+In Los Angeles how many schools have more than 500 free meals but less than 700 free or reduced price meals for K-12?
+cypher:
+MATCH (frpm:california_schools_frpm)
+WHERE frpm.`County Name` = 'Los Angeles'
+  AND frpm.`Free Meal Count (K-12)` > 500
+  AND frpm.`FRPM Count (K-12)` < 700
+RETURN COUNT(*) AS school_count
+SQL:
+SELECT COUNT(CDSCode) FROM frpm WHERE `County Name` = 'Los Angeles' AND `Free Meal Count (K-12)` > 500 AND `FRPM Count (K-12)`< 700
+result:1
+[[249]]
+answer:1
+[[249]]
+####################################################################################################
+process=22,match=9,p=0.4090909090909091
+####################################################################################################
+index:22
+question:
+Which school in Contra Costa has the highest number of test takers?
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE school.County CONTAINS 'Contra Costa' AND sat.NumTstTakr IS NOT NULL
+RETURN sat.sname AS SchoolName, sat.NumTstTakr AS TestTakers
+ORDER BY TestTakers DESC
+LIMIT 1
+SQL:
+SELECT sname FROM satscores WHERE cname = 'Contra Costa' AND sname IS NOT NULL ORDER BY NumTstTakr DESC LIMIT 1
+result:0
+[]
+answer:1
+[['Dougherty Valley High']]
+####################################################################################################
+process=23,match=9,p=0.391304347826087
+####################################################################################################
+index:23
+question:
+List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools. evidence: Diffrence in enrollement = `Enrollment (K-12)` - `Enrollment (Ages 5-17)`
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE ABS(frpm.`Enrollment (K-12)` - frpm.`Enrollment (Ages 5-17)`) > 30
+RETURN school.School AS SchoolName, school.Street AS FullStreetAddress
+SQL:
+SELECT T1.School, T1.Street FROM schools AS T1 INNER JOIN frpm AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.`Enrollment (K-12)` - T2.`Enrollment (Ages 5-17)` > 30
+result:1239
+[['Alameda County Community', '313 West Winton Avenue'], ['California School for the Deaf-Fremont', '39350 Gallaudet Drive'], ['Alameda High', '2201 Encinal Avenue']]
+answer:1239
+[['Alameda County Community', '313 West Winton Avenue'], ['California School for the Deaf-Fremont', '39350 Gallaudet Drive'], ['Alameda High', '2201 Encinal Avenue']]
+####################################################################################################
+process=24,match=10,p=0.4166666666666667
+####################################################################################################
+index:24
+question:
+Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500? evidence: Percent eligible for free meals = Free Meal Count (K-12) / Total (Enrollment (K-12)
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school)
+WHERE frpm.`Percent (%) Eligible Free (K-12)` > 0.1
+  AND sat.NumGE1500 >= 1
+RETURN DISTINCT school.School AS SchoolName
+SQL:
+SELECT T2.`School Name` FROM satscores AS T1 INNER JOIN frpm AS T2 ON T1.cds = T2.CDSCode WHERE CAST(T2.`Free Meal Count (K-12)` AS REAL) / T2.`Enrollment (K-12)` > 0.1 AND T1.NumGE1500 > 0
+result:999
+[['Clovis North High'], ['Clovis West High'], ['Buchanan High']]
+answer:1068
+[['Clovis North High'], ['Clovis West High'], ['Buchanan High']]
+####################################################################################################
+process=25,match=10,p=0.4
+####################################################################################################
+index:25
+question:
+Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools? evidence: Average of average math = sum(average math scores) / count(schools).
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE school.City = 'Riverside' AND sat.AvgScrMath IS NOT NULL
+WITH school, sat.AvgScrMath AS math_score
+WITH school, math_score, AVG(math_score) AS avg_math
+WHERE avg_math > 400
+RETURN school.School AS SchoolName, school.FundingType AS FundingType
+SQL:
+SELECT T1.sname, T2.`Charter Funding Type` FROM satscores AS T1 INNER JOIN frpm AS T2 ON T1.cds = T2.CDSCode WHERE T2.`District Name` LIKE 'Riverside%' GROUP BY T1.sname, T2.`Charter Funding Type` HAVING CAST(SUM(T1.AvgScrMath) AS REAL) / COUNT(T1.cds) > 400
+result:9
+[[None, None], ['La Sierra High', None], ['Norte Vista High', None]]
+answer:6
+[['Arlington High', None], ['John W. North High', None], ['Martin Luther King Jr. High', None]]
+####################################################################################################
+process=26,match=10,p=0.38461538461538464
+####################################################################################################
+index:26
+question:
+State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17? evidence: Full communication address should include Street, City, State and zip code if any.
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE 
+  TOLOWER(school.City) = 'monterey'
+  AND school.EILName = 'High School'
+  AND frpm.`FRPM Count (Ages 5-17)` > 800
+RETURN 
+  school.School AS SchoolName,
+  CASE 
+    WHEN school.Zip IS NOT NULL THEN school.Street + ', ' + school.City + ', ' + school.State + ' ' + school.Zip
+    ELSE school.Street + ', ' + school.City + ', ' + school.State
+  END AS FullAddress
+SQL:
+SELECT T1.`School Name`, T2.Street, T2.City, T2.State, T2.Zip FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.County = 'Monterey' AND T1.`Free Meal Count (Ages 5-17)` > 800 AND T1.`School Type` = 'High Schools (Public)'
+result:0
+[]
+answer:5
+[['Alisal High', '777 Williams Road', 'Salinas', 'CA', '93905-1907'], ['Everett Alvarez High', '1900 Independence Boulevard', 'Salinas', 'CA', '93906-5300'], ['North Salinas High', '55 Kip Drive', 'Salinas', 'CA', '93906-2908']]
+####################################################################################################
+process=27,match=10,p=0.37037037037037035
+####################################################################################################
+index:27
+question:
+What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any. evidence: Communication number refers to phone number.
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE (school.OpenDate > date('1991-01-01') OR school.ClosedDate < date('2000-01-01'))
+  AND sat.AvgScrWrite IS NOT NULL
+RETURN 
+    school.School AS schoolName,
+    sat.AvgScrWrite AS writingScore,
+    school.Phone AS phoneNumber
+ORDER BY writingScore DESC
+SQL:
+SELECT T2.School, T1.AvgScrWrite, T2.Phone FROM schools AS T2 LEFT JOIN satscores AS T1 ON T2.CDSCode = T1.cds WHERE strftime('%Y', T2.OpenDate) > '1991' OR strftime('%Y', T2.ClosedDate) < '2000'
+result:462
+[['Oxford Academy', 634, '(714) 220-3055'], ['Pacific Collegiate Charter', 630, '(831) 479-7785'], ['Northwood High', 621, '(949) 936-7200']]
+answer:8574
+[['FAME Public Charter', None, None], ['Envision Academy for Arts & Technology', None, '(510) 596-8901'], ['Aspire California College Preparatory Academy', None, None]]
+####################################################################################################
+process=28,match=10,p=0.35714285714285715
+####################################################################################################
+index:28
+question:
+Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average. evidence: Difference between K-12 enrollment and 15-17 enrollment can be computed by `Enrollment (K-12)` - `Enrollment (Ages 5-17)`
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE frpm.`Charter Funding Type` = 'Locally funded'
+WITH 
+    frpm, 
+    school,
+    toFloat(frpm.`Enrollment (K-12)`) - toFloat(frpm.`Enrollment (Ages 5-17)`) AS diff
+WITH 
+    avg(diff) AS avg_diff
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE frpm.`Charter Funding Type` = 'Locally funded'
+WITH 
+    school,
+    toFloat(frpm.`Enrollment (K-12)`) - toFloat(frpm.`Enrollment (Ages 5-17)`) AS diff,
+    avg_diff
+WHERE diff > avg_diff
+RETURN school.School AS SchoolName, school.DOCType AS DOCType
+SQL:
+SELECT T2.School, T2.DOC FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.FundingType = 'Locally funded' AND (T1.`Enrollment (K-12)` - T1.`Enrollment (Ages 5-17)`) > (SELECT AVG(T3.`Enrollment (K-12)` - T3.`Enrollment (Ages 5-17)`) FROM frpm AS T3 INNER JOIN schools AS T4 ON T3.CDSCode = T4.CDSCode WHERE T4.FundingType = 'Locally funded')
+result:49
+[['Mountain Oaks', 'County Office of Education (COE)'], ['Castle Rock', 'County Office of Education (COE)'], ['Charter Community School Home Study Academy', 'County Office of Education (COE)']]
+answer:57
+[['Mountain Oaks', '00'], ['Castle Rock', '00'], ['Charter Community School Home Study Academy', '00']]
+####################################################################################################
+process=29,match=10,p=0.3448275862068966
+####################################################################################################
+index:29
+question:
+When did the first-through-twelfth-grade school with the largest enrollment open? evidence: K-12 means First-through-twelfth-grade
+cypher:
+MATCH (f:california_schools_frpm)
+WHERE f.`Low Grade` = 'K' AND f.`High Grade` = '12' AND f.`Enrollment (K-12)` IS NOT NULL
+WITH f ORDER BY f.`Enrollment (K-12)` DESC LIMIT 1
+MATCH (f)-[:reportsMealEligibilityFor]->(s:california_schools_schools)
+RETURN s.OpenDate AS OpenDateOfLargestEnrollmentSchool
+SQL:
+SELECT T2.OpenDate FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode ORDER BY T1.`Enrollment (K-12)` DESC LIMIT 1
+result:1
+[[neo4j.time.Date(2006, 8, 29)]]
+answer:1
+[['2006-08-29']]
+####################################################################################################
+process=30,match=10,p=0.3333333333333333
+####################################################################################################
+index:30
+question:
+Which cities have the top 5 lowest enrollment number for students in grades 1 through 12? evidence: K-12 refers to students in grades 1 through 12.
+cypher:
+MATCH (school:california_schools_schools)
+MATCH (frpm:california_schools_frpm)
+WHERE school.CDSCode = frpm.CDSCode
+  AND frpm.`Enrollment (K-12)` IS NOT NULL
+  AND frpm.`Enrollment (K-12)` > 0
+RETURN school.City AS City, frpm.`Enrollment (K-12)` AS Enrollment
+ORDER BY Enrollment ASC
+LIMIT 5
+SQL:
+SELECT T2.City FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode GROUP BY T2.City ORDER BY SUM(T1.`Enrollment (K-12)`) ASC LIMIT 5
+result:5
+[['Oakland', 1.0], ['Oakland', 1.0], ['Oakland', 1.0]]
+answer:5
+[['Coulterville'], ['Pinecrest'], ['Shaver Lake']]
+####################################################################################################
+process=31,match=10,p=0.3225806451612903
+####################################################################################################
+index:31
+question:
+What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12? evidence: K-12 refers to students in grades 1 through 12; Eligible free rate for K-12 = `Free Meal Count (K-12)` / `Enrollment (K-12)`
+cypher:
+MATCH (s:california_schools_frpm)
+WHERE 
+  toInteger(s.`Low Grade`) <= 1 AND toInteger(s.`High Grade`) >= 12
+  AND s.`Enrollment (K-12)` IS NOT NULL
+  AND s.`Enrollment (K-12)` > 0
+WITH s
+ORDER BY s.`Enrollment (K-12)` DESC
+SKIP 9
+LIMIT 2
+RETURN 
+  s.`School Name` AS SchoolName,
+  s.`Percent (%) Eligible Free (K-12)` AS EligibleFreeRate
+SQL:
+SELECT CAST(`Free Meal Count (K-12)` AS REAL) / `Enrollment (K-12)` FROM frpm ORDER BY `Enrollment (K-12)` DESC LIMIT 9, 2
+result:2
+[['County Community', 0.866666666666667], ['Centennial Independent Study', 0.2]]
+answer:2
+[[0.1344364012409514], [0.2905894519131334]]
+####################################################################################################
+process=32,match=10,p=0.3125
+####################################################################################################
+index:32
+question:
+What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66? evidence: grades 1-12 means K-12; Eligible free or reduced price meal rate for K-12 = `FRPM Count (K-12)` / `Enrollment (K-12)`
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE school.SOC = '66'
+  AND frpm.`Low Grade` <= 'K' 
+  AND frpm.`High Grade` >= '12'
+  AND frpm.`FRPM Count (K-12)` IS NOT NULL
+RETURN 
+  frpm.`School Name` AS SchoolName,
+  frpm.`Enrollment (K-12)` AS EnrollmentK12,
+  frpm.`FRPM Count (K-12)` AS FRPMCountK12,
+  toFloat(frpm.`FRPM Count (K-12)`) / toFloat(frpm.`Enrollment (K-12)`) AS FRPMRate
+ORDER BY FRPMCountK12 DESC
+LIMIT 5
+SQL:
+SELECT CAST(T1.`FRPM Count (K-12)` AS REAL) / T1.`Enrollment (K-12)` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.SOC = 66 ORDER BY T1.`FRPM Count (K-12)` DESC LIMIT 5
+result:5
+[['Paramount High', 4814.0, 4419.0, 0.9179476526796843], ['Calexico High', 2981.0, 2979.0, 0.9993290841999329], ['Bell Senior High', 3256.0, 2919.0, 0.8964987714987716]]
+answer:5
+[[0.9179476526796843], [0.9993290841999329], [0.8964987714987716]]
+####################################################################################################
+process=33,match=10,p=0.30303030303030304
+####################################################################################################
+index:33
+question:
+If there are any, what are the websites address of the schools with a free meal count of 1,900-2,000 to students aged 5-17? Include the name of the school.
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE frpm.`Free Meal Count (Ages 5-17)` >= 1900 AND frpm.`Free Meal Count (Ages 5-17)` <= 2000
+RETURN school.School AS SchoolName, school.Website AS WebsiteAddress
+SQL:
+SELECT T2.Website, T1.`School Name` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.`Free Meal Count (Ages 5-17)` BETWEEN 1900 AND 2000 AND T2.Website IS NOT NULL
+result:3
+[['South Gate Middle', None], ['Lynwood High', 'http://lhs.lynwood.edlioschool.com/'], ['Katella High', 'www.auhsd.us/katella']]
+answer:2
+[['http://lhs.lynwood.edlioschool.com/', 'Lynwood High'], ['www.auhsd.us/katella', 'Katella High']]
+####################################################################################################
+process=34,match=10,p=0.29411764705882354
+####################################################################################################
+index:34
+question:
+What is the free rate for students between the ages of 5 and 17 at the school run by Kacey Gibson? evidence: Eligible free rates for students aged 5-17 = `Free Meal Count (Ages 5-17)` / `Enrollment (Ages 5-17)`
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.AdmFName1 = 'Kacey' AND school.AdmLName1 = 'Gibson'
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school)
+RETURN 
+  frpm.`Free Meal Count (Ages 5-17)` / frpm.`Enrollment (Ages 5-17)` AS free_rate
+SQL:
+SELECT CAST(T2.`Free Meal Count (Ages 5-17)` AS REAL) / T2.`Enrollment (Ages 5-17)` FROM schools AS T1 INNER JOIN frpm AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.AdmFName1 = 'Kacey' AND T1.AdmLName1 = 'Gibson'
+result:1
+[[0.20174165457184326]]
+answer:1
+[[0.20174165457184326]]
+####################################################################################################
+process=35,match=11,p=0.3142857142857143
+####################################################################################################
+index:35
+question:
+What is the administrator's email address of the chartered school with the fewest students enrolled in grades 1 through 12? evidence: Charted school means `Charter School (Y/N)` = 1 in the table frpm; Students enrolled in grades 1 through 12 refers to `Enrollment (K-12)`
+cypher:
+MATCH (frpm:california_schools_frpm {`Charter School (Y/N)`: 1})
+WHERE frpm.`Enrollment (K-12)` IS NOT NULL
+MATCH (school:california_schools_schools {CDSCode: frpm.CDSCode})
+WITH frpm, school
+ORDER BY frpm.`Enrollment (K-12)` ASC
+LIMIT 1
+RETURN 
+    school.AdmEmail1 AS PrimaryAdminEmail,
+    school.AdmEmail2 AS SecondaryAdminEmail,
+    school.AdmEmail3 AS TertiaryAdminEmail
+SQL:
+SELECT T2.AdmEmail1 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.`Charter School (Y/N)` = 1 ORDER BY T1.`Enrollment (K-12)` ASC LIMIT 1
+result:1
+[['mjennings@kesd.org', None, None]]
+answer:1
+[['mjennings@kesd.org']]
+####################################################################################################
+process=36,match=11,p=0.3055555555555556
+####################################################################################################
+index:36
+question:
+Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names. evidence: full name means first name, last name; There are at most 3 administrators for each school; SAT Scores are greater or equal to 1500 refers to NumGE1500
+cypher:
+MATCH (sat:california_schools_satscores {rtype: 'S'})
+MATCH (school:california_schools_schools)
+WHERE sat.cds = school.CDSCode
+  AND sat.NumGE1500 IS NOT NULL
+ORDER BY sat.NumGE1500 DESC
+LIMIT 1
+RETURN [
+    CASE WHEN school.AdmFName1 IS NOT NULL AND school.AdmLName1 IS NOT NULL THEN school.AdmFName1 + ' ' + school.AdmLName1 ELSE NULL END,
+    CASE WHEN school.AdmFName2 IS NOT NULL AND school.AdmLName2 IS NOT NULL THEN school.AdmFName2 + ' ' + school.AdmLName2 ELSE NULL END,
+    CASE WHEN school.AdmFName3 IS NOT NULL AND school.AdmLName3 IS NOT NULL THEN school.AdmFName3 + ' ' + school.AdmLName3 ELSE NULL END
+] AS Administrators
+SQL:
+SELECT T2.AdmFName1, T2.AdmLName1, T2.AdmFName2, T2.AdmLName2, T2.AdmFName3, T2.AdmLName3 FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.NumGE1500 DESC LIMIT 1
+result:1
+[[['Andrew Ishibashi', None, None]]]
+answer:1
+[['Michelle', 'King', None, None, None, None]]
+####################################################################################################
+process=37,match=11,p=0.2972972972972973
+####################################################################################################
+index:37
+question:
+What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State. evidence: Execellence Rate = NumGE1500 / NumTstTakr; complete address has Street, City, State, Zip code
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.NumTstTakr > 0  // 避免除以零
+WITH sat, school, toFloat(sat.NumGE1500) / sat.NumTstTakr AS excellence_rate
+WHERE excellence_rate IS NOT NULL  // 添加非空约束确保排序准确
+ORDER BY excellence_rate ASC
+LIMIT 1
+RETURN 
+  school.Street AS Street,
+  school.City AS City,
+  school.Zip AS Zip,
+  school.State AS State,
+  excellence_rate AS LowestExcellenceRate
+SQL:
+SELECT T2.Street, T2.City, T2.State, T2.Zip FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr ASC LIMIT 1
+result:1
+[['222 North Virgil Avenue', 'Los Angeles', '90004-3622', 'CA', 0.0]]
+answer:1
+[['1111 Van Ness Avenue', 'Fresno', 'CA', '93721-2002']]
+####################################################################################################
+process=38,match=11,p=0.2894736842105263
+####################################################################################################
+index:38
+question:
+What are the webpages for the Los Angeles County school that has between 2,000 and 3,000 test takers?
+cypher:
+MATCH (sat:california_schools_satscores)
+WHERE sat.NumTstTakr >= 2000 AND sat.NumTstTakr <= 3000
+MATCH (school:california_schools_schools {CDSCode: sat.cds})
+WHERE school.County = 'Los Angeles'
+RETURN DISTINCT school.Website AS Webpage
+SQL:
+SELECT T2.Website FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T1.NumTstTakr BETWEEN 2000 AND 3000 AND T2.County = 'Los Angeles'
+result:3
+[['www.avdistrict.org'], ['www.lbschools.net'], ['www.hartdistrict.org']]
+answer:3
+[['www.avdistrict.org'], ['www.lbschools.net'], ['www.hartdistrict.org']]
+####################################################################################################
+process=39,match=12,p=0.3076923076923077
+####################################################################################################
+index:39
+question:
+What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980? evidence: between 1/1/1980 and 12/31/1980 means the year = 1980
+cypher:
+MATCH (school:california_schools_schools {County: 'Fresno'})
+WHERE school.OpenDate >= date('1980-01-01') AND school.OpenDate <= date('1980-12-31')
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school)
+RETURN avg(sat.NumTstTakr) AS average_test_takers
+SQL:
+SELECT AVG(T1.NumTstTakr) FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE strftime('%Y', T2.OpenDate) = '1980' AND T2.County = 'Fresno'
+result:1
+[[137.88888888888889]]
+answer:1
+[[137.88888888888889]]
+####################################################################################################
+process=40,match=13,p=0.325
+####################################################################################################
+index:40
+question:
+What is the telephone number for the school with the lowest average score in reading in Fresno Unified? evidence: Fresno Unified is a name of district;
+cypher:
+MATCH (sat:california_schools_satscores {dname: "Fresno Unified"})
+WHERE sat.AvgScrRead IS NOT NULL
+WITH sat
+ORDER BY sat.AvgScrRead ASC
+LIMIT 1
+MATCH (school:california_schools_schools {CDSCode: sat.cds})
+RETURN school.Phone AS TelephoneNumber
+SQL:
+SELECT T2.Phone FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.District = 'Fresno Unified' AND T1.AvgScrRead IS NOT NULL ORDER BY T1.AvgScrRead ASC LIMIT 1
+result:1
+[['(559) 248-5100']]
+answer:1
+[['(559) 248-5100']]
+####################################################################################################
+process=41,match=14,p=0.34146341463414637
+####################################################################################################
+index:41
+question:
+List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores. evidence: Exclusively virtual refers to Virtual = 'F'; respective counties means PARTITION BY County
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE school.Virtual = 'F' AND sat.AvgScrRead IS NOT NULL
+WITH sat.cname AS county, school.School AS schoolName, sat.AvgScrRead AS readingScore
+ORDER BY county, readingScore DESC
+WITH county, collect({school: schoolName, score: readingScore})[0..5] AS top5Schools
+RETURN county, [s IN top5Schools | s.school] AS top5VirtualSchools
+SQL:
+SELECT School FROM (SELECT T2.School,T1.AvgScrRead, RANK() OVER (PARTITION BY T2.County ORDER BY T1.AvgScrRead DESC) AS rnk FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.Virtual = 'F' ) ranked_schools WHERE rnk <= 5
+result:3
+[['Los Angeles', ['California Virtual Academy @ Los Angeles', 'Insight @ Los Angeles']], ['Orange', ['Capistrano Connections Academy']], ['San Joaquin', ['California Connections Academy @ Ripon']]]
+answer:34
+[['Dunlap Leadership Academy'], ['Academy of Arts and Sciences: Fresno'], ['Insight School of California']]
+####################################################################################################
+process=42,match=14,p=0.3333333333333333
+####################################################################################################
+index:42
+question:
+What is the type of education offered in the school who scored the highest average in Math?
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.AvgScrMath IS NOT NULL
+WITH sat, school
+ORDER BY sat.AvgScrMath DESC
+LIMIT 1
+RETURN 
+  school.School AS SchoolName,
+  sat.AvgScrMath AS HighestMathScore,
+  school.SOCType AS EducationType
+SQL:
+SELECT T2.EdOpsName FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.AvgScrMath DESC LIMIT 1
+result:1
+[['Lynbrook High', 698, 'High Schools (Public)']]
+answer:1
+[['Traditional']]
+####################################################################################################
+process=43,match=14,p=0.32558139534883723
+####################################################################################################
+index:43
+question:
+What is the average math score of the school with the lowest average score for all subjects, and in which county is it located? evidence: Average score for all subjects can be computed by AvgScrMath + AvgScrRead + AvgScrWrite
+cypher:
+MATCH (sat:california_schools_satscores)
+WITH sat, 
+     toFloat(sat.AvgScrMath) + toFloat(sat.AvgScrRead) + toFloat(sat.AvgScrWrite) AS totalScore
+WHERE totalScore IS NOT NULL
+ORDER BY totalScore ASC
+LIMIT 1
+MATCH (school:california_schools_schools {CDSCode: sat.cds})
+RETURN sat.AvgScrMath AS MathScore, school.County AS CountyName
+SQL:
+SELECT T1.AvgScrMath, T2.County FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T1.AvgScrMath IS NOT NULL ORDER BY T1.AvgScrMath + T1.AvgScrRead + T1.AvgScrWrite ASC LIMIT 1
+result:0
+[]
+answer:1
+[[314, 'Los Angeles']]
+####################################################################################################
+process=44,match=14,p=0.3181818181818182
+####################################################################################################
+index:44
+question:
+What is the average writing score of the school who has the highest number of test takers whose total SAT sscores are greater or equal to 1500? Indicate the city to where the school is situated.
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.NumGE1500 IS NOT NULL AND sat.NumGE1500 > 0
+WITH school.CDSCode AS schoolCode,
+     school.City AS city,
+     AVG(sat.AvgScrWrite) AS avgWritingScore,
+     SUM(sat.NumGE1500) AS totalHighScorers
+ORDER BY totalHighScorers DESC
+LIMIT 1
+RETURN avgWritingScore, city
+SQL:
+SELECT T1.AvgScrWrite, T2.City FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.NumGE1500 DESC LIMIT 1
+result:1
+[[435.0, 'Los Angeles']]
+answer:1
+[[435, 'Los Angeles']]
+####################################################################################################
+process=45,match=15,p=0.3333333333333333
+####################################################################################################
+index:45
+question:
+What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores. evidence: Usually, administrators manage the school stuff.
+cypher:
+MATCH (school:california_schools_schools)
+WHERE 
+  (school.AdmFName1 + ' ' + school.AdmLName1 = 'Ricci Ulrich') OR
+  (school.AdmFName2 + ' ' + school.AdmLName2 = 'Ricci Ulrich') OR
+  (school.AdmFName3 + ' ' + school.AdmLName3 = 'Ricci Ulrich')
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school)
+RETURN school.School AS SchoolName, sat.AvgScrWrite AS AverageWritingScore
+SQL:
+SELECT T2.School, T1.AvgScrWrite FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.AdmFName1 = 'Ricci' AND T2.AdmLName1 = 'Ulrich'
+result:1
+[['Buchanan High', 507]]
+answer:1
+[['Buchanan High', 507]]
+####################################################################################################
+process=46,match=16,p=0.34782608695652173
+####################################################################################################
+index:46
+question:
+Which state special schools have the highest number of enrollees from grades 1 through 12? evidence: State Special Schools refers to DOC = 31; Grades 1 through 12 means K-12
+cypher:
+MATCH (school:california_schools_schools {SOC: '31'})-[:reportsMealEligibilityFor]->(frpm:california_schools_frpm)
+WHERE frpm.`Enrollment (K-12)` IS NOT NULL
+RETURN school.`School` AS school_name, 
+       school.`District`, 
+       frpm.`Enrollment (K-12)` AS enrollment_k_12
+ORDER BY enrollment_k_12 DESC
+LIMIT 5
+SQL:
+SELECT T2.School FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.DOC = 31 ORDER BY T1.`Enrollment (K-12)` DESC LIMIT 1
+result:0
+[]
+answer:1
+[['California School for the Deaf-Fremont']]
+####################################################################################################
+process=47,match=16,p=0.3404255319148936
+####################################################################################################
+index:47
+question:
+What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980? evidence: Elementary School District refers to DOC = 52; Monthly average number of schools that opened in 1980 = count(schools that opened in 1980) / 12
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.OpenDate IS NOT NULL
+  AND school.OpenDate >= date('1980-01-01')
+  AND school.OpenDate < date('1981-01-01')
+  AND school.DOCType = 'Elementary School District'
+MATCH (frpm:california_schools_frpm {CDSCode: school.CDSCode})
+WHERE frpm.`County Name` = 'Alameda County'
+RETURN toFloat(count(school)) / 12 AS monthly_avg_schools_opened_in_1980
+SQL:
+SELECT CAST(COUNT(School) AS REAL) / 12 FROM schools WHERE DOC = 52 AND County = 'Alameda' AND strftime('%Y', OpenDate) = '1980'
+result:1
+[[0.0]]
+answer:1
+[[1.4166666666666667]]
+####################################################################################################
+process=48,match=16,p=0.3333333333333333
+####################################################################################################
+index:48
+question:
+What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools? evidence: Elementary School District refers to DOC = 52; Unified School District refers to DOC = 54.
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.County = 'Orange'
+  AND s.StatusType = 'Merged'
+  AND (s.DOC = '52' OR s.DOC = '54')
+WITH 
+  SUM(CASE WHEN s.DOC = '54' THEN 1 ELSE 0 END) AS unified_count,
+  SUM(CASE WHEN s.DOC = '52' THEN 1 ELSE 0 END) AS elementary_count
+RETURN 
+  CASE 
+    WHEN elementary_count = 0 THEN NULL
+    ELSE toFloat(unified_count) / elementary_count
+  END AS ratio;
+SQL:
+SELECT CAST(SUM(CASE WHEN DOC = 54 THEN 1 ELSE 0 END) AS REAL) / SUM(CASE WHEN DOC = 52 THEN 1 ELSE 0 END) FROM schools WHERE StatusType = 'Merged' AND County = 'Orange'
+result:1
+[[0.5714285714285714]]
+answer:1
+[[0.5714285714285714]]
+####################################################################################################
+process=49,match=17,p=0.3469387755102041
+####################################################################################################
+index:49
+question:
+Which different county has the most number of closed schools? Please provide the name of each school as well as the closure date. evidence: Closure date and closed date are synonyms; 'Closed' was mentioned in schools.StatusType.
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.StatusType = 'Closed'
+WITH s.County AS county, 
+     collect({schoolName: s.School, closureDate: s.ClosedDate}) AS schoolsAndClosureDates,
+     count(*) AS schoolCount
+ORDER BY schoolCount DESC
+LIMIT 1
+RETURN county AS countyWithMostClosedSchools, 
+       schoolsAndClosureDates
+SQL:
+SELECT DISTINCT County, School, ClosedDate FROM schools WHERE County = ( SELECT County FROM schools WHERE StatusType = 'Closed' GROUP BY County ORDER BY COUNT(School) DESC LIMIT 1 ) AND StatusType = 'Closed' AND school IS NOT NULL
+result:1
+[['Los Angeles', [{'schoolName': 'Progressive Education Entrepreneurial Charter', 'closureDate': neo4j.time.Date(2004, 10, 15)}, {'schoolName': 'Opportunities Unlimited Charter High', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Wisdom Academy for Young Scientists', 'closureDate': neo4j.time.Date(2015, 5, 29)}, {'schoolName': 'Via Nueva Academy', 'closureDate': neo4j.time.Date(2011, 6, 28)}, {'schoolName': 'Celerity Sirius Charter', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'HOPE Leadership Charter', 'closureDate': neo4j.time.Date(2012, 3, 14)}, {'schoolName': 'Santa Fe Springs Community Day', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Dewey (John) Continuation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Echo High School-Defunct', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Littlerock Placement CDC', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'East Los Angeles CDC', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Excelsior Continuation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Excelsior Evening High Sch)Def', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Camp 15', 'closureDate': neo4j.time.Date(1985, 11, 13)}, {'schoolName': 'Karl Holton (Boys Camp)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Long Beach Continuation High S', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Oak Grove Boys Campschool', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pacific Shores High School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Fernando Valley Community', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Fernando Valley Boys Juven', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Fernando Valley Girls Juve', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pomona Valley Community Day Ce', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Santa Monica Continuation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Los Angeles County Juvenile Hall/Community', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Other County-Wide Programs', 'closureDate': neo4j.time.Date(1992, 3, 2)}, {'schoolName': 'Westside Community Day', 'closureDate': neo4j.time.Date(2012, 7, 31)}, {'schoolName': 'Eastern Community Day', 'closureDate': neo4j.time.Date(2011, 12, 23)}, {'schoolName': 'Northwest Day', 'closureDate': neo4j.time.Date(2005, 7, 1)}, {'schoolName': 'Southern Community Day', 'closureDate': neo4j.time.Date(2008, 7, 31)}, {'schoolName': 'Tri Community PAU', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Special Education (Co. Supt)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Calif State Univ At L.A. Clini', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Harbor Hospital Education Unit', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hollydale School for Oh', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lancaster Special Ed Unit MH', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Southwest School for Hearing I', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunset Senior Division', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Field School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Southeast Aphasic Educational', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Southwest Aphasic Educational', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Optimist Boys Home Ranch', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Wayside Juvenile Hall', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Shaw Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lawndale High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pelletier High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Golden Vista', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Juanita High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cleveland School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Avon School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cedarcreek', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Child Guidance Clinic', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Southwest School for Oh', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunset', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Villacorta School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Calif Youth Home', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Covina Valley', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Saugus Special Education Unit', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Kingston Public School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Addams (Jane) (Eh, Autistic)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Agua-Dulce School (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Associated Clinic School (Aph,', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Averett Boys Home (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Aviation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Begg (Foster) Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Casa Alegra', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Castaic (EMR)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Centennial Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Circle Y Boys Ranch Home', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cloverly School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Coronado School (Remedial Spee', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cubberly (Ellwood P.)(Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Drendle (William) School (Apha', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Eastside School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Monte High (Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Nido Lodge', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Segundo School District Off', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Emerson (Ralph Waldo) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Foster (Stephen) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Glazier (Anna M.)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hathaway Home for Boys', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hudnall School (Pregnant Girls', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Joshua School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Martin L. King General Hospita', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'La Pluma School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ladera School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Leroy Boys Home (Community Day', 'closureDate': neo4j.time.Date(1999, 6, 30)}, {'schoolName': 'Lincoln School (Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'McKinley Boys Home (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Merced Avenue School (Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mingay (Henry M.) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Norwalk High School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Olympic School (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pacific Lodge Boys Home', 'closureDate': neo4j.time.Date(1986, 11, 4)}, {'schoolName': 'Pacific Shores School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Parent (Frant D.) School (Apha', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Piute School (Deaf and H/H)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Prisk (William F.) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Reiss-Davis Child Study Clinic', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rio Vista School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Round Meadow School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Fernando Valley Child Guid', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sellers', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sepulveda (Jose)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunshine School (MH) (Maryott', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Stanford Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Vail', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Wilcox', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cullen School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Acton (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Center Street School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Corvallis Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Drew (Charles R.) Annex, Speci', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Centro', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Franklin School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Fulton School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Gompers (Samuel)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Gordon School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hathaway Ranch', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Imperial School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Keller School (MH,Autistic)', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Lampton School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Maryott School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Monte Vista', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Norwood School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pacific State Hospital', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pennekamp (Aurelia) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rancho Vista', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rice (Eldridge)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Silver Spur', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunkist School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Unfinished Symphony', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Vine School (Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Antelope School (EMR)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Calif School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Carr (Evelyn) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cienega School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Macarthur', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Nightingale (Florence) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Oak Avenue Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Valencia', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Victor School (Visually Handic', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Wescove School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bella Vista North (Sld-Aphasia', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Calif. Youth La Brea (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Edison (PAU)', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Gateway Center (Educationally', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Glenn High (Sld-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hollygrove School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Levy (Sam) Elementary (Deaf &', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Littlerock Boys Ranch (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Merlinda School (Slo-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'South Bay Child Care', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Willowwood School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Wright (Arthur E.) Aphasia', 'closureDate': neo4j.time.Date(1985, 11, 13)}, {'schoolName': 'Yucca School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Del Norte School (Sld-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Escalona (Sld-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Garden Hill (Sld-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Jefferson (Thomas) (Sld-Aphasi', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mesa (Sld-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Muir (John) Junior High (Sld-A', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'New River (Sld-Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Northridge (Eh)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Palm View (Sld-Aphasic)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Patterson (E. T.) (Sld-Aphasia', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Stevenson (Robert L.) (Sld-Aph', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sutherland (Aphasia)', 'closureDate': neo4j.time.Date(1985, 11, 13)}, {'schoolName': 'Willow (Sld,Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Jefferson (Special Education)', 'closureDate': neo4j.time.Date(1984, 9, 22)}, {'schoolName': 'Bell Gardens High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Burroughs Senior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Agoura High', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Cameron', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Demille (Cecil B.) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Howe (John Wesley) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lark Ellen School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Millikan (Robert A.) High (Sld', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Oak Grove School (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Roosevelt (Theodore) School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sage', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Washington Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Charter Oak Hospital', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Franklin (Deaf and Hard of Hea', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Gladstone', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Lakewood High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'La Mirada High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'La Mirada Pau', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Optimist Community Day Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Nottingham (Ralph)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rancho School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Shively (Dean L.)', 'closureDate': neo4j.time.Date(1984, 6, 27)}, {'schoolName': 'Round Meadow', 'closureDate': neo4j.time.Date(1985, 11, 13)}, {'schoolName': 'Adams (John)(Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Brainard School (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Casa Colina', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Emerson (Ralph Waldo)(MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Gateways Cntr (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lexington', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mountain View School (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Gabriel Valley/Training Ce', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunkist (Autism)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'White Oaks (PAU)', 'closureDate': neo4j.time.Date(1985, 11, 13)}, {'schoolName': 'Wing Lane (Aphasia)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sumner (Aphasia)', 'closureDate': neo4j.time.Date(1985, 11, 13)}, {'schoolName': 'Willowood (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Collegewood School (Autistic,M', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Aviation High (MH)', 'closureDate': neo4j.time.Date(1985, 11, 14)}, {'schoolName': 'Charter Oaks High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Jack B. Clarke High', 'closureDate': neo4j.time.Date(2012, 1, 1)}, {'schoolName': 'Nelles (Fred C.) High', 'closureDate': neo4j.time.Date(2004, 6, 30)}, {'schoolName': 'ABC Evening High School', 'closureDate': neo4j.time.Date(1994, 11, 23)}, {'schoolName': 'Bloomfield Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cabrillo Lane Elementary YR', 'closureDate': neo4j.time.Date(1985, 2, 5)}, {'schoolName': 'Carmenita Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Desert Pathways', 'closureDate': neo4j.time.Date(2006, 8, 11)}, {'schoolName': 'Independent Study', 'closureDate': neo4j.time.Date(1993, 12, 31)}, {'schoolName': 'Sierra Paloma', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hearns (Henry) Charter', 'closureDate': neo4j.time.Date(2005, 9, 2)}, {'schoolName': 'Huntington High (Cont.)', 'closureDate': neo4j.time.Date(1992, 6, 30)}, {'schoolName': 'Bonita Park Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Santa Anita Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Longfellow', 'closureDate': neo4j.time.Date(2014, 8, 18)}, {'schoolName': 'Citrus Laboratory', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Alternative Learning Ctr. (Cont.)', 'closureDate': neo4j.time.Date(1992, 3, 3)}, {'schoolName': 'Longfellow', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'William Drendel Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Alternative Learning Center (Cont.)', 'closureDate': neo4j.time.Date(1991, 12, 5)}, {'schoolName': 'Baldwin Park Alternative', 'closureDate': neo4j.time.Date(2011, 9, 30)}, {'schoolName': 'Baldwin Park Community Day', 'closureDate': neo4j.time.Date(1999, 6, 30)}, {'schoolName': 'Puente Valley Charter Middle', 'closureDate': neo4j.time.Date(2006, 4, 13)}, {'schoolName': 'Bassett Elementary', 'closureDate': neo4j.time.Date(1985, 9, 24)}, {'schoolName': 'Keenan (Ethel D.) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Florence E. Flanner Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Thomas M. Erwin Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Las Flores Elementary', 'closureDate': neo4j.time.Date(2010, 7, 1)}, {'schoolName': 'Lincoln Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Thompson (May) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rogers (Will) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Woodrow Wilson (Defunct)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Roosevelt (Franklin D.) Junior', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Betsy Ross Center (MH) Preschool', 'closureDate': neo4j.time.Date(1992, 3, 2)}, {'schoolName': 'Beverly Hills Adult', 'closureDate': neo4j.time.Date(2013, 8, 28)}, {'schoolName': 'Bonita Unified Alternative Ed.', 'closureDate': neo4j.time.Date(1994, 12, 16)}, {'schoolName': 'La Verne Primary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Off Campus Learning Center', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Burroughs (John) Evening High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Franklin Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lincoln Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mann Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mingay Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Monterey Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Media Art Academy at Centinela', 'closureDate': neo4j.time.Date(2008, 9, 10)}, {'schoolName': 'Lennox High', 'closureDate': neo4j.time.Date(1985, 2, 5)}, {'schoolName': 'Foundation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Charter Oak Alternative Education', 'closureDate': neo4j.time.Date(1995, 3, 23)}, {'schoolName': 'Banna Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Charter Oak Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Palm View Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunflower Intermediate', 'closureDate': neo4j.time.Date(1985, 9, 25)}, {'schoolName': 'Charter Oak Foundation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'La Puerta Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Central Continuation (Puente C', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Covina Valley Continuation Hig', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ranger High (Alternative)', 'closureDate': neo4j.time.Date(2006, 9, 1)}, {'schoolName': 'Cienega Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Covina Elementary', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Edwards (Eva D.) Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Fairvalley Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Griswold Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pioneer Elem. (Defunct)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunkist Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Valencia Elementary', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Vincent Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Culver City Independent Study', 'closureDate': neo4j.time.Date(2010, 7, 1)}, {'schoolName': 'Culver City Community Day', 'closureDate': neo4j.time.Date(2005, 6, 17)}, {'schoolName': 'Betsy Ross Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Linda Vista Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Washington Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Southeast Training Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rancho Los Amigos Hospital', 'closureDate': neo4j.time.Date(2004, 8, 1)}, {'schoolName': 'Downey Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pace (Lynn L.) Elementary', 'closureDate': neo4j.time.Date(2005, 6, 30)}, {'schoolName': 'Meadow Park Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rancho Santa Gertrudes Element', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rives Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Roger Casier Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Woodruff Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Francisco Training Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Development Center', 'closureDate': neo4j.time.Date(1993, 6, 30)}, {'schoolName': 'Tele-Teaching Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Downey District Programs', 'closureDate': neo4j.time.Date(1994, 6, 3)}, {'schoolName': 'Alternative Education Work Center', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Eastside Academy', 'closureDate': neo4j.time.Date(2007, 7, 1)}, {'schoolName': 'Mar Vista Early Childhood Center', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Charles T. Samuels Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Leffingwell Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mar Vista Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Valley View Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mar Vista School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mulhall Elementary', 'closureDate': neo4j.time.Date(2009, 6, 12)}, {'schoolName': 'Norwood Elementary', 'closureDate': neo4j.time.Date(2009, 6, 19)}, {'schoolName': 'Loma Elementary', 'closureDate': neo4j.time.Date(2007, 8, 25)}, {'schoolName': 'Byron E. Thompson Elementary', 'closureDate': neo4j.time.Date(2008, 8, 1)}, {'schoolName': 'Rosemead Adult', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Eugene A. Obregon', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'El Rancho Alternative Education Center', 'closureDate': neo4j.time.Date(2009, 6, 19)}, {'schoolName': 'Eugene A. Obregon Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Maizeland Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pio Pico Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Selby Grove Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Mary E. Meller Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Home and Independent Study', 'closureDate': neo4j.time.Date(1985, 3, 6)}, {'schoolName': 'Imperial Avenue (Special Education)', 'closureDate': neo4j.time.Date(1997, 10, 7)}, {'schoolName': 'El Segundo Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Imperial Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Development Center for Handica', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Ingleside Mental Health Center', 'closureDate': neo4j.time.Date(1996, 6, 16)}, {'schoolName': 'Williams (Dan T.) Elementary', 'closureDate': neo4j.time.Date(2006, 6, 19)}, {'schoolName': 'Marshall (John) Elementary', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Duff (Margaret) Elementary', 'closureDate': neo4j.time.Date(2008, 9, 3)}, {'schoolName': 'Home Teacher', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ingleside Hospital', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Maryvale Orphange', 'closureDate': neo4j.time.Date(1996, 4, 3)}, {'schoolName': 'Garvey School District Program', 'closureDate': neo4j.time.Date(1985, 2, 5)}, {'schoolName': 'Home Jr-Sr High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Home Junior-Senior High', 'closureDate': neo4j.time.Date(1984, 6, 27)}, {'schoolName': 'Teen Mother Program', 'closureDate': neo4j.time.Date(1984, 6, 27)}, {'schoolName': 'Glendale Evening High', 'closureDate': neo4j.time.Date(1995, 5, 11)}, {'schoolName': 'Field (Eugene) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Home Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lowell (James Russell) Element', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Montrose Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Clark (Anderson W.) Junior Hig', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Home, Glendale Jr. High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Glendora Adult School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Glendora Unified Alternative Education', 'closureDate': neo4j.time.Date(1992, 3, 2)}, {'schoolName': 'Bidwell Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Gordon Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Roosevelt Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Williams Elementary', 'closureDate': neo4j.time.Date(2009, 6, 29)}, {'schoolName': 'Antelope Valley Desert Montessori Schools, Inc.', 'closureDate': neo4j.time.Date(2009, 9, 15)}, {'schoolName': 'Lifeline Education Charter', 'closureDate': neo4j.time.Date(2007, 6, 30)}, {'schoolName': 'Gorman Middle', 'closureDate': neo4j.time.Date(2004, 12, 19)}, {'schoolName': 'Academy for Recording Arts', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Williams Elementary', 'closureDate': neo4j.time.Date(2005, 8, 15)}, {'schoolName': 'Opportunities for Learning - Hermosa Beach', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Options for Youth-Hermosa Beach, Inc.', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'North Elementary', 'closureDate': neo4j.time.Date(1989, 12, 2)}, {'schoolName': 'Pier Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Prospect Heights Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'South Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Valley Vista Middle', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Inglewood Academy', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Independent Study', 'closureDate': neo4j.time.Date(1994, 12, 16)}, {'schoolName': 'Inglewood Unified Community Day', 'closureDate': neo4j.time.Date(1999, 6, 30)}, {'schoolName': 'Freeman (Daniel) Elementary', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Woodworth Cerebral Palsy Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mountain View', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Sunset View Elementary', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'La Canada Continuation', 'closureDate': neo4j.time.Date(2001, 6, 13)}, {'schoolName': 'Foothills (Special Education)', 'closureDate': neo4j.time.Date(2010, 6, 18)}, {'schoolName': 'Chilao Mountain Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Foothill Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Oak Grove Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Transition Serivces', 'closureDate': neo4j.time.Date(1994, 10, 24)}, {'schoolName': 'Park View Middle', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Arthur E. Wright Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Kit Carson Elementary', 'closureDate': neo4j.time.Date(2014, 7, 1)}, {'schoolName': 'Betsy Ross Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Jane Addams Elementary', 'closureDate': neo4j.time.Date(2006, 7, 1)}, {'schoolName': 'Jonas Salk Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Kit Carson Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Whelan Elementary', 'closureDate': neo4j.time.Date(2003, 1, 6)}, {'schoolName': 'Development Center (H. M.)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Fairford Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Gettysburg Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Focus Community Day (Elementary)', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Rosie the Riveter Charter High', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'MATTIE Academy', 'closureDate': neo4j.time.Date(2008, 9, 17)}, {'schoolName': 'Colegio New City', 'closureDate': neo4j.time.Date(2012, 6, 6)}, {'schoolName': 'Boyd Senior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Long Beach Unified Alternative Education', 'closureDate': neo4j.time.Date(1993, 12, 31)}, {'schoolName': 'Juan Rodriguez Cabrillo High', 'closureDate': neo4j.time.Date(2006, 8, 31)}, {'schoolName': 'Options for Youth-Long Beach Charter', 'closureDate': neo4j.time.Date(2000, 4, 13)}, {'schoolName': 'Premiere Education Charter', 'closureDate': neo4j.time.Date(2002, 8, 21)}, {'schoolName': 'Pacific Learning Center Charter', 'closureDate': neo4j.time.Date(2005, 6, 30)}, {'schoolName': 'Promise Academy', 'closureDate': neo4j.time.Date(2004, 5, 10)}, {'schoolName': 'Avalon Elementary', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Buffum Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Burroughs Elementary', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Camp Hi-Hill Elementary', 'closureDate': neo4j.time.Date(1989, 12, 29)}, {'schoolName': 'Camp O-Ongo Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Field Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Keller Elementary', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'Monroe K-8', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Nightingale Elementary', 'closureDate': neo4j.time.Date(1993, 6, 30)}, {'schoolName': 'Sutter Elementary', 'closureDate': neo4j.time.Date(2007, 7, 1)}, {'schoolName': 'Tucker Elementary', 'closureDate': neo4j.time.Date(2013, 7, 1)}, {'schoolName': 'DeMille Middle', 'closureDate': neo4j.time.Date(2010, 6, 17)}, {'schoolName': 'Oak Academy', 'closureDate': neo4j.time.Date(1999, 6, 30)}, {'schoolName': 'Hill Classical Middle', 'closureDate': neo4j.time.Date(2016, 7, 1)}, {'schoolName': 'Buffum Elementary', 'closureDate': neo4j.time.Date(2011, 9, 1)}, {'schoolName': 'Two Harbors Elementary', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Constellation Community Charter Middle', 'closureDate': neo4j.time.Date(2012, 4, 30)}, {'schoolName': 'Long Beach Preparatory Academy (Altern)', 'closureDate': neo4j.time.Date(2004, 12, 19)}, {'schoolName': 'New City', 'closureDate': neo4j.time.Date(2015, 7, 14)}, {'schoolName': 'Cornerstone Prep Charter', 'closureDate': neo4j.time.Date(2011, 7, 21)}, {'schoolName': 'CLAS Affirmation', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Lincoln Heights Value', 'closureDate': neo4j.time.Date(2008, 7, 1)}, {'schoolName': 'Jessie Owens Community Day', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'CHIME Charter Middle', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Los Angeles Educational Achievement Partnership', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Renaissance Academy Charter High', 'closureDate': neo4j.time.Date(2006, 8, 1)}, {'schoolName': 'CityLife Downtown Charter', 'closureDate': neo4j.time.Date(2007, 6, 30)}, {'schoolName': 'Southern California School of Arts and Sciences', 'closureDate': neo4j.time.Date(2006, 5, 12)}, {'schoolName': 'Manual Arts New Elementary School #1', 'closureDate': neo4j.time.Date(2004, 7, 15)}, {'schoolName': 'Alliance Richard Merkin Middle', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'PUC CA Academy for Liberal Studies Early College High', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'PUC Community Charter Early College High', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Crescendo Charter', 'closureDate': neo4j.time.Date(2011, 7, 19)}, {'schoolName': 'Giraffe Charter', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Animo Justice Charter High', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Animo Film and Theater Arts Charter High', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Animo Locke Technology High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Fourth Street Primary Center', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'PUC Triumph Charter Academy', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Crescendo Charter Academy', 'closureDate': neo4j.time.Date(2011, 7, 12)}, {'schoolName': 'Lou Dantzler Preparatory Charter Middle', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Nuevo Sol Charter', 'closureDate': neo4j.time.Date(2011, 9, 27)}, {'schoolName': 'Crescendo Charter Conservatory', 'closureDate': neo4j.time.Date(2011, 7, 12)}, {'schoolName': 'Frederick Douglass Academy Middle', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Lou Dantzler Preparatory Charter High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Frederick Douglass Academy High', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Arleta High School of Science, Math & Related Technologies (S.M.A.R.T.)', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Jordan New Technology High', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Student Empowerment Academy', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Alliance College-Ready Academy High No. 7', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'Design High', 'closureDate': neo4j.time.Date(2010, 5, 19)}, {'schoolName': 'Pacifica Community Charter #2', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Thurgood Marshall Charter Middle', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Thurgood Marshall Charter High', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Fernando Pullum Performing Arts High', 'closureDate': neo4j.time.Date(2011, 7, 26)}, {'schoolName': 'Full Circle Learning Academy', 'closureDate': neo4j.time.Date(2012, 6, 20)}, {'schoolName': 'Crescendo Charter Preparatory West', 'closureDate': neo4j.time.Date(2011, 7, 19)}, {'schoolName': 'Crescendo Charter Preparatory Central', 'closureDate': neo4j.time.Date(2011, 7, 19)}, {'schoolName': 'Crescendo Charter Preparatory South', 'closureDate': neo4j.time.Date(2011, 7, 19)}, {'schoolName': "Alliance Christine O'Donovan Middle Academy", 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Legacy Charter High', 'closureDate': neo4j.time.Date(2011, 6, 15)}, {'schoolName': 'Civitas School of Leadership', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Los Angeles Teacher Preparatory Academy', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'ABC Charter Middle', 'closureDate': neo4j.time.Date(2009, 6, 10)}, {'schoolName': 'Larchmont Charter-West Hollywood', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Aspire Huntington Park Charter', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Anahuacalmecac International Preparatory High School of North America', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Animo Locke Charter High School #3', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Animo Locke II College Preparatory Academy', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'School of Engineering and Technology', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Animo Locke ACE Academy', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'PUC Nueva Esperanza Charter Academy', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Futuro College Preparatory Elementary', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Alliance College-Ready Middle Academy 7', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'School of Law & Government at Roosevelt High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Humanitas Art School at Roosevelt High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'School of Science, Technology, Engineering & Math (STEM) at Roosevelt High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Academy of Medical & Health Sciences at Roosevelt High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'PUC Triumph Charter High', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Los Angeles Big Picture High', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Antecello Preparatory Academy', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'ARTLAB at Sonia Sotomayor Learning Academics', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Social Justice Schools: Global Issues Academy at Dr. Maya Angelou Community High', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Leadership in Entertainment and Media Arts (LEMA)', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'The City', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'South Region High #12A Technology, Arts and Design High', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Urban Village Middle', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'City High', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Birmingham Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Canoga Park Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Chatsworth Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Francis Polytechnic Continuati', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Franklin Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Fremont Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Monterey Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Granada Hills Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Grant Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hamilton Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Locke Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Monroe Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Banning-Carson Community Adult', 'closureDate': neo4j.time.Date(2006, 4, 26)}, {'schoolName': 'Narbonne Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'North Hollywood Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Reseda Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Fernando Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Washington Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bilingual Community Adult', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Belmont Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Evans Central', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Camino Real Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Indian Springs Continuation', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Van Nuys Cont High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Westchester Cont High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Calif High School', 'closureDate': neo4j.time.Date(1984, 8, 2)}, {'schoolName': 'Mdta General Office', 'closureDate': neo4j.time.Date(2006, 2, 17)}, {'schoolName': 'Crenshaw-Washington Community Adult', 'closureDate': neo4j.time.Date(2006, 4, 26)}, {'schoolName': 'Del Rey Continuation', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Kennedy-San Fernando Community', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Miguel Leonis Continuation', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Camino Real High School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sojourner Truth Continuation', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Kirk Douglas Continuation', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Wilson-Lincoln Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Hollywood Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cooper (James Fenimore) Opportunity High', 'closureDate': neo4j.time.Date(2002, 12, 1)}, {'schoolName': 'Los Angeles Polytechnic High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Temescal Canyon Continuation', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Carson Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Kennedy Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sylmar Continuation', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Dorsey Community Adult', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Tri-C Opportunity', 'closureDate': neo4j.time.Date(1997, 7, 9)}, {'schoolName': 'Pacoima Skills Center', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Metropolitan Skill Center', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'La Puente Valley Adult Correct', 'closureDate': neo4j.time.Date(2005, 9, 1)}, {'schoolName': 'Westside Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Benjamin Franklin Community', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'John C. Fremont Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Middle Opportunity', 'closureDate': neo4j.time.Date(1995, 6, 30)}, {'schoolName': 'Owens (Jessie) Opportunity Center', 'closureDate': neo4j.time.Date(2002, 12, 1)}, {'schoolName': 'Johnson (Dorothy V.) Opportunity High', 'closureDate': neo4j.time.Date(2003, 11, 1)}, {'schoolName': 'George Kiriyama Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'James A. Garfield Community', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Hollywood Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Jackson (Andrew) Junior-Senior', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Jefferson Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Jordan-Locke Community Adult', 'closureDate': neo4j.time.Date(2006, 4, 26)}, {'schoolName': 'Lincoln Community Adult', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Alain Leroy Locke 3 College Preparatory Academy', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Los Angeles Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Manual Arts Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Metropolitan High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'North Hollywood Poly Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Palisades Senior High', 'closureDate': neo4j.time.Date(1997, 2, 11)}, {'schoolName': 'Reseda Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Riss Jacob A. Defunct', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Roosevelt Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Ross-Betsy-Junior-Senior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Fernando Community Adult', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Harbor Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'South Gate Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'University-Palisades Adult', 'closureDate': neo4j.time.Date(2006, 4, 26)}, {'schoolName': 'Van Nuys Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Venice Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Washington Community Adult', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Westchester-Emerson Community Adult', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Community Bilingual Home Healt', 'closureDate': neo4j.time.Date(1992, 5, 18)}, {'schoolName': 'Middle College High (Alternative)', 'closureDate': neo4j.time.Date(2004, 1, 27)}, {'schoolName': 'Los Angeles Unified Alternative Education', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'San Pedro Wilmington Skills Center', 'closureDate': neo4j.time.Date(2006, 4, 26)}, {'schoolName': 'Edutrain', 'closureDate': neo4j.time.Date(1995, 6, 30)}, {'schoolName': 'Discovery Charter', 'closureDate': neo4j.time.Date(2007, 6, 30)}, {'schoolName': 'Community Harvest Charter', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'Harbor Teacher Preparation Academy', 'closureDate': neo4j.time.Date(2004, 1, 27)}, {'schoolName': 'Anchorage Street Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Balboa Boulevard Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bellagio Road Newcomer Center Elementary', 'closureDate': neo4j.time.Date(2002, 6, 30)}, {'schoolName': 'Burnside Avenue Elem. (Defunct', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Collier Street Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'West Valley Center for Enriche', 'closureDate': neo4j.time.Date(1984, 9, 22)}, {'schoolName': 'Devonshire Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Emerson Manor Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Enadia Way Elementary', 'closureDate': neo4j.time.Date(1984, 9, 22)}, {'schoolName': 'Gravois Avenue Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hesby Street Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Highlander Road Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ninety-Eighth Street Elementar', 'closureDate': neo4j.time.Date(2004, 12, 19)}, {'schoolName': 'Oakdale Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Osage Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Oso Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Platt Ranch Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Prairie Street Elementary', 'closureDate': neo4j.time.Date(1984, 9, 22)}, {'schoolName': 'Rinaldi Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Westchester Elem.(Defunct)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Airport Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pasteur (Louis) Junior High', 'closureDate': neo4j.time.Date(1989, 3, 22)}, {'schoolName': 'Frances Blend Special Education Center', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Bennett (Mary E.) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pacific Boulevard Special Education Center', 'closureDate': neo4j.time.Date(2005, 9, 6)}, {'schoolName': 'Waters (Maxine) Employment Prep Ctr.', 'closureDate': neo4j.time.Date(1990, 5, 7)}, {'schoolName': 'Nightingale Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Seventy-Ninth Street Elementar', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Theodore Roosevelt Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Henry Clay Middle', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Hughes (Charles Evans) Junior', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sequoia Junior High', 'closureDate': neo4j.time.Date(1984, 9, 22)}, {'schoolName': 'Lanterman (Frank) High', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Marlton Junior High (Deaf)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'North Valley Occupational Cent', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'East Valley (MH)', 'closureDate': neo4j.time.Date(1989, 3, 22)}, {'schoolName': 'Diane S. Leichman Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'West Valley Special Education Center', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Metropolitan Skills Center', 'closureDate': neo4j.time.Date(1990, 5, 7)}, {'schoolName': 'Center for Enriched Studies', 'closureDate': neo4j.time.Date(1984, 5, 28)}, {'schoolName': 'Gardner Mini Magnet for Gifted', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lorne Fundamental Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Loyola Performing Arts', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'One Hundred Second Street Magn', 'closureDate': neo4j.time.Date(1989, 3, 22)}, {'schoolName': 'Revere (Paul) Junior Midsite', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Riggin Magnet Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Saturn Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Emerson (Ralph Waldo) Junior M', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Van Nuys Junior Mid-Site', 'closureDate': neo4j.time.Date(1984, 6, 28)}, {'schoolName': 'Saticoy Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Taper Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Sereno Junior Magnet Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Dodson Junior Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 12, 2)}, {'schoolName': 'Portola Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 3, 22)}, {'schoolName': 'North Hollywood Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Figueroa Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ninety-Third Street Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Webster Midsite', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Valerio Street Midsite', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Millikan Midsite', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Thirty-Second Street/Usc-Arts/', 'closureDate': neo4j.time.Date(1984, 6, 28)}, {'schoolName': 'Sierra Park Mini-Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'King Jh Mini-Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Park Western Gifted Magnet', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bellevue Primary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Arco Iris Primary Center', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'White House Primary Center', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Kindergarten Learning Academy', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Parks/Huerta Primary Center', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Valerio Primary Center', 'closureDate': neo4j.time.Date(2009, 7, 1)}, {'schoolName': 'Valley Community Charter', 'closureDate': neo4j.time.Date(2005, 6, 30)}, {'schoolName': 'PUC CALS Charter Middle', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Camino Nuevo Charter Middle', 'closureDate': neo4j.time.Date(2005, 6, 30)}, {'schoolName': 'Pacifica Community Charter', 'closureDate': neo4j.time.Date(2007, 6, 30)}, {'schoolName': 'Xinaxcalmecac Academia Semillas del Pueblo', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Santa Monica Blvd. Community Charter', 'closureDate': neo4j.time.Date(2002, 5, 28)}, {'schoolName': 'Nueva Esperanza Charter Academy', 'closureDate': neo4j.time.Date(2002, 9, 1)}, {'schoolName': 'Tierra del Sol', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Grace Christian Preschool', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Alpha Home for Boys', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Annette Crawford Home for Girl', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Wiggins (Wallace S.) Elementar', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Grovedale Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hacienda Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lowell Elementary (Sh)', 'closureDate': neo4j.time.Date(1985, 9, 24)}, {'schoolName': 'Maybrook Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Starbuck Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lynwood Learning Academy', 'closureDate': neo4j.time.Date(2007, 6, 24)}, {'schoolName': 'Kaplan Academy of Southern California', 'closureDate': neo4j.time.Date(2011, 8, 6)}, {'schoolName': 'Lynwood Unified Alternative Education', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Pathway High', 'closureDate': neo4j.time.Date(2005, 9, 12)}, {'schoolName': 'Lynwood Opportunity School', 'closureDate': neo4j.time.Date(2001, 7, 1)}, {'schoolName': 'Hosler (Fred W.) Jr High', 'closureDate': neo4j.time.Date(1998, 9, 29)}, {'schoolName': 'La Marina Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ladera Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Manhattan Heights Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Opal Robinson Elementary', 'closureDate': neo4j.time.Date(1996, 7, 24)}, {'schoolName': 'Special Services-Special Educa', 'closureDate': neo4j.time.Date(1985, 2, 15)}, {'schoolName': 'Quest Academy Community Day', 'closureDate': neo4j.time.Date(2015, 6, 8)}, {'schoolName': 'Monrovia Unified Alternative Education', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Canyon Early Learning Center', 'closureDate': neo4j.time.Date(2005, 6, 30)}, {'schoolName': 'Contract Independent Study', 'closureDate': neo4j.time.Date(1994, 12, 16)}, {'schoolName': 'Futures High (Cont.)', 'closureDate': neo4j.time.Date(1997, 4, 22)}, {'schoolName': 'Horizons High (Cont.)', 'closureDate': neo4j.time.Date(1997, 4, 22)}, {'schoolName': 'Live Oak Primary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Schurr (George Miller, Jr.) Hi', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mountain View Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Performance Learning Center - CDS', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': 'Excelsior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Neff (William N.) High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Norwalk-La Mirada Unif. Alter. Educ.', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'McNally (Andrew) Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Charlotte Anthony Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cora Hargitt Middle School Academy', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Wright (Henry L.) Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Howardine J. Kling Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hoxie Avenue Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Los Coyotes Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mesa Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Rancho Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Dolores Huerta Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Maryott (Roy R.) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mesa Intermediate', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Tamarisk Elementary', 'closureDate': neo4j.time.Date(2010, 7, 1)}, {'schoolName': 'Juniper Upper Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Juniper Intermediate', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Amargosa Sixth Grade Center', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Sumac Sixth Grade Center', 'closureDate': neo4j.time.Date(1992, 6, 30)}, {'schoolName': 'Wildflower Elementary', 'closureDate': neo4j.time.Date(2010, 7, 1)}, {'schoolName': 'Oak Tree Learning Center', 'closureDate': neo4j.time.Date(2008, 5, 2)}, {'schoolName': 'Mar Vista High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Miraleste High', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Palos Verdes High', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Rolling Hills High', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Dapplegray Intermediate', 'closureDate': neo4j.time.Date(1987, 11, 23)}, {'schoolName': 'La Cresta Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Ladera Linda Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Palos Verdes Peninsula USD Adult Education', 'closureDate': neo4j.time.Date(2002, 4, 16)}, {'schoolName': 'Valmonte Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Valmonte Kindergarten', 'closureDate': neo4j.time.Date(2000, 6, 30)}, {'schoolName': 'Paramount Alternative Education Center', 'closureDate': neo4j.time.Date(2016, 1, 22)}, {'schoolName': 'Contreras High (Cont.)', 'closureDate': neo4j.time.Date(1991, 9, 1)}, {'schoolName': 'Paramount High West', 'closureDate': neo4j.time.Date(1997, 6, 26)}, {'schoolName': 'Paramount High School Academy', 'closureDate': neo4j.time.Date(2007, 6, 30)}, {'schoolName': 'Grove Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lakewood Elementary', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Alondra', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Clearwater Intermediate', 'closureDate': neo4j.time.Date(1997, 5, 23)}, {'schoolName': 'Paramount Park', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Orange Avenue (Elem)', 'closureDate': neo4j.time.Date(1993, 6, 30)}, {'schoolName': 'Nia Educational Charter', 'closureDate': neo4j.time.Date(2009, 7, 2)}, {'schoolName': 'Rhythms of the Village Charter High', 'closureDate': neo4j.time.Date(2008, 4, 15)}, {'schoolName': 'Celerity Exa Charter', 'closureDate': neo4j.time.Date(2014, 9, 2)}, {'schoolName': 'Washington Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Evening High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Pasadena Unified Alternative', 'closureDate': neo4j.time.Date(1995, 12, 12)}, {'schoolName': 'Pasadena Community Prep', 'closureDate': neo4j.time.Date(1999, 9, 8)}, {'schoolName': 'Allendale Elementary', 'closureDate': neo4j.time.Date(2006, 6, 30)}, {'schoolName': 'Arroyo Seco Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Audubon Primary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Burbank Elementary', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Edison (Thomas A.) Elementary', 'closureDate': neo4j.time.Date(2006, 6, 30)}, {'schoolName': 'Arroyo Garfield Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hale Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Lincoln Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Linda Vista Elementary', 'closureDate': neo4j.time.Date(2006, 6, 30)}, {'schoolName': 'Loma Alta Elementary', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'McKinley Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Noyes (Arthur Amos) Elementary', 'closureDate': neo4j.time.Date(2006, 6, 30)}, {'schoolName': 'Sierra Mesa Fundamental', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Marshall Junior High Defunct', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Roosevelt Junior and Senior Hi', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'McKinley Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Washington Junior High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Fundamental School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'McKinley Fundamental', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Marshall Fundamental Elementar', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Marshall Fundamental Primary A', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Arcadia Adult Evening School', 'closureDate': neo4j.time.Date(1994, 6, 3)}, {'schoolName': 'Educational Resource Center at Garey Village Community Day', 'closureDate': neo4j.time.Date(2012, 3, 14)}, {'schoolName': 'Village Educational Resource Center at Indian Hill Community Day', 'closureDate': neo4j.time.Date(2004, 12, 20)}, {'schoolName': 'Casa Colina High School', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Casa Colina Elem (Defunct)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Mendoza Elementary', 'closureDate': neo4j.time.Date(2011, 6, 20)}, {'schoolName': 'Pueblo', 'closureDate': neo4j.time.Date(2014, 6, 4)}, {'schoolName': 'Andrews Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Edison Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Franklin Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Fulton Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'McCandless Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Patterson Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'SMMUSD Community Day', 'closureDate': neo4j.time.Date(2009, 1, 30)}, {'schoolName': 'Alternative School', 'closureDate': neo4j.time.Date(1984, 6, 28)}, {'schoolName': 'Madison Elementary', 'closureDate': neo4j.time.Date(1985, 9, 24)}, {'schoolName': 'Washington Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Malibu Park Middle', 'closureDate': neo4j.time.Date(1993, 6, 30)}, {'schoolName': 'Alternative Junior High', 'closureDate': neo4j.time.Date(1987, 11, 23)}, {'schoolName': 'Kennedy Child Study Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bay Street Learning Center', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Washington East', 'closureDate': neo4j.time.Date(1985, 2, 5)}, {'schoolName': 'Saugus Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bouquet Elementary Defunct', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Bouquet Canyon Elementary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Aviation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'South Pasadena Continuation', 'closureDate': neo4j.time.Date(1993, 12, 30)}, {'schoolName': 'El Centro Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Oneonta Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Las Flores', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sunnyside Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Telechron Elementary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Soledad Canyon Community Eleme', 'closureDate': neo4j.time.Date(1991, 6, 30)}, {'schoolName': 'Temple City Continuation High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'South High', 'closureDate': neo4j.time.Date(1989, 12, 2)}, {'schoolName': 'Newton Adult Education/Community Center', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Jefferson Adult Education/Community Center', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Torrance Continuation High Sch', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Torrance Opportunity', 'closureDate': neo4j.time.Date(2001, 6, 30)}, {'schoolName': 'Columbia MH', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Crenshaw Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hamilton Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hillside Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Levy (Sam) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Madison Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Meadow Park Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Parkway Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Perry Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sepulveda Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Steele (Carl) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Wright (Grace) Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Coronado Academy Community Day', 'closureDate': neo4j.time.Date(2010, 8, 25)}, {'schoolName': 'Insight @ Los Angeles', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Edgewood High', 'closureDate': neo4j.time.Date(1988, 12, 2)}, {'schoolName': 'Tonopah Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Coronado Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cortez Elementary', 'closureDate': neo4j.time.Date(1988, 10, 20)}, {'schoolName': 'Del Norte Intermediate', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'El Dorado Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Willowood Junior Hi', 'closureDate': neo4j.time.Date(1988, 12, 2)}, {'schoolName': 'Independent Study', 'closureDate': neo4j.time.Date(1994, 6, 30)}, {'schoolName': 'Willowood Elementary', 'closureDate': neo4j.time.Date(2004, 3, 5)}, {'schoolName': 'Westside Academy', 'closureDate': neo4j.time.Date(2014, 6, 4)}, {'schoolName': 'Neenach Elementary', 'closureDate': neo4j.time.Date(2002, 10, 1)}, {'schoolName': 'Abraham Lincoln Elementary', 'closureDate': neo4j.time.Date(2009, 4, 28)}, {'schoolName': 'Washington (George) Elementary', 'closureDate': neo4j.time.Date(2004, 7, 30)}, {'schoolName': 'Calif School of Adult Educatio', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Monte Vista High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Santa Fe School of Adult Educa', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sierra High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Santa Clarita Valley Early College High', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': 'Wayside Honor Rancho', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Passport Academy', 'closureDate': neo4j.time.Date(2002, 6, 30)}, {'schoolName': 'Transitional Learning Center Charter', 'closureDate': neo4j.time.Date(2014, 6, 30)}, {'schoolName': 'Wilsona Elementary', 'closureDate': neo4j.time.Date(2009, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Don M. Smith Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Sepulveda Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Compton Continuation H S (Defu', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Edward G. Chester Adult Center', 'closureDate': neo4j.time.Date(2008, 6, 9)}, {'schoolName': 'Tubman High', 'closureDate': neo4j.time.Date(1986, 10, 14)}, {'schoolName': 'Compton Unified Alternative/Opportunity', 'closureDate': neo4j.time.Date(1995, 6, 30)}, {'schoolName': 'Transition Continuation High', 'closureDate': neo4j.time.Date(1992, 9, 9)}, {'schoolName': 'Harriet Tubman High', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Caldwell Street Elementary', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Lincoln Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Riles (Wilson C.) (MH)', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Park Village Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Frances Willard Elementary', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Twain (Mark) Elementary', 'closureDate': neo4j.time.Date(1995, 10, 19)}, {'schoolName': 'Riles (Wilson C.) Elementary', 'closureDate': neo4j.time.Date(1995, 10, 19)}, {'schoolName': 'Stevenson Village Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Hacienda La Puente Unified Alternative', 'closureDate': neo4j.time.Date(1990, 11, 6)}, {'schoolName': 'Opportunities for Learning-Hacienda La Puente', 'closureDate': neo4j.time.Date(2004, 12, 19)}, {'schoolName': 'Amar Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Cedarlane Middle', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Dibble Elementary', 'closureDate': neo4j.time.Date(1984, 6, 28)}, {'schoolName': 'Glenelder Elementary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Hillgrove Elementary', 'closureDate': neo4j.time.Date(1984, 6, 28)}, {'schoolName': 'Hudson Elem.', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'La Subida Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Shadybend Elementary', 'closureDate': neo4j.time.Date(2008, 6, 30)}, {'schoolName': 'Willow Elementary', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Grandview Elementary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Rowland Heights Charter Academy', 'closureDate': neo4j.time.Date(2015, 6, 9)}, {'schoolName': 'Farjardo Elementary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'La Seda Elementary', 'closureDate': neo4j.time.Date(2010, 6, 30)}, {'schoolName': 'Rincon Intermediate', 'closureDate': neo4j.time.Date(2011, 6, 30)}, {'schoolName': 'Destiny Community Day', 'closureDate': neo4j.time.Date(2003, 6, 19)}, {'schoolName': 'Extended Day', 'closureDate': neo4j.time.Date(1994, 6, 3)}, {'schoolName': 'Madison Elementary', 'closureDate': neo4j.time.Date(1992, 6, 30)}, {'schoolName': 'Albert Einstein Academy Elementary', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Albert Einstein Academy for Letters, Arts & Sciences - Odyssey', 'closureDate': neo4j.time.Date(2015, 8, 19)}, {'schoolName': 'Academy of Arts and Sciences: Los Angeles (K-8)', 'closureDate': neo4j.time.Date(2016, 6, 30)}, {'schoolName': 'Valley Prep 9-12', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Valley Prep K-5', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Valley Prep 6-8', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Acton Elementary', 'closureDate': neo4j.time.Date(2004, 7, 1)}, {'schoolName': 'Agua Dulce Elementary', 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Manhattan Beach Intermediate', 'closureDate': neo4j.time.Date(1999, 5, 10)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Scanlon Center Community Adult', 'closureDate': neo4j.time.Date(2012, 6, 30)}, {'schoolName': 'Alhambra Independent Study', 'closureDate': neo4j.time.Date(1985, 3, 6)}, {'schoolName': 'Mark Keppel Adult High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'San Gabriel Adult High', 'closureDate': neo4j.time.Date(1989, 6, 30)}, {'schoolName': 'Alhambra Community Day', 'closureDate': neo4j.time.Date(2006, 8, 18)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Academy of Culture and Technology', 'closureDate': neo4j.time.Date(2006, 7, 12)}, {'schoolName': None, 'closureDate': None}, {'schoolName': 'Doris Topsy-Elvord Academy', 'closureDate': neo4j.time.Date(2013, 6, 30)}, {'schoolName': None, 'closureDate': None}, {'schoolName': None, 'closureDate': None}, {'schoolName': "Today's Fresh Start Charter", 'closureDate': neo4j.time.Date(2015, 6, 30)}, {'schoolName': 'Anahuacalmecac International University Preparatory of North America', 'closureDate': neo4j.time.Date(2015, 9, 10)}]]]
+answer:858
+[['Los Angeles', 'Progressive Education Entrepreneurial Charter', '2004-10-15'], ['Los Angeles', 'Opportunities Unlimited Charter High', '2014-06-30'], ['Los Angeles', 'Wisdom Academy for Young Scientists', '2015-05-29']]
+####################################################################################################
+process=50,match=17,p=0.34
+####################################################################################################
+index:50
+question:
+What is the postal street address for the school with the 7th highest Math average? Indicate the school's name. evidence: Postal street and mailing street are synonyms.
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.AvgScrMath IS NOT NULL AND sat.AvgScrMath > 0
+WITH sat, school
+ORDER BY sat.AvgScrMath DESC
+LIMIT 7
+WITH collect(school) AS schools
+WITH schools[6] AS seventh_school
+RETURN 
+  seventh_school.MailStreet AS postal_street_address,
+  seventh_school.School AS school_name
+SQL:
+SELECT T2.MailStreet, T2.School FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.AvgScrMath DESC LIMIT 6, 1
+result:1
+[['5172 Orange Avenue', 'Oxford Academy']]
+answer:1
+[['5172 Orange Avenue', 'Oxford Academy']]
+####################################################################################################
+process=51,match=18,p=0.35294117647058826
+####################################################################################################
+index:51
+question:
+In which mailing street address can you find the school that has the lowest average score in reading? Also give the school's name.
+cypher:
+MATCH (satscores:california_schools_satscores)-[:belongsTo]->(schools:california_schools_schools)
+WHERE satscores.AvgScrRead IS NOT NULL
+WITH satscores, schools
+ORDER BY satscores.AvgScrRead ASC
+LIMIT 1
+RETURN schools.MailStreet AS MailingStreetAddress, schools.School AS SchoolName
+SQL:
+SELECT T2.MailStreet, T2.School FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T1.AvgScrRead IS NOT NULL ORDER BY T1.AvgScrRead ASC LIMIT 1
+result:1
+[['1050 York Street', 'S.F. International High']]
+answer:1
+[['1050 York Street', 'S.F. International High']]
+####################################################################################################
+process=52,match=19,p=0.36538461538461536
+####################################################################################################
+index:52
+question:
+What is the total number of schools whose total SAT scores are greater or equal to 1500 whose mailing city is Lakeport? evidence: Total SAT scores can be computed by AvgScrRead + AvgScrMath + AvgScrWrite
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.AvgScrRead + sat.AvgScrMath + sat.AvgScrWrite >= 1500
+  AND school.MailCity = 'Lakeport'
+RETURN count(DISTINCT school.CDSCode) AS total_schools
+SQL:
+SELECT COUNT(T1.cds) FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.MailCity = 'Lakeport' AND (T1.AvgScrRead + T1.AvgScrMath + T1.AvgScrWrite) >= 1500
+result:1
+[[2]]
+answer:1
+[[2]]
+####################################################################################################
+process=53,match=20,p=0.37735849056603776
+####################################################################################################
+index:53
+question:
+How many test takers are there at the school/s whose mailing city address is in Fresno?
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.MailCity = 'Fresno'
+MATCH (scores:california_schools_satscores)
+WHERE scores.cds = school.CDSCode
+RETURN sum(scores.NumTstTakr) AS total_test_takers
+SQL:
+SELECT T1.NumTstTakr FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T2.MailCity = 'Fresno'
+result:1
+[[6070]]
+answer:32
+[[6], [5], [328]]
+####################################################################################################
+process=54,match=20,p=0.37037037037037035
+####################################################################################################
+index:54
+question:
+Please specify all of the schools and their related mailing zip codes that are under Avetik Atoian's administration.
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.AdmFName1 + ' ' + school.AdmLName1 = 'Avetik Atoian'
+RETURN school.School AS SchoolName, school.MailZip AS MailingZipCode
+SQL:
+SELECT School, MailZip FROM schools WHERE AdmFName1 = 'Avetik' AND AdmLName1 = 'Atoian'
+result:1
+[['Fairview Middle', '93926-0238']]
+answer:1
+[['Fairview Middle', '93926-0238']]
+####################################################################################################
+process=55,match=21,p=0.38181818181818183
+####################################################################################################
+index:55
+question:
+Of the schools with a mailing state address in California, what is the ratio of the schools located in the county of Colusa against the school located in the county of Humboldt? evidence: Ratio = count(schools in Colusa) / count(schools in Humboldt)
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.MailState = 'CA'
+WITH 
+    SUM(CASE WHEN s.County = 'Colusa' THEN 1 ELSE 0 END) AS count_colusa,
+    SUM(CASE WHEN s.County = 'Humboldt' THEN 1 ELSE 0 END) AS count_humboldt
+RETURN 
+    toFloat(count_colusa) / toFloat(count_humboldt) AS ratio
+SQL:
+SELECT CAST(SUM(CASE WHEN County = 'Colusa' THEN 1 ELSE 0 END) AS REAL) / SUM(CASE WHEN County = 'Humboldt' THEN 1 ELSE 0 END) FROM schools WHERE MailState = 'CA'
+result:1
+[[0.18090452261306533]]
+answer:1
+[[0.18090452261306533]]
+####################################################################################################
+process=56,match=22,p=0.39285714285714285
+####################################################################################################
+index:56
+question:
+Of all the schools with a mailing state address in California, how many are active in San Joaquin city?
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.MailState = 'CA'
+  AND s.City = 'San Joaquin'
+  AND s.StatusType = 'Active'
+RETURN count(s) AS active_schools_in_san_joaquin
+SQL:
+SELECT COUNT(CDSCode) FROM schools WHERE City = 'San Joaquin' AND MailState = 'CA' AND StatusType = 'Active'
+result:1
+[[2]]
+answer:1
+[[2]]
+####################################################################################################
+process=57,match=23,p=0.40350877192982454
+####################################################################################################
+index:57
+question:
+What is the phone number and extension number for the school that had the 333rd highest average writing score?
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.AvgScrWrite IS NOT NULL
+ORDER BY sat.AvgScrWrite DESC
+SKIP 332
+LIMIT 1
+RETURN school.Phone AS PhoneNumber, school.Ext AS ExtensionNumber
+SQL:
+SELECT T2.Phone, T2.Ext FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.AvgScrWrite DESC LIMIT 332, 1
+result:1
+[['(916) 395-5050', None]]
+answer:1
+[['(916) 395-5050', None]]
+####################################################################################################
+process=58,match=24,p=0.41379310344827586
+####################################################################################################
+index:58
+question:
+What is the phone number and extension number for the school with the zip code 95203-3704? Indicate the school's name.
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.Zip = '95203-3704'
+RETURN school.Phone AS Phone, school.Ext AS Extension, school.School AS SchoolName
+SQL:
+SELECT Phone, Ext, School FROM schools WHERE Zip = '95203-3704'
+result:1
+[['(209) 933-7470', '2222', 'Spanos (Alex G.) Elementary']]
+answer:1
+[['(209) 933-7470', '2222', 'Spanos (Alex G.) Elementary']]
+####################################################################################################
+process=59,match=25,p=0.423728813559322
+####################################################################################################
+index:59
+question:
+What is the website for the schools under the administrations of Mike Larson and Dante Alvarez?
+cypher:
+MATCH (school:california_schools_schools)
+WHERE 
+  (school.AdmFName1 = 'Mike' AND school.AdmLName1 = 'Larson') OR
+  (school.AdmFName2 = 'Mike' AND school.AdmLName2 = 'Larson') OR
+  (school.AdmFName3 = 'Mike' AND school.AdmLName3 = 'Larson') OR
+  (school.AdmFName1 = 'Dante' AND school.AdmLName1 = 'Alvarez') OR
+  (school.AdmFName2 = 'Dante' AND school.AdmLName2 = 'Alvarez') OR
+  (school.AdmFName3 = 'Dante' AND school.AdmLName3 = 'Alvarez')
+RETURN DISTINCT school.Website AS Website
+SQL:
+SELECT Website FROM schools WHERE (AdmFName1 = 'Mike' AND AdmLName1 = 'Larson') OR (AdmFName1 = 'Dante' AND AdmLName1 = 'Alvarez')
+result:2
+[['http://ripon.ca.rse.schoolinsites.com/'], ['http://ripona.ca.rse.schoolinsites.com/']]
+answer:2
+[['http://ripon.ca.rse.schoolinsites.com/'], ['http://ripona.ca.rse.schoolinsites.com/']]
+####################################################################################################
+process=60,match=26,p=0.43333333333333335
+####################################################################################################
+index:60
+question:
+What are the websites for all the partially virtual chartered schools located in San Joaquin? evidence: Virtual = 'P' means partially virtual; Charter schools refers to Charter = 1 in the table schools
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.Charter = 1 AND s.Virtual = 'P' AND s.County = 'San Joaquin'
+RETURN s.Website AS Website
+SQL:
+SELECT Website FROM schools WHERE County = 'San Joaquin' AND Virtual = 'P' AND Charter = 1
+result:2
+[['www.riovalley.org'], ['www.mantecausd.net']]
+answer:2
+[['www.riovalley.org'], ['www.mantecausd.net']]
+####################################################################################################
+process=61,match=27,p=0.4426229508196721
+####################################################################################################
+index:61
+question:
+How many chartered schools located in the city of Hickman are owned by the Elementary School District? evidence: Elementary School District refers to DOC = 52; Chartered schools refer to Charter = 1 in the table schools
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.Charter = 1
+  AND s.City = 'Hickman'
+  AND s.DOC = '52'
+RETURN COUNT(s) AS chartered_schools_count
+SQL:
+SELECT COUNT(School) FROM schools WHERE DOC = 52 AND Charter = 1 AND City = 'Hickman'
+result:1
+[[3]]
+answer:1
+[[3]]
+####################################################################################################
+process=62,match=28,p=0.45161290322580644
+####################################################################################################
+index:62
+question:
+What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%? evidence: non-chartered schools refer to schools whose Charter = 0; K-12 means grades 1 through 12; percent of eligible free rate for K-12 = `Free Meal Count (K-12)` * 100 / `Enrollment (K-12)`
+cypher:
+MATCH (frpm:california_schools_frpm)
+WHERE frpm.`County Name` = 'Los Angeles'
+  AND frpm.`Charter School (Y/N)` = 0
+  AND frpm.`Percent (%) Eligible Free (K-12)` < 0.18
+RETURN COUNT(*) AS total_non_chartered_schools
+SQL:
+SELECT COUNT(T2.School) FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.County = 'Los Angeles' AND T2.Charter = 0 AND CAST(T1.`Free Meal Count (K-12)` AS REAL) * 100 / T1.`Enrollment (K-12)` < 0.18
+result:1
+[[201]]
+answer:1
+[[1]]
+####################################################################################################
+process=63,match=28,p=0.4444444444444444
+####################################################################################################
+index:63
+question:
+In chartered schools with charter number 00D2, what are the names of all the administrators? Include the name of the school and the city to which it belongs evidence: Chartered schools refer to Charter = 1 in the table schools; Full name refers to first name, last name
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.Charter = 1 AND s.CharterNum = '00D2'
+RETURN DISTINCT
+  s.School AS SchoolName,
+  s.City AS City,
+  CASE WHEN s.AdmFName1 IS NOT NULL AND s.AdmLName1 IS NOT NULL 
+       THEN s.AdmFName1 + ' ' + s.AdmLName1 
+       ELSE NULL END AS Administrator1,
+  CASE WHEN s.AdmFName2 IS NOT NULL AND s.AdmLName2 IS NOT NULL 
+       THEN s.AdmFName2 + ' ' + s.AdmLName2 
+       ELSE NULL END AS Administrator2,
+  CASE WHEN s.AdmFName3 IS NOT NULL AND s.AdmLName3 IS NOT NULL 
+       THEN s.AdmFName3 + ' ' + s.AdmLName3 
+       ELSE NULL END AS Administrator3
+SQL:
+SELECT AdmFName1, AdmLName1, School, City FROM schools WHERE Charter = 1 AND CharterNum = '00D2'
+result:8
+[['Ronald W. Reagan Elementary', 'Kingsburg', 'Bobby Rodriguez', None, None], ['Island Community Day', 'Kingsburg', 'Misti Jennings', None, None], ['Lincoln Elementary', 'Kingsburg', 'Matt Stovall', None, None]]
+answer:8
+[['Bobby', 'Rodriguez', 'Ronald W. Reagan Elementary', 'Kingsburg'], ['Misti', 'Jennings', 'Island Community Day', 'Kingsburg'], ['Matt', 'Stovall', 'Lincoln Elementary', 'Kingsburg']]
+####################################################################################################
+process=64,match=28,p=0.4375
+####################################################################################################
+index:64
+question:
+What is the total number of schools with a mailing city in Hickman belonging to the charter number 00D4?
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.MailCity = 'Hickman' AND s.CharterNum = '00D4'
+RETURN COUNT(*) AS total_schools
+SQL:
+SELECT COUNT(*) FROM schools WHERE CharterNum = '00D4' AND MailCity = 'Hickman'
+result:1
+[[3]]
+answer:1
+[[3]]
+####################################################################################################
+process=65,match=29,p=0.4461538461538462
+####################################################################################################
+index:65
+question:
+What is the ratio in percentage of Santa Clara County schools that are locally funded compared to all other types of charter school funding? evidence: Ratio in percentage = (count(locally funded schools in Santa Clara) / count(all funding type schools in Santa Clara) * 100%
+cypher:
+MATCH (s:california_schools_frpm)
+WHERE s.`County Name` = 'Santa Clara'
+  AND s.`Charter School (Y/N)` = 1
+  AND s.`Charter Funding Type` <> 'Not in CS funding model'
+WITH 
+  COUNT(CASE WHEN s.`Charter Funding Type` = 'Locally funded' THEN 1 END) AS locally_count,
+  COUNT(*) AS total_count
+RETURN 
+  (locally_count * 100.0) / total_count AS percentage_locally_funded
+SQL:
+SELECT CAST(SUM(CASE WHEN FundingType = 'Locally funded' THEN 1 ELSE 0 END) AS REAL) * 100 / SUM(CASE WHEN FundingType != 'Locally funded' THEN 1 ELSE 0 END) FROM schools WHERE County = 'Santa Clara' AND Charter = 1
+result:1
+[[30.0]]
+answer:1
+[[33.333333333333336]]
+####################################################################################################
+process=66,match=29,p=0.4393939393939394
+####################################################################################################
+index:66
+question:
+Between 1/1/2000 to 12/31/2005, how many directly funded schools opened in the county of Stanislaus? evidence: Directly funded schools refers to FundingType = 'Directly Funded'
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.OpenDate >= date('2000-01-01') AND s.OpenDate <= date('2005-12-31')
+  AND s.County = 'Stanislaus'
+  AND s.FundingType = 'Directly funded'
+RETURN count(s) AS directlyFundedSchoolsCount
+SQL:
+SELECT COUNT(School) FROM schools WHERE strftime('%Y', OpenDate) BETWEEN '2000' AND '2005' AND County = 'Stanislaus' AND FundingType = 'Directly funded'
+result:1
+[[7]]
+answer:1
+[[7]]
+####################################################################################################
+process=67,match=30,p=0.44776119402985076
+####################################################################################################
+cypher run error
+index:67
+question:
+What is the total amount of Community College District closure in 1989 in the city of San Francisco?
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.City = 'San Francisco'
+  AND s.DOCType CONTAINS 'Community College'
+  AND s.StatusType = 'Closed'
+  AND YEAR(s.ClosedDate) = 1989
+RETURN COUNT(*) AS total_community_college_closures_1989_sf
+SQL:
+SELECT COUNT(School) FROM schools WHERE strftime('%Y', ClosedDate) = '1989' AND City = 'San Francisco' AND DOCType = 'Community College District'
+result:1
+[[]]
+answer:1
+[[2]]
+####################################################################################################
+process=68,match=30,p=0.4411764705882353
+####################################################################################################
+cypher run error
+index:68
+question:
+Which county reported the most number of school closure in the 1980s with school wonership code belonging to Youth Authority Facilities (CEA)? evidence: Youth Authority Facilities (CEA) refers to SOC = 11; 1980s = years between 1980 and 1989
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.StatusType = 'Closed'
+  AND s.SOC = '11'
+  AND exists(s.ClosedDate)
+  WITH s, toInteger(split(s.ClosedDate, '-')[0]) AS closedYear
+  WHERE closedYear >= 1980 AND closedYear <= 1989
+RETURN s.County AS CountyName, COUNT(*) AS closureCount
+ORDER BY closureCount DESC
+LIMIT 1
+SQL:
+SELECT County FROM schools WHERE strftime('%Y', ClosedDate) BETWEEN '1980' AND '1989' AND StatusType = 'Closed' AND SOC = 11 GROUP BY County ORDER BY COUNT(School) DESC LIMIT 1
+result:1
+[[]]
+answer:1
+[['Sacramento']]
+####################################################################################################
+process=69,match=30,p=0.43478260869565216
+####################################################################################################
+index:69
+question:
+Please provide the National Center for Educational Statistics school district identification number for all schools with a School Ownership Code that are part of the State Special Schools. evidence: State Special Schools means that SOC = 31.
+cypher:
+MATCH (s:california_schools_schools {SOC: "31"})
+RETURN DISTINCT s.NCESDist AS NCESDistrict
+SQL:
+SELECT NCESDist FROM schools WHERE SOC = 31
+result:3
+[['0600002'], ['0600003'], ['0600007']]
+answer:3
+[['0600002'], ['0600003'], ['0600007']]
+####################################################################################################
+process=70,match=31,p=0.44285714285714284
+####################################################################################################
+index:70
+question:
+How many active and closed District Community Day Schools are there in the county of Alpine?
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.County = 'Alpine'
+  AND school.SOCType = 'District Community'
+  AND school.StatusType IN ['Active', 'Closed']
+RETURN COUNT(school) AS count
+SQL:
+SELECT COUNT(School) FROM schools WHERE (StatusType = 'Closed' OR StatusType = 'Active') AND SOC = 69 AND County = 'Alpine'
+result:1
+[[0]]
+answer:1
+[[2]]
+####################################################################################################
+process=71,match=31,p=0.43661971830985913
+####################################################################################################
+index:71
+question:
+What is the district code for the School that does not offer a magnet program in the city of Fresno? evidence: When magent is equal to 0 in the database, it means ths school doesn't offer a magnet program.
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.City = 'Fresno' AND s.Magnet = 0
+RETURN DISTINCT s.District AS district_code
+SQL:
+SELECT T1.`District Code` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.City = 'Fresno' AND T2.Magnet = 0
+result:21
+[['Fresno County Office of Education'], ['Biola-Pershing Union Elementar'], ['Central Union High']]
+answer:151
+[[10108], [10108], [10108]]
+####################################################################################################
+process=72,match=31,p=0.4305555555555556
+####################################################################################################
+index:72
+question:
+How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year? evidence: State Special School means EdOpsCode = 'SSS'
+cypher:
+MATCH (school:california_schools_schools {EdOpsCode: 'SSS'})
+WHERE school.School CONTAINS 'Fremont'
+MATCH (frpm:california_schools_frpm {CDSCode: school.CDSCode, `Academic Year`: '2014-2015'})
+RETURN frpm.`Enrollment (Ages 5-17)` AS EnrollmentAge5To17
+SQL:
+SELECT T1.`Enrollment (Ages 5-17)` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.EdOpsCode = 'SSS' AND T2.City = 'Fremont' AND T1.`Academic Year` BETWEEN 2014 AND 2015
+result:1
+[[335.0]]
+answer:2
+[[40.0], [335.0]]
+####################################################################################################
+process=73,match=31,p=0.4246575342465753
+####################################################################################################
+index:73
+question:
+What is the free or reduced price meal count for ages 5 to 17 in the Youth Authority School with a mailing street address of PO Box 1040?
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE school.SOCType = 'Youth Authority Facilities'
+  AND school.MailStreet = 'PO Box 1040'
+RETURN frpm.`FRPM Count (Ages 5-17)` AS frpm_count_ages_5_to_17
+SQL:
+SELECT T1.`FRPM Count (Ages 5-17)` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.MailStreet = 'PO Box 1040' AND T2.SOCType = 'Youth Authority Facilities'
+result:1
+[[5.0]]
+answer:1
+[[5.0]]
+####################################################################################################
+process=74,match=32,p=0.43243243243243246
+####################################################################################################
+index:74
+question:
+What is the lowest grade for the District Special Education Consortia School with National Center for Educational Statistics school district identification number of 0613360? evidence: District Special Education Consortia School refers to EdOpsCode = 'SPECON'.
+cypher:
+MATCH (school:california_schools_schools {NCESDist: '0613360', EdOpsCode: 'SPECON'})
+MATCH (frpm:california_schools_frpm {CDSCode: school.CDSCode})
+RETURN frpm.`Low Grade` AS LowestGrade
+SQL:
+SELECT MIN(T1.`Low Grade`) FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.NCESDist = '0613360' AND T2.EdOpsCode = 'SPECON'
+result:1
+[['K']]
+answer:1
+[['K']]
+####################################################################################################
+process=75,match=33,p=0.44
+####################################################################################################
+index:75
+question:
+What is the educational level name for the schools with Breakfast Provision 2 in county code 37? Indicate the name of the school.
+cypher:
+MATCH (f:california_schools_frpm)-[:reportsMealEligibilityFor]->(s:california_schools_schools)
+WHERE f.`County Code` = '37' AND f.`NSLP Provision Status` = 'Breakfast Provision 2'
+RETURN s.`School` AS SchoolName, s.`EILName` AS EducationalLevelName
+SQL:
+SELECT T2.EILName, T2.School FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.`NSLP Provision Status` = 'Breakfast Provision 2' AND T1.`County Code` = 37
+result:8
+[['Lemon Grove Academy for the Sciences and Humanities', 'Elementary'], ['Monterey Heights Elementary', 'Elementary'], ['Mt. Vernon Elementary', 'Elementary']]
+answer:8
+[['Elementary', 'Lemon Grove Academy for the Sciences and Humanities'], ['Elementary', 'Monterey Heights Elementary'], ['Elementary', 'Mt. Vernon Elementary']]
+####################################################################################################
+process=76,match=34,p=0.4473684210526316
+####################################################################################################
+index:76
+question:
+What is the city location of the high school level school with Lunch Provision 2 whose lowest grade is 9 and the highest grade is 12 in the county of Merced? evidence: High school can be represented as EILCode = 'HS'
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE 
+    school.EILCode = 'HS' AND 
+    school.County = 'Merced' AND 
+    frpm.`NSLP Provision Status` = 'Lunch Provision 2' AND 
+    frpm.`Low Grade` = '9' AND 
+    frpm.`High Grade` = '12'
+RETURN 
+    school.City AS CityLocation
+LIMIT 10
+SQL:
+SELECT T2.City FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1.`NSLP Provision Status` = 'Lunch Provision 2' AND T2.County = 'Merced' AND T1.`Low Grade` = 9 AND T1.`High Grade` = 12 AND T2.EILCode = 'HS'
+result:1
+[['Le Grand']]
+answer:1
+[['Le Grand']]
+####################################################################################################
+process=77,match=35,p=0.45454545454545453
+####################################################################################################
+index:77
+question:
+Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)? evidence: Percent (%) Eligible FRPM (Ages 5-17) can be acquired by `FRPM Count (Ages 5-17)` / `Enrollment (Ages 5-17)` * 100
+cypher:
+MATCH (frpm:california_schools_frpm)-[:reportsMealEligibilityFor]->(school:california_schools_schools)
+WHERE school.County = 'Los Angeles'
+  AND school.GSserved = 'K-9'
+  AND frpm.`Enrollment (Ages 5-17)` IS NOT NULL
+  AND frpm.`Enrollment (Ages 5-17)` > 0
+RETURN 
+    school.School AS SchoolName,
+    (frpm.`FRPM Count (Ages 5-17)` / frpm.`Enrollment (Ages 5-17)` * 100) AS Percent_Eligible_FRPM_Ages_5_17
+ORDER BY Percent_Eligible_FRPM_Ages_5_17 DESC;
+SQL:
+SELECT T2.School, T1.`FRPM Count (Ages 5-17)` * 100 / T1.`Enrollment (Ages 5-17)` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.County = 'Los Angeles' AND T2.GSserved = 'K-9'
+result:2
+[['The Accelerated', 97.63888888888889], ['White Oak Elementary', 3.755868544600939]]
+answer:2
+[['White Oak Elementary', 3.755868544600939], ['The Accelerated', 97.63888888888889]]
+####################################################################################################
+process=78,match=36,p=0.46153846153846156
+####################################################################################################
+index:78
+question:
+What is the most common type of grade span served in the city of Adelanto?
+cypher:
+MATCH (school:california_schools_schools {City: 'Adelanto'})
+WHERE school.GSserved IS NOT NULL
+RETURN school.GSserved AS GradeSpan, COUNT(*) AS count
+ORDER BY count DESC
+LIMIT 1
+SQL:
+SELECT GSserved FROM schools WHERE City = 'Adelanto' GROUP BY GSserved ORDER BY COUNT(GSserved) DESC LIMIT 1
+result:1
+[['K-6', 5]]
+answer:1
+[['K-6']]
+####################################################################################################
+process=79,match=36,p=0.45569620253164556
+####################################################################################################
+cypher run error
+index:79
+question:
+Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount. evidence: 'Does not offer physical building' means Virtual = F in the database.
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.County IN ('San Diego', 'Santa Barbara') AND s.Virtual = 'F'
+WITH s.County AS county, COUNT(*) AS virtual_school_count
+WHERE virtual_school_count IS NOT NULL
+ORDER BY virtual_school_count DESC
+LIMIT 1
+SQL:
+SELECT County, COUNT(Virtual) FROM schools WHERE (County = 'San Diego' OR County = 'Santa Barbara') AND Virtual = 'F' GROUP BY County ORDER BY COUNT(Virtual) DESC LIMIT 1
+result:1
+[[]]
+answer:1
+[['San Diego', 8]]
+####################################################################################################
+process=80,match=36,p=0.45
+####################################################################################################
+index:80
+question:
+What is the school type of the school with the highest latitude? Indicate the name of the school as well as the latitude coordinates.
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.Latitude IS NOT NULL
+RETURN s.School AS SchoolName, s.Latitude AS Latitude, s.EILName AS SchoolType
+ORDER BY s.Latitude DESC
+LIMIT 1
+SQL:
+SELECT T1.`School Type`, T1.`School Name`, T2.Latitude FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode ORDER BY T2.Latitude DESC LIMIT 1
+result:1
+[['Leggett Valley High', 44.219305, 'High School']]
+answer:1
+[['High Schools (Public)', 'Leggett Valley High', 44.219305]]
+####################################################################################################
+process=81,match=36,p=0.4444444444444444
+####################################################################################################
+index:81
+question:
+In which city can you find the school in the state of California with the lowest latitude coordinates and what is its lowest grade? Indicate the school name. evidence: State of California refers to state = 'CA'
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.State = 'CA' AND s.Latitude IS NOT NULL
+RETURN s.City AS City, s.LowGrade AS LowestGrade, s.School AS SchoolName
+ORDER BY s.Latitude ASC
+LIMIT 1
+SQL:
+SELECT T2.City, T1.`Low Grade`, T1.`School Name` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.State = 'CA' ORDER BY T2.Latitude ASC LIMIT 1
+result:1
+[['San Ysidro', None, 'Willow Elementary']]
+answer:1
+[['Oroville', '7', 'Central Middle - RISE']]
+####################################################################################################
+process=82,match=36,p=0.43902439024390244
+####################################################################################################
+index:82
+question:
+What is the grade span offered in the school with the highest longitude? evidence: the highest longitude refers to the school with the maximum absolute longitude value.
+cypher:
+MATCH (s:california_schools_schools)
+WHERE s.Longitude IS NOT NULL
+RETURN s.GSoffered AS GradeSpanOffered
+ORDER BY abs(s.Longitude) DESC
+LIMIT 1
+SQL:
+SELECT GSoffered FROM schools ORDER BY ABS(longitude) DESC LIMIT 1
+result:1
+[['K-8']]
+answer:1
+[['K-8']]
+####################################################################################################
+process=83,match=37,p=0.4457831325301205
+####################################################################################################
+cypher run error
+index:83
+question:
+Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city. evidence: Kindergarten to 8th grade refers to K-8; 'Offers a magnet program' means Magnet = 1; Multiple Provision Types refers to `NSLP Provision Status` = 'Multiple Provision Types'
+cypher:
+MATCH (school:california_schools_schools {GSserved: 'K-8', Magnet: 1})
+MATCH (frpm:california_schools_frpm {`NSLP Provision Status`: 'Multiple Provision Types'})
+MATCH (school)-[:reportsMealEligibilityFor]->(frpm)
+
+WITH school.City AS City, COUNT(school) AS SchoolCount
+WITH City, SchoolCount
+WHERE SchoolCount IS NOT NULL
+RETURN City, SchoolCount, COUNT(DISTINCT City) OVER() AS TotalCities
+ORDER BY SchoolCount DESC
+SQL:
+SELECT T2.City, COUNT(T2.CDSCode) FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.Magnet = 1 AND T2.GSoffered = 'K-8' AND T1.`NSLP Provision Status` = 'Multiple Provision Types' GROUP BY T2.City
+result:1
+[[]]
+answer:1
+[['Adelanto', 1]]
+####################################################################################################
+process=84,match=37,p=0.44047619047619047
+####################################################################################################
+index:84
+question:
+What are the two most common first names among the school administrators? Indicate the district to which they administer.
+cypher:
+MATCH (s:california_schools_schools)
+UNWIND [s.AdmFName1, s.AdmFName2, s.AdmFName3] AS adminFirstName
+WITH adminFirstName, s.District AS district
+WHERE adminFirstName IS NOT NULL AND adminFirstName <> ''
+WITH adminFirstName, district, COUNT(*) AS count
+ORDER BY count DESC
+LIMIT 2
+RETURN adminFirstName, district, count
+SQL:
+SELECT DISTINCT T1.AdmFName1, T1.District FROM schools AS T1 INNER JOIN ( SELECT admfname1 FROM schools GROUP BY admfname1 ORDER BY COUNT(admfname1) DESC LIMIT 2 ) AS T2 ON T1.AdmFName1 = T2.admfname1
+result:2
+[['David', 'Los Angeles Unified', 13], ['Maria', 'Los Angeles Unified', 12]]
+answer:215
+[['David', 'Alameda County Office of Education'], ['David', 'Fremont Unified'], ['David', 'Hayward Unified']]
+####################################################################################################
+process=85,match=37,p=0.43529411764705883
+####################################################################################################
+index:85
+question:
+What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school. evidence: Percent (%) Eligible Free (K-12) = `Free Meal Count (K-12)` / `Enrollment (K-12)` * 100%
+cypher:
+MATCH (school:california_schools_schools)
+WHERE 
+    school.AdmFName1 =~ '(?i)Alusine' OR
+    school.AdmFName2 =~ '(?i)Alusine' OR
+    school.AdmFName3 =~ '(?i)Alusine'
+MATCH (school)-[:reportsMealEligibilityFor]->(frpm:california_schools_frpm)
+RETURN 
+    frpm.`District Code` AS district_code,
+    CASE 
+        WHEN frpm.`Enrollment (K-12)` IS NOT NULL AND frpm.`Enrollment (K-12)` <> 0
+        THEN toFloat(frpm.`Free Meal Count (K-12)`) / toFloat(frpm.`Enrollment (K-12)`) * 100
+        ELSE NULL
+    END AS percent_eligible_free
+SQL:
+SELECT T1.`Free Meal Count (K-12)` * 100 / T1.`Enrollment (K-12)`, T1.`District Code` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.AdmFName1 = 'Alusine'
+result:0
+[]
+answer:1
+[[70.15113350125945, 64857]]
+####################################################################################################
+process=86,match=37,p=0.43023255813953487
+####################################################################################################
+index:86
+question:
+What is the administrator's last name that oversees the school with Charter number 40? Indicate the district, the county where the school is situated, and the name of the school.
+cypher:
+MATCH (s:california_schools_schools {CharterNum: '40'})
+RETURN 
+    s.AdmLName1 AS AdministratorLastName,
+    s.District AS District,
+    s.County AS County,
+    s.School AS SchoolName
+LIMIT 1;
+SQL:
+SELECT AdmLName1, District, County, School FROM schools WHERE CharterNum = '0040'
+result:0
+[]
+answer:1
+[['Aguilar', 'San Francisco Unified', 'San Francisco', 'Creative Arts Charter']]
+####################################################################################################
+process=87,match=37,p=0.42528735632183906
+####################################################################################################
+index:87
+question:
+What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools? evidence: Intermediate/Middle Schools refers to SOC = 62; Unified School refers to DOC = 54; years between 2009 and 2010 can refer to 'between 1/1/2009 to 12/31/2010'
+cypher:
+MATCH (school:california_schools_schools)
+WHERE school.County = 'San Bernardino'
+  AND school.City = 'San Bernardino'
+  AND school.OpenDate >= date('2009-01-01')
+  AND school.OpenDate <= date('2010-12-31')
+  AND (school.SOC = '62' OR school.DOC = '54')
+RETURN DISTINCT school.AdmEmail1 AS AdminEmail1,
+                school.AdmEmail2 AS AdminEmail2,
+                school.AdmEmail3 AS AdminEmail3
+SQL:
+SELECT T2.AdmEmail1, T2.AdmEmail2 FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T2.County = 'San Bernardino' AND T2.City = 'San Bernardino' AND T2.DOC = 54 AND strftime('%Y', T2.OpenDate) BETWEEN '2009' AND '2010' AND T2.SOC = 62
+result:5
+[['a.lucero@realjourney.org', 'j.hernandez@realjourney.org', None], ['jfranco@ofy.org', 'bgillespie@ofy.org', None], [None, None, None]]
+answer:1
+[['a.lucero@realjourney.org', 'j.hernandez@realjourney.org']]
+####################################################################################################
+process=88,match=37,p=0.42045454545454547
+####################################################################################################
+index:88
+question:
+What is the administrator's email address for the school with the highest number of test takers who received SAT scores of at least 1500?Provide the name of the school.
+cypher:
+MATCH (sat:california_schools_satscores)-[:belongsTo]->(school:california_schools_schools)
+WHERE sat.NumGE1500 IS NOT NULL
+ORDER BY sat.NumGE1500 DESC
+LIMIT 1
+RETURN school.School AS SchoolName, school.AdmEmail1 AS AdministratorEmail
+SQL:
+SELECT T2.AdmEmail1, T2.School FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY T1.NumGE1500 DESC LIMIT 1
+result:1
+[[None, 'michelle.king@lausd.net']]
+answer:1
+[['michelle.king@lausd.net', None]]
+####################################################################################################
+process=89,match=38,p=0.42696629213483145
+####################################################################################################
