@@ -84,8 +84,7 @@ class EvaFor2wiki(EvalQa):
 
 
 if __name__ == "__main__":
-    import_modules_from_path("./prompt")
-    import_modules_from_path("./executors")
+    import_modules_from_path("./src")
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()
