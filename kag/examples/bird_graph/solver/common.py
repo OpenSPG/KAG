@@ -38,6 +38,8 @@ def get_entity_mschema_str(entity_info, db_name):
     for attr_info in entity_info["schema"]:
         attr_name = attr_info["column_name"]
         attr_type: str = attr_info["column_type"]
+        # if attr_type.endswith("64") or attr_type.endswith("32"):
+        #     attr_type = attr_type[:-2]
         attr_example = attr_info["sample_data"][:3]
         desc = desc_map.get(attr_name, "")
         if attr_type.lower().startswith("int") or attr_type.lower().startswith("float"):

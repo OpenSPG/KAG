@@ -40,7 +40,7 @@ NEO4J_PASSWORD = "neo4j@openspg"
 driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 
-async def check_cypher(cypher, dev_data, query):
+async def check_cypher(i, cypher, dev_data, query):
     async with driver.session(database="birdgraph") as session:
         try:
             result = await session.run(cypher)
@@ -57,7 +57,7 @@ async def check_cypher(cypher, dev_data, query):
     print_rows = rows[:3]
     print_answer = answer[:3]
     print(
-        f"question:\n{query}\ncypher:\n{cypher}\nresult:\n{print_rows}\nanswer:\n{print_answer}"
+        f"index:{i}\nquestion:\n{query}\ncypher:\n{cypher}\nSQL:\n{dev_data['SQL']}\nresult:{len(rows)}\n{print_rows}\nanswer:{len(answer)}\n{print_answer}"
     )
     return compare_2d_arrays(rows, answer)
 
@@ -112,9 +112,9 @@ def compare_2d_arrays(arr1, arr2):
     return set1 == set2
 
 
-async def qa_and_check(evaObj, query, db_name, test_data):
+async def qa_and_check(i, evaObj, query, db_name, test_data):
     cypher = await evaObj.qa(query=query, db_name=db_name)
-    match = await check_cypher(cypher, test_data, query)
+    match = await check_cypher(i, cypher, test_data, query)
     return match
 
 
@@ -126,11 +126,14 @@ if __name__ == "__main__":
     evaObj = BirdQA()
     loop = asyncio.get_event_loop()
     _count = 0
+    debug_index = None
     for i, test_data in enumerate(get_eval_dataset(db_name)):
+        if debug_index is not None and i != debug_index:
+            continue
         query = test_data["question"]
         if test_data["evidence"]:
             query += f" evidence: {test_data['evidence']}"
-        match = loop.run_until_complete(qa_and_check(evaObj, query, db_name, test_data))
+        match = loop.run_until_complete(qa_and_check(i, evaObj, query, db_name, test_data))
         if match:
             _count += 1
         print("#" * 100)

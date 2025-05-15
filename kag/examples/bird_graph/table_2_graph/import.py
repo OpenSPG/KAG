@@ -82,8 +82,10 @@ def import_node(db_name, node_type, primary_key, type_map):
                 f"n.`{field}` = toString(filteredRow.`{field}`)"
             )
         elif field_type.lower() == "date":
+            type_casting_statements.append(f"n.`{field}` = date(filteredRow.`{field}`)")
+        elif field_type.lower() == "datetime":
             type_casting_statements.append(
-                f"n.`{field}` = toString(filteredRow.`{field}`)"
+                f"n.`{field}` = datetime(filteredRow.`{field}`)"
             )
         # Optionally handle more types here, if needed
         else:
@@ -123,7 +125,7 @@ WITH s, o, apoc.map.clean(row, ['s', 'o', 'p'], []) AS properties, row.p AS rela
 CALL apoc.create.relationship(s, relationshipType, properties, o) YIELD rel
 RETURN COUNT(rel) AS edge_count
 """
-    #print(cypher)
+    # print(cypher)
     with driver.session(database=DATABASE) as session:
         session.run(f"MATCH ()-[r:{p}]-() DELETE r")
         result = session.run(cypher)

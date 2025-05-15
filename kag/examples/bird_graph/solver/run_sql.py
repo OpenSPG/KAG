@@ -51,9 +51,8 @@ if __name__ == "__main__":
     results = execute_sql(
         "california_schools",
         """
-        SELECT T2.School, T1.AvgScrWrite, T2.Phone FROM schools AS T2 LEFT JOIN satscores AS T1 ON T2.CDSCode = T1.cds WHERE strftime('%Y', T2.OpenDate) > '1991' OR strftime('%Y', T2.ClosedDate) < '2000'
-
-
+SELECT County,ClosedDate FROM schools WHERE strftime('%Y', ClosedDate) BETWEEN '1980' AND '1989' AND StatusType = 'Closed' AND SOC = 11
+-- SELECT T1.AvgScrMath, T2.County , T1.AvgScrMath, T1.AvgScrRead , T1.AvgScrWrite FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode WHERE T1.AvgScrMath IS NOT NULL ORDER BY T1.AvgScrMath + T1.AvgScrRead + T1.AvgScrWrite ASC LIMIT 1
 """.strip(),
     )
     limit = 30
@@ -62,3 +61,5 @@ if __name__ == "__main__":
         print("查询结果：")
         for row in results[:limit]:
             print(row)
+    else:
+        print("没有结果")

@@ -10,6 +10,8 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import json
+import io
+import csv
 from typing import Optional
 
 from tenacity import retry, stop_after_attempt
@@ -25,6 +27,9 @@ from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context, Task
+
+from neo4j import AsyncGraphDatabase
+from neo4j.exceptions import Neo4jError
 
 
 def to_task_context_str(context):
@@ -45,10 +50,20 @@ class BirdGenerator(GeneratorABC):
         super().__init__(**kwargs)
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
+        self.fix_cypher_prompt = init_prompt_with_fallback(
+            "fix_cypher", KAG_PROJECT_CONF.biz_scene
+        )
+
+        NEO4J_URI = "bolt://localhost:7687"
+        NEO4J_USER = "neo4j"
+        NEO4J_PASSWORD = "neo4j@openspg"
+        self.driver = AsyncGraphDatabase.driver(
+            NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
+        )
 
     @retry(stop=stop_after_attempt(3))
-    def generate_answer(self, query, content, **kwargs):
-        return self.llm_client.invoke(
+    async def generate_answer(self, query, content, **kwargs):
+        return await self.llm_client.ainvoke(
             variables={
                 "question": query,
                 "schema": kwargs.get("graph_schema", ""),
@@ -58,5 +73,72 @@ class BirdGenerator(GeneratorABC):
             with_json_parse=False,
         )
 
-    def invoke(self, query, context: Context, **kwargs):
-        return self.generate_answer(query=query, content="", **kwargs)
+    def invoke(self, query, context, **kwargs):
+        pass
+
+    async def ainvoke(self, query, context, **kwargs):
+        return await self._ainvoke(query, **kwargs)
+
+    async def _ainvoke(self, query, **kwargs):
+        history = []
+        try_times = 3
+        rst_cypher = None
+        while try_times > 0:
+            try_times -= 1
+            cypher = await self.generate_answer(
+                query=query, content="", history=str(history), **kwargs
+            )
+            if "i don't know" in cypher or len(cypher) == 0:
+                continue
+            cypher_rst, error_str = await self._get_cypher_result(cypher)
+            if cypher_rst:
+                rst_cypher = cypher
+                break
+            if error_str is None:
+                error_str = "Cypher execution completed, but with no results"
+            history.append({"cypher": cypher, "error": error_str})
+        if rst_cypher is None:
+            rst_cypher = cypher
+        return await self.refine_cypher(query, rst_cypher, **kwargs)
+
+    async def refine_cypher(self, query, cypher, **kwargs):
+        return cypher
+        return await self.llm_client.ainvoke(
+            variables={
+                "question": query,
+                "schema": kwargs.get("graph_schema", ""),
+                "cypher": cypher,
+            },
+            prompt_op=self.fix_cypher_prompt,
+            with_json_parse=False,
+        )
+
+    async def _get_cypher_result(self, cypher, limit=3):
+        # 使用异步会话执行查询
+        async with self.driver.session(database="birdgraph") as session:
+            try:
+                # 执行查询并获取结果
+                result = await session.run(cypher)
+                records = [record async for record in result][:limit]
+            except Neo4jError as e:
+                return "", str(e)
+
+            # 获取查询结果
+            rows = []
+            for i, record in enumerate(records):
+                if i >= limit:  # 只保存前 limit 行数据
+                    break
+                rows.append(dict(record))
+
+            # 如果没有数据，直接返回空字符串
+            if not rows:
+                return "", None
+
+            # 将数据组织为CSV格式
+            output = io.StringIO()
+            csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
+            csv_writer.writeheader()
+            csv_writer.writerows(rows)
+
+            # 返回CSV字符串
+            return output.getvalue(), None

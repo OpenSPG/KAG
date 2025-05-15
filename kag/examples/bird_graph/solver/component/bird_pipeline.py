@@ -57,7 +57,9 @@ class BirdPipeline(SolverPipelineABC):
         NEO4J_URI = "bolt://localhost:7687"
         NEO4J_USER = "neo4j"
         NEO4J_PASSWORD = "neo4j@openspg"
-        self.driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        self.driver = AsyncGraphDatabase.driver(
+            NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
+        )
 
     def select_executor(self, executor_name: str):
         """Select executor instance by name from available executors.
@@ -129,38 +131,8 @@ class BirdPipeline(SolverPipelineABC):
         Returns:
             Final generated answer from the execution context
         """
-        num_retry = 3
-        history_list = []
-        while num_retry > 0:
-            num_retry -= 1
-            # tasks = await self.planning(query, context, **kwargs)
-
-            # for task in tasks:
-            #     context.add_task(task)
-
-            # for task_group in context.gen_task(group=True):
-            #     await asyncio.gather(
-            #         *[
-            #             asyncio.create_task(
-            #                 self.execute_task(query, task, context, **kwargs)
-            #             )
-            #             for task in task_group
-            #         ]
-            #     )
-
-            context: Context = Context()
-            answer = await self.generator.ainvoke(
-                query, context, history=str(history_list), **kwargs
-            )
-            if "i don't know" in answer or len(answer) == 0:
-                continue
-            cypher_rst, error_str = await self._get_cypher_result(answer)
-            if cypher_rst:
-                return answer
-            if error_str is None:
-                error_str = "Cypher execution completed, but with no results"
-            history_list.append({"cypher": answer, "error": error_str})
-            continue
+        context: Context = Context()
+        answer = await self.generator.ainvoke(query, context, **kwargs)
         return answer
 
     async def _get_cypher_result(self, cypher, limit=3):
