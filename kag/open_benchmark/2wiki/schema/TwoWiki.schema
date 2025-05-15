@@ -5,6 +5,11 @@ Chunk(文本块): EntityType
         content(内容): Text
           index: TextAndVector
 
+AtomicQuery(原子问): EntityType
+  properties:
+    content(内容): Text
+      index: TextAndVector
+
 ArtificialObject(人造物体): EntityType
      properties:
         desc(描述): Text

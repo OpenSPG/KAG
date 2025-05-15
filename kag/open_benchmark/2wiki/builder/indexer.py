@@ -31,7 +31,7 @@ async def buildKB(file_path):
 
 
 if __name__ == "__main__":
-    import_modules_from_path(".")
+    import_modules_from_path("./src")
     parser = argparse.ArgumentParser(description="args")
     parser.add_argument(
         "--corpus_file",
