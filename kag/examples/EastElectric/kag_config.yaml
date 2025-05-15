@@ -54,15 +54,18 @@ e1: &e1
 e2: &e2
   type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
 
+e3: &e3
+  type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      - *e1
       - *e2
+      - *e3
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
-      cut_depth: 4
+      cut_depth: 6
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
     splitter:
@@ -81,97 +84,51 @@ kag_builder_pipeline:
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
-search_api:
+search_api: &search_api
   type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
-graph_api:
+graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
-
-kg_cs:
-  type: kg_cs_open_spg
-  path_select:
-    type: exact_one_hop_select
-  entity_linking:
-    type: entity_linking
-    recognition_threshold: 0.9
-    exclude_types:
-      - Chunk
-
-kg_fr:
-  type: kg_fr_open_spg
-  top_k: 20
-  path_select:
-    type: fuzzy_one_hop_select
-    llm_client: *chat_llm
-  ppr_chunk_retriever_tool:
-    type: ppr_chunk_retriever
-    llm_client: *openie_llm
-  entity_linking:
-    type: entity_linking
-    recognition_threshold: 0.8
-    exclude_types:
-      - Chunk
-
-
-rc:
-  type: rc_open_spg
-  vector_chunk_retriever:
-    type: vector_chunk_retriever
-    vectorize_model: *vectorize_model
+r1: &r1
+  type: vector_chunk_retriever
   vectorize_model: *vectorize_model
-  top_k: 20
+  search_api: *search_api
+  top_k: 10
 
-kag_merger:
-  type: kg_merger
-  top_k: 20
-  llm_module: *chat_llm
-  summary_prompt:
-    type: default_thought_then_answer
+r2: &r2
+  type: text_chunk_retriever
+  search_api: *search_api
+  top_k: 10
+
+r3: &r3
+  type: outline_chunk_retriever # recall chunk through outline
+  search_api: *search_api
+  graph_api: *graph_api
   vectorize_model: *vectorize_model
+  top_k: 5
 
-kag_hybrid_executor: &kag_hybrid_executor_conf
-  type: kag_hybrid_executor
-  lf_rewriter:
-    type: kag_spo_lf
-    llm_client: *chat_llm
-    lf_trans_prompt:
-      type: default_spo_retriever_decompose
-    vectorize_model: *vectorize_model
-  flow: |
-    kg_cs->kg_fr->kag_merger;rc->kag_merger
+retriever_executor: &retriever
+  type: kag_hybrid_retrieval_executor
+  retrievers:
+    - *r3
+  merger:
+    type: kag_merger
 
-
-kag_output_executor: &kag_output_executor_conf
-  type: kag_output_executor
-
-kag_deduce_executor: &kag_deduce_executor_conf
-  type: kag_deduce_executor
-
-
-py_code_based_math_executor: &py_code_based_math_executor_conf
-  type: py_code_based_math_executor
-  llm: *chat_llm
-
-solver_pipeline:
+kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: lf_kag_static_planner
+    type: kag_static_planner
     llm: *chat_llm
     plan_prompt:
-      type: default_lf_static_planning
+      type: retriever_static_planning
     rewrite_prompt:
-      type: default_rewrite_sub_task_query
+      type: default_query_rewrite
   executors:
-    - *kag_hybrid_executor_conf
-    - *py_code_based_math_executor_conf
-    - *kag_deduce_executor_conf
-    - *kag_output_executor_conf
+    - *retriever
   generator:
-    type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
+    type: llm_generator
     llm_client: *chat_llm
     generated_prompt:
-      type: default_refer_generator_prompt
-    enable_ref: true
-
+      type: default_multi_hop_generator
 #------------kag-solver configuration end----------------#

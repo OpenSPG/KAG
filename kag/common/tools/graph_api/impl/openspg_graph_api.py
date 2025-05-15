@@ -192,7 +192,7 @@ class OpenSPGGraphApi(GraphApiABC):
         if one_hop is None:
             logger.debug(f"get_entity_one_hop failed! {dsl_query}")
             return None
-        logger.info(f"get_entity_one_hop  cost ={time.time() - start_time}")
+        logger.debug(f"get_entity_one_hop  cost ={time.time() - start_time}")
         return copy_one_hop_graph_data(one_hop, "s")
 
     def convert_spo_to_one_graph(self, table: TableData) -> Dict[str, OneHopGraphData]:
