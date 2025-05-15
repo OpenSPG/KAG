@@ -10,8 +10,8 @@ from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
 
-@ExtractorABC.register("outline_extractor")
-class OutlineExtractor(ExtractorABC):
+@ExtractorABC.register("chunk_extractor")
+class ChunkExtractor(ExtractorABC):
     def __init__(
             self
     ):
@@ -48,41 +48,19 @@ class OutlineExtractor(ExtractorABC):
              outline_name = input.name
         else:
             outline_name = input.name.split("/")[-1]
-
-        index = outline_name.find("_split")
-        if index != -1:
-            outline_name = outline_name[:index]
+        outline_name = outline_name[:outline_name.find("_split")]
 
         sub_graph = SubGraph([],[])
         # add Outline Node
         sub_graph.add_node(
-            id=input.id,
+            id=f"{input.id}_{input.name}",
             name=outline_name,
-            label="Outline",
+            label="Chunk",
             properties = {
                 "id": input.id,
-                "name": outline_name
+                "name": outline_name,
+                "content":input.content
             }
-        )
-
-        # add Outline_childOf_Outline edge
-        sub_graph.add_edge(
-            s_id=input.id,
-            s_label="Outline",
-            p="childOf",
-            o_id=input.parent_id,
-            o_label="Outline",
-            properties = {}
-        )
-
-        # add Outline_relateTo_Chunk edge
-        sub_graph.add_edge(
-            s_id=input.id,
-            s_label="Outline",
-            p="relateTo",
-            o_id=f"{input.id}_{input.name}",
-            o_label=CHUNK_TYPE,
-            properties = {}
         )
 
         return [sub_graph]
