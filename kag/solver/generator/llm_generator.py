@@ -101,7 +101,9 @@ class LLMGenerator(GeneratorABC):
         rerank_queries = []
         chunks = []
         graph_data = context.variables_graph
+        tasks = []
         for task in context.gen_task(False):
+            tasks.append(task)
             if isinstance(task.result, KAGRetrievedResponse) and self.chunk_reranker:
                 rerank_queries.append(
                     task.arguments.get("rewrite_query", task.arguments["query"])
@@ -113,6 +115,7 @@ class LLMGenerator(GeneratorABC):
         refer_retrieved_data = to_reference_list(prefix_id=0, retrieved_datas=rerank_chunks)
         content_json = {"step": results}
         if reporter:
+            reporter.add_report_line("generator", "task_process", tasks, "FINISH")
             reporter.add_report_line(
                 "generator", "final_generator_input", content_json, "FINISH"
             )
