@@ -29,14 +29,30 @@ class EvaFor2wiki(EvalQa):
             return json.load(f)
 
     async def qa(self, query, gold, supporting_facts = None):
-        promt = f"""
+        llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
+
+        prompt = """Check the relevance of given references.\n"""
+        prompt += """Give me the item ids of the references as a JSON array that are relevant to the question.\n"""
+        prompt += """You should omit the reasoning process, just give me the item ids."""
+        prompt += "\n\nThe following are given references:"
+        for i, item in enumerate(supporting_facts, 1):
+            prompt += "\n{}. {}".format(i, item)
+        prompt += "\n\nQuestion: {}".format(query)
+
+        result = llm.__call__(prompt)
+        try:
+            item_ids = json.loads(result)
+            supporting_facts = [supporting_facts[i - 1] for i in item_ids]
+        except Exception:
+            return "noanswer", {"info":{"prompt": ""}}
+
+        prompt = f"""
             "Answer the question based on the given reference.Only give me the answer and do not output any other words."
             "\nThe following are given reference:{supporting_facts} \nQuestion: {query}"
             """
 
-        llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
-        result = llm.__call__(promt)
-        trace_log = {"info":{"prompt": promt}}
+        result = llm.__call__(prompt)
+        trace_log = {"info":{"prompt": prompt}}
         return result, trace_log
 
     def get_supporing_facts(self, sample):
