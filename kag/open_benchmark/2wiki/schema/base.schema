@@ -14,7 +14,7 @@ Summary: IndexType
   properties:
     title:
       index: TextAndVector
-  relation:
+  relations:
     relateTo: Chunk
     childOf: Summary        
 AtomicQuery: IndexType
@@ -24,3 +24,19 @@ AtomicQuery: IndexType
   relations:
     relateTo: Chunk
     similar: AtomicQuery
+Diagram: IndexType
+  properties:
+    title:
+      index: TextAndVector
+    content:
+      index: TextAndVector
+  relations:
+    relateTo: Chunk
+    contain: Cell
+Outline: IndexType
+  properties:
+    title:
+      index: TextAndVector
+  relations:
+    relateTo: Chunk
+    childOf: Outline
