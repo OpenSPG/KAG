@@ -25,19 +25,17 @@ from typing import List, Dict, Tuple
 from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.writer.kg_writer import KGWriter
 from kag.common.utils import generate_hash_id
-from kag.interface import ReaderABC
+from kag.interface import ReaderABC, Doc
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import LLMClient
 from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
+from kag.interface.builder.reader_abc import ReaderOutput
 from knext.common.base.runnable import Output, Input
 from kag.builder.model.sub_graph import SubGraph
 
 from kag.builder.model.sub_graph import Node, Edge
 
-
 logger = logging.getLogger(__name__)
-
-
 class MarkdownNode:
     def __init__(self, title: str, level: int, content: str = ""):
         self.title = title
@@ -45,233 +43,6 @@ class MarkdownNode:
         self.content = content
         self.children: List[MarkdownNode] = []
         self.tables: List[Dict] = []  # 存储表格数据
-
-
-def convert_to_subgraph(
-    root: MarkdownNode, chunks: List[Chunk], node_chunk_map: Dict[MarkdownNode, Chunk]
-) -> Tuple[SubGraph, dict]:
-    """
-    Convert a MarkdownNode tree and its corresponding chunks into a SubGraph structure.
-
-    Args:
-        root: The root MarkdownNode of the document tree
-        chunks: List of Chunk objects representing the document content
-        node_chunk_map: Mapping between MarkdownNode objects and their corresponding Chunk objects
-
-    Returns:
-        Tuple[SubGraph, dict]: A tuple containing:
-            - SubGraph: A graph representation of the document structure with:
-                - Directory hierarchy (parent-child title relationships)
-                - Title to chunk relationships
-                - Title to table relationships
-            - dict: Comprehensive statistics about the graph structure
-    """
-    nodes = []
-    edges = []
-
-    # Keep track of created nodes to avoid duplicates
-    node_map = {}
-    chunk_nodes = {}  # Track chunk nodes by their IDs
-
-    def add_bidirectional_edge(
-        from_node: Node, to_node: Node, label: str, properties: Dict = None
-    ):
-        """Helper function to add bidirectional edges"""
-        if properties is None:
-            properties = {}
-
-        # Forward edge
-        edges.append(
-            Edge(
-                _id="",
-                from_node=from_node,
-                to_node=to_node,
-                label=label,
-                properties=properties.copy(),
-            )
-        )
-
-        # Backward edge
-        reverse_label = {
-            "hasChild": "hasParent",
-            "hasContent": "belongsToTitle",
-            "hasTable": "belongsToTitle",
-        }.get(label, f"reverse_{label}")
-
-        edges.append(
-            Edge(
-                _id="",
-                from_node=to_node,
-                to_node=from_node,
-                label=reverse_label,
-                properties=properties.copy(),
-            )
-        )
-
-    def process_node(node: MarkdownNode, parent_node: Node = None):
-        # Create node ID based on title or root
-        node_id = f"node_{hash(node.title if node.title != 'root' else 'root')}"
-
-        # Create title node if not exists
-        if node_id not in node_map:
-            title_node = Node(
-                _id=node_id,
-                name=node.title,
-                label="Title",
-                properties={"level": str(node.level)},
-            )
-            nodes.append(title_node)
-            node_map[node_id] = title_node
-        else:
-            title_node = node_map[node_id]
-
-        # Create edge from parent title if exists
-        if parent_node:
-            add_bidirectional_edge(
-                parent_node, title_node, "hasChild", {"level": str(node.level)}
-            )
-
-        # Get corresponding chunk if exists
-        chunk = node_chunk_map.get(node)
-        if chunk:
-            # Create chunk node
-            chunk_node = Node(
-                _id=chunk.id,
-                name=chunk.name,
-                label="Chunk",
-                properties={
-                    "content": chunk.content,
-                    "parentContent": chunk.parent_content,
-                    "type": str(chunk.type),
-                },
-            )
-            nodes.append(chunk_node)
-            chunk_nodes[chunk.id] = chunk_node
-
-            # Create bidirectional edges between title and chunk
-            add_bidirectional_edge(title_node, chunk_node, "hasContent")
-
-        # Process tables if any
-        for i, table in enumerate(node.tables):
-            table_id = f"{node_id}_table_{i}"
-            table_node = Node(
-                _id=table_id,
-                name=f"Table {i+1}",
-                label="Table",
-                properties={
-                    "headers": ",".join(table["headers"]),
-                    "context_before": table.get("context", {}).get("before_text", ""),
-                    "context_after": table.get("context", {}).get("after_text", ""),
-                },
-            )
-            nodes.append(table_node)
-
-            # Create bidirectional edges between title and table
-            add_bidirectional_edge(title_node, table_node, "hasTable")
-
-        # Process children recursively
-        for child in node.children:
-            process_node(child, title_node)
-
-    # Start processing from root
-    process_node(root)
-
-    subgraph = SubGraph(nodes=nodes, edges=edges)
-    stats = get_graph_statistics(subgraph)
-
-    return subgraph, stats
-
-
-def get_graph_statistics(subgraph: SubGraph) -> dict:
-    """
-    Collect comprehensive statistics about the graph structure.
-
-    Args:
-        subgraph: The SubGraph to analyze
-
-    Returns:
-        dict: A dictionary containing detailed statistics about nodes, edges and connectivity
-    """
-    stats = {
-        "nodes": {"total": len(subgraph.nodes), "by_type": {}, "examples": {}},
-        "edges": {"total": len(subgraph.edges), "by_type": {}, "examples": {}},
-        "connectivity": {"average": 0, "max": 0, "min": 0, "most_connected": []},
-    }
-
-    # Node statistics
-    node_types = {}
-    for node in subgraph.nodes:
-        node_types[node.label] = node_types.get(node.label, 0) + 1
-
-        # Collect examples
-        if node.label not in stats["nodes"]["examples"]:
-            stats["nodes"]["examples"][node.label] = []
-        if len(stats["nodes"]["examples"][node.label]) < 3:
-            example = {"name": node.name, "id": node.id}
-            if node.label == "Title":
-                example["level"] = node.properties.get("level", "N/A")
-            elif node.label == "Table":
-                example["headers"] = node.properties.get("headers", "")[:100]
-            elif node.label == "Chunk":
-                example["content"] = node.properties.get("content", "")[:100]
-            stats["nodes"]["examples"][node.label].append(example)
-
-    stats["nodes"]["by_type"] = node_types
-
-    # Edge statistics
-    edge_types = {}
-    for edge in subgraph.edges:
-        edge_types[edge.label] = edge_types.get(edge.label, 0) + 1
-
-        # Collect examples
-        if edge.label not in stats["edges"]["examples"]:
-            stats["edges"]["examples"][edge.label] = []
-        if len(stats["edges"]["examples"][edge.label]) < 3:
-            from_node = next((n for n in subgraph.nodes if n.id == edge.from_id), None)
-            to_node = next((n for n in subgraph.nodes if n.id == edge.to_id), None)
-            if from_node and to_node:
-                stats["edges"]["examples"][edge.label].append(
-                    {
-                        "from": {"id": from_node.id, "name": from_node.name},
-                        "to": {"id": to_node.id, "name": to_node.name},
-                    }
-                )
-
-    stats["edges"]["by_type"] = edge_types
-
-    # Connectivity statistics
-    node_connections = {}
-    for edge in subgraph.edges:
-        node_connections[edge.from_id] = node_connections.get(edge.from_id, 0) + 1
-        node_connections[edge.to_id] = node_connections.get(edge.to_id, 0) + 1
-
-    if node_connections:
-        stats["connectivity"]["average"] = sum(node_connections.values()) / len(
-            node_connections
-        )
-        stats["connectivity"]["max"] = max(node_connections.values())
-        stats["connectivity"]["min"] = min(node_connections.values())
-
-        # Find most connected nodes
-        most_connected = sorted(
-            [(k, v) for k, v in node_connections.items()],
-            key=lambda x: x[1],
-            reverse=True,
-        )[:3]
-        for node_id, connections in most_connected:
-            node = next((n for n in subgraph.nodes if n.id == node_id), None)
-            if node:
-                stats["connectivity"]["most_connected"].append(
-                    {
-                        "id": node.id,
-                        "name": node.name,
-                        "label": node.label,
-                        "connections": connections,
-                    }
-                )
-
-    return stats
-
 
 @ReaderABC.register("md")
 @ReaderABC.register("md_reader")
@@ -311,9 +82,7 @@ class MarkDownReader(ReaderABC):
 
     @property
     def output_types(self):
-        return Tuple[
-            List[Chunk], Dict[MarkdownNode, Chunk], MarkdownNode, Tuple[SubGraph, dict]
-        ]
+        return List[Chunk]
 
     def solve_content(
         self, id: str, title: str, content: str, **kwargs
@@ -502,48 +271,8 @@ class MarkDownReader(ReaderABC):
         if current_content and stack[-1].title != "root":
             stack[-1].content = "\n".join(current_content)
 
-        outputs, node_chunk_map = self._convert_to_outputs(root, id)
-
-        if self.length_splitter:
-            # Split long outputs using LengthSplitter
-            new_outputs = []
-            new_node_chunk_map = {}
-
-            for output in outputs:
-                # Split long chunks while maintaining parent-child relationships
-                split_chunks = self.length_splitter.slide_window_chunk(output)
-                for chunk in split_chunks:
-                    chunk.parent_id = output.parent_id
-                new_outputs.extend(split_chunks)
-
-                # Update node_chunk_map for split chunks
-                # Find all nodes that were mapped to this output
-                related_nodes = [
-                    node
-                    for node, chunk in node_chunk_map.items()
-                    if chunk.id == output.id
-                ]
-                for node in related_nodes:
-                    # Map each node to all split chunks
-                    if node not in new_node_chunk_map:
-                        new_node_chunk_map[node] = []
-                    new_node_chunk_map[node].extend(split_chunks)
-            # use `outputs` to refer the split new chunks from now on
-            outputs = new_outputs
-
-        # Flatten the node_chunk_map to use first chunk for each node when converting to subgraph
-        if self.length_splitter:
-            flat_node_chunk_map = {
-                node: chunks[0] for node, chunks in new_node_chunk_map.items() if chunks
-            }
-        else:
-            flat_node_chunk_map = node_chunk_map
-        subgraph_and_stats = convert_to_subgraph(root, outputs, flat_node_chunk_map)
-
-        if self.kg_writer:
-            self.kg_writer.invoke(subgraph_and_stats[0])
-
-        return (outputs, subgraph_and_stats[0])
+        chunks, node_chunk_map = self._convert_to_outputs(root, id)
+        return chunks
 
     def _convert_to_outputs(
         self,
@@ -572,19 +301,21 @@ class MarkDownReader(ReaderABC):
                     table_md.append(
                         convert_table_to_markdown(table["headers"], table["data"])
                     )
-            for child in n.children:
-                child_tables, child_table_md = collect_tables(child)
-                tables.extend(child_tables)
-                table_md.extend(child_table_md)
+            # for child in n.children:
+            #     child_tables, child_table_md = collect_tables(child)
+            #     tables.extend(child_tables)
+            #     table_md.extend(child_table_md)
             return tables, table_md
 
         def collect_children_content(n: MarkdownNode):
-            """Collect content from node and its children"""
+            """Collect content from node and its children, including child titles with line breaks"""
             content = []
             if n.content:
                 content.append(n.content)
-            # Process child nodes recursively
+            # Process child nodes recursively, including their titles
             for child in n.children:
+                if child.title:
+                    content.append(f"\n{child.title}\n")
                 content.extend(collect_children_content(child))
             return content
 
@@ -677,13 +408,12 @@ class MarkDownReader(ReaderABC):
         # If current node level is less than target level, continue traversing
         elif node.level < self.cut_depth:
             # Check if any subtree contains target level nodes
-            has_target_level = False
             current_contents = parent_contents + (
                 [node.content] if node.content else []
             )
 
             # 新增：如果当前节点有内容且不是根节点，单独生成一个chunk
-            if node.content and node.title != "root":
+            if node.content or node.title != "root":
                 full_title = " / ".join(current_titles)
 
                 # Store parent content separately
@@ -697,51 +427,14 @@ class MarkDownReader(ReaderABC):
                     id=f"{generate_hash_id(full_title)}",
                     parent_id=parent_id,
                     name=full_title,
-                    content=node.content,  # 只包含当前节点自身的内容
+                    content=full_title + "\n" + node.content,  # 只包含当前节点自身的内容
                     parent_content=parent_content if self.reserve_meta else "",
                 )
+                parent_id = current_output.id
                 outputs.append(current_output)
                 node_chunk_map[node] = current_output
 
                 # 注意：这里不处理表格，因为表格会在下面的代码中处理
-
-            # 继续处理子节点（保持原逻辑不变）
-            for child in node.children:
-                child_outputs, child_map = self._convert_to_outputs(
-                    child, id, parent_id, current_titles, current_contents
-                )
-                if child_outputs:
-                    has_target_level = True
-                    outputs.extend(child_outputs)
-                    node_chunk_map.update(child_map)  # Merge child mappings
-
-            # 原有的逻辑保持不变：如果没有找到目标级别节点，处理当前节点及其子内容
-            if not has_target_level and node.title != "root":
-                full_title = " / ".join(current_titles)
-
-                # Store parent content separately
-                parent_content = (
-                    "\n".join(filter(None, parent_contents))
-                    if parent_contents
-                    else None
-                )
-
-                # Current node's own content and child content
-                current_content = [node.content] if node.content else []
-                for child in node.children:
-                    child_content = collect_children_content(child)
-                    current_content.extend(child_content)
-
-                current_output = Chunk(
-                    id=f"{generate_hash_id(full_title)}",
-                    parent_id=parent_id,
-                    name=full_title,
-                    content="\n".join(filter(None, current_content)),
-                    parent_content=parent_content if self.reserve_meta else "",
-                )
-                outputs.append(current_output)
-                node_chunk_map[node] = current_output  # Add mapping
-
                 # Create separate chunks for tables
                 all_tables = []
                 if node.tables:
@@ -794,6 +487,42 @@ class MarkDownReader(ReaderABC):
                         )
                         outputs.append(table_chunk)
                         all_tables.append(table)
+
+            # 继续处理子节点（保持原逻辑不变）
+            for child in node.children:
+                child_outputs, child_map = self._convert_to_outputs(
+                    child, id, parent_id, current_titles, current_contents
+                )
+                if child_outputs:
+                    outputs.extend(child_outputs)
+                    node_chunk_map.update(child_map)  # Merge child mappings
+
+            # # 原有的逻辑保持不变：如果没有找到目标级别节点，处理当前节点及其子内容
+            # if not has_target_level and node.title != "root":
+            #     full_title = " / ".join(current_titles)
+
+            #     # Store parent content separately
+            #     parent_content = (
+            #         "\n".join(filter(None, parent_contents))
+            #         if parent_contents
+            #         else None
+            #     )
+
+            #     # Current node's own content and child content
+            #     current_content = [node.content] if node.content else []
+            #     for child in node.children:
+            #         child_content = collect_children_content(child)
+            #         current_content.extend(child_content)
+
+            #     current_output = Chunk(
+            #         id=f"{generate_hash_id(full_title)}",
+            #         parent_id=parent_id,
+            #         name=full_title,
+            #         content="\n".join(filter(None, current_content)),
+            #         parent_content=parent_content if self.reserve_meta else "",
+            #     )
+            #     outputs.append(current_output)
+            #     node_chunk_map[node] = current_output  # Add mapping
 
         return outputs, node_chunk_map
 
@@ -855,22 +584,8 @@ class MarkDownReader(ReaderABC):
         else:
             raise TypeError(f"Expected file path or Chunk, got {type(input).__name__}")
 
-        chunks, subgraph = self.solve_content(str(id), basename, content)
-        length_500_list = []
-        length_1000_list = []
-        length_5000_list = []
-        length_smal_list = []
-        for chunk in chunks:
-            if chunk.content is not None:
-                if len(chunk.content) > 5000:
-                    length_5000_list.append(chunk)
-                elif len(chunk.content) > 1000:
-                    length_1000_list.append(chunk)
-                elif len(chunk.content) > 500:
-                    length_500_list.append(chunk)
-                elif len(chunk.content) <= 500:
-                    length_smal_list.append(chunk)
-        return chunks  # , subgraph
+        chunks = self.solve_content(str(id), basename, content)
+        return chunks
 
 
 @ReaderABC.register("yuque")
@@ -922,9 +637,13 @@ if __name__ == "__main__":
     reader = ReaderABC.from_config(
         {
             "type": "md",
-            "cut_depth": 1,
+            "cut_depth": 3,
         }
     )
     dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
+    file_path = (
+        "/Users/zhangxinhong.zxh/Downloads/附件1 10kV～110kV线路保护及辅助装置标准化设计规范 （报批稿）.md"
+    )
     chunks = reader.invoke(file_path, write_ckpt=False)
+    print(chunks)
