@@ -22,7 +22,7 @@ class ReaderOutput:
         chunks: Optional[List[Chunk]] = None,
         doc: Optional[Doc] = None,
     ):
-        self.chunk = chunks if chunks else []
+        self.chunks = chunks if chunks else []
         self.doc = doc
 
 
@@ -40,7 +40,7 @@ class ReaderABC(BuilderComponent, ABC):
 
     @property
     def output_types(self) -> Output:
-        return Union[ReaderOutput, Doc, Chunk]
+        return List[Chunk]
 
     @property
     def inherit_input_key(self):
