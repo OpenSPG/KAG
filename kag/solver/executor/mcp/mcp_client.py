@@ -89,7 +89,7 @@ class MCPClient:
             RuntimeError: If the server is not initialized.
         """
         if not self.session:
-            raise RuntimeError(f"Server {self.name} not initialized")
+            raise RuntimeError(f"Server not initialized")
 
         tools_response = await self.session.list_tools()
         tools = tools_response.tools
@@ -170,7 +170,7 @@ class MCPClient:
                 self.session = None
                 self.stdio_context = None
             except Exception as e:
-                logging.error(f"Error during cleanup of server {self.name}: {e}")
+                logging.error(f"Error during cleanup of server: {e}")
 
     async def __aenter__(self):
         """Enter the async context manager."""
