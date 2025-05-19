@@ -39,10 +39,12 @@ class EvaFor2wiki(EvalQa):
             prompt += "\n{}. {}".format(i, item)
         prompt += "\n\nQuestion: {}".format(query)
 
-        result = llm.__call__(prompt)
+        result = await llm.acall(prompt)
         try:
             item_ids = json.loads(result)
-            supporting_facts = [supporting_facts[i - 1] for i in item_ids]
+            filtered_supporting_facts = [supporting_facts[i - 1] for i in item_ids]
+            non_filtered_supporting_facts = [item for i, item in enumerate(supporting_facts, 1) if i not in item_ids]
+            supporting_facts = filtered_supporting_facts + non_filtered_supporting_facts
         except Exception:
             return "noanswer", {"info":{"prompt": ""}}
 
@@ -51,7 +53,7 @@ class EvaFor2wiki(EvalQa):
             "\nThe following are given reference:{supporting_facts} \nQuestion: {query}"
             """
 
-        result = llm.__call__(prompt)
+        result = await llm.acall(prompt)
         trace_log = {"info":{"prompt": prompt}}
         return result, trace_log
 
