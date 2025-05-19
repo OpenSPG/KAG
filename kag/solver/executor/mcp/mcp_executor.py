@@ -72,12 +72,18 @@ class McpExecutor(ExecutorABC):
 
     async def ainvoke(self, query, task, context: Context, **kwargs):
         task_query = task.arguments["query"]
-        await self.mcp_client.connect_to_server(self.mcp_file_path, self.env)
+        try:
+            await self.mcp_client.connect_to_server(self.mcp_file_path, self.env)
+        except Exception as e:
+            logger.error(f"Failed to connect to server: {e}")
+            return None
         response = await self.mcp_client.process_query(task_query)
+        await self.mcp_client.cleanup()
         task.update_result(response)
         return response
 
-    def schema(self, func_name: str = None) -> dict:
+
+def schema(self, func_name: str = None) -> dict:
         """Function schema definition for OpenAI Function Calling
 
         Returns:
