@@ -28,7 +28,7 @@ class EvaFor2wiki(EvalQa):
         with open(file_path, "r") as f:
             return json.load(f)
 
-    async def qa(self, query, gold, supporting_facts = None):
+    async def qa(self, query, gold, supporting_facts = None, sample = None):
         llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
 
         prompt = """Check the relevance of given references.\n"""
@@ -39,20 +39,26 @@ class EvaFor2wiki(EvalQa):
             prompt += "\n{}. {}".format(i, item)
         prompt += "\n\nQuestion: {}".format(query)
 
-        result = llm.__call__(prompt)
+        result = await llm.acall(prompt)
         try:
             item_ids = json.loads(result)
             supporting_facts = [supporting_facts[i - 1] for i in item_ids]
         except Exception:
-            return "noanswer", {"info":{"prompt": ""}}
+            return "noanswer", {"info":{"prompt": prompt, "tag": "LLM_FILTER_FAILED", "result": result}}
+
+        not_filtered = []
+        is_supporting = set(x[0] for x in sample["supporting_facts"])
+        # for item in supporting_facts:
+        #     if item["title"] not in is_supporting:
+        #         not_filtered.append(item)
 
         prompt = f"""
             "Answer the question based on the given reference.Only give me the answer and do not output any other words."
             "\nThe following are given reference:{supporting_facts} \nQuestion: {query}"
             """
 
-        result = llm.__call__(prompt)
-        trace_log = {"info":{"prompt": prompt}}
+        result = await llm.acall(prompt)
+        trace_log = {"info":{"prompt": prompt, "tag": "LLM_FILTER_SUCCESS", "filtered_supporting_facts": supporting_facts, "result": result}}
         return result, trace_log
 
     def get_supporing_facts(self, sample):
