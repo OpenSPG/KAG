@@ -44,7 +44,7 @@ class EvaFor2wiki(EvalQa):
             item_ids = json.loads(result)
             filtered_supporting_facts = [supporting_facts[i - 1] for i in item_ids]
             non_filtered_supporting_facts = [item for i, item in enumerate(supporting_facts, 1) if i not in item_ids]
-            supporting_facts = filtered_supporting_facts + non_filtered_supporting_facts
+            supporting_facts = non_filtered_supporting_facts + filtered_supporting_facts[::-1]
         except Exception:
             return "noanswer", {"info":{"prompt": ""}}
 
