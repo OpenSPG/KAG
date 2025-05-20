@@ -5,16 +5,14 @@ from kag.interface import ExtractorABC
 
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
-from knext.schema.client import CHUNK_TYPE
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
 
+
 @ExtractorABC.register("chunk_extractor")
 class ChunkExtractor(ExtractorABC):
-    def __init__(
-            self
-    ):
+    def __init__(self):
         super().__init__()
 
     @property
@@ -31,7 +29,7 @@ class ChunkExtractor(ExtractorABC):
 
     @staticmethod
     def output_indices() -> List[str]:
-        return ["Outline"]
+        return ["chunk_index"]
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -45,23 +43,18 @@ class ChunkExtractor(ExtractorABC):
             List[Output]: A list of processed results, containing subgraph information.
         """
         if "/" not in input.name:
-             outline_name = input.name
+            outline_name = input.name
         else:
             outline_name = input.name.split("/")[-1]
-        outline_name = outline_name[:outline_name.find("_split")]
+        outline_name = outline_name[: outline_name.find("_split")]
 
-        sub_graph = SubGraph([],[])
+        sub_graph = SubGraph([], [])
         # add Outline Node
         sub_graph.add_node(
             id=f"{input.id}_{input.name}",
             name=outline_name,
             label="Chunk",
-            properties = {
-                "id": input.id,
-                "name": outline_name,
-                "content":input.content
-            }
+            properties={"id": input.id, "name": outline_name, "content": input.content},
         )
 
         return [sub_graph]
-

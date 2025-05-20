@@ -17,6 +17,7 @@ from kag.builder.model.sub_graph import SubGraph
 import kag.interface as interface
 from kag.interface.common.llm_client import LLMCallCcontext, TokenMeterFactory
 from kag.common.conf import KAGConstants, init_env
+from kag.indexer.kag_index_manager import KAGIndexManager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -171,6 +172,21 @@ class SPGServerBridge:
         data = token_meter.to_dict()
         factory.remove_meter(task_id)
         return data
+
+    def get_index_manager_info(
+        self, index_manager_name, llm_config, vectorize_model_config
+    ):
+        config = {
+            "type": index_manager_name,
+            "llm_config": llm_config,
+            "vectorize_model_config": vectorize_model_config,
+        }
+
+        index_mgr = KAGIndexManager.from_config(config)
+        return index_mgr.get_meta()
+
+    def get_index_manger_names(self):
+        return KAGIndexManager.list_available_with_detail()
 
 
 if __name__ == "__main__":
