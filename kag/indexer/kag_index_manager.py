@@ -9,10 +9,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from typing import List
+from typing import List, Dict
 
 from knext.schema.client import SchemaClient
-from kag.interface.builder.extractor_abc import ExtractorABC
+from kag.interface import ExtractorABC, RetrieverABC, IndexABC
 from kag.common.registry import Registrable
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
@@ -23,25 +23,31 @@ from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
 class KAGIndexManager(Registrable):
     def __init__(
         self,
-        index_builder: List[ExtractorABC],
-        retriever: Retriever,
+        extractor: List[ExtractorABC],
+        retriever: List[Retriever],
     ):
-        self.index_builder = index_builder
+        self.extractor = extractor
         self.retriever = retriever
 
         self.indices = {}
         index_names = []
-        for item in self.index_builder:
-            index_names.extend(item.output_indices)
+        for item in self.extractor:
+            index_names.extend(item.output_indices())
 
-        extractor_register_dict = Registrable._registry[ExtractorABC]
+        index_register_dict = Registrable._registry[IndexABC]
         for index_name in index_names:
-            cls, _ = extractor_register_dict[index_name]
+            cls, _ = index_register_dict[index_name]
             self.indices[index_name] = cls()
 
         self.project_schema = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
         ).load()
+
+        self._config = None
+
+    @property
+    def name(self):
+        return "KAG Index Manager"
 
     @property
     def description(self) -> str:
@@ -54,6 +60,8 @@ class KAGIndexManager(Registrable):
         for item in self.indices.values():
             schema_keys.extend(item.schema)
 
+        index_schema = []
+
         for schema_key in schema_keys:
             if schema_key == "Graph":
                 continue
@@ -61,10 +69,84 @@ class KAGIndexManager(Registrable):
                 raise ValueError(
                     f"index {schema_key} not in project indxe schema, please check your index config."
                 )
-        index_schema = [x.schema for x in self.indices.values()]
+            index_schema.append(str(self.project_schema[schema_key]))
+
         return "\n".join(index_schema)
 
     @property
     def cost(self) -> str:
         index_costs = {k: v.cost for k, v in self.indices.items()}
         return f"The cost of each index are as follow:\n{index_costs}"
+
+    def get_meta(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "schema": self.schema,
+            "config": self._config,
+        }
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return []
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return []
+
+    @classmethod
+    def init_from_llm_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        extractor_config = cls.build_extractor_config(
+            llm_config, vectorize_model_config
+        )
+        retriever_config = cls.build_retriever_config(
+            llm_config, vectorize_model_config
+        )
+        extractors = [ExtractorABC.from_config(x) for x in extractor_config]
+        retrievers = [RetrieverABC.from_config(x) for x in retriever_config]
+        obj = cls(extractors, retrievers)
+        obj._config = {"extractor": extractor_config, "retriever": retriever_config}
+        return obj
+
+
+@KAGIndexManager.register("atomic_query_index", constructor="init_from_llm_config")
+class AtomicIndexManager(KAGIndexManager):
+    """Index manager to manage the atomic query index build and document retrieval."""
+
+    @property
+    def name(self):
+        return "Atomic Query based Index Manager"
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "atomic_query_extractor",
+                "llm": llm_config,
+                "prompt": {"type": "atomic_query_extract"},
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "atomic_query_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "graph_api": {"type": "openspg_graph_api"},
+                "top_k": 10,
+            },
+            {
+                "type": "vector_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "top_k": 10,
+            },
+            {
+                "type": "text_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "top_k": 10,
+            },
+        ]

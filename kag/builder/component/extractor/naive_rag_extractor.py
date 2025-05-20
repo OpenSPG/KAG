@@ -59,6 +59,10 @@ class NaiveRagExtractor(ExtractorABC):
         return SubGraph
 
     @staticmethod
+    def output_indices() -> List[str]:
+        return ["chunk_index"]
+
+    @staticmethod
     def assemble_sub_graph_with_chunk(sub_graph: SubGraph, chunk: Chunk):
         """
         Associates a Chunk object with the subgraph, adding it as a node and connecting it with existing nodes.
