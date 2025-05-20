@@ -122,7 +122,7 @@ class EvalQa:
         self, qa_list, res_file_path, thread_num=1, upper_limit=10
     ):
         ckpt = CheckpointerManager.get_checkpointer(
-            {"type": "zodb", "ckpt_dir": "ckpt"}
+            {"type": "diskcache", "ckpt_dir": "ckpt"}
         )
         res_qa = []
         semaphore = asyncio.Semaphore(thread_num)  # 控制并发度
