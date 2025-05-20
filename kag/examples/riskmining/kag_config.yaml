@@ -68,7 +68,7 @@ kg_fr:
     ner:
       type: ner
       llm_module: *openie_llm
-      ner_prompt: example_medical_question_ner
+      ner_prompt: default_ner
   entity_linking:
     type: entity_linking
     recognition_threshold: 0.8
