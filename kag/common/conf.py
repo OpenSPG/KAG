@@ -205,6 +205,7 @@ def init_env(config_file: str = None):
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
+    logger.info(msg)
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:

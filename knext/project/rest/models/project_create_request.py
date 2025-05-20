@@ -10,7 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-
 """
     knext
 
@@ -44,36 +43,26 @@ class ProjectCreateRequest(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        "id": "int",
-        "name": "str",
-        "desc": "str",
-        "namespace": "str",
-        "tenant_id": "str",
-        "config": "str",
-        "auto_schema": "str",
+        'id': 'int',
+        'name': 'str',
+        'desc': 'str',
+        'namespace': 'str',
+        'tenant_id': 'str',
+        'config': 'object',
+        'auto_schema': 'str'
     }
 
     attribute_map = {
-        "id": "id",
-        "name": "name",
-        "desc": "desc",
-        "namespace": "namespace",
-        "tenant_id": "tenantId",
-        "config": "config",
-        "auto_schema": "autoSchema",
+        'id': 'id',
+        'name': 'name',
+        'desc': 'desc',
+        'namespace': 'namespace',
+        'tenant_id': 'tenantId',
+        'config': 'config',
+        'auto_schema': 'autoSchema'
     }
 
-    def __init__(
-        self,
-        id=None,
-        name=None,
-        desc=None,
-        namespace=None,
-        tenant_id=None,
-        config=None,
-        auto_schema=None,
-        local_vars_configuration=None,
-    ):  # noqa: E501
+    def __init__(self, id=None, name=None, desc=None, namespace=None, tenant_id=None, config=None, auto_schema=None, local_vars_configuration=None):  # noqa: E501
         """ProjectCreateRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -214,7 +203,7 @@ class ProjectCreateRequest(object):
 
 
         :return: The config of this ProjectCreateRequest.  # noqa: E501
-        :rtype: str
+        :rtype: object
         """
         return self._config
 
@@ -224,7 +213,7 @@ class ProjectCreateRequest(object):
 
 
         :param config: The config of this ProjectCreateRequest.  # noqa: E501
-        :type: str
+        :type: object
         """
 
         self._config = config
@@ -257,20 +246,18 @@ class ProjectCreateRequest(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = list(map(
+                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
+                    value
+                ))
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(
-                    map(
-                        lambda item: (item[0], item[1].to_dict())
-                        if hasattr(item[1], "to_dict")
-                        else item,
-                        value.items(),
-                    )
-                )
+                result[attr] = dict(map(
+                    lambda item: (item[0], item[1].to_dict())
+                    if hasattr(item[1], "to_dict") else item,
+                    value.items()
+                ))
             else:
                 result[attr] = value
 

@@ -99,7 +99,6 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
-            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -110,8 +109,8 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
-            rsp = response.message.content
-            tool_calls = response.message.tool_calls
+            rsp = response["message"]["content"]
+            tool_calls = response["message"].get("tool_calls", None)
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
@@ -164,7 +163,6 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
-            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
