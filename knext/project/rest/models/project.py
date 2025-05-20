@@ -59,6 +59,7 @@ class Project(object):
         self._description = None
         self._namespace = None
         self._tenant_id = None
+        self._config = None
         self.discriminator = None
 
         if id is not None:
