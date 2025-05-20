@@ -9,7 +9,7 @@ chat_llm: &chat_llm
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
   model: qwen2.5-72b-instruct
-  stream: True
+  stream: true
 
 ner_llm: &ner_llm
   type: maas
@@ -31,7 +31,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '2'
+  id: '3'
   language: en
   namespace: TwoWiki
 #------------project configuration end----------------#
@@ -90,7 +90,7 @@ kg_cs:
     search_api: *search_api
     recognition_threshold: 0.9
     exclude_types:
-      - "Chunk"
+      - Chunk
 
 kg_fr:
   type: kg_fr_open_spg
@@ -111,7 +111,7 @@ kg_fr:
     search_api: *search_api
     recognition_threshold: 0.8
     exclude_types:
-      - "Chunk"
+      - Chunk
 
 rc:
   type: rc_open_spg

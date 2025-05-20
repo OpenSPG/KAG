@@ -8,7 +8,10 @@ from kag.interface.solver.model.one_hop_graph import (
     OneHopGraphData,
 )
 from kag.common.parser.logic_node_parser import GetSPONode
-from kag.tools.graph_api.graph_api_abc import generate_gql_id_params, generate_label
+from kag.interface.common.graph_api.graph_api_abc import (
+    generate_gql_id_params,
+    generate_label,
+)
 
 logger = logging.getLogger()
 

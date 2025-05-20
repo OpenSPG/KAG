@@ -18,8 +18,11 @@ from kag.interface.solver.model.one_hop_graph import (
 from kag.common.config import LogicFormConfiguration
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.utils import generate_biz_id_with_type
-from kag.tools.graph_api.graph_api_abc import GraphApiABC, generate_gql_id_params
-from kag.tools.graph_api.model.table_model import TableData
+from kag.interface.common.graph_api.graph_api_abc import (
+    GraphApiABC,
+    generate_gql_id_params,
+)
+from kag.interface.common.graph_api.model.table_model import TableData
 from knext.reasoner.client import ReasonerClient
 import knext.common.cache
 
@@ -80,7 +83,7 @@ class OpenSPGGraphApi(GraphApiABC):
         self.rc = ReasonerClient(self.host_addr, int(str(self.project_id)))
         self.gr = GraphClient(self.host_addr, int(str(self.project_id)))
 
-        self.cache_one_hop_graph: [str, OneHopGraphData] = {}
+        self.cache_one_hop_graph: Dict[str, OneHopGraphData] = {}
 
     def _get_cached_one_hop_graph(self, s_biz_id, s_type_name, cached_map: dict):
         s_biz_id_with_type_name = generate_biz_id_with_type(s_biz_id, s_type_name)

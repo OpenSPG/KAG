@@ -14,7 +14,7 @@ from kag.common.parser.logic_node_parser import (
     ParseLogicForm,
 )
 from kag.common.parser.schema_std import DefaultStdSchema
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 
 
 class KAGLFRewriter(Registrable):

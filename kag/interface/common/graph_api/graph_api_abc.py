@@ -7,7 +7,7 @@ from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     OneHopGraphData,
 )
-from kag.tools.graph_api.model.table_model import TableData
+from kag.interface.common.graph_api.model.table_model import TableData
 
 
 def replace_qota(s: str):

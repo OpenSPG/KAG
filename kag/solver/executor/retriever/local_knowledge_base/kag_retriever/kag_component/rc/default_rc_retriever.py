@@ -27,8 +27,8 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils impo
 from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
     VectorChunkRetriever,
 )
-from kag.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.graph_api.graph_api_abc import GraphApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 

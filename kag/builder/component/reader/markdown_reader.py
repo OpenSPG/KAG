@@ -923,9 +923,13 @@ if __name__ == "__main__":
     reader = ReaderABC.from_config(
         {
             "type": "md",
-            "cut_depth": 1,
+            "cut_depth": 3,
         }
     )
     dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
+    file_path = (
+        "/Users/zhangxinhong.zxh/Downloads/附件1 10kV～110kV线路保护及辅助装置标准化设计规范 （报批稿）.md"
+    )
     chunks = reader.invoke(file_path, write_ckpt=False)
+    print(chunks)

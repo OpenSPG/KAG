@@ -11,8 +11,8 @@ from kag.interface.solver.model.one_hop_graph import (
     OneHopGraphData,
 )
 
-from kag.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.tools.graph_api.model.table_model import TableData
+from kag.interface.common.graph_api.graph_api_abc import GraphApiABC
+from kag.interface.common.graph_api.model.table_model import TableData
 
 logger = logging.getLogger()
 

@@ -1,7 +1,7 @@
 from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 from knext.search.client import SearchClient
 
 

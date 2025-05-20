@@ -2,7 +2,7 @@ from typing import List
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import VectorizeModelABC
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 
 
 @SearchApiABC.register("memory_search_api")

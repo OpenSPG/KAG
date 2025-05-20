@@ -9,8 +9,8 @@ from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.common.utils import get_recall_node_label
 from kag.common.config import LogicFormConfiguration
-from kag.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.graph_api.graph_api_abc import GraphApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 

@@ -19,7 +19,6 @@ vectorize_model: &vectorize_model
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
-  enable_check: false
 vectorizer: *vectorize_model
 
 log:
@@ -30,7 +29,7 @@ project:
   host_addr: http://127.0.0.1:8887
   id: "1"
   language: en
-  namespace: HotpotQA
+  namespace: Jinchengtest7
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#

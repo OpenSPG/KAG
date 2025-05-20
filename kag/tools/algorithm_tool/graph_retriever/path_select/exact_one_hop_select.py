@@ -14,10 +14,10 @@ from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.common.config import LogicFormConfiguration
 from kag.common.parser.logic_node_parser import GetSPONode
-from kag.tools.graph_api.graph_api_abc import (
+from kag.interface.common.graph_api.graph_api_abc import (
     GraphApiABC,
 )
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
 from kag.tools.algorithm_tool.graph_retriever.path_select.path_utils import (
     run_gql,

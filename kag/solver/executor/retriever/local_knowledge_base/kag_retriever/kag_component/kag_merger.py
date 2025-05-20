@@ -23,7 +23,7 @@ from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
     VectorChunkRetriever,
 )
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.interface.common.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 
