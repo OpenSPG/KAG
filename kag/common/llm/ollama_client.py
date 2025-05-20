@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+import asyncio
 import logging
 from ollama import Client, AsyncClient
 
@@ -256,3 +257,11 @@ class OllamaClient(LLMClient):
         if tools and tool_calls:
             return response.message
         return rsp
+
+
+if __name__ == "__main__":
+    client = OllamaClient(
+        model="qwen3:0.6b", base_url="http://localhost:11434", stream=True
+    )
+    msg = asyncio.run(client.acall("你好"))
+    print(msg)
