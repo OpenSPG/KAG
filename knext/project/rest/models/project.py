@@ -37,7 +37,8 @@ class Project(object):
         'name': 'str',
         'description': 'str',
         'namespace': 'str',
-        'tenant_id': 'str'
+        'tenant_id': 'str',
+        'config': 'object'
     }
 
     attribute_map = {
@@ -45,10 +46,11 @@ class Project(object):
         'name': 'name',
         'description': 'description',
         'namespace': 'namespace',
-        'tenant_id': 'tenantId'
+        'tenant_id': 'tenantId',
+        'config': 'config'
     }
 
-    def __init__(self, id=None, name=None, description=None, namespace=None, tenant_id=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(self, id=None, name=None, description=None, namespace=None, tenant_id=None, config=None, local_vars_configuration=None):  # noqa: E501
         """Project - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -72,6 +74,8 @@ class Project(object):
             self.namespace = namespace
         if tenant_id is not None:
             self.tenant_id = tenant_id
+        if config is not None:
+            self.config = config
 
     @property
     def id(self):
@@ -244,3 +248,4 @@ class Project(object):
             return True
 
         return self.to_dict() != other.to_dict()
+
