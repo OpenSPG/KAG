@@ -1,8 +1,9 @@
 import json
 import logging
 import os
+import time
 from typing import List
-
+from kag.interface import LLMClient
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
@@ -92,10 +93,18 @@ if __name__ == "__main__":
     qa_file_path = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file}"
     )
+    start = time.time()
     do_main(
         qa_file_path=qa_file_path,
         thread_num=args.thread_num,
         upper_limit=args.upper_limit,
         collect_file=args.res_file,
         eval_obj=EvaFor2wiki(),
+    )
+    end = time.time()
+    token_meter = LLMClient.get_token_meter()
+    stat = token_meter.to_dict()
+
+    logger.info(
+        f"\n\nbenchmark successfully for {qa_file_path}\n\nTimes cost:{end-start}s\n\nTokens cost: {stat}"
     )
