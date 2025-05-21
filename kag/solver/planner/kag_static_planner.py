@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import logging
 import re
 from typing import List
 
@@ -86,11 +87,10 @@ class KAGStaticPlanner(PlannerABC):
                 return False
             return True
         except Exception as e:
-            print(f"Failed to run finish_judger, info: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return True
+            # import logging # Make sure logging is imported if not already at the top of the file
+            logger = logging.getLogger(__name__) # Get a logger instance
+            logger.warning(f"LLM call failed in finish_judger for query '{query}'. Error: {e}", exc_info=True)
+            return False # Treat as potentially bad answer
 
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
