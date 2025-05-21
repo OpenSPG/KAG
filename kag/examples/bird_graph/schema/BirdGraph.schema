@@ -1,0 +1,153 @@
+namespace BirdGraph
+
+Chunk(文本块): EntityType
+    properties:
+        content(内容): Text
+            index: TextAndVector
+
+Frpm(Frpm): EntityType
+    properties:
+        cDSCode(学校唯一标识码): Text
+        academicYear(学术年份): Text
+        countyCode(县代码): Text
+        districtCode(学区代码): Text
+        schoolCode(学校代码): Text
+        countyName(县名称): Text
+        districtName(学区名称): Text
+        schoolName(学校名称): Text
+        districtType(学区类型): Text
+        schoolType(学校类型): Text
+        educationalOptionType(教育选项类型): Text
+        nSLPProvisionStatus(国家学校午餐计划供应状态): Text
+        charterSchoolYN(是否特许学校1表示是0表示否): Text
+        charterSchoolNumber(特许学校编号): Text
+        charterFundingType(特许学校资金类型): Text
+        iRC(不重要的列): Text
+        lowGrade(最低年级): Text
+        highGrade(最高年级): Text
+        enrollmentK12(K12年级注册人数): Text
+        freeMealCountK12(K12年级免费餐人数): Text
+        percentEligibleFreeK12(K12年级免费餐资格百分比): Text
+        fRPMCountK12(K12年级免费或减价餐人数): Text
+        percentEligibleFRPMK12(K12年级免费或减价餐资格百分比): Text
+        enrollmentAges517(517岁注册人数): Text
+        freeMealCountAges517(517岁免费餐人数): Text
+        percentEligibleFreeAges517(517岁免费餐资格百分比): Text
+        fRPMCountAges517(517岁免费或减价餐人数): Text
+        percentEligibleFRPMAges517(517岁免费或减价餐资格百分比): Text
+        a201314CALPADSFall1CertificationStatus(201314年CALPADS秋季认证状态): Text
+        hasSchoolDetails(hasSchoolDetails): Schools
+        isin(isin): County
+        belongsto(belongsto): District
+        hasname(hasname): School
+        has(has): GradeSpan
+        hasCharterSchoolNumber(hasCharterSchoolNumber): CharterSchool
+        haslowgrade(haslowgrade): GradeSpan
+        contains(contains): District
+        belongstocounty(belongstocounty): County
+
+Satscores(Satscores): EntityType
+    properties:
+        cds(CaliforniaDepartmentSchools): Text
+        rtype(unuseful): Text
+        sname(schoolname): Text
+        dname(districtnamedistrictsegment): Text
+        cname(countyname): Text
+        enroll12(enrollment1st12ndgrade): Text
+        numTstTakr(NumberofTestTakersinthisschool): Text
+        avgScrRead(averagescoresinReading): Text
+        avgScrMath(averagescoresinMath): Text
+        avgScrWrite(averagescoresinwriting): Text
+        numGE1500(NumberofTestTakersWhoseTotalSATScoresAreGreaterorEqualto1500): Text
+        hasSATScore(hasSATScore): Schools
+        hasname(hasname): School
+        belongsto(belongsto): County
+        isin(isin): District
+        hascounty(hascounty): County
+
+Schools(Schools): EntityType
+    properties:
+        cDSCode(学校唯一标识码): Text
+        nCESDist(国家教育统计中心学区识别号): Text
+        nCESSchool(国家教育统计中心学校识别号): Text
+        statusType(学区状态): Text
+        county(县名): Text
+        district(学区名): Text
+        school(学校名): Text
+        street(学校街道地址): Text
+        streetAbr(学校街道地址缩写): Text
+        city(城市名): Text
+        zip(邮政编码): Text
+        state(州名): Text
+        mailStreet(邮寄地址街道): Text
+        mailStrAbr(邮寄地址街道缩写): Text
+        mailCity(邮寄地址城市): Text
+        mailZip(邮寄地址邮政编码): Text
+        mailState(邮寄地址州名): Text
+        phone(联系电话): Text
+        ext(电话分机号): Text
+        website(学校网站): Text
+        openDate(学校开学日期): Text
+        closedDate(学校关闭日期): Text
+        charter(是否特许学校): Text
+        charterNum(特许学校编号): Text
+        fundingType(特许学校资助类型): Text
+        dOC(学区所有权代码): Text
+        dOCType(学区所有权类型): Text
+        sOC(学校所有权代码): Text
+        sOCType(学校所有权类型): Text
+        edOpsCode(教育选项代码): Text
+        edOpsName(教育选项名称): Text
+        eILCode(教育级别代码): Text
+        eILName(教育级别名称): Text
+        gSoffered(提供的年级范围): Text
+        gSserved(服务的年级范围): Text
+        virtual(虚拟教学类型): Text
+        magnet(是否磁石学校): Text
+        latitude(纬度): Text
+        longitude(经度): Text
+        admFName1(管理员1的名): Text
+        admLName1(管理员1的姓): Text
+        admEmail1(管理员1的电子邮件): Text
+        admFName2(管理员2的名): Text
+        admLName2(管理员2的姓): Text
+        admEmail2(管理员2的电子邮件): Text
+        admFName3(管理员3的名): Text
+        admLName3(管理员3的姓): Text
+        admEmail3(管理员3的电子邮件): Text
+        lastUpdate(记录最后更新时间): Text
+        islocatedin(islocatedin): County
+        contains(contains): District
+        isnamed(isnamed): School
+        is(is): SchoolType
+        isidentifiedbyCharterSchoolNumber(isidentifiedbyCharterSchoolNumber): CharterSchool
+        servesgradespan(servesgradespan): GradeSpan
+        serves(serves): GradeSpan
+        has(has): District
+        isincounty(isincounty): County
+        locatedin(locatedin): County
+
+County(County): EntityType
+    properties:
+        eName(主键): Text
+
+District(District): EntityType
+    properties:
+        eName(主键): Text
+
+School(School): EntityType
+    properties:
+        eName(主键): Text
+
+SchoolType(SchoolType): EntityType
+    properties:
+        eName(主键): Text
+
+CharterSchool(CharterSchool): EntityType
+    properties:
+        eName(主键): Text
+
+GradeSpan(GradeSpan): EntityType
+    properties:
+        eName(主键): Text
+
