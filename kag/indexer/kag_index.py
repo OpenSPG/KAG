@@ -73,6 +73,21 @@ class AtomicQueryIndex(IndexABC):
         return "low"
 
 
+@IndexABC.register("outline_index")
+class OutlineIndex(IndexABC):
+    @property
+    def description(self) -> str:
+        return "Atomic query index with optional text/vector index"
+
+    @property
+    def schema(self) -> str:
+        return ["Outline"]
+
+    @property
+    def cost(self) -> str:
+        return "low"
+
+
 @IndexABC.register("graph")
 @IndexABC.register("spo_graph_index")
 class GraphIndex(IndexABC):

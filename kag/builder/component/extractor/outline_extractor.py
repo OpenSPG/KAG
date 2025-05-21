@@ -10,11 +10,10 @@ from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
 
+
 @ExtractorABC.register("outline_extractor")
 class OutlineExtractor(ExtractorABC):
-    def __init__(
-            self
-    ):
+    def __init__(self):
         super().__init__()
 
     @property
@@ -31,7 +30,7 @@ class OutlineExtractor(ExtractorABC):
 
     @staticmethod
     def output_indices() -> List[str]:
-        return ["Outline"]
+        return ["outline_index"]
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -45,7 +44,7 @@ class OutlineExtractor(ExtractorABC):
             List[Output]: A list of processed results, containing subgraph information.
         """
         if "/" not in input.name:
-             outline_name = input.name
+            outline_name = input.name
         else:
             outline_name = input.name.split("/")[-1]
 
@@ -53,16 +52,13 @@ class OutlineExtractor(ExtractorABC):
         if index != -1:
             outline_name = outline_name[:index]
 
-        sub_graph = SubGraph([],[])
+        sub_graph = SubGraph([], [])
         # add Outline Node
         sub_graph.add_node(
             id=input.id,
             name=outline_name,
             label="Outline",
-            properties = {
-                "id": input.id,
-                "name": outline_name
-            }
+            properties={"id": input.id, "name": outline_name},
         )
 
         # add Outline_childOf_Outline edge
@@ -72,7 +68,7 @@ class OutlineExtractor(ExtractorABC):
             p="childOf",
             o_id=input.parent_id,
             o_label="Outline",
-            properties = {}
+            properties={},
         )
 
         # add Outline_relateTo_Chunk edge
@@ -82,8 +78,7 @@ class OutlineExtractor(ExtractorABC):
             p="relateTo",
             o_id=f"{input.id}_{input.name}",
             o_label=CHUNK_TYPE,
-            properties = {}
+            properties={},
         )
 
         return [sub_graph]
-

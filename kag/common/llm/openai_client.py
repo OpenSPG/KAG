@@ -13,11 +13,12 @@ import logging
 
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 
-from kag.interface import LLMClient
-from typing import Callable, Optional
+
+from kag.interface.common.llm_client import LLMClient
+from typing import Callable
 
 
-from kag.interface.solver.reporter_abc import ReporterABC, do_report
+from kag.interface.solver.reporter_abc import do_report
 
 logging.getLogger("openai").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -91,6 +92,8 @@ class OpenAIClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
+
         if messages is None:
             if image_url:
                 messages = [
@@ -117,6 +120,7 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
         )
+        usages = []
         if not self.stream:
             # reasoning_content = getattr(
             #     response.choices[0].message, "reasoning_content", None
@@ -128,6 +132,7 @@ class OpenAIClient(LLMClient):
             #     rsp = content
             rsp = response.choices[0].message.content
             tool_calls = response.choices[0].message.tool_calls
+            usages.append(response.usage)
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
@@ -139,6 +144,19 @@ class OpenAIClient(LLMClient):
                 if delta_content is not None:
                     rsp += delta_content
                     do_report(rsp, "RUNNING", **kwargs)
+                usages.append(chunk.usage)
+
+        if token_meter and len(usages) > 0 and usages[-1]:
+            try:
+                usage = usages[-1]
+                token_meter.update(
+                    usage.completion_tokens,
+                    usage.prompt_tokens,
+                    usage.total_tokens,
+                )
+            except Exception as e:
+                logger.debug(f"failed to update token meter, info: {e}")
+
         do_report(rsp, "FINISH", **kwargs)
         if tools and tool_calls:
             return response.choices[0].message
@@ -158,6 +176,7 @@ class OpenAIClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
         if messages is None:
             if image_url:
                 messages = [
@@ -185,6 +204,7 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
         )
+        usages = []
         if not self.stream:
             # reasoning_content = getattr(
             #     response.choices[0].message, "reasoning_content", None
@@ -194,6 +214,7 @@ class OpenAIClient(LLMClient):
             # else:
             rsp = response.choices[0].message.content
             tool_calls = response.choices[0].message.tool_calls
+            usages.append(response.usage)
         else:
             rsp = ""
             tool_calls = None
@@ -204,6 +225,18 @@ class OpenAIClient(LLMClient):
                 if delta_content is not None:
                     rsp += delta_content
                 do_report(rsp, "RUNNING", **kwargs)
+                usages.append(chunk.usage)
+        if token_meter and len(usages) > 0 and usages[-1]:
+            try:
+                usage = usages[-1]
+                token_meter.update(
+                    usage.completion_tokens,
+                    usage.prompt_tokens,
+                    usage.total_tokens,
+                )
+            except Exception as e:
+                logger.debug(f"failed to update token meter, info: {e}")
+
         do_report(rsp, "FINISH", **kwargs)
         if tools and tool_calls:
             return response.choices[0].message
@@ -297,6 +330,7 @@ class AzureOpenAIClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
         if messages is None:
             if image_url:
                 messages = [
@@ -322,6 +356,12 @@ class AzureOpenAIClient(LLMClient):
             timeout=self.timeout,
             max_tokens=self.max_tokens,
         )
+        token_meter.update(
+            response.usage.completion_tokens,
+            response.usage.prompt_tokens,
+            response.usage.total_tokens,
+        )
+
         rsp = response.choices[0].message.content
         do_report(rsp, "FINISH", **kwargs)
         tool_calls = response.choices[0].message.tool_calls
@@ -343,6 +383,7 @@ class AzureOpenAIClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
         if messages is None:
             if image_url:
                 messages = [
@@ -369,6 +410,12 @@ class AzureOpenAIClient(LLMClient):
             timeout=self.timeout,
             max_tokens=self.max_tokens,
         )
+        token_meter.update(
+            response.usage.completion_tokens,
+            response.usage.prompt_tokens,
+            response.usage.total_tokens,
+        )
+
         rsp = response.choices[0].message.content
         tool_calls = response.choices[0].message.tool_calls
         do_report(rsp, "FINISH", **kwargs)

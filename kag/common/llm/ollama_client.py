@@ -77,6 +77,7 @@ class OllamaClient(LLMClient):
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
         if messages is None:
             if image_url:
                 messages = [
@@ -99,8 +100,10 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
-            max_tokens=self.max_tokens,
         )
+
+        usages = []
+
         if not self.stream:
             # reasoning_content = getattr(
             #     response.choices[0].message, "reasoning_content", None
@@ -110,6 +113,13 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
+            usages.append(
+                (
+                    response.eval_count,
+                    response.prompt_eval_count,
+                )
+            )
+
             rsp = response.message.content
             tool_calls = response.message.tool_calls
         else:
@@ -118,8 +128,20 @@ class OllamaClient(LLMClient):
 
             for chunk in response:
                 if chunk.message.content is not None:
+                    usages.append(
+                        chunk.eval_count,
+                        chunk.prompt_eval_count,
+                    )
                     rsp += chunk.message.content
                     do_report(rsp, "RUNNING", **kwargs)
+
+        if token_meter and len(usages) > 0 and usages[-1]:
+            token_meter.update(
+                response.eval_count,
+                response.prompt_eval_count,
+                response.eval_count + response.prompt_eval_count,
+            )
+
         do_report(rsp, "FINISH", **kwargs)
         if tools and tool_calls:
             return response.message
@@ -164,7 +186,6 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
-            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
