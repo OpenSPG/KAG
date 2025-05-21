@@ -144,9 +144,38 @@ Note:
 
     def parse_response(self, response: str, **kwargs):
         if isinstance(response, str):
-            response = json.loads(response)
-        if not isinstance(response, dict):
-            raise ValueError(f"response should be a dict, but got {type(response)}")
-        if "output" in response:
-            response = response["output"]
-        return Task.create_tasks_from_dag(response)
+            try:
+                response_json = json.loads(response)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Failed to decode LLM response as JSON: {e}. Response: {response}")
+        elif isinstance(response, dict):
+            response_json = response # If it's already a dict (e.g. from direct LLM client parsing)
+        else:
+            raise ValueError(f"LLM response is not a JSON string or a dictionary. Got type: {type(response)}. Response: {response}")
+
+        if not isinstance(response_json, dict):
+            # This case might be redundant if json.loads already ensures a dict or list, 
+            # but good for safety if the initial response could be a non-dict JSON type.
+            raise ValueError(f"Parsed LLM response should be a dict, but got {type(response_json)}. Response: {response_json}")
+
+        # Handle if the LLM wraps the DAG in an "output" key, as per original logic
+        actual_dag_data = response_json.get("output", response_json)
+        
+        if not isinstance(actual_dag_data, dict):
+            raise ValueError(f"The core plan data (after handling potential 'output' key) is not a dictionary. Got type: {type(actual_dag_data)}. Data: {actual_dag_data}")
+
+        try:
+            return Task.create_tasks_from_dag(actual_dag_data)
+        except (KeyError, TypeError) as e:
+            error_message = (
+                f"LLM response for static planning was malformed. Error: {e}. "
+                f"Each task in the DAG dictionary must define 'executor', 'arguments', and 'dependent_task_ids'. "
+                f"Problematic DAG data: {actual_dag_data}"
+            )
+            raise ValueError(error_message)
+        except Exception as e: # Catch any other unexpected errors from create_tasks_from_dag
+            error_message = (
+                f"An unexpected error occurred while creating tasks from DAG. Error: {e}. "
+                f"Problematic DAG data: {actual_dag_data}"
+            )
+            raise ValueError(error_message)
