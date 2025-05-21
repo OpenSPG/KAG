@@ -20,6 +20,7 @@ from kag.builder.component.extractor.schema_constraint_extractor import (
 )
 from kag.builder.component.extractor.table_extractor import TableExtractor
 from kag.builder.component.extractor.outline_extractor import OutlineExtractor
+from kag.builder.component.extractor.summary_extractor import SummaryExtractor
 from kag.builder.component.extractor.chunk_extractor import ChunkExtractor
 from kag.builder.component.extractor.atomic_query_extractor import AtomicQueryExtractor
 

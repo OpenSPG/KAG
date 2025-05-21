@@ -29,6 +29,7 @@ from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
 from kag.builder.prompt.spg_prompt import SPGPrompt, SPGEntityPrompt, SPGEventPrompt
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.prompt.outline_prompt import OutlinePrompt
+from kag.builder.prompt.chunk_summary_prompt import ChunkSummaryPrompt
 
 from kag.builder.prompt.table.table_context import TableContextPrompt
 from kag.builder.prompt.table.table_row_col_summary import TableRowColSummaryPrompt
