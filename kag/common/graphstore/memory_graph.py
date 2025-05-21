@@ -84,7 +84,7 @@ class MemoryGraph:
 
         checkpointer = CheckpointerManager.get_checkpointer(
             {
-                "type": "zodb",
+                "type": "diskcache",
                 "ckpt_dir": self.ckpt_dir,
                 "rank": 0,
                 "world_size": 1,
