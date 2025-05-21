@@ -20,7 +20,7 @@ class MCPPipeline(SolverPipelineABC):
         planner: PlannerABC,
         executors: List[ExecutorABC],
         generator: GeneratorABC,
-        max_iteration: int = 10,
+        max_iteration: int = 5,
     ):
         super().__init__()
         self.planner = planner
