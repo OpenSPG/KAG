@@ -7,6 +7,21 @@ slug: /release_notes
 
 Key features, improvements and bug fixes in the latest releases.
 
+## KAG 0.7 Version (2025-04-17)
+
+*   First, we refactored the KAG-Solver framework. Added support for two task planning modes, static and iterative, while implementing a more rigorous knowledge layering mechanism for the reasoning phase.
+*   Second, we optimized the product experience: introduced dual modes—"Simple Mode" and "Deep Reasoning"—during the reasoning phase, along with support for streaming inference output, automatic rendering of graph indexes, and linking generated content to original references.
+*   Added an open_benchmark directory to the top level of the KAG repository, comparing various RAG methods under the same base to achieve state-of-the-art (SOTA) results.
+*   Introduced a "Lightweight Build" mode, reducing knowledge construction token costs by 89%.
+
+---
+
+## Updates from 2025-01-07
+
+*   Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, enables schema-constraint mode for extraction, etc.
+
+---
+
 ## Version 0.5.1 (2024-11-21)
 This version focuses on addressing user feedback and introduces a series of new features and user experience optimizations.
 
