@@ -46,17 +46,19 @@ class RefDoc(object):
         'id': 'str',
         'content': 'str',
         'document_id': 'str',
-        'document_name': 'str'
+        'document_name': 'str',
+        'url': 'str'
     }
 
     attribute_map = {
         'id': 'id',
         'content': 'content',
         'document_id': 'document_id',
-        'document_name': 'document_name'
+        'document_name': 'document_name',
+        'url': 'url'
     }
 
-    def __init__(self, id=None, content=None, document_id=None, document_name=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(self, id=None, content=None, document_id=None, document_name=None, url=None, local_vars_configuration=None):  # noqa: E501
         """RefDoc - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -66,12 +68,15 @@ class RefDoc(object):
         self._content = None
         self._document_id = None
         self._document_name = None
+        self._url = None
         self.discriminator = None
 
         self.id = id
         self.content = content
         self.document_id = document_id
         self.document_name = document_name
+        if url is not None:
+            self.url = url
 
     @property
     def id(self):
@@ -164,6 +169,27 @@ class RefDoc(object):
             raise ValueError("Invalid value for `document_name`, must not be `None`")  # noqa: E501
 
         self._document_name = document_name
+
+    @property
+    def url(self):
+        """Gets the url of this RefDoc.  # noqa: E501
+
+
+        :return: The url of this RefDoc.  # noqa: E501
+        :rtype: str
+        """
+        return self._url
+
+    @url.setter
+    def url(self, url):
+        """Sets the url of this RefDoc.
+
+
+        :param url: The url of this RefDoc.  # noqa: E501
+        :type: str
+        """
+
+        self._url = url
 
     def to_dict(self):
         """Returns the model properties as a dict"""

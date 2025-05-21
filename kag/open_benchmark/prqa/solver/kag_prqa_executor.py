@@ -73,9 +73,12 @@ class PrqaExecutor(ExecutorABC):
         self.update_schema_messages(filter_messages, relationships_result)
         self.update_schema_messages(multi_hop_messages, relationships_result)
 
-    def send_cypher_messages_deepseek(self, messages):
+    def send_cypher_messages(self, messages):
         response = self.llm.client.chat.completions.create(
-            model=self.llm.model, messages=messages, tools=cypher_tools
+            model=self.llm.model,
+            messages=messages,
+            tools=cypher_tools,
+            tool_choice={"type": "function", "function": {"name": "run_cypher_query"}}
         )
         return response.choices[0].message
 
@@ -94,7 +97,7 @@ class PrqaExecutor(ExecutorABC):
             new_message = {"role": "user", "content": str(question)}
             message_list.append(new_message)
 
-            completion_1 = self.send_cypher_messages_deepseek(message_list)
+            completion_1 = self.send_cypher_messages(message_list)
 
             if not completion_1.tool_calls:
                 raise ValueError(f"{question} 查询失败，此时tool_calls 为空或为 None，无法继续处理")
@@ -250,9 +253,9 @@ class PrqaExecutor(ExecutorABC):
 
                     props = node.get("properties", {})
                     node_name = (
-                        props.get("name")
-                        or props.get("title")
-                        or f"未知节点_{node_id[-4:]}"
+                            props.get("name")
+                            or props.get("title")
+                            or f"未知节点_{node_id[-4:]}"
                     )
                     node_map[node_id] = node_name
 
