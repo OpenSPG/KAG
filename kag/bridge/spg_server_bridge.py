@@ -185,7 +185,7 @@ class SPGServerBridge:
         index_mgr = KAGIndexManager.from_config(config)
         return index_mgr.get_meta()
 
-    def get_index_manger_names(self):
+    def get_index_manager_names(self):
         return KAGIndexManager.list_available_with_detail()
 
 
