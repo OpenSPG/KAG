@@ -47,8 +47,8 @@ spo_runner:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   scanner:
     type: pr_scanner # kag.builder.component.scanner.pr_scanner.PRScanner
-  num_threads_per_chain: 1
-  num_chains: 64
+  num_threads_per_chain: 64
+  num_chains: 1
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
