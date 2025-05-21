@@ -30,65 +30,87 @@
    </a>
 </p>
 
+<div align="center">
+  <img src="./_static/images/examples/supplychain/kag-supplychain-product-chain-demo-en.gif" alt="KAG Overview Demo" width="720">
+</div>
+
 # 1. What is KAG?
 
-KAG is a logical reasoning and Q&A framework based on the [OpenSPG](https://github.com/OpenSPG/openspg) engine and large language models, which is used to build logical reasoning and Q&A solutions for vertical domain knowledge bases.  KAG can effectively overcome the ambiguity of traditional RAG vector similarity calculation and the noise problem of GraphRAG introduced by OpenIE.  KAG supports logical reasoning and multi-hop fact Q&A, etc., and is significantly better than the current SOTA method.
+KAG (Knowledge Augmented Generation) is a framework designed for logical reasoning and answering questions. It uses the [OpenSPG](https://github.com/OpenSPG/openspg) engine and Large Language Models (LLMs) to create solutions for knowledge bases in specific industries or fields. KAG aims to solve common problems found in other methods: it reduces the vagueness of traditional RAG (Retrieval Augmented Generation) which relies on vector similarity, and minimizes the errors (noise) that can occur with GraphRAG due to its OpenIE (Open Information Extraction) methods. KAG excels at tasks requiring logical reasoning and answering questions that need multiple steps of fact-finding, performing significantly better than current leading methods.
 
-The goal of KAG is to build a knowledge-enhanced LLM service framework in professional domains, supporting logical reasoning, factual Q&A, etc. KAG fully integrates the logical and factual characteristics of the KGs. Its core features include:
+The main goal of KAG is to provide an LLM service framework enhanced by knowledge, especially for professional fields. This allows for robust logical reasoning and accurate question answering. KAG leverages the strengths of Knowledge Graphs (KGs) by focusing on their logical and factual aspects. Key features include:
 
-- Knowledge and Chunk Mutual Indexing structure to integrate more complete contextual text information
-- Knowledge alignment using conceptual semantic reasoning to alleviate the noise problem caused by OpenIE
-- Schema-constrained knowledge construction to support the representation and construction of domain expert knowledge
-- Logical form-guided hybrid reasoning and retrieval to support logical reasoning and multi-hop reasoning Q&A
+- **Mutual Indexing of Knowledge and Text Chunks:** This creates a more complete understanding by linking knowledge graph information directly with relevant parts of the original text.
+- **Conceptual Semantic Reasoning for Knowledge Alignment:** This helps to clean up and reduce errors that might arise from automated information extraction (like OpenIE).
+- **Schema-Constrained Knowledge Construction:** This allows domain experts to accurately represent and build their specialized knowledge within the system.
+- **Logic-Form-Guided Hybrid Reasoning and Retrieval:** This supports complex reasoning, including multi-step logical deductions and answering questions that require finding information across different parts of the knowledge base.
 
-⭐️ Star our repository to stay up-to-date with exciting new features and improvements! Get instant notifications for new releases! 🌟
-
-![Star KAG](./_static/images/star-kag.gif)
+<div align="center">
+  <p><strong>⭐️ Star our repository to stay up-to-date with exciting new features and improvements! Get instant notifications for new releases! 🌟</strong></p>
+  <p><a href="https://github.com/OpenSPG/KAG/stargazers"><img src="./_static/images/star-kag.gif" alt="Star KAG"></a></p>
+</div>
 
 # 2. Core Features
 
 ## 2.1 Knowledge Representation
 
-In the context of private knowledge bases, unstructured data, structured information, and business expert experience often coexist. KAG references the DIKW hierarchy to upgrade SPG to a version that is friendly to LLMs. 
+Many organizations have knowledge in various forms: unstructured data (like articles and logs), structured data (like databases and spreadsheets), and the valuable experience of their experts. KAG helps manage this diverse information. It draws inspiration from the DIKW hierarchy (Data, Information, Knowledge, Wisdom) and enhances OpenSPG to work effectively with LLMs.
 
-For unstructured data such as news, events, logs, and books, as well as structured data like transactions, statistics, and approvals, along with business experience and domain knowledge rules, KAG employs techniques such as layout analysis, knowledge extraction, property normalization, and semantic alignment to integrate raw business data and expert rules into a unified business knowledge graph.
+KAG processes different types of data—such as news articles, event logs, books, transaction records, statistical data, and approval forms—along with expert insights and domain-specific rules. It uses methods like layout analysis, knowledge extraction, property normalization, and semantic alignment. This transforms raw business data and expert rules into a single, unified business knowledge graph.
 
 ![KAG Diagram](./_static/images/kag-diag.jpg)
 
-This makes it compatible with schema-free information extraction and schema-constrained expertise construction on the same knowledge type (e. G., entity type, event type), and supports the cross-index representation between the graph structure and the original text block. 
+This approach allows KAG to handle both flexible information extraction (without strict rules) and structured knowledge building (based on expert rules) for the same types of information (e.g., types of entities or events). It also supports a two-way indexing system that links the graph structure with the original text.
 
-This mutual index representation is helpful to the construction of inverted index based on graph structure, and promotes the unified representation and reasoning of logical forms.
+This mutual indexing is key for building efficient search capabilities based on the graph's structure and helps create a unified way to represent and reason with information using logical forms.
 
 ## 2.2 Mixed Reasoning Guided by Logic Forms
 
 ![Logical Form Solver](./_static/images/kag-lf-solver.png)
 
-KAG proposes a logically formal guided hybrid solution and inference engine. 
+KAG introduces an advanced reasoning engine that uses logical forms to guide its problem-solving process. This engine combines different approaches to find answers.
 
-The engine includes three types of operators: planning, reasoning, and retrieval, which transform natural language problems into problem solving processes that combine language and notation. 
+The engine uses three main types of operations:
+- **Planning:** Figuring out the steps needed to answer a question.
+- **Reasoning:** Using logic to deduce new information.
+- **Retrieval:** Finding relevant information from the knowledge base or text.
 
-In this process, each step can use different operators, such as exact match retrieval, text retrieval, numerical calculation or semantic reasoning, so as to realize the integration of four different problem solving processes: Retrieval, Knowledge Graph reasoning, language reasoning and numerical calculation.
+These operations work together to turn complex natural language questions into a structured problem-solving process that uses both language understanding and symbolic logic.
 
-# 3. Release Notes
+At each step, the system can choose the best operation for the task, whether it's finding an exact match, searching through text, performing calculations, or using semantic reasoning. This allows KAG to seamlessly integrate four different problem-solving methods: simple retrieval, knowledge graph reasoning, language-based reasoning, and numerical computation.
 
-## 3.1 Latest Updates
+# 3. Illustrative Examples
+
+KAG excels at building systems for complex question answering over private knowledge bases, performing multi-hop reasoning to connect disparate pieces of information, and integrating domain-specific expertise into LLM workflows. It's designed to tackle challenges where deep understanding and logical deduction from structured and unstructured data are paramount.
+
+For detailed, runnable examples that showcase KAG's capabilities in various scenarios, please see our [Examples Collection](./kag/examples/README.md).
+
+Here are a couple of specific applications:
+
+*   **Supply Chain Analysis:** Explore how KAG can be used to construct and query an enterprise supply chain knowledge graph, enabling insights into supplier relationships, industry connections, and event impacts. See the [Supply Chain Example](./kag/examples/supplychain/README.md) for more details.
+*   **Medical Knowledge Q&A:** Discover how KAG can build a medical knowledge graph from various data sources (structured and unstructured) to answer complex medical questions and support healthcare applications. Check out the [Medicine Example](./kag/examples/medicine/README.md).
+
+These examples provide hands-on experience with KAG's features and demonstrate its potential in real-world use cases.
+
+# 4. Release Notes
+
+## 4.1 Latest Updates
 
 * 2025.04.17 : Released KAG 0.7 Version 
   * First, we refactored the KAG-Solver framework. Added support for two task planning modes, static and iterative, while implementing a more rigorous knowledge layering mechanism for the reasoning phase. 
   * Second, we optimized the product experience: introduced dual modes—"Simple Mode" and "Deep Reasoning"—during the reasoning phase, along with support for streaming inference output, automatic rendering of graph indexes, and linking generated content to original references. 
   * Added an open_benchmark directory to the top level of the KAG repository, comparing various RAG methods under the same base to achieve state-of-the-art (SOTA) results. 
   * Introduced a "Lightweight Build" mode, reducing knowledge construction token costs by 89%.
-* 2025.01.07 : Support domain knowledge injection, domain schema customization, QFS tasks support, Visual query analysis, enables schema-constraint mode for extraction, etc.
-* 2024.11.21 : Support Word docs upload, model invoke concurrency setting, User experience optimization, etc.
-* 2024.10.25 : KAG initial release
 
-## 3.2 Future Plans
+For a full list of changes, see the [Release Notes](./docs/release_notes.md).
+
+## 4.2 Future Plans
 
 * Logical reasoning optimization, conversational tasks support
 * kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
 * kag front-end open source, distributed build support, mathematical reasoning optimization
 
-# 4. Quick Start
+# 5. Quick Start
 
 ## 4.1 product-based (for ordinary users)
 
@@ -126,13 +148,15 @@ Navigate to the default url of the KAG product with your browser: <http://127.0.
 Default Username: openspg
 Default password: openspg@kag
 ```
+<!-- TODO: Add Product-Based Demo GIF/Video Here. Should show a brief walkthrough of the KAG product interface, e.g., navigating to the URL, logging in, and a simple Q&A interaction. -->
+
 See [KAG usage (product mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#rtOlA) for detailed introduction.
 
 ## 4.2 toolkit-based (for developers)
 
 ### 4.2.1 Engine & Dependent Image Installation
 
-Refer to the 3.1 section to complete the installation of the engine & dependent image.
+Refer to the **Engine & Dependent Image Installation** instructions in the 'product-based (for ordinary users)' section above.
 
 ### 4.2.2 Installation of KAG
 
@@ -161,9 +185,11 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 
 ### 4.2.3 Use the toolkit
 
-Please refer to [KAG usage (developer mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#cikso) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new busineness scenarios.
+<!-- TODO: Add Toolkit-Based Demo GIF/Video Here. Should show a terminal session demonstrating KAG installation via pip and a basic command-line usage example. -->
 
-# 5. Technical Architecture
+Please refer to [KAG usage (developer mode)](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s538b1n7#cikso) guide for detailed introduction of the toolkit. Then you can use the built-in components to reproduce the performance results of the built-in datasets, and apply those components to new business scenarios.
+
+# 6. Technical Architecture
 
 ![KAG technical architecture](./_static/images/kag-arch.png)
 
@@ -173,7 +199,11 @@ kg-builder implements a knowledge representation that is friendly to large-scale
 
 kg-solver uses a logical symbol-guided hybrid solving and reasoning engine that includes three types of operators: planning, reasoning, and retrieval, to transform natural language problems into a problem-solving process that combines language and symbols. In this process, each step can use different operators, such as exact match retrieval, text retrieval, numerical calculation or semantic reasoning, so as to realize the integration of four different problem solving processes: Retrieval, Knowledge Graph reasoning, language reasoning and numerical calculation.
 
-# 6. Community & Support
+# 7. Contributing
+
+We welcome contributions to KAG! If you're interested in helping improve the project, please see our [Contributing Guidelines](./CONTRIBUTING.md) for more information on how to get started, report issues, and submit pull requests.
+
+# 8. Community & Support
 
 **GitHub**: <https://github.com/OpenSPG/KAG>
 
@@ -194,11 +224,11 @@ Scan the QR code below to join our WeChat group.
 <img src="./_static/images/robot-qr.JPG" alt="Join WeChat group" width="200">
 
 
-# 7. Differences between KAG, RAG, and GraphRAG
+# 9. Differences between KAG, RAG, and GraphRAG
 
 **KAG introduction and applications**: <https://github.com/orgs/OpenSPG/discussions/52>
 
-# 8. Citation
+# 10. Citation
 
 If you use this software, please cite it as below:
 
