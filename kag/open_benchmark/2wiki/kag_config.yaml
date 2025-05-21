@@ -9,9 +9,9 @@ chat_llm: &chat_llm
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: sk-
   model: qwen2.5-72b-instruct
-  stream: True
+  stream: true
 
-ner_llm: &ner_llm
+ner_llm:
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: sk-
@@ -31,40 +31,23 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '2'
+  id: '1'
   language: en
   namespace: TwoWiki
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
 e1: &e1
-  type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: atomic_query_extractor
   llm: *openie_llm
-  ner_prompt:
-    type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
-  std_prompt:
-    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-  triple_prompt:
-    type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
-
-e2: &e2
-  type: schema_constraint_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-  llm: *openie_llm
-  ner_prompt:
-    type: spg_entity # kag.builder.prompt.default.ner.OpenIENERPrompt
-  std_prompt:
-    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-  relation_prompt:
-    type: spg_relation
-  event_prompt:
-    type: spg_event # kag.builder.prompt.default.triple.OpenIETriplePrompt
+  prompt:
+    type: atomic_query_extract
 
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
       - *e1
-      - *e2
     reader:
       type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
@@ -92,24 +75,19 @@ graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 r1: &r1
-  type: vector_chunk_retriever
+  type: atomic_query_based_chunk_retriever
   vectorize_model: *vectorize_model
   search_api: *search_api
-  top_k: 10
-  
-r2: &r2
-  type: text_chunk_retriever
-  search_api: *search_api
+  graph_api: *graph_api
   top_k: 10
 
 retriever_executor: &retriever
   type: kag_hybrid_retrieval_executor
   retrievers:
     - *r1
-    - *r2
   merger:
     type: kag_merger
-      
+
 
 
 kag_solver_pipeline:
@@ -120,7 +98,7 @@ kag_solver_pipeline:
     plan_prompt:
       type: retriever_static_planning
     rewrite_prompt:
-      type: default_query_rewrite  
+      type: default_query_rewrite
   executors:
     - *retriever
   generator:

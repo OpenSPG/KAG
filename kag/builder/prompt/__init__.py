@@ -32,6 +32,7 @@ from kag.builder.prompt.outline_prompt import OutlinePrompt
 
 from kag.builder.prompt.table.table_context import TableContextPrompt
 from kag.builder.prompt.table.table_row_col_summary import TableRowColSummaryPrompt
+from kag.builder.prompt.atomic_query_extract_prompt import AtomicQueryExtractPrompt
 
 __all__ = [
     "DefaultOpenIENERPrompt",
@@ -48,4 +49,5 @@ __all__ = [
     "SPGEventPrompt",
     "TableContextPrompt",
     "TableRowColSummaryPrompt",
+    "AtomicQueryExtractPrompt",
 ]

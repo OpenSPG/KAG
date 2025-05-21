@@ -15,7 +15,7 @@ from kag.interface import GeneratorABC, LLMClient, PromptABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
-from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
+from kag.common.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
 @GeneratorABC.register("llm_generator_with_thought")
