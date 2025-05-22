@@ -47,7 +47,7 @@ class LLMGeneratorWithThought(GeneratorABC):
             retrieved_docs = task.memory.get("retriever")
             if retrieved_docs and self.chunk_reranker:
                 rerank_queries.append(task.arguments["query"])
-                chunks.append(retrieved_docs.chunk_datas)
+                chunks.append(retrieved_docs.chunks)
         rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
         total_reference_source = rerank_chunks
         refer_data = to_reference_list(

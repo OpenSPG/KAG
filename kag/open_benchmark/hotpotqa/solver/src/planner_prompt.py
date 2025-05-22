@@ -63,7 +63,7 @@ Please complete the task according to the following rules:
         tasks = {}
         for task_id, task_info in response.items():
             reason_task = {
-                "executor": "Reasoner",
+                "executor": "Retriever",
                 "dependent_task_ids": task_info["dependent_task_ids"],
                 "arguments": {"query": task_info["query"]},
             }
