@@ -12,30 +12,48 @@
 # flake8: noqa
 import asyncio
 import json
-from kag.interface import ExecutorABC, LLMClient, Task, Context
+from typing import List
+from kag.interface import (
+    ExecutorABC,
+    LLMClient,
+    Task,
+    Context,
+    RetrieverOutputMerger,
+    RetrieverABC,
+)
 
 
 @ExecutorABC.register("evidence_based_reasoner")
 class EvidenceBasedReasoner(ExecutorABC):
-    def __init__(self, llm: LLMClient, retriever: ExecutorABC):
+    def __init__(
+        self,
+        llm: LLMClient,
+        retrievers: List[RetrieverABC],
+        merger: RetrieverOutputMerger,
+    ):
         self.llm = llm
-        self.retriever = retriever
+        self.retrievers = retrievers
+        self.merger = merger
 
     async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
-        retrieve_task = Task(
-            executor=self.retriever.schema()["name"],
-            arguments=task.arguments,
-            id=task.id,
-        )
-        await asyncio.to_thread(
-            lambda: self.retriever.invoke(query, retrieve_task, context)
-        )
+        # retrieve_task = Task(
+        #     executor=self.retriever.schema()["name"],
+        #     arguments=task.arguments,
+        #     id=task.id,
+        # )
+
+        retrieval_futures = []
+        for retriever in self.retrievers:
+            retrieval_futures.append(
+                asyncio.create_task(retriever.ainvoke(task, **kwargs))
+            )
+        outputs = await asyncio.gather(*retrieval_futures)
+        merged = await self.merger.ainvoke(task, outputs, **kwargs)
+
         retrieved_docs = []
-        if hasattr(retrieve_task.result, "chunk_datas"):
-            retrieved_docs.extend(retrieve_task.result.chunk_datas)
-            retrieved_docs = "\n\n".join([x.content for x in retrieved_docs])
-        else:
-            retrieved_docs = str(retrieve_task.result)
+        for chunk in merged.chunks:
+            retrieved_docs.append(chunk.content)
+        retrieved_docs = "\n\n".join(retrieved_docs)
 
         system_instruction = """
 As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
@@ -78,7 +96,7 @@ Thought: The question asks about the origin of the last name Sylvester during th
         # print(f"Reasoner request = {request}")
         response = await self.llm.acall(request)
         # print(f"Reasoner response = {response}")
-        task.update_memory("retriever", retrieve_task.result)
+        task.update_memory("retriever", merged)
         task.result = json.dumps(
             {"query": task.arguments["query"], "response": response}, ensure_ascii=False
         )
@@ -87,7 +105,7 @@ Thought: The question asks about the origin of the last name Sylvester during th
 
     def schema(self, func_name: str = None):
         return {
-            "name": "Reasoner",
+            "name": "Retriever",
             "description": "Synthesizes precise, evidence-backed answers to user queries by analyzing provided contextual documents. Note: Contextual documents are pre-loaded and processed implicitly; no explicit context parameter is required.",
             "parameters": {
                 "query": {
