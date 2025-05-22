@@ -59,16 +59,15 @@ class LLMGeneratorWithThought(GeneratorABC):
         thoughts = "\n\n".join(thoughts)
 
         system_instruction = """
-As an advanced reading comprehension assistant, your task is to answer complex multi-hop questions based on the context I provide. The context I offer includes two parts: a set of documents that are helpful for answering the question, and a step-by-step breakdown of the question along with an analytical thought process. Please combine these two parts of the context to answer the question. Your response start after "Thought: ", where you will methodically break down the reasoning process step by step, illustrating how you arrive at conclusions. Conclude with "Answer: " to present a concise, definitive response, devoid of additional elaborations.\n
-NOTE:
-1. I hope your answer matches the answer exactly, so ENSURE that the answer following "Answer:" is concise, such as 14 May, 1832  or yes. THE SHORTER, THE BETTER!!
-2. If the answer is a date, please provide the full date as much as possible, such as 18 May, 1932.3. Pay attention to the differences in part of speech, such as "Japan" and "Japanese," and provide the accurate format according to the question.
-3. If you believe the provided documents cannot answer the question, response with Answer: UNKNOWN.
-"""
+            作为一名高级阅读理解助手，你的任务是根据我提供的上下文回答复杂的多跳问题。我提供的上下文包含两部分：一组有助于回答问题的文档，以及对问题的逐步分解和分析性思维过程。请结合这两部分上下文来回答问题。你的回答应从“思考：”之后开始，逐步系统地分解推理过程，并说明你是如何得出结论的。最后以“答案：”结尾，给出简洁、明确的答案，无需额外的阐述。\n
+            注意：
+            1. 我希望你的答案与召回文档完全一致。
+            2. 如果您认为所提供的文件无法回答问题，请回答“未知”。
+            """
 
-        prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}Question: {query}"
+        prompt = f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}问题: {query}"
         response = self.llm_client(prompt)
-        if "Answer: " not in response:
+        if "答案：" not in response:
             raise ValueError(f"no answer found in response: {response}")
-        answer = response.split("Answer:")[1].strip()
+        answer = response.split("答案：")[1].strip()
         return answer

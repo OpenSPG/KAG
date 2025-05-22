@@ -160,7 +160,7 @@ class EvalQa:
 
     async def async_write_json(self, file_path, data):
         async with aiofiles.open(file_path, "w") as f:
-            await f.write(json.dumps(data))
+            await f.write(json.dumps(data, ensure_ascii=False))
 
     def load_data(self, file_path):
         """
