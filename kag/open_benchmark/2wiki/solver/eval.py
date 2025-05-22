@@ -68,21 +68,6 @@ class EvaFor2wiki(EvalQa):
         eva_obj = Evaluate()
         return eva_obj.getBenchMark(questionList, predictions, golds)
 
-    def do_recall_eval(self, sample, references):
-        eva_obj = Evaluate()
-        paragraph_support_idx_set = [
-            idx["paragraph_support_idx"] for idx in sample["question_decomposition"]
-        ]
-        golds = []
-        for idx in paragraph_support_idx_set:
-            golds.append(
-                eva_obj.generate_id(
-                    sample["paragraphs"][idx]["title"],
-                    sample["paragraphs"][idx]["paragraph_text"],
-                )
-            )
-        return eva_obj.recall_top(predictionlist=references, goldlist=golds)
-
 
 if __name__ == "__main__":
     import_modules_from_path("./src")

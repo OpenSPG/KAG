@@ -40,7 +40,7 @@ class ReaderABC(BuilderComponent, ABC):
 
     @property
     def output_types(self) -> Output:
-        return List[Chunk]
+        return Chunk
 
     @property
     def inherit_input_key(self):
