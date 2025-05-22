@@ -15,6 +15,7 @@ from kag.solver.pipeline.self_cognition_pipeline import SelfCognitionPipeline
 from kag.solver.planner.kag_iterative_planner import KAGIterativePlanner
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
 from kag.solver.planner.lf_kag_static_planner import KAGLFStaticPlanner
+from kag.solver.planner.mcp_planner import MCPPlanner
 from kag.solver.prompt import (
     DeduceChoice,
     DeduceEntail,
@@ -52,6 +53,7 @@ __all__ = [
     "NaiveGenerationPipeline",
     "KAGIterativePlanner",
     "KAGStaticPlanner",
+    "MCPPlanner",
     "DefaultIterativePlanningPrompt",
     "DefaultStaticPlanningPrompt",
     "DefaultRewriteSubTaskQueryPrompt",
