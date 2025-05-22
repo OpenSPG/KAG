@@ -52,10 +52,13 @@ e1: &e1
     type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
 
 e2: &e2
-  type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: outline_extractor # kag.builder.component.extractor.outline_extractor.OutlineExtractor
 
 e3: &e3
-  type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
+
+e4: &e4
+  type: chunk_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
 
 kag_builder_pipeline:
   chain:
@@ -63,6 +66,7 @@ kag_builder_pipeline:
     extractor:
       - *e2
       - *e3
+      - *e4
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
       cut_depth: 6

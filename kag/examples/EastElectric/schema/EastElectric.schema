@@ -5,13 +5,21 @@ Chunk(文本块): EntityType
         content(内容): Text
           index: TextAndVector
 
-Outline(文本块): EntityType
+Outline(标题大纲): EntityType
      properties:
         content(内容): Text
           index: TextAndVector
      relations:
         relateTo(关联): Chunk
-        childOf(子outline): Outline
+        childOf(子标题): Outline
+
+Summary(文本摘要): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        relateTo(关联): Chunk
+        childOf(子摘要): Summary
 
 ArtificialObject(人造物体): EntityType
      properties:
