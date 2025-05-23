@@ -1,5 +1,4 @@
 import json
-import re
 
 
 def gen_schema_file(db_name):
