@@ -452,14 +452,14 @@ class MemoryGraph:
                 except (KeyError, ValueError):
                     return []
 
-        vector_field_name = self._get_vector_field_name(property_key)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        filtered_nodes, filtered_vectors = self.get_cached_tensor(label_nodes=nodes, label=label, vector_field_name=vector_field_name, device=device)
+            vector_field_name = self._get_vector_field_name(property_key)
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            filtered_nodes, filtered_vectors = self.get_cached_tensor(label_nodes=nodes, label=label, vector_field_name=vector_field_name, device=device)
 
-        if filtered_vectors.numel() == 0:
-            return []
-        query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
-        cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
+            if filtered_vectors.numel() == 0:
+                return []
+            query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
+            cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
             top_data = cosine_similarity.topk(k=min(topk, len(cosine_similarity)), dim=0)
             top_indices = top_data.indices.to("cpu")
