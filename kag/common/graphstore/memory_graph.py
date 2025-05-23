@@ -452,8 +452,6 @@ class MemoryGraph:
 
                 else:
                     return torch.matmul(M, v.T)
-
-        try:
             if label == "Entity":
                 nodes = self._backend_graph.vs
             else:
