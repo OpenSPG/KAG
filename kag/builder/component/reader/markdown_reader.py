@@ -10,32 +10,30 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import os
 import io
+import logging
+import os
 import re
+from typing import List, Dict, Tuple
 
 import markdown
-from bs4 import BeautifulSoup, Tag
-
-import logging
-import requests
 import pandas as pd
-from typing import List, Dict, Tuple
+import requests
+from bs4 import BeautifulSoup, Tag
 
 from kag.builder.component.splitter.length_splitter import LengthSplitter
 from kag.builder.component.writer.kg_writer import KGWriter
-from kag.common.utils import generate_hash_id
-from kag.interface import ReaderABC, Doc
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.interface import LLMClient
-from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
-from kag.interface.builder.reader_abc import ReaderOutput
-from knext.common.base.runnable import Output, Input
 from kag.builder.model.sub_graph import SubGraph
-
-from kag.builder.model.sub_graph import Node, Edge
+from kag.builder.prompt.analyze_table_prompt import AnalyzeTablePrompt
+from kag.common.utils import generate_hash_id
+from kag.interface import LLMClient
+from kag.interface import ReaderABC
+from knext.common.base.runnable import Output, Input
 
 logger = logging.getLogger(__name__)
+
+
 class MarkdownNode:
     def __init__(self, title: str, level: int, content: str = ""):
         self.title = title
@@ -43,6 +41,7 @@ class MarkdownNode:
         self.content = content
         self.children: List[MarkdownNode] = []
         self.tables: List[Dict] = []  # 存储表格数据
+
 
 @ReaderABC.register("md")
 @ReaderABC.register("md_reader")
@@ -427,7 +426,9 @@ class MarkDownReader(ReaderABC):
                     id=f"{generate_hash_id(full_title)}",
                     parent_id=parent_id,
                     name=full_title,
-                    content=full_title + "\n" + node.content,  # 只包含当前节点自身的内容
+                    content=full_title
+                            + "\n"
+                            + node.content,  # 只包含当前节点自身的内容
                     parent_content=parent_content if self.reserve_meta else "",
                 )
                 parent_id = current_output.id
@@ -641,9 +642,8 @@ if __name__ == "__main__":
         }
     )
     dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
-    file_path = (
-        "/Users/zhangxinhong.zxh/Downloads/附件1 10kV～110kV线路保护及辅助装置标准化设计规范 （报批稿）.md"
+    file_path = os.path.join(
+        dir, "../../../../tests/unit/builder/data", "需求内容test.md"
     )
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)
