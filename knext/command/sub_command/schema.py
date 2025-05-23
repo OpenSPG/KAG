@@ -30,11 +30,27 @@ def commit_schema():
         knext.project.DEFAULT_SCHEMA_DIR,
         knext.project.DEFAULT_SCHEMA_FILE.replace("$namespace", env.namespace),
     )
-    if not Path(schema_file).exists():
-        click.secho(f"ERROR: File {schema_file} not exists.", fg="bright_red")
+    index_file = os.path.join(
+        env.project_path,
+        knext.project.DEFAULT_SCHEMA_DIR,
+        knext.project.DEFAULT_INDEX_FILE,
+    )
+    if Path(schema_file).exists():
+        ml = SPGSchemaMarkLang(schema_file)
+    else:
+        ml = None
+    if Path(index_file).exists():
+        index_ml = SPGSchemaMarkLang(index_file)
+    else:
+        index_ml = None
+    if ml is None and index_ml is None:
+        click.secho(f"ERROR: File {schema_file} and {index_file} not exists.", fg="bright_red")
         return
+    if ml is None:
+        ml = index_ml
+    elif index_ml is not None:
+        ml.types.update(index_ml.types)
 
-    ml = SPGSchemaMarkLang(schema_file)
     is_altered = ml.sync_schema()
 
     if is_altered:

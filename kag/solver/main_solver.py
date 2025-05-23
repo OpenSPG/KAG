@@ -10,19 +10,17 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import asyncio
-import logging
+import copy
 import json
+import logging
 import os
 import re
-import copy
 
 import yaml
 
-from kag.interface import SolverPipelineABC
-
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.interface import SolverPipelineABC
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
-
 
 logger = logging.getLogger()
 
@@ -157,7 +155,11 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
 
-    use_pipeline = qa_config["chat"]["ename"] if "chat" in qa_config.keys() else params.get("usePipeline", "think_pipeline")
+    use_pipeline = (
+        qa_config["chat"]["ename"]
+        if "chat" in qa_config.keys()
+        else params.get("usePipeline", "think_pipeline")
+    )
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
     logger.info(
@@ -185,10 +187,14 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
                 qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
             except Exception as e:
                 logger.info(f"vectorize_model not found in config. Error: {str(e)}")
-
-        custom_pipeline_conf = copy.deepcopy(
-            KAG_CONFIG.all_config.get("solver_pipeline", None)
-        )
+        if use_pipeline in KAG_CONFIG.all_config.keys():
+            custom_pipeline_conf = copy.deepcopy(
+                KAG_CONFIG.all_config.get(use_pipeline, None)
+            )
+        else:
+            custom_pipeline_conf = copy.deepcopy(
+                KAG_CONFIG.all_config.get("solver_pipeline", None)
+            )
         # self cognition
         self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
         self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
@@ -214,7 +220,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         if KAG_PROJECT_CONF.language == "en":
             answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
         else:
-            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。with qa_config={qa_config},pipeline_config={pipeline_config}"
+            answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
         reporter.add_report_line("answer", "error", answer, "ERROR")
     finally:
         await reporter.stop()
@@ -260,8 +266,6 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    from kag.bridge.spg_server_bridge import init_kag_config
-
     # init_kag_config(
     #     "4200052", "https://spg-pre.alipay.com"
     # )

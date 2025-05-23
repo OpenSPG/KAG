@@ -2,6 +2,7 @@ from typing import List
 
 from kag.interface import PromptABC
 
+
 @PromptABC.register("default_chunk_summary")
 class ChunkSummaryPrompt(PromptABC):
 
