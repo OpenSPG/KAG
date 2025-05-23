@@ -426,9 +426,7 @@ class MarkDownReader(ReaderABC):
                     id=f"{generate_hash_id(full_title)}",
                     parent_id=parent_id,
                     name=full_title,
-                    content=full_title
-                            + "\n"
-                            + node.content,  # 只包含当前节点自身的内容
+                    content=full_title + "\n" + node.content,  # 只包含当前节点自身的内容
                     parent_content=parent_content if self.reserve_meta else "",
                 )
                 parent_id = current_output.id
@@ -642,8 +640,6 @@ if __name__ == "__main__":
         }
     )
     dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(
-        dir, "../../../../tests/unit/builder/data", "需求内容test.md"
-    )
+    file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)

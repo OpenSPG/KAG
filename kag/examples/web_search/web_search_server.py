@@ -7,15 +7,15 @@ mcp = FastMCP("mcp-server-web-search")
 @mcp.tool()
 async def web_search(query: str):
     """
-   Name:
-       Google搜索
+    Name:
+        Google搜索
 
-   Description:
-       通过输入问题，获取对应Google搜索的结果
+    Description:
+        通过输入问题，获取对应Google搜索的结果
 
-   Args:
-       query: 问题描述
-   """
+    Args:
+        query: 问题描述
+    """
     import requests
 
     channel = "google"
@@ -29,7 +29,7 @@ async def web_search(query: str):
         },
         "projectId": dummy_project_id,
         "queryString": query,
-        "topk": 3, # noqa
+        "topk": 3,  # noqa
     }
     url = "https://spgservice-standard-gray.alipay.com/public/v1/search/text"
     res = requests.post(url, json=data, timeout=60)
@@ -47,7 +47,9 @@ async def web_search(query: str):
 
     if len(results) == 0:
         raise Exception("No results found! Try a less restrictive/shorter query.")
-    formatted_results = [f"[{result['title']}]({result['href']})\n{result['body']}" for result in results]
+    formatted_results = [
+        f"[{result['title']}]({result['href']})\n{result['body']}" for result in results
+    ]
     return "## Search Results\n\n" + "\n\n".join(formatted_results)
 
 
@@ -55,10 +57,8 @@ async def main():
     result = await web_search("天空为什么是蓝色的")
     print(result)
 
+
 if __name__ == "__main__":
-    mcp.run(transport='stdio')
+    mcp.run(transport="stdio")
     # import asyncio
     # asyncio.run(main())
-
-
-

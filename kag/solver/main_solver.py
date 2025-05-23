@@ -10,19 +10,17 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import asyncio
-import logging
+import copy
 import json
+import logging
 import os
 import re
-import copy
 
 import yaml
 
-from kag.interface import SolverPipelineABC
-
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.interface import SolverPipelineABC
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
-
 
 logger = logging.getLogger()
 
@@ -157,7 +155,11 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     if isinstance(qa_config, str):
         qa_config = json.loads(qa_config)
 
-    use_pipeline = qa_config["chat"]["ename"] if "chat" in qa_config.keys() else params.get("usePipeline", "think_pipeline")
+    use_pipeline = (
+        qa_config["chat"]["ename"]
+        if "chat" in qa_config.keys()
+        else params.get("usePipeline", "think_pipeline")
+    )
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
     logger.info(
@@ -260,8 +262,6 @@ class SolverMain:
 
 
 if __name__ == "__main__":
-    from kag.bridge.spg_server_bridge import init_kag_config
-
     # init_kag_config(
     #     "4200052", "https://spg-pre.alipay.com"
     # )
