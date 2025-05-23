@@ -12,5 +12,6 @@
 
 DEFAULT_SCHEMA_DIR = "schema"
 DEFAULT_SCHEMA_FILE = "$namespace.schema"
+DEFAULT_INDEX_FILE = "index.schema"
 DEFAULT_BUILDER_DIR = "builder"
 DEFAULT_REASONER_DIR = "reasoner"
