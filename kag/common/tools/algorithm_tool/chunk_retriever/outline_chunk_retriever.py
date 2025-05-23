@@ -9,18 +9,22 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import logging
 from typing import List
 
 import knext.common.cache
-import logging
-
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
-from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.interface import RetrieverABC, VectorizeModelABC, ChunkData, RetrieverOutput, EntityData
-from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
+from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
-
+from kag.interface import (
+    RetrieverABC,
+    VectorizeModelABC,
+    ChunkData,
+    RetrieverOutput,
+    EntityData,
+)
+from kag.interface.solver.model.schema_utils import SchemaUtils
 from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
@@ -35,7 +39,7 @@ class OutlineChunkRetriever(RetrieverABC):
         search_api: SearchApiABC = None,
         graph_api: GraphApiABC = None,
         top_k: int = 10,
-        score_threshold = 0.85,
+        score_threshold=0.85,
         **kwargs,
     ):
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
@@ -44,9 +48,9 @@ class OutlineChunkRetriever(RetrieverABC):
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
         )
-        self.graph_api = graph_api or GraphApiABC.from_config({
-            "type": "openspg_graph_api"
-        })
+        self.graph_api = graph_api or GraphApiABC.from_config(
+            {"type": "openspg_graph_api"}
+        )
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
@@ -57,7 +61,7 @@ class OutlineChunkRetriever(RetrieverABC):
         )
         super().__init__(top_k, **kwargs)
 
-    def get_outlines(self, query, top_k)->List[str]:
+    def get_outlines(self, query, top_k) -> List[str]:
         topk_outline_ids = []
         query_vector = self.vectorize_model.vectorize(query)
 
@@ -76,10 +80,14 @@ class OutlineChunkRetriever(RetrieverABC):
     """
         get children outline of current outline 
     """
+
     def get_children_outlines(self, outline_ids):
         children_outline_ids = set()
         for outline_id in outline_ids:
-            entity = EntityData(entity_id=outline_id, node_type=self.schema_helper.get_label_within_prefix("Outline"))
+            entity = EntityData(
+                entity_id=outline_id,
+                node_type=self.schema_helper.get_label_within_prefix("Outline"),
+            )
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
             if not oneHopGraphData:
                 continue
@@ -91,7 +99,7 @@ class OutlineChunkRetriever(RetrieverABC):
                 children_outline_ids.add(relationData.from_id)
         return children_outline_ids
 
-    def get_chunk_data(self, chunk_id, score = 0.0):
+    def get_chunk_data(self, chunk_id, score=0.0):
         node = self.graph_api.get_entity_prop_by_id(
             label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
             biz_id=chunk_id,
@@ -108,7 +116,10 @@ class OutlineChunkRetriever(RetrieverABC):
         chunks = []
         chunk_ids = set()
         for outline_id in outline_ids:
-            entity = EntityData(entity_id=outline_id, node_type=self.schema_helper.get_label_within_prefix("Outline"))
+            entity = EntityData(
+                entity_id=outline_id,
+                node_type=self.schema_helper.get_label_within_prefix("Outline"),
+            )
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
 
             # parse oneHopGraphData and get related chunks
@@ -137,7 +148,9 @@ class OutlineChunkRetriever(RetrieverABC):
             children_outline_ids = self.get_children_outlines(topk_outline_ids)
 
             # get related chunk for each outline
-            chunks = self.get_related_chunks(topk_outline_ids + list(children_outline_ids))
+            chunks = self.get_related_chunks(
+                topk_outline_ids + list(children_outline_ids)
+            )
 
             # to retrieve output
             out = RetrieverOutput(chunks=chunks)

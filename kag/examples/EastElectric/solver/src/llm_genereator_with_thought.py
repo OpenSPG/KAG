@@ -11,11 +11,12 @@
 # or implied.
 # flake8: noqa
 import json
-from kag.interface import GeneratorABC, LLMClient, PromptABC
+
+from kag.common.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
+from kag.interface import GeneratorABC, LLMClient
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
-from kag.common.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
 @GeneratorABC.register("llm_generator_with_thought")
@@ -65,7 +66,9 @@ class LLMGeneratorWithThought(GeneratorABC):
             2. 如果您认为所提供的文件无法回答问题，请回答“未知”。
             """
 
-        prompt = f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}问题: {query}"
+        prompt = (
+            f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}问题: {query}"
+        )
         response = self.llm_client(prompt)
         if "答案：" not in response:
             raise ValueError(f"no answer found in response: {response}")
