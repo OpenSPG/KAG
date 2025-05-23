@@ -21,7 +21,7 @@ from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import processing_phrases, to_camel_case
-from kag.builder.model.chunk import Chunk
+from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
 from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
@@ -83,6 +83,13 @@ class SchemaFreeExtractor(ExtractorABC):
             self.triple_prompt = init_prompt_with_fallback("triple", biz_scene)
 
         self.external_graph = external_graph
+        table_extractor_config = {
+            "type": "table_extractor",
+            "llm": self.llm.to_config(),
+            "table_context_prompt": "table_context",
+            "table_row_col_summary_prompt": "table_row_col_summary",
+        }
+        self.table_extractor = ExtractorABC.from_config(table_extractor_config)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -517,6 +524,10 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
+
+        if self.table_extractor is not None and input.type == ChunkTypeEnum.Table:
+            return self.table_extractor._invoke(input)
+
         title = input.name
         passage = title + "\n" + input.content
         out = []
