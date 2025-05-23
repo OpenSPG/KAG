@@ -101,7 +101,6 @@ r2:
   search_api: *search_api
   top_k: 10
 
-
 r3: &r3
   type: outline_chunk_retriever # recall chunk through outline
   search_api: *search_api
