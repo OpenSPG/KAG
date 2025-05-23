@@ -61,15 +61,17 @@ class OutlineExtractor(ExtractorABC):
             properties={"id": input.id, "name": outline_name},
         )
 
-        # add Outline_childOf_Outline edge
-        sub_graph.add_edge(
-            s_id=input.id,
-            s_label="Outline",
-            p="childOf",
-            o_id=input.parent_id,
-            o_label="Outline",
-            properties={},
-        )
+        parent_id = getattr(input, "parent_id", None)
+        if parent_id is not None:
+            # add Outline_childOf_Outline edge
+            sub_graph.add_edge(
+                s_id=input.id,
+                s_label="Outline",
+                p="childOf",
+                o_id=parent_id,
+                o_label="Outline",
+                properties={},
+            )
 
         # add Outline_relateTo_Chunk edge
         sub_graph.add_edge(
