@@ -38,7 +38,7 @@ class LLMClient(Registrable):
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
         self.enable_check = kwargs.get("enable_check", True)
-        self.max_tokens = kwargs.get("max_tokens", 32768)
+        self.max_tokens = kwargs.get("max_tokens", 8192)
 
     @retry(
         stop=stop_after_attempt(3),
