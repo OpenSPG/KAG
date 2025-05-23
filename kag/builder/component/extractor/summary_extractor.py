@@ -80,15 +80,17 @@ class SummaryExtractor(ExtractorABC):
             },
         )
 
-        # add Summary_childOf_Summary edge
-        sub_graph.add_edge(
-            s_id=input.id,
-            s_label="Summary",
-            p="childOf",
-            o_id=input.parent_id,
-            o_label="Summary",
-            properties={},
-        )
+        parent_id = getattr(input, "parent_id", None)
+        if parent_id is not None:
+            # add Summary_childOf_Summary edge
+            sub_graph.add_edge(
+                s_id=input.id,
+                s_label="Summary",
+                p="childOf",
+                o_id=parent_id,
+                o_label="Summary",
+                properties = {}
+            )
 
         # add Summary_relateTo_Chunk edge
         sub_graph.add_edge(

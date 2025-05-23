@@ -115,9 +115,15 @@ r3: &r3
   vectorize_model: *vectorize_model
   top_k: 5
 
-retriever_executor: &retriever_executor
-  type: evidence_based_reasoner
-  llm: *chat_llm
+r4: &r4
+  type: summary_chunk_retriever # recall chunk through summary
+  search_api: *search_api
+  graph_api: *graph_api
+  vectorize_model: *vectorize_model
+  top_k: 5
+
+retriever_executor: &retriever
+  type: kag_hybrid_retrieval_executor
   retrievers:
     - *r3
   merger:

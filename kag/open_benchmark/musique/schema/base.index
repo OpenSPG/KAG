@@ -1,0 +1,26 @@
+namespace MuSiQue
+
+Doc: IndexType
+  properties:
+    content:
+      index: TextAndVector
+Chunk: IndexType
+  properties:
+    content:
+      index: TextAndVector
+  relations:
+    relateTo: Doc
+Summary: IndexType
+  properties:
+    title:
+      index: TextAndVector
+  relation:
+    relateTo: Chunk
+    childOf: Summary        
+AtomicQuery: IndexType
+  properties:
+    title:
+      index: TextAndVector
+  relations:
+    relateTo: Chunk
+    similar: AtomicQuery
