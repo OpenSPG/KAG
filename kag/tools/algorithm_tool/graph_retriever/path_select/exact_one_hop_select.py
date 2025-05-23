@@ -8,7 +8,7 @@ from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     RelationData,
     OneHopGraphData,
-    parse_entity_relation, parse_attribute_relation,
+    parse_attribute_relation,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
