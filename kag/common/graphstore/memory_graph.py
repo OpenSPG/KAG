@@ -32,8 +32,10 @@ from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
 
+
 def get_node_unique_id(biz_id, label):
     return f"{biz_id}_{label}"
+
 
 class MemoryGraph:
     _instances = {}
@@ -399,13 +401,20 @@ class MemoryGraph:
         # print(f"len(nodes) = {len(nodes)}")
         vector_field_name = self._get_vector_field_name(property_key)
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        filtered_nodes, filtered_vectors = self.get_cached_tensor(label_nodes=nodes, label=label, vector_field_name=vector_field_name, device=device)
+        filtered_nodes, filtered_vectors = self.get_cached_tensor(
+            label_nodes=nodes,
+            label=label,
+            vector_field_name=vector_field_name,
+            device=device,
+        )
         if filtered_vectors.numel() == 0:
             return []
 
         if isinstance(query_vector, str):
             query_vector = self._vectorizer.vectorize(query_vector)
-        query_vector = torch.tensor(query_vector, dtype=torch.float32).unsqueeze(1).to(device)
+        query_vector = (
+            torch.tensor(query_vector, dtype=torch.float32).unsqueeze(1).to(device)
+        )
         cosine_similarity = filtered_vectors @ query_vector
         scores = 0.5 * cosine_similarity + 0.5
 
@@ -444,6 +453,7 @@ class MemoryGraph:
                 else:
                     return torch.matmul(M, v.T)
 
+        try:
             if label == "Entity":
                 nodes = self._backend_graph.vs
             else:
@@ -454,14 +464,21 @@ class MemoryGraph:
 
             vector_field_name = self._get_vector_field_name(property_key)
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            filtered_nodes, filtered_vectors = self.get_cached_tensor(label_nodes=nodes, label=label, vector_field_name=vector_field_name, device=device)
+            filtered_nodes, filtered_vectors = self.get_cached_tensor(
+                label_nodes=nodes,
+                label=label,
+                vector_field_name=vector_field_name,
+                device=device,
+            )
 
             if filtered_vectors.numel() == 0:
                 return []
             query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
             cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
-            top_data = cosine_similarity.topk(k=min(topk, len(cosine_similarity)), dim=0)
+            top_data = cosine_similarity.topk(
+                k=min(topk, len(cosine_similarity)), dim=0
+            )
             top_indices = top_data.indices.to("cpu")
             top_values = top_data.values.to("cpu")
             output = []
@@ -478,7 +495,7 @@ class MemoryGraph:
                 output.append(items)
             return output
         except Exception as e:
-            logger.warning(f"batch_vector_search warn {e}")
+            logger.warning(f"batch_vector_search failed {e}", exc_info=True)
             return []
 
     @staticmethod
