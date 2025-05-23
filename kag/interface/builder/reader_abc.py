@@ -10,9 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 from abc import ABC
-from typing import List, Optional, Union
-from kag.interface.builder.base import BuilderComponent
+from typing import List, Optional
+
 from kag.interface import Chunk, Doc
+from kag.interface.builder.base import BuilderComponent
 from knext.common.base.runnable import Input, Output
 
 
@@ -40,7 +41,7 @@ class ReaderABC(BuilderComponent, ABC):
 
     @property
     def output_types(self) -> Output:
-        return List[Chunk]
+        return Chunk
 
     @property
     def inherit_input_key(self):
