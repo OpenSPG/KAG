@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 import time
 
@@ -12,9 +13,6 @@ from kag.interface.solver.model.one_hop_graph import (
     RelationData,
 )
 from kag.common.utils import generate_random_string
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
-    KAGRetrievedResponse,
-)
 from knext.common.rest import ApiClient, Configuration
 from knext.reasoner import ReasonerApi
 from knext.reasoner.rest.models import TaskStreamRequest
@@ -29,17 +27,23 @@ from knext.reasoner.rest.models.sub_graph import SubGraph
 logger = logging.getLogger()
 
 
-def generate_ref_doc_set(tag_name, ref_type, retrieved_data_list: list):
+def extract_ids(text):
+    return re.findall(r'<reference id="([^"]+)"', text)
+
+def generate_ref_doc_set(tag_name, ref_type, retrieved_data_list: list, refer_ids: list):
     refer = []
+    refer_doc_maps = {}
     for d in retrieved_data_list:
-        refer.append(
-            RefDoc(
+        refer_doc_maps[d["id"]] = RefDoc(
                 id=d["id"],
                 content=d["content"],
                 document_id=d["document_id"],
                 document_name=d["document_name"],
+                url=d.get("url", None)
             )
-        )
+    for refer_id in refer_ids:
+        if refer_id in refer_doc_maps:
+            refer.append(refer_doc_maps[refer_id])
     return RefDocSet(id=tag_name, type=ref_type, info=refer)
 
 
@@ -536,30 +540,14 @@ Rewritten question:\n{content}
             answer += report_content
         return answer, status
 
-    def process_reference(self, reference_reports):
+    def process_reference(self, reference_reports, refer_ids):
         reference = []
         for report_data in reference_reports:
             segment_name = report_data["segment"]
             content = report_data["content"]
-            if segment_name == "reference":
-                if isinstance(content, KAGRetrievedResponse):
-                    refer_list = content.to_reference_list()
-                    ref_doc_set = generate_ref_doc_set(
-                        report_data["tag_name"], "chunk", refer_list
-                    )
-                    for ref in reference:
-                        merged_data = merge_ref_doc_set(ref, ref_doc_set)
-                        if merged_data:
-                            ref.info = merged_data.info
-                            break
-                    else:
-                        reference.append(ref_doc_set)
-                else:
-                    logger.warning(f"Unknown reference type {type(content)}")
-                    continue
-            elif segment_name == "generator_reference_all":
+            if segment_name == "generator_reference_all":
                 ref_doc_set = generate_ref_doc_set(
-                    report_data["tag_name"], "chunk", content
+                    report_data["tag_name"], "chunk", content, refer_ids
                 )
                 reference = [ref_doc_set]
         return reference
@@ -570,7 +558,10 @@ Rewritten question:\n{content}
         think, thinker_cost, graph_list = self.process_think(
             think_reports, is_finished=status != "INIT"
         )
-        reference = self.process_reference(reference_reports)
+        refer_ids = []
+        if answer:
+            refer_ids = list(set(extract_ids(answer)))
+        reference = self.process_reference(reference_reports, refer_ids)
 
         content = StreamData(
             answer=answer,

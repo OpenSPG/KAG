@@ -1,21 +1,23 @@
 import logging
 from typing import List
 
+from kag.builder.model.chunk import Chunk
+from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import ExtractorABC, LLMClient, PromptABC
-
-from kag.builder.model.chunk import Chunk
-from kag.builder.model.sub_graph import SubGraph
-from knext.schema.client import CHUNK_TYPE
 from knext.common.base.runnable import Input, Output
+from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger(__name__)
 
+
 @ExtractorABC.register("summary_extractor")
 class SummaryExtractor(ExtractorABC):
-    def __init__(self, llm_module: LLMClient = None, chunk_summary_prompt: PromptABC = None):
+    def __init__(
+        self, llm_module: LLMClient = None, chunk_summary_prompt: PromptABC = None
+    ):
         super().__init__()
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
@@ -65,18 +67,17 @@ class SummaryExtractor(ExtractorABC):
             {"content": content}, self.chunk_summary_prompt, with_json_parse=False
         )
 
-
-        sub_graph = SubGraph([],[])
+        sub_graph = SubGraph([], [])
         # add Summary Node
         sub_graph.add_node(
             id=input.id,
             name=summary_name,
             label="Summary",
-            properties = {
+            properties={
                 "id": input.id,
                 "name": summary_name,
                 "content": summary,
-            }
+            },
         )
 
         parent_id = getattr(input, "parent_id", None)
@@ -98,7 +99,7 @@ class SummaryExtractor(ExtractorABC):
             p="relateTo",
             o_id=f"{input.id}_{input.name}",
             o_label=CHUNK_TYPE,
-            properties = {}
+            properties={},
         )
 
         return [sub_graph]

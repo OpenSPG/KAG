@@ -10,8 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import logging
-from typing import List, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Union
+
+from kag.common.utils import generate_hash_id
 from kag.interface import (
     ReaderABC,
     MappingABC,
@@ -23,10 +25,6 @@ from kag.interface import (
     KAGBuilderChain,
     ExternalGraphLoaderABC,
 )
-
-from kag.common.utils import generate_hash_id
-from kag.builder.model.chunk import Chunk
-from kag.builder.model.sub_graph import SubGraph
 
 logger = logging.getLogger(__name__)
 

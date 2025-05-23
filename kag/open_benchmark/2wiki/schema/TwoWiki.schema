@@ -1,23 +1,5 @@
 namespace TwoWiki
 
-Chunk(文本块): EntityType
-     properties:
-        content(内容): Text
-          index: TextAndVector
-
-AtomicQuery(原子问): EntityType
-  properties:
-    content(内容): Text
-      index: TextAndVector
-
-Summary(文本摘要): EntityType
-     properties:
-        content(内容): Text
-          index: TextAndVector
-     relations:
-        relateTo(关联): Chunk
-        childOf(子摘要): Summary
-
 ArtificialObject(人造物体): EntityType
      properties:
         desc(描述): Text

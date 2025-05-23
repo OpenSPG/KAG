@@ -12,7 +12,9 @@
 import asyncio
 import logging
 from typing import List
+
 from tenacity import stop_after_attempt, retry
+
 from kag.interface import (
     SolverPipelineABC,
     PlannerABC,
@@ -118,7 +120,7 @@ class KAGStaticPipeline(SolverPipelineABC):
         Returns:
             Final generated answer from the execution context
         """
-        num_retry = self.max_iteration -1
+        num_retry = self.max_iteration - 1
         finished = False
         while True:
             context: Context = Context()
