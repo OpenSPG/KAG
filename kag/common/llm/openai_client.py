@@ -17,7 +17,6 @@ from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 from kag.interface.common.llm_client import LLMClient
 from typing import Callable
 
-
 from kag.interface.solver.reporter_abc import do_report
 
 logging.getLogger("openai").setLevel(logging.ERROR)
@@ -48,6 +47,7 @@ class OpenAIClient(LLMClient):
         timeout: float = None,
         max_rate: float = 1000,
         time_period: float = 1,
+        think: bool = False,
         **kwargs,
     ):
         """
@@ -71,6 +71,7 @@ class OpenAIClient(LLMClient):
         self.stream = stream
         self.temperature = temperature
         self.timeout = timeout
+        self.think = think
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.aclient = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
         self.check()
@@ -119,6 +120,7 @@ class OpenAIClient(LLMClient):
             timeout=self.timeout,
             tools=tools,
             max_tokens=self.max_tokens,
+            extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         usages = []
         if not self.stream:
@@ -203,6 +205,7 @@ class OpenAIClient(LLMClient):
             timeout=self.timeout,
             tools=tools,
             max_tokens=self.max_tokens,
+            extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         usages = []
         if not self.stream:

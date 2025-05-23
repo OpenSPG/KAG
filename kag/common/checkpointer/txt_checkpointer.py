@@ -38,7 +38,7 @@ class TxtCheckPointer(CheckPointer):
                 for line in reader:
                     data = json.loads(line)
                     ckpt[data["id"]] = data["value"]
-        self._writer = open(self._ckpt_file_path, "a")
+        self._writer = open(self._ckpt_file_path, "a", encoding="utf-8", newline="\n")
         return ckpt
 
     def exists(self, key):

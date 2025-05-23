@@ -78,7 +78,7 @@ class OutlineChunkRetriever(RetrieverABC):
         return topk_outline_ids
 
     """
-        get children outline of current outline 
+        get children outline of current outline
     """
 
     def get_children_outlines(self, outline_ids):
@@ -139,7 +139,7 @@ class OutlineChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return {}
+                return RetrieverOutput()
 
             # recall outline through semantic vector
             topk_outline_ids = self.get_outlines(query, top_k)
