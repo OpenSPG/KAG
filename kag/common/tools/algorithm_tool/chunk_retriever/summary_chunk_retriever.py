@@ -27,8 +27,8 @@ logger = logging.getLogger()
 chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 
 
-@RetrieverABC.register("outline_chunk_retriever")
-class OutlineChunkRetriever(RetrieverABC):
+@RetrieverABC.register("summary_chunk_retriever")
+class SummaryChunkRetriever(RetrieverABC):
     def __init__(
         self,
         vectorize_model: VectorizeModelABC = None,
@@ -57,39 +57,39 @@ class OutlineChunkRetriever(RetrieverABC):
         )
         super().__init__(top_k, **kwargs)
 
-    def get_outlines(self, query, top_k)->List[str]:
-        topk_outline_ids = []
+    def get_summaries(self, query, top_k)->List[str]:
+        topk_summary_ids = []
         query_vector = self.vectorize_model.vectorize(query)
 
-        # recall top_k outline
-        top_k_outlines = self.search_api.search_vector(
-            label=self.schema_helper.get_label_within_prefix("Outline"),
-            property_key="name",
+        # recall top_k summaries
+        top_k_summaries = self.search_api.search_vector(
+            label=self.schema_helper.get_label_within_prefix("Summary"),
+            property_key="content",
             query_vector=query_vector,
             topk=top_k,
         )
-        for item in top_k_outlines:
-            topk_outline_ids.append(item["node"]["id"])
+        for item in top_k_summaries:
+            topk_summary_ids.append(item["node"]["id"])
 
-        return topk_outline_ids
+        return topk_summary_ids
 
     """
-        get children outline of current outline
+        get children summaries of current summary
     """
-    def get_children_outlines(self, outline_ids):
-        children_outline_ids = set()
-        for outline_id in outline_ids:
-            entity = EntityData(entity_id=outline_id, node_type=self.schema_helper.get_label_within_prefix("Outline"))
+    def get_children_summaries(self, summary_ids):
+        children_summary_ids = set()
+        for summary_id in summary_ids:
+            entity = EntityData(entity_id=summary_id, node_type=self.schema_helper.get_label_within_prefix("Summary"))
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
             if not oneHopGraphData:
                 continue
             if not oneHopGraphData.in_relations:
                 continue
-            # parse oneHopGraphData and get children outline
+            # parse oneHopGraphData and get children summaries
 
             for relationData in oneHopGraphData.in_relations.get("childOf", []):
-                children_outline_ids.add(relationData.from_id)
-        return children_outline_ids
+                children_summary_ids.add(relationData.from_id)
+        return children_summary_ids
 
     def get_chunk_data(self, chunk_id, score = 0.0):
         node = self.graph_api.get_entity_prop_by_id(
@@ -104,11 +104,11 @@ class OutlineChunkRetriever(RetrieverABC):
             score=score,
         )
 
-    def get_related_chunks(self, outline_ids):
+    def get_related_chunks(self, summary_ids):
         chunks = []
         chunk_ids = set()
-        for outline_id in outline_ids:
-            entity = EntityData(entity_id=outline_id, node_type=self.schema_helper.get_label_within_prefix("Outline"))
+        for summary_id in summary_ids:
+            entity = EntityData(entity_id=summary_id, node_type=self.schema_helper.get_label_within_prefix("Summary"))
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
 
             # parse oneHopGraphData and get related chunks
@@ -130,14 +130,14 @@ class OutlineChunkRetriever(RetrieverABC):
                 logger.error("chunk query is emtpy", exc_info=True)
                 return RetrieverOutput()
 
-            # recall outline through semantic vector
-            topk_outline_ids = self.get_outlines(query, top_k)
+            # recall summary through semantic vector
+            topk_summary_ids = self.get_summaries(query, top_k)
 
-            # recall children outlines
-            children_outline_ids = self.get_children_outlines(topk_outline_ids)
+            # recall children summaries
+            children_summary_ids = self.get_children_summaries(topk_summary_ids)
 
-            # get related chunk for each outline
-            chunks = self.get_related_chunks(topk_outline_ids + list(children_outline_ids))
+            # get related chunk for each summary
+            chunks = self.get_related_chunks(topk_summary_ids + list(children_summary_ids))
 
             # to retrieve output
             out = RetrieverOutput(chunks=chunks)
@@ -150,4 +150,4 @@ class OutlineChunkRetriever(RetrieverABC):
 
     @property
     def input_indices(self):
-        return ["Outline"]
+        return ["Summary"]

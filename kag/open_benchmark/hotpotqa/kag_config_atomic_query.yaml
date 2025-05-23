@@ -1,27 +1,24 @@
-#------------project configuration start----------------#
 openie_llm: &openie_llm
-  api_key:
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen2.5-7b-instruct
-  temperature: 0.7
   type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
 
 chat_llm: &chat_llm
-  api_key:
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
-  temperature: 0.0
   type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
+  stream: false
 
 ner_llm:
-  api_key:
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
-  temperature: 0.0
   type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
 
 vectorize_model: &vectorize_model
-  api_key:
+  api_key: sk-
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -34,47 +31,31 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '5'
+  id: '1'
   language: en
-  namespace: EastElectric
+  namespace: HotpotQA
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
-
 e1: &e1
-  type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: atomic_query_extractor
   llm: *openie_llm
-  ner_prompt:
-    type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
-  std_prompt:
-    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-  triple_prompt:
-    type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+  prompt:
+    type: atomic_query_extract
 
-e2: &e2
-  type: outline_extractor # kag.builder.component.extractor.outline_extractor.OutlineExtractor
-
-e3: &e3
-  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
-
-e4: &e4
-  type: chunk_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
 
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      - *e2
-      - *e3
-      - *e4
+      - *e1
     reader:
-      type: md_reader # kag.builder.component.reader.dict_reader.DictReader
-      cut_depth: 6
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 1000
+      split_length: 100000
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
@@ -84,8 +65,11 @@ kag_builder_pipeline:
   num_threads_per_chain: 1
   num_chains: 16
   scanner:
-    type: file_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
 #------------kag-builder configuration end----------------#
+
+
+
 
 #------------kag-solver configuration start----------------#
 search_api: &search_api
@@ -95,36 +79,28 @@ graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 r1: &r1
+  type: atomic_query_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  top_k: 10
+
+r2: &r2
   type: vector_chunk_retriever
   vectorize_model: *vectorize_model
   search_api: *search_api
   top_k: 10
 
-r2: &r2
-  type: text_chunk_retriever
-  search_api: *search_api
-  top_k: 10
-
-r3: &r3
-  type: outline_chunk_retriever # recall chunk through outline
-  search_api: *search_api
-  graph_api: *graph_api
-  vectorize_model: *vectorize_model
-  top_k: 5
-
-r4: &r4
-  type: summary_chunk_retriever # recall chunk through summary
-  search_api: *search_api
-  graph_api: *graph_api
-  vectorize_model: *vectorize_model
-  top_k: 5
-
 retriever_executor: &retriever
-  type: kag_hybrid_retrieval_executor
+  type: evidence_based_reasoner
+  llm: *chat_llm
   retrievers:
-    - *r3
+    - *r1
+    - *r2
   merger:
     type: kag_merger
+
+
 
 kag_solver_pipeline:
   type: kag_static_pipeline
@@ -138,8 +114,6 @@ kag_solver_pipeline:
   executors:
     - *retriever
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: default_multi_hop_generator
 #------------kag-solver configuration end----------------#

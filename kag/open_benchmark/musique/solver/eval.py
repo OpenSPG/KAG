@@ -2,7 +2,8 @@ import json
 import logging
 import os
 from typing import List
-
+import time
+from kag.interface import LLMClient
 from kag.interface import SolverPipelineABC
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
@@ -72,6 +73,7 @@ if __name__ == "__main__":
     qa_file_path = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file}"
     )
+    start = time.time()
     do_main(
         qa_file_path=qa_file_path,
         thread_num=args.thread_num,
@@ -79,5 +81,10 @@ if __name__ == "__main__":
         collect_file=args.res_file,
         eval_obj=EvaForMusique(),
     )
-    # obj = EvaForMusique()
-    # res = asyncio.run(obj.qa("When did the party that hold the majority in the House of Reps take control of the branch that approves members of the American cabinet?", ""))
+    end = time.time()
+    token_meter = LLMClient.get_token_meter()
+    stat = token_meter.to_dict()
+
+    logger.info(
+        f"\n\nbenchmark successfully for {qa_file_path}\n\nTimes cost:{end-start}s\n\nTokens cost: {stat}"
+    )
