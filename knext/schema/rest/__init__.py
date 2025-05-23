@@ -58,6 +58,7 @@ from knext.schema.rest.models.type.operator_key import OperatorKey
 from knext.schema.rest.models.type.event_type import EventType
 from knext.schema.rest.models.type.spg_type_ref_basic_info import SpgTypeRefBasicInfo
 from knext.schema.rest.models.type.entity_type import EntityType
+from knext.schema.rest.models.type.index_type import IndexType
 from knext.schema.rest.models.type.spg_type_advanced_config import SpgTypeAdvancedConfig
 from knext.schema.rest.models.type.concept_type import ConceptType
 from knext.schema.rest.models.type.base_advanced_type import BaseAdvancedType

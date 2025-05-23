@@ -1,0 +1,13 @@
+namespace TwoWiki
+
+Doc(文档): IndexType
+  properties:
+    content(内容): Text
+      index: TextAndVector
+
+Chunk(文本块): IndexType
+  properties:
+    content(内容): Text
+      index: TextAndVector
+  relations:
+    relateTo(关联文档): Doc

@@ -30,7 +30,7 @@ from knext.schema.model.spg_type import (
     StandardType,
     Property,
     Relation,
-    BasicType,
+    BasicType, IndexType,
 )
 from knext.schema.client import SchemaClient
 
@@ -75,6 +75,7 @@ class SPGSchemaMarkLang:
     concept_internal_property = {"stdId", "alias"}
     keyword_type = {
         "EntityType",
+        "IndexType",
         "ConceptType",
         "EventType",
         "StandardType",
@@ -178,6 +179,7 @@ class SPGSchemaMarkLang:
         self.concept_internal_property = {"stdId", "alias"}
         self.keyword_type = {
             "EntityType",
+            "IndexType",
             "ConceptType",
             "EventType",
             "StandardType",
@@ -297,6 +299,10 @@ class SPGSchemaMarkLang:
             spg_type = None
             if type_class == "EntityType":
                 spg_type = EntityType(
+                    name=self.get_type_name_with_ns(type_name), name_zh=type_name_zh
+                )
+            elif type_class == "IndexType":
+                spg_type = IndexType(
                     name=self.get_type_name_with_ns(type_name), name_zh=type_name_zh
                 )
             elif type_class == "ConceptType":
@@ -642,6 +648,8 @@ class SPGSchemaMarkLang:
             elif predicate_class in self.defined_types:
                 spg_type_enum_txt = self.defined_types[predicate_class]
                 if spg_type_enum_txt == "EntityType":
+                    spg_type_enum = SpgTypeEnum.Entity
+                elif spg_type_enum_txt == "IndexType":
                     spg_type_enum = SpgTypeEnum.Entity
                 elif spg_type_enum_txt == "ConceptType":
                     spg_type_enum = SpgTypeEnum.Concept
