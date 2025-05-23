@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import asyncio
 from typing import List
 
 import knext.common.cache
@@ -63,48 +64,59 @@ class SummaryChunkRetriever(RetrieverABC):
         )
         super().__init__(top_k, **kwargs)
 
-    def get_summaries(self, query, top_k) -> List[str]:
+    async def _get_summaries(self, query, top_k) -> List[str]:
         topk_summary_ids = []
-        query_vector = self.vectorize_model.vectorize(query)
+        query_vector = await self.vectorize_model.avectorize(query)
 
         # recall top_k summaries
-        top_k_summaries = self.search_api.search_vector(
-            label=self.schema_helper.get_label_within_prefix("Summary"),
-            property_key="content",
-            query_vector=query_vector,
-            topk=top_k,
+        top_k_summaries = await asyncio.to_thread(
+            lambda: self.search_api.search_vector(
+                label=self.schema_helper.get_label_within_prefix("Summary"),
+                property_key="content",
+                query_vector=query_vector,
+                topk=top_k,
+            )
         )
         for item in top_k_summaries:
             topk_summary_ids.append(item["node"]["id"])
 
         return topk_summary_ids
 
+    async def _get_children_summary_ids(self, summary_id) -> List[str]:
+        entity = EntityData(
+            entity_id=summary_id,
+            node_type=self.schema_helper.get_label_within_prefix("Summary"),
+        )
+        oneHopGraphData = await asyncio.to_thread(
+            lambda: self.graph_api.get_entity_one_hop(entity)
+        )
+        if not oneHopGraphData:
+            return []
+        if not oneHopGraphData.in_relations:
+            return []
+        children_summary_ids = set()
+        for relationData in oneHopGraphData.in_relations.get("childOf", []):
+            children_summary_ids.add(relationData.from_id)
+        return list(children_summary_ids)
+
     """
         get children summaries of current summary
     """
 
-    def get_children_summaries(self, summary_ids):
-        children_summary_ids = set()
+    async def _get_children_summaries(self, summary_ids):
+        tasks = []
         for summary_id in summary_ids:
-            entity = EntityData(
-                entity_id=summary_id,
-                node_type=self.schema_helper.get_label_within_prefix("Summary"),
-            )
-            oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
-            if not oneHopGraphData:
-                continue
-            if not oneHopGraphData.in_relations:
-                continue
-            # parse oneHopGraphData and get children summaries
-
-            for relationData in oneHopGraphData.in_relations.get("childOf", []):
-                children_summary_ids.add(relationData.from_id)
+            tasks.append(self._get_children_summary_ids(summary_id))
+        results = await asyncio.gather(*tasks)
+        children_summary_ids = set(item for result in results for item in result)
         return children_summary_ids
 
-    def get_chunk_data(self, chunk_id, score=0.0):
-        node = self.graph_api.get_entity_prop_by_id(
-            label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
-            biz_id=chunk_id,
+    async def _get_chunk_data(self, chunk_id, score=0.0):
+        node = await asyncio.to_thread(
+            lambda: self.graph_api.get_entity_prop_by_id(
+                label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+                biz_id=chunk_id,
+            )
         )
         node_dict = dict(node.items())
         return ChunkData(
@@ -114,25 +126,35 @@ class SummaryChunkRetriever(RetrieverABC):
             score=score,
         )
 
-    def get_related_chunks(self, summary_ids):
-        chunks = []
+    async def _get_related_chunk_ids(self, summary_id) -> List[str]:
+        entity = EntityData(
+            entity_id=summary_id,
+            node_type=self.schema_helper.get_label_within_prefix("Summary"),
+        )
+        oneHopGraphData = await asyncio.to_thread(
+            lambda: self.graph_api.get_entity_one_hop(entity)
+        )
+
+        # parse oneHopGraphData and get related chunks
         chunk_ids = set()
+        for relationData in oneHopGraphData.out_relations.get("relateTo", []):
+            chunk_ids.add(relationData.end_id)
+        return list(chunk_ids)
+
+    async def _get_related_chunks(self, summary_ids):
+        tasks = []
         for summary_id in summary_ids:
-            entity = EntityData(
-                entity_id=summary_id,
-                node_type=self.schema_helper.get_label_within_prefix("Summary"),
-            )
-            oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
+            tasks.append(self._get_related_chunk_ids(summary_id))
+        results = await asyncio.gather(*tasks)
+        chunk_ids = set(item for result in results for item in result)
 
-            # parse oneHopGraphData and get related chunks
-            for relationData in oneHopGraphData.out_relations.get("relateTo", []):
-                chunk_ids.add(relationData.end_id)
-
+        tasks = []
         for chunk_id in chunk_ids:
-            chunks.append(self.get_chunk_data(chunk_id))
+            tasks.append(self._get_chunk_data(chunk_id))
+        chunks = await asyncio.gather(*tasks)
         return chunks
 
-    def invoke(self, task, **kwargs) -> RetrieverOutput:
+    async def ainvoke(self, task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
         top_k = kwargs.get("top_k", self.top_k)
         try:
@@ -144,13 +166,13 @@ class SummaryChunkRetriever(RetrieverABC):
                 return RetrieverOutput()
 
             # recall summary through semantic vector
-            topk_summary_ids = self.get_summaries(query, top_k)
+            topk_summary_ids = await self._get_summaries(query, top_k)
 
             # recall children summaries
-            children_summary_ids = self.get_children_summaries(topk_summary_ids)
+            children_summary_ids = await self._get_children_summaries(topk_summary_ids)
 
             # get related chunk for each summary
-            chunks = self.get_related_chunks(
+            chunks = await self._get_related_chunks(
                 topk_summary_ids + list(children_summary_ids)
             )
 
