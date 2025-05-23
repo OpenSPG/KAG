@@ -362,6 +362,7 @@ class SPGSchemaMarkLang:
             parent_spg_type = self.types[ns_type_class]
             assert parent_spg_type.spg_type_enum in [
                 SpgTypeEnum.Entity,
+                SpgTypeEnum.Index,
                 SpgTypeEnum.Event,
             ], self.error_msg(
                 f'"{type_class}" cannot be inherited, only entity/event type can be inherited.'
@@ -650,7 +651,7 @@ class SPGSchemaMarkLang:
                 if spg_type_enum_txt == "EntityType":
                     spg_type_enum = SpgTypeEnum.Entity
                 elif spg_type_enum_txt == "IndexType":
-                    spg_type_enum = SpgTypeEnum.Entity
+                    spg_type_enum = SpgTypeEnum.Index
                 elif spg_type_enum_txt == "ConceptType":
                     spg_type_enum = SpgTypeEnum.Concept
                 elif spg_type_enum_txt == "EventType":
@@ -1089,7 +1090,7 @@ class SPGSchemaMarkLang:
             self.indent_level_pos[self.current_parsing_level] = indent_count
 
     def is_internal_property(self, prop: Property, spg_type: SpgTypeEnum):
-        if spg_type == SpgTypeEnum.Entity or spg_type == SpgTypeEnum.Standard:
+        if spg_type == SpgTypeEnum.Entity or spg_type == SpgTypeEnum.Standard or spg_type == SpgTypeEnum.Index:
             return prop in self.entity_internal_property
 
         elif spg_type == SpgTypeEnum.Concept:
