@@ -72,6 +72,7 @@ class OpenAIClient(LLMClient):
         self.temperature = temperature
         self.timeout = timeout
         self.think = think
+        self.stop = kwargs.get("stop", None)
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.aclient = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
         self.check()
@@ -118,6 +119,7 @@ class OpenAIClient(LLMClient):
             timeout=self.timeout,
             tools=tools,
             max_tokens=self.max_tokens,
+            stop=self.stop,
             extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         if not self.stream:

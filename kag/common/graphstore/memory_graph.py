@@ -364,7 +364,11 @@ class MemoryGraph:
         if emb_cache_key in self._emb_cache:
             filtered_nodes, filtered_vectors = self._emb_cache[emb_cache_key]
         else:
-            vectors = label_nodes.get_attribute_values(vector_field_name)
+            try:
+                vectors = label_nodes.get_attribute_values(vector_field_name)
+            except Exception as e:
+                logger.warning(f"get_cached_tensor index:{vector_field_name} not found in {label}")
+                return [], []
             filtered_nodes = []
             filtered_vectors = []
             for node, vector in zip(label_nodes, vectors):
@@ -407,7 +411,7 @@ class MemoryGraph:
             vector_field_name=vector_field_name,
             device=device,
         )
-        if filtered_vectors.numel() == 0:
+        if len(filtered_nodes) == 0 or filtered_vectors.numel() == 0:
             return []
 
         if isinstance(query_vector, str):
@@ -469,7 +473,7 @@ class MemoryGraph:
                 device=device,
             )
 
-            if filtered_vectors.numel() == 0:
+            if len(filtered_nodes) == 0 or filtered_vectors.numel() == 0:
                 return []
             query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
             cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
