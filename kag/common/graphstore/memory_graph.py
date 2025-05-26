@@ -398,6 +398,7 @@ class MemoryGraph:
         :param kwargs: other optional arguments
         """
         try:
+
             def batch_cosine_similarity(v, M, require_norm=False):
                 if require_norm:
                     v_norm = torch.norm(v, dim=1, keepdim=True)
@@ -431,16 +432,18 @@ class MemoryGraph:
                         filtered_nodes.append(node)
                         filtered_vectors.append(vector)
 
-                filtered_vectors = torch.tensor(filtered_vectors, dtype=torch.float32).to(
-                    device
-                )
+                filtered_vectors = torch.tensor(
+                    filtered_vectors, dtype=torch.float32
+                ).to(device)
                 self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
             if filtered_vectors.numel() == 0:
                 return []
             query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
             cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
-            top_data = cosine_similarity.topk(k=min(topk, len(cosine_similarity)), dim=0)
+            top_data = cosine_similarity.topk(
+                k=min(topk, len(cosine_similarity)), dim=0
+            )
             top_indices = top_data.indices.to("cpu")
             top_values = top_data.values.to("cpu")
             output = []
