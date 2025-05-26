@@ -78,6 +78,10 @@ class KAGIndexManager(Registrable):
         index_costs = {k: v.cost for k, v in self.indices.items()}
         return f"The cost of each index are as follow:\n{index_costs}"
 
+    @property
+    def as_default(self) -> bool:
+        return False
+
     def get_meta(self):
         return {
             "name": self.name,
@@ -87,6 +91,7 @@ class KAGIndexManager(Registrable):
             "index_cost": self.index_cost,
             "retrieval_method": self.retrieval_method,
             "applicable_scenarios": self.applicable_scenarios,
+            "as_default": self.as_default,
         }
 
     @property
@@ -142,7 +147,7 @@ AtomicQuery(原子问): EntityType
         """
 
     @property
-    def applicable_scenarios(self) -> str:
+    def index_cost(self) -> str:
         msg = """
         索引构建的成本：
         
@@ -154,7 +159,7 @@ AtomicQuery(原子问): EntityType
         return msg
 
     @property
-    def index_cost(self) -> str:
+    def applicable_scenarios(self) -> str:
         msg = """
         检索方法描述：
         
