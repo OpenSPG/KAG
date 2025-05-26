@@ -89,7 +89,7 @@ class SummaryExtractor(ExtractorABC):
                 p="childOf",
                 o_id=parent_id,
                 o_label="Summary",
-                properties = {}
+                properties={},
             )
 
         # add Summary_relateTo_Chunk edge
