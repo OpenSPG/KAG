@@ -176,6 +176,10 @@ class SPGServerBridge:
     def get_index_manager_info(
         self, index_manager_name, llm_config, vectorize_model_config
     ):
+        if isinstance(llm_config, str):
+            llm_config = json.loads(llm_config)
+        if isinstance(vectorize_model_config, str):
+            vectorize_model_config = json.loads(vectorize_model_config)
         config = {
             "type": index_manager_name,
             "llm_config": llm_config,
