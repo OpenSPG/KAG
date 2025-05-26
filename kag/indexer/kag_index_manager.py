@@ -8,7 +8,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-
+# flake8: noqa
 from typing import List, Dict
 
 from knext.schema.client import SchemaClient
@@ -84,7 +84,22 @@ class KAGIndexManager(Registrable):
             "description": self.description,
             "schema": self.schema,
             "config": self._config,
+            "index_cost": self.index_cost,
+            "retrieval_method": self.retrieval_method,
+            "applicable_scenarios": self.applicable_scenarios,
         }
+
+    @property
+    def applicable_scenarios(self) -> str:
+        pass
+
+    @property
+    def index_cost(self) -> str:
+        pass
+
+    @property
+    def retrieval_method(self) -> str:
+        pass
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
@@ -125,6 +140,54 @@ AtomicQuery(原子问): EntityType
     content(内容): Text
       index: TextAndVector
         """
+
+    @property
+    def applicable_scenarios(self) -> str:
+        pass
+
+    """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+    """
+
+    @property
+    def index_cost(self) -> str:
+        pass
+
+    """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        
+        # recall_atomic_questions, 基于question title，通过bm25/emb 等实现atomic question召回
+        # get_qa_associate_chunks, 基于chunk 与 question 的关联，实现chunk召回
+        chunks2 = get_qa_associate_chunks(recall_atomic_question(rewrite(sub_query)))
+        
+        # recall_summary, 基于summary title，通过bm25/emb 等实现summary召回
+        # get_summary_associate_chunks, 基于chunk 与summary 的关联实现chunk召回
+        chunks3 = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))
+        
+        # recall_outline，基于outline title, 通过bm25/emb 等实现outline召回
+        # recall_outline, 基于outline_childOf->outline, 实现outline 扩展召回
+        # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
+        chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
+        
+        # recall_diagram，基于diagram title, 通过bm25/emb 等实现diagram召回
+        # get_diagram_associate_chunks, 基于chunk 与 diagram 关联实现chunk 召回
+        chunks5 = get_diagram_associate_chunks(recall_diagram(rewrite(sub_query)))
+        
+        ……
+        return [chunks1,chunks2,chunks3,chunks4, chunks5,…]
+    """
+
+    @property
+    def retrieval_method(self) -> str:
+        pass
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
