@@ -16,7 +16,13 @@ import logging
 
 from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.interface import RetrieverABC, VectorizeModelABC, ChunkData, RetrieverOutput, EntityData
+from kag.interface import (
+    RetrieverABC,
+    VectorizeModelABC,
+    ChunkData,
+    RetrieverOutput,
+    EntityData,
+)
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
@@ -35,7 +41,7 @@ class SummaryChunkRetriever(RetrieverABC):
         search_api: SearchApiABC = None,
         graph_api: GraphApiABC = None,
         top_k: int = 10,
-        score_threshold = 0.85,
+        score_threshold=0.85,
         **kwargs,
     ):
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
@@ -44,9 +50,9 @@ class SummaryChunkRetriever(RetrieverABC):
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
         )
-        self.graph_api = graph_api or GraphApiABC.from_config({
-            "type": "openspg_graph_api"
-        })
+        self.graph_api = graph_api or GraphApiABC.from_config(
+            {"type": "openspg_graph_api"}
+        )
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
@@ -57,7 +63,7 @@ class SummaryChunkRetriever(RetrieverABC):
         )
         super().__init__(top_k, **kwargs)
 
-    def get_summaries(self, query, top_k)->List[str]:
+    def get_summaries(self, query, top_k) -> List[str]:
         topk_summary_ids = []
         query_vector = self.vectorize_model.vectorize(query)
 
@@ -76,10 +82,14 @@ class SummaryChunkRetriever(RetrieverABC):
     """
         get children summaries of current summary
     """
+
     def get_children_summaries(self, summary_ids):
         children_summary_ids = set()
         for summary_id in summary_ids:
-            entity = EntityData(entity_id=summary_id, node_type=self.schema_helper.get_label_within_prefix("Summary"))
+            entity = EntityData(
+                entity_id=summary_id,
+                node_type=self.schema_helper.get_label_within_prefix("Summary"),
+            )
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
             if not oneHopGraphData:
                 continue
@@ -91,7 +101,7 @@ class SummaryChunkRetriever(RetrieverABC):
                 children_summary_ids.add(relationData.from_id)
         return children_summary_ids
 
-    def get_chunk_data(self, chunk_id, score = 0.0):
+    def get_chunk_data(self, chunk_id, score=0.0):
         node = self.graph_api.get_entity_prop_by_id(
             label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
             biz_id=chunk_id,
@@ -108,7 +118,10 @@ class SummaryChunkRetriever(RetrieverABC):
         chunks = []
         chunk_ids = set()
         for summary_id in summary_ids:
-            entity = EntityData(entity_id=summary_id, node_type=self.schema_helper.get_label_within_prefix("Summary"))
+            entity = EntityData(
+                entity_id=summary_id,
+                node_type=self.schema_helper.get_label_within_prefix("Summary"),
+            )
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
 
             # parse oneHopGraphData and get related chunks
@@ -137,7 +150,9 @@ class SummaryChunkRetriever(RetrieverABC):
             children_summary_ids = self.get_children_summaries(topk_summary_ids)
 
             # get related chunk for each summary
-            chunks = self.get_related_chunks(topk_summary_ids + list(children_summary_ids))
+            chunks = self.get_related_chunks(
+                topk_summary_ids + list(children_summary_ids)
+            )
 
             # to retrieve output
             out = RetrieverOutput(chunks=chunks)

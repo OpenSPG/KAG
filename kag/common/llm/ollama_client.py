@@ -86,9 +86,9 @@ class OllamaClient(LLMClient):
         """
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
-        reporter = kwargs.get("reporter", None)
-        segment_name = kwargs.get("segment_name", None)
-        tag_name = kwargs.get("tag_name", None)
+        # reporter = kwargs.get("reporter", None)
+        # segment_name = kwargs.get("segment_name", None)
+        # tag_name = kwargs.get("tag_name", None)
         messages = kwargs.get("messages", None)
         token_meter = LLMClient.get_token_meter()
         if messages is None:
