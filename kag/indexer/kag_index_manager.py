@@ -143,22 +143,19 @@ AtomicQuery(原子问): EntityType
 
     @property
     def applicable_scenarios(self) -> str:
-        pass
-
-    """
+        msg = """
         索引构建的成本：
         
         1、抽取模型消耗：7B xx tokens
         2、向量模型消耗：bge-m3 xx tokens
         3、耗时：xx 分钟
         4、存储：xx GB
-    """
+        """
+        return msg
 
     @property
     def index_cost(self) -> str:
-        pass
-
-    """
+        msg = """
         检索方法描述：
         
         # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
@@ -183,7 +180,8 @@ AtomicQuery(原子问): EntityType
         
         ……
         return [chunks1,chunks2,chunks3,chunks4, chunks5,…]
-    """
+        """
+        return msg
 
     @property
     def retrieval_method(self) -> str:
