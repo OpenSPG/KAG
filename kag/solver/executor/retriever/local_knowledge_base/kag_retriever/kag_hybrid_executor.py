@@ -305,6 +305,7 @@ class KagHybridExecutor(ExecutorABC):
                 executor_task=task,
                 reporter=reporter,
                 segment_name=tag_id,
+                context_graph=context.variables_graph,
             )
             kag_response.graph_data = graph_data
             if graph_data:

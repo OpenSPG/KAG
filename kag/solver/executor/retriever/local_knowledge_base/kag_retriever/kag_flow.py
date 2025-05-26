@@ -176,7 +176,7 @@ class KAGFlow:
         if input_data is None:
             input_data = []
 
-        cur_graph_data = KgGraph()
+        cur_graph_data = kwargs.get("context_graph", KgGraph())
         cur_graph_data, _ = _merge_graph(cur_graph_data, input_data)
         cur_task.graph_data = cur_graph_data
 
