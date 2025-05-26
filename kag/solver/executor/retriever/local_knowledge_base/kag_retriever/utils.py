@@ -4,8 +4,9 @@ from typing import List, Tuple
 
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface.solver.base_model import LogicNode
-from kag.interface.solver.model.one_hop_graph import RetrievedData, ChunkData
+from kag.interface.solver.model.one_hop_graph import RetrievedData
 from knext.schema.client import CHUNK_TYPE
+from kag.interface.common.data_model.chunk import Chunk
 
 logger = logging.getLogger()
 
@@ -38,12 +39,12 @@ def generate_step_query(
     return sub_query
 
 
-def get_chunks(input_data: List[RetrievedData]) -> List[ChunkData]:
+def get_chunks(input_data: List[RetrievedData]) -> List[Chunk]:
     if not input_data:
         return []
     chunks = []
     for retrieved_data in input_data:
-        if isinstance(retrieved_data, ChunkData):
+        if isinstance(retrieved_data, Chunk):
             chunks.append(retrieved_data)
     return chunks
 
@@ -72,12 +73,12 @@ def get_all_docs_by_id(doc_ids: List[Tuple[str, float]], graph_api, schema_helpe
                 biz_id=doc_id,
             )
             node_dict = dict(node.items())
-            return doc_id, ChunkData(
+            return doc_id, Chunk(
                 content=node_dict["content"].replace("_split_0", ""),
                 title=node_dict["name"].replace("_split_0", ""),
                 chunk_id=doc_id,
                 score=doc_score,
-                properties=node_dict
+                properties=node_dict,
             )
         except Exception as e:
             logger.warning(f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True)

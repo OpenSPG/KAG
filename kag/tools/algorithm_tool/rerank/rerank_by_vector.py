@@ -3,11 +3,11 @@ from typing import List
 
 from kag.common.conf import KAG_CONFIG
 from kag.interface import ToolABC, VectorizeModelABC, RerankModelABC
-from kag.interface.solver.model.one_hop_graph import ChunkData
+from kag.interface.common.data_model.chunk import Chunk
 from kag.common.text_sim_by_vector import TextSimilarity, cosine_similarity
 
 
-def _flat_passages_set(passages_set: List[List[ChunkData]]):
+def _flat_passages_set(passages_set: List[List[Chunk]]):
     """
     Flattens the passages set and scores each passage based on its position.
 
@@ -53,12 +53,12 @@ class RerankByVector(ToolABC):
         self,
         query,
         sub_queries: List[str],
-        sub_question_chunks: List[List[ChunkData]],
+        sub_question_chunks: List[List[Chunk]],
         **kwargs,
     ):
         return self.rerank_docs([query] + sub_queries, sub_question_chunks)
 
-    def rerank_docs(self, queries: List[str], chunks: List[List[ChunkData]]):
+    def rerank_docs(self, queries: List[str], chunks: List[List[Chunk]]):
         if not isinstance(queries, list):
             queries = [queries]
         if len(chunks) == 0:
@@ -99,12 +99,12 @@ class RerankByModel(ToolABC):
         self,
         query,
         sub_queries: List[str],
-        sub_question_chunks: List[List[ChunkData]],
+        sub_question_chunks: List[List[Chunk]],
         **kwargs,
     ):
         return self.rerank_docs([query] + sub_queries, sub_question_chunks)
 
-    def rerank_docs(self, queries: List[str], chunks: List[List[ChunkData]]):
+    def rerank_docs(self, queries: List[str], chunks: List[List[Chunk]]):
         if not isinstance(queries, list):
             queries = [queries]
         if len(chunks) == 0:

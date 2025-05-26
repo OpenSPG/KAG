@@ -9,10 +9,10 @@ from kag.common.utils import get_recall_node_label
 from kag.interface import ToolABC, VectorizeModelABC, LLMClient
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
-    ChunkData,
     RelationData,
     Prop,
 )
+from kag.interface.common.data_model.chunk import Chunk
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.common.config import LogicFormConfiguration
@@ -132,6 +132,7 @@ class PprChunkRetriever(ToolABC):
         matched_docs = []
         hits_docs = []
         start_time = time.time()
+
         def process_get_doc_id(doc_id):
             if isinstance(doc_id, tuple):
                 doc_score = doc_id[1]
@@ -144,12 +145,12 @@ class PprChunkRetriever(ToolABC):
                     biz_id=doc_id,
                 )
                 node_dict = dict(node.items())
-                return doc_id, ChunkData(
+                return doc_id, Chunk(
                     content=node_dict["content"].replace("_split_0", ""),
                     title=node_dict["name"].replace("_split_0", ""),
                     chunk_id=doc_id,
                     score=doc_score,
-                    properties=node_dict
+                    properties=node_dict,
                 )
             except Exception as e:
                 logger.warning(
@@ -165,7 +166,9 @@ class PprChunkRetriever(ToolABC):
         for doc_id in limit_doc_ids:
             matched_docs.append(doc_maps[doc_id[0]])
             hits_docs.append(doc_maps[doc_id[0]].chunk_id)
-        logger.info(f"{queries} get_all_docs_by_id cost {time.time() - start_time}s, recall num = {len(doc_ids)} ")
+        logger.info(
+            f"{queries} get_all_docs_by_id cost {time.time() - start_time}s, recall num = {len(doc_ids)} "
+        )
         query = "\n".join(queries)
         start_time = time.time()
         try:
@@ -180,18 +183,20 @@ class PprChunkRetriever(ToolABC):
                         else:
                             logger.warning(f"{query} matched docs is empty")
                         matched_docs.append(
-                            ChunkData(
+                            Chunk(
                                 content=item["node"]["content"],
                                 title=item["node"]["name"],
                                 chunk_id=item["node"]["id"],
                                 score=item["score"],
-                                properties=item["node"]
+                                properties=item["node"],
                             )
                         )
                         break
         except Exception as e:
             logger.warning(f"{query} query chunk failed: {e}", exc_info=True)
-        logger.info(f"{queries} get_all_docs_by_id search text cost {time.time() - start_time}s")
+        logger.info(
+            f"{queries} get_all_docs_by_id search text cost {time.time() - start_time}s"
+        )
 
         return matched_docs
 
@@ -322,7 +327,7 @@ class PprChunkRetriever(ToolABC):
 
     def invoke(
         self, queries: List[str], start_entities: List[EntityData], top_k: int, **kwargs
-    ) -> Tuple[List[ChunkData], List[RelationData]]:
+    ) -> Tuple[List[Chunk], List[RelationData]]:
         logger.info(
             f"Starting invoke method with queries: {queries}, start_entities: {start_entities}, top_k: {top_k}"
         )
@@ -366,12 +371,12 @@ class PprChunkRetriever(ToolABC):
             for doc_id, score in sorted_scores:
                 node = pagerank_res[doc_id]["node"]
                 matched_docs.append(
-                    ChunkData(
+                    Chunk(
                         content=node["content"].replace("_split_0", ""),
                         title=node["name"].replace("_split_0", ""),
                         chunk_id=doc_id,
                         score=score,
-                        properties=node
+                        properties=node,
                     )
                 )
         return matched_docs, self._convert_relation_datas(

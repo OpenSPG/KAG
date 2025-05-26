@@ -11,7 +11,7 @@ from kag.interface import Task, VectorizeModelABC
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.interface.solver.model.one_hop_graph import ChunkData
+from kag.interface.common.data_model.chunk import Chunk
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.flow_component import (
     FlowComponentTask,
     FlowComponent,
@@ -87,7 +87,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         executor_task: Task,
         processed_logical_nodes: List[LogicNode],
         **kwargs,
-    ) -> List[ChunkData]:
+    ) -> List[Chunk]:
         segment_name = kwargs.get("segment_name", "thinker")
         component_name = self.name
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
@@ -128,12 +128,12 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
         matched_chunks = []
         for doc_id, doc_score in sorted_scores:
             matched_chunks.append(
-                ChunkData(
+                Chunk(
                     content=doc_maps[doc_id]["content"].replace("_split_0", ""),
                     title=doc_maps[doc_id]["name"].replace("_split_0", ""),
                     chunk_id=doc_id,
                     score=doc_score,
-                    properties=doc_maps[doc_id]
+                    properties=doc_maps[doc_id],
                 )
             )
         if reporter:

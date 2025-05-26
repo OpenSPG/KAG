@@ -2,7 +2,7 @@ import logging
 from typing import Dict
 
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.interface.solver.model.one_hop_graph import ChunkData
+from kag.interface.common.data_model.chunk import Chunk
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
 from kag.tools.search_api.search_api_abc import SearchApiABC
@@ -39,13 +39,13 @@ class TextChunkRetriever(ToolABC):
             )
             if len(top_k_docs) == 0:
                 return dict()
-            if isinstance(top_k_docs[0], ChunkData):
+            if isinstance(top_k_docs[0], Chunk):
                 scores = {}
                 for c in top_k_docs:
                     scores[c.chunk_id] = {
-                        "score":c.score,
+                        "score": c.score,
                         "name": c.title,
-                        "content": c.content
+                        "content": c.content,
                     }
             else:
                 scores = {

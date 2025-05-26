@@ -14,7 +14,7 @@ class MemorySearchAPI(SearchApiABC):
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
         )
-        from kag.common.graphstore.memory_graph import MemoryGraph
+        from kag.common.graph_store.memory_graph import MemoryGraph
 
         self.graph = MemoryGraph(
             KAG_PROJECT_CONF.namespace, self.memory_graph_path, vectorize_model

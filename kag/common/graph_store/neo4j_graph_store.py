@@ -18,7 +18,7 @@ from abc import ABCMeta
 import schedule
 from neo4j import GraphDatabase
 
-from kag.common.graphstore.graph_store import GraphStore
+from kag.interface.common.graph_store.graph_store_api import GraphStoreApiABC
 from kag.common.utils import escape_single_quotes
 from knext.schema.model.base import IndexTypeEnum
 
@@ -46,7 +46,7 @@ class SingletonMeta(ABCMeta):
         return cls._instances[key]
 
 
-class Neo4jClient(GraphStore, metaclass=SingletonMeta):
+class Neo4jClient(GraphStoreApiABC, metaclass=SingletonMeta):
     def __init__(
         self,
         uri,

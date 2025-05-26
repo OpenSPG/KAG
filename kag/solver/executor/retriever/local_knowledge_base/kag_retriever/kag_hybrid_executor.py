@@ -14,10 +14,10 @@ from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context
 from kag.interface.solver.base_model import LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import (
-    ChunkData,
     RetrievedData,
     KgGraph,
 )
+from kag.interface.common.data_model.chunk import Chunk
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import (
     get_history_qa,
 )
@@ -37,7 +37,7 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
     refer_docs = []
     refer_id = 0
     for rd in retrieved_datas:
-        if isinstance(rd, ChunkData):
+        if isinstance(rd, Chunk):
             # Clean rd.content: strip outer quotes and unescape '\n' to real newlines
             raw_content = rd.content
             if (
@@ -57,12 +57,12 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
                 raw_title = raw_title[1:-1]
             clean_title = raw_title.replace("\\n", "\n")
             refer_doc = {
-                    "id": f"chunk:{prefix_id}_{refer_id}",
-                    "content": clean_content,
-                    "document_id": rd.chunk_id,
-                    "document_name": clean_title,
-                }
-            for k,v in rd.properties.items():
+                "id": f"chunk:{prefix_id}_{refer_id}",
+                "content": clean_content,
+                "document_id": rd.chunk_id,
+                "document_name": clean_title,
+            }
+            for k, v in rd.properties.items():
                 if k not in refer_doc:
                     refer_doc[k] = str(v)
             refer_docs.append(refer_doc)

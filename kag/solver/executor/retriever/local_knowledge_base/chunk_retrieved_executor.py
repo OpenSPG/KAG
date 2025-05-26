@@ -9,7 +9,7 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid
     initialize_response,
     store_results,
 )
-from kag.interface.solver.model.one_hop_graph import ChunkData
+from kag.interface.common.data_model.chunk import Chunk
 
 logger = logging.getLogger()
 
@@ -51,8 +51,12 @@ class ChunkRetrievedExecutor(ExecutorABC):
         chunk_datas = []
         for k, v in retrieved_result.items():
             chunk_datas.append(
-                ChunkData(
-                    content=v["content"], title=v["name"], chunk_id=k, score=v["score"], properties=v
+                Chunk(
+                    content=v["content"],
+                    title=v["name"],
+                    chunk_id=k,
+                    score=v["score"],
+                    properties=v,
                 )
             )
         kag_response.chunk_datas = chunk_datas
