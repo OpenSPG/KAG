@@ -551,3 +551,31 @@ class ParseLogicForm:
         type_info.std_entity_type = self.get_edge_type_en_by_name(type_name)
         type_info.un_std_entity_type = type_name
         return type_info
+
+def parse_logic_form_with_str(response):
+    logger.debug(f"logic form:{response}")
+    _output_string = response.replace("：", ":")
+    _output_string = _output_string.strip()
+    sub_querys = []
+    logic_forms = []
+    current_sub_query = ""
+    for line in _output_string.split("\n"):
+        if line.startswith("Step"):
+            sub_querys_regex = re.search("Step\d+:(.*)", line)
+            if sub_querys_regex is not None:
+                sub_querys.append(sub_querys_regex.group(1))
+                current_sub_query = sub_querys_regex.group(1)
+                current_sub_query = current_sub_query.strip()
+                if current_sub_query == "":
+                    raise RuntimeError(f"{line} is not step query")
+        elif line.startswith("Action"):
+            logic_forms_regex = re.search("Action\d+:(.*)", line)
+            if logic_forms_regex:
+                logic_forms.append(logic_forms_regex.group(1))
+                if len(logic_forms) - len(sub_querys) == 1:
+                    sub_querys.append(current_sub_query)
+    if len(sub_querys) != len(logic_forms):
+        raise RuntimeError(
+            f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}"
+        )
+    return sub_querys, logic_forms

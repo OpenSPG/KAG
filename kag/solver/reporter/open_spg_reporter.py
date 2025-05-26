@@ -152,8 +152,8 @@ class OpenSPGReporter(ReporterABC):
                 "en": "No relevant information was found.",
             },
             "kag_merger_digest": {
-                "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息已足够回答问题。",
-                "en": "{chunk_num} documents were output, sufficient information retrieved to answer the question.",
+                "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息结束。",
+                "en": "{chunk_num} documents were output, information retrieved end.",
             },
             "retrieved_info_digest": {
                 "zh": "共检索到 {chunk_num} 篇文档，检索的子图中共有 {nodes_num} 个节点和 {edges_num} 条边。",
