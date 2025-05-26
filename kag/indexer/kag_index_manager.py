@@ -117,6 +117,15 @@ class AtomicIndexManager(KAGIndexManager):
     def name(self):
         return "Atomic Query based Index Manager"
 
+    @property
+    def schema(self) -> str:
+        return """
+AtomicQuery(原子问): EntityType
+  properties:
+    content(内容): Text
+      index: TextAndVector
+        """
+
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
         return [
