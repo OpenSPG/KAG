@@ -30,17 +30,20 @@ logger = logging.getLogger()
 def extract_ids(text):
     return re.findall(r'<reference id="([^"]+)"', text)
 
-def generate_ref_doc_set(tag_name, ref_type, retrieved_data_list: list, refer_ids: list):
+
+def generate_ref_doc_set(
+    tag_name, ref_type, retrieved_data_list: list, refer_ids: list
+):
     refer = []
     refer_doc_maps = {}
     for d in retrieved_data_list:
         refer_doc_maps[d["id"]] = RefDoc(
-                id=d["id"],
-                content=d["content"],
-                document_id=d["document_id"],
-                document_name=d["document_name"],
-                url=d.get("url", None)
-            )
+            id=d["id"],
+            content=d["content"],
+            document_id=d["document_id"],
+            document_name=d["document_name"],
+            url=d.get("url", None),
+        )
     for refer_id in refer_ids:
         if refer_id in refer_doc_maps:
             refer.append(refer_doc_maps[refer_id])

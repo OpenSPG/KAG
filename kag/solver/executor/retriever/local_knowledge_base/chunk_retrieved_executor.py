@@ -52,7 +52,11 @@ class ChunkRetrievedExecutor(ExecutorABC):
         for k, v in retrieved_result.items():
             chunk_datas.append(
                 ChunkData(
-                    content=v["content"], title=v["name"], chunk_id=k, score=v["score"], properties=v
+                    content=v["content"],
+                    title=v["name"],
+                    chunk_id=k,
+                    score=v["score"],
+                    properties=v,
                 )
             )
         kag_response.chunk_datas = chunk_datas
