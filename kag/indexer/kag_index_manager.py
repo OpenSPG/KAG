@@ -9,36 +9,19 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 # flake8: noqa
-from typing import List, Dict
+from typing import Dict
 
-from kag.interface import ExtractorABC, RetrieverABC, IndexABC
 from kag.common.registry import Registrable
-from kag.common.conf import KAG_PROJECT_CONF
-from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
-    KAGHybridRetrievalExecutor as Retriever,
-)
 
 
 class KAGIndexManager(Registrable):
-    def __init__(
-        self,
-        extractor: List[ExtractorABC],
-        retriever: List[Retriever],
-    ):
-        self.extractor = extractor
-        self.retriever = retriever
-
-        self.indices = {}
-        index_names = []
-        for item in self.extractor:
-            index_names.extend(item.output_indices())
-
-        index_register_dict = Registrable._registry[IndexABC]
-        for index_name in index_names:
-            cls, _ = index_register_dict[index_name]
-            self.indices[index_name] = cls()
-
-        self._config = None
+    def __init__(self, llm_config: Dict, vectorize_model_config: Dict):
+        self.extractor_config = self.build_extractor_config(
+            llm_config, vectorize_model_config
+        )
+        self.retriever_config = self.build_retriever_config(
+            llm_config, vectorize_model_config
+        )
 
     @property
     def name(self):
@@ -46,17 +29,11 @@ class KAGIndexManager(Registrable):
 
     @property
     def description(self) -> str:
-        index_desc = {k: v.description for k, v in self.indices.items()}
-        return f"The indexer contains following indices:\n{index_desc}"
+        return ""
 
     @property
     def schema(self) -> str:
         return ""
-
-    @property
-    def cost(self) -> str:
-        index_costs = {k: v.cost for k, v in self.indices.items()}
-        return f"The cost of each index are as follow:\n{index_costs}"
 
     @property
     def as_default(self) -> bool:
@@ -67,7 +44,10 @@ class KAGIndexManager(Registrable):
             "name": self.name,
             "description": self.description,
             "schema": self.schema,
-            "config": self._config,
+            "config": {
+                "extractor": self.extractor_config,
+                "retriever": self.retriever_config,
+            },
             "index_cost": self.index_cost,
             "retrieval_method": self.retrieval_method,
             "applicable_scenarios": self.applicable_scenarios,
@@ -86,30 +66,14 @@ class KAGIndexManager(Registrable):
     def retrieval_method(self) -> str:
         return ""
 
-    @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_extractor_config(self, llm_config: Dict, vectorize_model_config: Dict):
         return []
 
-    @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_retriever_config(self, llm_config: Dict, vectorize_model_config: Dict):
         return []
 
-    @classmethod
-    def init_from_llm_config(cls, llm_config: Dict, vectorize_model_config: Dict):
-        extractor_config = cls.build_extractor_config(
-            llm_config, vectorize_model_config
-        )
-        retriever_config = cls.build_retriever_config(
-            llm_config, vectorize_model_config
-        )
-        extractors = [ExtractorABC.from_config(x) for x in extractor_config]
-        retrievers = [RetrieverABC.from_config(x) for x in retriever_config]
-        obj = cls(extractors, retrievers)
-        obj._config = {"extractor": extractor_config, "retriever": retriever_config}
-        return obj
 
-
-@KAGIndexManager.register("atomic_query_index", constructor="init_from_llm_config")
+@KAGIndexManager.register("atomic_query_index")
 class AtomicIndexManager(KAGIndexManager):
     """Index manager to manage the atomic query index build and document retrieval."""
 
