@@ -11,7 +11,6 @@
 # flake8: noqa
 from typing import List, Dict
 
-from knext.schema.client import SchemaClient
 from kag.interface import ExtractorABC, RetrieverABC, IndexABC
 from kag.common.registry import Registrable
 from kag.common.conf import KAG_PROJECT_CONF
@@ -39,10 +38,6 @@ class KAGIndexManager(Registrable):
             cls, _ = index_register_dict[index_name]
             self.indices[index_name] = cls()
 
-        self.project_schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
-        ).load()
-
         self._config = None
 
     @property
@@ -56,22 +51,7 @@ class KAGIndexManager(Registrable):
 
     @property
     def schema(self) -> str:
-        schema_keys = []
-        for item in self.indices.values():
-            schema_keys.extend(item.schema)
-
-        index_schema = []
-
-        for schema_key in schema_keys:
-            if schema_key == "Graph":
-                continue
-            if schema_key not in self.project_schema:
-                raise ValueError(
-                    f"index {schema_key} not in project indxe schema, please check your index config."
-                )
-            index_schema.append(str(self.project_schema[schema_key]))
-
-        return "\n".join(index_schema)
+        return ""
 
     @property
     def cost(self) -> str:
@@ -96,15 +76,15 @@ class KAGIndexManager(Registrable):
 
     @property
     def applicable_scenarios(self) -> str:
-        pass
+        return ""
 
     @property
     def index_cost(self) -> str:
-        pass
+        return ""
 
     @property
     def retrieval_method(self) -> str:
-        pass
+        return ""
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
@@ -190,7 +170,7 @@ AtomicQuery(原子问): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        pass
+        return ""
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
