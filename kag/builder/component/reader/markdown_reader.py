@@ -562,7 +562,7 @@ class MarkDownReader(ReaderABC):
             data = data.astype(str)
             return "\n" + data.to_markdown(index=False) + "\n"
 
-        def collect_tables(n: MarkdownNode):
+        def collect_tables(n: MarkdownNode, recursive: bool = False):
             """Collect tables from node and its children"""
             tables = []
             table_md = []
@@ -572,10 +572,11 @@ class MarkDownReader(ReaderABC):
                     table_md.append(
                         convert_table_to_markdown(table["headers"], table["data"])
                     )
-            for child in n.children:
-                child_tables, child_table_md = collect_tables(child)
-                tables.extend(child_tables)
-                table_md.extend(child_table_md)
+            if recursive:
+                for child in n.children:
+                    child_tables, child_table_md = collect_tables(child)
+                    tables.extend(child_tables)
+                    table_md.extend(child_table_md)
             return tables, table_md
 
         def collect_children_content(n: MarkdownNode):
@@ -649,7 +650,7 @@ class MarkDownReader(ReaderABC):
                     all_tables.append(table)
 
             for child in node.children:
-                child_tables, _ = collect_tables(child)
+                child_tables, _ = collect_tables(child, recursive=True)
                 for i, table in enumerate(child_tables, start=len(all_tables)):
                     table_content = convert_table_to_markdown(
                         table["headers"], table["data"]
@@ -769,31 +770,14 @@ class MarkDownReader(ReaderABC):
                         outputs.append(table_chunk)
                         all_tables.append(table)
 
-                for child in node.children:
-                    child_tables, _ = collect_tables(child)
-                    for i, table in enumerate(child_tables, start=len(all_tables)):
-                        table_content = convert_table_to_markdown(
-                            table["headers"], table["data"]
-                        )
-                        table_chunk = Chunk(
-                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                            parent_id=current_output.id,
-                            name=f"{full_title} / Table {i+1}",
-                            content=table_content,
-                            type=ChunkTypeEnum.Table,
-                            metadata={
-                                # "table_data": table,
-                                "before_text": table.get("context", {}).get(
-                                    "before_text", ""
-                                ),
-                                "after_text": table.get("context", {}).get(
-                                    "after_text", ""
-                                ),
-                            },
-                            file_name=os.path.basename(id),
-                        )
-                        outputs.append(table_chunk)
-                        all_tables.append(table)
+            # handle child nodes
+            for child in node.children:
+                child_outputs, child_map = self._convert_to_outputs(
+                    child, id, parent_id, current_titles, current_contents
+                )
+                if child_outputs:
+                    outputs.extend(child_outputs)
+                    node_chunk_map.update(child_map)  # Merge child mappings
 
         return outputs, node_chunk_map
 
