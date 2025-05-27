@@ -562,7 +562,7 @@ class MarkDownReader(ReaderABC):
             data = data.astype(str)
             return "\n" + data.to_markdown(index=False) + "\n"
 
-        def collect_tables(n: MarkdownNode):
+        def collect_tables(n: MarkdownNode, recursive: bool = False):
             """Collect tables from node and its children"""
             tables = []
             table_md = []
@@ -572,10 +572,11 @@ class MarkDownReader(ReaderABC):
                     table_md.append(
                         convert_table_to_markdown(table["headers"], table["data"])
                     )
-            # for child in n.children:
-            #     child_tables, child_table_md = collect_tables(child)
-            #     tables.extend(child_tables)
-            #     table_md.extend(child_table_md)
+            if recursive:
+                for child in n.children:
+                    child_tables, child_table_md = collect_tables(child)
+                    tables.extend(child_tables)
+                    table_md.extend(child_table_md)
             return tables, table_md
 
         def collect_children_content(n: MarkdownNode):
@@ -651,7 +652,7 @@ class MarkDownReader(ReaderABC):
                     all_tables.append(table)
 
             for child in node.children:
-                child_tables, _ = collect_tables(child)
+                child_tables, _ = collect_tables(child, recursive=True)
                 for i, table in enumerate(child_tables, start=len(all_tables)):
                     table_content = convert_table_to_markdown(
                         table["headers"], table["data"]
@@ -733,33 +734,7 @@ class MarkDownReader(ReaderABC):
                         outputs.append(table_chunk)
                         all_tables.append(table)
 
-                for child in node.children:
-                    child_tables, _ = collect_tables(child)
-                    for i, table in enumerate(child_tables, start=len(all_tables)):
-                        table_content = convert_table_to_markdown(
-                            table["headers"], table["data"]
-                        )
-                        table_chunk = Chunk(
-                            id=f"{generate_hash_id(f'{full_title} / Table {i+1}')}",
-                            parent_id=current_output.id,
-                            name=f"{full_title} / Table {i+1}",
-                            content=table_content,
-                            type=ChunkTypeEnum.Table,
-                            metadata={
-                                # "table_data": table,
-                                "before_text": table.get("context", {}).get(
-                                    "before_text", ""
-                                ),
-                                "after_text": table.get("context", {}).get(
-                                    "after_text", ""
-                                ),
-                            },
-                            file_name=os.path.basename(id),
-                        )
-                        outputs.append(table_chunk)
-                        all_tables.append(table)
-
-            # 继续处理子节点（保持原逻辑不变）
+            # handle child nodes
             for child in node.children:
                 child_outputs, child_map = self._convert_to_outputs(
                     child, id, parent_id, current_titles, current_contents
@@ -767,33 +742,6 @@ class MarkDownReader(ReaderABC):
                 if child_outputs:
                     outputs.extend(child_outputs)
                     node_chunk_map.update(child_map)  # Merge child mappings
-
-            # # 原有的逻辑保持不变：如果没有找到目标级别节点，处理当前节点及其子内容
-            # if not has_target_level and node.title != "root":
-            #     full_title = " / ".join(current_titles)
-
-            #     # Store parent content separately
-            #     parent_content = (
-            #         "\n".join(filter(None, parent_contents))
-            #         if parent_contents
-            #         else None
-            #     )
-
-            #     # Current node's own content and child content
-            #     current_content = [node.content] if node.content else []
-            #     for child in node.children:
-            #         child_content = collect_children_content(child)
-            #         current_content.extend(child_content)
-
-            #     current_output = Chunk(
-            #         id=f"{generate_hash_id(full_title)}",
-            #         parent_id=parent_id,
-            #         name=full_title,
-            #         content="\n".join(filter(None, current_content)),
-            #         parent_content=parent_content if self.reserve_meta else "",
-            #     )
-            #     outputs.append(current_output)
-            #     node_chunk_map[node] = current_output  # Add mapping
 
         return outputs, node_chunk_map
 
@@ -927,8 +875,6 @@ if __name__ == "__main__":
     )
     dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir, "../../../../tests/unit/builder/data", "需求内容test.md")
-    file_path = (
-        "/Users/zhangxinhong.zxh/Downloads/附件1 10kV～110kV线路保护及辅助装置标准化设计规范 （报批稿）.md"
-    )
+    file_path = "/Users/zhangxinhong.zxh/Downloads/阿里巴巴2025财年度中期报告 (2).md"
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)
