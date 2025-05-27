@@ -25,7 +25,7 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid
 )
 from kag.solver.utils import init_prompt_with_fallback
 from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
-
+from kag.examples.bird_graph.solver.cypher.rewrite_cypher import rewrite_cypher
 from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context, Task
 
 from neo4j import AsyncGraphDatabase
@@ -45,11 +45,13 @@ class BirdGenerator(GeneratorABC):
         self,
         llm_client: LLMClient,
         generated_prompt: PromptABC,
+        generated_return_column_prompt: PromptABC,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
+        self.generated_return_column_prompt = generated_return_column_prompt
         self.fix_cypher_prompt = init_prompt_with_fallback(
             "fix_cypher", KAG_PROJECT_CONF.biz_scene
         )
@@ -73,6 +75,18 @@ class BirdGenerator(GeneratorABC):
             with_json_parse=False,
         )
 
+    @retry(stop=stop_after_attempt(3))
+    async def generate_return_column(self, query, content, **kwargs):
+        return await self.llm_client.ainvoke(
+            variables={
+                "question": query,
+                "schema": kwargs.get("graph_schema", ""),
+                "history": kwargs.get("history", ""),
+            },
+            prompt_op=self.generated_return_column_prompt,
+            with_json_parse=False,
+        )
+
     def invoke(self, query, context, **kwargs):
         pass
 
@@ -82,7 +96,8 @@ class BirdGenerator(GeneratorABC):
     async def _ainvoke(self, query, **kwargs):
         history = []
         try_times = 3
-        rst_cypher = None
+        cypher = None
+        r_cypher = None
         while try_times > 0:
             try_times -= 1
             cypher = await self.generate_answer(
@@ -90,16 +105,25 @@ class BirdGenerator(GeneratorABC):
             )
             if "i don't know" in cypher or len(cypher) == 0:
                 continue
-            cypher_rst, error_str = await self._get_cypher_result(cypher)
+            # check return column
+            # return_column = await self.generate_return_column(
+            #     query=query, content="", history=str(history), **kwargs
+            # )
+            # print(f"return_column={return_column}")
+            # rewrite cypher by cypher skeleton - only return_column
+            r_cypher = rewrite_cypher(cypher, [])
+            if r_cypher is None:
+                print(f"r_cypher is empty. cypher = {cypher}")
+                continue
+            # get cypher result
+            cypher_rst, error_str = await self._get_cypher_result(r_cypher)
             if cypher_rst:
-                rst_cypher = cypher
                 break
             if error_str is None:
                 error_str = "Cypher execution completed, but with no results"
-            history.append({"cypher": cypher, "error": error_str})
-        if rst_cypher is None:
-            rst_cypher = cypher
-        return await self.refine_cypher(query, rst_cypher, **kwargs)
+            history.append({"cypher": r_cypher, "error": error_str})
+        print(f"cypher:{cypher}\n,rewrite_cypher:{r_cypher}\n")
+        return await self.refine_cypher(query, r_cypher, **kwargs)
 
     async def refine_cypher(self, query, cypher, **kwargs):
         return cypher

@@ -14,7 +14,8 @@ class CypherEntityExtractor:
         """
         Extract entities and relations, and correct the directionality of SPO.
         """
-        # 获取模式部分（pattern）
+        # multi match -> clear triples
+        self.triples = []
         pattern = ctx.oC_Pattern()
         if pattern:
             for pattern_part in pattern.oC_PatternPart():

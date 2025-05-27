@@ -14,7 +14,12 @@ def rewrite_cypher(cypher, return_columns):
     extractor = KagCypherListener(cypher, return_columns)
     walker = ParseTreeWalker()
     walker.walk(extractor, tree)
-    return extractor.rewrite()
+    r_cypher = extractor.rewrite()
+    # if r_cypher is empty , then return origin cypher
+    if r_cypher:
+        return r_cypher
+    else:
+        return cypher
 
 
 def rewrite(cypher):
@@ -23,9 +28,12 @@ def rewrite(cypher):
 
 if __name__ == "__main__":
     cypher_query = """
-        MATCH (satscores:california_schools_satscores)-[:belongsTo]->(schools:california_schools_schools)<-[:hasfrpmdata]-(frpm:california_schools_frpm)
-        WHERE toFloat(satscores.NumGE1500) / toFloat(satscores.NumTstTakr) > 0.3
-        RETURN max(toFloat(frpm.`Free Meal Count (Ages 5-17)`) / toFloat(frpm.`Enrollment (Ages 5-17)`)) AS highest_eligible_free_rate
+        MATCH (f:california_schools_frpm)-[:hasfrpmdata]->(s:california_schools_schools)
+        MATCH (ss:california_schools_satscores)-[:belongsTo]->(s)
+        WHERE f.`County Name` = 'Contra Costa' AND ss.NumTstTakr IS NOT NULL AND ss.NumTstTakr > 0
+        RETURN ss.sname AS SchoolName, ss.NumTstTakr AS TestTakers
+        ORDER BY TestTakers DESC
+        LIMIT 1
     """
 
     match = ""

@@ -128,7 +128,7 @@ class KagCypherListener(CypherListener):
 
     def enterOC_Where(self, ctx: CypherParser.OC_WhereContext):
         express = ctx.oC_Expression().getText()
-        print(f"express={express}")
+        #  print(f"express={express}")
         self.where["express"].append(express)
         self.rewrite_cypher.write(f"{ctx.getText()} %s \n")
 
@@ -172,8 +172,8 @@ class KagCypherListener(CypherListener):
                 where_condition.write(f" AND {var_name} IS NOT NULL \n")
             new_cypher = new_cypher.replace("%s", f"{where_condition.getvalue()}\n", 1)
             new_cypher = new_cypher.replace("%s", "")
-            print("============= rewrite cypher begin ============= ")
-            print(f"cypher:{self.cypher},\n\n new_cypher: {new_cypher}")
-            print("============= rewrite cypher end =============== ")
+            # print("============= rewrite cypher begin ============= ")
+            # print(f"cypher:{self.cypher},\n\n new_cypher: {new_cypher}")
+            # print("============= rewrite cypher end =============== ")
         new_cypher = new_cypher.replace("%s", "")
         return new_cypher
