@@ -1,6 +1,10 @@
 from kag.examples.bird_graph.solver.cypher.CypherListener import CypherListener
 from kag.examples.bird_graph.solver.cypher.CypherParser import CypherParser
 from io import StringIO
+from kag.examples.bird_graph.solver.cypher.cypher_listener_match import (
+    CypherEntityExtractor,
+)
+
 
 # kag cypher listener
 class KagCypherListener(CypherListener):
@@ -18,7 +22,7 @@ class KagCypherListener(CypherListener):
         }
         self.order = {"fields": []}
         self.where = {"express": []}
-
+        self.extractor = CypherEntityExtractor()
         self.rewrite_cypher = StringIO()
         self.alias_mapping = {}
         self.struct = {
@@ -86,7 +90,7 @@ class KagCypherListener(CypherListener):
             return_statement = return_statement.replace(key, value, 1)
         return return_statement
 
-    def rewrite_match(self, ctx: CypherParser.OC_ReturnContext):
+    def rewrite_match(self, ctx: CypherParser.OC_MatchContext):
         for relation in self.relationInfo["relationships"]:
             pass
 
@@ -129,7 +133,11 @@ class KagCypherListener(CypherListener):
         self.rewrite_cypher.write(f"{ctx.getText()} %s \n")
 
     def enterOC_Match(self, ctx: CypherParser.OC_MatchContext):
-        self.rewrite_cypher.write(f"MATCH {ctx.oC_Pattern().getText()} \n")
+        new_match = self.extractor.visit_oc_match(ctx)
+        if new_match:
+            self.rewrite_cypher.write(f"{new_match} \n")
+        else:
+            self.rewrite_cypher.write(f"MATCH {ctx.oC_Pattern().getText()} \n")
 
     def enterOC_With(self, ctx: CypherParser.OC_WithContext):
         self.var2alias(ctx.oC_ProjectionBody().oC_ProjectionItems().oC_ProjectionItem())
@@ -144,7 +152,7 @@ class KagCypherListener(CypherListener):
         self.rewrite_cypher.write(f"{ctx.getText()} \n")
 
     def rewrite(self):
-        new_cypher = self.cypher
+        new_cypher = self.rewrite_cypher.getvalue()
         """
             If the ORDER BY clause is not empty, 
             then ensure that the fields in the ORDER BY clause are not null in the WHERE condition.
@@ -167,4 +175,5 @@ class KagCypherListener(CypherListener):
             print("============= rewrite cypher begin ============= ")
             print(f"cypher:{self.cypher},\n\n new_cypher: {new_cypher}")
             print("============= rewrite cypher end =============== ")
+        new_cypher = new_cypher.replace("%s", "")
         return new_cypher

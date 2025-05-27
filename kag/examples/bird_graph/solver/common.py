@@ -6,16 +6,7 @@ def load_graph_mschema(db_name: str):
     """
     组织Graph的mschema
     """
-    current_file_path = os.path.dirname(os.path.abspath(__file__))
-    schema_file = os.path.join(
-        current_file_path,
-        "..",
-        "table_2_graph",
-        "bird_dev_graph_dataset",
-        f"{db_name}.schema.json",
-    )
-    with open(schema_file) as f:
-        graph_schema = json.load(f)
+    graph_schema = load_schema_json(db_name)
     graph_m_schema_str = "【GraphSchema】\n"
     entity_mschema_list = []
     edge_mschema_list = []
@@ -50,6 +41,21 @@ def get_entity_mschema_str(entity_info, db_name):
         _str += ")"
     _str += "\n]"
     return _str
+
+
+def load_schema_json(db_name: str):
+    current_file_path = os.path.dirname(os.path.abspath(__file__))
+    schema_file = os.path.join(
+        current_file_path,
+        "..",
+        "table_2_graph",
+        "bird_dev_graph_dataset",
+        f"{db_name}.schema.json",
+    )
+    graph_schema = {}
+    with open(schema_file) as f:
+        graph_schema = json.load(f)
+    return graph_schema
 
 
 def get_edge_mschema_str(edge_info, db_name):
