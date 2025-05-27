@@ -27,7 +27,7 @@ class PrqaPipeline(SolverPipelineABC):
         planner: PlannerABC,
         executor: ExecutorABC,
         generator: GeneratorABC,
-        max_retries: int = 3,
+        max_retries: int = 4,
     ):
         super().__init__()
         self.planner = planner
@@ -45,7 +45,14 @@ class PrqaPipeline(SolverPipelineABC):
         """主处理流程"""
         try:
             q_type = self.planner.analyze_question(question)
-            raw_result = self.executor.handlers[q_type](question)
+            all_types = ["type1", "type2", "type3"]  # 所有可能的类型
+            remaining_types = [t for t in all_types if t != q_type]  # 获取剩余两种类型
+            if retry_count < self.max_retries - 1:
+                raw_result = self.executor.handlers[q_type](question)
+            elif retry_count == self.max_retries - 1:
+                raw_result = self.executor.handlers[remaining_types[0]](question)
+            elif retry_count == self.max_retries:
+                raw_result = self.executor.handlers[remaining_types[1]](question)
             result = self.generator.invoke(question, context="", raw_data=raw_result)
 
             if self.is_invalid_response(result):

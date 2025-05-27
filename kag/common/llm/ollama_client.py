@@ -10,6 +10,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+import asyncio
 import logging
 from ollama import Client, AsyncClient
 
@@ -64,6 +65,15 @@ class OllamaClient(LLMClient):
             f"Initialize OllamaClient with rate limit {max_rate} every {time_period}s"
         )
 
+    def remove_think_blocks(self, rsp: str):
+        if "<think>" in rsp and "</think>" in rsp:
+            think_start = rsp.find("<think>")
+            think_end = rsp.find("</think>") + len("</think>")
+            rsp = rsp[:think_start] + rsp[think_end:]
+            # Clean up any extra whitespace that might be left
+            rsp = rsp.strip()
+        return rsp
+
     def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """
         Executes a model request when the object is called and returns the result.
@@ -76,7 +86,11 @@ class OllamaClient(LLMClient):
         """
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
+        # reporter = kwargs.get("reporter", None)
+        # segment_name = kwargs.get("segment_name", None)
+        # tag_name = kwargs.get("tag_name", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
         if messages is None:
             if image_url:
                 messages = [
@@ -99,8 +113,10 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
-            max_tokens=self.max_tokens,
         )
+
+        usages = []
+
         if not self.stream:
             # reasoning_content = getattr(
             #     response.choices[0].message, "reasoning_content", None
@@ -110,19 +126,53 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
-            rsp = response.message.content
-            tool_calls = response.message.tool_calls
+            usages.append(
+                (
+                    response["eval_count"],
+                    response["prompt_eval_count"],
+                )
+            )
+            rsp = response["message"]["content"]
+            tool_calls = response["message"].get("tool_calls", None)
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
+            report_enabled = False
+            skip_next_newline = False
 
             for chunk in response:
-                if chunk.message.content is not None:
-                    rsp += chunk.message.content
-                    do_report(rsp, "RUNNING", **kwargs)
+                content = chunk["message"]["content"]
+                if content is not None:
+                    usages.append(
+                        chunk["eval_count"],
+                        chunk["prompt_eval_count"],
+                    )
+                    if report_enabled:
+                        # If we need to skip the first newline
+                        if skip_next_newline:
+                            if content == "\n\n" or content == "\n":
+                                skip_next_newline = False
+                                continue  # Skip this newline
+                            else:
+                                skip_next_newline = False  # Turn off the flag even if it's not a newline
+                        rsp += content
+                        do_report(rsp, "RUNNING", **kwargs)
+                    else:
+                        if content == "</think>":
+                            report_enabled = True
+                            skip_next_newline = True
+        # Remove <think> </think> blocks from the response
+        rsp = self.remove_think_blocks(rsp)
+
+        if token_meter and len(usages) > 0 and usages[-1]:
+            token_meter.update(
+                response["eval_count"],
+                response["prompt_eval_count"],
+                response["eval_count"] + response["prompt_eval_count"],
+            )
         do_report(rsp, "FINISH", **kwargs)
         if tools and tool_calls:
-            return response.message
+            return response["message"]
         return rsp
 
     async def acall(self, prompt: str = "", image_url: str = None, **kwargs):
@@ -164,7 +214,6 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
-            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -175,22 +224,38 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
-            rsp = response.message.content
-            tool_calls = response.message.tool_calls
+            rsp = response["message"]["content"]
+            tool_calls = response["message"].get("tool_calls", None)
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
+            report_enabled = False
+            skip_next_newline = False
 
             async for chunk in response:
-                if chunk.message.content is not None:
-                    rsp += chunk.message.content
-                    if reporter:
-                        reporter.add_report_line(
-                            segment_name,
-                            tag_name,
-                            rsp,
-                            status="RUNNING",
-                        )
+                content = chunk["message"]["content"]
+                if content is not None:
+                    if report_enabled:
+                        # If we need to skip the first newline
+                        if skip_next_newline:
+                            if content == "\n\n" or content == "\n":
+                                skip_next_newline = False
+                                continue  # Skip this newline
+                            else:
+                                skip_next_newline = False  # Turn off the flag even if it's not a newline
+                        rsp += content
+                        if reporter:
+                            reporter.add_report_line(
+                                segment_name,
+                                tag_name,
+                                rsp,
+                                status="RUNNING",
+                            )
+                    else:
+                        if content == "</think>":
+                            report_enabled = True
+                            skip_next_newline = True
+        rsp = self.remove_think_blocks(rsp)
         if reporter:
             reporter.add_report_line(
                 segment_name,
@@ -201,3 +266,11 @@ class OllamaClient(LLMClient):
         if tools and tool_calls:
             return response.message
         return rsp
+
+
+if __name__ == "__main__":
+    client = OllamaClient(
+        model="qwen3:0.6b", base_url="http://localhost:11434", stream=True
+    )
+    msg = asyncio.run(client.acall("你好"))
+    print(msg)

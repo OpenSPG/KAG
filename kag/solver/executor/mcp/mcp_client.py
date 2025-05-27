@@ -14,11 +14,14 @@
 import json
 from contextlib import AsyncExitStack
 from typing import Optional, Dict
-
+import asyncio
+import logging
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from kag.interface import LLMClient, PromptABC
+
+logger = logging.getLogger(__name__)
 
 
 class MCPClient:
@@ -31,7 +34,7 @@ class MCPClient:
         """
         self.llm = llm
         self.prompt = prompt or PromptABC.from_config({"type": "default_mcp_tool_call"})
-
+        self._cleanup_lock: asyncio.Lock = asyncio.Lock()
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
 
@@ -57,20 +60,40 @@ class MCPClient:
             command=command, args=[server_script_path], env=env
         )
 
-        stdio_transport = await self.exit_stack.enter_async_context(
-            stdio_client(server_params)
-        )
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(
-            ClientSession(self.stdio, self.write)
-        )
-
-        await self.session.initialize()
+        try:
+            stdio_transport = await self.exit_stack.enter_async_context(
+                stdio_client(server_params)
+            )
+            self.read, self.write = stdio_transport
+            session = await self.exit_stack.enter_async_context(
+                ClientSession(self.read, self.write)
+            )
+            await session.initialize()
+            self.session = session
+        except Exception as e:
+            logging.error(f"Error initializing server: {e}")
+            await self.cleanup()
+            raise
 
         # List available tools
-        response = await self.session.list_tools()
-        tools = response.tools
+        tools = await self.list_tools()
         print("\nConnected to server with tools:", [tool.name for tool in tools])
+
+    async def list_tools(self):
+        """List available tools from the server.
+
+        Returns:
+            A list of available tools.
+
+        Raises:
+            RuntimeError: If the server is not initialized.
+        """
+        if not self.session:
+            raise RuntimeError(f"Server not initialized")
+
+        tools_response = await self.session.list_tools()
+        tools = tools_response.tools
+        return tools
 
     async def process_query(self, query: str) -> str:
         """Process user query using LLM and available tools
@@ -104,7 +127,9 @@ class MCPClient:
         if hasattr(self.llm, "stream"):
             stream = self.llm.stream
             self.llm.stream = False
-        response = await self.llm.acall(messages=messages, tools=available_tools)
+        response = await self.llm.acall(
+            messages=messages, prompt="", tools=available_tools
+        )
         if hasattr(self.llm, "stream"):
             self.llm.stream = stream
         print(f"responses = {response}")
@@ -138,3 +163,22 @@ class MCPClient:
             return final_response
         else:
             return response
+
+    async def cleanup(self) -> None:
+        """Clean up server resources."""
+        async with self._cleanup_lock:
+            try:
+                await self.exit_stack.aclose()
+                self.session = None
+                self.stdio_context = None
+            except Exception as e:
+                logging.error(f"Error during cleanup of server: {e}")
+
+    async def __aenter__(self):
+        """Enter the async context manager."""
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit the async context manager."""
+        await self.cleanup()

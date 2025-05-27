@@ -201,6 +201,7 @@ class StandardType(object):
             )  # noqa: E501
         allowed_values = [
             "BASIC_TYPE",
+            "INDEX_TYPE",
             "ENTITY_TYPE",
             "CONCEPT_TYPE",
             "EVENT_TYPE",

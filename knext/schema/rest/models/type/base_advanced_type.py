@@ -190,6 +190,7 @@ class BaseAdvancedType(object):
         """
         allowed_values = [
             "BASIC_TYPE",
+            "INDEX_TYPE",
             "ENTITY_TYPE",
             "CONCEPT_TYPE",
             "EVENT_TYPE",

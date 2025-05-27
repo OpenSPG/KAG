@@ -19,6 +19,11 @@ from kag.builder.component.extractor.schema_constraint_extractor import (
     SchemaConstraintExtractor,
 )
 from kag.builder.component.extractor.table_extractor import TableExtractor
+from kag.builder.component.extractor.outline_extractor import OutlineExtractor
+from kag.builder.component.extractor.summary_extractor import SummaryExtractor
+from kag.builder.component.extractor.chunk_extractor import ChunkExtractor
+from kag.builder.component.extractor.atomic_query_extractor import AtomicQueryExtractor
+
 from kag.builder.component.aligner.kag_aligner import KAGAligner
 from kag.builder.component.aligner.spg_aligner import SPGAligner
 from kag.builder.component.postprocessor.kag_postprocessor import KAGPostProcessor
@@ -95,5 +100,8 @@ __all__ = [
     "SLSConsumerScanner",
     "NaiveRagExtractor",
     "TableExtractor",
+    "AtomicQueryExtractor",
+    "ChunkExtractor",
+    "OutlineExtractor",
     "MemoryGraphWriter",
 ]
