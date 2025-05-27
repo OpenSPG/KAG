@@ -1,8 +1,9 @@
 import json
 import logging
 import os
+import time
 from typing import List
-
+from kag.interface import LLMClient
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
@@ -67,25 +68,9 @@ class EvaFor2wiki(EvalQa):
         eva_obj = Evaluate()
         return eva_obj.getBenchMark(questionList, predictions, golds)
 
-    def do_recall_eval(self, sample, references):
-        eva_obj = Evaluate()
-        paragraph_support_idx_set = [
-            idx["paragraph_support_idx"] for idx in sample["question_decomposition"]
-        ]
-        golds = []
-        for idx in paragraph_support_idx_set:
-            golds.append(
-                eva_obj.generate_id(
-                    sample["paragraphs"][idx]["title"],
-                    sample["paragraphs"][idx]["paragraph_text"],
-                )
-            )
-        return eva_obj.recall_top(predictionlist=references, goldlist=golds)
-
 
 if __name__ == "__main__":
-    import_modules_from_path("./prompt")
-    import_modules_from_path("./executors")
+    import_modules_from_path("./src")
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()
@@ -93,10 +78,18 @@ if __name__ == "__main__":
     qa_file_path = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file}"
     )
+    start = time.time()
     do_main(
         qa_file_path=qa_file_path,
         thread_num=args.thread_num,
         upper_limit=args.upper_limit,
         collect_file=args.res_file,
         eval_obj=EvaFor2wiki(),
+    )
+    end = time.time()
+    token_meter = LLMClient.get_token_meter()
+    stat = token_meter.to_dict()
+
+    logger.info(
+        f"\n\nbenchmark successfully for {qa_file_path}\n\nTimes cost:{end-start}s\n\nTokens cost: {stat}"
     )

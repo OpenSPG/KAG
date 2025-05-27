@@ -84,7 +84,7 @@ class MemoryGraph:
 
         checkpointer = CheckpointerManager.get_checkpointer(
             {
-                "type": "zodb",
+                "type": "diskcache",
                 "ckpt_dir": self.ckpt_dir,
                 "rank": 0,
                 "world_size": 1,
@@ -397,65 +397,71 @@ class MemoryGraph:
         :param topk: number of entities to return; default tot 10
         :param kwargs: other optional arguments
         """
+        try:
 
-        def batch_cosine_similarity(v, M, require_norm=False):
-            if require_norm:
-                v_norm = torch.norm(v, dim=1, keepdim=True)
-                M_norms = torch.norm(M, dim=1, keepdim=True)
-                dot_product = torch.matmul(M, v.T)
-                norm_product = torch.matmul(v_norm, M_norms.T)
-                return dot_product / norm_product.T
+            def batch_cosine_similarity(v, M, require_norm=False):
+                if require_norm:
+                    v_norm = torch.norm(v, dim=1, keepdim=True)
+                    M_norms = torch.norm(M, dim=1, keepdim=True)
+                    dot_product = torch.matmul(M, v.T)
+                    norm_product = torch.matmul(v_norm, M_norms.T)
+                    return dot_product / norm_product.T
 
+                else:
+                    return torch.matmul(M, v.T)
+
+            if label == "Entity":
+                nodes = self._backend_graph.vs
             else:
-                return torch.matmul(M, v.T)
+                try:
+                    nodes = self._backend_graph.vs.select(label=label)
+                except (KeyError, ValueError):
+                    return []
 
-        if label == "Entity":
-            nodes = self._backend_graph.vs
-        else:
-            try:
-                nodes = self._backend_graph.vs.select(label=label)
-            except (KeyError, ValueError):
+            vector_field_name = self._get_vector_field_name(property_key)
+            emb_cache_key = f"{label}-{vector_field_name}"
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            if emb_cache_key in self._emb_cache:
+                filtered_nodes, filtered_vectors = self._emb_cache[emb_cache_key]
+            else:
+                vectors = nodes.get_attribute_values(vector_field_name)
+                filtered_nodes = []
+                filtered_vectors = []
+                for node, vector in zip(nodes, vectors):
+                    if vector is not None:
+                        filtered_nodes.append(node)
+                        filtered_vectors.append(vector)
+
+                filtered_vectors = torch.tensor(
+                    filtered_vectors, dtype=torch.float32
+                ).to(device)
+                self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
+            if filtered_vectors.numel() == 0:
                 return []
+            query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
+            cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
-        vector_field_name = self._get_vector_field_name(property_key)
-        emb_cache_key = f"{label}-{vector_field_name}"
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        if emb_cache_key in self._emb_cache:
-            filtered_nodes, filtered_vectors = self._emb_cache[emb_cache_key]
-        else:
-            vectors = nodes.get_attribute_values(vector_field_name)
-            filtered_nodes = []
-            filtered_vectors = []
-            for node, vector in zip(nodes, vectors):
-                if vector is not None:
-                    filtered_nodes.append(node)
-                    filtered_vectors.append(vector)
-
-            filtered_vectors = torch.tensor(filtered_vectors, dtype=torch.float32).to(
-                device
+            top_data = cosine_similarity.topk(
+                k=min(topk, len(cosine_similarity)), dim=0
             )
-            self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
-        if filtered_vectors.numel() == 0:
+            top_indices = top_data.indices.to("cpu")
+            top_values = top_data.values.to("cpu")
+            output = []
+            for idx in range(query_vector.shape[0]):
+                items = []
+                for index, score in zip(top_indices[:, idx], top_values[:, idx]):
+                    node = filtered_nodes[index.item()]
+                    node_attributes = node.attributes()
+                    if "__labels__" not in node_attributes:
+                        node_attributes["__labels__"] = list(
+                            set([node_attributes.get("label"), "Entity"])
+                        )
+                    items.append({"node": node_attributes, "score": score.item()})
+                output.append(items)
+            return output
+        except Exception as e:
+            logger.warning(f"batch_vector_search warn {e}")
             return []
-        query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
-        cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
-
-        top_data = cosine_similarity.topk(k=min(topk, len(cosine_similarity)), dim=0)
-        top_indices = top_data.indices.to("cpu")
-        top_values = top_data.values.to("cpu")
-        output = []
-        for idx in range(query_vector.shape[0]):
-            items = []
-            for index, score in zip(top_indices[:, idx], top_values[:, idx]):
-                node = filtered_nodes[index.item()]
-                node_attributes = node.attributes()
-                if "__labels__" not in node_attributes:
-                    node_attributes["__labels__"] = list(
-                        set([node_attributes.get("label"), "Entity"])
-                    )
-                items.append({"node": node_attributes, "score": score.item()})
-            output.append(items)
-        return output
 
     @staticmethod
     def _get_vector_field_name(property_key: str) -> str:

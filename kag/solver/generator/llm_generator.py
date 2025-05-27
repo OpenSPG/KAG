@@ -32,6 +32,17 @@ def to_task_context_str(context):
 thought: {context['result']}.{context.get('thought', '')}"""
 
 
+def extra_reference(references):
+    return [
+        {
+            "content": reference["content"],
+            "document_name": reference["document_name"],
+            "id": reference["id"],
+        }
+        for reference in references
+    ]
+
+
 @GeneratorABC.register("llm_generator")
 class LLMGenerator(GeneratorABC):
     def __init__(
@@ -95,7 +106,9 @@ class LLMGenerator(GeneratorABC):
         rerank_queries = []
         chunks = []
         graph_data = context.variables_graph
+        tasks = []
         for task in context.gen_task(False):
+            tasks.append(task)
             if isinstance(task.result, KAGRetrievedResponse) and self.chunk_reranker:
                 rerank_queries.append(
                     task.arguments.get("rewrite_query", task.arguments["query"])
@@ -104,9 +117,12 @@ class LLMGenerator(GeneratorABC):
             results.append(to_task_context_str(task.get_task_context()))
 
         rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
-        refer_data = to_reference_list(prefix_id=0, retrieved_datas=rerank_chunks)
+        refer_retrieved_data = to_reference_list(
+            prefix_id=0, retrieved_datas=rerank_chunks
+        )
         content_json = {"step": results}
         if reporter:
+            reporter.add_report_line("generator", "task_process", tasks, "FINISH")
             reporter.add_report_line(
                 "generator", "final_generator_input", content_json, "FINISH"
             )
@@ -114,12 +130,15 @@ class LLMGenerator(GeneratorABC):
                 "generator_reference", "reference_chunk", rerank_chunks, "FINISH"
             )
             reporter.add_report_line(
-                "generator_reference_all", "reference_ref_format", refer_data, "FINISH"
+                "generator_reference_all",
+                "reference_ref_format",
+                refer_retrieved_data,
+                "FINISH",
             )
             reporter.add_report_line(
                 "generator_reference_graphs", "reference_graph", graph_data, "FINISH"
             )
-
+        refer_data = extra_reference(refer_retrieved_data)
         if len(refer_data) and (not self.enable_ref):
             content_json["reference"] = refer_data
 

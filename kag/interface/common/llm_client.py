@@ -13,16 +13,99 @@ try:
     from json_repair import loads
 except:
     from json import loads
+from dataclasses import dataclass
+from collections import defaultdict
+from threading import Lock
 from typing import Union, Dict, List, Any
 import logging
 import traceback
-
+import contextvars
 from tenacity import retry, stop_after_attempt, wait_exponential
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
 from kag.common.rate_limiter import RATE_LIMITER_MANGER
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TokenMeter:
+    completion_tokens: int = 0
+    prompt_tokens: int = 0
+    total_tokens: int = 0
+
+    def update(
+        self, completion_tokens: int = 0, prompt_tokens: int = 0, total_tokens: int = 0
+    ):
+        self.completion_tokens += completion_tokens
+        self.prompt_tokens += prompt_tokens
+        self.total_tokens += total_tokens
+
+    def __add__(self, other: "TokenMeter") -> "TokenMeter":
+        return TokenMeter(
+            self.completion_tokens + other.completion_tokens,
+            self.prompt_tokens + other.prompt_tokens,
+            self.total_tokens + other.total_tokens,
+        )
+
+    def to_dict(self):
+        return {
+            "completion_tokens": self.completion_tokens,
+            "prompt_tokens": self.prompt_tokens,
+            "total_tokens": self.total_tokens,
+        }
+
+
+class TokenMeterFactory:
+    _instance = None
+    _lock = Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._meters = defaultdict(TokenMeter)
+            cls._instance._lock = Lock()
+        return cls._instance
+
+    def get_meter(self, task_id: str) -> TokenMeter:
+        with self._lock:
+            return self._meters[task_id]
+
+    def remove_meter(self, task_id: str):
+        with self._lock:
+            if task_id in self._meters:
+                del self._meters[task_id]
+
+    def get_all_meters(self) -> Dict[str, TokenMeter]:
+        with self._lock:
+            return dict(self._meters)
+
+    def clear_all(self):
+        with self._lock:
+            self._meters.clear()
+
+    def get_total_usage(self) -> TokenMeter:
+        with self._lock:
+            total = TokenMeter()
+            for meter in self._meters.values():
+                total += meter
+            return total
+
+
+CURRENT_TASK_ID = contextvars.ContextVar("current_task_id", default="default-task[0]")
+
+
+class LLMCallCcontext:
+    def __init__(self, task_id):
+        self.task_id = task_id
+        self.token = None
+
+    def __enter__(self):
+        self.token = CURRENT_TASK_ID.set(self.task_id)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        CURRENT_TASK_ID.reset(self.token)
 
 
 class LLMClient(Registrable):
@@ -371,3 +454,8 @@ class LLMClient(Registrable):
             except Exception as e:
                 logger.error("LLM config check failed!")
                 raise e
+
+    @staticmethod
+    def get_token_meter():
+        task_id = CURRENT_TASK_ID.get()
+        return TokenMeterFactory().get_meter(task_id)
