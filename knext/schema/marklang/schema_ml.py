@@ -30,7 +30,8 @@ from knext.schema.model.spg_type import (
     StandardType,
     Property,
     Relation,
-    BasicType, IndexType,
+    BasicType,
+    IndexType,
 )
 from knext.schema.client import SchemaClient
 
@@ -149,12 +150,12 @@ class SPGSchemaMarkLang:
     types = {}
     defined_types = {}
 
-    def __init__(self, filename, with_server=True):
+    def __init__(self, filename, with_server=True, host_addr=None, project_id=None):
         self.reset()
         self.schema_file = filename
         self.current_line_num = 0
         if with_server:
-            self.schema = SchemaClient()
+            self.schema = SchemaClient(host_addr, project_id)
             thing = self.schema.query_spg_type("Thing")
             for prop in thing.properties:
                 self.entity_internal_property.add(prop)
@@ -1090,7 +1091,11 @@ class SPGSchemaMarkLang:
             self.indent_level_pos[self.current_parsing_level] = indent_count
 
     def is_internal_property(self, prop: Property, spg_type: SpgTypeEnum):
-        if spg_type == SpgTypeEnum.Entity or spg_type == SpgTypeEnum.Standard or spg_type == SpgTypeEnum.Index:
+        if (
+            spg_type == SpgTypeEnum.Entity
+            or spg_type == SpgTypeEnum.Standard
+            or spg_type == SpgTypeEnum.Index
+        ):
             return prop in self.entity_internal_property
 
         elif spg_type == SpgTypeEnum.Concept:
@@ -1268,7 +1273,6 @@ class SPGSchemaMarkLang:
                         print(f"Delete property: [{new_type.name}] {prop}")
 
                 for prop, o in new_type.properties.items():
-
                     if (
                         prop not in old_type.properties
                         and not self.is_internal_property(prop, new_type.spg_type_enum)
