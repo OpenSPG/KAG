@@ -28,15 +28,15 @@ class OllamaVectorizeModel(VectorizeModelABC):
     """
 
     def __init__(
-            self,
-            model: str = "bge-m3",
-            base_url: str = "",
-            vector_dimensions: int = None,
-            timeout: float = None,
-            max_rate: float = 1000,
-            time_period: float = 1,
-            batch_size: int = 8,
-            **kwargs,
+        self,
+        model: str = "bge-m3",
+        base_url: str = "",
+        vector_dimensions: int = None,
+        timeout: float = None,
+        max_rate: float = 1000,
+        time_period: float = 1,
+        batch_size: int = 8,
+        **kwargs,
     ):
         """
         Initializes the OpenAIVectorizeModel instance.
@@ -61,12 +61,12 @@ class OllamaVectorizeModel(VectorizeModelABC):
         return f"{cls}_{base_url}_{model}"
 
     def vectorize(
-            self, texts: Union[str, Iterable[str]]
+        self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         return asyncio.run(self.avectorize(texts))
 
     async def avectorize(
-            self, texts: Union[str, Iterable[str]]
+        self, texts: Union[str, Iterable[str]]
     ) -> Union[EmbeddingVector, Iterable[EmbeddingVector]]:
         """
         Vectorize a text string into an embedding vector or multiple text strings into multiple embedding vectors.
@@ -102,14 +102,16 @@ class OllamaVectorizeModel(VectorizeModelABC):
     async def _execute_batch_vectorize(self, texts: List[str]) -> List[EmbeddingVector]:
         async def do_task_with_semaphore(_semaphore, _input: str) -> EmbeddingVector:
             async with _semaphore:
-                embeddings_response = await self.aclient.embeddings(prompt=_input, model=self.model)
+                embeddings_response = await self.aclient.embeddings(
+                    prompt=_input, model=self.model
+                )
             return embeddings_response.embedding
 
         try:
             semaphore = asyncio.Semaphore(self.batch_size)
-            embeddings = await asyncio.gather(*[
-                do_task_with_semaphore(semaphore, text) for text in texts
-            ])
+            embeddings = await asyncio.gather(
+                *[do_task_with_semaphore(semaphore, text) for text in texts]
+            )
             return embeddings
         except Exception as e:
             logger.error(f"Error: {e}")
