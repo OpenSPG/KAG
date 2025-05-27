@@ -28,17 +28,15 @@ def rewrite(cypher):
 
 if __name__ == "__main__":
     cypher_query = """
+       MATCH (f:california_schools_frpm)-[:hasfrpmdata]->(s:california_schools_schools)
+        WHERE f.`Charter Funding Type` = 'Locally funded'
+        WITH AVG(f.`Enrollment (K-12)` - f.`Enrollment (Ages 5-17)`) AS avg_diff
         MATCH (f:california_schools_frpm)-[:hasfrpmdata]->(s:california_schools_schools)
-        MATCH (ss:california_schools_satscores)-[:belongsTo]->(s)
-        WHERE f.`County Name` = 'Contra Costa' AND ss.NumTstTakr IS NOT NULL AND ss.NumTstTakr > 0
-        RETURN ss.sname AS SchoolName, ss.NumTstTakr AS TestTakers
-        ORDER BY TestTakers DESC
-        LIMIT 1
+        WHERE f.`Charter Funding Type` = 'Locally funded'
+        WITH s, f.`Enrollment (K-12)` - f.`Enrollment (Ages 5-17)` AS diff, avg_diff
+        WHERE diff > avg_diff
+        RETURN s.`School Name` AS SchoolName, s.`DOCType` AS DOCType
     """
-
-    match = ""
-    if match:
-        print("xxxx")
 
     result = rewrite_cypher(cypher_query, [])
     # output tree

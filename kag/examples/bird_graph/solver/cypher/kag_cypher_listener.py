@@ -1,8 +1,11 @@
 from kag.examples.bird_graph.solver.cypher.CypherListener import CypherListener
 from kag.examples.bird_graph.solver.cypher.CypherParser import CypherParser
 from io import StringIO
-from kag.examples.bird_graph.solver.cypher.cypher_listener_match import (
-    CypherEntityExtractor,
+from kag.examples.bird_graph.solver.cypher.match_extractor import (
+    CypherMatchExtractor,
+)
+from kag.examples.bird_graph.solver.cypher.where_extractor import (
+    CypherWhereExtractor,
 )
 
 
@@ -22,7 +25,8 @@ class KagCypherListener(CypherListener):
         }
         self.order = {"fields": []}
         self.where = {"express": []}
-        self.extractor = CypherEntityExtractor()
+        self.match_extractor = CypherMatchExtractor()
+        self.where_extractor = CypherWhereExtractor()
         self.rewrite_cypher = StringIO()
         self.alias_mapping = {}
         self.struct = {
@@ -41,7 +45,8 @@ class KagCypherListener(CypherListener):
             if alias:
                 self.alias_mapping[alias] = expression
             else:
-                self.alias_mapping[expression] = expression
+                if expression not in self.alias_mapping:
+                    self.alias_mapping[expression] = expression
 
     def convert_entity_2_alias(self):
         alias_entity_columns = {}
@@ -128,12 +133,13 @@ class KagCypherListener(CypherListener):
 
     def enterOC_Where(self, ctx: CypherParser.OC_WhereContext):
         express = ctx.oC_Expression().getText()
-        #  print(f"express={express}")
+        self.where_extractor.visit_where_condition(ctx)
+        text = ctx.getText()
         self.where["express"].append(express)
-        self.rewrite_cypher.write(f"{ctx.getText()} %s \n")
+        self.rewrite_cypher.write("{}\n")
 
     def enterOC_Match(self, ctx: CypherParser.OC_MatchContext):
-        new_match = self.extractor.visit_oc_match(ctx)
+        new_match = self.match_extractor.visit_oc_match(ctx)
         if new_match:
             self.rewrite_cypher.write(f"{new_match} \n")
         else:
@@ -147,9 +153,17 @@ class KagCypherListener(CypherListener):
     def enterOC_Return(self, ctx: CypherParser.OC_ReturnContext):
         self.var2alias(ctx.oC_ProjectionBody().oC_ProjectionItems().oC_ProjectionItem())
         # return_statement = self.rewrite_return_column(ctx)
-        if not self.where["express"]:
-            self.rewrite_cypher.write("\n %s ")
+        # if not self.where["express"]:
+        # self.rewrite_cypher.write("\n")
         self.rewrite_cypher.write(f"{ctx.getText()} \n")
+
+    # replace alias in where expression.
+    def replace_where_alias(self, cypher):
+        for key, value in self.alias_mapping.items():
+            # replace avg(s.abc) -> s.abc
+            value = self.where_extractor.function_2_field_expression(value)
+            cypher = str.replace(cypher, key, value)
+        return cypher
 
     def rewrite(self):
         new_cypher = self.rewrite_cypher.getvalue()
@@ -157,23 +171,44 @@ class KagCypherListener(CypherListener):
             If the ORDER BY clause is not empty, 
             then ensure that the fields in the ORDER BY clause are not null in the WHERE condition.
         """
+        # maybe exist several where condition
+        where_condition = []
         if self.struct["order"]["fields"]:
             new_cypher = self.rewrite_cypher.getvalue()
-            where_condition = StringIO()
+
             if not self.struct["where"]["express"]:
-                where_condition.write("WHERE 1=1 \n")
+                where_condition.append("WHERE 1=1 \n")
+            else:
+                for where_text in self.where["express"]:
+                    where_text = self.replace_where_alias(where_text)
+                    where_condition.append(f"WHERE {where_text} \n")
             for field in self.struct["order"]["fields"]:
                 var_name = field
                 # replace alias -> real var.
                 if field in self.alias_mapping:
                     var_name = self.alias_mapping[field]
+                    # replace avg(s.abc) -> s.abc
+                    var_name = self.where_extractor.function_2_field_expression(
+                        var_name
+                    )
                 if var_name.lower() == "count(*)" or var_name.lower() == "count(1)":
                     continue
-                where_condition.write(f" AND {var_name} IS NOT NULL \n")
-            new_cypher = new_cypher.replace("%s", f"{where_condition.getvalue()}\n", 1)
-            new_cypher = new_cypher.replace("%s", "")
+
+                for i in range(len(where_condition)):
+                    where_condition[i] += f"\n AND {var_name} IS NOT NULL"
+        else:
+            for where_text in self.where["express"]:
+                where_condition.append(f"WHERE {where_text} \n")
+            # new_cypher = new_cypher.replace("%s", f"{where_condition.getvalue()}\n", 1)
+            # new_cypher = new_cypher.replace("%s", "")
             # print("============= rewrite cypher begin ============= ")
             # print(f"cypher:{self.cypher},\n\n new_cypher: {new_cypher}")
             # print("============= rewrite cypher end =============== ")
-        new_cypher = new_cypher.replace("%s", "")
+
+        new_cypher = new_cypher.format(*where_condition)
         return new_cypher
+
+    def enterOC_FunctionInvocation(
+        self, ctx: CypherParser.OC_FunctionInvocationContext
+    ):
+        self.where_extractor.function_name_extractor(ctx)

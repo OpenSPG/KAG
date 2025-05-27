@@ -2,7 +2,7 @@ from kag.examples.bird_graph.solver.cypher.CypherParser import CypherParser
 from kag.examples.bird_graph.solver.common import load_schema_json
 
 
-class CypherEntityExtractor:
+class CypherMatchExtractor:
     def __init__(self):
         # {entity_alias,entity_name}
         self.entities = {}
