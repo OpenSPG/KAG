@@ -26,6 +26,8 @@ vectorize_model: &vectorize_model
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
+  max_rate: 1000
+  time_period: 60
 vectorizer: *vectorize_model
 
 log:
@@ -57,12 +59,16 @@ e2: &e2
 e3: &e3
   type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
 
+e4: &e4
+  type: table_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
       - *e2
       - *e3
+      - *e4
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
       cut_depth: 6
@@ -79,8 +85,10 @@ kag_builder_pipeline:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 1
   num_chains: 16
+  max_concurrency: 10
   scanner:
-    type: file_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+    type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
+    file_suffix: md
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
@@ -90,7 +98,7 @@ search_api: &search_api
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
-r1:
+r1: &r1
   type: vector_chunk_retriever
   vectorize_model: *vectorize_model
   search_api: *search_api
@@ -109,11 +117,15 @@ r3: &r3
   top_k: 5
 
 retriever_executor: &retriever_executor
-  type: kag_hybrid_retrieval_executor
+  type: evidence_based_reasoner
+  llm: *chat_llm
   retrievers:
+    - *r1
     - *r3
   merger:
     type: kag_merger
+
+
 
 kag_solver_pipeline:
   type: kag_static_pipeline
