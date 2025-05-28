@@ -206,7 +206,11 @@ class SPGServerBridge:
                     res = []
                     for t in ml.types.values():
                         res.append(t.to_rest())
-                    meta["spg_schema"] = res
+                    meta[
+                        "spg_schema"
+                    ] = ml.schema.create_session()._rest_client.api_client.sanitize_for_serialization(
+                        res
+                    )
         except:
             pass
         return meta
