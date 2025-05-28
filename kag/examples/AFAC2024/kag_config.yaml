@@ -59,12 +59,16 @@ e2: &e2
 e3: &e3
   type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
 
+e4: &e4
+  type: table_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
       - *e2
       - *e3
+      - *e4
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
       cut_depth: 6
