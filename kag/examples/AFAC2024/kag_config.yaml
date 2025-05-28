@@ -26,6 +26,8 @@ vectorize_model: &vectorize_model
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
+  max_rate: 1000
+  time_period: 60
 vectorizer: *vectorize_model
 
 log:
@@ -79,8 +81,10 @@ kag_builder_pipeline:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 1
   num_chains: 16
+  max_concurrency: 10
   scanner:
-    type: file_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+    type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
+    file_suffix: md
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#

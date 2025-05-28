@@ -8,3 +8,38 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import asyncio
+import os
+import logging
+import time
+
+from kag.common.registry import import_modules_from_path
+from kag.builder.runner import BuilderChainRunner
+from kag.interface import LLMClient
+
+logger = logging.getLogger(__name__)
+
+
+async def buildKB(dir_path):
+    from kag.common.conf import KAG_CONFIG
+
+    start = time.time()
+    runner = BuilderChainRunner.from_config(
+        KAG_CONFIG.all_config["kag_builder_pipeline"]
+    )
+    await runner.ainvoke(dir_path)
+    end = time.time()
+
+    token_meter = LLMClient.get_token_meter()
+    stat = token_meter.to_dict()
+    logger.info(
+        f"\n\nbuildKB successfully for {dir_path}\n\nTimes cost:{end-start}s\n\nTokens cost: {stat}"
+    )
+
+
+if __name__ == "__main__":
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    import_modules_from_path(dir_path)
+
+    data_dir_path = os.path.join(dir_path, "data")
+    asyncio.run(buildKB(data_dir_path))
