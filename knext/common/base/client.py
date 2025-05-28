@@ -41,10 +41,7 @@ class Client(ABC):
             project_id (int): The ID of the user's project. If not provided, the value from the environment variable `KAG_PROJECT_ID` is used.
         """
         self._host_addr = host_addr or env.host_addr
-        try:
-            self._project_id = project_id or env.id
-        except Exception as e:
-            self._project_id = project_id
+        self._project_id = project_id or env.id
 
     @staticmethod
     def serialize(obj):
