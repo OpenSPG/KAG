@@ -106,6 +106,7 @@ class KAGFlow:
                     node_name, self.default_flow_component.get(node_name)
                 )
                 component_nodes[node_name] = FlowComponent.from_config(component_conf)
+                execute_graph.add_node(node_name)
 
         def _add_edge(src: str, dst: str):
             # Add an edge between two nodes, ensuring both nodes exist in the graph

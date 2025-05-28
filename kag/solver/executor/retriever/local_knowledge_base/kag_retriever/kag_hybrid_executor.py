@@ -245,7 +245,7 @@ class KagHybridExecutor(ExecutorABC):
             "history": "\n".join(history_qa),
         }
 
-        llm_output = self.llm_module.invoke(
+        llm_output = self.llm_client.invoke(
             params,
             prompt,
             with_json_parse=False,
