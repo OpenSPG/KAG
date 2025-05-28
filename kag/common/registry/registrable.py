@@ -813,7 +813,10 @@ class Registrable:
             raise e
         if len(params) > 0:
             logger.warn(f"These params are not used for constructing {cls}:\n{params}")
-
+            if "type" in params.keys():
+                raise ConfigurationError(
+                    f"type is not used for constructing {cls}, but it is passed in params."
+                )
         return instant
 
     def _to_config(self, v):
