@@ -61,9 +61,14 @@ class ProjectClient(Client):
             print(e)
         return None
 
-    def create(self, name: str, namespace: str, config: str, desc: str = None, auto_schema=False, visibility: str = "public", tag: str = None):
+    def create(self, name: str, namespace: str, config: str, **kwargs):
+        visibility = kwargs.get("visibility", "PRIVATE")
+        tag = kwargs.get("tag", "LOCAL")
+        auto_schema = kwargs.get("auto_schema", False)
+        desc = kwargs.get("desc", None)
+        userNo = kwargs.get("userNo", "openspg")
         project_create_request = rest.ProjectCreateRequest(
-            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag
+            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag, userNo=userNo
         )
 
         project = self._rest_client.project_create_post(
