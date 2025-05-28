@@ -11,13 +11,13 @@
 # or implied.
 import os
 import json
-from io import StringIO
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 import kag.interface as interface
 from kag.interface.common.llm_client import LLMCallCcontext, TokenMeterFactory
 from kag.common.conf import KAGConstants, init_env
 from kag.indexer.kag_index_manager import KAGIndexManager
+from tempfile import TemporaryDirectory
 
 from knext.schema.marklang.schema_ml import SPGSchemaMarkLang
 
@@ -177,7 +177,7 @@ class SPGServerBridge:
         return data
 
     def get_index_manager_info(
-        self, index_manager_name, llm_config, vectorize_model_config, project_id=None
+        self, index_manager_name, namespace, llm_config, vectorize_model_config
     ):
         if isinstance(llm_config, str):
             llm_config = json.loads(llm_config)
@@ -194,11 +194,19 @@ class SPGServerBridge:
         try:
             project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
             host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-            if project_id and host_addr:
+            if namespace and project_id and host_addr:
                 schema = meta["schema"]
-                schema_file = StringIO(schema)
-                ml = SPGSchemaMarkLang(schema_file, host_addr, project_id)
-            meta["spg_schema"] = ml
+                schema_content = f"namespace {namespace}\n\n{schema}"
+
+                with TemporaryDirectory() as tmpdir:
+                    schema_file = os.path.join(tmpdir, "temp.schema")
+                    with open(schema_file, "w") as writer:
+                        writer.write(schema_content)
+                    ml = SPGSchemaMarkLang(schema_file, True, host_addr, project_id)
+                    res = []
+                    for t in ml.types.values():
+                        res.append(t.to_rest())
+                    meta["spg_schema"] = res
         except:
             pass
         return meta
