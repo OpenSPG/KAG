@@ -28,14 +28,16 @@ def rewrite(cypher):
 
 if __name__ == "__main__":
     cypher_query = """
-       MATCH (f:california_schools_frpm)-[:hasfrpmdata]->(s:california_schools_schools)
-        WHERE f.`Charter Funding Type` = 'Locally funded'
-        WITH AVG(f.`Enrollment (K-12)` - f.`Enrollment (Ages 5-17)`) AS avg_diff
-        MATCH (f:california_schools_frpm)-[:hasfrpmdata]->(s:california_schools_schools)
-        WHERE f.`Charter Funding Type` = 'Locally funded'
-        WITH s, f.`Enrollment (K-12)` - f.`Enrollment (Ages 5-17)` AS diff, avg_diff
-        WHERE diff > avg_diff
-        RETURN s.`School Name` AS SchoolName, s.`DOCType` AS DOCType
+        MATCH (sc:california_schools_schools {City: "Riverside"})
+        MATCH (sat:california_schools_satscores)-[:belongsTo]->(sc:california_schools_schools)
+        
+        where abc = 1
+        WITH COLLECT(sat.AvgScrMath) AS mathScores, sc
+        WITH SUM(mathScores) / SIZE(mathScores) AS avgMath, sc
+        WHERE avgMath > 400
+        where abc = 2
+        RETURN sc.School AS SchoolName, sc.FundingType AS FundingType
+
     """
 
     result = rewrite_cypher(cypher_query, [])

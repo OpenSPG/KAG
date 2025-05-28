@@ -204,8 +204,11 @@ class KagCypherListener(CypherListener):
             # print("============= rewrite cypher begin ============= ")
             # print(f"cypher:{self.cypher},\n\n new_cypher: {new_cypher}")
             # print("============= rewrite cypher end =============== ")
+        try:
+            new_cypher = new_cypher.format(*where_condition)
+        except KeyError:
+            print(f"{new_cypher},{where_condition} key error..")
 
-        new_cypher = new_cypher.format(*where_condition)
         return new_cypher
 
     def enterOC_FunctionInvocation(
