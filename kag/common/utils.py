@@ -21,6 +21,8 @@ import os
 import tempfile
 import time
 import uuid
+import subprocess
+import shlex
 
 import requests
 import importlib
@@ -45,6 +47,20 @@ blue = "\033[34m"
 magenta = "\033[35m"
 cyan = "\033[36m"
 white = "\033[37m"
+
+
+def run_cmd(cmd, catch_stdout=True, catch_stderr=True, shell=False):
+    args = shlex.split(cmd)
+    if catch_stdout:
+        stdout = subprocess.PIPE
+    else:
+        stdout = None
+    if catch_stderr:
+        stderr = subprocess.PIPE
+    else:
+        stderr = None
+    result = subprocess.run(args, stdout=stdout, stderr=stderr, shell=shell)
+    return result
 
 
 def append_python_path(path: str) -> bool:
