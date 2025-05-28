@@ -94,7 +94,7 @@ search_api: &search_api
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
-r1:
+r1: &r1
   type: vector_chunk_retriever
   vectorize_model: *vectorize_model
   search_api: *search_api
@@ -113,11 +113,15 @@ r3: &r3
   top_k: 5
 
 retriever_executor: &retriever_executor
-  type: kag_hybrid_retrieval_executor
+  type: evidence_based_reasoner
+  llm: *chat_llm
   retrievers:
+    - *r1
     - *r3
   merger:
     type: kag_merger
+
+
 
 kag_solver_pipeline:
   type: kag_static_pipeline

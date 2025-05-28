@@ -159,7 +159,7 @@ class EvalQa:
         return res_qa, metrics_list
 
     async def async_write_json(self, file_path, data):
-        async with aiofiles.open(file_path, "w") as f:
+        async with aiofiles.open(file_path, "w", encoding="utf-8", newline="\n") as f:
             await f.write(json.dumps(data, ensure_ascii=False))
 
     def load_data(self, file_path):
