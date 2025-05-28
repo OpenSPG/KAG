@@ -16,7 +16,7 @@ from kag.interface import PlannerABC, Task, LLMClient, PromptABC
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
 
 
-@PlannerABC.register("kag_bird_planner")
+@PlannerABC.register("bird_planner")
 class BirdPlanner(KAGStaticPlanner):
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.

@@ -8,7 +8,7 @@ from kag.interface import PromptABC, Task
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("default_bird_plan_prompt")
+@PromptABC.register("bird_plan_prompt")
 class BirdPlanPrompt(PromptABC):
     template_zh = """
 ### 任务

@@ -12,24 +12,17 @@
 import json
 import io
 import csv
-from typing import Optional
 
 from tenacity import retry, stop_after_attempt
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import GeneratorABC, LLMClient, PromptABC
-from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
-    KAGRetrievedResponse,
-    to_reference_list,
-)
 from kag.solver.utils import init_prompt_with_fallback
-from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 from kag.examples.bird_graph.solver.cypher.rewrite_cypher import rewrite_cypher
 from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context, Task
-
-from neo4j import AsyncGraphDatabase
-from neo4j.exceptions import Neo4jError
+from kag.examples.bird_graph.solver.cypher.cypher_execute_engine import (
+    CypherExecuteEngine,
+)
 
 
 def to_task_context_str(context):
@@ -54,13 +47,6 @@ class BirdGenerator(GeneratorABC):
         self.generated_return_column_prompt = generated_return_column_prompt
         self.fix_cypher_prompt = init_prompt_with_fallback(
             "fix_cypher", KAG_PROJECT_CONF.biz_scene
-        )
-
-        NEO4J_URI = "bolt://localhost:7687"
-        NEO4J_USER = "neo4j"
-        NEO4J_PASSWORD = "neo4j@openspg"
-        self.driver = AsyncGraphDatabase.driver(
-            NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
         )
 
     @retry(stop=stop_after_attempt(3))
@@ -127,42 +113,29 @@ class BirdGenerator(GeneratorABC):
 
     async def refine_cypher(self, query, cypher, **kwargs):
         return cypher
-        return await self.llm_client.ainvoke(
-            variables={
-                "question": query,
-                "schema": kwargs.get("graph_schema", ""),
-                "cypher": cypher,
-            },
-            prompt_op=self.fix_cypher_prompt,
-            with_json_parse=False,
-        )
+        # return await self.llm_client.ainvoke(
+        #     variables={
+        #         "question": query,
+        #         "schema": kwargs.get("graph_schema", ""),
+        #         "cypher": cypher,
+        #     },
+        #     prompt_op=self.fix_cypher_prompt,
+        #     with_json_parse=False,
+        # )
 
     async def _get_cypher_result(self, cypher, limit=3):
         # 使用异步会话执行查询
-        async with self.driver.session(database="birdgraph") as session:
-            try:
-                # 执行查询并获取结果
-                result = await session.run(cypher)
-                records = [record async for record in result][:limit]
-            except Neo4jError as e:
-                return "", str(e)
+        rows = CypherExecuteEngine().run(cypher)
 
-            # 获取查询结果
-            rows = []
-            for i, record in enumerate(records):
-                if i >= limit:  # 只保存前 limit 行数据
-                    break
-                rows.append(dict(record))
+        # 如果没有数据，直接返回空字符串
+        if not rows:
+            return "", None
 
-            # 如果没有数据，直接返回空字符串
-            if not rows:
-                return "", None
+        # 将数据组织为CSV格式
+        output = io.StringIO()
+        csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
+        csv_writer.writeheader()
+        csv_writer.writerows(rows)
 
-            # 将数据组织为CSV格式
-            output = io.StringIO()
-            csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
-            csv_writer.writeheader()
-            csv_writer.writerows(rows)
-
-            # 返回CSV字符串
-            return output.getvalue(), None
+        # 返回CSV字符串
+        return output.getvalue(), None

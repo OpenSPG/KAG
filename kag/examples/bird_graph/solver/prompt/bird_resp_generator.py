@@ -7,7 +7,7 @@ from kag.interface import PromptABC
 logger = logging.getLogger(__name__)
 
 
-@PromptABC.register("default_bird_resp_generator")
+@PromptABC.register("bird_resp_generator")
 class BirdRespGenerator(PromptABC):
     template_zh = """
 ### 任务

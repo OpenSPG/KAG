@@ -1,43 +1,19 @@
-import json
-import os
-import io
 import csv
+import io
+import json
 import logging
-import time
-import uuid
-
-from typing import List, Any, Optional
-
+from typing import List
+import asyncio
 from sympy import limit
-from tenacity import stop_after_attempt, retry
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
-from kag.common.parser.logic_node_parser import GetSPONode
-from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context
-from kag.interface.solver.base_model import LogicNode
-from kag.interface.solver.reporter_abc import ReporterABC
-from kag.interface.solver.model.one_hop_graph import (
-    ChunkData,
-    RetrievedData,
-    KgGraph,
+from kag.examples.bird_graph.solver.cypher.cypher_execute_engine import (
+    CypherExecuteEngine,
 )
+from kag.interface import ExecutorABC, LLMClient, Context
 from kag.interface import Task
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils import (
-    get_history_qa,
-)
 from kag.solver.utils import init_prompt_with_fallback
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kag_lf_rewriter import (
-    KAGLFRewriter,
-)
-
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_flow import (
-    KAGFlow,
-)
-
-from neo4j import GraphDatabase
-from neo4j.exceptions import Neo4jError
-
 
 logger = logging.getLogger()
 
@@ -60,17 +36,12 @@ class BirdCypherGenRunner(ExecutorABC):
             get_default_chat_llm_config()
         )
 
-        NEO4J_URI = "bolt://localhost:7687"
-        NEO4J_USER = "neo4j"
-        NEO4J_PASSWORD = "neo4j@openspg"
-        self.driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-
     def invoke(self, query, task: Task, context: Context, **kwargs):
         try_times = 1
         histroy_list = []
+        cypher = None
         while try_times > 0:
             try_times -= 1
-
             cypher = self.llm_client.invoke(
                 variables={
                     "question": task.arguments["query"],
@@ -84,44 +55,31 @@ class BirdCypherGenRunner(ExecutorABC):
             )
             cypher_result, error_str = self._get_cypher_result(cypher)
             if cypher_result:
-                task.result = str({"cypher": cypher, "result": "Cypher executed correctly and obtained the result"})
+                task.result = {"cypher": cypher, "result": cypher_result}
                 return
             if not error_str:
+                task.result = {"cypher": cypher, "result": []}
                 error_str = "no result"
             else:
                 try_times += 1
             histroy_list.append({"cypher": cypher, "error": error_str})
         # 多次尝试都没有结果
-        task.result = str(histroy_list[-1])
+        task.result = {"cypher": cypher, "result": []}
 
-    def _get_cypher_result(self, cypher, limit=3):
-        with self.driver.session(database="birdgraph") as session:
-            # 执行查询
-            try:
-                result = session.run(cypher)
-                records = [record for record in result][:limit]
-            except Neo4jError as e:
-                return "", str(e)
+    def _get_cypher_result(self, cypher, limit=9999):
+        rows = asyncio.run(CypherExecuteEngine().async_run(cypher))
+        # 如果没有数据，直接返回空字符串
+        if not rows:
+            return [], None
 
-            # 获取查询结果
-            rows = []
-            for i, record in enumerate(records):
-                if i >= limit:  # 只保存前 max_rows 行数据
-                    break
-                rows.append(dict(record))
+        # 将数据组织为CSV格式
+        # output = io.StringIO()
+        # csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
+        # csv_writer.writeheader()
+        # csv_writer.writerows(rows)
 
-            # 如果没有数据，直接返回空字符串
-            if not rows:
-                return "", None
-
-            # 将数据组织为CSV格式
-            output = io.StringIO()
-            csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
-            csv_writer.writeheader()
-            csv_writer.writerows(rows)
-
-            # 返回CSV字符串
-            return output.getvalue(), None
+        # 返回CSV字符串
+        return rows[0], None
 
     # def _refein_cypher(self, cypher, query: str, task: Task):
     #     """

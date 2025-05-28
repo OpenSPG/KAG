@@ -143,7 +143,7 @@ kag_solver_pipeline:
     type: default_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: *chat_llm
     generate_prompt:
-      type: resp_simple # kag/examples/2wiki/solver/prompt/resp_generator.py
+      type: resp_simple # kag/examples/2wiki/solver/prompt/bird_resp_generator.py
   reflector:
     type: default_reflector # kag.solver.implementation.default_reflector.DefaultReflector
     llm_client: *chat_llm
