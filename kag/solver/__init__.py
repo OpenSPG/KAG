@@ -79,9 +79,13 @@ __all__ = [
     "MockMathExecutor",
     "MockGenerator",
     "LLMGenerator",
+    "OpenSPGReporter",
+    "TraceLogReporter"
 ]
 
 from kag.solver.prompt.thought_iterative_planning_prompt import (
     DefaultIterativePlanningPrompt,
 )
+from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
+from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 from kag.tools.algorithm_tool.self_cognition.self_cogn_tools import SelfCognExecutor

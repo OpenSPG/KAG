@@ -168,7 +168,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
     )
     reporter: ReporterABC = ReporterABC.from_config({
-        "type": KAG_CONFIG.all_config.get("reporter", "kag_open_spg_reporter"),
+        "type": KAG_CONFIG.all_config.get("reporter", "open_spg_reporter"),
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
