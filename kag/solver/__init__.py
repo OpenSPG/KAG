@@ -18,6 +18,7 @@ from kag.solver.pipeline.self_cognition_pipeline import SelfCognitionPipeline
 from kag.solver.planner.kag_iterative_planner import KAGIterativePlanner
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
 from kag.solver.planner.lf_kag_static_planner import KAGLFStaticPlanner
+from kag.solver.planner.mcp_planner import MCPPlanner
 from kag.solver.prompt import (
     DeduceChoice,
     DeduceEntail,
@@ -55,6 +56,7 @@ __all__ = [
     "NaiveGenerationPipeline",
     "KAGIterativePlanner",
     "KAGStaticPlanner",
+    "MCPPlanner",
     "DefaultIterativePlanningPrompt",
     "DefaultStaticPlanningPrompt",
     "DefaultRewriteSubTaskQueryPrompt",
@@ -81,6 +83,8 @@ __all__ = [
     "MockMathExecutor",
     "MockGenerator",
     "LLMGenerator",
+    "OpenSPGReporter",
+    "TraceLogReporter"
 ]
 
 from kag.solver.prompt.thought_iterative_planning_prompt import (
@@ -89,3 +93,5 @@ from kag.solver.prompt.thought_iterative_planning_prompt import (
 from kag.common.tools.algorithm_tool.self_cognition.self_cogn_tools import (
     SelfCognExecutor,
 )
+from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
+from kag.solver.reporter.trace_log_reporter import TraceLogReporter

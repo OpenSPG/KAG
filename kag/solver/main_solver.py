@@ -20,7 +20,9 @@ import yaml
 
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.interface import SolverPipelineABC
-from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
+
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.interface.solver.reporter_abc import ReporterABC
 
 logger = logging.getLogger()
 
@@ -160,17 +162,23 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         if "chat" in qa_config.keys()
         else params.get("usePipeline", "think_pipeline")
     )
+    if "kb" in qa_config.keys():
+        kb = qa_config["kb"][0]
+        KAG_CONFIG.all_config.update(kb)
+    else:
+        kb = KAG_CONFIG.all_config
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline == "think_pipeline"
     logger.info(
         f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
     )
-    reporter: OpenSPGReporter = OpenSPGReporter(
-        task_id=task_id,
-        host_addr=host_addr,
-        project_id=project_id,
-        thinking_enabled=thinking_enabled,
-    )
+    reporter: ReporterABC = ReporterABC.from_config({
+        "type": KAG_CONFIG.all_config.get("reporter", "open_spg_reporter"),
+        "task_id": task_id,
+        "host_addr": host_addr,
+        "project_id": project_id,
+        "thinking_enabled": thinking_enabled,
+    })
 
     pipeline_config = {}
     try:
@@ -182,18 +190,22 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
         KAG_PROJECT_CONF.host_addr = host_addr
         if "kb" in qa_config.keys():
-            KAG_PROJECT_CONF.project_id = qa_config["kb"][0]["id"]
+            KAG_PROJECT_CONF.project_id = kb["project"]["id"]
             try:
-                qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
+                if "id" in kb:
+                    KAG_PROJECT_CONF.project_id = kb["id"]
+                elif "project" in kb and "id" in kb["project"]:
+                    KAG_PROJECT_CONF.project_id = kb["project"]["id"]
+                qa_config["vectorize_model"] = kb["vectorizer"]
             except Exception as e:
                 logger.info(f"vectorize_model not found in config. Error: {str(e)}")
-        if use_pipeline in KAG_CONFIG.all_config.keys():
+        if use_pipeline in kb.keys():
             custom_pipeline_conf = copy.deepcopy(
-                KAG_CONFIG.all_config.get(use_pipeline, None)
+                kb.get(use_pipeline, None)
             )
         else:
             custom_pipeline_conf = copy.deepcopy(
-                KAG_CONFIG.all_config.get("solver_pipeline", None)
+                kb.get("solver_pipeline", None)
             )
         # self cognition
         self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
