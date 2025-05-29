@@ -78,7 +78,7 @@ class OpenAIClient(LLMClient):
         logger.debug(
             f"Initialize OpenAIClient with rate limit {max_rate} every {time_period}s"
         )
-        logger.info(f"OpenAIClient max_tokens={self.max_tokens}")
+        logger.debug(f"OpenAIClient max_tokens={self.max_tokens}")
 
     def __call__(self, prompt: str = "", image_url: str = None, **kwargs):
         """

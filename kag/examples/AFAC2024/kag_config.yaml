@@ -36,14 +36,14 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '10'
-  language: en
+  id: '2'
+  language: zh
   namespace: AFAC2024
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
 
-e1:
+e1: &e1
   type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
   llm: *openie_llm
   ner_prompt:
@@ -54,17 +54,22 @@ e1:
     type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
 
 e2: &e2
-  type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: chunk_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
 
 e3: &e3
-  type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: outline_extractor # kag.builder.component.extractor.outline_extractor.OutlineExtractor
+
+e4: &e4
+  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
 
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
+      - *e1
       - *e2
       - *e3
+      - *e4
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
       cut_depth: 6
@@ -100,7 +105,7 @@ r1: &r1
   search_api: *search_api
   top_k: 10
 
-r2:
+r2: &r2
   type: text_chunk_retriever
   search_api: *search_api
   top_k: 10
@@ -112,12 +117,19 @@ r3: &r3
   vectorize_model: *vectorize_model
   top_k: 5
 
+r4: &r4
+  type: summary_chunk_retriever
+  search_api: *search_api
+  graph_api: *graph_api
+  vectorize_model: *vectorize_model
+  top_k: 5
+
 retriever_executor: &retriever_executor
   type: evidence_based_reasoner
   llm: *chat_llm
   retrievers:
     - *r1
-    - *r3
+    - *r4
   merger:
     type: kag_merger
 
