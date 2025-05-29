@@ -367,7 +367,9 @@ class MemoryGraph:
             try:
                 vectors = label_nodes.get_attribute_values(vector_field_name)
             except Exception as e:
-                logger.warning(f"get_cached_tensor index:{vector_field_name} not found in {label}")
+                logger.error(
+                    f"get_cached_tensor index:{vector_field_name} not found in {label} with:{e}"
+                )
                 return [], []
             filtered_nodes = []
             filtered_vectors = []
@@ -457,6 +459,7 @@ class MemoryGraph:
 
                 else:
                     return torch.matmul(M, v.T)
+
             if label == "Entity":
                 nodes = self._backend_graph.vs
             else:

@@ -21,9 +21,12 @@ from kag.interface import (
 )
 from kag.interface.solver.reporter_abc import ReporterABC
 
+
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
-    def __init__(self, retrievers: List[RetrieverABC], merger: RetrieverOutputMerger, **kwargs):
+    def __init__(
+        self, retrievers: List[RetrieverABC], merger: RetrieverOutputMerger, **kwargs
+    ):
         super().__init__(**kwargs)
         self.retrievers = retrievers
         self.merger = merger
@@ -59,14 +62,20 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 f"begin_sub_kag_retriever_{retriever.schema().get('name')}",
                 "task_executing",
                 "FINISH",
-                component_name=retriever.schema().get('name')
+                component_name=retriever.schema().get("name"),
             )
             retrieval_tasks.append(
                 asyncio.create_task(retriever.ainvoke(task, **kwargs))
             )
         outputs = await asyncio.gather(*retrieval_tasks)
         for output in outputs:
-            self.do_data_report(output, reporter, tag_id, f"begin_sub_kag_retriever_{output.retriever_method}", "retrieved_info_digest")
+            self.do_data_report(
+                output,
+                reporter,
+                tag_id,
+                f"begin_sub_kag_retriever_{output.retriever_method}",
+                "retrieved_info_digest",
+            )
             spos = []
             for graph in output.graphs:
                 spos += graph.get_all_spo()
@@ -102,7 +111,15 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             },
         }
 
-    def do_data_report(self, output:RetrieverOutput, reporter, segment_name, tag_id, show_info_digest, **kwargs):
+    def do_data_report(
+        self,
+        output: RetrieverOutput,
+        reporter,
+        segment_name,
+        tag_id,
+        show_info_digest,
+        **kwargs,
+    ):
         chunk_num = len(output.chunks)
         nodes_num = 0
         edges_num = 0
@@ -122,5 +139,5 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             chunk_num=chunk_num,
             edges_num=edges_num,
             nodes_num=nodes_num,
-            **kwargs
+            **kwargs,
         )

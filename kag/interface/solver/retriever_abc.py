@@ -62,7 +62,7 @@ class RetrieverOutput:
                 f"Retrieved Graphs:\n{graphs}",
                 f"Retrieved Chunks:\n{chunks}",
                 f"Retrieved Docs:\n{docs}",
-                f"Retriever Method: {self.retriever_method}"
+                f"Retriever Method: {self.retriever_method}",
             ]
         )
 

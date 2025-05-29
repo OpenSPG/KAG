@@ -502,6 +502,7 @@ Rewritten question:\n{content}
             report_content = self.generate_content(
                 report_id, tag_template, report_content, kwargs, graph_list
             )
+
             def generate_sub_segment_content(cur_report_id, cur_report_content):
                 generated_content = cur_report_content
                 sub_segments = self.report_sub_segment.get(cur_report_id, [])
@@ -520,13 +521,18 @@ Rewritten question:\n{content}
                         content_params=sub_kwargs,
                         graph_list=graph_list,
                     )
-                    processed_sub_segment_content = generate_sub_segment_content(sub_segment_data["report_id"], sub_segment_report)
+                    processed_sub_segment_content = generate_sub_segment_content(
+                        sub_segment_data["report_id"], sub_segment_report
+                    )
                     tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
                     generated_content = generated_content.replace(
                         tag_replace_str, processed_sub_segment_content
                     )
                 return generated_content
-            processed_report_content = generate_sub_segment_content(report_data["report_id"], report_content)
+
+            processed_report_content = generate_sub_segment_content(
+                report_data["report_id"], report_content
+            )
 
             think += processed_report_content + "\n\n"
             thinker_start_time = self.report_segment_time.get(
