@@ -154,7 +154,7 @@ r4: &r4
   top_k: 10
 
 r5: &r5
-  type: diagram_retriever
+  type: table_retriever
   vectorize_model: *vectorize_model
   search_api: *search_api
   graph_api: *graph_api
