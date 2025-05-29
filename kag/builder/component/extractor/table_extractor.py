@@ -118,11 +118,11 @@ class TableExtractor(ExtractorABC):
 
         parent_id = getattr(input_table_chunk, "parent_id", None)
         if parent_id is not None:
-            # add Table_relateTo_Chunk edge
+            # add Table_sourceChunk_Chunk edge
             sub_graph.add_edge(
                 s_id=input_table_chunk.id,
                 s_label="Table",
-                p="relateTo",
+                p="sourceChunk",
                 o_id=parent_id,
                 o_label="Chunk",
                 properties={},
