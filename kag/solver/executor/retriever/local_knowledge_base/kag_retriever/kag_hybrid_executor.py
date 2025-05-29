@@ -62,9 +62,10 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
                 "document_id": rd.chunk_id,
                 "document_name": clean_title,
             }
-            for k, v in rd.properties.items():
-                if k not in refer_doc:
-                    refer_doc[k] = str(v)
+            if hasattr(rd, "properties"):
+                for k, v in rd.properties.items():
+                    if k not in refer_doc:
+                        refer_doc[k] = str(v)
             refer_docs.append(refer_doc)
             refer_id += 1
 
