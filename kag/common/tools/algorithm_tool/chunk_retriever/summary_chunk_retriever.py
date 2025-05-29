@@ -137,7 +137,7 @@ class SummaryChunkRetriever(RetrieverABC):
 
         # parse oneHopGraphData and get related chunks
         chunk_ids = set()
-        for relationData in oneHopGraphData.out_relations.get("relateTo", []):
+        for relationData in oneHopGraphData.out_relations.get("sourceChunk", []):
             chunk_ids.add(relationData.end_id)
         return list(chunk_ids)
 
