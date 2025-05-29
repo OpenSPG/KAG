@@ -39,10 +39,12 @@ if __name__ == "__main__":
     # print(asyncio.run(evaObj.qa("What is the unabbreviated mailing street address of the school with the highest FRPM count for K-12 students?")))
     # Which school in Contra Costa has the highest number of test takers?
 
-    context = asyncio.run(
+    answer = asyncio.run(
         evaObj.qa(
             """
-            What is the unabbreviated mailing street address of the school with the highest FRPM count for K-12 students?
+            Please list the phone numbers of the schools with the top 3 SAT excellence rate. evidence: Excellence rate = NumGE1500 / NumTstTakr
             """.strip()
         )
     )
+
+    print(answer)

@@ -22,7 +22,7 @@ class CypherWhereExtractor:
         处理函数调用，提取聚合函数及其参数。
         """
         func_name = ctx.oC_FunctionName().getText()
-        filed = ctx.oC_Expression(0).getText()
+        filed = ctx.oC_Expression(0).getText() if ctx.oC_Expression(0) else None
         expression = ctx.getText()
         # pair = (func_name, "value")
         if expression not in self.function_express:

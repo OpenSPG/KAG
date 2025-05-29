@@ -41,7 +41,9 @@ class KagCypherListener(CypherListener):
     def var2alias(self, projection_items):
         for item in projection_items:
             alias = item.oC_Variable().getText() if item.oC_Variable() else None
-            expression = item.oC_Expression().getText()
+            expression = (
+                item.oC_Expression().getText() if item.oC_Expression() else None
+            )
             if alias:
                 self.alias_mapping[alias] = expression
             else:
@@ -134,7 +136,6 @@ class KagCypherListener(CypherListener):
     def enterOC_Where(self, ctx: CypherParser.OC_WhereContext):
         express = ctx.oC_Expression().getText()
         self.where_extractor.visit_where_condition(ctx)
-        text = ctx.getText()
         self.where["express"].append(express)
         self.rewrite_cypher.write("{}\n")
 
@@ -155,6 +156,8 @@ class KagCypherListener(CypherListener):
         # return_statement = self.rewrite_return_column(ctx)
         # if not self.where["express"]:
         # self.rewrite_cypher.write("\n")
+        if not self.where["express"]:
+            self.rewrite_cypher.write("{} \n")
         self.rewrite_cypher.write(f"{ctx.getText()} \n")
 
     # replace alias in where expression.
@@ -162,6 +165,8 @@ class KagCypherListener(CypherListener):
         for key, value in self.alias_mapping.items():
             # replace avg(s.abc) -> s.abc
             value = self.where_extractor.function_2_field_expression(value)
+            if value is None:
+                value = ""
             cypher = str.replace(cypher, key, value)
         return cypher
 

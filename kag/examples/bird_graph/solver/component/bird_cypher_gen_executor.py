@@ -67,7 +67,7 @@ class BirdCypherGenRunner(ExecutorABC):
         task.result = {"cypher": cypher, "result": []}
 
     def _get_cypher_result(self, cypher, limit=9999):
-        rows = asyncio.run(CypherExecuteEngine().async_run(cypher))
+        rows, error_info = asyncio.run(CypherExecuteEngine().async_run(cypher, 50))
         # 如果没有数据，直接返回空字符串
         if not rows:
             return [], None

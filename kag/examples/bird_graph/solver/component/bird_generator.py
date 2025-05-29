@@ -125,17 +125,17 @@ class BirdGenerator(GeneratorABC):
 
     async def _get_cypher_result(self, cypher, limit=3):
         # 使用异步会话执行查询
-        rows = CypherExecuteEngine().run(cypher)
+        rows, error_info = await CypherExecuteEngine().async_run(cypher, 9999)
 
         # 如果没有数据，直接返回空字符串
         if not rows:
             return "", None
 
         # 将数据组织为CSV格式
-        output = io.StringIO()
-        csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
-        csv_writer.writeheader()
-        csv_writer.writerows(rows)
+        # output = io.StringIO()
+        # csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
+        # csv_writer.writeheader()
+        # csv_writer.writerows(rows)
 
         # 返回CSV字符串
-        return output.getvalue(), None
+        return rows, None
