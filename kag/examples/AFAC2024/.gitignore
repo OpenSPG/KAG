@@ -1,0 +1,4 @@
+ckpt/
+/solver/afac2024_res_*.json
+/solver/afac2024_metrics_*.json
+/solver/benchmark.txt

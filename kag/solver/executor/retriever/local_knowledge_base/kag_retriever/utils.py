@@ -77,16 +77,18 @@ def get_all_docs_by_id(doc_ids: List[Tuple[str, float]], graph_api, schema_helpe
                 title=node_dict["name"].replace("_split_0", ""),
                 chunk_id=doc_id,
                 score=doc_score,
-                properties=node_dict
+                properties=node_dict,
             )
         except Exception as e:
             logger.warning(f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True)
+            return doc_id, None
 
     doc_maps = {}
     with ThreadPoolExecutor() as executor:
         doc_res = list(executor.map(process_get_doc_id, doc_ids))
         for d in doc_res:
-            doc_maps[d[0]] = d[1]
+            if d[1]:
+                doc_maps[d[0]] = d[1]
     for doc_id in doc_ids:
         matched_docs.append(doc_maps[doc_id[0]])
 

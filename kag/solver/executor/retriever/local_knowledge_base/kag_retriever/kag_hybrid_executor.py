@@ -57,14 +57,15 @@ def to_reference_list(prefix_id, retrieved_datas: List[RetrievedData]):
                 raw_title = raw_title[1:-1]
             clean_title = raw_title.replace("\\n", "\n")
             refer_doc = {
-                    "id": f"chunk:{prefix_id}_{refer_id}",
-                    "content": clean_content,
-                    "document_id": rd.chunk_id,
-                    "document_name": clean_title,
-                }
-            for k,v in rd.properties.items():
-                if k not in refer_doc:
-                    refer_doc[k] = str(v)
+                "id": f"chunk:{prefix_id}_{refer_id}",
+                "content": clean_content,
+                "document_id": rd.chunk_id,
+                "document_name": clean_title,
+            }
+            if hasattr(rd, "properties"):
+                for k, v in rd.properties.items():
+                    if k not in refer_doc:
+                        refer_doc[k] = str(v)
             refer_docs.append(refer_doc)
             refer_id += 1
 
@@ -245,7 +246,7 @@ class KagHybridExecutor(ExecutorABC):
             "history": "\n".join(history_qa),
         }
 
-        llm_output = self.llm_module.invoke(
+        llm_output = self.llm_client.invoke(
             params,
             prompt,
             with_json_parse=False,
@@ -323,6 +324,7 @@ class KagHybridExecutor(ExecutorABC):
                 executor_task=task,
                 reporter=reporter,
                 segment_name=tag_id,
+                context_graph=context.variables_graph,
             )
             kag_response.graph_data = graph_data
             if graph_data:

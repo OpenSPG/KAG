@@ -62,7 +62,7 @@ type_messages = [
                     },{
                         "query": "朱棣的姑母的侄子的母亲是谁？",
                         "response": "3"
-                    }]}"""
+                    }]}""",
     }
 ]
 
@@ -92,7 +92,7 @@ path_messages = [
                     },{
                         "query":"是宜宁翁主的侄子的孙子的同时又是李芳远的曾孙的人是谁？",
                         "response":"MATCH p=(startNode)-[*1..3]-(endNode) WHERE startNode.name =~ '宜宁翁主' AND endNode.name =~ '李芳远' RETURN p"
-                    }]}"""
+                    }]}""",
     }
 ]
 
@@ -120,7 +120,7 @@ multi_hop_messages = [
             }，{
                 "query":"泳娜的丈夫的搭档有哪些搭档?",
                 "response":"MATCH p=(startNode)-[:丈夫]->()-[:搭档]->()-[:搭档]->() WHERE startNode.name = '泳娜' RETURN p" 
-            }]}"""
+            }]}""",
     }
 ]
 
@@ -148,8 +148,6 @@ filter_messages = [
             },{
                 "query":"《感化院》中某位主要演员的搭档和杰克·汤普森有合作过，那么这位搭档的其他搭档还有哪些人？", 
                 "response":"MATCH p=(startNode)-[:主要演员]->()-[:搭档]->(actor)-[:搭档]->() WHERE startNode.name = '感化院' AND '杰克·汤普森' IN [(actor)-[:搭档]->(endNode) | endNode.name] RETURN p" 
-            }]}"""
+            }]}""",
     }
 ]
-
-

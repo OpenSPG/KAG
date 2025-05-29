@@ -80,6 +80,15 @@ class KAGGlobalConf:
         self._extra = kwargs
 
 
+def _env_parser(loader, node):
+    value = loader.construct_scalar(node)
+    var_name = value.strip()
+    return os.getenv(var_name)
+
+
+yaml.SafeLoader.add_constructor("!ENV", _env_parser)
+
+
 def _closest_cfg(
     path: Union[str, os.PathLike] = ".",
     prev_path: Optional[Union[str, os.PathLike]] = None,
@@ -205,10 +214,11 @@ def init_env(config_file: str = None):
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
-    logger.info(msg)
+    logger.debug(msg)
     os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
+        pprint.pprint(KAG_CONFIG.all_config, indent=2)
         if dump_flag is not None and dump_flag.strip() == "1":
             pprint.pprint(KAG_CONFIG.all_config, indent=2)

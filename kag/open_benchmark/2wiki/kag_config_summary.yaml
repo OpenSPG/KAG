@@ -44,7 +44,6 @@ e2: &e2
   type: summary_extractor
 
 
-
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
