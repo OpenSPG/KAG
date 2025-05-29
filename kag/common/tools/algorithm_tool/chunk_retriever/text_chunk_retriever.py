@@ -42,7 +42,7 @@ class TextChunkRetriever(RetrieverABC):
             for item in top_k_docs:
                 chunks.append(
                     ChunkData(
-                        content=item["node"]["content"],
+                        content=item["node"].get("content", ""),
                         title=item["node"]["name"],
                         chunk_id=item["node"]["id"],
                         score=item["score"],
