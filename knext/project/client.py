@@ -68,7 +68,7 @@ class ProjectClient(Client):
         desc = kwargs.get("desc", None)
         userNo = kwargs.get("userNo", "openspg")
         project_create_request = rest.ProjectCreateRequest(
-            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag, userNo=userNo
+            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag, user_no=userNo
         )
 
         project = self._rest_client.project_create_post(
