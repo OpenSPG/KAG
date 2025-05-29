@@ -159,8 +159,8 @@ class EvalQa:
         return res_qa, metrics_list
 
     async def async_write_json(self, file_path, data):
-        async with aiofiles.open(file_path, "w") as f:
-            await f.write(json.dumps(data))
+        async with aiofiles.open(file_path, "w", encoding="utf-8", newline="\n") as f:
+            await f.write(json.dumps(data, ensure_ascii=False))
 
     def load_data(self, file_path):
         """
@@ -205,6 +205,7 @@ def do_main(qa_file_path, thread_num, upper_limit, eval_obj, collect_file=None):
     if collect_file:
         with open(collect_file, "a") as f:
             f.writelines("\n" + metrics_lines)
+    return result
 
 
 def running_paras():

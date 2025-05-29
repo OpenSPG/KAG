@@ -106,6 +106,7 @@ class KAGFlow:
                     node_name, self.default_flow_component.get(node_name)
                 )
                 component_nodes[node_name] = FlowComponent.from_config(component_conf)
+                execute_graph.add_node(node_name)
 
         def _add_edge(src: str, dst: str):
             # Add an edge between two nodes, ensuring both nodes exist in the graph
@@ -179,7 +180,7 @@ class KAGFlow:
         if input_data is None:
             input_data = []
 
-        cur_graph_data = KgGraph()
+        cur_graph_data = kwargs.get("context_graph", KgGraph())
         cur_graph_data, _ = _merge_graph(cur_graph_data, input_data)
         cur_task.graph_data = cur_graph_data
 

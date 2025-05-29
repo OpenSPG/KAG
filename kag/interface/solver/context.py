@@ -12,6 +12,7 @@ class Context:
 
         self._tasks = OrderedDict()
         self.variables_graph = KgGraph()
+        self.kwargs = {}
 
     def add_task(self, task: Task):
         """Adds a task to the context.

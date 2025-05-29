@@ -24,6 +24,7 @@ class RetrieverOutput:
         graphs (List[KgGraph]): List of retrieved knowledge graph elements.
         chunks (List[ChunkData]): List of retrieved text/document chunks.
         docs (List[DocData]): List of retrieved complete documents.
+        retriever_method (str): Name of the retrieval method that generated this output.
     """
 
     def __init__(
@@ -31,6 +32,7 @@ class RetrieverOutput:
         graphs: Optional[List[KgGraph]] = None,
         chunks: Optional[List[ChunkData]] = None,
         docs: Optional[List[DocData]] = None,
+        retriever_method: str = "",
     ):
         """Initializes retrieval output container with optional data components.
 
@@ -38,10 +40,12 @@ class RetrieverOutput:
             graphs: Optional list of knowledge graph elements. Defaults to empty list.
             chunks: Optional list of text/document chunks. Defaults to empty list.
             docs: Optional list of complete documents. Defaults to empty list.
+            retriever_method:  Name of the retrieval method used to generate this output.
         """
         self.graphs = graphs if graphs else []
         self.chunks = chunks if chunks else []
         self.docs = docs if docs else []
+        self.retriever_method = retriever_method
 
     def __str__(self):
         """Generates human-readable string representation of retrieval results.
@@ -58,6 +62,7 @@ class RetrieverOutput:
                 f"Retrieved Graphs:\n{graphs}",
                 f"Retrieved Chunks:\n{chunks}",
                 f"Retrieved Docs:\n{docs}",
+                f"Retriever Method: {self.retriever_method}",
             ]
         )
 

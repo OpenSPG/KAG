@@ -78,25 +78,24 @@ class McpExecutor(ExecutorABC):
             await self.mcp_client.cleanup()
             logger.error(f"Failed to connect to server: {e}")
         response = await self.mcp_client.process_query(task_query)
-        await self.mcp_client.cleanup()
         task.update_result(response)
         return response
 
 
 def schema(self, func_name: str = None) -> dict:
-        """Function schema definition for OpenAI Function Calling
+    """Function schema definition for OpenAI Function Calling
 
-        Returns:
-            dict: Schema definition in OpenAI Function format
-        """
-        return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": {
-                "query": {
-                    "type": "string",
-                    "description": "User-provided query for retrieval.",
-                    "optional": False,
-                },
+    Returns:
+        dict: Schema definition in OpenAI Function format
+    """
+    return {
+        "name": self.name,
+        "description": self.description,
+        "parameters": {
+            "query": {
+                "type": "string",
+                "description": "User-provided query for retrieval.",
+                "optional": False,
             },
-        }
+        },
+    }
