@@ -22,6 +22,7 @@ class TraceLog:
         return {
             "decompose": self.decompose,
             "thinker": self.thinker,
+            "generator": self.generator,
             "answer": self.answer,
             "reference": [ref.to_dict() for ref in self.reference],
         }

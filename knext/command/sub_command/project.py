@@ -141,6 +141,8 @@ def create_project(
     project_config = config.get("project", {})
     namespace = project_config.get("namespace", None)
     name = project_config.get("namespace", None)
+    visibility = project_config.get("visibility","PRIVATE")
+    tag = project_config.get("tag", "LOCAL")
     host_addr = project_config.get("host_addr", None)
 
     if not namespace:
@@ -172,7 +174,7 @@ def create_project(
 
     if host_addr:
         client = ProjectClient(host_addr=host_addr)
-        project = client.create(name=name, namespace=namespace, config=config)
+        project = client.create(name=name, namespace=namespace, config=config, visibility=visibility, tag=tag)
 
         if project and project.id:
             project_id = project.id

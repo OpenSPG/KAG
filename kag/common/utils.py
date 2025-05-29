@@ -21,6 +21,8 @@ import os
 import tempfile
 import time
 import uuid
+import subprocess
+import shlex
 
 import requests
 import importlib
@@ -45,6 +47,20 @@ blue = "\033[34m"
 magenta = "\033[35m"
 cyan = "\033[36m"
 white = "\033[37m"
+
+
+def run_cmd(cmd, catch_stdout=True, catch_stderr=True, shell=False):
+    args = shlex.split(cmd)
+    if catch_stdout:
+        stdout = subprocess.PIPE
+    else:
+        stdout = None
+    if catch_stderr:
+        stderr = subprocess.PIPE
+    else:
+        stderr = None
+    result = subprocess.run(args, stdout=stdout, stderr=stderr, shell=shell)
+    return result
 
 
 def append_python_path(path: str) -> bool:
@@ -438,3 +454,14 @@ def resolve_instance(
         raise TypeError(f"Expected {expected_type}, got {type(instance)}")
     else:
         return instance
+
+def extract_tag_content(text):
+    # 匹配<tag>和</tag>之间的内容，支持任意标签名
+    matches = re.findall(r'<([^>]+)>(.*?)</\1>', text, flags=re.DOTALL)
+    return [(tag, content.strip()) for tag, content in matches]
+
+def extract_specific_tag_content(text, tag):
+    # 构建正则表达式：匹配指定标签内的内容（支持嵌套相同标签）
+    pattern = fr'<{tag}\b[^>]*>(.*?)</{tag}>'
+    matches = re.findall(pattern, text, flags=re.DOTALL)
+    return [content.strip() for content in matches]
