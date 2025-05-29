@@ -46,7 +46,9 @@ class ChunkExtractor(ExtractorABC):
             outline_name = input.name
         else:
             outline_name = input.name.split("/")[-1]
-        outline_name = outline_name[: outline_name.find("_split")]
+
+        if "_split" in outline_name:
+            outline_name = outline_name[: outline_name.find("_split")]
 
         sub_graph = SubGraph([], [])
         # add Outline Node

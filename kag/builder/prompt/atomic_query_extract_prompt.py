@@ -31,16 +31,27 @@ Your task is to extract as many questions as possible that are relevant and can 
 Output your answers line by line, with each question on a new line, without itemized symbols or numbers.
 
 # Content
+$content
+
+# Output
+    """
+
+    template_zh = """
+    # 任务
+    你的任务是提取尽可能多的与给定内容相关且能够回答的问题。请尽量保持多样性，避免提取重复或相似的问题。确保你的问题包含必要的实体名称，并避免使用代词，例如“它”、“他”、“她”、“他们”、“公司”、“个人”等。
+    
+    # 输出格式
+    逐行输出你的答案，每个问题占一行，不带逐项符号或数字。
+    
+    # 内容
+    $content
+    
+    # 输出
     """
 
     @property
     def template_variables(self) -> List[str]:
         return ["content"]
-
-    def build_prompt(self, variables) -> str:
-        content = variables["content"]
-        template = f"{self.template_en}\n{content}\n\n# Output:\n"
-        return template
 
     def parse_response(self, response: str, **kwargs):
         questions = response.split("\n")
