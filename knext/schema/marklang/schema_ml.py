@@ -964,8 +964,14 @@ class SPGSchemaMarkLang:
             elif cons.lower() == "vector":
                 prop.index_type = IndexTypeEnum.Vector
 
+            elif cons.lower() == "sparsevector":
+                prop.index_type = IndexTypeEnum.SparseVector
+
             elif cons.lower() == "textandvector":
                 prop.index_type = IndexTypeEnum.TextAndVector
+
+            elif cons.lower() == "textandsparsevector":
+                prop.index_type = IndexTypeEnum.TextAndSparseVector
 
     def complete_rule(self, rule):
         """
