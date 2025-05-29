@@ -19,7 +19,11 @@ from kag.interface import (
     VectorizeModelABC,
     ChunkData,
     RetrieverOutput,
-    EntityData, Context, LLMClient, PromptABC, Task,
+    EntityData,
+    Context,
+    LLMClient,
+    PromptABC,
+    Task,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 
@@ -35,15 +39,15 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @RetrieverABC.register("atomic_query_chunk_retriever")
 class AtomicQueryChunkRetriever(RetrieverABC):
     def __init__(
-            self,
-            vectorize_model: VectorizeModelABC = None,
-            search_api: SearchApiABC = None,
-            graph_api: GraphApiABC = None,
-            llm_client: LLMClient = None,
-            query_rewrite_prompt: PromptABC = None,
-            top_k: int = 10,
-            score_threshold=0.85,
-            **kwargs,
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        graph_api: GraphApiABC = None,
+        llm_client: LLMClient = None,
+        query_rewrite_prompt: PromptABC = None,
+        top_k: int = 10,
+        score_threshold=0.85,
+        **kwargs,
     ):
         self.llm_client = llm_client
         self.query_rewrite_prompt = query_rewrite_prompt
@@ -100,27 +104,35 @@ class AtomicQueryChunkRetriever(RetrieverABC):
     def rewrite_query(self, query: str, context: Context):
         chosen_atom_infos = self.parse_chosen_atom_infos(context)
         i_decomposed, thinking, rewritten_queries = self.llm_client.invoke(
-            {"content": query, "chosen_context": chosen_atom_infos}, self.query_rewrite_prompt, with_except=False,
-            with_json_parse=False
+            {"content": query, "chosen_context": chosen_atom_infos},
+            self.query_rewrite_prompt,
+            with_except=False,
+            with_json_parse=False,
         )
 
         return rewritten_queries
 
-    async def recall_atomic_query(self, query:str, context:Context):
+    async def recall_atomic_query(self, query: str, context: Context):
         # rewrite query to expand diversity
         rewritten_queries = self.rewrite_query(query, context)
         # get vector for rewritten queries
-        rewritten_queries_vector_list = await self.vectorize_model.avectorize(rewritten_queries)
+        rewritten_queries_vector_list = await self.vectorize_model.avectorize(
+            rewritten_queries
+        )
 
         # recall atomic_query
         tasks = []
         for rewritten_queries_vector in rewritten_queries_vector_list:
-            task = asyncio.create_task(asyncio.to_thread(lambda: self.search_api.search_vector(
-                label=self.schema_helper.get_label_within_prefix("AtomicQuery"),
-                property_key="name",
-                query_vector=rewritten_queries_vector,
-                topk=self.top_k,
-            )))
+            task = asyncio.create_task(
+                asyncio.to_thread(
+                    lambda: self.search_api.search_vector(
+                        label=self.schema_helper.get_label_within_prefix("AtomicQuery"),
+                        property_key="name",
+                        query_vector=rewritten_queries_vector,
+                        topk=self.top_k,
+                    )
+                )
+            )
             tasks.append(task)
         top_k_atomic_queries = await asyncio.gather(*tasks)
 
@@ -133,7 +145,12 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                     if atomic_id not in top_k_atomic_queries_with_threshold:
                         top_k_atomic_queries_with_threshold[atomic_id] = atomic_query
 
-                    max_score = max(top_k_atomic_queries_with_threshold[atomic_id].get("score", 0.0), score)
+                    max_score = max(
+                        top_k_atomic_queries_with_threshold[atomic_id].get(
+                            "score", 0.0
+                        ),
+                        score,
+                    )
                     atomic_query["score"] = max_score
                     top_k_atomic_queries_with_threshold[atomic_id] = atomic_query
 
@@ -152,7 +169,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         chunks = await asyncio.gather(*tasks)
         return chunks
 
-    def invoke(self, task:Task, **kwargs) -> RetrieverOutput:
+    def invoke(self, task: Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
         context = kwargs.get("context", None)
         try:
@@ -169,9 +186,9 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             return out
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput()
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
-    async def ainvoke(self, task:Task, **kwargs) -> RetrieverOutput:
+    async def ainvoke(self, task: Task, **kwargs) -> RetrieverOutput:
         retrieverOutput = await self.invoke(task, kwargs)
         return retrieverOutput
 

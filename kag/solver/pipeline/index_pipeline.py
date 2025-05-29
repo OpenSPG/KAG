@@ -7,7 +7,8 @@ from kag.interface import (
     PlannerABC,
     ExecutorABC,
     GeneratorABC,
-    Context, Task,
+    Context,
+    Task,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class IndexPipeline(SolverPipelineABC):
             if executor_name == schema["name"]:
                 return executor
         return None
+
     @retry(stop=stop_after_attempt(3), reraise=True)
     async def planning(self, query, context, **kwargs):
         """Generates task plan through LLM-based planning with automatic retry.

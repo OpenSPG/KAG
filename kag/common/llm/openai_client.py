@@ -12,7 +12,6 @@
 import logging
 
 from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI, NOT_GIVEN
-from openai.types.chat import ChatCompletionToolParam
 from pyhocon import ConfigTree
 
 
@@ -79,7 +78,7 @@ class OpenAIClient(LLMClient):
         extra_body = kwargs.get("extra_body", NOT_GIVEN)
         if isinstance(extra_body, ConfigTree):
             extra_body_dict = extra_body.as_plain_ordered_dict()
-            for k,v in extra_body_dict.items():
+            for k, v in extra_body_dict.items():
                 self.extra_body[k] = v
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.aclient = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
@@ -130,7 +129,7 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
             stop=self.stop,
-            extra_body=self.extra_body
+            extra_body=self.extra_body,
         )
         usages = []
         if not self.stream:
