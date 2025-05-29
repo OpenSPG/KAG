@@ -117,7 +117,7 @@ async def geocoder_v2(address: str, ctx: Context) -> dict:
             raise error_msg("Can not found API key.")
 
         # 调用百度API
-        url = f"{api_url}/geocoder/v2/"
+        url = f"{api_url}/geocoding/v3/"
         params = {
             "ak": api_key,
             "output": "json",
