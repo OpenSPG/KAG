@@ -11,6 +11,7 @@
 # or implied.
 from kag.bin.commands.info import ListRegisterInfo
 from kag.bin.commands.builder import BuilderJobSubmit
+from kag.bin.commands.benchmark import KAGBenchmark, RunBenchmark
 
 
-__all__ = ["ListRegisterInfo", "BuilderJobSubmit"]
+__all__ = ["ListRegisterInfo", "BuilderJobSubmit", "KAGBenchmark", "RunBenchmark"]

@@ -163,7 +163,7 @@ class SummaryChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput()
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
             # recall summary through semantic vector
             topk_summary_ids = await self._get_summaries(query, top_k)
@@ -177,13 +177,13 @@ class SummaryChunkRetriever(RetrieverABC):
             )
 
             # to retrieve output
-            out = RetrieverOutput(chunks=chunks)
+            out = RetrieverOutput(chunks=chunks, retriever_method=self.schema().get("name", ""))
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput()
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
     @property
     def input_indices(self):

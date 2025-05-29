@@ -4,6 +4,7 @@ import os
 import time
 from typing import List
 from kag.interface import LLMClient
+from kag.common.registry import Functor
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
@@ -67,6 +68,27 @@ class EvaFor2wiki(EvalQa):
     ):
         eva_obj = Evaluate()
         return eva_obj.getBenchMark(questionList, predictions, golds)
+
+
+@Functor.register("benchmark_solver_2wiki")
+def eval(qa_file_path, thread_num=10, upper_limit=1000, collect_file="benchmark.txt"):
+    eval_obj = EvaFor2wiki()
+    start = time.time()
+    metric = do_main(
+        qa_file_path=qa_file_path,
+        thread_num=thread_num,
+        upper_limit=upper_limit,
+        collect_file=collect_file,
+        eval_obj=eval_obj,
+    )
+    end = time.time()
+    token_meter = LLMClient.get_token_meter()
+    stat = token_meter.to_dict()
+
+    logger.info(
+        f"\n\nbenchmark successfully for {qa_file_path}\n\nTimes cost:{end-start}s\n\nTokens cost: {stat}"
+    )
+    return {"time_cost": end - start, "token_cost": stat, "metric": metric}
 
 
 if __name__ == "__main__":

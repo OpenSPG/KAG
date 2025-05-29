@@ -92,6 +92,10 @@ class GetSPONode(LogicNode):
         params_str = ",".join(params)
         return f"{self.operator}({params_str})"
 
+    def to_logical_form_str(self):
+        params = [f"{k}={v}" for k, v in self.args.items() if k in ["s", "p", "o"]]
+        params_str = ",".join(params)
+        return f"{self.operator}({params_str})"
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")
 
@@ -451,7 +455,7 @@ class ParseLogicForm:
             if node.alias_name in parsed_entity_set.keys():
                 s = parsed_entity_set[node.alias_name]
                 node.s = s
-        elif operator in ["get_spo", "retrieval"]:
+        elif operator in ["get_spo", "retrieval", "retriever"]:
             node: GetSPONode = GetSPONode.parse_node(args_str)
             s_node = self.std_parse_kg_node(node.s, parsed_entity_set)
             o_node = self.std_parse_kg_node(node.o, parsed_entity_set)
@@ -537,7 +541,6 @@ class ParseLogicForm:
         en = self.get_node_type_en_by_name(type_name)
         if zh == en:
             en = self.std_node_type_name(type_name)
-            zh = en
         type_info = TypeInfo()
         type_info.std_entity_type = en
         type_info.un_std_entity_type = zh
@@ -551,3 +554,60 @@ class ParseLogicForm:
         type_info.std_entity_type = self.get_edge_type_en_by_name(type_name)
         type_info.un_std_entity_type = type_name
         return type_info
+
+def extract_steps_and_actions(text):
+    # 忽略 Step 和 Action 的大小写，支持各种格式如 step1、STEP2、Action3 等
+    pattern = re.compile(
+        r'([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*([Ss][Tt][Ee][Pp]\d+:\s)|$|([Aa][Cc][Tt][Ii][Oo][Nn]\d+:\s))',
+        re.DOTALL
+    )
+
+    for match in pattern.finditer(text):
+        step_head = match.group(1)
+        step_content = match.group(2).strip()
+        # 提取 Step 编号并标准化为 StepX
+
+        # 查找紧跟其后的 Action
+        action_pattern = re.compile(rf'([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*([Ss][Tt][Ee][Pp]\d+:\s)|$)', re.DOTALL)
+        action_match = action_pattern.search(text, match.end())
+
+        if action_match:
+            action_head = action_match.group(1)
+            action_content = action_match.group(2).strip()
+            return step_content, step_head, action_content, action_head
+        else:
+            return step_content, step_head, None, None
+    return None, None, None, None
+def parse_logic_form_with_str(response):
+    logger.debug(f"logic form:{response}")
+    _output_string = response.replace("：", ":")
+    _output_string = _output_string.strip()
+    sub_querys = []
+    logic_forms = []
+    current_sub_query = ""
+    for line in _output_string.split("\n"):
+        if line.startswith("Step"):
+            step_query, _, action, _= extract_steps_and_actions(line)
+            if step_query is not None:
+                sub_querys.append(step_query)
+                current_sub_query = step_query.strip()
+                if current_sub_query == "":
+                    raise RuntimeError(f"{line} is not step query")
+            if action is not None:
+                logic_forms.append(action)
+        elif line.startswith("Action"):
+            logic_forms_regex = re.search("Action\d+:(.*)", line)
+            if logic_forms_regex:
+                logic_forms.append(logic_forms_regex.group(1))
+                if len(logic_forms) - len(sub_querys) == 1:
+                    sub_querys.append(current_sub_query)
+    if len(sub_querys) != len(logic_forms):
+        raise RuntimeError(
+            f"sub query not equal logic form num {len(sub_querys)} != {len(logic_forms)}"
+        )
+    return sub_querys, logic_forms
+
+if __name__ == "__main__":
+    d = 'Step1:  when 	Christopher Nolan bornAction1: Retriever(s=s1:person[Christopher Nolan] ,p=p1:birthTime,o=o1:birthTime )'
+    print(extract_steps_and_actions(d))
+    parse_logic_form_with_str(d)
