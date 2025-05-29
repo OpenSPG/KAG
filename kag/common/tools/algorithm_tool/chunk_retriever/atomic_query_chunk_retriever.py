@@ -19,7 +19,7 @@ from kag.interface import (
     VectorizeModelABC,
     ChunkData,
     RetrieverOutput,
-    EntityData,
+    EntityData, Context, LLMClient, PromptABC, Task,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 
@@ -35,13 +35,18 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @RetrieverABC.register("atomic_query_chunk_retriever")
 class AtomicQueryChunkRetriever(RetrieverABC):
     def __init__(
-        self,
-        vectorize_model: VectorizeModelABC = None,
-        search_api: SearchApiABC = None,
-        graph_api: GraphApiABC = None,
-        top_k: int = 10,
-        **kwargs,
+            self,
+            vectorize_model: VectorizeModelABC = None,
+            search_api: SearchApiABC = None,
+            graph_api: GraphApiABC = None,
+            llm_client: LLMClient = None,
+            query_rewrite_prompt: PromptABC = None,
+            top_k: int = 10,
+            score_threshold=0.85,
+            **kwargs,
     ):
+        self.llm_client = llm_client
+        self.query_rewrite_prompt = query_rewrite_prompt
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
         )
@@ -60,15 +65,16 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                 }
             )
         )
+        self.score_threshold = score_threshold
         super().__init__(top_k, **kwargs)
 
-    def extract_doc_by_atomic_query(self, atomic_query):
+    def recall_doc_by_atomic_query(self, atomic_query):
         entity = EntityData(
             entity_id=atomic_query["node"]["id"],
             node_type=self.schema_helper.get_label_within_prefix("AtomicQuery"),
         )
         subgraph = self.graph_api.get_entity_one_hop(entity)
-        doc_id = subgraph.out_relations["relateTo"][0].end_id
+        doc_id = subgraph.out_relations["sourceChunk"][0].end_id
         doc = self.graph_api.get_entity_prop_by_id(
             label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
             biz_id=doc_id,
@@ -81,37 +87,93 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             score=atomic_query["score"],
         )
 
-    async def ainvoke(self, task, **kwargs) -> RetrieverOutput:
+    def parse_chosen_atom_infos(self, context: Context):
+        if not context:
+            return []
+
+        chunks = []
+        for task in context.gen_task(False):
+            if isinstance(task.result, RetrieverOutput):
+                chunks.extend(task.result.chunks)
+        return chunks
+
+    def rewrite_query(self, query: str, context: Context):
+        chosen_atom_infos = self.parse_chosen_atom_infos(context)
+        i_decomposed, thinking, rewritten_queries = self.llm_client.invoke(
+            {"content": query, "chosen_context": chosen_atom_infos}, self.query_rewrite_prompt, with_except=False,
+            with_json_parse=False
+        )
+
+        return rewritten_queries
+
+    async def recall_atomic_query(self, query:str, context:Context):
+        # rewrite query to expand diversity
+        rewritten_queries = self.rewrite_query(query, context)
+        # get vector for rewritten queries
+        rewritten_queries_vector_list = await self.vectorize_model.avectorize(rewritten_queries)
+
+        # recall atomic_query
+        tasks = []
+        for rewritten_queries_vector in rewritten_queries_vector_list:
+            task = asyncio.create_task(asyncio.to_thread(lambda: self.search_api.search_vector(
+                label=self.schema_helper.get_label_within_prefix("AtomicQuery"),
+                property_key="name",
+                query_vector=rewritten_queries_vector,
+                topk=self.top_k,
+            )))
+            tasks.append(task)
+        top_k_atomic_queries = await asyncio.gather(*tasks)
+
+        top_k_atomic_queries_with_threshold = {}
+        for top_k_atomic_query in top_k_atomic_queries:
+            for atomic_query in top_k_atomic_query:
+                score = atomic_query.get("score", 0.0)
+                if score >= self.score_threshold:
+                    atomic_id = atomic_query["node"]["id"]
+                    if atomic_id not in top_k_atomic_queries_with_threshold:
+                        top_k_atomic_queries_with_threshold[atomic_id] = atomic_query
+
+                    max_score = max(top_k_atomic_queries_with_threshold[atomic_id].get("score", 0.0), score)
+                    atomic_query["score"] = max_score
+                    top_k_atomic_queries_with_threshold[atomic_id] = atomic_query
+
+        res_list = []
+        for item in top_k_atomic_queries_with_threshold.values():
+            res_list.append(item)
+        return res_list
+
+    async def recall_sourceChunks_chunks(self, top_k_atomic_queries):
+        tasks = []
+        for item in top_k_atomic_queries:
+            task = asyncio.create_task(
+                asyncio.to_thread(lambda: self.recall_doc_by_atomic_query(item))
+            )
+            tasks.append(task)
+        chunks = await asyncio.gather(*tasks)
+        return chunks
+
+    def invoke(self, task:Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
-        top_k = kwargs.get("top_k", self.top_k)
+        context = kwargs.get("context", None)
         try:
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
                 return RetrieverOutput()
-            query_vector = await self.vectorize_model.avectorize(query)
-            top_k_atomic_queries = await asyncio.to_thread(
-                lambda: self.search_api.search_vector(
-                    label=self.schema_helper.get_label_within_prefix("AtomicQuery"),
-                    property_key="content",
-                    query_vector=query_vector,
-                    topk=top_k,
-                )
-            )
 
-            chunks = []
-            tasks = []
-            for item in top_k_atomic_queries:
-                task = asyncio.create_task(
-                    asyncio.to_thread(lambda: self.extract_doc_by_atomic_query(item))
-                )
-                tasks.append(task)
-            chunks = await asyncio.gather(*tasks)
+            # recall atomic queries
+            top_k_atomic_queries = asyncio.run(self.recall_atomic_query(query, context))
+
+            # recall atomic_relatedTo_chunks
+            chunks = asyncio.run(self.recall_sourceChunks_chunks(top_k_atomic_queries))
             out = RetrieverOutput(chunks=chunks)
             return out
-
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput()
+
+    async def ainvoke(self, task:Task, **kwargs) -> RetrieverOutput:
+        retrieverOutput = await self.invoke(task, kwargs)
+        return retrieverOutput
 
     def schema(self):
         return {
