@@ -77,7 +77,9 @@ class VectorChunkRetriever(RetrieverABC):
                         score=item["score"],
                     )
                 )
-            out = RetrieverOutput(chunks=chunks, retriever_method=self.schema().get("name", ""))
+            out = RetrieverOutput(
+                chunks=chunks, retriever_method=self.schema().get("name", "")
+            )
             chunk_cached_by_query_map.put(query, out)
             return out
 

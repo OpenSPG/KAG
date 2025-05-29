@@ -88,7 +88,7 @@ __all__ = [
     "OpenSPGReporter",
     "TraceLogReporter",
     "LLMIndexGenerator",
-    "IndexPipeline"
+    "IndexPipeline",
 ]
 
 from kag.solver.prompt.thought_iterative_planning_prompt import (

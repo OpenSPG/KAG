@@ -3,6 +3,7 @@ from typing import List
 from kag.common.llm.llm_response_parser import parse_json
 from kag.interface import PromptABC
 
+
 @PromptABC.register("atomic_query_rewrite_prompt")
 class AtomicQueryRewritePrompt(PromptABC):
     template_en = """
