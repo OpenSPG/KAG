@@ -21,9 +21,10 @@ import threading
 from tenacity import retry, stop_after_attempt
 from kag.common.rate_limiter import RATE_LIMITER_MANGER
 from kag.common.registry import Registrable
-from typing import Union, Iterable
+from typing import Union, Iterable, Mapping
 
 EmbeddingVector = Iterable[float]
+SparseEmbeddingVector = Mapping[str, float]
 logger = logging.getLogger()
 
 
@@ -140,6 +141,101 @@ class VectorizeModelABC(Registrable):
 
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+        """
+
+        async with self.limiter:
+            return await asyncio.to_thread(lambda: self.vectorize(texts))
+
+
+@Registrable.register("sparse_vectorize_model")
+class SparseVectorizeModelABC(Registrable):
+    """
+    An abstract base class that defines the interface for converting text into sparse embedding vectors.
+    """
+
+    _instances = {}
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        key = cls.generate_key(*args, **kwargs)
+
+        if key in cls._instances:
+            return cls._instances[key]
+
+        instance = super().__new__(cls)
+        cls._instances[key] = instance
+        return instance
+
+    def __init__(
+        self,
+        name: str,
+        max_rate: float = 1000,
+        time_period: float = 1,
+    ):
+        """
+        Initializes the SparseVectorizeModelABC instance.
+        """
+        self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
+
+    def _download_model(self, path, url):
+        """
+        Downloads a model from a specified URL and extracts it to a given path.
+
+        Args:
+            path (str): The directory path to save the downloaded model.
+            url (str): The URL from which to download the model.
+
+        Raises:
+            RuntimeError: If the model configuration file is not found at the specified path.
+        """
+        logger.info(f"download model from:\n{url} to:\n{path}")
+        res = requests.get(url)
+        with io.BytesIO(res.content) as fileobj:
+            with tarfile.open(fileobj=fileobj) as tar:
+                tar.extractall(path=path)
+        config_path = os.path.join(path, "config.json")
+        if not os.path.isfile(config_path):
+            message = f"model config not found at {config_path!r}, url {url!r} specified an invalid model"
+            raise RuntimeError(message)
+
+    @classmethod
+    def generate_key(cls, *args, **kwargs) -> str:
+        return f"{cls}"
+
+    @retry(stop=stop_after_attempt(3), reraise=True)
+    def vectorize(
+        self, texts: Union[str, Iterable[str]]
+    ) -> Union[SparseEmbeddingVector, Iterable[SparseEmbeddingVector]]:
+        """
+        Vectorizes text(s) into sparse embedding vector(s).
+
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[SparseEmbeddingVector, Iterable[SparseEmbeddingVector]]: The sparse embedding vector(s) of the text(s).
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+        """
+        message = "abstract method vectorize is not implemented"
+        raise NotImplementedError(message)
+
+    @retry(stop=stop_after_attempt(3), reraise=True)
+    async def avectorize(
+        self, texts: Union[str, Iterable[str]]
+    ) -> Union[SparseEmbeddingVector, Iterable[SparseEmbeddingVector]]:
+        """
+        Vectorizes text(s) into sparse embedding vector(s).
+
+        Args:
+            texts (Union[str, Iterable[str]]): The text or texts to vectorize.
+
+        Returns:
+            Union[SparseEmbeddingVector, Iterable[SparseEmbeddingVector]]: The sparse embedding vector(s) of the text(s).
 
         Raises:
             NotImplementedError: This method must be implemented by subclasses.
