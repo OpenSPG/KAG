@@ -44,9 +44,13 @@ def generate_ref_doc_set(
             document_name=d["document_name"],
             url=d.get("url", None),
         )
-    for refer_id in refer_ids:
-        if refer_id in refer_doc_maps:
-            refer.append(refer_doc_maps[refer_id])
+    if refer_ids is not None:
+        for refer_id in refer_ids:
+            if refer_id in refer_doc_maps:
+                refer.append(refer_doc_maps[refer_id])
+    else:
+        for v in refer_doc_maps.values():
+            refer.append(v)
     return RefDocSet(id=tag_name, type=ref_type, info=refer)
 
 
@@ -149,6 +153,7 @@ class OpenSPGReporter(ReporterABC):
         self.report_record = []
         self.report_sub_segment = {}
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
+        self.report_all_references = kwargs.get("report_all_references", False)
         self.word_mapping = {
             "kag_merger_digest_failed": {
                 "zh": "未检索到相关信息。",
@@ -569,6 +574,8 @@ Rewritten question:\n{content}
         refer_ids = []
         if answer:
             refer_ids = list(set(extract_ids(answer)))
+        if self.report_all_references:
+            refer_ids = None
         reference = self.process_reference(reference_reports, refer_ids)
 
         content = StreamData(

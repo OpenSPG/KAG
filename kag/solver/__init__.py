@@ -9,6 +9,8 @@ from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KagHybridExecutor,
 )
+from kag.solver.generator.llm_index_generator import LLMIndexGenerator
+from kag.solver.pipeline.index_pipeline import IndexPipeline
 from kag.solver.pipeline.kag_iterative_pipeline import KAGIterativePipeline
 from kag.solver.pipeline.kag_static_pipeline import KAGStaticPipeline
 
@@ -84,7 +86,9 @@ __all__ = [
     "MockGenerator",
     "LLMGenerator",
     "OpenSPGReporter",
-    "TraceLogReporter"
+    "TraceLogReporter",
+    "LLMIndexGenerator",
+    "IndexPipeline"
 ]
 
 from kag.solver.prompt.thought_iterative_planning_prompt import (
