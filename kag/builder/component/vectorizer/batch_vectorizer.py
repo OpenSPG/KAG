@@ -105,7 +105,15 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
-            tasks.append(asyncio.create_task(vectorizer.avectorize(texts[start:end])))
+            sub_texts = []
+            for text in texts[start:end]:
+                if text.strip() != "":
+                    sub_texts.append(text)
+                else:
+                    sub_texts.append("none")
+            if len(sub_texts) == 0:
+                continue
+            tasks.append(asyncio.create_task(vectorizer.avectorize(sub_texts)))
         results = await asyncio.gather(*tasks)
         return [item for sublist in results for item in sublist]
 

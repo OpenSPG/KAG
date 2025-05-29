@@ -84,7 +84,7 @@ class TableExtractor(ExtractorABC):
         table_chunk: Chunk = input
         if table_chunk.type != ChunkTypeEnum.Table:
             # only process table
-            raise RuntimeError(f"input chunk type is not table: {input}")
+            return []
 
         if "chunk" == self.extract_type:
             return self._table_row_chunk(input_table_chunk=table_chunk)
@@ -100,17 +100,33 @@ class TableExtractor(ExtractorABC):
         file_name = input_table_chunk.kwargs.get("file_name", "")
         name = f"{file_name} / {input_table_chunk.name}"
         content = f"{name}\n{input_table_chunk.content}"
+        before_text = input_table_chunk.metadata.get("before_text", "")
+        after_text = input_table_chunk.metadata.get("after_text", "")
         sub_graph = SubGraph(nodes=[], edges=[])
         sub_graph.add_node(
             input_table_chunk.id,
             input_table_chunk.name,
-            "Chunk",
+            "Diagram",
             {
                 "id": input_table_chunk.id,
                 "name": name,
                 "content": content,
+                "beforeText": before_text,
+                "afterText": after_text,
             },
         )
+
+        parent_id = getattr(input_table_chunk, "parent_id", None)
+        if parent_id is not None:
+            # add Diagram_relateTo_Chunk edge
+            sub_graph.add_edge(
+                s_id=input_table_chunk.id,
+                s_label="Diagram",
+                p="relateTo",
+                o_id=parent_id,
+                o_label="Chunk",
+                properties={},
+            )
         return [sub_graph]
 
     @retry(stop=stop_after_attempt(3), reraise=True)
