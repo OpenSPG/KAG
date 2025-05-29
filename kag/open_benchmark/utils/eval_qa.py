@@ -205,6 +205,7 @@ def do_main(qa_file_path, thread_num, upper_limit, eval_obj, collect_file=None):
     if collect_file:
         with open(collect_file, "a") as f:
             f.writelines("\n" + metrics_lines)
+    return result
 
 
 def running_paras():
