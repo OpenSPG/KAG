@@ -177,7 +177,9 @@ class SummaryChunkRetriever(RetrieverABC):
             )
 
             # to retrieve output
-            out = RetrieverOutput(chunks=chunks, retriever_method=self.schema().get("name", ""))
+            out = RetrieverOutput(
+                chunks=chunks, retriever_method=self.schema().get("name", "")
+            )
             chunk_cached_by_query_map.put(query, out)
             return out
 

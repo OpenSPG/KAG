@@ -151,6 +151,7 @@ def is_chinese(text):
     chinese_pattern = re.compile(r"[\u4e00-\u9fff]+")
     return bool(chinese_pattern.search(text))
 
+
 async def do_index_pipeline(query, qa_config, reporter):
     if "chat" not in qa_config or "index_list" not in qa_config["chat"]:
         raise RuntimeError("chat or index_list not found in qa_config.")
@@ -158,12 +159,16 @@ async def do_index_pipeline(query, qa_config, reporter):
     retriever_configs = []
     for index_name in index_names:
         try:
-            index_manager = KAGIndexManager.from_config({
-                "type": index_name,
-                "llm_config": qa_config["llm"],
-                "vectorize_model_config": qa_config["vectorize_model"]
-            })
-            retriever_configs += index_manager.build_retriever_config(qa_config["llm"], qa_config["vectorize_model"])
+            index_manager = KAGIndexManager.from_config(
+                {
+                    "type": index_name,
+                    "llm_config": qa_config["llm"],
+                    "vectorize_model_config": qa_config["vectorize_model"],
+                }
+            )
+            retriever_configs += index_manager.build_retriever_config(
+                qa_config["llm"], qa_config["vectorize_model"]
+            )
         except Exception as e:
             raise RuntimeError(f"not found index {index_name}")
     qa_config["retrievers"] = retriever_configs
@@ -171,21 +176,16 @@ async def do_index_pipeline(query, qa_config, reporter):
     pipeline = SolverPipelineABC.from_config(pipeline_config)
     return await pipeline.ainvoke(query, reporter=reporter)
 
+
 async def do_qa_pipeline(use_pipeline, query, qa_config, reporter):
     if use_pipeline in qa_config.keys():
-        custom_pipeline_conf = copy.deepcopy(
-            qa_config.get(use_pipeline, None)
-        )
+        custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
     else:
-        custom_pipeline_conf = copy.deepcopy(
-            qa_config.get("solver_pipeline", None)
-        )
+        custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
     # self cognition
     self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
     self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
-    self_cognition_res = await self_cognition_pipeline.ainvoke(
-        query, reporter=reporter
-    )
+    self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
     if not self_cognition_res:
         if custom_pipeline_conf:
             pipeline_config = custom_pipeline_conf
@@ -197,6 +197,7 @@ async def do_qa_pipeline(use_pipeline, query, qa_config, reporter):
     else:
         answer = self_cognition_res
     return answer
+
 
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     qa_config = params.get("config", KAG_CONFIG.all_config)
@@ -219,14 +220,16 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     logger.info(
         f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
     )
-    reporter: ReporterABC = ReporterABC.from_config({
-        "type": KAG_CONFIG.all_config.get("reporter", "open_spg_reporter"),
-        "task_id": task_id,
-        "host_addr": host_addr,
-        "project_id": project_id,
-        "thinking_enabled": thinking_enabled,
-        "report_all_references": use_pipeline == "index_pipeline"
-    })
+    reporter: ReporterABC = ReporterABC.from_config(
+        {
+            "type": KAG_CONFIG.all_config.get("reporter", "open_spg_reporter"),
+            "task_id": task_id,
+            "host_addr": host_addr,
+            "project_id": project_id,
+            "thinking_enabled": thinking_enabled,
+            "report_all_references": use_pipeline == "index_pipeline",
+        }
+    )
     if is_chinese(query):
         KAG_PROJECT_CONF.language = "zh"
     else:

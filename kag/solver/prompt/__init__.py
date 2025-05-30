@@ -50,6 +50,7 @@ from kag.solver.prompt.summary_question import SummaryQuestionWithOutSPO
 from kag.solver.prompt.mcp_tool_call import MCPToolCallPrompt
 from kag.solver.prompt.thought_then_answer import ThoughtThenAnswerPrompt
 from kag.solver.prompt.without_reference_generator import WithOutReferGeneratorPrompt
+from kag.solver.prompt.atomic_query_rewrite_prompt import AtomicQueryRewritePrompt
 
 __all__ = [
     "DeduceChoice",
@@ -83,4 +84,5 @@ __all__ = [
     "WithOutReferGeneratorPrompt",
     "ThoughtThenAnswerPrompt",
     "MultiHopGeneratorPrompt",
+    "AtomicQueryRewritePrompt",
 ]

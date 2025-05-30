@@ -56,10 +56,7 @@ class LLMIndexGenerator(GeneratorABC):
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
         self.chunk_reranker = chunk_reranker or RerankByVector.from_config(
-            {
-                "type": "rerank_by_vector",
-                "rerank_top_k": -1
-            }
+            {"type": "rerank_by_vector", "rerank_top_k": -1}
         )
         if enable_ref:
             self.with_out_ref_prompt = init_prompt_with_fallback(
