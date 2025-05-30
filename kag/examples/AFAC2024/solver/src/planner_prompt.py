@@ -55,6 +55,49 @@ Please complete the task according to the following rules:
         },
     }
 
+    template_zh = {
+        "instruction": """
+            query字段包含一个复杂的多跳问题，可拆解为一系列简单的单跳问题。你的任务是仔细分析问题的逻辑结构，将多跳问题分解为多个单跳原子问题，并给出子问题间的依赖关系。依赖关系需以有向无环图(DAG)形式表示。
+            
+            请将原始多跳问题分解为一系列单跳原子问题并仔细分析其依赖关系，以DAG形式呈现。若问题2依赖于问题1，则问题2中必须显式引用问题1的答案。
+            
+            请按照以下规则完成任务：
+            
+            原子化分解：
+            
+            将query字段的多跳问题拆解为最细粒度的单跳子问题
+            
+            每个子问题必须可独立执行，严禁隐含多跳操作（例如"X导演的生日"必须拆解为两个子问题："X的导演"和"[导演]的生日"）
+            
+            依赖建模：
+            
+            使用DAG清晰定义子问题间的依赖关系
+            
+            下游任务必须使用{{i.output}}显式引用上游结果（例如若问题2依赖问题1，则问题2的查询必须包含{{1.output}}）
+            
+            输出规范：
+            
+            example字段提供了示例查询及预期输出（位于output字段）。请严格遵循输出格式，以JSON格式提供响应
+        """,
+        "example": {
+            "query": "张学友和刘德华共同出演过哪些电影？",
+            "output": {
+                "0": {
+                    "dependent_task_ids": [],
+                    "query": "张学友出演过哪些电影？",
+                },
+                "1": {
+                    "dependent_task_ids": [],
+                    "query": "刘德华出演过哪些电影？",
+                },
+                "2": {
+                    "dependent_task_ids": ["0", "1"],
+                    "query": "张学友出演的电影是{{0.output}}，刘德华出演的电影是{{1.output}}。他们共同出演过哪些电影？",
+                },
+            },
+        },
+    }
+
     @property
     def template_variables(self) -> List[str]:
         return ["executors", "query"]
