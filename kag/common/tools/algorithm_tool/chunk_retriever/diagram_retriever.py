@@ -22,10 +22,8 @@ from kag.interface import (
     VectorizeModelABC,
     ChunkData,
     RetrieverOutput,
-    EntityData,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
-from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
 chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
@@ -34,13 +32,13 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @RetrieverABC.register("diagram_retriever")
 class DiagramRetriever(RetrieverABC):
     def __init__(
-            self,
-            vectorize_model: VectorizeModelABC = None,
-            search_api: SearchApiABC = None,
-            graph_api: GraphApiABC = None,
-            top_k: int = 10,
-            score_threshold=0.85,
-            **kwargs,
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        graph_api: GraphApiABC = None,
+        top_k: int = 10,
+        score_threshold=0.85,
+        **kwargs,
     ):
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
             KAG_CONFIG.all_config["vectorize_model"]
@@ -95,7 +93,12 @@ class DiagramRetriever(RetrieverABC):
             topk=top_k,
         )
 
-        for item in top_k_diagrams_from_name + top_k_diagrams_from_content + top_k_diagrams_from_beforeText + top_k_diagrams_from_afterText:
+        for item in (
+            top_k_diagrams_from_name
+            + top_k_diagrams_from_content
+            + top_k_diagrams_from_beforeText
+            + top_k_diagrams_from_afterText
+        ):
             node_score = item.get("score", 0.0)
             if node_score >= self.score_threshold:
                 key = item["node"]["id"]
@@ -144,9 +147,7 @@ class DiagramRetriever(RetrieverABC):
             topk_diagram_ids = self.get_diagram(query, top_k)
 
             # get diagram data for each diagram
-            chunks = self.get_related_chunks(
-                topk_diagram_ids
-            )
+            chunks = self.get_related_chunks(topk_diagram_ids)
 
             # to retrieve output
             out = RetrieverOutput(chunks=chunks)

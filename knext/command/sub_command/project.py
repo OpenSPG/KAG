@@ -222,7 +222,7 @@ def restore_project(host_addr, proj_path):
     if not project_wanted:
         if host_addr:
             client = ProjectClient(host_addr=host_addr)
-            project = client.create(name=env.name, namespace=env.namespace, config=env._config)
+            project = client.create(name=env.name, namespace=env.namespace, config=env._config, visibility="PUBLIC", tag="PUBLIC-NET")
             project_id = project.id
     else:
         project_id = project_wanted.id
@@ -254,7 +254,7 @@ def update_project(proj_path):
         sys.exit()
 
     logger.info(f"project id: {env.id}")
-    client.update(id=env.id, config=env._config)
+    client.update(id=env.id,name=env.name,namespace=env.namespace,config=env._config)
     click.secho(
         f"Project [{env.name}] with namespace [{env.namespace}] was successfully updated from [{proj_path}].",
         fg="bright_green",
