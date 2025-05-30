@@ -7,7 +7,6 @@ openie_llm: &openie_llm
   enable_check: false
   max_tokens: 8192
 
-
 ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
@@ -39,10 +38,10 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://127.0.0.1:8887
-  id: '1'
-  language: zh
-  namespace: AFAC2024
+  host_addr: http://localhost:8887
+  id: '2'
+  language: en
+  namespace: MuSiQue
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
@@ -93,13 +92,12 @@ kag_builder_pipeline:
       - *e5
       - *e6
     reader:
-      type: md_reader # kag.builder.component.reader.dict_reader.DictReader
-      cut_depth: 6
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 1000
+      split_length: 100000
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
@@ -110,9 +108,7 @@ kag_builder_pipeline:
   num_chains: 8
   max_concurrency: 1
   scanner:
-    #type: file_scanner
-    type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
-    file_suffix: md
+    type: musique_dataset_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
@@ -164,7 +160,7 @@ retriever_executor: &retriever_executor
   type: evidence_based_reasoner
   llm: *chat_llm
   retrievers:
-#    - *r1
+    #    - *r1
     - *r2
     - *r3
     - *r4
@@ -186,6 +182,5 @@ kag_solver_pipeline:
   generator:
     type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: default_multi_hop_generator
+
 #------------kag-solver configuration end----------------#

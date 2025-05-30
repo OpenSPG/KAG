@@ -66,7 +66,7 @@ class SummaryChunkRetriever(RetrieverABC):
 
     async def _get_summaries(self, query, top_k) -> List[str]:
         topk_summary_ids = []
-        query_vector = await self.vectorize_model.avectorize(query)
+        query_vector = self.vectorize_model.vectorize(query)
 
         # recall top_k summaries
         top_k_summaries = await asyncio.to_thread(

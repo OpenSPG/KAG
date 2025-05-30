@@ -196,10 +196,6 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
-    async def ainvoke(self, task: Task, **kwargs) -> RetrieverOutput:
-        retrieverOutput = await self.invoke(task, kwargs)
-        return retrieverOutput
-
     def schema(self):
         return {
             "name": "atomic_query_based_chunk_retriever",
