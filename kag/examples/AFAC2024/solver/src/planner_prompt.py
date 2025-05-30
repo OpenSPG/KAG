@@ -20,22 +20,21 @@ from kag.interface import PromptABC, Task
 class StaticPlanningPrompt(PromptABC):
     template_en = {
         "instruction": """
-The `query` field contains a complex multi-hop question that can be broken down into a series of simple single-hop questions. Your task is to carefully analyze the logical structure of the question, then decompose the multi-hop question into a series of single-hop atomic questions, and provide the dependencies between these sub-questions. The dependencies should be represented as a Directed Acyclic Graph (DAG).
-  
-Decompose the original multi-hop question into a series of single-hop atomic questions and carefully analyze their dependencies, representing them in the form of a DAG. If Question 2 depends on Question 1, then the answer to Question 1 must be explicitly referenced within Question 2.
-  
-Please complete the task according to the following rules:
-1. Atomic Decomposition:
-   - Break down the multi-hop question in the `query` field into the finest-grained single-hop sub-questions.
-   - Each sub-question must be independently executable; implicit multi-hop operations are strictly prohibited (e.g., "the birthday of X's director" must be split into two sub-questions: "X's director" and "[Director]'s birthday").
-        
-2. Dependency Modeling:
-   - Use a DAG to clearly define the dependencies between sub-questions.
-   - Downstream tasks must explicitly reference upstream results using `{{i.output}}` (e.g., if Question 2 depends on Question 1, the query for Question 2 must include `{{1.output}}`).
-        
-3. Output Specification:
-   - The `example` field provides a sample query and the expected output (in the `output` field). Strictly follow the output format and provide your response in JSON format.        
-""",
+        The `query` field contains a complex multi-hop question that can be broken down into a series of simple single-hop questions. Your task is to carefully analyze the logical structure of the question, then decompose the multi-hop question into a series of single-hop atomic questions, and provide the dependencies between these sub-questions. The dependencies should be represented as a Directed Acyclic Graph (DAG).
+        Decompose the original multi-hop question into a series of single-hop atomic questions and carefully analyze their dependencies, representing them in the form of a DAG. If Question 2 depends on Question 1, then the answer to Question 1 must be explicitly referenced within Question 2.
+          
+        Please complete the task according to the following rules:
+        1. Atomic Decomposition:
+           - Break down the multi-hop question in the `query` field into the finest-grained single-hop sub-questions.
+           - Each sub-question must be independently executable; implicit multi-hop operations are strictly prohibited (e.g., "the birthday of X's director" must be split into two sub-questions: "X's director" and "[Director]'s birthday").
+                
+        2. Dependency Modeling:
+           - Use a DAG to clearly define the dependencies between sub-questions.
+           - Downstream tasks must explicitly reference upstream results using `{{i.output}}` (e.g., if Question 2 depends on Question 1, the query for Question 2 must include `{{1.output}}`).
+                
+        3. Output Specification:
+           - The `example` field provides a sample query and the expected output (in the `output` field). Strictly follow the output format and provide your response in JSON format.        
+        """,
         "example": {
             "query": "Which movies have been starred by both Jacky Cheung and Andy Lau?",
             "output": {
@@ -57,27 +56,22 @@ Please complete the task according to the following rules:
 
     template_zh = {
         "instruction": """
-            query字段包含一个复杂的多跳问题，可拆解为一系列简单的单跳问题。你的任务是仔细分析问题的逻辑结构，将多跳问题分解为多个单跳原子问题，并给出子问题间的依赖关系。依赖关系需以有向无环图(DAG)形式表示。
-            
-            请将原始多跳问题分解为一系列单跳原子问题并仔细分析其依赖关系，以DAG形式呈现。若问题2依赖于问题1，则问题2中必须显式引用问题1的答案。
+            `query` 字段如果包含一个复杂的多跳问题，可以分解为一系列简单的单跳问题。您的任务是仔细分析该问题的逻辑结构，然后将该多跳问题分解为一系列单跳原子问题，并提供这些子问题之间的依赖关系。这些依赖关系应表示为有向无环图 (DAG)。
+            将原始多跳问题分解为一系列单跳原子问题（`query`中已明确的信息无需再次拆解），并仔细分析它们的依赖关系，以 DAG 的形式表示它们。如果问题 2 依赖于问题 1，则问题 2 中必须明确引用问题 1 的答案。
             
             请按照以下规则完成任务：
+            1. 原子分解：
+            - 将 `query` 字段中的多跳问题分解为最细粒度的单跳子问题。
+            - 每个子问题必须可独立执行；严禁隐式多跳操作（例如，“某人的生日” “X 的导演”必须拆分为两个子问题：“X 的导演”和“[导演] 的生日”）。
             
-            原子化分解：
+            2. 依赖关系建模：
+            - 使用 DAG 清晰定义子问题之间的依赖关系。
+            - 下游任务必须使用 `{{i.output}}` 明确引用上游结果（例如，如果问题 2 依赖于问题 1，则问题 2 的查询必须包含 `{{1.output}}`）。
             
-            将query字段的多跳问题拆解为最细粒度的单跳子问题
+            3. 输出规范：
+            - `example` 字段提供了示例查询和预期输出（在 `output` 字段中）。请严格遵循输出格式，并以 JSON 格式提供您的响应。   
             
-            每个子问题必须可独立执行，严禁隐含多跳操作（例如"X导演的生日"必须拆解为两个子问题："X的导演"和"[导演]的生日"）
-            
-            依赖建模：
-            
-            使用DAG清晰定义子问题间的依赖关系
-            
-            下游任务必须使用{{i.output}}显式引用上游结果（例如若问题2依赖问题1，则问题2的查询必须包含{{1.output}}）
-            
-            输出规范：
-            
-            example字段提供了示例查询及预期输出（位于output字段）。请严格遵循输出格式，以JSON格式提供响应
+            如果原始问题已经是单跳问题，则直接输出问题本身。
         """,
         "example": {
             "query": "张学友和刘德华共同出演过哪些电影？",
