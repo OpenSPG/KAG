@@ -110,6 +110,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             with_json_parse=False,
         )
 
+        rewritten_queries = rewritten_queries.append(query)
         return rewritten_queries
 
     async def recall_atomic_query(self, query: str, context: Context):

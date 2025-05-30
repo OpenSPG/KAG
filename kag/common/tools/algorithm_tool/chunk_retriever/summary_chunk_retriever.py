@@ -139,8 +139,10 @@ class SummaryChunkRetriever(RetrieverABC):
         chunk_ids = set()
         for relationData in oneHopGraphData.out_relations.get("sourceChunk", []):
             chunk_ids.add(relationData.end_id)
-        return list(chunk_ids)
+        #return list(chunk_ids)
 
+        # chunk_id 和summary_id 一致，先暂时返回summary_id
+        return [summary_id]
     async def _get_related_chunks(self, summary_ids):
         tasks = []
         for summary_id in summary_ids:
