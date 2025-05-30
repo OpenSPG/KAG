@@ -25,8 +25,7 @@ def append_python_path(path: Union[os.PathLike, str]) -> None:
     # In some environments, such as TC, it fails when sys.path contains a relative path, such as ".".
     path = Path(path).resolve()
     path = str(path)
-    sys.path.append(path)
-
+    sys.path.insert(0, path)
 
 def import_modules_from_path(path: str) -> None:
     """
