@@ -1,8 +1,8 @@
 import os
 import csv
 import json
-from table_2_graph.m_schema.schema_engine import SchemaEngine
-from table_2_graph.m_schema.m_schema import MSchema
+from kag.examples.bird_graph.table_2_graph.m_schema.schema_engine import SchemaEngine
+from kag.examples.bird_graph.table_2_graph.m_schema.m_schema import MSchema
 from sqlalchemy import create_engine
 
 import networkx as nx
@@ -184,14 +184,12 @@ def get_column_list_from_mschema(table_name: str, mschema: MSchema):
 
 if __name__ == "__main__":
     _db_list = [
-        # "california_schools",
+        "california_schools",
         # "card_games",
-        "financial",
+        # "financial",
     ]
     for _db_name in _db_list:
         # 1.connect to the database engine
-        _db_path = (
-            f"/Users/youdonghai/code/nl2ql/NL2QL/table_2_graph/bird_dev_table_dataset/"
-        )
+        _db_path = f"/Users/tangkun/workspace/KAG/kag/examples/bird_graph/table_2_graph/bird_dev_table_dataset/"
         _mschema_str = get_m_schema_str(_db_path, db_name=_db_name)
         print(_mschema_str)

@@ -25,26 +25,19 @@ from kag.examples.bird_graph.solver.cypher.cypher_execute_engine import (
 )
 
 
-def to_task_context_str(context):
-    if not context or "task" not in context:
-        return ""
-    return f"""{context['name']}:{context['task']}
-thought: {context['result']}.{context.get('thought', '')}"""
-
-
-@GeneratorABC.register("bird_generator")
-class BirdGenerator(GeneratorABC):
+@GeneratorABC.register("event_generator")
+class EventGenerator(GeneratorABC):
     def __init__(
         self,
         llm_client: LLMClient,
         generated_prompt: PromptABC,
-        generated_return_column_prompt: PromptABC,
+        generated_final_answer_prompt: PromptABC,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
-        self.generated_return_column_prompt = generated_return_column_prompt
+        self.generated_final_answer_prompt = generated_final_answer_prompt
         self.fix_cypher_prompt = init_prompt_with_fallback(
             "fix_cypher", KAG_PROJECT_CONF.biz_scene
         )
@@ -62,14 +55,10 @@ class BirdGenerator(GeneratorABC):
         )
 
     @retry(stop=stop_after_attempt(3))
-    async def generate_return_column(self, query, content, **kwargs):
+    async def generate_final_answer(self, query, content, **kwargs):
         return await self.llm_client.ainvoke(
-            variables={
-                "question": query,
-                "schema": kwargs.get("graph_schema", ""),
-                "history": kwargs.get("history", ""),
-            },
-            prompt_op=self.generated_return_column_prompt,
+            variables={"question": query, "content": content},
+            prompt_op=self.generated_final_answer_prompt,
             with_json_parse=False,
         )
 
@@ -86,6 +75,7 @@ class BirdGenerator(GeneratorABC):
         try_times = 3
         cypher = None
         r_cypher = None
+        cypher_rst = []
         while try_times > 0:
             try_times -= 1
             cypher = await self.generate_answer(
@@ -93,14 +83,7 @@ class BirdGenerator(GeneratorABC):
             )
             if "i don't know" in cypher or len(cypher) == 0:
                 continue
-            # check return column
-            # return_column = await self.generate_return_column(
-            #     query=query, content="", history=str(history), **kwargs
-            # )
-            # print(f"return_column={return_column}")
-            # rewrite cypher by cypher skeleton - only return_column
-            # r_cypher = rewrite_cypher(dataset, db_name, cypher, [])
-            r_cypher = cypher
+            r_cypher = rewrite_cypher(dataset, db_name, cypher, [])
             if r_cypher is None:
                 print(f"r_cypher is empty. cypher = {cypher}")
                 continue
@@ -111,34 +94,14 @@ class BirdGenerator(GeneratorABC):
             if error_str is None:
                 error_str = "Cypher execution completed, but with no results"
             history.append({"cypher": r_cypher, "error": error_str})
-        print(f"cypher:{cypher}\n,rewrite_cypher:{r_cypher}\n")
-        return await self.refine_cypher(query, r_cypher, **kwargs)
 
-    async def refine_cypher(self, query, cypher, **kwargs):
-        return cypher
-        # return await self.llm_client.ainvoke(
-        #     variables={
-        #         "question": query,
-        #         "schema": kwargs.get("graph_schema", ""),
-        #         "cypher": cypher,
-        #     },
-        #     prompt_op=self.fix_cypher_prompt,
-        #     with_json_parse=False,
-        # )
+        print(f"cypher:{cypher}\n,rewrite_cypher:{r_cypher}\n")
+        return await self.generate_final_answer(
+            query=query, content=cypher_rst, **kwargs
+        )
 
     async def _get_cypher_result(self, cypher, db_name):
-        # 使用异步会话执行查询
         rows, error_info = await CypherExecuteEngine().async_run(cypher, 9999, db_name)
-
-        # 如果没有数据，直接返回空字符串
         if not rows:
             return "", None
-
-        # 将数据组织为CSV格式
-        # output = io.StringIO()
-        # csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
-        # csv_writer.writeheader()
-        # csv_writer.writerows(rows)
-
-        # 返回CSV字符串
         return rows, None

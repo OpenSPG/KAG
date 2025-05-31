@@ -25,7 +25,9 @@ class KagBirdQA:
         resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["solver_pipeline"])
 
         answer = await resp.ainvoke(
-            query, reporter=reporter, graph_schema=load_graph_mschema(db_name)
+            query,
+            reporter=reporter,
+            graph_schema=load_graph_mschema("bird_dev_graph_dataset", db_name),
         )
         return answer
 

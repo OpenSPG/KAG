@@ -2,17 +2,17 @@ import os
 import json
 
 
-def load_graph_mschema(db_name: str):
+def load_graph_mschema(dir_name: str, db_name: str, separator="_"):
     """
     组织Graph的mschema
     """
-    graph_schema = load_schema_json(db_name)
+    graph_schema = load_schema_json(dir_name, db_name)
     graph_m_schema_str = "【GraphSchema】\n"
     entity_mschema_list = []
     edge_mschema_list = []
     for item in graph_schema:
         if "entity_type" in item:
-            entity_mschema_list.append(get_entity_mschema_str(item, db_name))
+            entity_mschema_list.append(get_entity_mschema_str(item, db_name, separator))
         elif "edge_type" in item:
             edge_mschema_list.append(get_edge_mschema_str(item, db_name))
     graph_m_schema_str += "#### Entity\n"
@@ -23,9 +23,9 @@ def load_graph_mschema(db_name: str):
     return graph_m_schema_str
 
 
-def get_entity_mschema_str(entity_info, db_name):
+def get_entity_mschema_str(entity_info, db_name, separator):
     desc_map = entity_info["property_list"]
-    _str = f"##### {db_name}_{entity_info['entity_type']}\n["
+    _str = f"##### {db_name}{separator}{entity_info['entity_type']}\n["
     for attr_info in entity_info["schema"]:
         attr_name = attr_info["column_name"]
         attr_type: str = attr_info["column_type"]
@@ -43,13 +43,13 @@ def get_entity_mschema_str(entity_info, db_name):
     return _str
 
 
-def load_schema_json(db_name: str):
+def load_schema_json(dataset: str, db_name: str):
     current_file_path = os.path.dirname(os.path.abspath(__file__))
     schema_file = os.path.join(
         current_file_path,
         "..",
         "table_2_graph",
-        "bird_dev_graph_dataset",
+        dataset,
         f"{db_name}.schema.json",
     )
     graph_schema = {}

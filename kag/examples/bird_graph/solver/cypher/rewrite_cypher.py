@@ -4,14 +4,14 @@ from kag.examples.bird_graph.solver.cypher.CypherParser import CypherParser
 from kag.examples.bird_graph.solver.cypher.kag_cypher_listener import KagCypherListener
 
 
-def rewrite_cypher(cypher, return_columns):
+def rewrite_cypher(dataset, db_name, cypher, return_columns):
     input_stream = InputStream(cypher)
     lexer = CypherLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
     parser = CypherParser(token_stream)
     tree = parser.oC_Cypher()
 
-    extractor = KagCypherListener(cypher, return_columns)
+    extractor = KagCypherListener(dataset, db_name, cypher, return_columns)
     walker = ParseTreeWalker()
     walker.walk(extractor, tree)
     r_cypher = extractor.rewrite()
@@ -22,8 +22,8 @@ def rewrite_cypher(cypher, return_columns):
         return cypher
 
 
-def rewrite(cypher):
-    rewrite_cypher(cypher, [])
+def rewrite(dataset, db_name, cypher):
+    rewrite_cypher(dataset, db_name, cypher, [])
 
 
 if __name__ == "__main__":
@@ -40,7 +40,9 @@ if __name__ == "__main__":
 
     """
 
-    result = rewrite_cypher(cypher_query, [])
+    result = rewrite_cypher(
+        "bird_dev_graph_dataset", "california_schools", cypher_query, []
+    )
     # output tree
     # print("nodes:", result["nodes"])
     # print("relationships:", result["relationships"])

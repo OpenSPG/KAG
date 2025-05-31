@@ -3,12 +3,12 @@ from kag.examples.bird_graph.solver.common import load_schema_json
 
 
 class CypherMatchExtractor:
-    def __init__(self):
+    def __init__(self, dataset, db_name):
         # {entity_alias,entity_name}
         self.entities = {}
         self.triples = []
-        self.db_name = "california_schools"
-        self.graph_schema = load_schema_json(self.db_name)
+        # self.db_name = "california_schools"
+        self.graph_schema = load_schema_json(dataset, db_name)
 
     def visit_oc_match(self, ctx: CypherParser.OC_MatchContext):
         """

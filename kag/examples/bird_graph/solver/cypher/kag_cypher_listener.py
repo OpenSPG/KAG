@@ -11,7 +11,7 @@ from kag.examples.bird_graph.solver.cypher.where_extractor import (
 
 # kag cypher listener
 class KagCypherListener(CypherListener):
-    def __init__(self, cypher, return_columns):
+    def __init__(self, dataset, db_name, cypher, return_columns):
         self.cypher = cypher
         self.nodeInfo = {
             # {entity_name,entity_alias}
@@ -25,7 +25,7 @@ class KagCypherListener(CypherListener):
         }
         self.order = {"fields": []}
         self.where = {"express": []}
-        self.match_extractor = CypherMatchExtractor()
+        self.match_extractor = CypherMatchExtractor(dataset, db_name)
         self.where_extractor = CypherWhereExtractor()
         self.rewrite_cypher = StringIO()
         self.alias_mapping = {}

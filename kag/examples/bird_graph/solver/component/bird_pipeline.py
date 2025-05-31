@@ -54,13 +54,6 @@ class BirdPipeline(SolverPipelineABC):
         self.generator = generator
         self.max_iteration = max_iteration
 
-        NEO4J_URI = "bolt://localhost:7687"
-        NEO4J_USER = "neo4j"
-        NEO4J_PASSWORD = "neo4j@openspg"
-        self.driver = AsyncGraphDatabase.driver(
-            NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
-        )
-
     def select_executor(self, executor_name: str):
         """Select executor instance by name from available executors.
 
@@ -134,33 +127,3 @@ class BirdPipeline(SolverPipelineABC):
         context: Context = Context()
         answer = await self.generator.ainvoke(query, context, **kwargs)
         return answer
-
-    async def _get_cypher_result(self, cypher, limit=3):
-        # 使用异步会话执行查询
-        async with self.driver.session(database="birdgraph") as session:
-            try:
-                # 执行查询并获取结果
-                result = await session.run(cypher)
-                records = [record async for record in result][:limit]
-            except Neo4jError as e:
-                return "", str(e)
-
-            # 获取查询结果
-            rows = []
-            for i, record in enumerate(records):
-                if i >= limit:  # 只保存前 limit 行数据
-                    break
-                rows.append(dict(record))
-
-            # 如果没有数据，直接返回空字符串
-            if not rows:
-                return "", None
-
-            # 将数据组织为CSV格式
-            output = io.StringIO()
-            csv_writer = csv.DictWriter(output, fieldnames=rows[0].keys())
-            csv_writer.writeheader()
-            csv_writer.writerows(rows)
-
-            # 返回CSV字符串
-            return output.getvalue(), None
