@@ -18,9 +18,9 @@ ner_llm: &ner_llm
 
 chat_llm: &chat_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  base_url: https://api.deepseek.com
   api_key: sk-
-  model: qwen2.5-72b-instruct
+  model: deepseek-chat
   enable_check: false
   max_tokens: 1024
 
@@ -39,7 +39,7 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://127.0.0.1:8887
+  host_addr: http://8.211.148.36:8887
   id: '1'
   language: zh
   namespace: AFAC2024
@@ -144,6 +144,7 @@ r3: &r3
   vectorize_model: *vectorize_model
   search_api: *search_api
   graph_api: *graph_api
+  score_threshold: 0.8
   top_k: 10
 
 r4: &r4
@@ -151,6 +152,7 @@ r4: &r4
   vectorize_model: *vectorize_model
   search_api: *search_api
   graph_api: *graph_api
+  score_threshold: 0.8
   top_k: 10
 
 r5: &r5
@@ -165,17 +167,17 @@ retriever_executor: &retriever_executor
   llm: *chat_llm
   retrievers:
 #    - *r1
-    - *r2
+#    - *r2
     - *r3
     - *r4
-    - *r5
+#    - *r5
   merger:
     type: kag_merger
 
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: kag_static_planner
+    type: kag_afac_static_planner
     llm: *chat_llm
     plan_prompt:
       type: retriever_static_planning
