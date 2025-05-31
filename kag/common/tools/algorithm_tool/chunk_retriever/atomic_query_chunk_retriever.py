@@ -110,6 +110,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             with_json_parse=False,
         )
 
+        rewritten_queries = rewritten_queries.append(query)
         return rewritten_queries
 
     async def recall_atomic_query(self, query: str, context: Context):
@@ -167,7 +168,15 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             )
             tasks.append(task)
         chunks = await asyncio.gather(*tasks)
-        return chunks
+
+        res_chunk_list = []
+        chunk_id_set = set()
+        for chunk in chunks:
+            if chunk.chunk_id not in chunk_id_set:
+                chunk_id_set.add(chunk.chunk_id)
+                res_chunk_list.append(chunk)
+
+        return res_chunk_list
 
     def invoke(self, task: Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
@@ -187,10 +196,6 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput(retriever_method=self.schema().get("name", ""))
-
-    async def ainvoke(self, task: Task, **kwargs) -> RetrieverOutput:
-        retrieverOutput = await self.invoke(task, kwargs)
-        return retrieverOutput
 
     def schema(self):
         return {

@@ -53,7 +53,7 @@ class ChunkExtractor(ExtractorABC):
         sub_graph = SubGraph([], [])
         # add Outline Node
         sub_graph.add_node(
-            id=f"{input.id}_{input.name}",
+            id=f"{input.id}",
             name=outline_name,
             label="Chunk",
             properties={"id": input.id, "name": outline_name, "content": input.content},
