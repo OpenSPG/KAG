@@ -7,7 +7,6 @@ from kag.interface import VectorizeModelABC
 
 @pytest.mark.skip(reason="Missing API key")
 def test_openai_vectorize_model():
-
     conf = {
         "type": "openai",
         "model": "BAAI/bge-m3",
@@ -19,6 +18,19 @@ def test_openai_vectorize_model():
     res1 = vectorize_model.vectorize("你好")
     res2 = asyncio.run(vectorize_model.avectorize("你好"))
     assert res1 is not None and res1 == res2
+
+
+@pytest.mark.skip(reason="Missing model")
+def test_ollama_vectorize_model():
+    conf = {
+        "type": "ollama",
+        "model": "",
+        "base_url": "http://127.0.0.1:11434/",
+        "vector_dimensions": 1024,
+    }
+    vectorize_model = VectorizeModelABC.from_config(copy.deepcopy(conf))
+    emb = vectorize_model.vectorize("你好")
+    assert len(emb) == vectorize_model.get_vector_dimensions()
 
 
 @pytest.mark.skip(reason="Missing model file")

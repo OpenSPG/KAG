@@ -14,6 +14,7 @@ from kag.common.vectorize_model.local_bge_model import (
     LocalBGEVectorizeModel,
     LocalBGEM3VectorizeModel,
 )
+from kag.common.vectorize_model.ollama_model import OllamaVectorizeModel
 from kag.common.vectorize_model.openai_model import OpenAIVectorizeModel
 from kag.common.vectorize_model.mock_model import MockVectorizeModel
 from kag.common.vectorize_model.vectorize_model_config_checker import (
@@ -25,6 +26,7 @@ __all__ = [
     "LocalBGEM3VectorizeModel",
     "LocalBGEVectorizeModel",
     "OpenAIVectorizeModel",
+    "OllamaVectorizeModel",
     "MockVectorizeModel",
     "VectorizeModelConfigChecker",
 ]
