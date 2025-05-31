@@ -35,11 +35,10 @@ if __name__ == "__main__":
     import_modules_from_path("./prompt")
     import_modules_from_path("./component")
     evaObj = EventQA()
-
     answer = asyncio.run(
         evaObj.qa(
             """
-                为什么泰康人寿厦门分公司被罚35万元?
+                为什么泰康人寿被罚款?
             """.strip()
         )
     )
