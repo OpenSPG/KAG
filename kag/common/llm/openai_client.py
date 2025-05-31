@@ -12,7 +12,7 @@
 import logging
 import asyncio
 
-from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+from openai import OpenAI, AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI, NOT_GIVEN
 
 from kag.interface import LLMClient
 from typing import Callable, Optional
@@ -121,7 +121,7 @@ class OpenAIClient(LLMClient):
             temperature=self.temperature,
             timeout=self.timeout,
             tools=tools,
-            max_tokens=self.max_tokens,
+            max_tokens=self.max_tokens if self.max_tokens > 0 else NOT_GIVEN,
             extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         if not self.stream:
@@ -213,7 +213,7 @@ class OpenAIClient(LLMClient):
             temperature=self.temperature,
             timeout=self.timeout,
             tools=tools,
-            max_tokens=self.max_tokens,
+            max_tokens=self.max_tokens if self.max_tokens > 0 else NOT_GIVEN,
             extra_body={"chat_template_kwargs": {"enable_thinking": self.think}},
         )
         if not self.stream:
