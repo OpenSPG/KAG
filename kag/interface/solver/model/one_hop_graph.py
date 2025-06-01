@@ -641,6 +641,7 @@ class KgGraph(RetrievedData):
             self.answered_alias[alias].append(value)
         else:
             self.answered_alias[alias] = [value]
+        self.answered_alias[alias] = list(set(self.answered_alias[alias]))
 
     def get_answered_alias(self, alias):
         if alias in self.answered_alias.keys():
@@ -665,7 +666,11 @@ class KgGraph(RetrievedData):
         self.entity_map[alias] = data_values
 
     def merge_kg_graph(self, other, wo_intersect=True):
-        self.answered_alias = other.answered_alias
+        for k,v in other.answered_alias.items():
+            if isinstance(v, list):
+                for d in v:
+                    self.add_answered_alias(k, d)
+
         self.alias_set = list(set(other.alias_set))
         self.nodes_alias = list(set(self.nodes_alias + other.nodes_alias))
         self.edge_alias = list(set(self.edge_alias + other.edge_alias))
