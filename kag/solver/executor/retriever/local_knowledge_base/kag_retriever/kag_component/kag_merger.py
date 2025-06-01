@@ -174,4 +174,4 @@ class KagMerger(FlowComponent):
                 **kwargs,
             )
             cur_task.logical_node.get_fl_node_result().summary = summary_response
-        return limited_merged_chunks
+        return limited_merged_chunks + [cur_task.graph_data]

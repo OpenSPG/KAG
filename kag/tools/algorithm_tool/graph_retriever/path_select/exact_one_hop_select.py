@@ -8,7 +8,7 @@ from kag.interface.solver.model.one_hop_graph import (
     EntityData,
     RelationData,
     OneHopGraphData,
-    parse_entity_relation,
+    parse_attribute_relation,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
@@ -155,7 +155,7 @@ class ExactOneHopSelect(PathSelect):
                 if value is None or value == "":
                     continue
                 # new a RelationData
-                relation_data = [parse_entity_relation(one_graph, std_p, value)]
+                relation_data = [parse_attribute_relation(one_graph, std_p, value)]
             if target_value is not None:
                 for r in relation_data:
                     candi_target_value = (
