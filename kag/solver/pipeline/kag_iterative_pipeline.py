@@ -21,6 +21,10 @@ from kag.interface import (
 )
 
 
+class MaxIterationsReachedError(RuntimeError):
+    pass
+
+
 @SolverPipelineABC.register("kag_iterative_pipeline")
 class KAGIterativePipeline(SolverPipelineABC):
     """Iterative problem-solving pipeline that decomposes and analyzes problems step-by-step.
@@ -42,7 +46,7 @@ class KAGIterativePipeline(SolverPipelineABC):
             planner: Component responsible for generating execution plans
             executors: List of available executor components for task execution
             generator: Component that generates final answers from context
-            max_iteration: Maximum number of allowed execution cycles (default: 10)
+            max_iteration: Maximum number of allowed execution cycles (default: 5)
         """
         super().__init__()
         self.planner = planner
@@ -107,19 +111,32 @@ class KAGIterativePipeline(SolverPipelineABC):
             Generated answer from the final context
 
         Raises:
-            RuntimeError: If maximum iterations reached without completion
+            MaxIterationsReachedError: If maximum iterations reached without completion
         """
         num_iteration = 0
         context: Context = Context()
+        finished_by_executor = False  # Initialize flag
         while num_iteration < self.max_iteration:
             num_iteration += 1
             task, executor = await self.planning(
                 query, context, num_iteration=num_iteration, **kwargs
             )
-            context.append_task(task)
+            
             if executor == self.finish_executor:
+                context.append_task(task)  # Add finish task to context
+                finished_by_executor = True
                 break
+            
+            # Execute the task first
             await executor.ainvoke(query, task, context, **kwargs)
-        # force answer
+            # Add task to context only after successful execution
+            context.append_task(task)
+
+        if not finished_by_executor:
+            raise MaxIterationsReachedError(
+                f"Pipeline reached max_iteration ({self.max_iteration}) "
+                f"without finishing for query: {query}"
+            )
+        
         answer = await self.generator.ainvoke(query, context, **kwargs)
         return answer
