@@ -61,9 +61,9 @@ class ProjectClient(Client):
             print(e)
         return None
 
-    def create(self, name: str, namespace: str, config: str, desc: str = None, auto_schema=False):
+    def create(self, name: str, namespace: str, config: str, desc: str = None, auto_schema=False, visibility: str = "public", tag: str = None):
         project_create_request = rest.ProjectCreateRequest(
-            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema
+            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag
         )
 
         project = self._rest_client.project_create_post(
@@ -71,8 +71,8 @@ class ProjectClient(Client):
         )
         return project
 
-    def update(self, id, config):
-        project_create_request = rest.ProjectCreateRequest(id=id, config=config)
+    def update(self, id, name, namespace, config):
+        project_create_request = rest.ProjectCreateRequest(id=id, name=name, namespace=namespace, config=config)
         project = self._rest_client.project_update_post(
             project_create_request=project_create_request
         )

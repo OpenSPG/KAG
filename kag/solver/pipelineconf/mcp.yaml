@@ -4,12 +4,7 @@ pipeline_name: mcp_pipeline
 solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: kag_static_planner
-    llm: "{chat_llm}"
-    plan_prompt:
-      type: default_retriever_static_planning
-    rewrite_prompt:
-      type: default_query_rewrite
+    type: mcp_planner
   generator:
     type: llm_generator
     llm_client: "{chat_llm}"

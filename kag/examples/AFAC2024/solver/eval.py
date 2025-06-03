@@ -32,7 +32,9 @@ class EvaForAFAC2024(EvalQa):
     """
 
     def __init__(self, solver_pipeline_name="kag_solver_pipeline"):
-        super().__init__(task_name="afac2024", solver_pipeline_name=solver_pipeline_name)
+        super().__init__(
+            task_name="afac2024", solver_pipeline_name=solver_pipeline_name
+        )
 
     async def qa(self, query, gold):
         reporter: TraceLogReporter = TraceLogReporter()

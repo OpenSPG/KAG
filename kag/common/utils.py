@@ -454,3 +454,16 @@ def resolve_instance(
         raise TypeError(f"Expected {expected_type}, got {type(instance)}")
     else:
         return instance
+
+
+def extract_tag_content(text):
+    # 匹配<tag>和</tag>之间的内容，支持任意标签名
+    matches = re.findall(r"<([^>]+)>(.*?)</\1>", text, flags=re.DOTALL)
+    return [(tag, content.strip()) for tag, content in matches]
+
+
+def extract_specific_tag_content(text, tag):
+    # 构建正则表达式：匹配指定标签内的内容（支持嵌套相同标签）
+    pattern = rf"<{tag}\b[^>]*>(.*?)</{tag}>"
+    matches = re.findall(pattern, text, flags=re.DOTALL)
+    return [content.strip() for content in matches]

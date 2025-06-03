@@ -21,7 +21,7 @@ from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select imp
 )
 
 
-@FlowComponent.register("kg_cs_open_spg")
+@FlowComponent.register("kg_cs_open_spg_legacy")
 class KgConstrainRetrieverWithOpenSPG(KagLogicalFormComponent):
     def __init__(
         self,

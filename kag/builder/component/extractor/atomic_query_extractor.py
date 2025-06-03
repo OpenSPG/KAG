@@ -89,29 +89,22 @@ class AtomicQueryExtractor(ExtractorABC):
             atomic_queries = []
         subgraph = SubGraph([], [])
         chunk = input
-        subgraph.add_node(
-            chunk.id,
-            chunk.name,
-            CHUNK_TYPE,
-            {
-                "id": chunk.id,
-                "name": chunk.name,
-                "content": f"{chunk.name}\n{chunk.content}",
-                **chunk.kwargs,
-            },
-        )
+
         for atomic_query in atomic_queries:
+            atomic_id = f"{chunk.id}_{atomic_query}"
+
             subgraph.add_node(
-                id=atomic_query,
+                id=atomic_id,
                 name=atomic_query,
                 label="AtomicQuery",
-                properties={"content": atomic_query},
+                properties={"name": atomic_query},
             )
+
             subgraph.add_edge(
-                s_id=atomic_query,
+                s_id=atomic_id,
                 s_label="AtomicQuery",
-                p="relateTo",
-                o_id=chunk.id,
+                p="sourceChunk",
+                o_id=f"{chunk.id}_{chunk.name}",
                 o_label=CHUNK_TYPE,
             )
         subgraph.id = chunk.id

@@ -59,7 +59,7 @@ class VectorChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return {}
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
             query_vector = self.vectorize_model.vectorize(query)
             top_k_docs = self.search_api.search_vector(
                 label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
@@ -77,13 +77,15 @@ class VectorChunkRetriever(RetrieverABC):
                         score=item["score"],
                     )
                 )
-            out = RetrieverOutput(chunks=chunks)
+            out = RetrieverOutput(
+                chunks=chunks, retriever_method=self.schema().get("name", "")
+            )
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput()
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
     def schema(self):
         return {
