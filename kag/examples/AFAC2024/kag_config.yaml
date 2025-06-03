@@ -18,9 +18,9 @@ ner_llm: &ner_llm
 
 chat_llm: &chat_llm
   type: maas
-  base_url: https://api.deepseek.com
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: sk-
-  model: deepseek-chat
+  model: qwen2.5-72b-instruct
   enable_check: false
   max_tokens: 1024
 
