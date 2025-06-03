@@ -148,13 +148,14 @@ class PprChunkRetriever(RetrieverABC):
                 logger.warning(
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
-
+                return None
         limit_doc_ids = doc_ids[:top_k]
         doc_maps = {}
         with ThreadPoolExecutor(max_workers=20) as executor:
             doc_res = list(executor.map(process_get_doc_id, limit_doc_ids))
             for d in doc_res:
-                doc_maps[d[0]] = d[1]
+                if d[1]:
+                    doc_maps[d[0]] = d[1]
         for doc_id in limit_doc_ids:
             matched_docs.append(doc_maps[doc_id[0]])
             hits_docs.append(doc_maps[doc_id[0]].chunk_id)
