@@ -3,11 +3,9 @@ import time
 from typing import List, Optional
 
 from kag.common.config import get_default_chat_llm_config
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_component.kg_cs.lf_kg_retriever_template import (
-    KgRetrieverTemplate,
-)
 
 from kag.common.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
     PprChunkRetriever,
