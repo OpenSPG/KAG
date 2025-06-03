@@ -1,4 +1,4 @@
-2wikimultihop:
+2wikimultihopqa:
   root_dir: 2wiki
   config_file: kag_config_chunk.yaml
   index_builder:
@@ -6,6 +6,17 @@
     file_path: data/sub_corpus.json
   qa_solver:    
      type: benchmark_solver_2wiki
+     upper_limit: 1
+     qa_file_path: data/qa_sub.json
+  
+hotpotqa:
+  root_dir: hotpotqa-new
+  config_file: kag_config_chunk.yaml
+  index_builder:
+    type: benchmark_builder_hotpotqa
+    file_path: data/sub_corpus.json
+  qa_solver:    
+     type: benchmark_solver_hotpotqa
      upper_limit: 1
      qa_file_path: data/qa_sub.json
   

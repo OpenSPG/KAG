@@ -10,5 +10,5 @@
 # or implied.
 
 """
-Builder Dir.
+Place the prompts to be used for solving problems in this directory.
 """
