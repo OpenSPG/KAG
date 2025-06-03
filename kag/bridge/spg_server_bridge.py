@@ -17,9 +17,7 @@ import kag.interface as interface
 from kag.interface.common.llm_client import LLMCallCcontext, TokenMeterFactory
 from kag.common.conf import KAGConstants, init_env
 from kag.indexer.kag_index_manager import KAGIndexManager
-from tempfile import TemporaryDirectory
 
-from knext.schema.marklang.schema_ml import SPGSchemaMarkLang
 
 import logging
 
@@ -177,7 +175,7 @@ class SPGServerBridge:
         return data
 
     def get_index_manager_info(
-        self, index_manager_name, namespace, llm_config, vectorize_model_config
+        self, index_manager_name, llm_config, vectorize_model_config
     ):
         if isinstance(llm_config, str):
             llm_config = json.loads(llm_config)
@@ -191,28 +189,6 @@ class SPGServerBridge:
 
         index_mgr = KAGIndexManager.from_config(config)
         meta = index_mgr.get_meta()
-        try:
-            project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
-            host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-            if namespace and project_id and host_addr:
-                schema = meta["schema"]
-                schema_content = f"namespace {namespace}\n\n{schema}"
-
-                with TemporaryDirectory() as tmpdir:
-                    schema_file = os.path.join(tmpdir, "temp.schema")
-                    with open(schema_file, "w") as writer:
-                        writer.write(schema_content)
-                    ml = SPGSchemaMarkLang(schema_file, True, host_addr, project_id)
-                    res = []
-                    for t in ml.types.values():
-                        res.append(t.to_rest())
-                    meta[
-                        "spg_schema"
-                    ] = ml.schema.create_session()._rest_client.api_client.sanitize_for_serialization(
-                        res
-                    )
-        except:
-            pass
         return meta
 
     def get_index_manager_names(self):
