@@ -215,6 +215,10 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         KAG_CONFIG.update_conf(kb)
     else:
         kb = KAG_CONFIG.all_config
+    if "llm" not in KAG_CONFIG.all_config and "llm" in qa_config:
+        KAG_CONFIG.update_conf({
+            "llm": qa_config["llm"]
+        })
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
     thinking_enabled = use_pipeline in ["think_pipeline", "index_pipeline"]
     logger.info(
