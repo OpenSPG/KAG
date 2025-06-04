@@ -92,12 +92,12 @@ class SummaryExtractor(ExtractorABC):
                 properties={},
             )
 
-        # add Summary_relateTo_Chunk edge
+        # add Summary_sourceChunk_Chunk edge
         sub_graph.add_edge(
             s_id=input.id,
             s_label="Summary",
-            p="relateTo",
-            o_id=f"{input.id}_{input.name}",
+            p="sourceChunk",
+            o_id=f"{input.id}",
             o_label=CHUNK_TYPE,
             properties={},
         )

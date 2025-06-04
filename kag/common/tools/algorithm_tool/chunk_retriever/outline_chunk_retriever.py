@@ -123,7 +123,7 @@ class OutlineChunkRetriever(RetrieverABC):
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
 
             # parse oneHopGraphData and get related chunks
-            for relationData in oneHopGraphData.out_relations.get("relateTo", []):
+            for relationData in oneHopGraphData.out_relations.get("sourceChunk", []):
                 chunk_ids.add(relationData.end_id)
 
         for chunk_id in chunk_ids:
