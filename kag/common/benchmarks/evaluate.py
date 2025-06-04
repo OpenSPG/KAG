@@ -61,7 +61,9 @@ class Evaluate:
     def convert_chunk_data_2_str(self, predictionlist: list):
         ret = []
         for chunk_data in predictionlist:
+            title = chunk_data["title"]
             content = chunk_data["content"]
+            content = f"{title}\n{content}"
             for i in range(0, 10):
                 content = content.replace(f"_split_{i}", "")
             content = processing_phrases(content).replace("\n", "")

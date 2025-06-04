@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from kag.interface import ExtractorABC
+from kag.interface import ExtractorABC, ChunkTypeEnum
 
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
@@ -42,6 +42,11 @@ class ChunkExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
+        text_chunk: Chunk = input
+        if text_chunk.type != ChunkTypeEnum.Text:
+            # only process text
+            return []
+
         if "/" not in input.name:
             outline_name = input.name
         else:
@@ -56,7 +61,7 @@ class ChunkExtractor(ExtractorABC):
             id=f"{input.id}",
             name=outline_name,
             label="Chunk",
-            properties={"id": input.id, "name": outline_name, "content": input.content},
+            properties={"id": input.id, "name": outline_name, "content": f"{outline_name}\n{input.content}"},
         )
 
         return [sub_graph]
