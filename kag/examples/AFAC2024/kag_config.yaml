@@ -62,6 +62,9 @@ e3: &e3
 e4: &e4
   type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
 
+e4: &e4
+  type: table_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain

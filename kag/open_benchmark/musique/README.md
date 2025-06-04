@@ -1,11 +1,11 @@
-# KAG Example: MuSiQue
+# KAG Example: HotpotQA
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
-[MuSiQue](https://arxiv.org/abs/2108.00573) is a multi-hop QA dataset for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
+[HotpotQA](https://arxiv.org/abs/1809.09600) is a dataset for diverse, explainable multi-hop question answering. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
 
-Here we demonstrate how to build a knowledge graph for the MuSiQue dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
+Here we demonstrate how to build a knowledge graph for the HotpotQA dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
 
 ## 1. Precondition
 
@@ -16,7 +16,7 @@ Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s5
 ### Step 1: Enter the example directory
 
 ```bash
-cd kag/open_benchmark/musique
+cd kag/open_benchmark/hotpotqa
 ```
 
 ### Step 2: Configure models
@@ -35,7 +35,7 @@ knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
 
 ### Step 4: Commit the schema
 
-Execute the following command to commit the schema [MuSiQue.schema](./schema/MuSiQue.schema).
+Execute the following command to commit the schema [HotpotQA.schema](./schema/HotpotQA.schema).
 
 ```bash
 knext schema commit
@@ -57,9 +57,9 @@ Execute [eva.py](./solver/eva.py) in the [solver](./solver) directory to generat
 cd solver && python eva.py --qa_file ./data/qa_sub.json && cd ..
 ```
 
-The generated answers are saved to ``./solver/musique_res_*.json``.
+The generated answers are saved to ``./solver/hotpotqa_res_*.json``.
 
-The calculated EM and F1 metrics are saved to ``./solver/musique_metrics_*.json``.
+The calculated EM and F1 metrics are saved to ``./solver/hotpotqa_metrics_*.json``.
 
 ### Step 7: (Optional) Cleanup
 

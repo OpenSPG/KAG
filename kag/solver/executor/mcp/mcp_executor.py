@@ -78,7 +78,6 @@ class McpExecutor(ExecutorABC):
             await self.mcp_client.cleanup()
             logger.error(f"Failed to connect to server: {e}")
         response = await self.mcp_client.process_query(task_query)
-        await self.mcp_client.cleanup()
         task.update_result(response)
         return response
 
