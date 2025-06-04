@@ -74,6 +74,8 @@ class OpenAIClient(LLMClient):
         self.temperature = temperature
         self.timeout = timeout
         self.think = think
+        self.seed = kwargs.get("seed", NOT_GIVEN)
+        self.top_p = kwargs.get("top_p", NOT_GIVEN)
         self.extra_body = {"chat_template_kwargs": {"enable_thinking": self.think}}
         self.stop = kwargs.get("stop", NOT_GIVEN)
         extra_body = kwargs.get("extra_body", NOT_GIVEN)
