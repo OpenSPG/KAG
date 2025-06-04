@@ -1,4 +1,14 @@
 # coding: utf-8
+# Copyright 2023 OpenSPG Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied.
 
 """
     knext
@@ -39,10 +49,7 @@ class ProjectCreateRequest(object):
         'namespace': 'str',
         'tenant_id': 'str',
         'config': 'object',
-        'auto_schema': 'str',
-        'visibility': 'str',
-        'tag': 'str',
-        'user_no': 'str'
+        'auto_schema': 'str'
     }
 
     attribute_map = {
@@ -52,13 +59,10 @@ class ProjectCreateRequest(object):
         'namespace': 'namespace',
         'tenant_id': 'tenantId',
         'config': 'config',
-        'auto_schema': 'autoSchema',
-        'visibility': 'visibility',
-        'tag': 'tag',
-        'user_no': 'userNo'
+        'auto_schema': 'autoSchema'
     }
 
-    def __init__(self, id=None, name=None, desc=None, namespace=None, tenant_id=None, config=None, auto_schema=None, visibility='PRIVATE', tag='LOCAL', user_no='openspg', local_vars_configuration=None):  # noqa: E501
+    def __init__(self, id=None, name=None, desc=None, namespace=None, tenant_id=None, config=None, auto_schema=None, local_vars_configuration=None):  # noqa: E501
         """ProjectCreateRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -71,9 +75,6 @@ class ProjectCreateRequest(object):
         self._tenant_id = None
         self._config = None
         self._auto_schema = None
-        self._visibility = None
-        self._tag = None
-        self._user_no = None
         self.discriminator = None
 
         if id is not None:
@@ -90,10 +91,6 @@ class ProjectCreateRequest(object):
             self.config = config
         if auto_schema is not None:
             self.auto_schema = auto_schema
-        self.visibility = visibility
-        self.tag = tag
-        if user_no is not None:
-            self.user_no = user_no
 
     @property
     def id(self):
@@ -241,85 +238,6 @@ class ProjectCreateRequest(object):
         """
 
         self._auto_schema = auto_schema
-
-    @property
-    def visibility(self):
-        """Gets the visibility of this ProjectCreateRequest.  # noqa: E501
-
-
-        :return: The visibility of this ProjectCreateRequest.  # noqa: E501
-        :rtype: str
-        """
-        return self._visibility
-
-    @visibility.setter
-    def visibility(self, visibility):
-        """Sets the visibility of this ProjectCreateRequest.
-
-
-        :param visibility: The visibility of this ProjectCreateRequest.  # noqa: E501
-        :type: str
-        """
-        if self.local_vars_configuration.client_side_validation and visibility is None:  # noqa: E501
-            raise ValueError("Invalid value for `visibility`, must not be `None`")  # noqa: E501
-        allowed_values = ["PUBLIC_READ", "PRIVATE"]  # noqa: E501
-        if self.local_vars_configuration.client_side_validation and visibility not in allowed_values:  # noqa: E501
-            raise ValueError(
-                "Invalid value for `visibility` ({0}), must be one of {1}"  # noqa: E501
-                .format(visibility, allowed_values)
-            )
-
-        self._visibility = visibility
-
-    @property
-    def tag(self):
-        """Gets the tag of this ProjectCreateRequest.  # noqa: E501
-
-
-        :return: The tag of this ProjectCreateRequest.  # noqa: E501
-        :rtype: str
-        """
-        return self._tag
-
-    @tag.setter
-    def tag(self, tag):
-        """Sets the tag of this ProjectCreateRequest.
-
-
-        :param tag: The tag of this ProjectCreateRequest.  # noqa: E501
-        :type: str
-        """
-        if self.local_vars_configuration.client_side_validation and tag is None:  # noqa: E501
-            raise ValueError("Invalid value for `tag`, must not be `None`")  # noqa: E501
-        allowed_values = ["LOCAL", "PUBLIC-NET"]  # noqa: E501
-        if self.local_vars_configuration.client_side_validation and tag not in allowed_values:  # noqa: E501
-            raise ValueError(
-                "Invalid value for `tag` ({0}), must be one of {1}"  # noqa: E501
-                .format(tag, allowed_values)
-            )
-
-        self._tag = tag
-
-    @property
-    def user_no(self):
-        """Gets the user_no of this ProjectCreateRequest.  # noqa: E501
-
-
-        :return: The user_no of this ProjectCreateRequest.  # noqa: E501
-        :rtype: str
-        """
-        return self._user_no
-
-    @user_no.setter
-    def user_no(self, user_no):
-        """Sets the user_no of this ProjectCreateRequest.
-
-
-        :param user_no: The user_no of this ProjectCreateRequest.  # noqa: E501
-        :type: str
-        """
-
-        self._user_no = user_no
 
     def to_dict(self):
         """Returns the model properties as a dict"""

@@ -147,8 +147,6 @@ def create_project(
     project_config = config.get("project", {})
     namespace = project_config.get("namespace", None)
     name = project_config.get("namespace", None)
-    visibility = project_config.get("visibility","PRIVATE")
-    tag = project_config.get("tag", "LOCAL")
     host_addr = project_config.get("host_addr", None)
 
     if not namespace:
@@ -270,7 +268,7 @@ def update_project(proj_path):
         sys.exit()
 
     logger.info(f"project id: {env.id}")
-    client.update(id=env.id,name=env.name,namespace=env.namespace,config=env._config)
+    client.update(id=env.id, config=env._config)
     click.secho(
         f"Project [{env.name}] with namespace [{env.namespace}] was successfully updated from [{proj_path}].",
         fg="bright_green",
