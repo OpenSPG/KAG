@@ -87,7 +87,8 @@ kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      - *e1
+      # turn off SchemaFreeExtractor for the moment
+      #- *e1
       - *e2
       - *e3
       - *e4
