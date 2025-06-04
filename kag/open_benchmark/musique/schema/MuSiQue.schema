@@ -1,129 +1,60 @@
 namespace MuSiQue
 
+Document(原始doc): EntityType
+     properties:
+        desc(内容): Text
+            index: TextAndVector
+
 Chunk(文本块): EntityType
      properties:
         content(内容): Text
           index: TextAndVector
+     relations:
+        sourceChunk(关联): Document
 
-AtomicQuery(原子问): EntityType
-  properties:
-    content(内容): Text
-      index: TextAndVector
-
-ArtificialObject(人造物体): EntityType
+Outline(标题大纲): EntityType
      properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Chunk
+        childOf(子标题): Outline
 
-Astronomy(天文学): EntityType
+Summary(文本摘要): EntityType
      properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Chunk
+        childOf(子摘要): Summary
 
-Building(建筑): EntityType
+Table(表格): EntityType
+    properties:
+        content(内容): Text
+          index: TextAndVector
+        beforeText(前缀): Text
+          index: TextAndVector
+        afterText(后缀): Text
+          index: TextAndVector
+    relations:
+        sourceChunk(关联): Chunk
+
+KnowledgeUnit(知识单元): EntityType
      properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Creature(生物): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Concept(概念): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Date(日期): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-GeographicLocation(地理位置): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Keyword(关键词): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Medicine(药物): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-
-NaturalScience(自然科学): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Organization(组织机构): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Person(人物): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Transport(运输): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Works(作品): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Event(事件): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-Others(其他): EntityType
-     properties:
-        desc(描述): Text
-            index: TextAndVector
-        semanticType(语义类型): Text
-            index: Text
-
-SemanticConcept(语义概念): EntityType
-     properties:
+        structed(结构化文本): Text
+        ontology(领域本体): Text
+             index: Text
+        keywords(关键词): Text
+             index: Text
         desc(内容): Text
-            index: Text
+            index: TextAndVector
+     relations:
+        sourceChunk(归属于): Chunk
+        sourceDoc(归属于): Document
+
+AtomicQuery(原子问题):  EntityType
+     properties:
+     relations:
+        sourceChunk(归属于): Chunk
+        sourceDoc(归属于): Document
+        relatTo(关联): KnowledgeUnit

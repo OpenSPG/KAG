@@ -73,12 +73,12 @@ class OutlineExtractor(ExtractorABC):
                 properties={},
             )
 
-        # add Outline_relateTo_Chunk edge
+        # add Outline_sourceChunk_Chunk edge
         sub_graph.add_edge(
             s_id=input.id,
             s_label="Outline",
-            p="relateTo",
-            o_id=f"{input.id}_{input.name}",
+            p="sourceChunk",
+            o_id=f"{input.id}",
             o_label=CHUNK_TYPE,
             properties={},
         )
