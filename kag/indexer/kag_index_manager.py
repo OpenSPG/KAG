@@ -152,6 +152,8 @@ AtomicQuery(原子问): EntityType
             {
                 "type": "atomic_query_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
+                "llm_client": llm_config,
+                "query_rewrite_prompt": {"type": "atomic_query_rewrite_prompt"},
                 "search_api": {"type": "openspg_search_api"},
                 "graph_api": {"type": "openspg_graph_api"},
                 "top_k": 10,
