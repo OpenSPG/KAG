@@ -5,8 +5,7 @@ openie_llm: &openie_llm
   api_key: sk-
   model: qwen2.5-7b-instruct
   enable_check: false
-  max_tokens: 8092
-
+  max_tokens: 8192
 
 ner_llm: &ner_llm
   type: maas
@@ -32,14 +31,6 @@ vectorize_model: &vectorize_model
   vector_dimensions: 1024
   max_rate: 1000
   time_period: 60
-#vectorize_model: &vectorize_model
-#  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-#  api_key: sk-
-#  model: text-embedding-v3
-#  type: openai
-#  vector_dimensions: 1024
-#  max_rate: 1000
-#  time_period: 60
 vectorizer: *vectorize_model
 
 log:
@@ -47,14 +38,15 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://127.0.0.1:8887
-  language: zh
-  id: '12'
-  namespace: FinAlibaba3
+  host_addr: http://localhost:8887
+  id: '2'
+  language: en
+  namespace: MuSiQue
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
-e1: &e1
+
+e1:
   type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
   llm: *openie_llm
   ner_prompt:
@@ -65,13 +57,16 @@ e1: &e1
     type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
 
 e2: &e2
-  type: outline_extractor # kag.builder.component.extractor.outline_extractor.OutlineExtractor
+  type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
 
 e3: &e3
-  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
+  type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
 
 e4: &e4
-  type: chunk_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
+  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
+  llm_module: *openie_llm
+  chunk_summary_prompt:
+    type: default_chunk_summary
 
 e5: &e5
   type: table_extractor
@@ -91,28 +86,29 @@ kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
+      - *e2
+      - *e3
       - *e4
+      - *e5
       - *e6
     reader:
-      type: md_reader # kag.builder.component.reader.dict_reader.DictReader
-      cut_depth: 6
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
       type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
     splitter:
       type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
-      split_length: 1000
+      split_length: 100000
       window_length: 0
     vectorizer:
       type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
       vectorize_model: *vectorize_model
-      batch_size: 10
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 10
-  num_chains: 2
-  max_concurrency: 10
+  num_chains: 8
+  max_concurrency: 1
   scanner:
-    type: file_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+    type: musique_dataset_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
@@ -160,10 +156,15 @@ r5: &r5
   graph_api: *graph_api
   top_k: 10
 
-retriever_executor: &retriever
-  type: kag_hybrid_retrieval_executor
+retriever_executor: &retriever_executor
+  type: evidence_based_reasoner
+  llm: *chat_llm
   retrievers:
-    - *r1
+    #    - *r1
+    - *r2
+    - *r3
+    - *r4
+    - *r5
   merger:
     type: kag_merger
 
@@ -177,11 +178,9 @@ kag_solver_pipeline:
     rewrite_prompt:
       type: default_query_rewrite
   executors:
-    - *retriever
+    - *retriever_executor
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: default_multi_hop_generator
 
 #------------kag-solver configuration end----------------#
