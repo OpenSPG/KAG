@@ -1,24 +1,12 @@
-openie_llm: &openie_llm
+llm: &llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  api_key: !ENV LLM_API_KEY
   model: qwen2.5-72b-instruct
 
-chat_llm: &chat_llm
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
-  model: qwen2.5-72b-instruct
-  stream: false
-
-ner_llm:
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
-  model: qwen2.5-72b-instruct
 
 vectorize_model: &vectorize_model
-  api_key: sk-
+  api_key: !ENV VECTORIZE_MODEL_API_KEY
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -40,7 +28,7 @@ project:
 
 e1: &e1
   type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-  llm: *openie_llm
+  llm: *llm
   ner_prompt:
     type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
   std_prompt:
@@ -70,7 +58,7 @@ kag_builder_pipeline:
   num_threads_per_chain: 1
   num_chains: 16
   scanner:
-    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
 #------------kag-builder configuration end----------------#
 
 
@@ -102,12 +90,12 @@ kg_fr:
   top_k: 20
   path_select:
     type: fuzzy_one_hop_select
-    llm_client: *chat_llm
+    llm_client: *llm
     graph_api: *graph_api
     search_api: *search_api
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever_legacy
-    llm_client: *chat_llm
+    llm_client: *llm
     graph_api: *graph_api
     search_api: *search_api
   entity_linking:
@@ -132,7 +120,7 @@ rc:
 kag_merger:
   type: kg_merger
   top_k: 20
-  llm_module: *chat_llm
+  llm_module: *llm
   summary_prompt:
     type: default_thought_then_answer
   vectorize_model: *vectorize_model
@@ -143,7 +131,7 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
   type: kag_hybrid_executor
   lf_rewriter:
     type: kag_spo_lf
-    llm_client: *openie_llm
+    llm_client: *llm
     lf_trans_prompt:
       type: default_spo_retriever_decompose
     vectorize_model: *vectorize_model
@@ -155,7 +143,7 @@ kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
     type: lf_kag_static_planner
-    llm: *chat_llm
+    llm: *llm
     plan_prompt:
       type: default_lf_static_planning
     rewrite_prompt:
@@ -164,7 +152,7 @@ kag_solver_pipeline:
     - *kag_hybrid_executor_conf
   generator:
     type: llm_generator
-    llm_client: *chat_llm
+    llm_client: *llm
     generated_prompt:
       type: default_multi_hop_generator
 #------------kag-solver configuration end----------------#

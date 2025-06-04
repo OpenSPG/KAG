@@ -85,7 +85,9 @@ class RerankByVector(ToolABC):
         merged_sorted_idx = np.argsort(-passage_scores)
 
         new_passages = [flat_chunks[x] for x in merged_sorted_idx]
-        return new_passages[: self.rerank_top_k]
+        if self.rerank_top_k > 0:
+            return new_passages[: self.rerank_top_k]
+        return new_passages
 
 
 @ToolABC.register("rerank_by_model")

@@ -33,7 +33,7 @@ from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select imp
 logger = logging.getLogger()
 
 
-@FlowComponent.register("kg_fr_open_spg")
+@FlowComponent.register("kg_fr_open_spg_legacy")
 class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
     def __init__(
         self,

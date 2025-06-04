@@ -133,9 +133,17 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
         async with self.limiter:
-            results = await self.aclient.embeddings.create(
-                input=texts, model=self.model, timeout=self.timeout
-            )
+            texts = [text if text.strip() != "" else "none" for text in texts]
+            try:
+                results = await self.aclient.embeddings.create(
+                    input=texts, model=self.model, timeout=self.timeout
+                )
+            except Exception as e:
+                logger.error(f"Error: {e}")
+                logger.error(f"input: {texts}")
+                logger.error(f"model: {self.model}")
+                logger.error(f"timeout: {self.timeout}")
+                return None
         results = [item.embedding for item in results.data]
         if isinstance(texts, str):
             assert len(results) == 1

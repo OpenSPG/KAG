@@ -18,9 +18,11 @@ import re
 
 import yaml
 
-from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.indexer import KAGIndexManager
 from kag.interface import SolverPipelineABC
-from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
+
+from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
+from kag.interface.solver.reporter_abc import ReporterABC
 
 logger = logging.getLogger()
 
@@ -104,11 +106,12 @@ def get_pipeline_conf(use_pipeline_name, config):
                 backup_key = "vectorizer"
             if backup_key:
                 value = config.get(backup_key)
-        # if value is None:
-        #     raise RuntimeError(
-        #         f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config."
-        #     )
-        # value["enable_check"] = False
+        if value is None:
+            raise RuntimeError(
+                f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config."
+            )
+        if "llm" in placeholder or "vectorizer" in placeholder:
+            value["enable_check"] = False
         placeholders_replacement_map[placeholder] = value
     default_pipeline_conf = replace_placeholders(
         conf_map[use_pipeline_name], placeholders_replacement_map
@@ -149,6 +152,53 @@ def is_chinese(text):
     return bool(chinese_pattern.search(text))
 
 
+async def do_index_pipeline(query, qa_config, reporter):
+    if "chat" not in qa_config or "index_list" not in qa_config["chat"]:
+        raise RuntimeError("chat or index_list not found in qa_config.")
+    index_names = qa_config["chat"]["index_list"]
+    retriever_configs = []
+    for index_name in index_names:
+        try:
+            index_manager = KAGIndexManager.from_config(
+                {
+                    "type": index_name,
+                    "llm_config": qa_config["llm"],
+                    "vectorize_model_config": qa_config["vectorize_model"],
+                }
+            )
+            retriever_configs += index_manager.build_retriever_config(
+                qa_config["llm"], qa_config["vectorize_model"]
+            )
+        except Exception as e:
+            raise RuntimeError(f"not found index {index_name}")
+    qa_config["retrievers"] = retriever_configs
+    pipeline_config = get_pipeline_conf("index_pipeline", qa_config)
+    pipeline = SolverPipelineABC.from_config(pipeline_config)
+    return await pipeline.ainvoke(query, reporter=reporter)
+
+
+async def do_qa_pipeline(use_pipeline, query, qa_config, reporter):
+    if use_pipeline in qa_config.keys():
+        custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
+    else:
+        custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
+    # self cognition
+    self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
+    self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
+    self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+    if not self_cognition_res:
+        if custom_pipeline_conf:
+            pipeline_config = custom_pipeline_conf
+        else:
+            pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+        logger.error(f"pipeline conf: \n{pipeline_config}")
+        pipeline = SolverPipelineABC.from_config(pipeline_config)
+        answer = await pipeline.ainvoke(query, reporter=reporter)
+    else:
+        answer = self_cognition_res
+    return answer
+
+
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     qa_config = params.get("config", KAG_CONFIG.all_config)
     logger.info(f"qa_config = {qa_config}")
@@ -160,57 +210,52 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         if "chat" in qa_config.keys()
         else params.get("usePipeline", "think_pipeline")
     )
+    if "kb" in qa_config.keys():
+        kb = qa_config["kb"][0]
+        KAG_CONFIG.update_conf(kb)
+    else:
+        kb = KAG_CONFIG.all_config
+    if "llm" not in KAG_CONFIG.all_config and "llm" in qa_config:
+        KAG_CONFIG.update_conf({
+            "llm": qa_config["llm"]
+        })
     logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
-    thinking_enabled = use_pipeline == "think_pipeline"
+    thinking_enabled = use_pipeline in ["think_pipeline", "index_pipeline"]
     logger.info(
         f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
     )
-    reporter: OpenSPGReporter = OpenSPGReporter(
-        task_id=task_id,
-        host_addr=host_addr,
-        project_id=project_id,
-        thinking_enabled=thinking_enabled,
+    reporter: ReporterABC = ReporterABC.from_config(
+        {
+            "type": KAG_CONFIG.all_config.get("reporter", "open_spg_reporter"),
+            "task_id": task_id,
+            "host_addr": host_addr,
+            "project_id": project_id,
+            "thinking_enabled": thinking_enabled,
+            "report_all_references": use_pipeline == "index_pipeline",
+        }
     )
+    if is_chinese(query):
+        KAG_PROJECT_CONF.language = "zh"
+    else:
+        KAG_PROJECT_CONF.language = "en"
 
-    pipeline_config = {}
+    KAG_PROJECT_CONF.host_addr = host_addr
+
+    try:
+        if "id" in kb:
+            KAG_PROJECT_CONF.project_id = kb["id"]
+        elif "project" in kb and "id" in kb["project"]:
+            KAG_PROJECT_CONF.project_id = kb["project"]["id"]
+        qa_config["vectorize_model"] = kb["vectorizer"]
+    except Exception as e:
+        logger.info(f"vectorize_model not found in config. Error: {str(e)}")
+
     try:
         await reporter.start()
-        if is_chinese(query):
-            KAG_PROJECT_CONF.language = "zh"
+        if use_pipeline == "index_pipeline":
+            answer = await do_index_pipeline(query, qa_config, reporter)
         else:
-            KAG_PROJECT_CONF.language = "en"
-
-        KAG_PROJECT_CONF.host_addr = host_addr
-        if "kb" in qa_config.keys():
-            KAG_PROJECT_CONF.project_id = qa_config["kb"][0]["id"]
-            try:
-                qa_config["vectorize_model"] = qa_config["kb"][0]["vectorizer"]
-            except Exception as e:
-                logger.info(f"vectorize_model not found in config. Error: {str(e)}")
-        if use_pipeline in KAG_CONFIG.all_config.keys():
-            custom_pipeline_conf = copy.deepcopy(
-                KAG_CONFIG.all_config.get(use_pipeline, None)
-            )
-        else:
-            custom_pipeline_conf = copy.deepcopy(
-                KAG_CONFIG.all_config.get("solver_pipeline", None)
-            )
-        # self cognition
-        self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
-        self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
-        self_cognition_res = await self_cognition_pipeline.ainvoke(
-            query, reporter=reporter
-        )
-        if not self_cognition_res:
-            if custom_pipeline_conf:
-                pipeline_config = custom_pipeline_conf
-            else:
-                pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
-            logger.error(f"pipeline conf: \n{pipeline_config}")
-            pipeline = SolverPipelineABC.from_config(pipeline_config)
-            answer = await pipeline.ainvoke(query, reporter=reporter)
-        else:
-            answer = self_cognition_res
+            answer = await do_qa_pipeline(use_pipeline, query, qa_config, reporter)
         reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
     except Exception as e:
         logger.warning(
@@ -277,8 +322,8 @@ if __name__ == "__main__":
         "周杰伦有哪些专辑",
         "4700026",
         True,
-        # host_addr="http://spg-pre.alipay.com",
-        host_addr="http://antspg-gz00b-006003080066.sa128-sqa.alipay.net:8887",
+        host_addr="http://spg-pre.alipay.com",
+        # host_addr="http://antspg-gz00b-006003080066.sa128-sqa.alipay.net:8887",
         params=params,
     )
     print("*" * 80)

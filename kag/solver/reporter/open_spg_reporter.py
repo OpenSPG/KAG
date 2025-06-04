@@ -44,9 +44,13 @@ def generate_ref_doc_set(
             document_name=d["document_name"],
             url=d.get("url", None),
         )
-    for refer_id in refer_ids:
-        if refer_id in refer_doc_maps:
-            refer.append(refer_doc_maps[refer_id])
+    if refer_ids is not None:
+        for refer_id in refer_ids:
+            if refer_id in refer_doc_maps:
+                refer.append(refer_doc_maps[refer_id])
+    else:
+        for v in refer_doc_maps.values():
+            refer.append(v)
     return RefDocSet(id=tag_name, type=ref_type, info=refer)
 
 
@@ -149,14 +153,15 @@ class OpenSPGReporter(ReporterABC):
         self.report_record = []
         self.report_sub_segment = {}
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
+        self.report_all_references = kwargs.get("report_all_references", False)
         self.word_mapping = {
             "kag_merger_digest_failed": {
                 "zh": "未检索到相关信息。",
                 "en": "No relevant information was found.",
             },
             "kag_merger_digest": {
-                "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息已足够回答问题。",
-                "en": "{chunk_num} documents were output, sufficient information retrieved to answer the question.",
+                "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息结束。",
+                "en": "{chunk_num} documents were output, information retrieved end.",
             },
             "retrieved_info_digest": {
                 "zh": "共检索到 {chunk_num} 篇文档，检索的子图中共有 {nodes_num} 个节点和 {edges_num} 条边。",
@@ -497,28 +502,39 @@ Rewritten question:\n{content}
             report_content = self.generate_content(
                 report_id, tag_template, report_content, kwargs, graph_list
             )
-            sub_segments = self.report_sub_segment.get(report_data["report_id"], [])
-            for sub_segment in sub_segments:
-                sub_segment_data = self.report_stream_data.get(sub_segment, None)
-                if not sub_segment_data:
-                    continue
-                tpl = sub_segment_data["tag_template"]
-                sub_content = sub_segment_data["content"]
-                sub_kwargs = sub_segment_data.get("kwargs", {})
 
-                sub_segment_report = self.generate_content(
-                    report_id=report_id,
-                    tpl=tpl,
-                    datas=sub_content,
-                    content_params=sub_kwargs,
-                    graph_list=graph_list,
-                )
-                tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
-                report_content = report_content.replace(
-                    tag_replace_str, sub_segment_report
-                )
+            def generate_sub_segment_content(cur_report_id, cur_report_content):
+                generated_content = cur_report_content
+                sub_segments = self.report_sub_segment.get(cur_report_id, [])
+                for sub_segment in sub_segments:
+                    sub_segment_data = self.report_stream_data.get(sub_segment, None)
+                    if not sub_segment_data:
+                        continue
+                    tpl = sub_segment_data["tag_template"]
+                    sub_content = sub_segment_data["content"]
+                    sub_kwargs = sub_segment_data.get("kwargs", {})
 
-            think += report_content + "\n\n"
+                    sub_segment_report = self.generate_content(
+                        report_id=cur_report_id,
+                        tpl=tpl,
+                        datas=sub_content,
+                        content_params=sub_kwargs,
+                        graph_list=graph_list,
+                    )
+                    processed_sub_segment_content = generate_sub_segment_content(
+                        sub_segment_data["report_id"], sub_segment_report
+                    )
+                    tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
+                    generated_content = generated_content.replace(
+                        tag_replace_str, processed_sub_segment_content
+                    )
+                return generated_content
+
+            processed_report_content = generate_sub_segment_content(
+                report_data["report_id"], report_content
+            )
+
+            think += processed_report_content + "\n\n"
             thinker_start_time = self.report_segment_time.get(
                 segment_name, {"start_time": time.time()}
             )["start_time"]
@@ -564,6 +580,8 @@ Rewritten question:\n{content}
         refer_ids = []
         if answer:
             refer_ids = list(set(extract_ids(answer)))
+        if self.report_all_references:
+            refer_ids = None
         reference = self.process_reference(reference_reports, refer_ids)
 
         content = StreamData(

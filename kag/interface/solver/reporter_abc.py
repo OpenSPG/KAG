@@ -58,12 +58,9 @@ def do_report(content, status, **kwargs):
     reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
     segment_name = kwargs.get("segment_name", None)
     tag_name = kwargs.get("tag_name", None)
-    if reporter:
+    if reporter and segment_name and tag_name:
         reporter.add_report_line(
-            segment_name,
-            tag_name,
-            content,
-            status=status,
+            segment=segment_name, content=content, status=status, **kwargs
         )
 
 

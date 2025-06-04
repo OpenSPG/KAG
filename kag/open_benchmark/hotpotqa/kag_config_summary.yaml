@@ -1,0 +1,121 @@
+openie_llm: &openie_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
+
+chat_llm: &chat_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
+  stream: false
+
+ner_llm:
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
+
+vectorize_model: &vectorize_model
+  api_key: sk-
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+vectorizer: *vectorize_model
+
+log:
+  level: INFO
+
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: en
+  namespace: HotpotQA
+#------------project configuration end----------------#
+
+#------------kag-builder configuration start----------------#
+e1: &e1
+  type: chunk_extractor
+
+e2: &e2
+  type: summary_extractor
+
+
+kag_builder_pipeline:
+  chain:
+    type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
+    extractor:
+      - *e1
+      - *e2
+    reader:
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
+    post_processor:
+      type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
+    splitter:
+      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 100000
+      window_length: 0
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+    writer:
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+  num_threads_per_chain: 1
+  num_chains: 16
+  scanner:
+    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+#------------kag-builder configuration end----------------#
+
+
+
+
+#------------kag-solver configuration start----------------#
+search_api: &search_api
+  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+
+graph_api: &graph_api
+  type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+
+
+r1: &r1
+  type: vector_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  top_k: 10
+
+r2: &r2
+  type: summary_chunk_retriever
+  search_api: *search_api
+  graph_api: *graph_api
+  vectorize_model: *vectorize_model
+  top_k: 5
+
+retriever_executor: &retriever
+  type: evidence_based_reasoner
+  llm: *chat_llm
+  retrievers:
+    - *r1
+    - *r2
+  merger:
+    type: kag_merger
+
+
+
+kag_solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: kag_static_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: retriever_static_planning
+    rewrite_prompt:
+      type: default_query_rewrite
+  executors:
+    - *retriever
+  generator:
+    type: llm_generator_with_thought
+    llm_client: *chat_llm
+#------------kag-solver configuration end----------------#

@@ -122,7 +122,7 @@ r4: &r4
   vectorize_model: *vectorize_model
   top_k: 5
 
-retriever_executor: &retriever
+retriever_executor: &retriever_executor
   type: kag_hybrid_retrieval_executor
   retrievers:
     - *r3

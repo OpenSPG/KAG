@@ -13,6 +13,13 @@ Outline(标题大纲): EntityType
         relateTo(关联): Chunk
         childOf(子标题): Outline
 
+Diagram(标题大纲): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        relateTo(关联): Chunk
+
 Summary(文本摘要): EntityType
      properties:
         content(内容): Text

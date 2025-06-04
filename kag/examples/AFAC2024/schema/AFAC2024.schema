@@ -21,6 +21,17 @@ Summary(文本摘要): EntityType
         relateTo(关联): Chunk
         childOf(子摘要): Summary
 
+Diagram(表格): EntityType
+    properties:
+        content(内容): Text
+          index: TextAndVector
+        beforeText(前缀): Text
+          index: TextAndVector
+        afterText(后缀): Text
+          index: TextAndVector
+    relations:
+        relateTo(关联): Chunk
+
 ArtificialObject(人造物体): EntityType
      properties:
         desc(描述): Text
