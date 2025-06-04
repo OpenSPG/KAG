@@ -222,7 +222,7 @@ def restore_project(host_addr, proj_path):
     if not project_wanted:
         if host_addr:
             client = ProjectClient(host_addr=host_addr)
-            project = client.create(name=env.name, namespace=env.namespace, config=env._config, visibility="PUBLIC", tag="PUBLIC-NET")
+            project = client.create(name=env.name, namespace=env.namespace, config=env._config, visibility="PRIVATE", tag="PUBLIC-NET")
             project_id = project.id
     else:
         project_id = project_wanted.id

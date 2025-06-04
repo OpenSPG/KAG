@@ -63,7 +63,7 @@ class ProjectClient(Client):
 
     def create(self, name: str, namespace: str, config: str, desc: str = None, auto_schema=False, visibility: str = "public", tag: str = None):
         project_create_request = rest.ProjectCreateRequest(
-            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag
+            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,tag=tag, user_no="openspg"
         )
 
         project = self._rest_client.project_create_post(
@@ -72,7 +72,7 @@ class ProjectClient(Client):
         return project
 
     def update(self, id, name, namespace, config):
-        project_create_request = rest.ProjectCreateRequest(id=id, name=name, namespace=namespace, config=config)
+        project_create_request = rest.ProjectCreateRequest(id=id, name=name, namespace=namespace, config=config, user_no="openspg")
         project = self._rest_client.project_update_post(
             project_create_request=project_create_request
         )
