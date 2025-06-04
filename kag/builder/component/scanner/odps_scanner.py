@@ -180,7 +180,7 @@ class ODPSScanner(ScannerABC):
                 rows_yielded = 0
                 if self.pre_load:
                     records = list(shard_reader)
-                    logger.debug(f"Pre-loaded {len(records)} records")
+                    logger.info(f"Pre-loaded {len(records)} records")
                 else:
                     records = shard_reader
 
