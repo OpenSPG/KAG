@@ -109,7 +109,7 @@ kag_builder_pipeline:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 10
   num_chains: 8
-  max_concurrency: 1
+  max_concurrency: 10
   scanner:
     type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
     file_suffix: md
