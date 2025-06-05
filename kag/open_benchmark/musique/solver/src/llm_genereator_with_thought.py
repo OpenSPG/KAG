@@ -73,6 +73,8 @@ NOTE:
 """
 
         prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}\nQuestion: {query}"
+        #prompt = f"{system_instruction}\n\nStep by Step Analysis:\n{thoughts}\nQuestion: {query}"
+
         response = self.llm_client(prompt)
         if "Answer: " not in response:
             raise ValueError(f"no answer found in response: {response}")

@@ -980,13 +980,13 @@ class MarkDownReader(ReaderABC):
                     length_categories["extra_large"].append(chunk)
 
         # Log statistics
-        logger.info("Chunk statistics:")
-        logger.info(f"  Total chunks: {len(chunks)}")
-        logger.info(f"  Table chunks: {table_count}")
-        logger.info(f"  Small chunks (≤500): {len(length_categories['small'])}")
-        logger.info(f"  Medium chunks (501-1000): {len(length_categories['medium'])}")
-        logger.info(f"  Large chunks (1001-5000): {len(length_categories['large'])}")
-        logger.info(
+        logger.debug("Chunk statistics:")
+        logger.debug(f"  Total chunks: {len(chunks)}")
+        logger.debug(f"  Table chunks: {table_count}")
+        logger.debug(f"  Small chunks (≤500): {len(length_categories['small'])}")
+        logger.debug(f"  Medium chunks (501-1000): {len(length_categories['medium'])}")
+        logger.debug(f"  Large chunks (1001-5000): {len(length_categories['large'])}")
+        logger.debug(
             f"  Extra large chunks (>5000): {len(length_categories['extra_large'])}"
         )
 
@@ -1053,7 +1053,7 @@ if __name__ == "__main__":
 
     dir_path = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(
-        dir_path, "../../../../tests/unit/builder/data", "需求内容test.md"
+        dir_path, "/Users/zhengke.gzk/Projects/Git/opensource-OpenSPG/configurable_index_mng/KAG/kag/examples/AFAC2024/builder/data/BY09.md"
     )
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)

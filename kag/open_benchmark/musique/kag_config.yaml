@@ -7,7 +7,7 @@ openie_llm: &openie_llm
   enable_check: false
   max_tokens: 8192
 
-ner_llm: &ner_llm
+ner_llm:
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: sk-
@@ -162,8 +162,12 @@ r5: &r5
   top_k: 10
 
 retriever_executor: &retriever_executor
-  type: evidence_based_reasoner
+  type: long_context_reasoner
   llm: *chat_llm
+  context_select_llm: *chat_llm
+  vectorize_model: *vectorize_model
+  context_select_prompt:
+    type: context_select_prompt
   retrievers:
 #    - *r1
 #    - *r2
