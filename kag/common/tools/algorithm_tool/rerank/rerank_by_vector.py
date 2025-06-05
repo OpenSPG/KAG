@@ -40,7 +40,7 @@ def _flat_passages_set(passages_set: List[List[ChunkData]]):
 @ToolABC.register("rerank_by_vector")
 class RerankByVector(ToolABC):
     def __init__(
-        self, vectorize_model: VectorizeModelABC = None, rerank_top_k: int = 10
+        self, vectorize_model: VectorizeModelABC = None, rerank_top_k: int = 100
     ):
         super().__init__()
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(

@@ -2,35 +2,35 @@
 openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-72b-instruct
-  enable_check: False
-chat_llm: &chat_llm
-  type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-72b-instruct
-  enable_check: False
+  api_key: sk-
+  model: qwen2.5-7b-instruct
+  enable_check: false
+  max_tokens: 8192
 
 ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-7b-instruct-1m
-  enable_check: False
-llm: &llm
+  api_key: sk-
+  model: qwen2.5-7b-instruct
+  enable_check: false
+  max_tokens: 1024
+
+chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
+  api_key: sk-
   model: qwen2.5-72b-instruct
-  enable_check: False
+  enable_check: false
+  max_tokens: 1024
+
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key: sk-
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
-  enable_check: False
+  max_rate: 1000
+  time_period: 60
 vectorizer: *vectorize_model
 
 log:
@@ -38,25 +38,59 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://127.0.0.1:8887
+  host_addr: http://8.211.148.36:8887
   id: '2'
   language: en
   namespace: MuSiQue
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
+
+e1:
+  type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  llm: *openie_llm
+  ner_prompt:
+    type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
+  std_prompt:
+    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+  triple_prompt:
+    type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+
+e2: &e2
+  type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
+e3: &e3
+  type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
+e4: &e4
+  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
+  llm_module: *openie_llm
+  chunk_summary_prompt:
+    type: default_chunk_summary
+
+e5: &e5
+  type: table_extractor
+  llm: *openie_llm
+  table_context_prompt:
+    type: table_context
+  table_row_col_summary_prompt:
+    type: table_row_col_summary
+
+e6: &e6
+  type: atomic_query_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
+  llm: *openie_llm
+  prompt:
+    type: atomic_query_extract
+
 kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-      llm: *openie_llm
-      ner_prompt:
-        type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
-      std_prompt:
-        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-      triple_prompt:
-        type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+      - *e2
+      - *e3
+      - *e4
+      - *e5
+      - *e6
     reader:
       type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
@@ -70,115 +104,88 @@ kag_builder_pipeline:
       vectorize_model: *vectorize_model
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
-  num_threads_per_chain: 2
-  num_chains: 10
+  num_threads_per_chain: 10
+  num_chains: 8
+  max_concurrency: 1
   scanner:
-    type: musique_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+    type: musique_dataset_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
-
 search_api: &search_api
   type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
-
-kg_cs:
-  type: kg_cs_open_spg
-  path_select:
-    type: exact_one_hop_select
-    graph_api: *graph_api
-    search_api: *search_api
-  entity_linking:
-    type: entity_linking
-    graph_api: *graph_api
-    search_api: *search_api
-    recognition_threshold: 0.9
-    exclude_types:
-      - "Chunk"
-
-kg_fr:
-  type: kg_fr_open_spg
-  top_k: 20
-  path_select:
-    type: fuzzy_one_hop_select
-    llm_client: *chat_llm
-    graph_api: *graph_api
-    search_api: *search_api
-  ppr_chunk_retriever_tool:
-    type: ppr_chunk_retriever
-    llm_client: *ner_llm
-    graph_api: *graph_api
-    search_api: *search_api
-  entity_linking:
-    type: entity_linking
-    graph_api: *graph_api
-    search_api: *search_api
-    recognition_threshold: 0.8
-    exclude_types:
-      - "Chunk"
-
-rc:
-  type: rc_open_spg
-  vector_chunk_retriever:
-    type: vector_chunk_retriever
-    vectorize_model: *vectorize_model
-    search_api: *search_api
-  graph_api: *graph_api
-  search_api: *search_api
+r1: &r1
+  type: atomic_query_chunk_retriever
   vectorize_model: *vectorize_model
-  top_k: 20
-
-kag_merger:
-  type: kg_merger
-  top_k: 20
-  llm_module: *chat_llm
-  summary_prompt:
-    type: default_thought_then_answer
-  vectorize_model: *vectorize_model
-  graph_api: *graph_api
   search_api: *search_api
+  graph_api: *graph_api
+  llm_client: *chat_llm
+  score_threshold: 0.85
+  query_rewrite_prompt:
+    type: atomic_query_rewrite_prompt
+  top_k: 10
 
-kag_hybrid_executor: &kag_hybrid_executor_conf
-  type: kag_hybrid_executor
-  lf_rewriter:
-    type: kag_spo_lf
-    llm_client: *openie_llm
-    lf_trans_prompt:
-      type: default_spo_retriever_decompose
-    vectorize_model: *vectorize_model
-  flow: |
-    kg_cs->kg_fr->kag_merger;rc->kag_merger
+r2: &r2
+  type: outline_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  score_threshold: 0.85
+  top_k: 10
 
-kag_output_executor: &kag_output_executor_conf
-  type: kag_output_executor
-kag_deduce_executor: &kag_deduce_executor_conf
-  type: kag_deduce_executor
+r3: &r3
+  type: summary_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  score_threshold: 0.85
+  top_k: 10
 
-py_code_based_math_executor: &py_code_based_math_executor_conf
-  type: py_code_based_math_executor
-  llm: *openie_llm
+r4: &r4
+  type: vector_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  score_threshold: 0.7
+  top_k: 10
+
+r5: &r5
+  type: table_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  score_threshold: 0.85
+  top_k: 10
+
+retriever_executor: &retriever_executor
+  type: evidence_based_reasoner
+  llm: *chat_llm
+  retrievers:
+#    - *r1
+#    - *r2
+    - *r3
+    - *r4
+#    - *r5
+  merger:
+    type: kag_merger
 
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: lf_kag_static_planner
+    type: kag_static_planner
     llm: *chat_llm
     plan_prompt:
-      type: default_lf_static_planning
+      type: retriever_static_planning
     rewrite_prompt:
-      type: default_rewrite_sub_task_query
+      type: default_query_rewrite
   executors:
-    - *kag_hybrid_executor_conf
-    - *py_code_based_math_executor_conf
-    - *kag_deduce_executor_conf
-    - *kag_output_executor_conf
+    - *retriever_executor
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
-    generated_prompt:
-      type: default_multi_hop_generator
 
 #------------kag-solver configuration end----------------#
