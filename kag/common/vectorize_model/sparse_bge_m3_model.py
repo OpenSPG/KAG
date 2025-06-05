@@ -11,7 +11,6 @@
 from typing import Union, Iterable
 
 import httpx
-import json_repair
 
 from kag.interface import SparseVectorizeModelABC, SparseEmbeddingVector
 import logging
@@ -69,17 +68,24 @@ class SparseBGEM3VectorizeModel(SparseVectorizeModelABC):
         }
         return json_data
 
-    @staticmethod
-    def _decode_response_data(texts, response):
+    @classmethod
+    def _decode_sparse_vector(cls, value) -> SparseEmbeddingVector:
+        if isinstance(value, str):
+            return value
+        else:
+            return str(value)
+
+    @classmethod
+    def _decode_response_data(cls, texts, response):
         res_map = response.json()
         if isinstance(texts, str):
-            return json_repair.loads(res_map.get("resultMap").get("result"))
+            return cls._decode_sparse_vector(res_map.get("resultMap").get("result"))
         elif len(texts) == 1:
-            return [json_repair.loads(res_map.get("resultMap").get("result"))]
+            return [cls._decode_sparse_vector(res_map.get("resultMap").get("result"))]
         else:
             object_value = res_map.get("resultMap").get("result").get("objectValue")
             assert len(texts) == len(object_value), f"Input size mismatch: {list}"
-            return [json_repair.loads(val) for val in object_value]
+            return [cls._decode_sparse_vector(val) for val in object_value]
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]

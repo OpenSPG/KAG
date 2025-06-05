@@ -24,7 +24,7 @@ from kag.common.registry import Registrable
 from typing import Union, Iterable, Mapping
 
 EmbeddingVector = Iterable[float]
-SparseEmbeddingVector = Mapping[str, float]
+SparseEmbeddingVector = Union[Mapping[str, float], str]
 logger = logging.getLogger()
 
 
