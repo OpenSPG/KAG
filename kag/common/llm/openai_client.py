@@ -130,6 +130,8 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
             stop=self.stop,
+            seed=self.seed,
+            top_p=self.top_p,
             extra_body=self.extra_body
         )
         if not self.stream:
@@ -200,6 +202,8 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
             stop=self.stop,
+            seed=self.seed,
+            top_p=self.top_p,
             extra_body=self.extra_body,
         )
         if not self.stream:
