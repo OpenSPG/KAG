@@ -138,19 +138,6 @@ class SparseVectorizeModelABC(Registrable):
     An abstract base class that defines the interface for converting text into sparse embedding vectors.
     """
 
-    _instances = {}
-    _lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        key = cls.generate_key(*args, **kwargs)
-
-        if key in cls._instances:
-            return cls._instances[key]
-
-        instance = super().__new__(cls)
-        cls._instances[key] = instance
-        return instance
-
     def __init__(
         self,
         name: str,
