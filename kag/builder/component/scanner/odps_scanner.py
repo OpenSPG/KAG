@@ -19,6 +19,7 @@ class ODPSScanner(ScannerABC):
         col_names=None,
         col_ids=None,
         limit=None,
+        pre_load=False,
     ):
         super().__init__()
         self.access_id = access_id
@@ -29,6 +30,7 @@ class ODPSScanner(ScannerABC):
         self.col_names = col_names
         self.col_ids = col_ids
         self.limit = limit
+        self.pre_load = pre_load
         from odps import ODPS
 
         self._o = ODPS(self.access_id, self.access_key, self.project, self.endpoint)
@@ -176,7 +178,13 @@ class ODPSScanner(ScannerABC):
 
                 # Yield records one by one with limit
                 rows_yielded = 0
-                for record in shard_reader:
+                if self.pre_load:
+                    records = list(shard_reader)
+                    logger.info(f"Pre-loaded {len(records)} records")
+                else:
+                    records = shard_reader
+
+                for record in records:
                     if self.limit is not None and rows_yielded >= self.limit:
                         logger.debug(
                             f"Reached row limit of {self.limit}, stopping generation"
