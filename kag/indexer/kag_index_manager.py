@@ -171,3 +171,74 @@ AtomicQuery(原子问): EntityType
                 "top_k": 10,
             },
         ]
+
+
+@KAGIndexManager.register("chunk_index")
+class ChunkIndexManager(KAGIndexManager):
+    """Index manager to manage the atomic query index build and document retrieval."""
+
+    @property
+    def name(self):
+        return "Atomic Query based Index Manager"
+
+    @property
+    def schema(self) -> str:
+        return """
+Chunk(文本块): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector        
+        """
+
+    @property
+    def index_cost(self) -> str:
+        msg = """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+        """
+        return msg
+
+    @property
+    def applicable_scenarios(self) -> str:
+        msg = """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        ……
+        return [chunks1]
+        """
+        return msg
+
+    @property
+    def retrieval_method(self) -> str:
+        return ""
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "naive_rag_extractor",
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "vector_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "top_k": 10,
+            },
+            {
+                "type": "text_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "top_k": 10,
+            },
+        ]
