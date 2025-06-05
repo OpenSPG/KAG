@@ -9,6 +9,8 @@ logger = logging.getLogger()
 
 
 def cosine_similarity(vector1, vector2):
+    if vector1.shape == (0,) or vector2.shape == (0,):
+        return 0.0
     cosine = np.dot(vector1, vector2) / (
         np.linalg.norm(vector1) * np.linalg.norm(vector2)
     )
@@ -80,6 +82,8 @@ class TextSimilarity:
         if mention is None:
             return []
         mention_emb = self.sentence_encode(mention, is_cached)
+        if not mention_emb:
+            return []
         candidates = [
             cand for cand in candidates if cand is not None and cand.strip() != ""
         ]
@@ -88,6 +92,8 @@ class TextSimilarity:
         candidates_emb = self.sentence_encode(candidates)
         candidates_dis = {}
         for candidate, candidate_emb in zip(candidates, candidates_emb):
+            if not candidate_emb:
+                continue
             cosine = cosine_similarity(np.array(mention_emb), np.array(candidate_emb))
             if cosine < low_score:
                 continue
