@@ -106,8 +106,8 @@ class OutlineChunkRetriever(RetrieverABC):
         )
         node_dict = dict(node.items())
         return ChunkData(
-            content=node_dict["content"].replace("_split_0", ""),
-            title=node_dict["name"].replace("_split_0", ""),
+            content=node_dict.get("content", "").replace("_split_0", ""),
+            title=node_dict.get("name", "").replace("_split_0", ""),
             chunk_id=chunk_id,
             score=score,
         )

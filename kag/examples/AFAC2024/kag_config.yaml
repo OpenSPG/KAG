@@ -169,6 +169,7 @@ retriever_executor: &retriever_executor
   retrievers:
     - *r3
     - *r4
+    - *r5
   merger:
     type: kag_merger
 
