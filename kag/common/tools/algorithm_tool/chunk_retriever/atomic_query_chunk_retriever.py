@@ -30,7 +30,7 @@ from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
-from knext.schema.client import CHUNK_TYPE
+from knext.schema.client import CHUNK_TYPE, TABLE_TYPE
 
 logger = logging.getLogger()
 chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
@@ -83,13 +83,26 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
             biz_id=doc_id,
         )
+        if doc == {}:
+            doc = self.graph_api.get_entity_prop_by_id(
+                label=self.schema_helper.get_label_within_prefix(TABLE_TYPE),
+                biz_id=doc_id,
+            )
+        if doc == {}:
+            doc = self.graph_api.get_entity_prop_by_id(
+                label=self.schema_helper.get_label_within_prefix("Summary"),
+                biz_id=doc_id,
+            )
 
-        return ChunkData(
-            content=doc["content"],
-            title=doc["name"],
-            chunk_id=doc["id"],
-            score=atomic_query["score"],
-        )
+        if doc.get("content"):
+            return ChunkData(
+                content=doc["content"],
+                title=doc["name"],
+                chunk_id=doc["id"],
+                score=atomic_query["score"],
+            )
+        else:
+            return None
 
     def parse_chosen_atom_infos(self, context: Context):
         if not context:
@@ -110,8 +123,13 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             with_json_parse=False,
         )
 
-        rewritten_queries = rewritten_queries.append(query)
-        return rewritten_queries
+        rewritten_queries.append(query)
+        if rewritten_queries is not None:
+            return rewritten_queries
+        else:
+            rewritten_queries = []
+            rewritten_queries.append(query)
+            return rewritten_queries
 
     async def recall_atomic_query(self, query: str, context: Context):
         # rewrite query to expand diversity
@@ -120,21 +138,30 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         rewritten_queries_vector_list = await self.vectorize_model.avectorize(
             rewritten_queries
         )
+        while rewritten_queries_vector_list is None:
+            rewritten_queries_vector_list = await self.vectorize_model.avectorize(
+                rewritten_queries
+            )
 
         # recall atomic_query
         tasks = []
-        for rewritten_queries_vector in rewritten_queries_vector_list:
-            task = asyncio.create_task(
-                asyncio.to_thread(
-                    lambda: self.search_api.search_vector(
-                        label=self.schema_helper.get_label_within_prefix("AtomicQuery"),
-                        property_key="name",
-                        query_vector=rewritten_queries_vector,
-                        topk=self.top_k,
+        if rewritten_queries_vector_list is not None:
+            for rewritten_queries_vector in rewritten_queries_vector_list:
+                task = asyncio.create_task(
+                    asyncio.to_thread(
+                        lambda: self.search_api.search_vector(
+                            label=self.schema_helper.get_label_within_prefix(
+                                "AtomicQuery"
+                            ),
+                            property_key="name",
+                            query_vector=rewritten_queries_vector,
+                            topk=self.top_k,
+                        )
                     )
                 )
-            )
-            tasks.append(task)
+                tasks.append(task)
+        else:
+            tasks = []
         top_k_atomic_queries = await asyncio.gather(*tasks)
 
         top_k_atomic_queries_with_threshold = {}

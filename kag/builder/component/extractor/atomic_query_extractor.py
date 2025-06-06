@@ -20,7 +20,8 @@ from kag.interface import ExtractorABC, PromptABC
 
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
-from knext.schema.client import CHUNK_TYPE
+from kag.interface.common.model.chunk import ChunkTypeEnum
+from knext.schema.client import CHUNK_TYPE, TABLE_TYPE
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,10 @@ class AtomicQueryExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
+        if input.type == ChunkTypeEnum.Text:
+            o_label = CHUNK_TYPE
+        else:
+            o_label = TABLE_TYPE
         title = input.name
         passage = title + "\n" + input.content
         try:
@@ -105,7 +110,7 @@ class AtomicQueryExtractor(ExtractorABC):
                 s_label="AtomicQuery",
                 p="sourceChunk",
                 o_id=f"{chunk.id}",
-                o_label=CHUNK_TYPE,
+                o_label=o_label,
             )
         subgraph.id = chunk.id
         return [subgraph]
