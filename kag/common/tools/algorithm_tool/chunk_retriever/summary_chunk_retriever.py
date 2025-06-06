@@ -66,7 +66,7 @@ class SummaryChunkRetriever(RetrieverABC):
 
     async def _get_summaries(self, query, top_k) -> List[str]:
         topk_summary_ids = []
-        query_vector = await self.vectorize_model.avectorize(query)
+        query_vector = self.vectorize_model.vectorize(query)
 
         # recall top_k summaries
         top_k_summaries = await asyncio.to_thread(
@@ -120,8 +120,8 @@ class SummaryChunkRetriever(RetrieverABC):
         )
         node_dict = dict(node.items())
         return ChunkData(
-            content=node_dict["content"].replace("_split_0", ""),
-            title=node_dict["name"].replace("_split_0", ""),
+            content=node_dict.get("content", "").replace("_split_0", ""),
+            title=node_dict.get("name", "").replace("_split_0", ""),
             chunk_id=chunk_id,
             score=score,
         )
@@ -137,10 +137,12 @@ class SummaryChunkRetriever(RetrieverABC):
 
         # parse oneHopGraphData and get related chunks
         chunk_ids = set()
-        for relationData in oneHopGraphData.out_relations.get("relateTo", []):
+        for relationData in oneHopGraphData.out_relations.get("sourceChunk", []):
             chunk_ids.add(relationData.end_id)
-        return list(chunk_ids)
+        #return list(chunk_ids)
 
+        # chunk_id 和summary_id 一致，先暂时返回summary_id
+        return [summary_id]
     async def _get_related_chunks(self, summary_ids):
         tasks = []
         for summary_id in summary_ids:

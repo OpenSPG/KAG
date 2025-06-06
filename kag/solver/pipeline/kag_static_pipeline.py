@@ -147,7 +147,7 @@ class KAGStaticPipeline(SolverPipelineABC):
                 task_info.append(
                     {
                         "task": task.arguments,
-                        # "memory": task.memory,
+                        "memory": task.memory,
                         "result": task.result,
                     }
                 )

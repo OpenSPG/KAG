@@ -40,12 +40,13 @@ class TextChunkRetriever(RetrieverABC):
 
             chunks = []
             for item in top_k_docs:
+                score = item.get("score", 0.0)
                 chunks.append(
                     ChunkData(
-                        content=item["node"]["content"],
+                        content=item["node"].get("content", ""),
                         title=item["node"]["name"],
                         chunk_id=item["node"]["id"],
-                        score=item["score"],
+                        score=score,
                     )
                 )
             return RetrieverOutput(
