@@ -21,8 +21,6 @@ psutil
 Jinja2>=3.0.3
 cachetools==5.3.2
 numpy>=1.23.1
-langchain-text-splitters
-langchain-community
 pypdf
 pandas
 pycryptodome
