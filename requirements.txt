@@ -15,7 +15,6 @@ python-dateutil==2.8.2
 networkx==3.1
 pydantic
 requests==2.31.0
-setuptools==60.2.0
 psutil
 Jinja2>=3.0.3
 cachetools==5.3.2
