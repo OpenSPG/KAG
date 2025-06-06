@@ -23,6 +23,7 @@ cache = knext.common.cache.SchemaCache()
 
 
 CHUNK_TYPE = "Chunk"
+TABLE_TYPE = "Table"
 TITLE_TYPE = "Title"
 OTHER_TYPE = "Others"
 TEXT_TYPE = "Text"

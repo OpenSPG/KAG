@@ -1,6 +1,7 @@
 from typing import List
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
 
 from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
@@ -70,18 +71,182 @@ class Evaluate:
             ret.append(content)
         return ret
 
-    def recall_top(self, predictionlist: list, goldlist: List[str]):
+    def _extract_text_only(self, text, mode="all"):
+        """
+        Extract text content only, removing all symbols including newlines
+
+        Parameters:
+        text: input text
+        mode: extraction mode ('all', 'chinese_only')
+            - 'all': extract Chinese characters, English letters and numbers
+            - 'chinese_only': extract only Chinese characters
+
+        Returns:
+        str: extracted text content (lowercase for English)
+        """
+        if mode == "chinese_only":
+            # Use regex to keep only Chinese characters, remove all other content
+            text_only = re.sub(r"[^\u4e00-\u9fa5]", "", str(text))
+            return text_only
+        else:
+            # Use regex to keep only Chinese characters, English letters and numbers, remove all symbols (including newlines, spaces, etc.)
+            text_only = re.sub(r"[^\u4e00-\u9fa5a-zA-Z0-9]", "", str(text))
+            # Convert to lowercase
+            return text_only.lower()
+
+    def _tokenize_chinese(self, text):
+        """
+        Tokenize Chinese text into word set
+
+        Parameters:
+        text: Chinese text
+
+        Returns:
+        set: set of Chinese words/characters
+        """
+        try:
+            # Try to use jieba for word segmentation
+            import jieba
+
+            words = jieba.lcut(text)
+            # Filter out single characters and short words, keep meaningful words
+            meaningful_words = [word.strip() for word in words if len(word.strip()) > 1]
+            # If no meaningful words found, fall back to character-level
+            if not meaningful_words:
+                meaningful_words = [char for char in text if char.strip()]
+            return set(meaningful_words)
+        except ImportError:
+            # Fallback to character-level tokenization if jieba not available
+            return set([char for char in text if char.strip()])
+
+    def _calculate_set_similarity(self, set1, set2):
+        """
+        Calculate similarity between two sets using Jaccard similarity
+
+        Parameters:
+        set1: first set
+        set2: second set
+
+        Returns:
+        float: Jaccard similarity (0.0 to 1.0)
+        """
+        if not set1 and not set2:
+            return 1.0
+        if not set1 or not set2:
+            return 0.0
+
+        intersection = len(set1.intersection(set2))
+        union = len(set1.union(set2))
+        return intersection / union if union > 0 else 0.0
+
+    def fuzzy_intersection(
+        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.9
+    ):
+        """
+        Calculate intersection using fuzzy matching, only matching text content and ignoring symbols
+
+        Parameters:
+        gold_set: ground truth set
+        prediction_set: prediction result set
+        fuzzy_mode: text extraction mode ('all', 'chinese_only')
+        similarity_threshold: minimum similarity threshold for chinese_only mode (0.0 to 1.0)
+
+        Returns:
+        int: number of matches
+        """
+        matches = 0
+        for gold_item in gold_set:
+            gold_text = self._extract_text_only(gold_item, fuzzy_mode)
+
+            for pred_item in prediction_set:
+                pred_text = self._extract_text_only(pred_item, fuzzy_mode)
+
+                if fuzzy_mode == "chinese_only":
+                    # Use tokenization and set similarity for Chinese text
+                    gold_tokens = self._tokenize_chinese(gold_text)
+                    pred_tokens = self._tokenize_chinese(pred_text)
+                    similarity = self._calculate_set_similarity(
+                        gold_tokens, pred_tokens
+                    )
+
+                    if similarity >= similarity_threshold:
+                        matches += 1
+                        break  # Break inner loop after finding match to avoid duplicate counting
+                else:
+                    # Use original substring matching for 'all' mode
+                    if gold_text in pred_text or pred_text in gold_text:
+                        matches += 1
+                        break  # Break inner loop after finding match to avoid duplicate counting
+        return matches
+
+    def fuzzy_difference(
+        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.9
+    ):
+        """
+        Calculate difference using fuzzy matching, only matching text content and ignoring symbols
+        Returns the number of items in gold_set but not in prediction_set
+
+        Parameters:
+        gold_set: ground truth set
+        prediction_set: prediction result set
+        fuzzy_mode: text extraction mode ('all', 'chinese_only')
+        similarity_threshold: minimum similarity threshold for chinese_only mode (0.0 to 1.0)
+
+        Returns:
+        int: number of items in difference set
+        """
+        unmatched = 0
+        for gold_item in gold_set:
+            gold_text = self._extract_text_only(gold_item, fuzzy_mode)
+            found_match = False
+
+            for pred_item in prediction_set:
+                pred_text = self._extract_text_only(pred_item, fuzzy_mode)
+
+                if fuzzy_mode == "chinese_only":
+                    # Use tokenization and set similarity for Chinese text
+                    gold_tokens = self._tokenize_chinese(gold_text)
+                    pred_tokens = self._tokenize_chinese(pred_text)
+                    similarity = self._calculate_set_similarity(
+                        gold_tokens, pred_tokens
+                    )
+
+                    if similarity >= similarity_threshold:
+                        found_match = True
+                        break
+                else:
+                    # Use original substring matching for 'all' mode
+                    if gold_text in pred_text or pred_text in gold_text:
+                        found_match = True
+                        break
+
+            if not found_match:
+                unmatched += 1
+        return unmatched
+
+    def recall_top(
+        self,
+        predictionlist: list,
+        goldlist: List[str],
+        is_chunk_data: bool = True,
+        fuzzy_mode: str = "all",
+        similarity_threshold: float = 0.9,
+    ):
         """
         Calculate recall for top-3, top-5, and all predictions.
 
         Parameters:
         predictionlist (List[str]): List of predicted values from the model.
         goldlist (List[str]): List of actual ground truth values.
+        is_chunk_data (bool): Whether predictionlist contains chunk data.
+        fuzzy_mode (str): Text extraction mode ('all', 'chinese_only').
+        similarity_threshold (float): Minimum similarity threshold for chinese_only mode (0.0 to 1.0).
 
         Returns:
         dict: Dictionary containing recall for top-3, top-5, and all predictions.
         """
-        predictionlist = self.convert_chunk_data_2_str(predictionlist)
+        if is_chunk_data:
+            predictionlist = self.convert_chunk_data_2_str(predictionlist)
         # Split predictions into lists of top-3 and top-5
         top3_predictions = predictionlist[:3]
         top5_predictions = predictionlist[:5]
@@ -91,8 +256,13 @@ class Evaluate:
         top3_set = set(top3_predictions)
         top5_set = set(top5_predictions)
 
-        true_positives_top3 = len(gold_set.intersection(top3_set))
-        false_negatives_top3 = len(gold_set - top3_set)
+        # Use fuzzy matching instead of exact intersection
+        true_positives_top3 = self.fuzzy_intersection(
+            gold_set, top3_set, fuzzy_mode, similarity_threshold
+        )
+        false_negatives_top3 = self.fuzzy_difference(
+            gold_set, top3_set, fuzzy_mode, similarity_threshold
+        )
 
         recall_top3 = (
             true_positives_top3 / (true_positives_top3 + false_negatives_top3)
@@ -101,8 +271,12 @@ class Evaluate:
         )
 
         # Update counters for top-5
-        true_positives_top5 = len(gold_set.intersection(top5_set))
-        false_negatives_top5 = len(gold_set - top5_set)
+        true_positives_top5 = self.fuzzy_intersection(
+            gold_set, top5_set, fuzzy_mode, similarity_threshold
+        )
+        false_negatives_top5 = self.fuzzy_difference(
+            gold_set, top5_set, fuzzy_mode, similarity_threshold
+        )
 
         recall_top5 = (
             true_positives_top5 / (true_positives_top5 + false_negatives_top5)
@@ -110,8 +284,12 @@ class Evaluate:
             else 0.0
         )
         # Update counters for all
-        true_positives_all = len(gold_set.intersection(all_set))
-        false_negatives_all = len(gold_set - all_set)
+        true_positives_all = self.fuzzy_intersection(
+            gold_set, all_set, fuzzy_mode, similarity_threshold
+        )
+        false_negatives_all = self.fuzzy_difference(
+            gold_set, all_set, fuzzy_mode, similarity_threshold
+        )
 
         recall_all = (
             true_positives_all / (true_positives_all + false_negatives_all)

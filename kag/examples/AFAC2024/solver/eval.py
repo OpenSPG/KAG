@@ -36,18 +36,29 @@ class EvaForAFAC2024(EvalQa):
             task_name="afac2024", solver_pipeline_name=solver_pipeline_name
         )
 
-    async def qa(self, query, gold):
+    async def qa(self, query, gold, **kwargs):
         reporter: TraceLogReporter = TraceLogReporter()
+        retrieved_chunks = []
 
         pipeline = SolverPipelineABC.from_config(
             KAG_CONFIG.all_config[self.solver_pipeline_name]
         )
-        answer = await pipeline.ainvoke(query, reporter=reporter, gold=gold)
+        answer = await pipeline.ainvoke(
+            query,
+            reporter=reporter,
+            gold=gold,
+            retrieved_chunks=retrieved_chunks,
+            **kwargs,
+        )
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
 
         info, status = reporter.generate_report_data()
-        return answer, {"info": info.to_dict(), "status": status}
+        return answer, {
+            "info": info.to_dict(),
+            "status": status,
+            "retrieved_chunks": retrieved_chunks,
+        }
 
     async def async_process_sample(self, data):
         sample_idx, sample, ckpt = data
@@ -58,10 +69,13 @@ class EvaForAFAC2024(EvalQa):
                 print(f"found existing answer to question: {question}")
                 prediction, trace_log = ckpt.read_from_ckpt(question)
             else:
-                prediction, trace_log = await self.qa(query=question, gold=gold)
+                prediction, trace_log = await self.qa(
+                    query=question, gold=gold, ckpt=ckpt
+                )
                 if ckpt:
                     ckpt.write_to_ckpt(question, (prediction, trace_log))
             metrics = self.do_metrics_eval([question], [prediction], [gold])
+            metrics["recall"] = self.do_recall_eval(sample, [prediction], trace_log)
             return sample_idx, prediction, metrics, trace_log
         except Exception as e:
             import traceback
@@ -80,6 +94,19 @@ class EvaForAFAC2024(EvalQa):
     ):
         eva_obj = Evaluate()
         return eva_obj.getBenchMark(questionList, predictions, golds)
+
+    def do_recall_eval(self, sample, references, trace_log):
+        eva_obj = Evaluate()
+        predictions = trace_log.get("retrieved_chunks", None)
+        goldlist = []
+        for s in sample["supporting_facts"]:
+            goldlist.extend(s[1:])
+        return eva_obj.recall_top(
+            predictionlist=predictions,
+            goldlist=goldlist,
+            is_chunk_data=False,
+            fuzzy_mode="chinese_only",
+        )
 
 
 if __name__ == "__main__":
