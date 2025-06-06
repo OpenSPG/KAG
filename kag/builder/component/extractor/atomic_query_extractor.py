@@ -104,7 +104,7 @@ class AtomicQueryExtractor(ExtractorABC):
                 s_id=atomic_id,
                 s_label="AtomicQuery",
                 p="sourceChunk",
-                o_id=f"{chunk.id}_{chunk.name}",
+                o_id=f"{chunk.id}",
                 o_label=CHUNK_TYPE,
             )
         subgraph.id = chunk.id

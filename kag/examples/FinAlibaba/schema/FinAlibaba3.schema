@@ -1,16 +1,23 @@
 namespace FinAlibaba3
 
+Document(原始doc): EntityType
+     properties:
+        desc(内容): Text
+            index: TextAndVector
+
 Chunk(文本块): EntityType
      properties:
         content(内容): Text
           index: TextAndVector
+     relations:
+        sourceChunk(关联): Document
 
 Outline(标题大纲): EntityType
      properties:
         content(内容): Text
           index: TextAndVector
      relations:
-        relateTo(关联): Chunk
+        sourceChunk(关联): Chunk
         childOf(子标题): Outline
 
 Summary(文本摘要): EntityType
@@ -18,10 +25,10 @@ Summary(文本摘要): EntityType
         content(内容): Text
           index: TextAndVector
      relations:
-        relateTo(关联): Chunk
+        sourceChunk(关联): Chunk
         childOf(子摘要): Summary
 
-Diagram(表格): EntityType
+Table(表格): EntityType
     properties:
         content(内容): Text
           index: TextAndVector
@@ -30,12 +37,7 @@ Diagram(表格): EntityType
         afterText(后缀): Text
           index: TextAndVector
     relations:
-        relateTo(关联): Chunk
-
-Document(原始doc): EntityType
-     properties:
-        desc(内容): Text
-            index: TextAndVector
+        sourceChunk(关联): Chunk
 
 KnowledgeUnit(知识单元): EntityType
      properties:

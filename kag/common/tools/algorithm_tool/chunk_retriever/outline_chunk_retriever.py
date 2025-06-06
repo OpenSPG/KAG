@@ -106,8 +106,8 @@ class OutlineChunkRetriever(RetrieverABC):
         )
         node_dict = dict(node.items())
         return ChunkData(
-            content=node_dict["content"].replace("_split_0", ""),
-            title=node_dict["name"].replace("_split_0", ""),
+            content=node_dict.get("content", "").replace("_split_0", ""),
+            title=node_dict.get("name", "").replace("_split_0", ""),
             chunk_id=chunk_id,
             score=score,
         )
@@ -123,7 +123,7 @@ class OutlineChunkRetriever(RetrieverABC):
             oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
 
             # parse oneHopGraphData and get related chunks
-            for relationData in oneHopGraphData.out_relations.get("relateTo", []):
+            for relationData in oneHopGraphData.out_relations.get("sourceChunk", []):
                 chunk_ids.add(relationData.end_id)
 
         for chunk_id in chunk_ids:
