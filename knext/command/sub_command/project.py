@@ -105,7 +105,13 @@ def _recover_project(prj_path: str):
 
     client = ProjectClient()
     project = client.get(namespace=namespace) or client.create(
-        name=project_name, desc=desc, namespace=namespace, config=env._config
+        name=project_name, 
+        desc=desc, 
+        namespace=namespace, 
+        config=env._config, 
+        visibility=env.project_config.get("visibility", "PRIVATE"), 
+        tag=env.project_config.get("tag", "LOCAL"), 
+        userNo=env.project_config.get("userNo", "openspg")
     )
 
     env._config["project"]["id"] = project.id
@@ -141,8 +147,6 @@ def create_project(
     project_config = config.get("project", {})
     namespace = project_config.get("namespace", None)
     name = project_config.get("namespace", None)
-    visibility = project_config.get("visibility","PRIVATE")
-    tag = project_config.get("tag", "LOCAL")
     host_addr = project_config.get("host_addr", None)
 
     if not namespace:
@@ -174,7 +178,12 @@ def create_project(
 
     if host_addr:
         client = ProjectClient(host_addr=host_addr)
-        project = client.create(name=name, namespace=namespace, config=config, visibility=visibility, tag=tag)
+        project = client.create(name=name, 
+                                namespace=namespace, 
+                                config=config, 
+                                visibility=env.project_config.get("visibility", "PRIVATE"), 
+                                tag=env.project_config.get("tag", "LOCAL"), 
+                                userNo=env.project_config.get("userNo", "openspg"))
 
         if project and project.id:
             project_id = project.id
@@ -222,7 +231,12 @@ def restore_project(host_addr, proj_path):
     if not project_wanted:
         if host_addr:
             client = ProjectClient(host_addr=host_addr)
-            project = client.create(name=env.name, namespace=env.namespace, config=env._config, visibility="PUBLIC", tag="PUBLIC-NET")
+            project = client.create(name=env.name, 
+                                    namespace=env.namespace, 
+                                    config=env._config, 
+                                    visibility=env.project_config.get("visibility", "PRIVATE"), 
+                                    tag=env.project_config.get("tag", "LOCAL"), 
+                                    userNo=env.project_config.get("userNo", "openspg"))
             project_id = project.id
     else:
         project_id = project_wanted.id
@@ -254,7 +268,7 @@ def update_project(proj_path):
         sys.exit()
 
     logger.info(f"project id: {env.id}")
-    client.update(id=env.id,name=env.name,namespace=env.namespace,config=env._config)
+    client.update(id=env.id, namespace=env.namespace, config=env._config, visibility=env.project_config.get("visibility", "PRIVATE"), tag=env.project_config.get("tag", "LOCAL"), userNo=env.project_config.get("userNo", "openspg"))
     click.secho(
         f"Project [{env.name}] with namespace [{env.namespace}] was successfully updated from [{proj_path}].",
         fg="bright_green",
