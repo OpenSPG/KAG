@@ -91,7 +91,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
             dict: Schema definition in OpenAI Function format
         """
         return {
-            "name": "Retriever",
+            "name": "ChunkRetriever",  # Changed from "Retriever"
             "description": "Retrieve relevant knowledge from the local knowledge base.",
             "parameters": {
                 "query": {

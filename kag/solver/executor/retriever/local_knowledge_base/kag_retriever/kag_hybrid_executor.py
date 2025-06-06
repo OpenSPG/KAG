@@ -134,10 +134,6 @@ class KAGRetrievedResponse(ExecutorResponse):
 
         Returns:
             str: Formatted string containing task description and sub-question results
-
-        Note:
-            Contains formatting error: "task: f{self.retrieved_task}"
-            should be corrected to "task: {self.retrieved_task}"
         """
         refer_docs = self.to_reference_list()
         for doc in refer_docs:

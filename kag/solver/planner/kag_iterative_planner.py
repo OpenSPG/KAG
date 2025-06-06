@@ -80,6 +80,9 @@ class KAGIterativePlanner(PlannerABC):
             **kwargs,
         )
 
+    def is_static(self):
+        return False
+
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.
 
