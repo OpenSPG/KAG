@@ -12,6 +12,7 @@
 
 from kag.common.vectorize_model.openai_model import OpenAIVectorizeModel
 from kag.common.vectorize_model.mock_model import MockVectorizeModel
+from kag.common.vectorize_model.sparse_bge_m3_model import SparseBGEM3VectorizeModel
 from kag.common.vectorize_model.vectorize_model_config_checker import (
     VectorizeModelConfigChecker,
 )
@@ -20,5 +21,6 @@ from kag.common.vectorize_model.vectorize_model_config_checker import (
 __all__ = [
     "OpenAIVectorizeModel",
     "MockVectorizeModel",
+    "SparseBGEM3VectorizeModel",
     "VectorizeModelConfigChecker",
 ]

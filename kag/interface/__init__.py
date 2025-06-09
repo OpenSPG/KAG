@@ -11,10 +11,13 @@
 # or implied.
 from kag.interface.common.prompt import PromptABC
 from kag.interface.common.llm_client import LLMClient
-
 from kag.interface.indexer.index import IndexABC
-
-from kag.interface.common.vectorize_model import VectorizeModelABC, EmbeddingVector
+from kag.interface.common.vectorize_model import (
+    VectorizeModelABC,
+    EmbeddingVector,
+    SparseVectorizeModelABC,
+    SparseEmbeddingVector,
+)
 from kag.interface.common.rerank_model import RerankModelABC
 from kag.interface.common.model.retriever_data import (
     RetrievedData,
@@ -66,8 +69,10 @@ __all__ = [
     "LLMClient",
     "IndexABC",
     "VectorizeModelABC",
+    "SparseVectorizeModelABC",
     "RerankModelABC",
     "EmbeddingVector",
+    "SparseEmbeddingVector",
     "ScannerABC",
     "ReaderABC",
     "SplitterABC",

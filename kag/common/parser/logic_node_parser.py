@@ -556,32 +556,64 @@ class ParseLogicForm:
         type_info.un_std_entity_type = type_name
         return type_info
 
-
+# def extract_steps_and_actions(text):
+#     # 忽略 Step 和 Action 的大小写，支持各种格式如 step1、STEP2、Action3 等
+#     pattern = re.compile(
+#         r'([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*([Ss][Tt][Ee][Pp]\d+:\s)|$|([Aa][Cc][Tt][Ii][Oo][Nn]\d+:\s))',
+#         re.DOTALL
+#     )
+#
+#     for match in pattern.finditer(text):
+#         step_head = match.group(1)
+#         step_content = match.group(2).strip()
+#         # 提取 Step 编号并标准化为 StepX
+#
+#         # 查找紧跟其后的 Action
+#         action_pattern = re.compile(r'([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*(?:[Ss][Tt][Ee][Pp]\d+:|$))',
+#                                     re.DOTALL)
+#         action_match = action_pattern.search(text, match.end())
+#
+#         if action_match:
+#             action_head = action_match.group(1)
+#             action_content = action_match.group(2).strip()
+#             return step_content, step_head, action_content, action_head
+#         else:
+#             return step_content, step_head, None, None
+#     return None, None, None, None
 def extract_steps_and_actions(text):
-    # 忽略 Step 和 Action 的大小写，支持各种格式如 step1、STEP2、Action3 等
-    pattern = re.compile(
-        r"([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*([Ss][Tt][Ee][Pp]\d+:\s)|$|([Aa][Cc][Tt][Ii][Oo][Nn]\d+:\s))",
-        re.DOTALL,
+    # 提取 Step 和紧跟的 Action
+    step_pattern = re.compile(
+        r'([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*[Aa][Cc][Tt][Ii][Oo][Nn]\d+:|\s*[Ss][Tt][Ee][Pp]\d+:|$)',
+        re.DOTALL
+    )
+    action_pattern = re.compile(
+        r'([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*[Ss][Tt][Ee][Pp]\d+:|$)',
+        re.DOTALL
     )
 
-    for match in pattern.finditer(text):
-        step_head = match.group(1)
+    steps = []
+    actions = []
+
+    for match in step_pattern.finditer(text):
+        step_name = match.group(1)
         step_content = match.group(2).strip()
-        # 提取 Step 编号并标准化为 StepX
+        steps.append((step_name, step_content))
 
-        # 查找紧跟其后的 Action
-        action_pattern = re.compile(
-            r"([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*([Ss][Tt][Ee][Pp]\d+:\s)|$)",
-            re.DOTALL,
-        )
-        action_match = action_pattern.search(text, match.end())
+    for match in action_pattern.finditer(text):
+        action_name = match.group(1)
+        action_content = match.group(2).strip()
+        actions.append((action_name, action_content))
 
-        if action_match:
-            action_head = action_match.group(1)
-            action_content = action_match.group(2).strip()
-            return step_content, step_head, action_content, action_head
+    # 将 Step 和 Action 按位置对应起来
+    results = []
+    for i in range(len(steps)):
+        step_name, step_content = steps[i]
+        if i < len(actions):
+            action_name, action_content = actions[i]
         else:
-            return step_content, step_head, None, None
+            action_name = action_content = None
+        return step_content, step_name, action_content, action_name
+
     return None, None, None, None
 
 
@@ -616,6 +648,9 @@ def parse_logic_form_with_str(response):
 
 
 if __name__ == "__main__":
-    d = "Step1:  when 	Christopher Nolan bornAction1: Retriever(s=s1:person[Christopher Nolan] ,p=p1:birthTime,o=o1:birthTime )"
+    d = 'Step1:  What continent is Panama in? Action1:Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) '
+    d = 'Step1:  What continent is Panama in? Action1: Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) '
+    # d = 'Step1:  What continent is Panama in? '
+
     print(extract_steps_and_actions(d))
     parse_logic_form_with_str(d)

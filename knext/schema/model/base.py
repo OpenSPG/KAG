@@ -64,8 +64,10 @@ class AlterOperationEnum(str, Enum):
 
 class IndexTypeEnum(str, Enum):
     Vector = "VECTOR"
+    SparseVector = "SPARSE_VECTOR"
     Text = "TEXT"
     TextAndVector = "TEXT_AND_VECTOR"
+    TextAndSparseVector = "TEXT_AND_SPARSE_VECTOR"
 
 
 def iter_init(klass):
