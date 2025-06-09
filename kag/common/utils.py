@@ -217,6 +217,12 @@ def get_vector_field_name(property_key: str):
     return "_" + name
 
 
+def get_sparse_vector_field_name(property_key: str):
+    name = f"{property_key}_sparse_vector"
+    name = to_snake_case(name)
+    return "_" + name
+
+
 def split_list_into_n_parts(lst, n):
     length = len(lst)
     part_size = length // n
