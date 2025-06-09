@@ -53,9 +53,9 @@ class KgRetrieverTemplate:
     def __init__(
         self, path_select: PathSelect, entity_linking, **kwargs
     ):
-        super().__init__(**kwargs)
         self.path_select = path_select
         self.entity_linking = entity_linking
+        self.kwargs = kwargs
 
     def invoke(
         self,

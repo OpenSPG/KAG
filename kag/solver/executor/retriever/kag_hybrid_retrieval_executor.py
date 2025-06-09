@@ -13,14 +13,14 @@ import asyncio
 from typing import List, Optional
 
 from kag.common.conf import KAG_PROJECT_CONF
-from kag.common.config import get_default_chat_llm_config
+from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
 from kag.interface import (
     ExecutorABC,
     RetrieverABC,
     RetrieverOutputMerger,
     RetrieverOutput,
     Task,
-    Context, KgGraph, LLMClient, PromptABC,
+    Context, KgGraph, LLMClient, PromptABC, EntityData, SchemaUtils, Prop,
 )
 from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
@@ -43,6 +43,15 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         )
 
         self.enable_summary = enable_summary
+
+        self.schema_helper: SchemaUtils = SchemaUtils(
+            LogicFormConfiguration(
+                {
+                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
+                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                }
+            )
+        )
 
     def inovke(
         self, query: str, task: Task, context: Context, **kwargs
@@ -182,3 +191,34 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             nodes_num=nodes_num,
             **kwargs,
         )
+        all_spo = merged_graph.get_all_spo()
+        if len(all_spo) != 0:
+            self.report_content(
+                reporter,
+                tag_id,
+                f"{tag_id}_graph",
+                all_spo,
+                "FINISH",
+            )
+        chunk_graph = []
+        for chunk in output.chunks:
+            entity = EntityData(
+                    entity_id=chunk.chunk_id,
+                    name=chunk.title,
+                    node_type=self.schema_helper.get_label_within_prefix("Chunk"),
+                )
+            entity_prop = dict(chunk.properties) if chunk.properties else {}
+            entity_prop["content"] = chunk.content
+            entity_prop["score"] = chunk.score
+            entity.prop = Prop.from_dict(entity_prop, "Chunk", self.schema_helper)
+            chunk_graph.append(
+                entity
+            )
+        if len(chunk_graph):
+            self.report_content(
+                reporter,
+                tag_id,
+                f"{tag_id}_graph_chunk",
+                chunk_graph,
+                "FINISH",
+            )
