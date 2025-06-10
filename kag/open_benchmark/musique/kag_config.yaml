@@ -179,6 +179,7 @@ retriever_executor: &retriever_executor
   merger:
     type: kag_merger
 
+
 kag_solver_pipeline:
   type: kag_static_pipeline
   max_iteration: 3
