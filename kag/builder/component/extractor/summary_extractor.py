@@ -59,10 +59,10 @@ class SummaryExtractor(ExtractorABC):
         else:
             o_label = TABLE_TYPE
 
-        if "/" not in input.name:
-            summary_name = input.name
-        else:
-            summary_name = input.name.split("/")[-1]
+        # if "/" not in input.name:
+        summary_name = input.name
+        # else:
+        #     summary_name = input.name.split("/")[-1]
 
         index = summary_name.find("_split")
         if index != -1:

@@ -140,7 +140,7 @@ class Evaluate:
         return intersection / union if union > 0 else 0.0
 
     def fuzzy_intersection(
-        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.9
+        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.5
     ):
         """
         Calculate intersection using fuzzy matching, only matching text content and ignoring symbols
@@ -172,6 +172,9 @@ class Evaluate:
                     if similarity >= similarity_threshold:
                         matches += 1
                         break  # Break inner loop after finding match to avoid duplicate counting
+                    if gold_text in pred_text or pred_text in gold_text:
+                        matches += 1
+                        break
                 else:
                     # Use original substring matching for 'all' mode
                     if gold_text in pred_text or pred_text in gold_text:
@@ -180,7 +183,7 @@ class Evaluate:
         return matches
 
     def fuzzy_difference(
-        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.9
+        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.5
     ):
         """
         Calculate difference using fuzzy matching, only matching text content and ignoring symbols
@@ -214,6 +217,9 @@ class Evaluate:
                     if similarity >= similarity_threshold:
                         found_match = True
                         break
+                    if gold_text in pred_text or pred_text in gold_text:
+                        found_match = True
+                        break
                 else:
                     # Use original substring matching for 'all' mode
                     if gold_text in pred_text or pred_text in gold_text:
@@ -230,7 +236,7 @@ class Evaluate:
         goldlist: List[str],
         is_chunk_data: bool = True,
         fuzzy_mode: str = "all",
-        similarity_threshold: float = 0.9,
+        similarity_threshold: float = 0.5,
     ):
         """
         Calculate recall for top-3, top-5, and all predictions.

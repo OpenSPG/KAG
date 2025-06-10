@@ -37,7 +37,7 @@ class TableRetriever(RetrieverABC):
         search_api: SearchApiABC = None,
         graph_api: GraphApiABC = None,
         top_k: int = 10,
-        score_threshold=0.85,
+        score_threshold=0.8,
         **kwargs,
     ):
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
