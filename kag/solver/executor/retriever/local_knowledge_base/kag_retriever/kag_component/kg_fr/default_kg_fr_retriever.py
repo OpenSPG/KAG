@@ -74,6 +74,7 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
             )
         )
         self.top_k = top_k
+        self.disable_chunk = kwargs.get("disable_chunk", False)
 
     def invoke(
         self,
@@ -94,12 +95,6 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
             name=self.name,
             **kwargs,
         )
-
-        ppr_sub_query = generate_step_query(
-            logical_node=cur_task.logical_node,
-            processed_logical_nodes=processed_logical_nodes,
-        )
-
         entities = []
         selected_rel = []
         if graph_data is not None:
@@ -115,6 +110,17 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
                 entities.extend(o_entities)
             selected_rel = graph_data.get_all_spo()
             entities = list(set(entities))
+
+
+        ppr_sub_query = generate_step_query(
+            logical_node=cur_task.logical_node,
+            processed_logical_nodes=processed_logical_nodes,
+        )
+
+        if self.disable_chunk:
+            cur_task.logical_node.get_fl_node_result().spo = selected_rel
+            cur_task.logical_node.get_fl_node_result().sub_question = ppr_sub_query
+            return [graph_data]
 
         ppr_queries = [query, ppr_sub_query]
         ppr_queries = list(set(ppr_queries))
