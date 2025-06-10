@@ -75,6 +75,7 @@ class SummaryChunkRetriever(RetrieverABC):
                 property_key="content",
                 query_vector=query_vector,
                 topk=top_k,
+                ef_search=top_k * 3,
             )
         )
         for item in top_k_summaries:

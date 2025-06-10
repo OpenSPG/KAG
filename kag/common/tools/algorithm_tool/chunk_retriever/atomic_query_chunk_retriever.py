@@ -156,6 +156,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                             property_key="name",
                             query_vector=rewritten_queries_vector,
                             topk=self.top_k,
+                            ef_search=self.top_k * 3,
                         )
                     )
                 )
@@ -223,8 +224,8 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                     label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
                     property_key="content",
                     query_vector=query_vector,
-                    topk=5,
-                    ef_search=20,
+                    topk=self.top_k / 2,
+                    ef_search=self.top_k / 2 * 3,
                 )
                 query_text_related_chunks.extend(top_k_docs)
 

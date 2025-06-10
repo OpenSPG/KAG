@@ -68,12 +68,14 @@ class VectorChunkRetriever(RetrieverABC):
                 property_key="content",
                 query_vector=query_vector,
                 topk=top_k,
+                ef_search=top_k * 3,
             )
             top_k_docs_name = self.search_api.search_vector(
                 label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
                 property_key="name",
                 query_vector=query_vector,
                 topk=top_k / 2,
+                ef_search=top_k / 2 * 3,
             )
             top_k_docs = top_k_docs_name + top_k_docs
             chunks = []
