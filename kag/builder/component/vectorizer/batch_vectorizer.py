@@ -17,8 +17,8 @@ from tenacity import stop_after_attempt, retry
 from kag.builder.model.sub_graph import SubGraph
 from kag.common.conf import KAG_PROJECT_CONF
 
-from kag.common.utils import get_vector_field_name
-from kag.interface import VectorizerABC, VectorizeModelABC
+from kag.common.utils import get_vector_field_name, get_sparse_vector_field_name
+from kag.interface import VectorizerABC, VectorizeModelABC, SparseVectorizeModelABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import IndexTypeEnum
 from knext.common.base.runnable import Input, Output
@@ -44,10 +44,11 @@ class EmbeddingVectorPlaceholder(object):
 
 class EmbeddingVectorManager(object):
     def __init__(self, disable_generation=None):
-        self._placeholders = []
+        self._dense_placeholders = []
+        self._sparse_placeholders = []
         self._disable_generation = frozenset(disable_generation or [])
 
-    def get_placeholder(self, label, properties, vector_field):
+    def get_dense_placeholder(self, label, properties, vector_field):
         for property_key, property_value in properties.items():
             disable_prop_key = f"{label}.{property_key}"
             if disable_prop_key in self._disable_generation:
@@ -59,24 +60,53 @@ class EmbeddingVectorManager(object):
                 return None
             if not isinstance(property_value, str):
                 property_value = str(property_value)
-            num = len(self._placeholders)
+            num = len(self._dense_placeholders)
             placeholder = EmbeddingVectorPlaceholder(
                 num, properties, vector_field, property_key, property_value
             )
-            self._placeholders.append(placeholder)
+            self._dense_placeholders.append(placeholder)
             return placeholder
         return None
 
-    def _get_text_batch(self):
+    def get_sparse_placeholder(self, label, properties, vector_field):
+        for property_key, property_value in properties.items():
+            disable_prop_key = f"{label}.{property_key}"
+            if disable_prop_key in self._disable_generation:
+                continue
+            field_name = get_sparse_vector_field_name(property_key)
+            if field_name != vector_field:
+                continue
+            if property_value is None:
+                return None
+            if not isinstance(property_value, str):
+                property_value = str(property_value)
+            num = len(self._sparse_placeholders)
+            placeholder = EmbeddingVectorPlaceholder(
+                num, properties, vector_field, property_key, property_value
+            )
+            self._sparse_placeholders.append(placeholder)
+            return placeholder
+        return None
+
+    def _get_dense_text_batch(self):
         text_batch = dict()
-        for placeholder in self._placeholders:
+        for placeholder in self._dense_placeholders:
             property_value = placeholder._property_value
             if property_value not in text_batch:
                 text_batch[property_value] = list()
             text_batch[property_value].append(placeholder)
         return text_batch
 
-    def _generate_vectors(self, vectorizer, text_batch, batch_size=32):
+    def _get_sparse_text_batch(self):
+        text_batch = dict()
+        for placeholder in self._sparse_placeholders:
+            property_value = placeholder._property_value
+            if property_value not in text_batch:
+                text_batch[property_value] = list()
+            text_batch[property_value].append(placeholder)
+        return text_batch
+
+    def _generate_dense_vectors(self, dense_vectorizer, text_batch, batch_size=32):
         texts = list(text_batch)
         if not texts:
             return []
@@ -89,10 +119,43 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
-            embeddings.extend(vectorizer.vectorize(texts[start:end]))
+            embeddings.extend(dense_vectorizer.vectorize(texts[start:end]))
         return embeddings
 
-    async def _agenerate_vectors(self, vectorizer, text_batch, batch_size=32):
+    def _generate_sparse_vectors(self, sparse_vectorizer, text_batch, batch_size=32):
+        texts = list(text_batch)
+        if not texts:
+            return []
+
+        if len(texts) % batch_size == 0:
+            n_batchs = len(texts) // batch_size
+        else:
+            n_batchs = len(texts) // batch_size + 1
+        embeddings = []
+        for idx in range(n_batchs):
+            start = idx * batch_size
+            end = min(start + batch_size, len(texts))
+            embeddings.extend(sparse_vectorizer.vectorize(texts[start:end]))
+        return embeddings
+
+    async def _agenerate_dense_vectors(self, dense_vectorizer, text_batch, batch_size=32):
+        texts = list(text_batch)
+        if not texts:
+            return []
+
+        if len(texts) % batch_size == 0:
+            n_batchs = len(texts) // batch_size
+        else:
+            n_batchs = len(texts) // batch_size + 1
+        tasks = []
+        for idx in range(n_batchs):
+            start = idx * batch_size
+            end = min(start + batch_size, len(texts))
+            tasks.append(asyncio.create_task(dense_vectorizer.avectorize(texts[start:end])))
+        results = await asyncio.gather(*tasks)
+        return [item for sublist in results for item in sublist]
+
+    async def _agenerate_sparse_vectors(self, sparse_vectorizer, text_batch, batch_size=32):
         texts = list(text_batch)
         if not texts:
             return []
@@ -113,7 +176,7 @@ class EmbeddingVectorManager(object):
                     sub_texts.append("none")
             if len(sub_texts) == 0:
                 continue
-            tasks.append(asyncio.create_task(vectorizer.avectorize(sub_texts)))
+            tasks.append(asyncio.create_task(sparse_vectorizer.avectorize(texts[start:end])))
         results = await asyncio.gather(*tasks)
         return [item for sublist in results for item in sublist]
 
@@ -122,18 +185,30 @@ class EmbeddingVectorManager(object):
             for placeholder in placeholders:
                 placeholder._embedding_vector = vector
 
-    def batch_generate(self, vectorizer, batch_size=32):
-        text_batch = self._get_text_batch()
-        vectors = self._generate_vectors(vectorizer, text_batch, batch_size)
+    def batch_generate_dense(self, dense_vectorizer, batch_size=32):
+        text_batch = self._get_dense_text_batch()
+        vectors = self._generate_dense_vectors(dense_vectorizer, text_batch, batch_size)
         self._fill_vectors(vectors, text_batch)
 
-    async def abatch_generate(self, vectorizer, batch_size=32):
-        text_batch = self._get_text_batch()
-        vectors = await self._agenerate_vectors(vectorizer, text_batch, batch_size)
+    def batch_generate_sparse(self, sparse_vectorizer, batch_size=32):
+        text_batch = self._get_sparse_text_batch()
+        vectors = self._generate_sparse_vectors(sparse_vectorizer, text_batch, batch_size)
+        self._fill_vectors(vectors, text_batch)
+
+    async def abatch_generate_dense(self, dense_vectorizer, batch_size=32):
+        text_batch = self._get_dense_text_batch()
+        vectors = await self._agenerate_dense_vectors(dense_vectorizer, text_batch, batch_size)
+        self._fill_vectors(vectors, text_batch)
+
+    async def abatch_generate_sparse(self, sparse_vectorizer, batch_size=32):
+        text_batch = self._get_sparse_text_batch()
+        vectors = await self._agenerate_sparse_vectors(sparse_vectorizer, text_batch, batch_size)
         self._fill_vectors(vectors, text_batch)
 
     def patch(self):
-        for placeholder in self._placeholders:
+        for placeholder in self._dense_placeholders:
+            placeholder.replace()
+        for placeholder in self._sparse_placeholders:
             placeholder.replace()
 
 
@@ -143,55 +218,73 @@ class EmbeddingVectorGenerator(object):
         vectorizer,
         vector_index_meta=None,
         disable_generation=None,
+        sparse_vectorizer=None,
         extra_labels=("Entity",),
     ):
         self._vectorizer = vectorizer
         self._extra_labels = extra_labels
-        self._vector_index_meta = vector_index_meta or {}
+        self._vector_index_meta = vector_index_meta or ({}, {})
         self._disable_generation = disable_generation
+        self._sparse_vectorizer = sparse_vectorizer
 
     def batch_generate(self, node_batch, batch_size=32):
         manager = EmbeddingVectorManager(self._disable_generation)
-        vector_index_meta = self._vector_index_meta
+        dense_vec_meta, sparse_vec_meta = self._vector_index_meta
         for node_item in node_batch:
             label, properties = node_item
             labels = [label]
             if self._extra_labels:
                 labels.extend(self._extra_labels)
             for label in labels:
-                if label not in vector_index_meta:
-                    continue
-                for vector_field in vector_index_meta[label]:
-                    if vector_field in properties:
-                        continue
-                    placeholder = manager.get_placeholder(
-                        label, properties, vector_field
-                    )
-                    if placeholder is not None:
-                        properties[vector_field] = placeholder
-        manager.batch_generate(self._vectorizer, batch_size)
+                if label in dense_vec_meta:
+                    for vector_field in dense_vec_meta[label]:
+                        if vector_field not in properties:
+                            placeholder = manager.get_dense_placeholder(
+                                label, properties, vector_field
+                            )
+                            if placeholder is not None:
+                                properties[vector_field] = placeholder
+                if label in sparse_vec_meta and self._sparse_vectorizer is not None:
+                    for vector_field in sparse_vec_meta[label]:
+                        if vector_field not in properties:
+                            placeholder = manager.get_sparse_placeholder(
+                                label, properties, vector_field
+                            )
+                            if placeholder is not None:
+                                properties[vector_field] = placeholder
+        manager.batch_generate_dense(self._vectorizer, batch_size)
+        if self._sparse_vectorizer is not None:
+            manager.batch_generate_sparse(self._sparse_vectorizer, batch_size)
         manager.patch()
 
     async def abatch_generate(self, node_batch, batch_size=32):
         manager = EmbeddingVectorManager(self._disable_generation)
-        vector_index_meta = self._vector_index_meta
+        dense_vec_meta, sparse_vec_meta = self._vector_index_meta
         for node_item in node_batch:
             label, properties = node_item
             labels = [label]
             if self._extra_labels:
                 labels.extend(self._extra_labels)
             for label in labels:
-                if label not in vector_index_meta:
-                    continue
-                for vector_field in vector_index_meta[label]:
-                    if vector_field in properties:
-                        continue
-                    placeholder = manager.get_placeholder(
-                        label, properties, vector_field
-                    )
-                    if placeholder is not None:
-                        properties[vector_field] = placeholder
-        await manager.abatch_generate(self._vectorizer, batch_size)
+                if label in dense_vec_meta:
+                    for vector_field in dense_vec_meta[label]:
+                        if vector_field not in properties:
+                            placeholder = manager.get_dense_placeholder(
+                                label, properties, vector_field
+                            )
+                            if placeholder is not None:
+                                properties[vector_field] = placeholder
+                if label in sparse_vec_meta and self._sparse_vectorizer is not None:
+                    for vector_field in sparse_vec_meta[label]:
+                        if vector_field not in properties:
+                            placeholder = manager.get_sparse_placeholder(
+                                label, properties, vector_field
+                            )
+                            if placeholder is not None:
+                                properties[vector_field] = placeholder
+        await manager.abatch_generate_dense(self._vectorizer, batch_size)
+        if self._sparse_vectorizer is not None:
+            await manager.abatch_generate_sparse(self._sparse_vectorizer, batch_size)
         manager.patch()
 
 
@@ -217,6 +310,7 @@ class BatchVectorizer(VectorizerABC):
         vectorize_model: VectorizeModelABC,
         batch_size: int = 32,
         disable_generation: Optional[List[str]] = None,
+        sparse_vectorize_model: SparseVectorizeModelABC = None,
     ):
         """
         Initializes the BatchVectorizer with the specified vectorization model and batch size.
@@ -230,6 +324,7 @@ class BatchVectorizer(VectorizerABC):
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
         self.vectorize_model = vectorize_model
+        self.sparse_vectorize_model = sparse_vectorize_model
         self.batch_size = batch_size
         self.disable_generation = disable_generation
 
@@ -238,9 +333,10 @@ class BatchVectorizer(VectorizerABC):
         Initializes the vector metadata for the SubGraph.
 
         Returns:
-            defaultdict: Metadata for vector fields in the SubGraph.
+            Tuple[defaultdict, defaultdict]: Metadata for dense and sparse vector fields in the SubGraph.
         """
-        vec_meta = defaultdict(list)
+        dense_vec_meta = defaultdict(list)
+        sparse_vec_meta = defaultdict(list)
         schema_client = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=self.project_id
         )
@@ -248,11 +344,16 @@ class BatchVectorizer(VectorizerABC):
         for type_name, spg_type in spg_types.items():
             for prop_name, prop in spg_type.properties.items():
                 if prop_name == "name" or prop.index_type in [
-                    # if prop.index_type in [
                     IndexTypeEnum.Vector,
                     IndexTypeEnum.TextAndVector,
                 ]:
-                    vec_meta[type_name].append(get_vector_field_name(prop_name))
+                    dense_vec_meta[type_name].append(get_vector_field_name(prop_name))
+                elif prop.index_type in [
+                    IndexTypeEnum.SparseVector,
+                    IndexTypeEnum.TextAndSparseVector,
+                ]:
+                    sparse_vec_meta[type_name].append(get_sparse_vector_field_name(prop_name))
+        vec_meta = dense_vec_meta, sparse_vec_meta
         return vec_meta
 
     @retry(stop=stop_after_attempt(3), reraise=True)
@@ -276,7 +377,7 @@ class BatchVectorizer(VectorizerABC):
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
         generator = EmbeddingVectorGenerator(
-            self.vectorize_model, self.vec_meta, self.disable_generation
+            self.vectorize_model, self.vec_meta, self.disable_generation, self.sparse_vectorize_model
         )
         generator.batch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(
@@ -309,7 +410,7 @@ class BatchVectorizer(VectorizerABC):
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
         generator = EmbeddingVectorGenerator(
-            self.vectorize_model, self.vec_meta, self.disable_generation
+            self.vectorize_model, self.vec_meta, self.disable_generation, self.sparse_vectorize_model
         )
         await generator.abatch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(

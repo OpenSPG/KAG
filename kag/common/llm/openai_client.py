@@ -73,6 +73,8 @@ class OpenAIClient(LLMClient):
         self.temperature = temperature
         self.timeout = timeout
         self.think = think
+        self.seed = kwargs.get("seed", NOT_GIVEN)
+        self.top_p = kwargs.get("top_p", NOT_GIVEN)
         self.extra_body = {"chat_template_kwargs": {"enable_thinking": self.think}}
         self.stop = kwargs.get("stop", NOT_GIVEN)
         extra_body = kwargs.get("extra_body", NOT_GIVEN)
@@ -129,6 +131,8 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
             stop=self.stop,
+            seed=self.seed,
+            top_p=self.top_p,
             extra_body=self.extra_body,
         )
         usages = []
@@ -215,6 +219,8 @@ class OpenAIClient(LLMClient):
             tools=tools,
             max_tokens=self.max_tokens,
             stop=self.stop,
+            seed=self.seed,
+            top_p=self.top_p,
             extra_body=self.extra_body,
         )
         usages = []
