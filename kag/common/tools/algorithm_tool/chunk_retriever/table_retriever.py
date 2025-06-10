@@ -70,6 +70,7 @@ class TableRetriever(RetrieverABC):
             query_vector=query_vector,
             property_key="name",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
         top_k_tables_from_content = self.search_api.search_vector(
@@ -77,6 +78,7 @@ class TableRetriever(RetrieverABC):
             query_vector=query_vector,
             property_key="content",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
         top_k_tables_from_beforeText = self.search_api.search_vector(
@@ -84,6 +86,7 @@ class TableRetriever(RetrieverABC):
             query_vector=query_vector,
             property_key="beforeText",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
         top_k_tables_from_afterText = self.search_api.search_vector(
@@ -91,6 +94,7 @@ class TableRetriever(RetrieverABC):
             query_vector=query_vector,
             property_key="afterText",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
         for item in (

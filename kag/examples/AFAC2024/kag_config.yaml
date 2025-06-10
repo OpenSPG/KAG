@@ -2,16 +2,16 @@
 openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  api_key: 
   model: qwen2.5-7b-instruct
   enable_check: false
   max_tokens: 8192
 
 
-ner_llm: &ner_llm
+ner_llm:
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  api_key: 
   model: qwen2.5-7b-instruct
   enable_check: false
   max_tokens: 1024
@@ -19,13 +19,13 @@ ner_llm: &ner_llm
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  api_key: 
   model: qwen2.5-72b-instruct
   enable_check: false
   max_tokens: 1024
 
 vectorize_model: &vectorize_model
-  api_key: sk-
+  api_key: 
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -39,7 +39,7 @@ log:
 
 project:
   biz_scene: default
-  host_addr: http://8.211.148.36:8887
+  host_addr: http://127.0.0.1:8887
   id: '1'
   language: zh
   namespace: AFAC2024
@@ -106,8 +106,8 @@ kag_builder_pipeline:
       vectorize_model: *vectorize_model
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
-  num_threads_per_chain: 10
-  num_chains: 8
+  num_threads_per_chain: 1
+  num_chains: 1
   max_concurrency: 1
   scanner:
     #type: file_scanner
@@ -117,7 +117,8 @@ kag_builder_pipeline:
 
 #------------kag-solver configuration start----------------#
 search_api: &search_api
-  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+  type: openspg_search_api 
+  #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
@@ -166,11 +167,11 @@ retriever_executor: &retriever_executor
   type: evidence_based_reasoner
   llm: *chat_llm
   retrievers:
-#    - *r1
-#    - *r2
-    - *r3
-    - *r4
-#    - *r5
+   - *r1
+   - *r2
+   - *r3
+   - *r4
+   - *r5
   merger:
     type: kag_merger
 
