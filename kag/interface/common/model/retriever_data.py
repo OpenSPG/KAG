@@ -636,10 +636,16 @@ class KgGraph(RetrievedData):
         return False
 
     def add_answered_alias(self, alias, value):
+        def add_value_to_list(v):
+            if isinstance(v, list):
+                return v
+            else:
+                return [v]
+
         if alias in self.answered_alias:
-            self.answered_alias[alias].append(value)
+            self.answered_alias[alias] += add_value_to_list(value)
         else:
-            self.answered_alias[alias] = [value]
+            self.answered_alias[alias] = add_value_to_list(value)
         self.answered_alias[alias] = list(set(self.answered_alias[alias]))
 
     def get_answered_alias(self, alias):
