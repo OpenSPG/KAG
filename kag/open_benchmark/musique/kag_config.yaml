@@ -22,6 +22,8 @@ chat_llm: &chat_llm
   model: qwen2.5-72b-instruct
   enable_check: false
   max_tokens: 1024
+  max_rate: 720
+  time_period: 60
 
 vectorize_model: &vectorize_model
   api_key: sk-
@@ -169,7 +171,7 @@ retriever_executor: &retriever_executor
   context_select_prompt:
     type: context_select_prompt
   retrievers:
-#    - *r1
+    - *r1
 #    - *r2
     - *r3
     - *r4
@@ -179,6 +181,7 @@ retriever_executor: &retriever_executor
 
 kag_solver_pipeline:
   type: kag_static_pipeline
+  max_iteration: 3
   planner:
     type: kag_static_planner
     llm: *chat_llm
