@@ -175,6 +175,21 @@ retriever_executor: &retriever_executor
   merger:
     type: kag_merger
 
+retriever_executor_rerank: &retriever_executor_rerank
+  type: long_context_reasoner
+  llm: *chat_llm
+  retrievers:
+#    - *r1
+#    - *r2
+    - *r3
+    - *r4
+#    - *r5
+  merger:
+    type: kag_merger
+  context_select_llm: *chat_llm
+  context_select_prompt:
+    type: context_select_prompt
+
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
