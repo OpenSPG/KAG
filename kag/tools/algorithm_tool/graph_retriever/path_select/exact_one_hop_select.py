@@ -122,9 +122,13 @@ class ExactOneHopSelect(PathSelect):
                     result = one_graph.out_relations[k] + result
             final_result_list = final_result_list + result
 
-        for un_std_p in un_std_p_list:
+        if one_graph.s_alias_name == "s":
             target_value = n.o.get_mention_name()
             target_node = n.o
+        else:
+            target_value = n.s.get_mention_name()
+            target_node = n.s
+        for un_std_p in un_std_p_list:
             relation_name_set = one_graph.get_s_all_relation_name()
             attribute_name_set = one_graph.get_s_all_attribute_name()
             candi_name_set = relation_name_set + attribute_name_set
