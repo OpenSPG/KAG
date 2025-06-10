@@ -171,14 +171,13 @@ retriever_executor: &retriever_executor
   context_select_prompt:
     type: context_select_prompt
   retrievers:
-    - *r1
+#    - *r1
 #    - *r2
     - *r3
     - *r4
 #    - *r5
   merger:
     type: kag_merger
-
 
 kag_solver_pipeline:
   type: kag_static_pipeline
