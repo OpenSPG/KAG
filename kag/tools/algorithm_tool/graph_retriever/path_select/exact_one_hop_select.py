@@ -161,7 +161,7 @@ class ExactOneHopSelect(PathSelect):
                     candi_target_value = (
                         r.end_entity.name
                         if one_graph.s_alias_name == "s"
-                        else r.start_entity.name
+                        else r.from_entity.name
                     )
                     if candi_target_value == target_value:
                         final_result_list.append(r)

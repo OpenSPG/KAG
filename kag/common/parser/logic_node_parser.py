@@ -335,66 +335,78 @@ class ParseLogicForm:
                     entity.is_attribute = True
                 std_entity_type_set.append(type_info)
         elif isinstance(entity, SPORelation):
-            s_type_zh = entity.s.get_un_std_entity_first_type_or_std()
-            o_type_zh = entity.o.get_un_std_entity_first_type_or_std()
-            s_type_en = entity.s.get_entity_first_type_or_un_std()
-            o_type_en = entity.o.get_entity_first_type_or_un_std()
-            for entity_type in zh_types:
-                type_info = TypeInfo()
-                type_info.un_std_entity_type = entity_type
-                if self.schema is not None:
-                    if o_type_zh == "Entity":
-                        sp_index = (s_type_zh, entity_type)
-                        if sp_index in self.schema.sp_o:
-                            o_candis_set = self.schema.sp_o[sp_index]
-                            for candis in o_candis_set:
-                                spo_zh = f"{s_type_zh}_{entity_type}_{candis}"
-                                type_info.std_entity_type = self.schema.get_spo_with_p(
-                                    self.schema.spo_zh_en[spo_zh]
-                                )
-                                break
+            s_type_set = entity.s.type_set
+            o_type_set = entity.o.type_set
+            for p_unstd_type in zh_types:
+                p_std_types = []
+                for s_type in s_type_set:
+                    for o_type in o_type_set:
+                        type_info = TypeInfo()
+                        type_info.un_std_entity_type = p_unstd_type
+                        def check_type_is_exists(type_name):
+                            if type_name is None or type_name == "Entity":
+                                return False
+                            return True
 
-                    if not type_info.std_entity_type and s_type_zh == "Entity":
-                        op_index = (o_type_zh, entity_type)
-                        if op_index in self.schema.op_s:
-                            s_candis_set = self.schema.op_s[op_index]
-                            for candis in s_candis_set:
-                                spo_zh = f"{candis}_{entity_type}_{o_type_zh}"
-                                type_info.std_entity_type = self.schema.get_spo_with_p(
-                                    self.schema.spo_zh_en[spo_zh]
-                                )
-                                break
+                        if self.schema is not None:
+                            if not check_type_is_exists(o_type.std_entity_type):
+                                sp_index = (s_type.un_std_entity_type, p_unstd_type)
+                                if sp_index in self.schema.sp_o:
+                                    o_candis_set = self.schema.sp_o[sp_index]
+                                    for candis in o_candis_set:
+                                        spo_zh = f"{s_type.un_std_entity_type}_{p_unstd_type}_{candis}"
+                                        type_info.std_entity_type = self.schema.get_spo_with_p(
+                                            self.schema.spo_zh_en[spo_zh]
+                                        )
+                                        break
+                            if not type_info.std_entity_type and not check_type_is_exists(s_type.std_entity_type):
+                                op_index = (o_type.un_std_entity_type, p_unstd_type)
+                                if op_index in self.schema.op_s:
+                                    s_candis_set = self.schema.op_s[op_index]
+                                    for candis in s_candis_set:
+                                        spo_zh = f"{candis}_{p_unstd_type}_{o_type.un_std_entity_type}"
+                                        type_info.std_entity_type = self.schema.get_spo_with_p(
+                                            self.schema.spo_zh_en[spo_zh]
+                                        )
+                                        break
 
-                    if (
-                        not type_info.std_entity_type
-                        and o_type_zh != "Entity"
-                        and s_type_zh != "Entity"
-                    ):
-                        so_index = (s_type_zh, o_type_zh)
-                        if so_index not in self.schema.so_p:
-                            so_index = (o_type_zh, s_type_zh)
-                        candis_set = self.schema.so_p[so_index]
-                        for p_candis in candis_set:
-                            if p_candis == entity_type:
-                                spo_zh = f"{s_type_zh}_{p_candis}_{o_type_zh}"
-                                type_info.std_entity_type = self.schema.get_spo_with_p(
-                                    self.schema.spo_zh_en[spo_zh]
-                                )
+                            if (
+                                    not type_info.std_entity_type
+                                    and check_type_is_exists(s_type.std_entity_type)
+                                    and check_type_is_exists(o_type.std_entity_type)
+                            ):
+                                so_index = (s_type.un_std_entity_type, o_type.un_std_entity_type)
+                                if so_index not in self.schema.so_p:
+                                    so_index = (o_type.un_std_entity_type, s_type.un_std_entity_type)
+                                candis_set = self.schema.so_p[so_index]
+                                for p_candis in candis_set:
+                                    if p_candis == p_unstd_type:
+                                        spo_zh = f"{s_type.un_std_entity_type}_{p_candis}_{o_type.un_std_entity_type}"
+                                        type_info.std_entity_type = self.schema.get_spo_with_p(
+                                            self.schema.spo_zh_en[spo_zh]
+                                        )
 
-                    if not type_info.std_entity_type:
-                        # maybe a property
-                        s_attr_zh_en = self.schema.attr_zh_en_by_label.get(
-                            s_type_en, []
-                        )
-                        if s_attr_zh_en and entity_type in s_attr_zh_en:
-                            type_info.std_entity_type = s_attr_zh_en[entity_type]
-                        if not type_info.std_entity_type:
-                            o_attr_zh_en = self.schema.attr_zh_en_by_label.get(
-                                o_type_en, []
-                            )
-                            if o_attr_zh_en and entity_type in o_attr_zh_en:
-                                type_info.std_entity_type = o_attr_zh_en[entity_type]
-                std_entity_type_set.append(type_info)
+                            if not type_info.std_entity_type:
+                                # maybe a property
+                                s_attr_zh_en = self.schema.attr_zh_en_by_label.get(
+                                    s_type.std_entity_type, []
+                                )
+                                if s_attr_zh_en and p_unstd_type in s_attr_zh_en:
+                                    type_info.std_entity_type = s_attr_zh_en[p_unstd_type]
+                                if not type_info.std_entity_type:
+                                    o_attr_zh_en = self.schema.attr_zh_en_by_label.get(
+                                        o_type.std_entity_type, []
+                                    )
+                                    if o_attr_zh_en and p_unstd_type in o_attr_zh_en:
+                                        type_info.std_entity_type = o_attr_zh_en[p_unstd_type]
+
+                        if type_info.std_entity_type:
+                            p_std_types.append(type_info)
+                if len(p_std_types) == 0:
+                    type_info = TypeInfo()
+                    type_info.un_std_entity_type = p_unstd_type
+                    p_std_types.append(type_info)
+                std_entity_type_set += p_std_types
 
         entity.type_set = std_entity_type_set
         parsed_entity_set[alias_name] = entity
