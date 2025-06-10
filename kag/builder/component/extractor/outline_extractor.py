@@ -48,10 +48,10 @@ class OutlineExtractor(ExtractorABC):
             o_label = CHUNK_TYPE
         else:
             o_label = TABLE_TYPE
-        if "/" not in input.name:
-            outline_name = input.name
-        else:
-            outline_name = input.name.split("/")[-1]
+        # if "/" not in input.name:
+        outline_name = input.name
+        # else:
+        #     outline_name = input.name.split("/")[-1]
 
         index = outline_name.find("_split")
         if index != -1:

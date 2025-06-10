@@ -47,10 +47,10 @@ class ChunkExtractor(ExtractorABC):
             # only process text
             return []
 
-        if "/" not in input.name:
-            outline_name = input.name
-        else:
-            outline_name = input.name.split("/")[-1]
+        # if "/" not in input.name:
+        outline_name = input.name
+        # else:
+        #     outline_name = input.name.split("/")[-1]
 
         if "_split" in outline_name:
             outline_name = outline_name[: outline_name.find("_split")]
@@ -61,7 +61,11 @@ class ChunkExtractor(ExtractorABC):
             id=f"{input.id}",
             name=outline_name,
             label="Chunk",
-            properties={"id": input.id, "name": outline_name, "content": f"{outline_name}\n{input.content}"},
+            properties={
+                "id": input.id,
+                "name": outline_name,
+                "content": f"{outline_name}\n{input.content}",
+            },
         )
 
         return [sub_graph]

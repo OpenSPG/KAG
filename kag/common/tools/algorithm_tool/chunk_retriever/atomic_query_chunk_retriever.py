@@ -215,9 +215,34 @@ class AtomicQueryChunkRetriever(RetrieverABC):
 
             # recall atomic queries
             top_k_atomic_queries = asyncio.run(self.recall_atomic_query(query, context))
+            query_texts = [item["node"]["name"] for item in top_k_atomic_queries]
+            query_text_related_chunks = []
+            for query_text in query_texts:
+                query_vector = self.vectorize_model.vectorize(query_text)
+                top_k_docs = self.search_api.search_vector(
+                    label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+                    property_key="content",
+                    query_vector=query_vector,
+                    topk=5,
+                    ef_search=20,
+                )
+                query_text_related_chunks.extend(top_k_docs)
+
+            query_text_related_chunks = [
+                ChunkData(
+                    content=item["node"]["content"],
+                    title=item["node"]["name"],
+                    chunk_id=item["node"]["id"],
+                    score=item["score"],
+                )
+                for item in query_text_related_chunks
+            ]
 
             # recall atomic_relatedTo_chunks
             chunks = asyncio.run(self.recall_sourceChunks_chunks(top_k_atomic_queries))
+
+            chunks = chunks + query_text_related_chunks
+
             out = RetrieverOutput(chunks=chunks)
             return out
         except Exception as e:

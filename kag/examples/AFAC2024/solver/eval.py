@@ -101,6 +101,7 @@ class EvaForAFAC2024(EvalQa):
         goldlist = []
         for s in sample["supporting_facts"]:
             goldlist.extend(s[1:])
+        goldlist = sample["supporting_facts"][0][1:]
         return eva_obj.recall_top(
             predictionlist=predictions,
             goldlist=goldlist,
