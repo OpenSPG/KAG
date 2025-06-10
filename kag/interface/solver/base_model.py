@@ -54,7 +54,7 @@ class SPOBase:
         self.value_list = []
 
     def __repr__(self):
-        return f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}"
+        return f"{self.alias_name}:{self.get_type_with_gql_format()}"
 
     def get_value_list_str(self):
         return [f"{self.alias_name}.{v[0]} {v[2]} {v[1]}" for v in self.value_list]
@@ -145,7 +145,7 @@ class SPORelation(SPOBase):
         self.o: SPOEntity = None
 
     def __str__(self):
-        show = [f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}"]
+        show = [f"{self.alias_name}:{self.get_type_with_gql_format()}"]
         show = show + self.get_value_list_str()
         return ",".join(show)
 
@@ -209,7 +209,7 @@ class SPOEntity(SPOBase):
 
     def __str__(self):
         show = [
-            f"{self.alias_name}:{self.get_un_std_entity_first_type_or_std()}{'' if self.entity_name is None else '[' + self.entity_name + ']'} "
+            f"{self.alias_name}:{self.get_type_with_gql_format()}{'' if self.entity_name is None else '[' + self.entity_name + ']'} "
         ]
         show = show + self.get_value_list_str()
         return ",".join(show)
