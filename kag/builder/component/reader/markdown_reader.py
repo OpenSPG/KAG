@@ -946,13 +946,13 @@ class MarkDownReader(ReaderABC):
             elif isinstance(first_item, Chunk):
                 content = first_item.content
                 return content, first_item.name, first_item.id
+            elif isinstance(first_item, BuilderComponentData):
+                content = first_item.data.content
+                return content, first_item.data.name, first_item.data.id
             else:
                 raise TypeError(
                     f"Expected file path or Chunk, got {type(first_item).__name__}"
                 )
-        elif isinstance(input, BuilderComponentData):
-            content = input.data.content.replace("\\n", "\n")
-            return content, input.data.name, input.data.id
         else:
             raise TypeError(f"Expected file path or Chunk, got {type(input).__name__}")
 
