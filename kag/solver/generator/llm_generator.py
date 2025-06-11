@@ -115,7 +115,6 @@ class LLMGenerator(GeneratorABC):
         refer_retrieved_data = to_reference_list(prefix_id=0, retrieved_datas=rerank_chunks)
         content_json = {"step": results}
         if reporter:
-            reporter.add_report_line("generator", "task_process", tasks, "FINISH")
             reporter.add_report_line(
                 "generator", "final_generator_input", content_json, "FINISH"
             )
