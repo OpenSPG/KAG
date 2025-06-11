@@ -11,7 +11,7 @@
 
 
 from kag.builder.runner import BuilderChainStreamRunner
-from kag.common.conf import KAG_CONFIG
+from kag.common.conf import KAG_CONFIG, KAGConfigAccessor
 import logging
 
 from ruamel.yaml import YAML
@@ -38,5 +38,5 @@ class BuilderMain:
 
 if __name__ == "__main__":
 
-    builder_main = BuilderMain(KAG_CONFIG.all_config)
+    builder_main = BuilderMain(KAGConfigAccessor.get_config().all_config)
     builder_main.invoke("dt=20250225")
