@@ -69,11 +69,10 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         if not logical_node:
             return RetrieverOutput(
                 retriever_method=self.schema().get("name", ""),
+                err_msg="No logical-form node found",
             )
         context = kwargs.get("context", Context())
 
-
-        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
 
         graph_data = self.template.invoke(
             query=query,
@@ -111,6 +110,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
         )
         output.graphs = [graph_data]
+        output.retriever_method = self.schema().get("name", "")
         return output
 
     def schema(self):

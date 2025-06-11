@@ -69,7 +69,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         task_query = task.arguments["query"]
         retrieval_tasks = []
-        tag_id = f"{task_query}_begin_kag_retriever"
+        tag_id = f"{task_query}_begin_task"
         self.report_content(
             reporter,
             "thinker",
@@ -87,7 +87,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 component_name=retriever.schema().get("name"),
             )
             retrieval_tasks.append(
-                asyncio.create_task(retriever.ainvoke(task, context=context, **kwargs))
+                asyncio.create_task(retriever.ainvoke(task, context=context, segment_name=tag_id, **kwargs))
             )
         outputs = await asyncio.gather(*retrieval_tasks)
         for output in outputs:
@@ -196,7 +196,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             self.report_content(
                 reporter,
                 tag_id,
-                f"{tag_id}_graph",
+                f"spo_graph",
                 all_spo,
                 "FINISH",
             )

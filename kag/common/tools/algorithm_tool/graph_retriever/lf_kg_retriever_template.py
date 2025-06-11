@@ -77,22 +77,6 @@ class KgRetrieverTemplate:
                 if logic_node.get_fl_node_result().spo:
                     continue
 
-                if reporter:
-                    reporter.add_report_line(
-                        segment_name,
-                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        logic_node.sub_query,
-                        "INIT",
-                        component_name=component_name,
-                    )
-                    reporter.add_report_line(
-                        segment_name,
-                        f"begin_sub_kag_retriever_{logic_node.sub_query}_{component_name}",
-                        "task_executing",
-                        "RUNNING",
-                        component_name=component_name,
-                    )
-
                 try:
                     select_rel = self._retrieved_on_graph(kg_graph, logic_node)
                     logic_node.get_fl_node_result().spo = select_rel

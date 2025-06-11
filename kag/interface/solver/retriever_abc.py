@@ -34,7 +34,8 @@ class RetrieverOutput:
         chunks: Optional[List[ChunkData]] = None,
         docs: Optional[List[DocData]] = None,
         retriever_method: str = "",
-        summary: str = ""
+        summary: str = "",
+        err_msg: str = "",
     ):
         """Initializes retrieval output container with optional data components.
 
@@ -51,6 +52,7 @@ class RetrieverOutput:
         self.docs = docs if docs else []
         self.retriever_method = retriever_method
         self.summary = summary
+        self.err_msg = err_msg
 
     def __str__(self):
         """Generates human-readable string representation of retrieval results.

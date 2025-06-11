@@ -59,7 +59,7 @@ class VectorChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg="query is empty")
             query_vector = self.vectorize_model.vectorize(query)
             top_k_docs = self.search_api.search_vector(
                 label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
@@ -85,7 +85,7 @@ class VectorChunkRetriever(RetrieverABC):
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
 
     def schema(self):
         return {
