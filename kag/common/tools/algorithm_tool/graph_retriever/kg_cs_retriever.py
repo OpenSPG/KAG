@@ -14,7 +14,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
     def __init__(
         self,
         path_select: PathSelect = None,
-        entity_linking=None,
+        entity_linking: EntityLinking =None,
         llm: LLMClient = None,
         **kwargs
     ):
