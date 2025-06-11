@@ -139,4 +139,4 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
         """
         chunk_lists = [x.chunks for x in retrieve_outputs]
         merged = self.chunk_merge(chunk_lists, self.rrf_normalize)
-        return RetrieverOutput(chunks=merged)
+        return RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=merged)

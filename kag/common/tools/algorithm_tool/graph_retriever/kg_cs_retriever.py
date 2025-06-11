@@ -48,6 +48,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         if not logical_node:
             return RetrieverOutput(
                 retriever_method=self.schema().get("name", ""),
+                err_msg="No logic node found in task arguments",
             )
         context = kwargs.get("context", Context())
 

@@ -59,34 +59,8 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         )
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
-        segment_name = kwargs.get("segment_name", "thinker")
-        component_name = self.name
-        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
-        query = task.arguments.get(
-            "rewrite_query", task.arguments["query"]
-        )
-
-        if reporter:
-            reporter.add_report_line(
-                segment_name,
-                f"begin_sub_kag_retriever_{query}_{component_name}",
-                query,
-                "INIT",
-                component_name=component_name,
-            )
-
         output = self.vector_chunk_retriever.invoke(task=task, **kwargs)
-        if reporter:
-            reporter.add_report_line(
-                segment_name,
-                f"begin_sub_kag_retriever_{query}_{component_name}",
-                "",
-                "FINISH",
-                component_name=component_name,
-                chunk_num=min(len(output.chunks), self.top_k),
-                desc="retrieved_doc_digest",
-            )
-
+        output.retriever_method = self.schema().get("name", "")
         return output
 
     def schema(self):
