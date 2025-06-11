@@ -42,7 +42,7 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
         entities = el.invoke(
             query,
             symbol_entity.get_mention_name(),
-            symbol_entity.get_entity_first_type_or_un_std(),
+            symbol_entity.get_entity_type_or_un_std_list(),
         )
         if entities:
             kg_graph.entity_map[symbol_entity.alias_name] = entities
