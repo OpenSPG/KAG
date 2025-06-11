@@ -500,7 +500,8 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
-
+        print("Enter schema free extractor======================")
+        logger.info("Enter schema free extractor======================")
         title = input.name
         passage = title + "\n" + input.content
         out = []
@@ -515,6 +516,8 @@ class SchemaFreeExtractor(ExtractorABC):
         self.append_official_name(entities, std_entities)
         self.assemble_sub_graph(sub_graph, input, entities, triples)
         out.append(sub_graph)
+        print("Exit schema free extractor=================")
+        logger.info("Exit schema free extractor=================")
         return out
 
     async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
