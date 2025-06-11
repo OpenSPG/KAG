@@ -98,6 +98,8 @@ class SPGServerBridge:
 
                 cls = getattr(interface, component_name)
                 instance = cls.from_config(component_config)
+                print(f"instance ==================== {instance}")
+                logger.info(f"instance ================= {instance}")
                 if not isinstance(input_data, list):
                     input_data = [input_data]
                 output = []
