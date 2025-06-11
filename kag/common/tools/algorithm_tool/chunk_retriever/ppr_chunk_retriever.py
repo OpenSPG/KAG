@@ -227,6 +227,7 @@ class PprChunkRetriever(RetrieverABC):
                 property_key="name",
                 query_vector=query_entity_vector,
                 topk=1,
+                ef_search= 1 * 5
             )
             for top_entity in top_entities:
                 score = top_entity["score"]

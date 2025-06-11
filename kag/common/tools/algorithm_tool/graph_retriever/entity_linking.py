@@ -170,6 +170,7 @@ class EntityLinking(ToolABC):
                 property_key="name",
                 query_vector=query_vector,
                 topk=recall_topk,
+                ef_search = recall_topk * 5
             )
             logger.info(
                 f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
@@ -181,6 +182,7 @@ class EntityLinking(ToolABC):
                     property_key="name",
                     query_vector=query_vector,
                     topk=recall_topk,
+                    ef_search = recall_topk * 5
                 )
                 logger.info(
                     f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
@@ -196,6 +198,7 @@ class EntityLinking(ToolABC):
                     property_key="desc",
                     query_vector=content_vector,
                     topk=recall_topk,
+                    ef_search = recall_topk * 5
                 )
                 logger.info(
                     f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes."

@@ -39,15 +39,15 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @RetrieverABC.register("atomic_query_chunk_retriever")
 class AtomicQueryChunkRetriever(RetrieverABC):
     def __init__(
-        self,
-        vectorize_model: VectorizeModelABC = None,
-        search_api: SearchApiABC = None,
-        graph_api: GraphApiABC = None,
-        llm_client: LLMClient = None,
-        query_rewrite_prompt: PromptABC = None,
-        top_k: int = 10,
-        score_threshold=0.85,
-        **kwargs,
+            self,
+            vectorize_model: VectorizeModelABC = None,
+            search_api: SearchApiABC = None,
+            graph_api: GraphApiABC = None,
+            llm_client: LLMClient = None,
+            query_rewrite_prompt: PromptABC = None,
+            top_k: int = 10,
+            score_threshold=0.85,
+            **kwargs,
     ):
         self.llm_client = llm_client
         self.query_rewrite_prompt = query_rewrite_prompt
@@ -131,6 +131,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                         property_key="name",
                         query_vector=rewritten_queries_vector,
                         topk=self.top_k,
+                        ef_search= self.top_k * 5
                     )
                 )
             )

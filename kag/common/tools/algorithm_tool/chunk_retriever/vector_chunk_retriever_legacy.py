@@ -49,6 +49,7 @@ class VectorChunkRetriever(ToolABC):
                 property_key="content",
                 query_vector=query_vector,
                 topk=top_k,
+                ef_search = top_k * 5
             )
             scores = {
                 item["node"]["id"]: {
