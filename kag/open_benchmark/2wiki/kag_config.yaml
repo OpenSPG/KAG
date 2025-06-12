@@ -2,20 +2,22 @@ openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
-  model: qwen2.5-72b-instruct
+  model: qwen-long
+  max_tokens: 8192
 
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
-  model: qwen2.5-72b-instruct
-  stream: True
+  model: qwen-long
+  max_tokens: 8192
 
 ner_llm: &ner_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: key
-  model: qwen2.5-72b-instruct
+  model: qwen-long
+  max_tokens: 8192
 
 vectorize_model: &vectorize_model
   api_key: key
@@ -31,7 +33,7 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '2'
+  id: '1'
   language: en
   namespace: TwoWiki
 #------------project configuration end----------------#

@@ -71,7 +71,7 @@ class EvaFor2wiki(EvalQa):
                 supporing_facts.append(doc)
             else:
                 non_supporting_facts.append(doc)
-        if 1:
+        if 0:
             reslist = non_supporting_facts[:10]
             reslist.extend(supporing_facts)
             random.shuffle(reslist)
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     parser = running_paras()
     args = parser.parse_args()
     qa_file_path = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file}"
+        os.path.abspath(os.path.dirname(__file__)), f"{args.qa_file or 'data/qa.json'}"
     )
     do_main(
         qa_file_path=qa_file_path,
