@@ -12,6 +12,7 @@
 import os
 import json
 import tempfile
+import portalocker
 
 try:
     from json_repair import loads
@@ -46,6 +47,7 @@ class TokenMeter:
     def load(self):
         if os.path.exists(self.ckpt_file):
             with open(self.ckpt_file, "r") as reader:
+                portalocker.lock(reader, portalocker.LOCK_EX)
                 data = json.loads(reader.read())
             self.completion_tokens = data["completion_tokens"]
             self.prompt_tokens = data["prompt_tokens"]
@@ -58,6 +60,7 @@ class TokenMeter:
         data["prompt_tokens"] = self.prompt_tokens
         data["total_tokens"] = self.total_tokens
         with open(self.ckpt_file, "w") as writer:
+            portalocker.lock(writer, portalocker.LOCK_EX)
             writer.write(json.dumps(data))
 
     def update(
