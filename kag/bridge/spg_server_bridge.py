@@ -90,16 +90,14 @@ class SPGServerBridge:
             logger.error(f"===================\n{msg}===================")
             raise e
 
-    def run_component(self, component_name, component_config, input_data, task_id="0"):
+    def run_component(self, component_name, component_config, input_data):
+        if isinstance(component_config, str):
+            component_config = json.loads(component_config)
+        task_id = component_config.get("task_id", "0")
         with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             try:
-                if isinstance(component_config, str):
-                    component_config = json.loads(component_config)
-
                 cls = getattr(interface, component_name)
                 instance = cls.from_config(component_config)
-                print(f"instance ==================== {instance}")
-                logger.info(f"instance ================= {instance}")
                 if not isinstance(input_data, list):
                     input_data = [input_data]
                 output = []
@@ -117,7 +115,8 @@ class SPGServerBridge:
                 logger.error(f"===================\n{msg}===================")
                 raise e
 
-    def run_llm_config_check(self, llm_config, task_id="0"):
+    def run_llm_config_check(self, llm_config):
+        task_id = llm_config.get("llm_config", "0")
         with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.common.llm.llm_config_checker import LLMConfigChecker
 
@@ -130,12 +129,13 @@ class SPGServerBridge:
 
         return VectorizeModelConfigChecker().check(vec_config)
 
-    def run_builder(self, config, input, task_id="0"):
+    def run_builder(self, config, input):
+        if isinstance(config, str):
+            config = json.loads(config)
+        task_id = config.get("task_id" "0")
         with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.builder.main_builder import BuilderMain
 
-            if isinstance(config, str):
-                config = json.loads(config)
             builder_main = BuilderMain(config)
             builder_main.invoke(input)
 
