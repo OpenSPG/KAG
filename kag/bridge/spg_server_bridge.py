@@ -91,7 +91,7 @@ class SPGServerBridge:
             raise e
 
     def run_component(self, component_name, component_config, input_data, task_id="0"):
-        with LLMCallCcontext(task_id=task_id):
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             try:
                 if isinstance(component_config, str):
                     component_config = json.loads(component_config)
@@ -118,7 +118,7 @@ class SPGServerBridge:
                 raise e
 
     def run_llm_config_check(self, llm_config, task_id="0"):
-        with LLMCallCcontext(task_id=task_id):
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.common.llm.llm_config_checker import LLMConfigChecker
 
             return LLMConfigChecker().check(llm_config)
@@ -131,7 +131,7 @@ class SPGServerBridge:
         return VectorizeModelConfigChecker().check(vec_config)
 
     def run_builder(self, config, input, task_id="0"):
-        with LLMCallCcontext(task_id=task_id):
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.builder.main_builder import BuilderMain
 
             if isinstance(config, str):
@@ -151,7 +151,7 @@ class SPGServerBridge:
         host_addr="http://127.0.0.1:8887",
         app_id="",
     ):
-        with LLMCallCcontext(task_id=task_id):
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.solver.main_solver import SolverMain
 
             if isinstance(args, str):

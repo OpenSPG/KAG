@@ -38,13 +38,18 @@ class TokenMeter:
     completion_tokens: int = 0
     prompt_tokens: int = 0
     total_tokens: int = 0
+    in_memory: bool = True
 
     @property
     def ckpt_file(self):
+        if self.in_memory:
+            return None
         tmp_dir = tempfile.gettempdir()
         return os.path.join(tmp_dir, f"token-meter-task-{self.task_id}.json")
 
     def load(self):
+        if self.in_memory:
+            return
         if os.path.exists(self.ckpt_file):
             with open(self.ckpt_file, "r") as reader:
                 portalocker.lock(reader, portalocker.LOCK_EX)
@@ -54,6 +59,8 @@ class TokenMeter:
             self.total_tokens = data["total_tokens"]
 
     def dump(self):
+        if self.in_memory:
+            return
         data = {}
 
         data["completion_tokens"] = self.completion_tokens
@@ -92,10 +99,10 @@ class TokenMeterFactory:
             cls._instance._lock = Lock()
         return cls._instance
 
-    def get_meter(self, task_id: str) -> TokenMeter:
+    def get_meter(self, task_id: str, token_meter_in_memory: bool = True) -> TokenMeter:
         with self._lock:
             if task_id not in self._meters:
-                meter = TokenMeter(task_id=task_id)
+                meter = TokenMeter(task_id=task_id, in_memory=token_meter_in_memory)
                 self._meters[task_id] = meter
             return self._meters[task_id]
 
@@ -127,19 +134,26 @@ class TokenMeterFactory:
 
 
 CURRENT_TASK_ID = contextvars.ContextVar("current_task_id", default="default-task[0]")
+TOKEN_METER_IN_MEMORY = contextvars.ContextVar("token_meter_in_memory", default=True)
 
 
 class LLMCallCcontext:
-    def __init__(self, task_id):
+    def __init__(self, task_id, token_meter_in_memory):
         self.task_id = task_id
-        self.token = None
+        self.token_meter_in_memory = token_meter_in_memory
+        self.task_id_token = None
+        self.token_meter_in_memory_token = None
 
     def __enter__(self):
-        self.token = CURRENT_TASK_ID.set(self.task_id)
+        self.task_id_token = CURRENT_TASK_ID.set(self.task_id)
+        self.token_meter_in_memory_token = TOKEN_METER_IN_MEMORY.set(
+            self.token_meter_in_memory
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        CURRENT_TASK_ID.reset(self.token)
+        CURRENT_TASK_ID.reset(self.task_id_token)
+        TOKEN_METER_IN_MEMORY.reset(self.token_meter_in_memory_token)
 
 
 class LLMClient(Registrable):
@@ -492,4 +506,6 @@ class LLMClient(Registrable):
     @staticmethod
     def get_token_meter():
         task_id = CURRENT_TASK_ID.get()
-        return TokenMeterFactory().get_meter(task_id)
+        token_meter_in_memory = TOKEN_METER_IN_MEMORY.get()
+
+        return TokenMeterFactory().get_meter(task_id, token_meter_in_memory)
