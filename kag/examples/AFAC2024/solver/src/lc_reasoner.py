@@ -38,6 +38,7 @@ class LongContextBasedReasoner(ExecutorABC):
         vectorize_model: VectorizeModelABC,
         context_select_prompt: PromptABC,
         context_select_llm: LLMClient,
+        language: str = "zh",
     ):
         self.llm = llm
         self.retrievers = retrievers
@@ -46,6 +47,7 @@ class LongContextBasedReasoner(ExecutorABC):
 
         self.context_select_prompt = context_select_prompt
         self.context_select_llm = context_select_llm
+        self.language = language
 
     def rrf_merge(self, ppr_chunks: List, dpr_chunks: List):
         merged = {}
@@ -168,34 +170,7 @@ class LongContextBasedReasoner(ExecutorABC):
             formatted_docs.append(f"{chunk.content}")
 
         formatted_docs = "\n\n".join(formatted_docs)
-        system_instruction = """
-As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
-        
-Docs:
-Sylvester
-Sylvester is a name derived from the Latin adjective silvestris meaning ``wooded ''or`` wild'', which derives from the noun silva meaning ``woodland ''. Classical Latin spells this with i. In Classical Latin y represented a separate sound distinct from i, not a native Latin sound but one used in transcriptions of foreign words. After the Classical period y came to be pronounced as i. Spellings with Sylv - in place of Silv - date from after the Classical period.
-
-Stanton Township, Champaign County, Illinois
-Stanton Township is a township in Champaign County, Illinois, USA. As of the 2010 census, its population was 505 and it contained 202 housing units.
-
-
-Montebello, New York
-Montebello (Italian: "Beautiful mountain") is an incorporated village in the town of Ramapo, Rockland County, New York, United States. It is located north of Suffern, east of Hillburn, south of Wesley Hills, and west of Airmont. The population was 4,526 at the 2010 census
-
-Erik Hort
-Erik Hort (born February 16, 1987 in Montebello, New York) is an American soccer player who is currently a Free Agent.
-
-
-Questions:
-0: Who was crowned emperor of the west in 800 CE?
-Thought: One of the provided passage on Charlemagne indicates that he was crowned Holy Roman Emperor in 800. Answer: Charlemagne.
-
-1: What was {{0.output}} later known as?
-Thought: To determine what {{0.oputput}} (Charlemagne) was later known as, I need to review the provided passage about Charlemagne. The passage indicates that Charlemagne was also known as "Charles the Great." Answer: Charles the Great
-
-2: What was the language from which the last name Sylvester originated during {{0.output}} era?
-Thought: The question asks about the origin of the last name Sylvester during the time of the person {{0.output}}, which was Charlemagne, whose reign was in the Early Middle Ages. The passage about the name Sylvester states that it is derived from Latin. Answer: Latin
-"""
+        system_instruction = self.get_system_instruction()
         query = f"{task.id}: {task.arguments['query']}"
         subqa = []
         for pt in task.parents:
@@ -233,3 +208,62 @@ Thought: The question asks about the origin of the last name Sylvester during th
                 },
             },
         }
+
+    def get_system_instruction(self):
+        """根据语言参数返回相应的系统指令"""
+        if self.language == "zh":
+            return """
+作为解决复杂多跳问题的专家，我需要你帮助解决一个多跳问题。该问题已被分解为多个简单的单跳查询，其中每个问题可能依赖于前面问题的答案，即问题主体可能包含诸如"{{i.output}}"的内容，这意味着第i个子问题的答案。我将为你提供如何解决这些初步问题的见解或答案本身，这些对于准确解决问题至关重要。此外，我将提供与当前问题相关的文本摘录，建议你仔细阅读和理解。请以"思考："开始你的回答，在其中概述导致你结论的逐步思考过程。最后以"答案："结束，提供清晰准确的回答，不要添加任何额外的评论。
+
+文档：
+Sylvester
+Sylvester是一个源自拉丁形容词silvestris的名字，意思是"森林的"或"野生的"，该词源自名词silva，意思是"林地"。古典拉丁语用i拼写。在古典拉丁语中，y代表与i不同的独立音素，不是拉丁语本土音素，而是用于转录外来词的音素。古典时期之后，y开始发音为i。用Sylv-代替Silv-的拼写始于古典时期之后。
+
+伊利诺伊州尚佩恩县斯坦顿镇
+斯坦顿镇是美国伊利诺伊州尚佩恩县的一个镇。根据2010年人口普查，其人口为505人，包含202个住房单元。
+
+纽约州蒙特贝洛
+蒙特贝洛（意大利语："美丽的山"）是美国纽约州罗克兰县拉马波镇的一个合并村庄。它位于萨芬北部、希尔伯恩东部、韦斯利山南部和艾尔蒙特西部。2010年人口普查时人口为4,526人。
+
+埃里克·霍特
+埃里克·霍特（1987年2月16日出生于纽约州蒙特贝洛）是一名美国足球运动员，目前是自由球员。
+
+问题：
+0：谁在公元800年被加冕为西方皇帝？
+思考：提供的查理曼大帝段落表明他在800年被加冕为神圣罗马皇帝。答案：查理曼大帝。
+
+1：{{0.output}}后来被称为什么？
+思考：要确定{{0.output}}（查理曼大帝）后来被称为什么，我需要查看提供的关于查理曼大帝的段落。段落表明查理曼大帝也被称为"查理大帝"。答案：查理大帝
+
+2：在{{0.output}}时代，姓氏Sylvester起源于哪种语言？
+思考：问题询问在{{0.output}}（查理曼大帝）时代姓氏Sylvester的起源，查理曼大帝的统治时期是中世纪早期。关于Sylvester名字的段落说明它源自拉丁语。答案：拉丁语
+"""
+        else:  # 默认英文
+            return """
+As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
+        
+Docs:
+Sylvester
+Sylvester is a name derived from the Latin adjective silvestris meaning ``wooded ''or`` wild'', which derives from the noun silva meaning ``woodland ''. Classical Latin spells this with i. In Classical Latin y represented a separate sound distinct from i, not a native Latin sound but one used in transcriptions of foreign words. After the Classical period y came to be pronounced as i. Spellings with Sylv - in place of Silv - date from after the Classical period.
+
+Stanton Township, Champaign County, Illinois
+Stanton Township is a township in Champaign County, Illinois, USA. As of the 2010 census, its population was 505 and it contained 202 housing units.
+
+
+Montebello, New York
+Montebello (Italian: "Beautiful mountain") is an incorporated village in the town of Ramapo, Rockland County, New York, United States. It is located north of Suffern, east of Hillburn, south of Wesley Hills, and west of Airmont. The population was 4,526 at the 2010 census
+
+Erik Hort
+Erik Hort (born February 16, 1987 in Montebello, New York) is an American soccer player who is currently a Free Agent.
+
+
+Questions:
+0: Who was crowned emperor of the west in 800 CE?
+Thought: One of the provided passage on Charlemagne indicates that he was crowned Holy Roman Emperor in 800. Answer: Charlemagne.
+
+1: What was {{0.output}} later known as?
+Thought: To determine what {{0.oputput}} (Charlemagne) was later known as, I need to review the provided passage about Charlemagne. The passage indicates that Charlemagne was also known as "Charles the Great." Answer: Charles the Great
+
+2: What was the language from which the last name Sylvester originated during {{0.output}} era?
+Thought: The question asks about the origin of the last name Sylvester during the time of the person {{0.output}}, which was Charlemagne, whose reign was in the Early Middle Ages. The passage about the name Sylvester states that it is derived from Latin. Answer: Latin
+"""

@@ -139,7 +139,7 @@ class PyBasedMathExecutor(ExecutorABC):
                     result = f"""```python
 {code}
 ```
-code result:{logic_node.alias_name}={rst}"""
+code result:{logic_node.alias_name if logic_node else ""}={rst}"""
                     task.update_result(result)
                     self.report_content(
                         reporter,

@@ -140,7 +140,7 @@ class Evaluate:
         return intersection / union if union > 0 else 0.0
 
     def fuzzy_intersection(
-        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.5
+        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.2
     ):
         """
         Calculate intersection using fuzzy matching, only matching text content and ignoring symbols
@@ -183,7 +183,7 @@ class Evaluate:
         return matches
 
     def fuzzy_difference(
-        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.5
+        self, gold_set, prediction_set, fuzzy_mode="all", similarity_threshold=0.2
     ):
         """
         Calculate difference using fuzzy matching, only matching text content and ignoring symbols
@@ -236,7 +236,7 @@ class Evaluate:
         goldlist: List[str],
         is_chunk_data: bool = True,
         fuzzy_mode: str = "all",
-        similarity_threshold: float = 0.5,
+        similarity_threshold: float = 0.2,
     ):
         """
         Calculate recall for top-3, top-5, and all predictions.
