@@ -44,11 +44,12 @@ class TokenMeter:
         return os.path.join(tmp_dir, f"token-meter-task-{self.task_id}.json")
 
     def load(self):
-        with open(self.ckpt_file, "r") as reader:
-            data = json.loads(reader.read())
-        self.completion_tokens = data["completion_tokens"]
-        self.prompt_tokens = data["prompt_tokens"]
-        self.total_tokens = data["total_tokens"]
+        if os.path.exists(self.ckpt_file):
+            with open(self.ckpt_file, "r") as reader:
+                data = json.loads(reader.read())
+            self.completion_tokens = data["completion_tokens"]
+            self.prompt_tokens = data["prompt_tokens"]
+            self.total_tokens = data["total_tokens"]
 
     def dump(self):
         data = {}
