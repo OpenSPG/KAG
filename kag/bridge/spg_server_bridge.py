@@ -116,11 +116,9 @@ class SPGServerBridge:
                 raise e
 
     def run_llm_config_check(self, llm_config):
-        task_id = llm_config.get("llm_config", "0")
-        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
-            from kag.common.llm.llm_config_checker import LLMConfigChecker
+        from kag.common.llm.llm_config_checker import LLMConfigChecker
 
-            return LLMConfigChecker().check(llm_config)
+        return LLMConfigChecker().check(llm_config)
 
     def run_vectorizer_config_check(self, vec_config):
         from kag.common.vectorize_model.vectorize_model_config_checker import (
