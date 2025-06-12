@@ -99,6 +99,10 @@ class SchemaFreeExtractor(ExtractorABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
+    @staticmethod
+    def output_indices() -> List[str]:
+        return ["spo_graph_index", "chunk_index"]
+
     def _named_entity_recognition_llm(self, passage: str):
         ner_result = self.llm.invoke(
             {"input": passage}, self.ner_prompt, with_except=False

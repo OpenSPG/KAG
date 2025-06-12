@@ -6,12 +6,11 @@ from kag.interface import Task, PlannerABC
 
 @PlannerABC.register("mcp_planner")
 class MCPPlanner(PlannerABC):
-    """mcp planner that generates task plans
-    """
+    """mcp planner that generates task plans"""
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -31,5 +30,3 @@ class MCPPlanner(PlannerABC):
 
     def check_require_rewrite(self, task: Task):
         return False
-
-

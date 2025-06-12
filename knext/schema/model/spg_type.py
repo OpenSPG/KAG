@@ -57,6 +57,39 @@ class EntityType(BaseSpgType):
         )
 
 
+class IndexType(BaseSpgType):
+    """IndexType Model."""
+
+    spg_type_enum: SpgTypeEnum
+    name: str
+    name_zh: str
+    desc: str
+    parent_type_name: str
+    properties: Dict[str, Property]
+    relations: Dict[str, Relation]
+
+    def __init__(
+        self,
+        name: str,
+        name_zh: str = None,
+        desc: str = None,
+        parent_type_name: str = ROOT_TYPE_UNIQUE_NAME,
+        properties: List[Property] = None,
+        relations: List[Relation] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            spg_type_enum=SpgTypeEnum.Index,
+            name=name,
+            name_zh=name_zh,
+            desc=desc,
+            properties=properties,
+            relations=relations,
+            parent_type_name=parent_type_name,
+            **kwargs,
+        )
+
+
 class ConceptType(BaseSpgType):
     """ConceptType Model."""
 

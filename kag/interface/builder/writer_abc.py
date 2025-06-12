@@ -33,9 +33,5 @@ class SinkWriterABC(BuilderComponent, ABC):
         return SubGraph
 
     @property
-    def ckpt_subdir(self):
-        return "writer"
-
-    @property
     def inherit_input_key(self):
         return True

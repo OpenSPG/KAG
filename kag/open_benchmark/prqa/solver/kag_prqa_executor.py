@@ -78,7 +78,7 @@ class PrqaExecutor(ExecutorABC):
             model=self.llm.model,
             messages=messages,
             tools=cypher_tools,
-            tool_choice={"type": "function", "function": {"name": "run_cypher_query"}}
+            tool_choice={"type": "function", "function": {"name": "run_cypher_query"}},
         )
         return response.choices[0].message
 
@@ -253,9 +253,9 @@ class PrqaExecutor(ExecutorABC):
 
                     props = node.get("properties", {})
                     node_name = (
-                            props.get("name")
-                            or props.get("title")
-                            or f"未知节点_{node_id[-4:]}"
+                        props.get("name")
+                        or props.get("title")
+                        or f"未知节点_{node_id[-4:]}"
                     )
                     node_map[node_id] = node_name
 

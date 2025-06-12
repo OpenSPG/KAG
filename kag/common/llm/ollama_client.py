@@ -15,6 +15,7 @@ import logging
 from ollama import Client, AsyncClient
 
 from kag.interface import LLMClient
+from kag.interface.solver.reporter_abc import do_report
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -85,10 +86,11 @@ class OllamaClient(LLMClient):
         """
         # Call the model with the given prompt and return the response
         tools = kwargs.get("tools", None)
-        reporter = kwargs.get("reporter", None)
-        segment_name = kwargs.get("segment_name", None)
-        tag_name = kwargs.get("tag_name", None)
+        # reporter = kwargs.get("reporter", None)
+        # segment_name = kwargs.get("segment_name", None)
+        # tag_name = kwargs.get("tag_name", None)
         messages = kwargs.get("messages", None)
+        token_meter = LLMClient.get_token_meter()
         if messages is None:
             if image_url:
                 messages = [
@@ -112,6 +114,9 @@ class OllamaClient(LLMClient):
             stream=self.stream,
             tools=tools,
         )
+
+        usages = []
+
         if not self.stream:
             # reasoning_content = getattr(
             #     response.choices[0].message, "reasoning_content", None
@@ -121,6 +126,12 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
+            usages.append(
+                (
+                    response["eval_count"],
+                    response["prompt_eval_count"],
+                )
+            )
             rsp = response["message"]["content"]
             tool_calls = response["message"].get("tool_calls", None)
         else:
@@ -132,6 +143,10 @@ class OllamaClient(LLMClient):
             for chunk in response:
                 content = chunk["message"]["content"]
                 if content is not None:
+                    usages.append(
+                        chunk["eval_count"],
+                        chunk["prompt_eval_count"],
+                    )
                     if report_enabled:
                         # If we need to skip the first newline
                         if skip_next_newline:
@@ -141,13 +156,7 @@ class OllamaClient(LLMClient):
                             else:
                                 skip_next_newline = False  # Turn off the flag even if it's not a newline
                         rsp += content
-                        if reporter:
-                            reporter.add_report_line(
-                                segment_name,
-                                tag_name,
-                                rsp,
-                                status="RUNNING",
-                            )
+                        do_report(rsp, "RUNNING", **kwargs)
                     else:
                         if content == "</think>":
                             report_enabled = True
@@ -155,15 +164,15 @@ class OllamaClient(LLMClient):
         # Remove <think> </think> blocks from the response
         rsp = self.remove_think_blocks(rsp)
 
-        if reporter:
-            reporter.add_report_line(
-                segment_name,
-                tag_name,
-                rsp,
-                status="FINISH",
+        if token_meter and len(usages) > 0 and usages[-1]:
+            token_meter.update(
+                response["eval_count"],
+                response["prompt_eval_count"],
+                response["eval_count"] + response["prompt_eval_count"],
             )
+        do_report(rsp, "FINISH", **kwargs)
         if tools and tool_calls:
-            return response.message
+            return response["message"]
         return rsp
 
     async def acall(self, prompt: str = "", image_url: str = None, **kwargs):

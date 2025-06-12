@@ -10,7 +10,9 @@ from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
 
 from kag.solver.utils import init_prompt_with_fallback
-from kag.tools.algorithm_tool.graph_retriever.path_select.path_select import PathSelect
+from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select import (
+    PathSelect,
+)
 
 logger = logging.getLogger()
 

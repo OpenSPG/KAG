@@ -11,6 +11,9 @@
 # or implied.
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Union
+
+from kag.common.utils import generate_hash_id
 from kag.interface import (
     ReaderABC,
     MappingABC,
@@ -22,10 +25,6 @@ from kag.interface import (
     KAGBuilderChain,
     ExternalGraphLoaderABC,
 )
-
-from kag.common.utils import generate_hash_id
-from kag.builder.model.chunk import Chunk
-from kag.builder.model.sub_graph import SubGraph
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         self,
         reader: ReaderABC,
         splitter: SplitterABC = None,
-        extractor: ExtractorABC = None,
+        extractor: Union[ExtractorABC, List[ExtractorABC]] = None,
         vectorizer: VectorizerABC = None,
         writer: SinkWriterABC = None,
         post_processor: PostProcessorABC = None,
@@ -97,7 +96,7 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
         Args:
             reader (ReaderABC): The reader component to be used.
             splitter (SplitterABC): The splitter component to be used.
-            extractor (ExtractorABC): The extractor component to be used.
+            extractor (Union[ExtractorABC, List[ExtractorABC]]): The extractor component to be used.
             vectorizer (VectorizerABC): The vectorizer component to be used.
             writer (SinkWriterABC): The writer component to be used.
             post_processor (PostProcessorABC, optional): The post-processor component to be used. Defaults to None.
@@ -134,26 +133,6 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
             List: The final output from the builder chain.
         """
 
-        def collect_reader_outputs(data):
-            chunks = []
-            subgraphs = []
-
-            def collect(data):
-                if isinstance(data, Chunk):
-                    chunks.append(data)
-                elif isinstance(data, SubGraph):
-                    subgraphs.append(data)
-                elif isinstance(data, (tuple, list)):
-                    for item in data:
-                        collect(item)
-                else:
-                    logger.debug(
-                        f"expect Chunk and SubGraph nested in tuple and list; found {data.__class__}"
-                    )
-
-            collect(data)
-            return chunks, subgraphs
-
         def execute_node(node, node_input, **kwargs):
             if not isinstance(node_input, list):
                 node_input = [node_input]
@@ -177,32 +156,11 @@ class DefaultUnstructuredBuilderChain(KAGBuilderChain):
                 flow_data = execute_node(node, flow_data, key=input_key)
             return flow_data
 
-        def write_outline_subgraph(subgraph):
-            flow_data = [subgraph]
-            for node in [
-                self.vectorizer,
-                self.post_processor,
-                self.writer,
-            ]:
-                if node is None:
-                    continue
-                flow_data = execute_node(node, flow_data)
-
         reader_output = self.reader.invoke(input_data, key=generate_hash_id(input_data))
-        chunks, subgraphs = collect_reader_outputs(reader_output)
 
-        if subgraphs:
-            if self.splitter is not None:
-                logger.debug(
-                    "when reader outputs SubGraph, splitter in chain is ignored; you can split chunks in reader"
-                )
-            for subgraph in subgraphs:
-                write_outline_subgraph(subgraph)
-            splitter_output = chunks
-        else:
-            splitter_output = []
-            for chunk in reader_output:
-                splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
+        splitter_output = []
+        for chunk in reader_output:
+            splitter_output.extend(self.splitter.invoke(chunk, key=chunk.hash_key))
 
         processed_chunk_keys = kwargs.get("processed_chunk_keys", set())
         filtered_chunks = []
