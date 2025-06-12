@@ -46,7 +46,6 @@ class TokenMeter:
             return None
         tmp_dir = tempfile.gettempdir()
         path = os.path.join(tmp_dir, f"token-meter-task-{self.task_id}.json")
-        print(f"=======================ckpt_file path:{path}")
         return path
 
     def load(self):
@@ -75,13 +74,10 @@ class TokenMeter:
     def update(
         self, completion_tokens: int = 0, prompt_tokens: int = 0, total_tokens: int = 0
     ):
-        old_value = self.to_dict()
         self.load()
         self.completion_tokens += completion_tokens
         self.prompt_tokens += prompt_tokens
         self.total_tokens += total_tokens
-        new_value = self.to_dict()
-        print(f"token meter update from {old_value} to: {new_value}")
         self.dump()
 
     def to_dict(self):
