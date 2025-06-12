@@ -67,15 +67,73 @@ Answer:
 }
 """
 
+    template_zh = """
+问题字段是用户的问题，Context是从知识库中检索到的可能包含问题答案的一批文章。请仔细分析问题和每个上下文，返回最多5个可能包含问题答案的上下文，并回答问题。如果你认为所有检索到的上下文都与问题无关，请返回空列表并将答案设置为UNKNOWN。返回格式参考示例：
+
+问题:
+谁是《Hello Love》的演唱者？
+
+上下文:
+{'idx': 0,
+ 'content': '"Hello Love"是汉克·斯诺(Hank Snow)1974年的单曲。"Hello Love"是斯诺在美国乡村单曲榜上的第七首也是最后一首冠军单曲，也是他十二年来的第一首冠军单曲。这首单曲在榜首停留了一周，总共在榜上停留了十周。',
+}
+    
+{'idx': 1,
+   'content': '"Your Love Is a Song"是由另类摇滚乐队Switchfoot创作和录制的。它首先作为单曲在澳大利亚的iTunes商店发布，成为该乐队第七张录音室专辑"Hello Hurricane"的第三首电台单曲。'
+}
+    
+{'idx': 2,
+   'content': '"Will to Love"是尼尔·杨(Neil Young)创作的一首歌曲，首次收录在他1977年的专辑"American Stars \'N Bars"中。"Will to Love"发行了宣传单曲，B面是"Cortez the Killer"的现场演出版本。'
+}
+    
+答案:
+{
+  "context": [0],
+  "answer": "汉克·斯诺(Hank Snow)"
+}
+
+    
+问题:
+哪个州在田纳西州的东边？
+    
+上下文:
+{'idx': 0,
+   'content': '2013年，Ulta在美国开设了125家门店，使其门店总数达到675家。他们还宣布计划在2014年底前再开设100家门店。截至2018年8月4日，Ulta在49个州和哥伦比亚特区经营着1,124家门店。大部分Ulta Beauty门店位于东海岸地区，不过加利福尼亚州也有大量公司自营门店。',    
+}
+    
+{'idx': 1,
+   'content': '她出生并成长在瑞典斯德哥尔摩的索伦图纳，但多年来一直居住在哥德堡。玛雅通过安妮卡·诺林的乐队Hello Saferide而为人所知，她在其中担任和声歌手。她的独唱生涯始于2007年初，当时歌曲"And I Found This Boy"开始在瑞典电台大量播放。这首单曲之后发行了专辑"Though, I\'m Just Me"和单曲"Gothenburg"。2007年夏天，她在瑞典各地巡演，参加了Allsång på Skansen、Hultsfredsfestivalen、Peace & Love和Arvika Festival等演出。2010年，她首次发行瑞典语材料，推出了EP"Dröm bort mig igen"。',    
+}
+    
+{'idx': 2,
+   'content': 'Publix Super Markets, Inc.，通常被称为Publix，是一家员工持股的美国连锁超市，总部位于佛罗里达州莱克兰。由乔治·W·詹金斯于1930年创立，Publix是一家完全由现任和前任员工拥有的私人公司。它被认为是世界上最大的员工持股公司。Publix在美国东南部运营，在佛罗里达州(785家)、乔治亚州(186家)、阿拉巴马州(68家)、南卡罗来纳州(58家)、田纳西州(42家)、北卡罗来纳州(35家)和弗吉尼亚州(8家)都有门店。',    
+}
+    
+答案:
+{
+  "context": [],
+  "answer": "UNKNOWN"
+}
+"""
+
     def build_prompt(self, variables: Dict) -> str:
         question = variables["question"]
         context = variables["context"]
+
         context = "\n".join([str(x) for x in context])
-        return f"{self.template_en}\nQuestion:\n{question}\nContext:\n{context}"
+
+        if self.language == "zh":
+            return f"{self.template_zh}\n问题:\n{question}\n上下文:\n{context}"
+        else:
+            return f"{self.template_en}\nQuestion:\n{question}\nContext:\n{context}"
 
     def parse_response(self, response: str, **kwargs):
-        if isinstance(response, str) and "Answer:" in response:
-            response = response.split("Answer:")[1]
+        if self.language == "zh":
+            if isinstance(response, str) and "答案:" in response:
+                response = response.split("答案:")[1]
+        else:
+            if isinstance(response, str) and "Answer:" in response:
+                response = response.split("Answer:")[1]
         if isinstance(response, str):
             response = json.loads(response)
 
