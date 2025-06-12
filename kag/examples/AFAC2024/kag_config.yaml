@@ -2,7 +2,7 @@
 openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: 
+  api_key: sk-
   model: qwen2.5-7b-instruct
   enable_check: false
   max_tokens: 8192
@@ -11,7 +11,7 @@ openie_llm: &openie_llm
 ner_llm:
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: 
+  api_key: sk-
   model: qwen2.5-7b-instruct
   enable_check: false
   max_tokens: 1024
@@ -19,13 +19,13 @@ ner_llm:
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: 
+  api_key: sk-
   model: qwen2.5-72b-instruct
   enable_check: false
   max_tokens: 1024
 
 vectorize_model: &vectorize_model
-  api_key: 
+  api_key: sk-
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -179,18 +179,43 @@ retriever_executor_rerank: &retriever_executor_rerank
   type: long_context_reasoner
   llm: *chat_llm
   retrievers:
-#    - *r1
-#    - *r2
+    - *r1
+    - *r2
     - *r3
     - *r4
-#    - *r5
+    - *r5
   merger:
     type: kag_merger
   context_select_llm: *chat_llm
   context_select_prompt:
     type: context_select_prompt
+  vectorize_model: *vectorize_model
 
-kag_solver_pipeline:
+kag_hybrid_executor: &kag_hybrid_executor_conf
+  type: kag_hybrid_executor
+  lf_rewriter:
+    type: kag_spo_lf
+    llm_client: *chat_llm
+    lf_trans_prompt:
+      type: default_spo_retriever_decompose
+    vectorize_model: *vectorize_model
+  flow: |
+    kg_cs->kg_fr->kag_merger;rc->kag_merger
+
+
+kag_output_executor: &kag_output_executor_conf
+  type: kag_output_executor
+
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
+
+
+py_code_based_math_executor: &py_code_based_math_executor_conf
+  type: py_code_based_math_executor
+  llm: *chat_llm
+
+
+kag_solver_pipeline_tc:
   type: kag_static_pipeline
   planner:
     type: kag_afac_static_planner
@@ -207,3 +232,25 @@ kag_solver_pipeline:
     generated_prompt:
       type: default_multi_hop_generator
 #------------kag-solver configuration end----------------#
+
+
+kag_solver_pipeline:
+  type: kag_iterative_pipeline
+  planner:
+    type: kag_iterative_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: default_thought_iterative_planning
+    rewrite_prompt:
+      type: default_query_rewrite
+  executors:
+    - *retriever_executor_rerank
+    # - *kag_hybrid_executor_conf
+    - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
+    - *kag_output_executor_conf
+  generator:
+    type: llm_generator_with_thought
+    llm_client: *chat_llm
+    generated_prompt:
+      type: default_multi_hop_generator
