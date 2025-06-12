@@ -20,10 +20,10 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils impo
     generate_step_query,
 )
 from kag.solver.utils import init_prompt_with_fallback
-from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
+from kag.common.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
     VectorChunkRetriever,
 )
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.common.tools.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 

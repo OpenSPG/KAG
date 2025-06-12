@@ -25,6 +25,7 @@ class SpgTypeEnum(str, Enum):
     Basic = "BASIC_TYPE"
     Standard = "STANDARD_TYPE"
     Entity = "ENTITY_TYPE"
+    Index = "INDEX_TYPE"
     Event = "EVENT_TYPE"
     Concept = "CONCEPT_TYPE"
 
@@ -589,7 +590,7 @@ class BaseSpgType(ABC):
     """Base class of `ConceptType`, `EntityType`, `EventType`, `StandardType`, `BasicType`."""
 
     _rest_model: Union[
-        rest.ConceptType, rest.EntityType, rest.EventType, rest.StandardType
+        rest.ConceptType, rest.EntityType, rest.IndexType, rest.EventType, rest.StandardType
     ]
 
     def __init__(

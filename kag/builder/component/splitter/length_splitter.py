@@ -155,9 +155,16 @@ class LengthSplitter(BaseTableSplitter):
 
         output = []
         for idx, sentences in enumerate(splitted):
+            if idx > 0:
+                new_id = generate_hash_id(f"{org_chunk.id}#{idx}")
+                new_name = f"{org_chunk.name}_split_{idx}"
+            else:
+                new_id = org_chunk.id
+                new_name = org_chunk.name
+
             chunk = Chunk(
-                id=generate_hash_id(f"{org_chunk.id}#{idx}"),
-                name=f"{org_chunk.name}_split_{idx}",
+                id=new_id,
+                name=new_name,
                 content=sep.join(sentences),
                 type=org_chunk.type,
                 chunk_size=chunk_size,

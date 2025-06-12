@@ -12,7 +12,8 @@ import asyncio
 import logging
 import argparse
 import os
-
+import time
+from kag.interface import LLMClient
 from kag.common.registry import import_modules_from_path
 
 from kag.builder.runner import BuilderChainRunner
@@ -21,14 +22,19 @@ logger = logging.getLogger(__name__)
 
 
 async def buildKB(file_path):
+    start = time.time()
     from kag.common.conf import KAG_CONFIG
 
     runner = BuilderChainRunner.from_config(
         KAG_CONFIG.all_config["kag_builder_pipeline"]
     )
     await runner.ainvoke(file_path)
-
-    logger.info(f"\n\nbuildKB successfully for {file_path}\n\n")
+    end = time.time()
+    token_meter = LLMClient.get_token_meter()
+    stat = token_meter.to_dict()
+    logger.info(
+        f"\n\nbuildKB successfully for {file_path}\n\nTimes cost:{end-start}s\n\nTokens cost: {stat}"
+    )
 
 
 if __name__ == "__main__":

@@ -101,9 +101,22 @@ class EvalQa:
         total_metrics = {
             "processNum": len(metrics_list),
         }
+        recall_metrics = {}
+        hit3 = 0.0
+        hit5 = 0.0
+        hitall = 0.0
+        for metric in metrics_list:
+            recall_data = metric["recall"]
+            hit3 += recall_data["recall_top3"]
+            hit5 += recall_data["recall_top5"]
+            hitall += recall_data["recall_all"]
+        recall_metrics["hit3"] = hit3 / len(metrics_list)
+        recall_metrics["hit5"] = hit5 / len(metrics_list)
+        recall_metrics["hitall"] = hitall / len(metrics_list)
         if len(metrics_list) == 0:
             return total_metrics
         res_metrics = {}
+        res_metrics["recall"] = recall_metrics
         for metric in metrics_list:
             for k, v in metric.items():
                 if not isinstance(v, int) and not isinstance(v, float):
@@ -159,8 +172,8 @@ class EvalQa:
         return res_qa, metrics_list
 
     async def async_write_json(self, file_path, data):
-        async with aiofiles.open(file_path, "w") as f:
-            await f.write(json.dumps(data))
+        async with aiofiles.open(file_path, "w", encoding="utf-8", newline="\n") as f:
+            await f.write(json.dumps(data, ensure_ascii=False))
 
     def load_data(self, file_path):
         """
@@ -205,6 +218,7 @@ def do_main(qa_file_path, thread_num, upper_limit, eval_obj, collect_file=None):
     if collect_file:
         with open(collect_file, "a") as f:
             f.writelines("\n" + metrics_lines)
+    return result
 
 
 def running_paras():

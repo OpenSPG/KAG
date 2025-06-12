@@ -16,6 +16,7 @@ from typing import List
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
+from knext.schema.model.base import SpgTypeEnum
 
 
 @PromptABC.register("default_ner")
@@ -148,9 +149,15 @@ class OpenIENERPrompt(PromptABC):
 
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
-        self.schema = SchemaClient(
+        project_schema = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
-        ).extract_types()
+        ).load()
+        self.schema = []
+        for name, value in project_schema.items():
+            # filter out index types
+            if value.spg_type_enum != SpgTypeEnum.Index:
+                self.schema.append(name)
+
         self.template = Template(self.template).safe_substitute(
             schema=json.dumps(self.schema)
         )

@@ -24,11 +24,11 @@ from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.utils impo
     get_all_docs_by_id,
 )
 
-from kag.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
+from kag.common.tools.algorithm_tool.chunk_retriever.vector_chunk_retriever import (
     VectorChunkRetriever,
 )
-from kag.tools.graph_api.graph_api_abc import GraphApiABC
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
+from kag.common.tools.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 
@@ -133,7 +133,7 @@ class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
                     title=doc_maps[doc_id]["name"].replace("_split_0", ""),
                     chunk_id=doc_id,
                     score=doc_score,
-                    properties=doc_maps[doc_id]
+                    properties=doc_maps[doc_id],
                 )
             )
         if reporter:

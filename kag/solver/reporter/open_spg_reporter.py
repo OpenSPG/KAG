@@ -30,20 +30,27 @@ logger = logging.getLogger()
 def extract_ids(text):
     return re.findall(r'<reference id="([^"]+)"', text)
 
-def generate_ref_doc_set(tag_name, ref_type, retrieved_data_list: list, refer_ids: list):
+
+def generate_ref_doc_set(
+    tag_name, ref_type, retrieved_data_list: list, refer_ids: list
+):
     refer = []
     refer_doc_maps = {}
     for d in retrieved_data_list:
         refer_doc_maps[d["id"]] = RefDoc(
-                id=d["id"],
-                content=d["content"],
-                document_id=d["document_id"],
-                document_name=d["document_name"],
-                url=d.get("url", None)
-            )
-    for refer_id in refer_ids:
-        if refer_id in refer_doc_maps:
-            refer.append(refer_doc_maps[refer_id])
+            id=d["id"],
+            content=d["content"],
+            document_id=d["document_id"],
+            document_name=d["document_name"],
+            url=d.get("url", None),
+        )
+    if refer_ids is not None:
+        for refer_id in refer_ids:
+            if refer_id in refer_doc_maps:
+                refer.append(refer_doc_maps[refer_id])
+    else:
+        for v in refer_doc_maps.values():
+            refer.append(v)
     return RefDocSet(id=tag_name, type=ref_type, info=refer)
 
 
@@ -146,6 +153,7 @@ class OpenSPGReporter(ReporterABC):
         self.report_record = []
         self.report_sub_segment = {}
         self.thinking_enabled = kwargs.get("thinking_enabled", True)
+        self.report_all_references = kwargs.get("report_all_references", False)
         self.word_mapping = {
             "kag_merger_digest_failed": {
                 "zh": "未检索到相关信息。",
@@ -494,6 +502,7 @@ Rewritten question:\n{content}
             report_content = self.generate_content(
                 report_id, tag_template, report_content, kwargs, graph_list
             )
+
             def generate_sub_segment_content(cur_report_id, cur_report_content):
                 generated_content = cur_report_content
                 sub_segments = self.report_sub_segment.get(cur_report_id, [])
@@ -512,13 +521,18 @@ Rewritten question:\n{content}
                         content_params=sub_kwargs,
                         graph_list=graph_list,
                     )
-                    processed_sub_segment_content = generate_sub_segment_content(sub_segment_data["report_id"], sub_segment_report)
+                    processed_sub_segment_content = generate_sub_segment_content(
+                        sub_segment_data["report_id"], sub_segment_report
+                    )
                     tag_replace_str = f"<tag_name>{sub_segment}</tag_name>"
                     generated_content = generated_content.replace(
                         tag_replace_str, processed_sub_segment_content
                     )
                 return generated_content
-            processed_report_content = generate_sub_segment_content(report_data["report_id"], report_content)
+
+            processed_report_content = generate_sub_segment_content(
+                report_data["report_id"], report_content
+            )
 
             think += processed_report_content + "\n\n"
             thinker_start_time = self.report_segment_time.get(
@@ -566,6 +580,8 @@ Rewritten question:\n{content}
         refer_ids = []
         if answer:
             refer_ids = list(set(extract_ids(answer)))
+        if self.report_all_references:
+            refer_ids = None
         reference = self.process_reference(reference_reports, refer_ids)
 
         content = StreamData(

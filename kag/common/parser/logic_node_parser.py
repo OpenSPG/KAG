@@ -96,6 +96,7 @@ class GetSPONode(LogicNode):
         params = [f"{k}={v}" for k, v in self.args.items() if k in ["s", "p", "o"]]
         params_str = ",".join(params)
         return f"{self.operator}({params_str})"
+
     def to_dsl(self):
         raise NotImplementedError("Subclasses should implement this method.")
 
@@ -343,6 +344,7 @@ class ParseLogicForm:
                     for o_type in o_type_set:
                         type_info = TypeInfo()
                         type_info.un_std_entity_type = p_unstd_type
+
                         def check_type_is_exists(type_name):
                             if type_name is None or type_name == "Entity":
                                 return False
@@ -355,35 +357,50 @@ class ParseLogicForm:
                                     o_candis_set = self.schema.sp_o[sp_index]
                                     for candis in o_candis_set:
                                         spo_zh = f"{s_type.un_std_entity_type}_{p_unstd_type}_{candis}"
-                                        type_info.std_entity_type = self.schema.get_spo_with_p(
-                                            self.schema.spo_zh_en[spo_zh]
+                                        type_info.std_entity_type = (
+                                            self.schema.get_spo_with_p(
+                                                self.schema.spo_zh_en[spo_zh]
+                                            )
                                         )
                                         break
-                            if not type_info.std_entity_type and not check_type_is_exists(s_type.std_entity_type):
+                            if (
+                                not type_info.std_entity_type
+                                and not check_type_is_exists(s_type.std_entity_type)
+                            ):
                                 op_index = (o_type.un_std_entity_type, p_unstd_type)
                                 if op_index in self.schema.op_s:
                                     s_candis_set = self.schema.op_s[op_index]
                                     for candis in s_candis_set:
                                         spo_zh = f"{candis}_{p_unstd_type}_{o_type.un_std_entity_type}"
-                                        type_info.std_entity_type = self.schema.get_spo_with_p(
-                                            self.schema.spo_zh_en[spo_zh]
+                                        type_info.std_entity_type = (
+                                            self.schema.get_spo_with_p(
+                                                self.schema.spo_zh_en[spo_zh]
+                                            )
                                         )
                                         break
 
                             if (
-                                    not type_info.std_entity_type
-                                    and check_type_is_exists(s_type.std_entity_type)
-                                    and check_type_is_exists(o_type.std_entity_type)
+                                not type_info.std_entity_type
+                                and check_type_is_exists(s_type.std_entity_type)
+                                and check_type_is_exists(o_type.std_entity_type)
                             ):
-                                so_index = (s_type.un_std_entity_type, o_type.un_std_entity_type)
+                                so_index = (
+                                    s_type.un_std_entity_type,
+                                    o_type.un_std_entity_type,
+                                )
                                 if so_index not in self.schema.so_p:
-                                    so_index = (o_type.un_std_entity_type, s_type.un_std_entity_type)
+                                    so_index = (
+                                        o_type.un_std_entity_type,
+                                        s_type.un_std_entity_type,
+                                    )
                                 candis_set = self.schema.so_p[so_index]
                                 for p_candis in candis_set:
                                     if p_candis == p_unstd_type:
                                         spo_zh = f"{s_type.un_std_entity_type}_{p_candis}_{o_type.un_std_entity_type}"
-                                        type_info.std_entity_type = self.schema.get_spo_with_p(
-                                            self.schema.spo_zh_en[spo_zh]
+                                        type_info.std_entity_type = (
+                                            self.schema.get_spo_with_p(
+                                                self.schema.spo_zh_en[spo_zh]
+                                            )
                                         )
 
                             if not type_info.std_entity_type:
@@ -392,13 +409,17 @@ class ParseLogicForm:
                                     s_type.std_entity_type, []
                                 )
                                 if s_attr_zh_en and p_unstd_type in s_attr_zh_en:
-                                    type_info.std_entity_type = s_attr_zh_en[p_unstd_type]
+                                    type_info.std_entity_type = s_attr_zh_en[
+                                        p_unstd_type
+                                    ]
                                 if not type_info.std_entity_type:
                                     o_attr_zh_en = self.schema.attr_zh_en_by_label.get(
                                         o_type.std_entity_type, []
                                     )
                                     if o_attr_zh_en and p_unstd_type in o_attr_zh_en:
-                                        type_info.std_entity_type = o_attr_zh_en[p_unstd_type]
+                                        type_info.std_entity_type = o_attr_zh_en[
+                                            p_unstd_type
+                                        ]
 
                         if type_info.std_entity_type:
                             p_std_types.append(type_info)
@@ -567,6 +588,7 @@ class ParseLogicForm:
         type_info.un_std_entity_type = type_name
         return type_info
 
+
 # def extract_steps_and_actions(text):
 #     # 忽略 Step 和 Action 的大小写，支持各种格式如 step1、STEP2、Action3 等
 #     pattern = re.compile(
@@ -594,12 +616,12 @@ class ParseLogicForm:
 def extract_steps_and_actions(text):
     # 提取 Step 和紧跟的 Action
     step_pattern = re.compile(
-        r'([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*[Aa][Cc][Tt][Ii][Oo][Nn]\d+:|\s*[Ss][Tt][Ee][Pp]\d+:|$)',
-        re.DOTALL
+        r"([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*[Aa][Cc][Tt][Ii][Oo][Nn]\d+:|\s*[Ss][Tt][Ee][Pp]\d+:|$)",
+        re.DOTALL,
     )
     action_pattern = re.compile(
-        r'([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*[Ss][Tt][Ee][Pp]\d+:|$)',
-        re.DOTALL
+        r"([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*[Ss][Tt][Ee][Pp]\d+:|$)",
+        re.DOTALL,
     )
 
     steps = []
@@ -616,7 +638,6 @@ def extract_steps_and_actions(text):
         actions.append((action_name, action_content))
 
     # 将 Step 和 Action 按位置对应起来
-    results = []
     for i in range(len(steps)):
         step_name, step_content = steps[i]
         if i < len(actions):
@@ -626,6 +647,8 @@ def extract_steps_and_actions(text):
         return step_content, step_name, action_content, action_name
 
     return None, None, None, None
+
+
 def parse_logic_form_with_str(response):
     logger.debug(f"logic form:{response}")
     _output_string = response.replace("：", ":")
@@ -635,7 +658,7 @@ def parse_logic_form_with_str(response):
     current_sub_query = ""
     for line in _output_string.split("\n"):
         if line.startswith("Step"):
-            step_query, _, action, _= extract_steps_and_actions(line)
+            step_query, _, action, _ = extract_steps_and_actions(line)
             if step_query is not None:
                 sub_querys.append(step_query)
                 current_sub_query = step_query.strip()
@@ -644,7 +667,7 @@ def parse_logic_form_with_str(response):
             if action is not None:
                 logic_forms.append(action)
         elif line.startswith("Action"):
-            logic_forms_regex = re.search("Action\d+:(.*)", line)
+            logic_forms_regex = re.search(r"Action\d+:(.*)", line)
             if logic_forms_regex:
                 logic_forms.append(logic_forms_regex.group(1))
                 if len(logic_forms) - len(sub_querys) == 1:
@@ -655,9 +678,10 @@ def parse_logic_form_with_str(response):
         )
     return sub_querys, logic_forms
 
+
 if __name__ == "__main__":
-    d = 'Step1:  What continent is Panama in? Action1:Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) '
-    d = 'Step1:  What continent is Panama in? Action1: Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) '
+    d = "Step1:  What continent is Panama in? Action1:Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) "
+    d = "Step1:  What continent is Panama in? Action1: Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) "
     # d = 'Step1:  What continent is Panama in? '
 
     print(extract_steps_and_actions(d))

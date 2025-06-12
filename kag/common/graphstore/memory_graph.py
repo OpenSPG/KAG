@@ -27,7 +27,7 @@ from kag.interface.solver.model.one_hop_graph import (
     Prop,
 )
 from kag.common.checkpointer import CheckpointerManager
-from kag.tools.graph_api.model.table_model import TableData
+from kag.common.tools.graph_api.model.table_model import TableData
 from knext.schema.client import CHUNK_TYPE
 
 logger = logging.getLogger()
@@ -232,7 +232,9 @@ class MemoryGraph:
         entity.prop = Prop.from_dict(attributes, None, None)
         entity.biz_id = attributes.get("id", biz_id)
         entity.name = attributes.get("name", "")
-        entity.description = attributes.get('content', attributes.get("description", attributes.get("desc", "")))
+        entity.description = attributes.get(
+            "content", attributes.get("description", attributes.get("desc", ""))
+        )
         entity.type = attributes.get("label", label)
         entity.name_vec = attributes.get("_name_vector")
         entity.content_vec = attributes.get("_content_vector")
@@ -372,7 +374,9 @@ class MemoryGraph:
             try:
                 vectors = label_nodes.get_attribute_values(vector_field_name)
             except Exception as e:
-                logger.warning(f"get_cached_tensor index:{vector_field_name} not found in {label}")
+                logger.error(
+                    f"get_cached_tensor index:{vector_field_name} not found in {label} with:{e}"
+                )
                 return [], []
             filtered_nodes = []
             filtered_vectors = []
@@ -451,6 +455,7 @@ class MemoryGraph:
         :param kwargs: other optional arguments
         """
         try:
+
             def batch_cosine_similarity(v, M, require_norm=False):
                 if require_norm:
                     v_norm = torch.norm(v, dim=1, keepdim=True)
@@ -461,6 +466,7 @@ class MemoryGraph:
 
                 else:
                     return torch.matmul(M, v.T)
+
             if label == "Entity":
                 nodes = self._backend_graph.vs
             else:

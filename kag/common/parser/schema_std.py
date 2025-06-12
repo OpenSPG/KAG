@@ -15,7 +15,7 @@ from kag.interface.solver.model.one_hop_graph import (
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.common.config import LogicFormConfiguration
-from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.common.tools.search_api.search_api_abc import SearchApiABC
 
 logger = logging.getLogger()
 

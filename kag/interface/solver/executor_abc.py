@@ -14,7 +14,7 @@ import inspect
 from abc import ABC, abstractmethod
 
 from docstring_parser import parse
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from kag.common.registry import Registrable
 from kag.interface import Context
@@ -184,3 +184,9 @@ class ExecutorABC(Registrable):
     def report_content(self, reporter, segment, tag_id, content, status, **kwargs):
         if reporter:
             reporter.add_report_line(segment, tag_id, content, status, **kwargs)
+
+
+class RetrieverABC(ExecutorABC):
+    @staticmethod
+    def input_indices() -> List[str]:
+        return []

@@ -84,6 +84,10 @@ class SchemaConstraintExtractor(ExtractorABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
+    @staticmethod
+    def output_indices() -> List[str]:
+        return ["spo_graph_index", "chunk_index"]
+
     def _named_entity_recognition_llm(self, passage: str):
         ner_result = self.llm.invoke(
             {"input": passage}, self.ner_prompt, with_except=False
@@ -567,7 +571,7 @@ class SchemaConstraintExtractor(ExtractorABC):
         passage = title + "\n" + input.content
 
         out = []
-        entities, events = asyncio.gather(
+        entities, events = await asyncio.gather(
             self.anamed_entity_recognition(passage), self.aevent_extraction(passage)
         )
         named_entities = []
@@ -575,7 +579,7 @@ class SchemaConstraintExtractor(ExtractorABC):
             named_entities.append(
                 {"name": entity["name"], "category": entity["category"]}
             )
-        relations, std_entities = asyncio.gather(
+        relations, std_entities = await asyncio.gather(
             self.arelations_extraction(passage, named_entities),
             self.anamed_entity_standardization(passage, named_entities),
         )
