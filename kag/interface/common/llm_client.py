@@ -9,12 +9,15 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
+import json
+import tempfile
+
 try:
     from json_repair import loads
 except:
     from json import loads
 from dataclasses import dataclass
-from collections import defaultdict
 from threading import Lock
 from typing import Union, Dict, List, Any
 import logging
@@ -30,25 +33,43 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class TokenMeter:
+    task_id: str = "default-task[0]"
     completion_tokens: int = 0
     prompt_tokens: int = 0
     total_tokens: int = 0
 
+    @property
+    def ckpt_file(self):
+        tmp_dir = tempfile.gettempdir()
+        return os.path.join(tmp_dir, f"token-meter-task-{self.task_id}.json")
+
+    def load(self):
+        with open(self.ckpt_file, "r") as reader:
+            data = json.loads(reader.read())
+        self.completion_tokens = data["completion_tokens"]
+        self.prompt_tokens = data["prompt_tokens"]
+        self.total_tokens = data["total_tokens"]
+
+    def dump(self):
+        data = {}
+
+        data["completion_tokens"] = self.completion_tokens
+        data["prompt_tokens"] = self.prompt_tokens
+        data["total_tokens"] = self.total_tokens
+        with open(self.ckpt_file, "w") as writer:
+            writer.write(json.dumps(data))
+
     def update(
         self, completion_tokens: int = 0, prompt_tokens: int = 0, total_tokens: int = 0
     ):
+        self.load()
         self.completion_tokens += completion_tokens
         self.prompt_tokens += prompt_tokens
         self.total_tokens += total_tokens
-
-    def __add__(self, other: "TokenMeter") -> "TokenMeter":
-        return TokenMeter(
-            self.completion_tokens + other.completion_tokens,
-            self.prompt_tokens + other.prompt_tokens,
-            self.total_tokens + other.total_tokens,
-        )
+        self.dump()
 
     def to_dict(self):
+        self.load()
         return {
             "completion_tokens": self.completion_tokens,
             "prompt_tokens": self.prompt_tokens,
@@ -63,17 +84,26 @@ class TokenMeterFactory:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._meters = defaultdict(TokenMeter)
+            cls._instance._meters = {}
             cls._instance._lock = Lock()
         return cls._instance
 
     def get_meter(self, task_id: str) -> TokenMeter:
         with self._lock:
+            if task_id not in self._meters:
+                meter = TokenMeter(task_id=task_id)
+                self._meters[task_id] = meter
             return self._meters[task_id]
 
     def remove_meter(self, task_id: str):
         with self._lock:
             if task_id in self._meters:
+                ckpt_file = self._meters[task_id].ckpt_file
+                try:
+                    if os.path.exists(ckpt_file):
+                        os.remove(ckpt_file)
+                except:
+                    pass
                 del self._meters[task_id]
 
     def get_all_meters(self) -> Dict[str, TokenMeter]:
