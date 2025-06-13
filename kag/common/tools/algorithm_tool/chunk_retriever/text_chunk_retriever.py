@@ -56,7 +56,7 @@ class TextChunkRetriever(RetrieverABC):
             )
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput()
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
 
     def schema(self):
         return {

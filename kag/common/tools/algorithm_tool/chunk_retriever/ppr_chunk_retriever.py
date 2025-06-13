@@ -277,7 +277,7 @@ class PprChunkRetriever(RetrieverABC):
         pagerank_start_time = time.time()
         if len(matched_entities):
             pagerank_res = self.calculate_pagerank_scores(
-                matched_entities, top_k=top_k * 20
+                matched_entities, top_k=top_k
             )
         else:
             pagerank_res = {}
@@ -297,7 +297,7 @@ class PprChunkRetriever(RetrieverABC):
             pagerank_scores.items(), key=lambda item: item[1], reverse=True
         )
         if is_need_get_doc:
-            matched_docs = self.get_all_docs_by_id([query], sorted_scores, top_k * 20)
+            matched_docs = self.get_all_docs_by_id([query], sorted_scores, top_k)
         else:
             matched_docs = []
             for doc_id, score in sorted_scores:
@@ -311,7 +311,7 @@ class PprChunkRetriever(RetrieverABC):
                         properties=node,
                     )
                 )
-        return RetrieverOutput(chunks=matched_docs)
+        return RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=matched_docs)
 
     def schema(self):
         return {
