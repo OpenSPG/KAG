@@ -232,7 +232,9 @@ class MemoryGraph:
         entity.prop = Prop.from_dict(attributes, None, None)
         entity.biz_id = attributes.get("id", biz_id)
         entity.name = attributes.get("name", "")
-        entity.description = attributes.get('content', attributes.get("description", attributes.get("desc", "")))
+        entity.description = attributes.get(
+            "content", attributes.get("description", attributes.get("desc", ""))
+        )
         entity.type = attributes.get("label", label)
         entity.name_vec = attributes.get("_name_vector")
         entity.content_vec = attributes.get("_content_vector")

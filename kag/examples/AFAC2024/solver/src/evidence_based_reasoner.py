@@ -56,32 +56,30 @@ class EvidenceBasedReasoner(ExecutorABC):
         retrieved_docs = "\n\n".join(retrieved_docs)
 
         system_instruction = """
-As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
-        
-Docs:
+作为解决复杂多跳问题的专家，我需要您协助我解答一个多跳问题。该问题被拆分成多个简单的单跳查询，每个问题可能依赖于前面问题的答案，也就是说，问题正文可能包含诸如“{{i.output}}”之类的内容，表示第i个子问题的答案。我将为您提供一些关于如何解答这些初步问题（或答案本身）的见解，这些见解对于准确解决问题至关重要。此外，我将提供与当前问题相关的文本摘录，建议您仔细阅读并彻底理解。您的回复请以“思考：”开头，概述逐步得出结论的思考过程。最后以“答案：”结尾，以便清晰准确地给出答案，无需任何额外的注释。
+
+召回文档：
 Sylvester
-Sylvester is a name derived from the Latin adjective silvestris meaning ``wooded ''or`` wild'', which derives from the noun silva meaning ``woodland ''. Classical Latin spells this with i. In Classical Latin y represented a separate sound distinct from i, not a native Latin sound but one used in transcriptions of foreign words. After the Classical period y came to be pronounced as i. Spellings with Sylv - in place of Silv - date from after the Classical period.
+Sylvester 这个名字源自拉丁语形容词 silvestris，意为“树木繁茂的”或“荒野的”，而 silvestris 又源自名词 silva，意为“林地”。古典拉丁语将其拼写为 i。在古典拉丁语中，y 代表与 i​​ 不同的独立发音，这并非拉丁语的固有发音，而是用于转录外来词的发音。古典时期之后，y 的发音开始为 i。用 Sylv（代替 Silv）拼写的拼写可以追溯到古典时期之后。
 
-Stanton Township, Champaign County, Illinois
-Stanton Township is a township in Champaign County, Illinois, USA. As of the 2010 census, its population was 505 and it contained 202 housing units.
+伊利诺伊州香槟县斯坦顿镇
+斯坦顿镇是美国伊利诺伊州香槟县的一个镇区。根据 2010 年人口普查，其人口为 505 人，共有 202 个住房单元。
 
+纽约州蒙特贝罗
+蒙特贝罗（意大利语：美丽的山峰）是美国纽约州罗克兰县拉马波镇的一个建制村。它位于萨弗恩以北、希尔伯恩以东、韦斯利山以南、艾尔蒙特以西。2010 年人口普查时，人口为 4,526 人。
 
-Montebello, New York
-Montebello (Italian: "Beautiful mountain") is an incorporated village in the town of Ramapo, Rockland County, New York, United States. It is located north of Suffern, east of Hillburn, south of Wesley Hills, and west of Airmont. The population was 4,526 at the 2010 census
+埃里克·霍特
+埃里克·霍特（1987 年 2 月 16 日出生于纽约州蒙特贝罗）是一名美国足球运动员，目前是自由球员。
 
-Erik Hort
-Erik Hort (born February 16, 1987 in Montebello, New York) is an American soccer player who is currently a Free Agent.
+问题：
+0：公元 800 年，谁被加冕为西方皇帝？
+思考：提供的关于查理曼大帝的一段文字表明，他于 800 年被加冕为神圣罗马帝国皇帝。答案：查理曼大帝。
 
+1：{{0.output}} 后来被称为什么？
+思考：为了确定 {{0.oputput}}（查理曼大帝）后来被称为什么，我需要复习一下提供的关于查理曼大帝的文章。文章表明查理曼大帝也被称为“查理大帝”。答案：查理大帝
 
-Questions:
-0: Who was crowned emperor of the west in 800 CE?
-Thought: One of the provided passage on Charlemagne indicates that he was crowned Holy Roman Emperor in 800. Answer: Charlemagne.
-
-1: What was {{0.output}} later known as?
-Thought: To determine what {{0.oputput}} (Charlemagne) was later known as, I need to review the provided passage about Charlemagne. The passage indicates that Charlemagne was also known as "Charles the Great." Answer: Charles the Great
-
-2: What was the language from which the last name Sylvester originated during {{0.output}} era?
-Thought: The question asks about the origin of the last name Sylvester during the time of the person {{0.output}}, which was Charlemagne, whose reign was in the Early Middle Ages. The passage about the name Sylvester states that it is derived from Latin. Answer: Latin
+2：在 {{0.output}} 时代，Sylvester 这个姓氏起源于什么语言？
+思考：这个问题询问的是 {{0.output}} 查理曼大帝统治时期，Sylvester 这个姓氏的起源，当时正值中世纪早期。关于 Sylvester 这个名字的文章指出，它源于拉丁语。答案：拉丁语
 """
         query = f"{task.id}: {task.arguments['query']}"
         subqa = []

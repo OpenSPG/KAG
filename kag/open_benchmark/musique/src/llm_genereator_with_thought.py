@@ -11,7 +11,10 @@
 # or implied.
 # flake8: noqa
 import json
+from typing import Optional
+
 from kag.interface import GeneratorABC, LLMClient, PromptABC
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
@@ -35,11 +38,14 @@ class LLMGeneratorWithThought(GeneratorABC):
         )
 
     def invoke(self, query, context, **kwargs):
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         rerank_queries = []
         chunks = []
         thoughts = []
+        tasks = []
         for task in context.gen_task(False):
             print(f"task.result = {task.result}")
+            tasks.append(task.__str__())
             task_result = json.loads(task.result)
             subq = task_result["query"]
             suba = task_result["response"]
@@ -66,9 +72,27 @@ NOTE:
 3. If you believe the provided documents cannot answer the question, response with Answer: UNKNOWN.
 """
 
-        prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}Question: {query}"
+        prompt = f"{system_instruction}\n\nDocs:\n{refer_data}\nStep by Step Analysis:\n{thoughts}\nQuestion: {query}"
         response = self.llm_client(prompt)
         if "Answer: " not in response:
             raise ValueError(f"no answer found in response: {response}")
         answer = response.split("Answer:")[1].strip()
+
+        if reporter:
+            reporter.add_report_line("generator", "task_process", tasks, "FINISH")
+            reporter.add_report_line(
+                "generator", "final_generator_input", prompt, "FINISH"
+            )
+            reporter.add_report_line(
+                "generator_reference", "reference_chunk", rerank_chunks, "FINISH"
+            )
+            reporter.add_report_line(
+                "generator_reference_all",
+                "reference_ref_format",
+                refer_data,
+                "FINISH",
+            )
+            # reporter.add_report_line(
+            #     "generator_reference_graphs", "reference_graph", graph_data, "FINISH"
+            # )
         return answer

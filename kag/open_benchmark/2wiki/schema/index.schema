@@ -10,7 +10,7 @@ Chunk(文本块): IndexType
     content(内容): Text
       index: TextAndVector
   relations:
-    relateTo(关联文档): Doc
+    sourceChunk(关联文档): Document
 
 Summary(摘要): IndexType
   properties:
