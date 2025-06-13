@@ -176,10 +176,18 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
                     if index_type:
                         if index_type == IndexTypeEnum.Text:
                             pass
-                        elif index_type in (IndexTypeEnum.Vector, IndexTypeEnum.TextAndVector):
+                        elif index_type in (
+                            IndexTypeEnum.Vector,
+                            IndexTypeEnum.TextAndVector,
+                        ):
                             self.create_vector_index(label, property_key)
-                        elif index_type in (IndexTypeEnum.SparseVector, IndexTypeEnum.TextAndSparseVector):
-                            logger.info(f"Neo4j doesn't support sparse vector index: {index_type}")
+                        elif index_type in (
+                            IndexTypeEnum.SparseVector,
+                            IndexTypeEnum.TextAndSparseVector,
+                        ):
+                            logger.info(
+                                f"Neo4j doesn't support sparse vector index: {index_type}"
+                            )
                         else:
                             logger.info(f"Undefined IndexTypeEnum {index_type}")
         labels, property_keys = self._collect_text_index_info(schema_types)
@@ -202,7 +210,11 @@ class Neo4jClient(GraphStore, metaclass=SingletonMeta):
                         property_key == "name"
                         or index_type
                         and index_type
-                        in (IndexTypeEnum.Text, IndexTypeEnum.TextAndVector, IndexTypeEnum.TextAndSparseVector)
+                        in (
+                            IndexTypeEnum.Text,
+                            IndexTypeEnum.TextAndVector,
+                            IndexTypeEnum.TextAndSparseVector,
+                        )
                     ):
                         label_property_keys[property_key] = True
                 if label_property_keys:

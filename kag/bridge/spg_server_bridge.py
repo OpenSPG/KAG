@@ -17,9 +17,7 @@ import kag.interface as interface
 from kag.interface.common.llm_client import LLMCallCcontext, TokenMeterFactory
 from kag.common.conf import KAGConstants, init_env
 from kag.indexer.kag_index_manager import KAGIndexManager
-from tempfile import TemporaryDirectory
 
-from knext.schema.marklang.schema_ml import SPGSchemaMarkLang
 
 import logging
 
@@ -92,12 +90,12 @@ class SPGServerBridge:
             logger.error(f"===================\n{msg}===================")
             raise e
 
-    def run_component(self, component_name, component_config, input_data, task_id="0"):
-        with LLMCallCcontext(task_id=task_id):
+    def run_component(self, component_name, component_config, input_data):
+        if isinstance(component_config, str):
+            component_config = json.loads(component_config)
+        task_id = component_config.get("task_id", "0")
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             try:
-                if isinstance(component_config, str):
-                    component_config = json.loads(component_config)
-
                 cls = getattr(interface, component_name)
                 instance = cls.from_config(component_config)
                 if not isinstance(input_data, list):
@@ -117,11 +115,10 @@ class SPGServerBridge:
                 logger.error(f"===================\n{msg}===================")
                 raise e
 
-    def run_llm_config_check(self, llm_config, task_id="0"):
-        with LLMCallCcontext(task_id=task_id):
-            from kag.common.llm.llm_config_checker import LLMConfigChecker
+    def run_llm_config_check(self, llm_config):
+        from kag.common.llm.llm_config_checker import LLMConfigChecker
 
-            return LLMConfigChecker().check(llm_config)
+        return LLMConfigChecker().check(llm_config)
 
     def run_vectorizer_config_check(self, vec_config):
         from kag.common.vectorize_model.vectorize_model_config_checker import (
@@ -130,12 +127,13 @@ class SPGServerBridge:
 
         return VectorizeModelConfigChecker().check(vec_config)
 
-    def run_builder(self, config, input, task_id="0"):
-        with LLMCallCcontext(task_id=task_id):
+    def run_builder(self, config, input):
+        if isinstance(config, str):
+            config = json.loads(config)
+        task_id = config.get("task_id" "0")
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.builder.main_builder import BuilderMain
 
-            if isinstance(config, str):
-                config = json.loads(config)
             builder_main = BuilderMain(config)
             builder_main.invoke(input)
 
@@ -151,7 +149,7 @@ class SPGServerBridge:
         host_addr="http://127.0.0.1:8887",
         app_id="",
     ):
-        with LLMCallCcontext(task_id=task_id):
+        with LLMCallCcontext(task_id=task_id, token_meter_in_memory=False):
             from kag.solver.main_solver import SolverMain
 
             if isinstance(args, str):
@@ -177,7 +175,7 @@ class SPGServerBridge:
         return data
 
     def get_index_manager_info(
-        self, index_manager_name, namespace, llm_config, vectorize_model_config
+        self, index_manager_name, llm_config, vectorize_model_config
     ):
         if isinstance(llm_config, str):
             llm_config = json.loads(llm_config)
@@ -191,29 +189,7 @@ class SPGServerBridge:
 
         index_mgr = KAGIndexManager.from_config(config)
         meta = index_mgr.get_meta()
-        try:
-            project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
-            host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-            if namespace and project_id and host_addr:
-                schema = meta["schema"]
-                schema_content = f"namespace {namespace}\n\n{schema}"
-
-                with TemporaryDirectory() as tmpdir:
-                    schema_file = os.path.join(tmpdir, "temp.schema")
-                    with open(schema_file, "w") as writer:
-                        writer.write(schema_content)
-                    ml = SPGSchemaMarkLang(schema_file, True, host_addr, project_id)
-                    res = []
-                    for t in ml.types.values():
-                        res.append(t.to_rest())
-                    meta[
-                        "spg_schema"
-                    ] = ml.schema.create_session()._rest_client.api_client.sanitize_for_serialization(
-                        res
-                    )
-        except:
-            pass
-        return meta
+        return json.dumps(meta, ensure_ascii=False)
 
     def get_index_manager_names(self):
         return KAGIndexManager.list_available_with_detail()

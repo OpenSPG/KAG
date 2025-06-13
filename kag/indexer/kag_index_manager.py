@@ -75,8 +75,6 @@ class KAGIndexManager(Registrable):
 
 @KAGIndexManager.register("atomic_query_index")
 class AtomicIndexManager(KAGIndexManager):
-    """Index manager to manage the atomic query index build and document retrieval."""
-
     @property
     def name(self):
         return "Atomic Query based Index Manager"
@@ -152,6 +150,8 @@ AtomicQuery(原子问): EntityType
             {
                 "type": "atomic_query_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
+                "llm_client": llm_config,
+                "query_rewrite_prompt": {"type": "atomic_query_rewrite_prompt"},
                 "search_api": {"type": "openspg_search_api"},
                 "graph_api": {"type": "openspg_graph_api"},
                 "top_k": 10,
@@ -167,5 +167,175 @@ AtomicQuery(原子问): EntityType
                 "vectorize_model": vectorize_model_config,
                 "search_api": {"type": "openspg_search_api"},
                 "top_k": 10,
+            },
+        ]
+
+
+@KAGIndexManager.register("chunk_index")
+class ChunkIndexManager(KAGIndexManager):
+    @property
+    def name(self):
+        return "Chunk based Index Manager"
+
+    @property
+    def schema(self) -> str:
+        return """
+Chunk(文本块): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector        
+        """
+
+    @property
+    def index_cost(self) -> str:
+        msg = """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+        """
+        return msg
+
+    @property
+    def applicable_scenarios(self) -> str:
+        msg = """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        ……
+        return [chunks1]
+        """
+        return msg
+
+    @property
+    def retrieval_method(self) -> str:
+        return ""
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "naive_rag_extractor",
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "vector_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "top_k": 10,
+            },
+            {
+                "type": "text_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "top_k": 10,
+            },
+        ]
+
+
+@KAGIndexManager.register("kag_hybrid_index")
+class KAGHybridIndexManager(KAGIndexManager):
+    @property
+    def name(self):
+        return "Chunk and Graph based hybrid Index Manager"
+
+    @property
+    def schema(self) -> str:
+        return """
+Chunk(文本块): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector        
+        """
+
+    @property
+    def index_cost(self) -> str:
+        msg = """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+        """
+        return msg
+
+    @property
+    def applicable_scenarios(self) -> str:
+        msg = """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        return [chunks1]
+        """
+        return msg
+
+    @property
+    def retrieval_method(self) -> str:
+        return ""
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "schema_free_extractor",
+                "llm": llm_config,
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "kg_cs_open_spg",
+                "path_select": {
+                    "type": "exact_one_hop_select",
+                    "vectorize_model": vectorize_model_config,
+                },
+                "entity_linking": {
+                    "type": "entity_linking",
+                    "recognition_threshold": 0.9,
+                    "exclude_types": ["Chunk"],
+                    "vectorize_model": vectorize_model_config,
+                },
+                "llm": llm_config,
+            },
+            {
+                "type": "kg_fr_open_spg",
+                "top_k": 20,
+                "path_select": {
+                    "type": "fuzzy_one_hop_select",
+                    "llm_client": llm_config,
+                    "vectorize_model": vectorize_model_config,
+                },
+                "ppr_chunk_retriever_tool": {
+                    "type": "ppr_chunk_retriever",
+                    "llm_client": llm_config,
+                    "vectorize_model": vectorize_model_config,
+                },
+                "entity_linking": {
+                    "type": "entity_linking",
+                    "recognition_threshold": 0.8,
+                    "exclude_types": ["Chunk"],
+                    "vectorize_model": vectorize_model_config,
+                },
+                "llm": llm_config,
+            },
+            {
+                "type": "rc_open_spg",
+                "vector_chunk_retriever": {
+                    "type": "vector_chunk_retriever",
+                    "vectorize_model": vectorize_model_config,
+                },
+                "vectorize_model": vectorize_model_config,
+                "top_k": 20,
             },
         ]

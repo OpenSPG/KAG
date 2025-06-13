@@ -589,30 +589,6 @@ class ParseLogicForm:
         return type_info
 
 
-# def extract_steps_and_actions(text):
-#     # 忽略 Step 和 Action 的大小写，支持各种格式如 step1、STEP2、Action3 等
-#     pattern = re.compile(
-#         r'([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*([Ss][Tt][Ee][Pp]\d+:\s)|$|([Aa][Cc][Tt][Ii][Oo][Nn]\d+:\s))',
-#         re.DOTALL
-#     )
-#
-#     for match in pattern.finditer(text):
-#         step_head = match.group(1)
-#         step_content = match.group(2).strip()
-#         # 提取 Step 编号并标准化为 StepX
-#
-#         # 查找紧跟其后的 Action
-#         action_pattern = re.compile(r'([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*(?:[Ss][Tt][Ee][Pp]\d+:|$))',
-#                                     re.DOTALL)
-#         action_match = action_pattern.search(text, match.end())
-#
-#         if action_match:
-#             action_head = action_match.group(1)
-#             action_content = action_match.group(2).strip()
-#             return step_content, step_head, action_content, action_head
-#         else:
-#             return step_content, step_head, None, None
-#     return None, None, None, None
 def extract_steps_and_actions(text):
     # 提取 Step 和紧跟的 Action
     step_pattern = re.compile(
