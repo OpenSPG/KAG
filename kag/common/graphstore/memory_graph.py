@@ -386,7 +386,7 @@ class MemoryGraph:
             filtered_nodes = []
             filtered_vectors = []
             for node, vector in zip(label_nodes, vectors):
-                if vector is not None:
+                if vector:
                     filtered_nodes.append(node)
                     filtered_vectors.append(vector)
 
