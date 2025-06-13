@@ -74,17 +74,11 @@ class TokenMeter:
     def update(
         self, completion_tokens: int = 0, prompt_tokens: int = 0, total_tokens: int = 0
     ):
-        old_value = self.to_dict()
         self.load()
         self.completion_tokens += completion_tokens
         self.prompt_tokens += prompt_tokens
         self.total_tokens += total_tokens
         self.dump()
-        new_value = self.to_dict()
-        print(f"completion_tokens = {completion_tokens}")
-        print(f"prompt_tokens = {prompt_tokens}")
-        print(f"total_tokens = {total_tokens}")
-        print(f"update token from {old_value} to {new_value}")
 
     def to_dict(self):
         self.load()
