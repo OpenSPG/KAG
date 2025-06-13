@@ -121,9 +121,9 @@ AtomicQuery(原子问): EntityType
         # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
         chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
         
-        # recall_diagram，基于diagram title, 通过bm25/emb 等实现diagram召回
-        # get_diagram_associate_chunks, 基于chunk 与 diagram 关联实现chunk 召回
-        chunks5 = get_diagram_associate_chunks(recall_diagram(rewrite(sub_query)))
+        # recall_table，基于table title, 通过bm25/emb 等实现table召回
+        # get_table_associate_chunks, 基于chunk 与 table 关联实现chunk 召回
+        chunks5 = get_table_associate_chunks(recall_table(rewrite(sub_query)))
         
         ……
         return [chunks1,chunks2,chunks3,chunks4, chunks5,…]

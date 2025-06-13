@@ -111,7 +111,6 @@ class KgFreeRetrieverWithOpenSPG(KagLogicalFormComponent):
             selected_rel = graph_data.get_all_spo()
             entities = list(set(entities))
 
-
         ppr_sub_query = generate_step_query(
             logical_node=cur_task.logical_node,
             processed_logical_nodes=processed_logical_nodes,

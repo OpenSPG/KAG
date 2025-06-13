@@ -1,6 +1,7 @@
 import logging
 import time
 
+from kag.interface import RetrieverOutput
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KAGRetrievedResponse,
@@ -53,6 +54,8 @@ class TraceLogReporter(OpenSPGReporter):
                 report_to_spg_data.answer = content
             elif segment_name == "reference":
                 if isinstance(content, KAGRetrievedResponse):
+                    report_to_spg_data.decompose.append(content.to_dict())
+                elif isinstance(content, RetrieverOutput):
                     report_to_spg_data.decompose.append(content.to_dict())
                 else:
                     logger.warning(f"Unknown reference type {type(content)}")

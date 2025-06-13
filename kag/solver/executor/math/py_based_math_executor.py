@@ -30,7 +30,7 @@ from kag.solver.utils import init_prompt_with_fallback
 
 def run_py_code(python_code: str, **kwargs):
     # Default timeout in seconds
-    default_timeout = 5 
+    default_timeout = 5
     # Allow timeout to be passed via kwargs if needed for more flexibility
     timeout_duration = kwargs.get("timeout", default_timeout)
 
@@ -47,18 +47,18 @@ def run_py_code(python_code: str, **kwargs):
             [python_executable, temp_file_path],
             capture_output=True,
             text=True,
-            timeout=timeout_duration # Added timeout
+            timeout=timeout_duration,  # Added timeout
         )
         stdout_value = result.stdout
         stderr_value = result.stderr
     except subprocess.TimeoutExpired as e:
         stderr_value = f"Code execution timed out after {timeout_duration} seconds: {e}"
-    except Exception as e: # Catch other potential errors during subprocess.run
+    except Exception as e:  # Catch other potential errors during subprocess.run
         stderr_value = f"An unexpected error occurred during code execution: {e}"
     finally:
         os.remove(temp_file_path)
 
-    if stderr_value: # If there's any error (timeout or other execution error)
+    if stderr_value:  # If there's any error (timeout or other execution error)
         return None, stderr_value, python_code
     return stdout_value, None, python_code
 
@@ -154,7 +154,7 @@ class PyBasedMathExecutor(ExecutorABC):
                     result = f"""```python
 {code}
 ```
-code result:{logic_node.alias_name}={rst}"""
+code result:{logic_node.alias_name if logic_node else ""}={rst}"""
                     task.update_result(result)
                     self.report_content(
                         reporter,
