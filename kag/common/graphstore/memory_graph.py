@@ -36,6 +36,15 @@ logger = logging.getLogger()
 def get_node_unique_id(biz_id, label):
     return f"{biz_id}_{label}"
 
+def configure_device(use_mps=True):
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif use_mps and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+    logger.info(f"Using device: {device}")
+    return device
 
 class MemoryGraph:
     _instances = {}
@@ -409,7 +418,7 @@ class MemoryGraph:
                 return []
         # print(f"len(nodes) = {len(nodes)}")
         vector_field_name = self._get_vector_field_name(property_key)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = configure_device()
         filtered_nodes, filtered_vectors = self.get_cached_tensor(
             label_nodes=nodes,
             label=label,
@@ -470,7 +479,7 @@ class MemoryGraph:
                     return []
 
             vector_field_name = self._get_vector_field_name(property_key)
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = configure_device()
             filtered_nodes, filtered_vectors = self.get_cached_tensor(
                 label_nodes=nodes,
                 label=label,
