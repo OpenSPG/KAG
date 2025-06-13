@@ -70,6 +70,8 @@ class BuilderComponent(Component, Registrable):
 
     @property
     def checkpointer(self):
+        self._checkpointer = None
+        return self._checkpointer
         if not self._checkpointer_initialized:
             if self.ckpt_subdir:
                 self.ckpt_dir = os.path.join(
