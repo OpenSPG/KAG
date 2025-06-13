@@ -13,7 +13,7 @@ import os
 from typing import List
 
 from kag.interface import ScannerABC
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from knext.common.base.runnable import Input, Output
 
 
@@ -48,10 +48,13 @@ class FileScanner(ScannerABC):
         Returns:
             List[Output]: A list containing the input file path.
         """
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(kag_project_config.ckpt_dir, "file_scanner")
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             from urllib.parse import urlparse

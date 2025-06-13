@@ -5,7 +5,7 @@ import logging
 
 from typing import List
 
-from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF, KAGConfigAccessor, KAGConstants
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.common.utils import resolve_instance
 from kag.interface import VectorizeModelABC
 from kag.interface.solver.base_model import SPOEntity

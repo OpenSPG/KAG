@@ -14,7 +14,7 @@ import logging
 import re
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import get_now, resolve_instance
 from kag.interface import PromptABC, Task
 from kag.interface.common.vectorize_model import VectorizeModelABC
@@ -177,15 +177,18 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
             }}   
                 """
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
 
         logger.info(
-            f"KAG_PROJECT_ID: {KAG_PROJECT_CONF.project_id}, KAG_PROJECT_HOST_ADDR: {KAG_PROJECT_CONF.host_addr}"
+            f"KAG_PROJECT_ID: {kag_project_config.project_id}, KAG_PROJECT_HOST_ADDR: {kag_project_config.host_addr}"
         )
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
                 }
             )
         )

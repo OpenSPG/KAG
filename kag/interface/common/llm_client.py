@@ -24,6 +24,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
 from kag.common.rate_limiter import RATE_LIMITER_MANGER
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,9 @@ class LLMClient(Registrable):
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
         self.enable_check = kwargs.get("enable_check", True)
         self.max_tokens = kwargs.get("max_tokens", 8192)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
 
     @retry(
         stop=stop_after_attempt(3),
@@ -443,11 +447,10 @@ class LLMClient(Registrable):
     def check(self):
         if not self.enable_check:
             return
-        from kag.common.conf import KAG_PROJECT_CONF
 
         if (
-            hasattr(KAG_PROJECT_CONF, "llm_config_check")
-            and KAG_PROJECT_CONF.llm_config_check
+            hasattr(self.kag_project_config, "llm_config_check")
+            and self.kag_project_config.llm_config_check
         ):
             try:
                 self.__call__("Are you OK?")

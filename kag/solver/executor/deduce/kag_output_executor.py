@@ -4,7 +4,7 @@ import logging
 
 from typing import Any, Optional
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetNode
 from kag.interface import ExecutorABC, LLMClient, PromptABC, Context
@@ -48,8 +48,11 @@ class KagOutputExecutor(ExecutorABC):
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.summary_prompt = summary_prompt or init_prompt_with_fallback(
-            "output_question", KAG_PROJECT_CONF.biz_scene
+            "output_question", kag_project_config.biz_scene
         )
 
     @property

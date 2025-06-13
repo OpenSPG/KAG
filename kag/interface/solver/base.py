@@ -3,7 +3,7 @@ from string import Template
 
 from kag.common.registry import Registrable
 from kag.interface import LLMClient
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 
 class Question(object):
@@ -105,11 +105,14 @@ class KagBaseModule(Registrable):
         If the module is computational, it initializes the state dictionary with the prompt template.
         """
         super().__init__(**kwargs)
-        self.host_addr = KAG_PROJECT_CONF.host_addr
-        self.project_id = KAG_PROJECT_CONF.project_id
-        self.config = KAG_CONFIG.all_config
-        self.biz_scene = KAG_PROJECT_CONF.biz_scene
-        self.language = KAG_PROJECT_CONF.language
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
+        self.host_addr = kag_project_config.host_addr
+        self.project_id = kag_project_config.project_id
+        self.config = kag_project_config.all_config
+        self.biz_scene = kag_project_config.biz_scene
+        self.language = kag_project_config.language
 
         if llm_client is None:
             llm_client = kwargs["llm_module"]
