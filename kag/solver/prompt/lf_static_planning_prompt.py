@@ -181,27 +181,32 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         kag_config = KAGConfigAccessor.get_config(task_id)
         kag_project_config = kag_config.global_config
 
-        logger.info(
-            f"KAG_PROJECT_ID: {kag_project_config.project_id}, KAG_PROJECT_HOST_ADDR: {kag_project_config.host_addr}"
-        )
-        self.schema_helper: SchemaUtils = SchemaUtils(
-            LogicFormConfiguration(
-                {
-                    "KAG_PROJECT_ID": kag_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
-                }
+
+        if std_schema is not None:
+            logger.info(
+                f"KAG_PROJECT_ID: {kag_project_config.project_id}, KAG_PROJECT_HOST_ADDR: {KAG_PROJECT_CONF.host_addr}"
             )
-        )
-        self.std_schema = resolve_instance(
-            std_schema,
-            default_config={"type": "default_std_schema"},
-            from_config_func=StdSchema.from_config,
-        )
+            self.schema_helper: SchemaUtils = SchemaUtils(
+                LogicFormConfiguration(
+                    {
+                        "KAG_PROJECT_ID": kag_project_config.project_id,
+                        "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
+                    }
+                )
+            )
+            self.std_schema = resolve_instance(
+                std_schema,
+                default_config={"type": "default_std_schema"},
+                from_config_func=StdSchema.from_config,
+            )
 
-        self.logic_node_parser = ParseLogicForm(
-            schema=self.schema_helper, schema_retrieval=self.std_schema
-        )
-
+            self.logic_node_parser = ParseLogicForm(
+                schema=self.schema_helper, schema_retrieval=self.std_schema
+            )
+        else:
+            self.logic_node_parser = ParseLogicForm(
+                schema=None, schema_retrieval=None
+            )
     def is_json_format(self):
         return False
 

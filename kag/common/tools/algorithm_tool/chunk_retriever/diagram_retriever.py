@@ -144,7 +144,7 @@ class DiagramRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput()
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
             # recall diagram_ids through semantic vector
             topk_diagram_ids = self.get_diagram(query, top_k)
@@ -153,13 +153,13 @@ class DiagramRetriever(RetrieverABC):
             chunks = self.get_related_chunks(topk_diagram_ids)
 
             # to retrieve output
-            out = RetrieverOutput(chunks=chunks)
+            out = RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=chunks)
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput()
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
 
     @property
     def input_indices(self):
