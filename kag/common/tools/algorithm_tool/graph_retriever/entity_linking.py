@@ -116,28 +116,9 @@ class EntityLinking(ToolABC):
             result.append(node)
         return result
 
-    def invoke(self, query, name, type_name, topk_k=None, **kwargs) -> List[EntityData]:
-        """Perform entity linking by combining vector and text search strategies
-        Args:
-            query: Original text context containing the entity
-            name: Entity name to link
-            type_name: Entity type (e.g., Person, Location)
-            topk_k: Maximum number of results to return
-            recognition_threshold: Minimum score threshold (default 0.8)
-        Returns:
-            List of matched entities with scores and metadata
-        """
-        # Implementation logic with detailed steps:
-        # 1. Determine query type and adjust parameters
-        # 2. Vector search based on entity name
-        # 3. Content-based vector search for non-basic types
-        # 4. Text search fallback
-        # 5. Semantic type re-ranking
-        # 6. Final filtering and sorting
-        retdata = []
-        if name is None:
-            return retdata
-
+    def recall_entity(
+        self, query: str, name: str, type_name: str = None, topk_k: int = None
+    ):
         # Determine the query type based on the entity's standard type or set it to "Entity" if not specified
         query_type = type_name
         if query_type is None:
@@ -202,7 +183,6 @@ class EntityLinking(ToolABC):
                 )
             else:
                 content_recall_nodes = []
-
             # Combine the results from both searches
             sorted_nodes = typed_nodes + content_recall_nodes
             sorted_nodes = self.filter_target_types(sorted_nodes)
@@ -210,17 +190,49 @@ class EntityLinking(ToolABC):
             # Fallback to text-based search if no nodes are found
             if len(sorted_nodes) == 0:
                 sorted_nodes = self.search_api.search_text(query_string=name)
+            return sorted_nodes
+        except Exception as e:
+            logger.error(
+                f"Error in entity_linking {query} name={name} type={with_prefix_type}: {e}",
+                exc_info=True,
+            )
+            return []
 
-            if "entity" not in query_type.lower():
-                text_search_start_time = time.time()
-                # sorted_nodes = self.rerank_sematic_type(sorted_nodes, query_type)
-                logger.info(
-                    f"`{name}`  rerank_sematic_type completed in {time.time() - text_search_start_time:.2f} seconds. Found {len(sorted_nodes)} nodes."
-                )
+    def invoke(self, query, name, type_name, topk_k=None, **kwargs) -> List[EntityData]:
+        """Perform entity linking by combining vector and text search strategies
+        Args:
+            query: Original text context containing the entity
+            name: Entity name to link
+            type_name: Entity type (e.g., Person, Location)
+            topk_k: Maximum number of results to return
+            recognition_threshold: Minimum score threshold (default 0.8)
+        Returns:
+            List of matched entities with scores and metadata
+        """
+        # Implementation logic with detailed steps:
+        # 1. Determine query type and adjust parameters
+        # 2. Vector search based on entity name
+        # 3. Content-based vector search for non-basic types
+        # 4. Text search fallback
+        # 5. Semantic type re-ranking
+        # 6. Final filtering and sorting
+        retdata = []
+        if name is None:
+            return retdata
+
+        try:
+            if isinstance(type_name, str):
+                type_name_set = [type_name]
+            else:
+                type_name_set = type_name
+            total_recall_entities = []
+            for type_name in type_name_set:
+                recall_nodes = self.recall_entity(query, name, type_name, topk_k)
+                total_recall_entities += recall_nodes
 
             # Final sorting based on score
             sorted_people_dicts = sorted(
-                sorted_nodes, key=lambda node: node["score"], reverse=True
+                total_recall_entities, key=lambda node: node["score"], reverse=True
             )
 
             # Create EntityData objects for the top results that meet the recognition threshold
@@ -243,7 +255,7 @@ class EntityLinking(ToolABC):
             return retdata[: self.top_k]
         except Exception as e:
             logger.error(
-                f"Error in entity_linking {query} name={name} type={with_prefix_type}: {e}",
+                f"Error in entity_linking {query} name={name} type={type_name}: {e}",
                 exc_info=True,
             )
             return []

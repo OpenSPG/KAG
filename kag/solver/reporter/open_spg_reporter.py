@@ -63,10 +63,11 @@ def merge_ref_doc_set(left: RefDocSet, right: RefDocSet):
     return left
 
 
-def _convert_spo_to_graph(graph_id, spo_retrieved):
+def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
     nodes = {}
     edges = []
-    for spo in spo_retrieved:
+
+    for spo_or_entity in spo_retrieved_or_entities:
 
         def get_label(type_en, type_zh):
             type_name = type_zh if KAG_PROJECT_CONF.language == "zh" else type_en
@@ -81,36 +82,38 @@ def _convert_spo_to_graph(graph_id, spo_retrieved):
                 id=entity.to_show_id(KAG_PROJECT_CONF.language),
                 name=entity.get_short_name(),
                 label=get_label(entity.type, entity.type_zh),
-                properties={},
+                properties=entity.prop.get_properties_map() if entity.prop else {},
             )
 
-        start_node = _get_node(spo.from_entity)
-        end_node = _get_node(spo.end_entity)
-        if start_node.id not in nodes:
-            nodes[start_node.id] = start_node
-        if end_node.id not in nodes:
-            nodes[end_node.id] = end_node
-        spo_id = spo.to_show_id(KAG_PROJECT_CONF.language)
-        data_spo = DataEdge(
-            id=spo_id,
-            _from=start_node.id,
-            from_type=start_node.label,
-            to=end_node.id,
-            to_type=end_node.label,
-            properties=spo.prop.get_properties_map() if spo.prop else {},
-            label=get_label(spo.type, spo.type_zh),
-        )
+        if isinstance(spo_or_entity, RelationData):
+            spo = spo_or_entity
+            start_node = _get_node(spo.from_entity)
+            end_node = _get_node(spo.end_entity)
+            if start_node.id not in nodes:
+                nodes[start_node.id] = start_node
+            if end_node.id not in nodes:
+                nodes[end_node.id] = end_node
+            spo_id = spo.to_show_id(KAG_PROJECT_CONF.language)
+            data_spo = DataEdge(
+                id=spo_id,
+                _from=start_node.id,
+                from_type=start_node.label,
+                to=end_node.id,
+                to_type=end_node.label,
+                properties=spo.prop.get_properties_map() if spo.prop else {},
+                label=get_label(spo.type, spo.type_zh),
+            )
 
-        edges.append(data_spo)
+            edges.append(data_spo)
+        elif isinstance(spo_or_entity, EntityData):
+            entity = _get_node(spo_or_entity)
+            if entity.id not in nodes:
+                nodes[entity.id] = entity
+
     sub_graph = SubGraph(
         class_name=graph_id, result_nodes=list(nodes.values()), result_edges=edges
     )
     return sub_graph
-
-
-def _convert_kg_graph_to_show_graph(graph_id, kg_graph: KgGraph):
-    spo_retrieved = kg_graph.get_all_spo()
-    return _convert_spo_to_graph(graph_id, spo_retrieved)
 
 
 class SafeDict(dict):
@@ -341,7 +344,11 @@ Rewritten question:\n{content}
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
         end_word = "." if KAG_PROJECT_CONF.language == "en" else "。"
-        if isinstance(datas, list) and datas and isinstance(datas[0], RelationData):
+        if (
+            isinstance(datas, list)
+            and datas
+            and (isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData))
+        ):
             graph_id = f"graph_{generate_random_string(3)}"
             graph_list.append(_convert_spo_to_graph(graph_id, datas))
             tpl = self.get_tag_template("Graph Show")

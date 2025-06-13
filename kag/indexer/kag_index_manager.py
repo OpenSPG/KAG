@@ -298,7 +298,7 @@ Chunk(文本块): EntityType
                 "type": "kg_cs_open_spg",
                 "path_select": {
                     "type": "exact_one_hop_select",
-                    "vectorize_model": "{vectorize_model}",
+                    "vectorize_model": vectorize_model_config,
                 },
                 "entity_linking": {
                     "type": "entity_linking",
@@ -313,7 +313,7 @@ Chunk(文本块): EntityType
                 "top_k": 20,
                 "path_select": {
                     "type": "fuzzy_one_hop_select",
-                    "llm_client": "{chat_llm}",
+                    "llm_client": llm_config,
                     "vectorize_model": vectorize_model_config,
                 },
                 "ppr_chunk_retriever_tool": {

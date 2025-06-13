@@ -1,11 +1,13 @@
 import logging
 import time
-from typing import List, Optional
+
 
 from kag.common.config import get_default_chat_llm_config
-from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
+    KgRetrieverTemplate,
+)
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
-from kag.interface.solver.reporter_abc import ReporterABC
+
 
 from kag.common.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
     PprChunkRetriever,
@@ -23,7 +25,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
     def __init__(
         self,
         path_select: PathSelect = None,
-        entity_linking=None,
+        entity_linking: EntityLinking = None,
         llm: LLMClient = None,
         ppr_chunk_retriever_tool: RetrieverABC = None,
         top_k=10,
@@ -61,10 +63,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         self.top_k = top_k
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
-
-        query = task.arguments.get(
-            "rewrite_query", task.arguments["query"]
-        )
+        query = task.arguments.get("rewrite_query", task.arguments["query"])
         logical_node = task.arguments.get("logic_form_node", None)
         if not logical_node:
             return RetrieverOutput(
@@ -72,8 +71,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             )
         context = kwargs.get("context", Context())
 
-
-        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+        # reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
 
         graph_data = self.template.invoke(
             query=query,
@@ -81,12 +79,11 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             graph_data=context.variables_graph,
             is_exact_match=True,
             name=self.name,
-            **kwargs
+            **kwargs,
         )
 
-
         entities = []
-        selected_rel = []
+        # selected_rel = []
         if graph_data is not None:
             s_entities = graph_data.get_entity_by_alias_without_attr(
                 logical_node.s.alias_name
@@ -127,7 +124,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
                     "logic_form_node": {
                         "type": "object",
                         "description": "Logic node for context retrieval",
-                    }
+                    },
                 },
                 "required": ["query", "logic_form_node"],
             },

@@ -41,9 +41,15 @@ class LLMGeneratorWithThought(GeneratorABC):
         thoughts = []
         for task in context.gen_task(False):
             print(f"task.result = {task.result}")
-            task_result = json.loads(task.result)
-            subq = task_result["query"]
-            suba = task_result["response"]
+            if task.result is None:
+                continue
+            if task.executor == "Math":
+                subq = task.arguments["query"]
+                suba = task.result
+            else:
+                task_result = json.loads(task.result)
+                subq = task_result["query"]
+                suba = task_result["response"]
             thoughts.append(f"Sub-Query: {subq}\n{suba}")
             retrieved_docs = task.memory.get("retriever")
             if retrieved_docs and self.chunk_reranker:
@@ -64,13 +70,12 @@ class LLMGeneratorWithThought(GeneratorABC):
             注意：
             1. 我希望你的答案与召回文档完全一致。
             2. 如果您认为所提供的文件无法回答问题，请回答“未知”。
+            3. 未知也要回答“答案： 未知”。
             """
 
-        prompt = (
-            f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}问题: {query}"
-        )
+        prompt = f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}\n\n问题: {query}"
         response = self.llm_client(prompt)
-        if "答案：" not in response:
+        if "答案" not in response:
             raise ValueError(f"no answer found in response: {response}")
-        answer = response.split("答案：")[1].strip()
+        answer = response.split("答案")[-1].strip().lstrip("：").lstrip(":")
         return answer

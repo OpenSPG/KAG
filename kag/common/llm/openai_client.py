@@ -133,7 +133,7 @@ class OpenAIClient(LLMClient):
             stop=self.stop,
             seed=self.seed,
             top_p=self.top_p,
-            extra_body=self.extra_body
+            extra_body=self.extra_body,
         )
         usages = []
         if not self.stream:

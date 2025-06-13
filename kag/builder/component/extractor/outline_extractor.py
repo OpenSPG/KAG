@@ -5,7 +5,8 @@ from kag.interface import ExtractorABC
 
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
-from knext.schema.client import CHUNK_TYPE
+from kag.interface.common.model.chunk import ChunkTypeEnum
+from knext.schema.client import CHUNK_TYPE, TABLE_TYPE
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -43,10 +44,14 @@ class OutlineExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
-        if "/" not in input.name:
-            outline_name = input.name
+        if input.type == ChunkTypeEnum.Text:
+            o_label = CHUNK_TYPE
         else:
-            outline_name = input.name.split("/")[-1]
+            o_label = TABLE_TYPE
+        # if "/" not in input.name:
+        outline_name = input.name
+        # else:
+        #     outline_name = input.name.split("/")[-1]
 
         index = outline_name.find("_split")
         if index != -1:
@@ -79,7 +84,7 @@ class OutlineExtractor(ExtractorABC):
             s_label="Outline",
             p="sourceChunk",
             o_id=f"{input.id}",
-            o_label=CHUNK_TYPE,
+            o_label=o_label,
             properties={},
         )
 

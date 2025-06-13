@@ -32,7 +32,7 @@ class VectorChunkRetriever(RetrieverABC):
         vectorize_model: VectorizeModelABC = None,
         search_api: SearchApiABC = None,
         top_k: int = 10,
-        score_threshold = 0.85,
+        score_threshold=0.85,
         **kwargs,
     ):
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
@@ -68,7 +68,16 @@ class VectorChunkRetriever(RetrieverABC):
                 property_key="content",
                 query_vector=query_vector,
                 topk=top_k,
+                ef_search=top_k * 7,
             )
+            top_k_docs_name = self.search_api.search_vector(
+                label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+                property_key="name",
+                query_vector=query_vector,
+                topk=top_k / 2,
+                ef_search=top_k / 2 * 3,
+            )
+            top_k_docs = top_k_docs_name + top_k_docs
             chunks = []
             for item in top_k_docs:
                 score = item.get("score", 0.0)

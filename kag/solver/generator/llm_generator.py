@@ -122,7 +122,6 @@ class LLMGenerator(GeneratorABC):
         )
         content_json = {"step": results}
         if reporter:
-            reporter.add_report_line("generator", "task_process", tasks, "FINISH")
             reporter.add_report_line(
                 "generator", "final_generator_input", content_json, "FINISH"
             )
