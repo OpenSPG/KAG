@@ -1,5 +1,7 @@
 from kag.common.config import get_default_chat_llm_config
-from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate
+from kag.common.parser.schema_std import StdSchema
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate, \
+    get_std_logic_form_parser, std_logic_node
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
 
 
@@ -16,6 +18,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         path_select: PathSelect = None,
         entity_linking: EntityLinking =None,
         llm: LLMClient = None,
+        std_schema: StdSchema = None,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -38,6 +41,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
             entity_linking=self.entity_linking,
             llm_module=self.llm,
         )
+        self.std_parser = get_std_logic_form_parser(std_schema, self.kb_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
 
@@ -51,7 +55,10 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                 err_msg="No logic node found in task arguments",
             )
         context = kwargs.get("context", Context())
-
+        logical_node = std_logic_node(task_cache_id=self.kb_project_config.project_id,
+                                      logic_node=logical_node,
+                                      logic_parser=self.std_parser,
+                                      context=context)
         kg_graph = self.template.invoke(
                 query=query,
                 logic_nodes=[logical_node],
