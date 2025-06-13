@@ -137,6 +137,10 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
         Returns:
             RetrieverOutput: Final merged output containing unified chunk list.
         """
+        retrieved_chunks = kwargs.get("retrieved_chunks", None)
         chunk_lists = [x.chunks for x in retrieve_outputs]
         merged = self.chunk_merge(chunk_lists, self.rrf_normalize)
+        if retrieved_chunks is not None:
+            chunk_texts = [x.content for x in merged]
+            retrieved_chunks.extend(chunk_texts)
         return RetrieverOutput(chunks=merged)

@@ -149,6 +149,7 @@ class PprChunkRetriever(RetrieverABC):
                     f"{doc_id} get_entity_prop_by_id failed: {e}", exc_info=True
                 )
                 return None
+
         limit_doc_ids = doc_ids[:top_k]
         doc_maps = {}
         with ThreadPoolExecutor(max_workers=20) as executor:

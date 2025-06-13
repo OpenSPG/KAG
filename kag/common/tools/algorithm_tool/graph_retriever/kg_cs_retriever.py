@@ -1,5 +1,7 @@
 from kag.common.config import get_default_chat_llm_config
-from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
+    KgRetrieverTemplate,
+)
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
 
 
@@ -14,7 +16,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
     def __init__(
         self,
         path_select: PathSelect = None,
-        entity_linking=None,
+        entity_linking: EntityLinking = None,
         llm: LLMClient = None,
         **kwargs
     ):
@@ -41,9 +43,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
 
-        query = task.arguments.get(
-            "rewrite_query", task.arguments["query"]
-        )
+        query = task.arguments.get("rewrite_query", task.arguments["query"])
         logical_node = task.arguments.get("logic_form_node", None)
         if not logical_node:
             return RetrieverOutput(
@@ -52,17 +52,16 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         context = kwargs.get("context", Context())
 
         kg_graph = self.template.invoke(
-                query=query,
-                logic_nodes=[logical_node],
-                graph_data=context.variables_graph,
-                is_exact_match=True,
-                name=self.name,
-                **kwargs
-            )
+            query=query,
+            logic_nodes=[logical_node],
+            graph_data=context.variables_graph,
+            is_exact_match=True,
+            name=self.name,
+            **kwargs
+        )
         return RetrieverOutput(
-                retriever_method=self.schema().get("name", ""),
-                graphs=[kg_graph]
-            )
+            retriever_method=self.schema().get("name", ""), graphs=[kg_graph]
+        )
 
     def schema(self):
         return {
@@ -78,7 +77,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                     "logic_form_node": {
                         "type": "object",
                         "description": "Logic node for context retrieval",
-                    }
+                    },
                 },
                 "required": ["query", "logic_form_node"],
             },

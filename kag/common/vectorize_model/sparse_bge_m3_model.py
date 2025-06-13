@@ -50,23 +50,20 @@ class SparseBGEM3VectorizeModel(SparseVectorizeModelABC):
 
     @staticmethod
     def _get_headers():
-        headers = {'Content-Type': 'application/json','MPS-app-name': 'kag','MPS-http-version': '1.0'}
+        headers = {
+            "Content-Type": "application/json",
+            "MPS-app-name": "kag",
+            "MPS-http-version": "1.0",
+        }
         return headers
 
     @staticmethod
     def _make_request_data(texts):
         text_list = [texts] if isinstance(texts, str) else texts
         text_list = [text.strip()[:8000] for text in text_list]
-        data = {
-            'inputs': text_list,
-            'return_sparse': True
-        }
-        features = {
-            'data': data
-        }
-        json_data = {
-            'features': features
-        }
+        data = {"inputs": text_list, "return_sparse": True}
+        features = {"data": data}
+        json_data = {"features": features}
         return json_data
 
     @classmethod

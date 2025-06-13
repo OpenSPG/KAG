@@ -636,10 +636,17 @@ class KgGraph(RetrievedData):
         return False
 
     def add_answered_alias(self, alias, value):
+        def add_value_to_list(v):
+            if isinstance(v, list):
+                return v
+            else:
+                return [v]
+
         if alias in self.answered_alias:
-            self.answered_alias[alias].append(value)
+            self.answered_alias[alias] += add_value_to_list(value)
         else:
-            self.answered_alias[alias] = [value]
+            self.answered_alias[alias] = add_value_to_list(value)
+        self.answered_alias[alias] = list(set(self.answered_alias[alias]))
 
     def get_answered_alias(self, alias):
         if alias in self.answered_alias.keys():
@@ -664,7 +671,11 @@ class KgGraph(RetrievedData):
         self.entity_map[alias] = data_values
 
     def merge_kg_graph(self, other, wo_intersect=True):
-        self.answered_alias = other.answered_alias
+        for k, v in other.answered_alias.items():
+            if isinstance(v, list):
+                for d in v:
+                    self.add_answered_alias(k, d)
+
         self.alias_set = list(set(other.alias_set))
         self.nodes_alias = list(set(self.nodes_alias + other.nodes_alias))
         self.edge_alias = list(set(self.edge_alias + other.edge_alias))
@@ -1030,7 +1041,7 @@ class KgGraph(RetrievedData):
 
 
 class ChunkData(RetrievedData):
-    def __init__(self, content="", title="", chunk_id="", score=0.0, properties = None):
+    def __init__(self, content="", title="", chunk_id="", score=0.0, properties=None):
         super().__init__()
         self.content = content
         self.title = title

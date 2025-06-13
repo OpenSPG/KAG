@@ -34,7 +34,7 @@ class RetrieverOutput:
         chunks: Optional[List[ChunkData]] = None,
         docs: Optional[List[DocData]] = None,
         retriever_method: str = "",
-        summary: str = ""
+        summary: str = "",
     ):
         """Initializes retrieval output container with optional data components.
 
@@ -68,7 +68,7 @@ class RetrieverOutput:
                 f"Retrieved Chunks:\n{chunks}",
                 f"Retrieved Docs:\n{docs}",
                 f"Retriever Method: {self.retriever_method}",
-                f"Summary:\n{self.summary}"
+                f"Summary:\n{self.summary}",
             ]
         )
 
