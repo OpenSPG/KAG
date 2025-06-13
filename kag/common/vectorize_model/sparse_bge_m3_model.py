@@ -8,6 +8,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import json
 from typing import Union, Iterable
 
 import httpx
@@ -67,22 +68,20 @@ class SparseBGEM3VectorizeModel(SparseVectorizeModelABC):
 
     @classmethod
     def _decode_sparse_vector(cls, value) -> SparseEmbeddingVector:
-        if isinstance(value, str):
-            return value
-        else:
-            return str(value)
+        result = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+        return result
 
     @classmethod
     def _decode_response_data(cls, texts, response):
         res_map = response.json()
+        result = res_map.get("resultMap").get("result")
+        result_values = json.loads(result)
+        result_vectors = [cls._decode_sparse_vector(val) for val in result_values]
         if isinstance(texts, str):
-            return cls._decode_sparse_vector(res_map.get("resultMap").get("result"))
-        elif len(texts) == 1:
-            return [cls._decode_sparse_vector(res_map.get("resultMap").get("result"))]
+            return result_vectors[0]
         else:
-            object_value = res_map.get("resultMap").get("result").get("objectValue")
-            assert len(texts) == len(object_value), f"Input size mismatch: {list}"
-            return [cls._decode_sparse_vector(val) for val in object_value]
+            assert len(texts) == len(result_vectors), f"Input size mismatch: {len(texts)} != {len(result_vectors)}"
+            return result_vectors
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]
