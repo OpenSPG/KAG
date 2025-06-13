@@ -4,7 +4,7 @@ import time
 from typing import List, Dict, Optional
 
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config
 from kag.common.text_sim_by_vector import TextSimilarity
 from kag.interface import Task, PromptABC, LLMClient, VectorizeModelABC
@@ -80,17 +80,20 @@ class KagMerger(FlowComponent):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.name = "kag_merger"
         self.top_k = top_k
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
         self.summary_prompt = summary_prompt or init_prompt_with_fallback(
-            "thought_then_answer", KAG_PROJECT_CONF.biz_scene
+            "thought_then_answer", kag_project_config.biz_scene
         )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            kag_config.all_config["vectorize_model"]
         )
         self.text_similarity = TextSimilarity(vectorize_model)
 

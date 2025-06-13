@@ -14,7 +14,7 @@ from typing import Optional
 
 from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import GeneratorABC, LLMClient, PromptABC, RetrieverOutput
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
@@ -53,17 +53,18 @@ class LLMIndexGenerator(GeneratorABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
-        self.chunk_reranker = chunk_reranker or RerankByVector.from_config(
-            {"type": "rerank_by_vector", "rerank_top_k": -1}
-        )
+        self.chunk_reranker = chunk_reranker
         if enable_ref:
             self.with_out_ref_prompt = init_prompt_with_fallback(
-                "without_refer_generator_prompt", KAG_PROJECT_CONF.biz_scene
+                "without_refer_generator_prompt", kag_project_config.biz_scene
             )
             self.with_ref_prompt = init_prompt_with_fallback(
-                "refer_generator_prompt", KAG_PROJECT_CONF.biz_scene
+                "refer_generator_prompt", kag_project_config.biz_scene
             )
         self.enable_ref = enable_ref
 
@@ -106,14 +107,19 @@ class LLMIndexGenerator(GeneratorABC):
         tasks = []
         for task in context.gen_task(False):
             tasks.append(task)
-            if isinstance(task.result, RetrieverOutput) and self.chunk_reranker:
+            if isinstance(task.result, RetrieverOutput):
                 rerank_queries.append(
                     task.arguments.get("rewrite_query", task.arguments["query"])
                 )
                 chunks.append(task.result.chunks)
             results.append(to_task_context_str(task.get_task_context()))
+        if self.chunk_reranker:
+            rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
+        else:
+            rerank_chunks = []
+            for chunk_list in chunks:
+                rerank_chunks.extend(chunk_list)
 
-        rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
         refer_retrieved_data = to_reference_list(
             prefix_id=0, retrieved_datas=rerank_chunks
         )

@@ -2,7 +2,7 @@ import logging
 import time
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import ToolABC, VectorizeModelABC
 from kag.interface.solver.model.one_hop_graph import EntityData
 from kag.interface.solver.model.schema_utils import SchemaUtils
@@ -25,6 +25,7 @@ class EntityLinking(ToolABC):
         recognition_threshold: float = 0.8,
         top_k: int = 5,
         exclude_types: List[str] = None,
+        **kwargs
     ):
         """Initialize entity linking components with default configurations
         Args:
@@ -36,11 +37,14 @@ class EntityLinking(ToolABC):
             exclude_types: exclude types for entity
         """
         super().__init__()
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
                 }
             )
         )
@@ -53,7 +57,7 @@ class EntityLinking(ToolABC):
         )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            kag_config.all_config["vectorize_model"]
         )
         self.text_similarity = TextSimilarity(vectorize_model)
         self.recognition_threshold = recognition_threshold

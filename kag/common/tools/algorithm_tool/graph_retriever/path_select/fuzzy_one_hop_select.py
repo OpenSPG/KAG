@@ -2,7 +2,7 @@ import logging
 import time
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import VectorizeModelABC, LLMClient, PromptABC
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
@@ -35,13 +35,17 @@ class FuzzyOneHopSelect(PathSelect):
         graph_api: GraphApiABC = None,
         search_api: SearchApiABC = None,
         spo_retrieval_prompt: PromptABC = None,
+        **kwargs
     ):
         super().__init__()
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
@@ -54,12 +58,12 @@ class FuzzyOneHopSelect(PathSelect):
         )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            kag_config.all_config["vectorize_model"]
         )
         self.text_similarity = TextSimilarity(vectorize_model)
         self.llm_client = llm_client
         self.spo_retrieval_prompt = spo_retrieval_prompt or init_prompt_with_fallback(
-            "spo_retrieval", KAG_PROJECT_CONF.biz_scene
+            "spo_retrieval", self.kag_project_config.biz_scene
         )
 
     def recall_graph_data_from_knowledge_base(
@@ -153,7 +157,7 @@ class FuzzyOneHopSelect(PathSelect):
         revert_graph_map = {}
         for one_hop_graph in one_hop_graph_list:
             for k, v_set in one_hop_graph.get_s_all_relation_spo(
-                len(n.p.value_list) != 0, KAG_PROJECT_CONF.language
+                len(n.p.value_list) != 0, self.kag_project_config.language
             ).items():
                 for v in v_set:
                     all_spo_text.append(v)
@@ -195,7 +199,7 @@ class FuzzyOneHopSelect(PathSelect):
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
             rel_set = one_hop_graph.get_std_p_value_by_spo_text(
-                std_p, std_spo_text, len(n.p.value_list) != 0, KAG_PROJECT_CONF.language
+                std_p, std_spo_text, len(n.p.value_list) != 0, self.kag_project_config.language
             )
             result += rel_set
         return result

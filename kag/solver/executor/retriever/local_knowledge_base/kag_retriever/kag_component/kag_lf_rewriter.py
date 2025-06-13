@@ -2,7 +2,7 @@ from typing import List
 
 from tenacity import stop_after_attempt, retry
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.registry import Registrable
 from kag.common.utils import resolve_instance
 from kag.interface import LLMClient, PromptABC, VectorizeModelABC
@@ -44,12 +44,14 @@ class KAGGetSpoLF(KAGLFRewriter):
         super().__init__(**kwargs)
         self.llm_client = llm_client
         self.lf_trans_prompt = lf_trans_prompt
-
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
                 }
             )
         )
@@ -62,7 +64,7 @@ class KAGGetSpoLF(KAGLFRewriter):
 
         self.vectorize_model = resolve_instance(
             vectorize_model,
-            default_config=KAG_CONFIG.all_config["vectorize_model"],
+            default_config=kag_config.all_config["vectorize_model"],
             from_config_func=VectorizeModelABC.from_config,
         )
 

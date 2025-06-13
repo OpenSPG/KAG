@@ -12,7 +12,7 @@
 import asyncio
 from typing import List, Optional
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
 from kag.interface import (
     ExecutorABC,
@@ -33,13 +33,16 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
     def __init__(self, retrievers: List[RetrieverABC], merger: RetrieverOutputMerger, enable_summary = False, llm_module: LLMClient = None,
                  summary_prompt: PromptABC = None, **kwargs):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.retrievers = retrievers
         self.merger = merger
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
         self.summary_prompt = summary_prompt or init_prompt_with_fallback(
-            "thought_then_answer", KAG_PROJECT_CONF.biz_scene
+            "thought_then_answer", self.kag_project_config.biz_scene
         )
 
         self.enable_summary = enable_summary
@@ -47,8 +50,8 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )

@@ -4,7 +4,7 @@ import threading
 import time
 
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import (
@@ -63,13 +63,13 @@ def merge_ref_doc_set(left: RefDocSet, right: RefDocSet):
     return left
 
 
-def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
+def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities, kag_project_config):
     nodes = {}
     edges = []
 
     for spo_or_entity in spo_retrieved_or_entities:
         def get_label(type_en, type_zh):
-            type_name = type_zh if KAG_PROJECT_CONF.language == "zh" else type_en
+            type_name = type_zh if kag_project_config.language == "zh" else type_en
             if not type_name:
                 type_name = type_en
             if not type_name:
@@ -78,7 +78,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
 
         def _get_node(entity: EntityData):
             return DataNode(
-                id=entity.to_show_id(KAG_PROJECT_CONF.language),
+                id=entity.to_show_id(kag_project_config.language),
                 name=entity.get_short_name(),
                 label=get_label(entity.type, entity.type_zh),
                 properties=entity.prop.get_properties_map() if entity.prop else {},
@@ -91,7 +91,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
                 nodes[start_node.id] = start_node
             if end_node.id not in nodes:
                 nodes[end_node.id] = end_node
-            spo_id = spo.to_show_id(KAG_PROJECT_CONF.language)
+            spo_id = spo.to_show_id(kag_project_config.language)
             data_spo = DataEdge(
                 id=spo_id,
                 _from=start_node.id,
@@ -333,6 +333,9 @@ Rewritten question:\n{content}
                 "zh": "正在生成代码\n \n{content}\n",
             },
         }
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
 
         if self.host:
             self.client: ReasonerApi = ReasonerApi(
@@ -342,10 +345,10 @@ Rewritten question:\n{content}
             self.client = None
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
-        end_word = "." if KAG_PROJECT_CONF.language == "en" else "。"
+        end_word = "." if self.kag_project_config.language == "en" else "。"
         if isinstance(datas, list) and datas and (isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData)):
             graph_id = f"graph_{generate_random_string(3)}"
-            graph_list.append(_convert_spo_to_graph(graph_id, datas))
+            graph_list.append(_convert_spo_to_graph(graph_id, datas, self.kag_project_config))
             tpl = self.get_tag_template("Graph Show")
             datas = f"""<graph id={graph_id}></graph>{end_word}"""
         if tpl:
@@ -454,7 +457,7 @@ Rewritten question:\n{content}
             if not isinstance(word, str):
                 continue
             if name in word:
-                template = self.word_mapping[name][KAG_PROJECT_CONF.language]
+                template = self.word_mapping[name][self.kag_project_config.language]
                 if "{" in template:
                     template = template.format_map(SafeDict(params))
                 return template
@@ -463,7 +466,7 @@ Rewritten question:\n{content}
     def get_tag_template(self, tag_name):
         for name in self.tag_mapping:
             if name in tag_name:
-                return self.tag_mapping[name][KAG_PROJECT_CONF.language]
+                return self.tag_mapping[name][self.kag_project_config.language]
         return None
 
     def extra_segment_report(self):

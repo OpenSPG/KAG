@@ -13,7 +13,7 @@
 import json
 from string import Template
 from typing import List
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import PromptABC
 from knext.reasoner.client import ReasonerClient
 
@@ -49,11 +49,14 @@ class QuestionNER(PromptABC):
 
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.schema = (
             ReasonerClient(
-                project_id=KAG_PROJECT_CONF.project_id,
-                host_addr=KAG_PROJECT_CONF.host_addr,
-                namespace=KAG_PROJECT_CONF.namespace,
+                project_id=kag_project_config.project_id,
+                host_addr=kag_project_config.host_addr,
+                namespace=kag_project_config.namespace,
             )
             .get_reason_schema()
             .keys()

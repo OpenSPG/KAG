@@ -2,7 +2,6 @@ import logging
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import LLMClient
 from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC

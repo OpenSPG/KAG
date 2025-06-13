@@ -66,10 +66,10 @@ class KAGIndexManager(Registrable):
     def retrieval_method(self) -> str:
         return ""
 
-    def build_extractor_config(self, llm_config: Dict, vectorize_model_config: Dict):
+    def build_extractor_config(self, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return []
 
-    def build_retriever_config(self, llm_config: Dict, vectorize_model_config: Dict):
+    def build_retriever_config(self, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return []
 
 
@@ -135,7 +135,7 @@ AtomicQuery(原子问): EntityType
         return ""
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return [
             {
                 "type": "atomic_query_extractor",
@@ -145,7 +145,7 @@ AtomicQuery(原子问): EntityType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return [
             {
                 "type": "atomic_query_chunk_retriever",
@@ -215,7 +215,7 @@ Chunk(文本块): EntityType
         return ""
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return [
             {
                 "type": "naive_rag_extractor",
@@ -223,7 +223,7 @@ Chunk(文本块): EntityType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return [
             {
                 "type": "vector_chunk_retriever",
@@ -283,7 +283,7 @@ Chunk(文本块): EntityType
         return ""
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return [
             {
                 "type": "schema_free_extractor",
@@ -292,13 +292,14 @@ Chunk(文本块): EntityType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
         return [
             {
                 "type": "kg_cs_open_spg",
                 "path_select": {
                     "type": "exact_one_hop_select",
                     "vectorize_model": vectorize_model_config,
+                    "task_id_key": kwargs.get("task_id_key", None)
                 },
                 "entity_linking": {
                     "type": "entity_linking",
