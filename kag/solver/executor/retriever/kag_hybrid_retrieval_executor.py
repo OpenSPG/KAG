@@ -20,18 +20,30 @@ from kag.interface import (
     RetrieverOutputMerger,
     RetrieverOutput,
     Task,
-    Context, KgGraph, LLMClient, PromptABC, EntityData, SchemaUtils, Prop,
+    Context,
+    KgGraph,
+    LLMClient,
+    PromptABC,
+    EntityData,
+    SchemaUtils,
+    Prop,
 )
 from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
 
-
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
-    def __init__(self, retrievers: List[RetrieverABC], merger: RetrieverOutputMerger, enable_summary = False, llm_module: LLMClient = None,
-                 summary_prompt: PromptABC = None, **kwargs):
+    def __init__(
+        self,
+        retrievers: List[RetrieverABC],
+        merger: RetrieverOutputMerger,
+        enable_summary=False,
+        llm_module: LLMClient = None,
+        summary_prompt: PromptABC = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.retrievers = retrievers
         self.merger = merger
@@ -203,17 +215,15 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         chunk_graph = []
         for chunk in output.chunks:
             entity = EntityData(
-                    entity_id=chunk.chunk_id,
-                    name=chunk.title,
-                    node_type=self.schema_helper.get_label_within_prefix("Chunk"),
-                )
+                entity_id=chunk.chunk_id,
+                name=chunk.title,
+                node_type=self.schema_helper.get_label_within_prefix("Chunk"),
+            )
             entity_prop = dict(chunk.properties) if chunk.properties else {}
             entity_prop["content"] = chunk.content
             entity_prop["score"] = chunk.score
             entity.prop = Prop.from_dict(entity_prop, "Chunk", self.schema_helper)
-            chunk_graph.append(
-                entity
-            )
+            chunk_graph.append(entity)
         if len(chunk_graph):
             self.report_content(
                 reporter,

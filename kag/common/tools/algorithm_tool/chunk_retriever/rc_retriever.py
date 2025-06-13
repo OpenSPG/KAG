@@ -5,7 +5,7 @@ from typing import Optional
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.common.config import LogicFormConfiguration
 from kag.common.text_sim_by_vector import TextSimilarity
-from kag.interface import Task, VectorizeModelABC, RetrieverABC, RetrieverOutput
+from kag.interface import VectorizeModelABC, RetrieverABC, RetrieverOutput
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.interface.solver.reporter_abc import ReporterABC
 
@@ -62,9 +62,7 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         segment_name = kwargs.get("segment_name", "thinker")
         component_name = self.name
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
-        query = task.arguments.get(
-            "rewrite_query", task.arguments["query"]
-        )
+        query = task.arguments.get("rewrite_query", task.arguments["query"])
 
         if reporter:
             reporter.add_report_line(

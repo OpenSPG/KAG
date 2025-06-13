@@ -1,9 +1,6 @@
 import logging
 from typing import List, Optional
-from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
-from kag.interface import LLMClient
 from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
@@ -50,9 +47,7 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(
-        self, path_select: PathSelect, entity_linking, **kwargs
-    ):
+    def __init__(self, path_select: PathSelect, entity_linking, **kwargs):
         self.path_select = path_select
         self.entity_linking = entity_linking
         self.kwargs = kwargs
