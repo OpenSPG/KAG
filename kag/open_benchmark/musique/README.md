@@ -1,11 +1,11 @@
-# KAG Example: HotpotQA
+# KAG Example: MuSiQue
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
-[HotpotQA](https://arxiv.org/abs/1809.09600) is a dataset for diverse, explainable multi-hop question answering. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
+[MuSiQue](https://arxiv.org/abs/2108.00573) is a multi-hop QA dataset for comprehensive evaluation of reasoning steps. It's used by [KAG](https://arxiv.org/abs/2409.13731) and [HippoRAG](https://arxiv.org/abs/2405.14831) for multi-hop question answering performance evaluation.
 
-Here we demonstrate how to build a knowledge graph for the HotpotQA dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
+Here we demonstrate how to build a knowledge graph for the MuSiQue dataset, generate answers to those evaluation questions with KAG and calculate EM and F1 metrics of the KAG generated answers compared to the ground-truth answers.
 
 ## 1. Precondition
 
@@ -16,7 +16,7 @@ Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s5
 ### Step 1: Enter the example directory
 
 ```bash
-cd kag/open_benchmark/hotpotqa
+cd kag/open_benchmark/musique
 ```
 
 ### Step 2: Configure models
@@ -35,7 +35,8 @@ knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
 
 ### Step 4: Commit the schema
 
-Execute the following command to commit the schema [HotpotQA.schema](./schema/HotpotQA.schema).
+
+Execute the following command to commit the schema [MuSiQue.schema](./schema/MuSiQue.schema).
 
 ```bash
 knext schema commit
@@ -43,31 +44,30 @@ knext schema commit
 
 ### Step 5: Build the knowledge graph
 
-Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph.
+Execute [indexer.py](./src/indexer.py) in the [src](./src) directory to build the knowledge graph.
 
 ```bash
-cd builder && python indexer.py && cd ..
+cd src && python indexer.py && cd ..
 ```
 
 ### Step 6: Execute the QA tasks
 
-Execute [eva.py](./solver/eva.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
+Execute [eval.py](./src/eval.py) in the [src](./src) directory to generate the answers and calculate the EM and F1 metrics.
 
 ```bash
-cd solver && python eva.py --qa_file ./data/qa_sub.json && cd ..
+cd src && python eval.py --qa_file ./data/qa_sub.json && cd ..
 ```
 
-The generated answers are saved to ``./solver/hotpotqa_res_*.json``.
+The generated answers are saved to ``./src/musique_res_*.json``.
 
-The calculated EM and F1 metrics are saved to ``./solver/hotpotqa_metrics_*.json``.
+The calculated EM and F1 metrics are saved to ``./src/musique_metrics_*.json``.
 
 ### Step 7: (Optional) Cleanup
 
 To delete the checkpoints, execute the following command.
 
 ```bash
-rm -rf ./builder/ckpt
-rm -rf ./solver/ckpt
+rm -rf ./src/ckpt
 ```
 
 To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
@@ -78,5 +78,5 @@ curl http://127.0.0.1:8887/project/api/delete?projectId=1
 
 ### Step 8: (Optional) Try the larger datasets
 
-Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [eva.py](./solver/eva.py) to try the larger datasets.
+Restart from Step 1 and modify [indexer.py](./src/indexer.py) and [eval.py](./src/eval.py) to try the larger datasets.
 
