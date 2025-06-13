@@ -88,9 +88,12 @@ class KAGStaticPlanner(PlannerABC):
             return True
         except Exception as e:
             # import logging # Make sure logging is imported if not already at the top of the file
-            logger = logging.getLogger(__name__) # Get a logger instance
-            logger.warning(f"LLM call failed in finish_judger for query '{query}'. Error: {e}", exc_info=True)
-            return False # Treat as potentially bad answer
+            logger = logging.getLogger(__name__)  # Get a logger instance
+            logger.warning(
+                f"LLM call failed in finish_judger for query '{query}'. Error: {e}",
+                exc_info=True,
+            )
+            return False  # Treat as potentially bad answer
 
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.

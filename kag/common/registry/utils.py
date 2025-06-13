@@ -27,6 +27,7 @@ def append_python_path(path: Union[os.PathLike, str]) -> None:
     path = str(path)
     sys.path.insert(0, path)
 
+
 def import_modules_from_path(path: str) -> None:
     """
     Import all submodules under the given package.

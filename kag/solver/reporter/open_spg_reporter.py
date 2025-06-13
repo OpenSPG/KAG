@@ -68,6 +68,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
     edges = []
 
     for spo_or_entity in spo_retrieved_or_entities:
+
         def get_label(type_en, type_zh):
             type_name = type_zh if KAG_PROJECT_CONF.language == "zh" else type_en
             if not type_name:
@@ -83,6 +84,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
                 label=get_label(entity.type, entity.type_zh),
                 properties=entity.prop.get_properties_map() if entity.prop else {},
             )
+
         if isinstance(spo_or_entity, RelationData):
             spo = spo_or_entity
             start_node = _get_node(spo.from_entity)
@@ -112,7 +114,6 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
         class_name=graph_id, result_nodes=list(nodes.values()), result_edges=edges
     )
     return sub_graph
-
 
 
 class SafeDict(dict):
@@ -343,7 +344,11 @@ Rewritten question:\n{content}
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
         end_word = "." if KAG_PROJECT_CONF.language == "en" else "。"
-        if isinstance(datas, list) and datas and (isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData)):
+        if (
+            isinstance(datas, list)
+            and datas
+            and (isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData))
+        ):
             graph_id = f"graph_{generate_random_string(3)}"
             graph_list.append(_convert_spo_to_graph(graph_id, datas))
             tpl = self.get_tag_template("Graph Show")
