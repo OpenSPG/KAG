@@ -128,7 +128,9 @@ class Task(Registrable):
                 result["result"] = str(self.result)
 
         if result:
-            result["task"] = self.arguments.get("rewrite_query", self.arguments.get("query", ""))
+            result["task"] = self.arguments.get(
+                "rewrite_query", self.arguments.get("query", "")
+            )
 
         if self.name:
             result["name"] = self.name

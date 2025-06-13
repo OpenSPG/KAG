@@ -25,8 +25,10 @@ project:
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
-
 e1: &e1
+  type: naive_rag_extractor
+
+e2: &e2
   type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
   llm: *llm
   ner_prompt:
@@ -63,6 +65,7 @@ kag_builder_pipeline:
 
 
 
+
 #------------kag-solver configuration start----------------#
 search_api: &search_api
   type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
@@ -70,89 +73,34 @@ search_api: &search_api
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
-
-kg_cs:
-  type: kg_cs_open_spg
-  path_select:
-    type: exact_one_hop_select
-    graph_api: *graph_api
-    search_api: *search_api
-  entity_linking:
-    type: entity_linking
-    graph_api: *graph_api
-    search_api: *search_api
-    recognition_threshold: 0.9
-    exclude_types:
-      - "Chunk"
-
-kg_fr:
-  type: kg_fr_open_spg
-  top_k: 20
-  path_select:
-    type: fuzzy_one_hop_select
-    llm_client: *llm
-    graph_api: *graph_api
-    search_api: *search_api
-  ppr_chunk_retriever_tool:
-    type: ppr_chunk_retriever_legacy
-    llm_client: *llm
-    graph_api: *graph_api
-    search_api: *search_api
-  entity_linking:
-    type: entity_linking
-    graph_api: *graph_api
-    search_api: *search_api
-    recognition_threshold: 0.8
-    exclude_types:
-      - "Chunk"
-
-rc:
-  type: rc_open_spg
-  vector_chunk_retriever:
-    type: vector_chunk_retriever_legacy
-    vectorize_model: *vectorize_model
-    search_api: *search_api
-  graph_api: *graph_api
-  search_api: *search_api
+r2: &r2
+  type: vector_chunk_retriever
   vectorize_model: *vectorize_model
-  top_k: 20
-
-kag_merger:
-  type: kg_merger
-  top_k: 20
-  llm_module: *llm
-  summary_prompt:
-    type: default_thought_then_answer
-  vectorize_model: *vectorize_model
-  graph_api: *graph_api
   search_api: *search_api
+  top_k: 10
 
-kag_hybrid_executor: &kag_hybrid_executor_conf
-  type: kag_hybrid_executor
-  lf_rewriter:
-    type: kag_spo_lf
-    llm_client: *llm
-    lf_trans_prompt:
-      type: default_spo_retriever_decompose
-    vectorize_model: *vectorize_model
-  flow: |
-    kg_cs->kg_fr->kag_merger;rc->kag_merger
+retriever_executor: &retriever
+  type: evidence_based_reasoner
+  llm: *llm
+  retrievers:
+    - *r2
+  merger:
+    type: kag_merger
+
 
 
 kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: lf_kag_static_planner
+    type: kag_static_planner
     llm: *llm
     plan_prompt:
-      type: default_lf_static_planning
+      type: retriever_static_planning
     rewrite_prompt:
-      type: default_rewrite_sub_task_query
+      type: default_query_rewrite
   executors:
-    - *kag_hybrid_executor_conf
+    - *retriever
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *llm
-    generated_prompt:
-      type: default_multi_hop_generator
 #------------kag-solver configuration end----------------#

@@ -43,31 +43,30 @@ knext schema commit
 
 ### Step 5: Build the knowledge graph
 
-Execute [indexer.py](./builder/indexer.py) in the [builder](./builder) directory to build the knowledge graph.
+Execute [indexer.py](./src/indexer.py) in the [src](./src) directory to build the knowledge graph.
 
 ```bash
-cd builder && python indexer.py && cd ..
+cd src && python indexer.py && cd ..
 ```
 
 ### Step 6: Execute the QA tasks
 
-Execute [eva.py](./solver/eva.py) in the [solver](./solver) directory to generate the answers and calculate the EM and F1 metrics.
+Execute [eva.py](./src/eva.py) in the [src](./src) directory to generate the answers and calculate the EM and F1 metrics.
 
 ```bash
-cd solver && python eva.py --qa_file ./data/qa_sub.json && cd ..
+cd src && python eva.py --qa_file ./data/qa_sub.json && cd ..
 ```
 
-The generated answers are saved to ``./solver/2wiki_res_*.json``.
+The generated answers are saved to ``./src/2wiki_res_*.json``.
 
-The calculated EM and F1 metrics are saved to ``./solver/2wiki_metrics_*.json``.
+The calculated EM and F1 metrics are saved to ``./src/2wiki_metrics_*.json``.
 
 ### Step 7: (Optional) Cleanup
 
 To delete the checkpoints, execute the following command.
 
 ```bash
-rm -rf ./builder/ckpt
-rm -rf ./solver/ckpt
+rm -rf ./src/ckpt
 ```
 
 To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
@@ -78,5 +77,5 @@ curl http://127.0.0.1:8887/project/api/delete?projectId=1
 
 ### Step 8: (Optional) Try the larger datasets
 
-Restart from Step 1 and modify [indexer.py](./builder/indexer.py) and [eva.py](./solver/eva.py) to try the larger datasets.
+Restart from Step 1 and modify [indexer.py](./src/indexer.py) and [eval.py](./src/eval.py) to try the larger datasets.
 

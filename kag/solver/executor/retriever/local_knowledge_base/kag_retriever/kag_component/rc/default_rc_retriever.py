@@ -33,7 +33,7 @@ from kag.common.tools.search_api.search_api_abc import SearchApiABC
 logger = logging.getLogger()
 
 
-@FlowComponent.register("rc_open_spg")
+@FlowComponent.register("rc_open_spg_legacy")
 class RCRetrieverOnOpenSPG(KagLogicalFormComponent):
     def __init__(
         self,
