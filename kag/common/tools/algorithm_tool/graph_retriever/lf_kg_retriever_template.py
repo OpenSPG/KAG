@@ -1,13 +1,15 @@
 import logging
 from typing import List, Optional
-from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
-from kag.interface import LLMClient
+from kag.common.conf import KAGGlobalConf
+from kag.common.config import LogicFormConfiguration
+from kag.common.parser.schema_std import StdSchema
+from kag.common.utils import resolve_instance
+from kag.interface import Context, SchemaUtils
 from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
-from kag.common.parser.logic_node_parser import GetSPONode
+from kag.common.parser.logic_node_parser import GetSPONode, ParseLogicForm
 
 from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select import (
     PathSelect,
@@ -15,6 +17,32 @@ from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select imp
 
 logger = logging.getLogger()
 
+def get_std_logic_form_parser(std_schema: StdSchema, kb_project_conf: KAGGlobalConf):
+    logger.info(
+        f"KAG_PROJECT_ID: {kb_project_conf.project_id}, KAG_PROJECT_HOST_ADDR: {kb_project_conf.host_addr}"
+    )
+    schema_helper: SchemaUtils = SchemaUtils(
+        LogicFormConfiguration(
+            {
+                "KAG_PROJECT_ID": kb_project_conf.project_id,
+                "KAG_PROJECT_HOST_ADDR": kb_project_conf.host_addr,
+            }
+        )
+    )
+    std_schema = resolve_instance(
+        std_schema,
+        default_config={"type": "default_std_schema"},
+        from_config_func=StdSchema.from_config,
+    )
+
+    return ParseLogicForm(
+        schema=schema_helper, schema_retrieval=std_schema
+    )
+def std_logic_node(task_cache_id, logic_node: LogicNode, logic_parser: ParseLogicForm, context: Context):
+    parsed_entity_set = context.kwargs.get(str(task_cache_id), {})
+    std_node = logic_parser.std_logic_form(node=logic_node, sub_query=logic_node.sub_query, parsed_entity_set= parsed_entity_set)
+    context.kwargs[str(task_cache_id)] = parsed_entity_set
+    return std_node
 
 def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
     """Store logical node structure in knowledge graph
