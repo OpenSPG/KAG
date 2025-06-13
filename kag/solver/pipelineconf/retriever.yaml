@@ -7,7 +7,6 @@ pipeline_name: index_pipeline
 retriever_executor: &retriever_executor
   type: kag_hybrid_retrieval_executor
   retrievers: "{retrievers}"
-  is_reporter:  true
   merger:
     type: kag_merger
 

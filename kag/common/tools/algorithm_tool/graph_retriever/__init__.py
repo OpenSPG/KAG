@@ -1,2 +1,4 @@
 import kag.common.tools.algorithm_tool.graph_retriever.path_select
 import kag.common.tools.algorithm_tool.graph_retriever.entity_linking
+import kag.common.tools.algorithm_tool.graph_retriever.kg_cs_retriever
+import kag.common.tools.algorithm_tool.graph_retriever.kg_fr_retriever

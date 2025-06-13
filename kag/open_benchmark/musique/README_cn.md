@@ -1,4 +1,4 @@
-# KAG 示例：MuSiQue
+# KAG 示例：Musique
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
@@ -43,31 +43,31 @@ knext schema commit
 
 ### Step 5：构建知识图谱
 
-在 [builder](./builder) 目录执行 [indexer.py](./builder/indexer.py) 构建知识图谱。
+在 [src](./src) 目录执行 [indexer.py](./src/indexer.py) 构建知识图谱。
 
 ```bash
-cd builder && python indexer.py && cd ..
+cd src && python indexer.py && cd ..
 ```
 
 ### Step 6：执行 QA 任务
 
-在 [solver](./solver) 目录执行 [eva.py](./solver/eva.py) 生成答案并计算 EM 和 F1 指标。
+在 [src](./src) 目录执行 [eval.py](./src/eval.py) 生成答案并计算 EM 和 F1 指标。
 
 ```bash
-cd solver && python eva.py --qa_file ./data/qa_sub.json && cd ..
+cd src && python eval.py --qa_file ./data/qa_sub.json && cd ..
 ```
 
-生成的答案被保存至 ``./solver/musique_res_*.json``.
+生成的答案被保存至 ``./src/musique_res_*.json``.
 
-计算出的 EM 和 F1 指标被保存至 ``./solver/musique_metrics_*.json``.
+计算出的 EM 和 F1 指标被保存至 ``./src/musique_metrics_*.json``.
 
 ### Step 7：（可选）清理
 
 若要删除 checkpoint，可执行以下命令。
 
 ```bash
-rm -rf ./builder/ckpt
-rm -rf ./solver/ckpt
+rm -rf ./src/ckpt
+
 ```
 
 若要删除 KAG 项目及关联的知识图谱，可执行以下类似命令，将 OpenSPG server 地址和 KAG 项目 id 换为实际的值。
@@ -78,5 +78,5 @@ curl http://127.0.0.1:8887/project/api/delete?projectId=1
 
 ### Step 8：（可选）尝试更大的数据集
 
-从 Step 1 重新开始，修改 [indexer.py](./builder/indexer.py) 和 [eva.py](./solver/eva.py) 以尝试更大的数据集。
+从 Step 1 重新开始，修改 [indexer.py](./src/indexer.py) 和 [eval.py](./src/eval.py) 以尝试更大的数据集。
 

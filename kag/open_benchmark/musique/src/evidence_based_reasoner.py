@@ -98,10 +98,12 @@ Thought: The question asks about the origin of the last name Sylvester during th
             {"query": task.arguments["query"], "response": response}, ensure_ascii=False
         )
 
-        reporter.add_report_line("reference",
-                                 f"{query}_kag_retriever_result",
-                                 merged,
-                                 "FINISH",)
+        reporter.add_report_line(
+            "reference",
+            f"{query}_kag_retriever_result",
+            merged,
+            "FINISH",
+        )
         return response
 
     def schema(self, func_name: str = None):
