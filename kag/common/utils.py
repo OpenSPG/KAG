@@ -218,7 +218,7 @@ def get_vector_field_name(property_key: str):
 
 
 def get_sparse_vector_field_name(property_key: str):
-    name = f"{property_key}_sparse_vector"
+    name = f"{property_key}_sparse"
     name = to_snake_case(name)
     return "_" + name
 
