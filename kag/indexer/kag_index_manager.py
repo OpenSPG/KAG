@@ -240,6 +240,216 @@ Chunk(文本块): EntityType
         ]
 
 
+@KAGIndexManager.register("table_index")
+class TableIndexManager(KAGIndexManager):
+    @property
+    def name(self):
+        return "Table based Index Manager"
+
+    @property
+    def schema(self) -> str:
+        return """
+Table(表格): EntityType
+    properties:
+        content(内容): Text
+          index: TextAndVector
+        beforeText(前缀): Text
+          index: TextAndVector
+        afterText(后缀): Text
+          index: TextAndVector
+    relations:
+        sourceChunk(关联): Chunk       
+        """
+
+    @property
+    def index_cost(self) -> str:
+        msg = """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+        """
+        return msg
+
+    @property
+    def applicable_scenarios(self) -> str:
+        msg = """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        ……
+        return [chunks1]
+        """
+        return msg
+
+    @property
+    def retrieval_method(self) -> str:
+        return ""
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "table_extractor",
+                "llm": llm_config,
+                "table_context_prompt": {"type": "table_context"},
+                "table_row_col_summary_prompt": {"type": "table_row_col_summary"},
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "table_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "graph_api": {"type": "openspg_graph_api"},
+                "top_k": 10,
+            },
+        ]
+
+
+@KAGIndexManager.register("summary_index")
+class SummaryIndexManager(KAGIndexManager):
+    @property
+    def name(self):
+        return "Summary based Index Manager"
+
+    @property
+    def schema(self) -> str:
+        return """
+Summary(文本摘要): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Chunk
+        childOf(子摘要): Summary      
+        """
+
+    @property
+    def index_cost(self) -> str:
+        msg = """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+        """
+        return msg
+
+    @property
+    def applicable_scenarios(self) -> str:
+        msg = """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        ……
+        return [chunks1]
+        """
+        return msg
+
+    @property
+    def retrieval_method(self) -> str:
+        return ""
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "summary_extractor",
+                "llm_module": llm_config,
+                "chunk_summary_prompt": {"type": "default_chunk_summary"},
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "summary_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "graph_api": {"type": "openspg_graph_api"},
+                "top_k": 10,
+                "score_threshold": 0.8,
+            },
+        ]
+
+
+@KAGIndexManager.register("outline_index")
+class OutlineIndexManager(KAGIndexManager):
+    @property
+    def name(self):
+        return "Outline based Index Manager"
+
+    @property
+    def schema(self) -> str:
+        return """
+Outline(标题大纲): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Chunk
+        childOf(子标题): Outline     
+        """
+
+    @property
+    def index_cost(self) -> str:
+        msg = """
+        索引构建的成本：
+        
+        1、抽取模型消耗：7B xx tokens
+        2、向量模型消耗：bge-m3 xx tokens
+        3、耗时：xx 分钟
+        4、存储：xx GB
+        """
+        return msg
+
+    @property
+    def applicable_scenarios(self) -> str:
+        msg = """
+        检索方法描述：
+        
+        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
+        chunks1 = recall_chunks(rewrite(sub_query))
+        ……
+        return [chunks1]
+        """
+        return msg
+
+    @property
+    def retrieval_method(self) -> str:
+        return ""
+
+    @classmethod
+    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "outline_extractor",
+            }
+        ]
+
+    @classmethod
+    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict):
+        return [
+            {
+                "type": "outline_chunk_retriever",
+                "vectorize_model": vectorize_model_config,
+                "search_api": {"type": "openspg_search_api"},
+                "graph_api": {"type": "openspg_graph_api"},
+                "top_k": 10,
+            },
+        ]
+
+
 @KAGIndexManager.register("kag_hybrid_index")
 class KAGHybridIndexManager(KAGIndexManager):
     @property
