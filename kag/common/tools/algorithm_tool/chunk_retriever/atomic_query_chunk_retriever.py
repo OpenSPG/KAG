@@ -208,6 +208,13 @@ class AtomicQueryChunkRetriever(RetrieverABC):
 
         return res_chunk_list
 
+    @staticmethod
+    def sync_wrapper(coro):
+        try:
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(coro)
+        except RuntimeError:
+            return asyncio.run(coro)
     def invoke(self, task: Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
         context = kwargs.get("context", None)
@@ -217,7 +224,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                 return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
             # recall atomic queries
-            top_k_atomic_queries = asyncio.run(self.recall_atomic_query(query, context))
+            top_k_atomic_queries = self.sync_wrapper(self.recall_atomic_query(query, context))
             query_texts = [item["node"]["name"] for item in top_k_atomic_queries]
             query_text_related_chunks = []
             for query_text in query_texts:
@@ -242,7 +249,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             ]
 
             # recall atomic_relatedTo_chunks
-            chunks = asyncio.run(self.recall_sourceChunks_chunks(top_k_atomic_queries))
+            chunks = self.sync_wrapper(self.recall_sourceChunks_chunks(top_k_atomic_queries))
 
             chunks = chunks + query_text_related_chunks
 
