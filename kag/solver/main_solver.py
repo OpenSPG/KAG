@@ -17,10 +17,10 @@ import os
 import re
 
 import yaml
-
+from kag.common.conf import KAGConfigMgr, KAGConfigAccessor, KAGConstants
 from kag.indexer import KAGIndexManager
 from kag.interface import SolverPipelineABC
-
+from knext.project.client import ProjectClient
 from kag.common.conf import KAG_CONFIG, KAG_PROJECT_CONF
 from kag.interface.solver.reporter_abc import ReporterABC
 
@@ -177,98 +177,153 @@ async def do_index_pipeline(query, qa_config, reporter):
     return await pipeline.ainvoke(query, reporter=reporter)
 
 
-async def do_qa_pipeline(use_pipeline, query, qa_config, reporter):
-    if use_pipeline in qa_config.keys():
-        custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
-    else:
-        custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
-    # self cognition
-    self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
-    self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
-    self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
-    if not self_cognition_res:
-        if custom_pipeline_conf:
-            pipeline_config = custom_pipeline_conf
-        else:
-            pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
-        logger.error(f"pipeline conf: \n{pipeline_config}")
-        pipeline = SolverPipelineABC.from_config(pipeline_config)
-        answer = await pipeline.ainvoke(query, reporter=reporter)
-    else:
-        answer = self_cognition_res
-    return answer
+async def do_qa_pipeline(use_pipeline, query, qa_config, reporter, task_id, kb_project_ids):
+	retriever_configs = []
+	kb_configs = qa_config.get("kb", [])
+	for kb_project_id in kb_project_ids:
+		kb_task_project_id = f"{task_id}_{kb_project_id}"
+		try:
+			kag_config = KAGConfigAccessor.get_config(kb_task_project_id)
+			matched_kb = next((kb for kb in kb_configs if kb.get("id") == kb_project_id), None)
+			if not matched_kb:
+				reporter.warning(f"Knowledge base with id {kb_project_id} not found in qa_config['kb']")
+				continue
+
+			for index_name in matched_kb.get("index_list", []):
+				index_manager = KAGIndexManager.from_config(
+					{
+						"type": index_name,
+						"llm_config": qa_config["llm"],
+						"vectorize_model_config": kag_config.all_config["vectorize_model"],
+					}
+				)
+				retriever_configs.extend(
+					index_manager.build_retriever_config(
+						qa_config["llm"], kag_config.all_config["vectorize_model"],
+						kag_qa_task_config_key=kb_task_project_id
+					)
+				)
+		except Exception as e:
+			reporter.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
+			continue
+	qa_config["retrievers"] = retriever_configs
+
+	if use_pipeline in qa_config.keys():
+		custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
+	else:
+		custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
+
+	self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
+	self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
+	self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+	if not self_cognition_res:
+		if custom_pipeline_conf:
+			pipeline_config = custom_pipeline_conf
+		else:
+			pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+		logger.error(f"pipeline conf: \n{pipeline_config}")
+		pipeline = SolverPipelineABC.from_config(pipeline_config)
+		answer = await pipeline.ainvoke(query, reporter=reporter)
+	else:
+		answer = self_cognition_res
+	return answer
 
 
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
-    qa_config = params.get("config", KAG_CONFIG.all_config)
-    logger.info(f"qa_config = {qa_config}")
-    if isinstance(qa_config, str):
-        qa_config = json.loads(qa_config)
-
-    use_pipeline = (
-        qa_config["chat"]["ename"]
-        if "chat" in qa_config.keys()
-        else params.get("usePipeline", "think_pipeline")
-    )
-    if "kb" in qa_config.keys():
-        kb = qa_config["kb"][0]
-        KAG_CONFIG.update_conf(kb)
-    else:
-        kb = KAG_CONFIG.all_config
-    if "llm" not in KAG_CONFIG.all_config and "llm" in qa_config:
-        KAG_CONFIG.update_conf({
-            "llm": qa_config["llm"]
-        })
-    logger.info(f"qa_config = {json.dumps(qa_config, ensure_ascii=False, indent=2)}")
-    thinking_enabled = use_pipeline in ["think_pipeline", "index_pipeline"]
-    logger.info(
-        f"qa(task_id={task_id}, query={query}, project_id={project_id}, use_pipeline={use_pipeline}, params={params})"
-    )
-    reporter: ReporterABC = ReporterABC.from_config(
-        {
-            "type": KAG_CONFIG.all_config.get("reporter", "open_spg_reporter"),
-            "task_id": task_id,
-            "host_addr": host_addr,
-            "project_id": project_id,
-            "thinking_enabled": thinking_enabled,
-            "report_all_references": use_pipeline == "index_pipeline",
-        }
-    )
-    if is_chinese(query):
-        KAG_PROJECT_CONF.language = "zh"
-    else:
-        KAG_PROJECT_CONF.language = "en"
+    main_config = params.get("config", KAGConfigAccessor.get_config().all_config)
+    if isinstance(main_config, str):
+        main_config = json.loads(main_config)
 
     KAG_PROJECT_CONF.host_addr = host_addr
+    KAG_PROJECT_CONF.language = "zh" if is_chinese(query) else "en"
 
-    try:
-        if "id" in kb:
-            KAG_PROJECT_CONF.project_id = kb["id"]
-        elif "project" in kb and "id" in kb["project"]:
-            KAG_PROJECT_CONF.project_id = kb["project"]["id"]
-        qa_config["vectorize_model"] = kb["vectorizer"]
-    except Exception as e:
-        logger.info(f"vectorize_model not found in config. Error: {str(e)}")
+    use_pipeline = (
+        main_config["chat"]["ename"]
+        if isinstance(main_config.get("chat"), dict)
+        else params.get("usePipeline", "think_pipeline")
+    )
+
+    kb_configs = {}
+    kb_project_ids = []
+
+    if isinstance(main_config.get("kb"), list):
+        kbs = main_config["kb"]
+        for kb in kbs:
+            try:
+                kb_project_id = kb.get("id") or kb.get("project", {}).get("id")
+                if not kb_project_id:
+                    continue
+
+                kb_project_ids.append(kb_project_id)
+                kb_task_project_id = f"{task_id}_{kb_project_id}"
+
+                # 创建KB专用配置管理器
+                kb_conf = KAGConfigMgr()
+                kb_conf.update_conf(kb)
+
+                # 合并全局配置
+                global_config = kb.get(KAGConstants.PROJECT_CONFIG_KEY, {})
+                kb_conf.global_config.initialize(**global_config)
+                project_client = ProjectClient(host_addr=host_addr, project_id=kb_project_id)
+                project = project_client.get_by_id(kb_project_id)
+
+                kb_conf.global_config.project_id = kb_project_id
+                kb_conf.global_config.namespace = project.namespace
+                kb_conf.global_config.host_addr = host_addr
+                kb_conf.global_config.language = KAG_PROJECT_CONF.language
+
+                if "llm" in main_config:
+                    kb_conf.update_conf({"llm": main_config["llm"]})
+                if "vectorizer" in kb:
+                    kb_conf.update_conf({"vectorize_model": kb["vectorizer"]})
+
+                KAGConfigAccessor.set_task_config(kb_task_project_id, kb_conf)
+                kb_configs[kb_project_id] = (kb_task_project_id, kb_conf)
+
+            except Exception as e:
+                logger.error(f"KB配置初始化失败: {str(e)}", exc_info=True)
+
+    # 创建Reporter
+    reporter_config = {
+        "type": main_config.get("reporter", "open_spg_reporter"),
+        "task_id": task_id,
+        "host_addr": host_addr,
+        "project_id": project_id,
+        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline"],
+        "report_all_references": use_pipeline == "index_pipeline",
+    }
+    reporter = ReporterABC.from_config(reporter_config)
 
     try:
         await reporter.start()
         if use_pipeline == "index_pipeline":
-            answer = await do_index_pipeline(query, qa_config, reporter)
+            answer = await do_index_pipeline(
+                query, main_config, reporter
+            )
         else:
-            answer = await do_qa_pipeline(use_pipeline, query, qa_config, reporter)
+            answer = await do_qa_pipeline(
+                use_pipeline, query, main_config, reporter,
+                task_id=task_id,
+                kb_project_ids=kb_project_ids
+            )
+
         reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
+
     except Exception as e:
         logger.warning(
             f"An exception occurred while processing query: {query}. Error: {str(e)}",
             exc_info=True,
         )
-        if KAG_PROJECT_CONF.language == "en":
-            answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
-        else:
+        # 使用查询语言判断生成错误信息
+        if is_chinese(query):
             answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
+        else:
+            answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
         reporter.add_report_line("answer", "error", answer, "ERROR")
+
     finally:
         await reporter.stop()
+
     return answer
 
 
@@ -314,17 +369,22 @@ if __name__ == "__main__":
     # init_kag_config(
     #     "4200052", "https://spg-pre.alipay.com"
     # )
-    params = {}
-    res = SolverMain().invoke(
-        4200052,
-        7700089,
-        # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
-        "周杰伦有哪些专辑",
-        "4700026",
-        True,
-        host_addr="http://spg-pre.alipay.com",
-        # host_addr="http://antspg-gz00b-006003080066.sa128-sqa.alipay.net:8887",
-        params=params,
-    )
-    print("*" * 80)
-    print("The Answer is: ", res)
+	config = {
+
+	}
+	params = {
+		"config": config
+	}
+	res = SolverMain().invoke(
+		2100007,
+		11200009,
+		# "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
+		"周杰伦有哪些专辑",
+		"9500005",
+		True,
+			# host_addr="http://spg-pre.alipay.com",
+			host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
+			params=params,
+		)
+	print("*" * 80)
+	print("The Answer is: ", res)
