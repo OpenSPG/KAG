@@ -3,12 +3,12 @@ import re
 import threading
 import time
 
+from jinja2 import Undefined, Template
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import (
-    KgGraph,
     EntityData,
     RelationData,
 )
@@ -32,7 +32,7 @@ def extract_ids(text):
 
 
 def generate_ref_doc_set(
-    tag_name, ref_type, retrieved_data_list: list, refer_ids: list
+        tag_name, ref_type, retrieved_data_list: list, refer_ids: list
 ):
     refer = []
     refer_doc_maps = {}
@@ -63,14 +63,14 @@ def merge_ref_doc_set(left: RefDocSet, right: RefDocSet):
     return left
 
 
-def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
+def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities, kag_project_config):
     nodes = {}
     edges = []
 
     for spo_or_entity in spo_retrieved_or_entities:
 
         def get_label(type_en, type_zh):
-            type_name = type_zh if KAG_PROJECT_CONF.language == "zh" else type_en
+            type_name = type_zh if kag_project_config.language == "zh" else type_en
             if not type_name:
                 type_name = type_en
             if not type_name:
@@ -79,7 +79,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
 
         def _get_node(entity: EntityData):
             return DataNode(
-                id=entity.to_show_id(KAG_PROJECT_CONF.language),
+                id=entity.to_show_id(kag_project_config.language),
                 name=entity.get_short_name(),
                 label=get_label(entity.type, entity.type_zh),
                 properties=entity.prop.get_properties_map() if entity.prop else {},
@@ -93,7 +93,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities):
                 nodes[start_node.id] = start_node
             if end_node.id not in nodes:
                 nodes[end_node.id] = end_node
-            spo_id = spo.to_show_id(KAG_PROJECT_CONF.language)
+            spo_id = spo.to_show_id(kag_project_config.language)
             data_spo = DataEdge(
                 id=spo_id,
                 _from=start_node.id,
@@ -142,6 +142,29 @@ def process_planning(think_str):
     return "\n".join(result)
 
 
+class SilentUndefined(Undefined):
+    """Jinja2 undefined variable handler that suppresses errors and returns empty values."""
+
+    def __getattr__(self, name):
+        return self  # Return the undefined object itself to avoid raising an error
+
+
+def render_jinja2_template(template_str, context):
+    """
+    Render a Jinja2 template string using the provided context dictionary.
+
+    :param template_str: A Jinja2 template in string format.
+    :param context: A dictionary containing variables used for rendering the template.
+    :return: The rendered string after applying the template, or the original string if rendering fails.
+    """
+    try:
+        template = Template(template_str, undefined=SilentUndefined)
+        return template.render(**context).strip()
+    except Exception as e:
+        logging.error(f"Jinja2 rendering failed: {e}, Original template: {template_str}")
+        return template_str.strip()  # Fallback to raw template string on failure
+
+
 @ReporterABC.register("open_spg_reporter")
 class OpenSPGReporter(ReporterABC):
     def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
@@ -163,40 +186,91 @@ class OpenSPGReporter(ReporterABC):
                 "en": "No relevant information was found.",
             },
             "kag_merger_digest": {
-                "zh": "排序文档后，输出{chunk_num}篇文档, 检索信息结束。",
-                "en": "{chunk_num} documents were output, information retrieved end.",
+                "zh": """{% if chunk_num is not defined or chunk_num == 0%}
+未检索到相关文档。
+{% else %}
+合并文档后，输出{{chunk_num}}篇文档, 检索信息结束。
+{% endif %}""",
+                "en": """{% if chunk_num is not defined or chunk_num == 0%}
+o relevant information was found.
+{% else %}
+{{chunk_num}} documents were output, information retrieved end.
+{% endif %}""",
             },
             "retrieved_info_digest": {
-                "zh": "共检索到 {chunk_num} 篇文档，检索的子图中共有 {nodes_num} 个节点和 {edges_num} 条边。",
-                "en": "In total, {chunk_num} documents were retrieved, with {node_num} nodes and {edge_num} edges in the graph.",
+                "zh": """{% if (nodes_num is defined and nodes_num != 0) or (edges_num is defined and edges_num != 0) %}检索的子图中共有 {{ nodes_num | default(0) }} 个节点和 {{ edges_num | default(0) }} 条边。
+{% endif %}
+{%if chunk_num != 0 %}共检索到 {{ chunk_num }} 篇文档。
+{% endif %}
+{%if (chunk_num is not defined or chunk_num == 0) and ((nodes_num is not defined or nodes_num == 0) and (edges_num is not defined and edges_num == 0)) %}未检索到相关信息。
+{% endif %}""",
+                "en": """{% if(nodes_num is defined and nodes_num != 0) or (edges_num is defined and edges_num != 0)  %}The retrieved subgraph contains {{ nodes_num | default(0) }} nodes and {{ edges_num | default(0) }} edges.
+{% endif %}
+{%if chunk_num != 0 %}{{ chunk_num }} document(s) were retrieved.
+{% endif %}
+{%if (chunk_num is not defined or chunk_num == 0) and ((nodes_num is not defined or nodes_num == 0) and (edges_num is not defined and edges_num == 0)) %}No relevant information was found.
+{% endif %}"""
             },
             "retrieved_doc_digest": {
-                "zh": "共检索到{chunk_num}篇文档。",
-                "en": "{chunk_num} documents were retrieved.",
+                "zh": """{% if chunk_num is not defined or chunk_num == 0 %}
+未检索到相关文档。
+{% else %}
+共检索到 {{ chunk_num }} 篇文档。
+{% endif %}""",
+                "en": """{% if chunk_num is not defined or chunk_num == 0 %}
+No relevant documents were retrieved.
+{% else %}
+{{ chunk_num }} document(s) were retrieved.
+{% endif %}"""
             },
             "next_finish": {
                 "zh": "检索信息不足以回答，需要继续检索。",
-                "en": "Insufficient information retrieved to answer, need to continue retrieving.",
+                "en": "Insufficient information retrieved to answer, need to continue retrieving."
             },
             "next_retrieved_finish": {
-                "zh": "检索的子图中共有 {edges_num} 条边和问题相关，还需进行chunk检索。",
-                "en": "There are {edges_num} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed.",
+                "zh": """{% if edges_num is not defined or edges_num == 0 %}
+        子图中无与问题相关的边，需进一步进行文档检索。
+        {% else %}
+        检索的子图中共有 {{ edges_num }} 条边和问题相关，还需进行chunk检索。
+        {% endif %}""",
+                "en": """{% if edges_num is not defined or edges_num == 0 %}
+        There are no edges in the subgraph related to the question. Further document retrieval is needed.
+        {% else %}
+        There are {{ edges_num }} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed.
+        {% endif %}"""
             },
             "retrieved_finish": {
                 "zh": "",
-                "en": "",
+                "en": ""
             },
-            "task_executing": {"en": "Executing...", "zh": "执行中..."},
+            "task_executing": {
+                "en": "Executing...",
+                "zh": "执行中..."
+            },
             "kg_fr": {
                 "en": "Open Information Extraction Graph Retrieve",
-                "zh": "开放信息抽取层检索",
+                "zh": "开放信息抽取层检索"
             },
-            "kg_cs": {"en": "SPG Graph Retrieve", "zh": "SPG知识层检索"},
-            "kg_rc": {"en": "RawChunk Retrieve", "zh": "文档检索"},
+            "kg_cs": {
+                "en": "SPG Graph Retrieve",
+                "zh": "SPG知识层检索"
+            },
+            "kg_rc": {
+                "en": "RawChunk Retrieve",
+                "zh": "文档检索"
+            },
             "kag_merger": {
-                "en": "Rerank the documents and take the top {chunk_num} ",
-                "zh": "重排序文档，取top {chunk_num} ",
-            },
+                "zh": """{% if chunk_num is not defined or chunk_num == 0 %}
+未检索到相关文档。
+{% else %}
+重排序文档，取top {{ chunk_num }}。
+{% endif %}""",
+        "en": """{% if chunk_num is not defined or chunk_num == 0 %}
+No relevant documents were found.
+{% else %}
+Rerank the documents and take the top {{ chunk_num }}.
+{% endif %}"""
+            }
         }
         self.tag_mapping = {
             "Graph Show": {
@@ -334,6 +408,9 @@ Rewritten question:\n{content}
                 "zh": "正在生成代码\n \n{content}\n",
             },
         }
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
 
         if self.host:
             self.client: ReasonerApi = ReasonerApi(
@@ -343,16 +420,13 @@ Rewritten question:\n{content}
             self.client = None
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
-        end_word = "." if KAG_PROJECT_CONF.language == "en" else "。"
-        if (
-            isinstance(datas, list)
-            and datas
-            and (isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData))
-        ):
+        end_word = "." if self.kag_project_config.language == "en" else "。"
+        if isinstance(datas, list) and datas and (
+                isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData)):
             graph_id = f"graph_{generate_random_string(3)}"
-            graph_list.append(_convert_spo_to_graph(graph_id, datas))
+            graph_list.append(_convert_spo_to_graph(graph_id, datas, self.kag_project_config))
             tpl = self.get_tag_template("Graph Show")
-            datas = f"""<graph id={graph_id}></graph>{end_word}"""
+            datas = f"""<graph id={graph_id}></graph>"""
         if tpl:
             format_params = {"content": datas}
             format_params.update(content_params)
@@ -384,9 +458,9 @@ Rewritten question:\n{content}
         params["status"] = step_status
 
         if (
-            is_overwrite
-            or report_id not in self.report_stream_data
-            or (not isinstance(report_content, str))
+                is_overwrite
+                or report_id not in self.report_stream_data
+                or (not isinstance(report_content, str))
         ):
             tag_template = self.get_tag_template(tag_name)
             self.report_stream_data[report_id] = {
@@ -459,16 +533,18 @@ Rewritten question:\n{content}
             if not isinstance(word, str):
                 continue
             if name in word:
-                template = self.word_mapping[name][KAG_PROJECT_CONF.language]
-                if "{" in template:
-                    template = template.format_map(SafeDict(params))
-                return template
+                template = self.word_mapping[name][self.kag_project_config.language]
+                if "{" in template or "%}" in template:
+                    rendered = render_jinja2_template(template, params)
+                else:
+                    rendered = template.format_map(SafeDict(params))
+                return rendered
         return word
 
     def get_tag_template(self, tag_name):
         for name in self.tag_mapping:
             if name in tag_name:
-                return self.tag_mapping[name][KAG_PROJECT_CONF.language]
+                return self.tag_mapping[name][self.kag_project_config.language]
         return None
 
     def extra_segment_report(self):

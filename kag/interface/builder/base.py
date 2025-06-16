@@ -19,7 +19,7 @@ from functools import partial
 from knext.common.base.component import Component
 from knext.common.base.runnable import Input, Output
 from kag.common.registry import Registrable
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.checkpointer import CheckPointer, CheckpointerManager
 from kag.common.sharding_info import ShardingInfo
 from kag.common.utils import generate_hash_id
@@ -53,7 +53,10 @@ class BuilderComponent(Component, Registrable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.language = kwargs.get("language", KAG_PROJECT_CONF.language)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
+        self.language = kwargs.get("language", self.kag_project_config.language)
         rank = kwargs.get("rank")
         world_size = kwargs.get("world_size")
         if rank is None or world_size is None:
@@ -70,7 +73,7 @@ class BuilderComponent(Component, Registrable):
         if not self._checkpointer_initialized:
             if self.ckpt_subdir:
                 self.ckpt_dir = os.path.join(
-                    KAG_PROJECT_CONF.ckpt_dir, self.ckpt_subdir
+                    self.kag_project_config.ckpt_dir, self.ckpt_subdir
                 )
                 self._checkpointer: CheckPointer = CheckpointerManager.get_checkpointer(
                     {

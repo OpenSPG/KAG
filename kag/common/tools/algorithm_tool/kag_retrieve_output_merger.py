@@ -15,7 +15,7 @@ from kag.interface import (
     Task,
     RetrieverOutputMerger,
     RetrieverOutput,
-    ChunkData,
+    ChunkData, KgGraph,
 )
 
 
@@ -143,4 +143,8 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
         if retrieved_chunks is not None:
             chunk_texts = [x.content for x in merged]
             retrieved_chunks.extend(chunk_texts)
-        return RetrieverOutput(chunks=merged)
+        graph = KgGraph()
+        for x in retrieve_outputs:
+            for g in x.graphs:
+                graph.merge_kg_graph(g)
+        return RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=merged, graphs=[graph])

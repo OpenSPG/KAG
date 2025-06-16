@@ -3,9 +3,9 @@ import time
 
 
 from kag.common.config import get_default_chat_llm_config
-from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
-    KgRetrieverTemplate,
-)
+from kag.common.parser.schema_std import StdSchema
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate, \
+    get_std_logic_form_parser, std_logic_node
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
 
 
@@ -28,6 +28,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         entity_linking: EntityLinking = None,
         llm: LLMClient = None,
         ppr_chunk_retriever_tool: RetrieverABC = None,
+        std_schema: StdSchema = None,
         top_k=10,
         **kwargs,
     ):
@@ -61,6 +62,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             )
         )
         self.top_k = top_k
+        self.std_parser = get_std_logic_form_parser(std_schema, self.kb_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
         query = task.arguments.get("rewrite_query", task.arguments["query"])
@@ -68,11 +70,13 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         if not logical_node:
             return RetrieverOutput(
                 retriever_method=self.schema().get("name", ""),
+                err_msg="No logical-form node found",
             )
         context = kwargs.get("context", Context())
-
-        # reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
-
+        logical_node = std_logic_node(task_cache_id=self.kb_project_config.project_id,
+                                      logic_node=logical_node,
+                                      logic_parser=self.std_parser,
+                                      context=context)
         graph_data = self.template.invoke(
             query=query,
             logic_nodes=[logical_node],
@@ -108,6 +112,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
         )
         output.graphs = [graph_data]
+        output.retriever_method = self.schema().get("name", "")
         return output
 
     def schema(self):

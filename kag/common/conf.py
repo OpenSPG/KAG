@@ -15,9 +15,10 @@ import logging
 import yaml
 import json
 import pprint
+import threading
 from jinja2 import Template
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 
 from knext.project.client import ProjectClient
 
@@ -38,6 +39,7 @@ class KAGConstants(object):
     KAG_LANGUAGE_KEY = "language"
     KAG_USER_TOKEN_KEY = "user_token"
     KAG_CKPT_DIR_KEY = "checkpoint_path"
+    KAG_QA_TASK_CONFIG_KEY = "kag_qa_task_config_key"
     KAG_BIZ_SCENE_KEY = "biz_scene"
     ENV_KAG_PROJECT_ID = "KAG_PROJECT_ID"
     ENV_KAG_PROJECT_HOST_ADDR = "KAG_PROJECT_HOST_ADDR"
@@ -201,6 +203,58 @@ KAG_CONFIG = KAGConfigMgr()
 
 KAG_PROJECT_CONF = KAG_CONFIG.global_config
 
+"""
+KAG_QA_TASK_CONFIG stores per-task configuration and should be cleaned up after use.
+"""
+KAG_QA_TASK_CONFIG:Dict[str, KAGConfigMgr] = {}
+KAG_QA_TASK_CONFIG_LOCK = threading.Lock()
+
+
+class KAGConfigAccessor:
+    @staticmethod
+    def get_config(task_with_kb_id=None):
+        """
+        Get the configuration information.
+
+        If task_id is provided, retrieve the corresponding config from KAG_QA_TASK_CONFIG;
+        otherwise, return the global KAG_CONFIG.
+
+        :param task_with_kb_id: Task ID, optional
+        :return: Corresponding configuration object
+        """
+        if task_with_kb_id is not None:
+            with KAG_QA_TASK_CONFIG_LOCK:
+                return KAG_QA_TASK_CONFIG.get(task_with_kb_id)
+        return KAG_CONFIG
+
+    @staticmethod
+    def set_task_config(task_with_kb_id, config: KAGConfigMgr):
+        """
+        Set the configuration for a specific task.
+
+        :param task_with_kb_id: Task ID
+        :param config: Configuration object to store
+        """
+        with KAG_QA_TASK_CONFIG_LOCK:
+            KAG_QA_TASK_CONFIG[task_with_kb_id] = config
+
+    @staticmethod
+    def set_kb_config(task_id, kb_project_id, kb_config):
+        """Setting up kb specific configuration (separate namespace)"""
+        config_key = f"{task_id}_{kb_project_id}"
+        with KAG_QA_TASK_CONFIG_LOCK:
+            KAG_QA_TASK_CONFIG[config_key] = kb_config
+
+    @staticmethod
+    def cleanup_task_config(task_with_kb_id):
+        """
+        Remove the configuration for a specific task.
+
+        :param task_with_kb_id: Task ID whose configuration needs to be cleaned up
+        """
+        with KAG_QA_TASK_CONFIG_LOCK:
+            if task_with_kb_id in KAG_QA_TASK_CONFIG:
+                del KAG_QA_TASK_CONFIG[task_with_kb_id]
 
 def init_env(config_file: str = None):
     project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)

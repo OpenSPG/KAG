@@ -50,6 +50,7 @@ from kag.interface.builder.external_graph_abc import (
 )
 from kag.interface.builder.builder_chain_abc import KAGBuilderChain
 from kag.interface.builder.postprocessor_abc import PostProcessorABC
+from kag.interface.indexer.index import IndexABC
 from kag.interface.solver.base import KagBaseModule, Question
 from kag.interface.solver.context import Context
 

@@ -14,7 +14,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from knext.common.base.runnable import Input, Output
 
 
@@ -27,7 +27,11 @@ class ScannerABC(BuilderComponent, ABC):
     It inherits from `BuilderComponent` and `ABC` (Abstract Base Class).
 
     """
-
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
     @property
     def input_types(self) -> Input:
         return str
@@ -113,7 +117,7 @@ class ScannerABC(BuilderComponent, ABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(self.kag_project_config.ckpt_dir, "file_scanner")
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             # local_file = os.path.join(local_file_path, os.path.basename(input))

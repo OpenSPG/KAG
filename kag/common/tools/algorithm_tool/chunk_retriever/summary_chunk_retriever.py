@@ -15,7 +15,7 @@ from typing import List
 import knext.common.cache
 import logging
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.interface import (
     RetrieverABC,
@@ -45,8 +45,11 @@ class SummaryChunkRetriever(RetrieverABC):
         score_threshold=0.85,
         **kwargs,
     ):
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            kag_config.all_config["vectorize_model"]
         )
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
@@ -57,8 +60,8 @@ class SummaryChunkRetriever(RetrieverABC):
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
                 }
             )
         )
@@ -167,7 +170,7 @@ class SummaryChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg="query is empty")
 
             # recall summary through semantic vector
             topk_summary_ids = await self._get_summaries(query, top_k)
@@ -189,7 +192,7 @@ class SummaryChunkRetriever(RetrieverABC):
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
 
     @property
     def input_indices(self):
