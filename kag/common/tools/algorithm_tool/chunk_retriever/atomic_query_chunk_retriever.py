@@ -13,7 +13,6 @@
 import knext.common.cache
 import logging
 import asyncio
-from kag.common.conf import KAG_CONFIG, KAGConstants, KAGConfigAccessor
 from kag.interface import (
     RetrieverABC,
     VectorizeModelABC,
@@ -49,10 +48,11 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         score_threshold=0.85,
         **kwargs,
     ):
+        super().__init__(top_k, **kwargs)
         self.llm_client = llm_client
         self.query_rewrite_prompt = query_rewrite_prompt
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
@@ -60,19 +60,16 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         self.graph_api = graph_api or GraphApiABC.from_config(
             {"type": "openspg_graph_api"}
         )
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": kag_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
         self.score_threshold = score_threshold
-        super().__init__(top_k, **kwargs)
+
 
     def recall_doc_by_atomic_query(self, atomic_query):
         entity = EntityData(

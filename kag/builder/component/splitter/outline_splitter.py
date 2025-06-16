@@ -19,7 +19,6 @@ from typing import List, Type, Union, Tuple
 import matplotlib.pyplot as plt
 from kag.interface.common.prompt import PromptABC
 from knext.common.base.runnable import Input, Output
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import generate_hash_id
 from kag.builder.model.chunk import Chunk, dump_chunks
 from kag.builder.model.chunk import ChunkTypeEnum
@@ -45,9 +44,6 @@ class OutlineSplitter(SplitterABC):
     ):
         super().__init__(**kwargs)
         self.llm = llm
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
         self.prompt = PromptABC.from_config(
             {"type": "outline", "language": self.kag_project_config.language}
         )

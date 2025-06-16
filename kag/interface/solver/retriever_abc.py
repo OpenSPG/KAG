@@ -108,8 +108,9 @@ class RetrieverABC(ToolABC):
         """
         self.top_k = top_k
         super().__init__(**kwargs)
-        self.kb_config: KAGConfigMgr = KAGConfigAccessor.get_config(kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None))
-        self.kb_project_config = self.kb_config.global_config
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        self.kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = self.kag_config.global_config
     @property
     def input_types(self):
         return str

@@ -20,9 +20,6 @@ Directly answer “Yes” or “No”."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
 
     @property
     def template_variables(self) -> List[str]:

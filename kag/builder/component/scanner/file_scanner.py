@@ -13,7 +13,6 @@ import os
 from typing import List
 
 from kag.interface import ScannerABC
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from knext.common.base.runnable import Input, Output
 
 
@@ -26,6 +25,8 @@ class FileScanner(ScannerABC):
     This class is responsible for reading SINGLE file and returning the path as a list of strings.
     It inherits from `ScannerABC` and overrides the necessary methods to handle file-specific operations.
     """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def input_types(self) -> Input:
@@ -35,7 +36,7 @@ class FileScanner(ScannerABC):
     def output_types(self) -> Output:
         return str
 
-    def load_data(self, input: Input, **kwargs) -> List[Output]:
+    def load_data(self, input: Input) -> List[Output]:
         """
         Loads data by returning the input file path as a list of strings.
 
@@ -48,13 +49,10 @@ class FileScanner(ScannerABC):
         Returns:
             List[Output]: A list containing the input file path.
         """
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(kag_project_config.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(self.kag_project_config.ckpt_dir, "file_scanner")
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             from urllib.parse import urlparse

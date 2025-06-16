@@ -13,7 +13,6 @@ import logging
 from typing import List
 
 import knext.common.cache
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
@@ -42,11 +41,9 @@ class OutlineChunkRetriever(RetrieverABC):
         score_threshold=0.85,
         **kwargs,
     ):
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
+        super().__init__(top_k, **kwargs)
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            kag_config.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
@@ -57,12 +54,12 @@ class OutlineChunkRetriever(RetrieverABC):
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": kag_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
-        super().__init__(top_k, **kwargs)
+
 
     def get_outlines(self, query, top_k) -> List[str]:
         topk_outline_ids = []

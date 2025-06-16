@@ -15,7 +15,7 @@ from tenacity import stop_after_attempt, retry
 from kag.interface import PostProcessorABC
 from kag.interface import ExternalGraphLoaderABC
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAGConstants, KAGConfigAccessor
+from kag.common.conf import KAGConstants
 from kag.common.utils import get_vector_field_name
 from knext.search.client import SearchClient
 from knext.schema.client import SchemaClient, OTHER_TYPE
@@ -46,10 +46,7 @@ class KAGPostProcessor(PostProcessorABC):
             similarity_threshold (float, optional): The similarity threshold for entity linking. Defaults to 0.9.
             external_graph (ExternalGraphLoaderABC, optional): An instance of ExternalGraphLoaderABC for external graph-based linking. Defaults to None.
         """
-        super().__init__()
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
+        super().__init__(**kwargs)
         self.schema = SchemaClient(
             host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()

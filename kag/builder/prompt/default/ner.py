@@ -149,11 +149,8 @@ class OpenIENERPrompt(PromptABC):
 
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         project_schema = SchemaClient(
-            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()
         self.schema = []
         for name, value in project_schema.items():
