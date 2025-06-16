@@ -14,7 +14,6 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from knext.common.base.runnable import Input, Output
 
 
@@ -29,9 +28,6 @@ class ScannerABC(BuilderComponent, ABC):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
     @property
     def input_types(self) -> Input:
         return str
@@ -41,7 +37,7 @@ class ScannerABC(BuilderComponent, ABC):
         return Any
 
     @abstractmethod
-    def load_data(self, input: Input, **kwargs) -> List[Output]:
+    def load_data(self, input: Input) -> List[Output]:
         """
         Abstract method to load data from the input source.
 
@@ -50,7 +46,6 @@ class ScannerABC(BuilderComponent, ABC):
 
         Args:
             input (Input): The input source to load data from.
-            **kwargs: Additional keyword arguments.
 
         Returns:
             List[Output]: A list of processed results.
@@ -93,16 +88,15 @@ class ScannerABC(BuilderComponent, ABC):
 
         Args:
             input (Input): The input source to load data from.
-            **kwargs: Additional keyword arguments.
 
         Yields:
             The items within the sharded range.
         """
-        data = self.load_data(input, **kwargs)
+        data = self.load_data(input)
         for item in self._generate(data):
             yield item
 
-    def download_data(self, input: Input, **kwargs) -> List[Output]:
+    def download_data(self, input: Input) -> List[Output]:
         """
         Downloads data from a given input URL or returns the input directly if it is not a URL.
 

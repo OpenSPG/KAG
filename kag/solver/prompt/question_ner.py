@@ -49,14 +49,11 @@ class QuestionNER(PromptABC):
 
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         self.schema = (
             ReasonerClient(
-                project_id=kag_project_config.project_id,
-                host_addr=kag_project_config.host_addr,
-                namespace=kag_project_config.namespace,
+                project_id=self.kag_project_config.project_id,
+                host_addr=self.kag_project_config.host_addr,
+                namespace=self.kag_project_config.namespace,
             )
             .get_reason_schema()
             .keys()

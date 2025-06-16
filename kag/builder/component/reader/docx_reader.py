@@ -19,7 +19,6 @@ from kag.interface import LLMClient
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import ReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from kag.builder.model.sub_graph import SubGraph, Node, Edge
@@ -93,12 +92,9 @@ class DocxReader(ReaderABC):
             cut_depth (int): The heading level at which to cut the document into chunks. Defaults to 5.
             length_splitter (LengthSplitter): An optional LengthSplitter instance for splitting long chunks. Defaults to None.
         """
-        super().__init__()
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
+        super().__init__(**kwargs)
         self.llm = llm
-        self.prompt = OutlinePrompt(kag_project_config.language)
+        self.prompt = OutlinePrompt(self.kag_project_config.language)
         self.cut_depth = cut_depth
         self.length_splitter = length_splitter
 

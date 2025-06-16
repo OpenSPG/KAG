@@ -44,7 +44,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
             entity_linking=self.entity_linking,
             llm_module=self.llm,
         )
-        self.std_parser = get_std_logic_form_parser(std_schema, self.kb_project_config)
+        self.std_parser = get_std_logic_form_parser(std_schema, self.kag_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
 
@@ -56,7 +56,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                 err_msg="No logic node found in task arguments",
             )
         context = kwargs.get("context", Context())
-        logical_node = std_logic_node(task_cache_id=self.kb_project_config.project_id,
+        logical_node = std_logic_node(task_cache_id=self.kag_project_config.project_id,
                                       logic_node=logical_node,
                                       logic_parser=self.std_parser,
                                       context=context)

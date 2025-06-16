@@ -41,14 +41,11 @@ class PprChunkRetriever(RetrieverABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": kag_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
@@ -61,7 +58,7 @@ class PprChunkRetriever(RetrieverABC):
         )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            kag_config.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
 
         self.ner = ner or Ner(llm_module=llm_client, **kwargs)

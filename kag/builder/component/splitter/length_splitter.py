@@ -11,7 +11,6 @@
 # or implied.
 
 from typing import Type, List
-from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.common.utils import generate_hash_id
@@ -49,13 +48,10 @@ class LengthSplitter(BaseTableSplitter):
             window_length (int): The length of the overlap between chunks. Defaults to 100.
             strict_length (bool): Whether to split strictly by length without preserving sentences. Defaults to False.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.split_length = split_length
         self.window_length = window_length
         self.strict_length = strict_length
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
 
     @property
     def input_types(self) -> Type[Input]:

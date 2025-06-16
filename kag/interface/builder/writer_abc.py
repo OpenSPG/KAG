@@ -23,6 +23,8 @@ class SinkWriterABC(BuilderComponent, ABC):
     It inherits from BuilderComponent and ABC, ensuring that any subclass must implement
     the `invoke` method.
     """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def input_types(self):
