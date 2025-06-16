@@ -1,14 +1,14 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
   api_key:
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
   type: maas
 
 chat_llm: &chat_llm
   api_key:
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
   type: maas
 
 vectorize_model: &vectorize_model

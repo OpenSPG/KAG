@@ -80,7 +80,7 @@ def _render_template(namespace: str, tmpl: str, **kwargs):
     project_id = kwargs.get("id", None)
     config["project"]["id"] = project_id
     config_file_path = project_dir.resolve() / "kag_config.yaml"
-    with open(config_file_path, "w") as config_file:
+    with open(config_file_path, "w", encoding="utf-8", newline="\n") as config_file:
         yaml.dump(config, config_file)
     return project_dir
 

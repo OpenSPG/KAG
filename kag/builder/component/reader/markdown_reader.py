@@ -18,6 +18,7 @@ import re
 from typing import Dict, List, Tuple
 
 # Third-party imports
+from kag.interface.builder.base import BuilderComponentData
 import markdown
 import pandas as pd
 import requests
@@ -951,6 +952,9 @@ class MarkDownReader(ReaderABC):
             elif isinstance(first_item, Chunk):
                 content = first_item.content
                 return content, first_item.name, first_item.id
+            elif isinstance(first_item, BuilderComponentData):
+                content = first_item.data.content
+                return content, first_item.data.name, first_item.data.id
             else:
                 raise TypeError(
                     f"Expected file path or Chunk, got {type(first_item).__name__}"

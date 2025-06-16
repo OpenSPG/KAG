@@ -112,7 +112,7 @@ class KAGBenchmark(Registrable):
 
         logger.info("Run builder...")
         if self.is_async(self.index_builder):
-            result = asyncio.run(self.index_builder())
+            result = self.sync_wrapper(self.index_builder())
         else:
             result = self.index_builder()
         output["builder"] = result
@@ -120,14 +120,20 @@ class KAGBenchmark(Registrable):
 
         logger.info("Run solver...")
         if self.is_async(self.qa_solver):
-            result = asyncio.run(self.qa_solver())
+            result = self.sync_wrapper(self.qa_solver())
         else:
             result = self.qa_solver()
         output["solver"] = result
         logger.info("Done run solver!")
         return output
 
-
+    @staticmethod
+    def sync_wrapper(coro):
+        try:
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(coro)
+        except RuntimeError:
+            return asyncio.run(coro)
 def run_benchmark(config, result_queue):
     workdir = config.pop("root_dir")
     print(f"workdir = {workdir}")

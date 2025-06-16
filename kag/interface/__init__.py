@@ -11,7 +11,7 @@
 # or implied.
 from kag.interface.common.prompt import PromptABC
 from kag.interface.common.llm_client import LLMClient
-
+from kag.interface.indexer.index import IndexABC
 from kag.interface.common.vectorize_model import (
     VectorizeModelABC,
     EmbeddingVector,
@@ -33,7 +33,7 @@ from kag.interface.common.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface.common.model.doc import Doc
 from kag.interface.common.model.spg_record import SPGRecord
 from kag.interface.common.model.sub_graph import Node, Edge, SubGraph
-
+from kag.interface.indexer.index import IndexABC
 from kag.interface.common.tools import ToolABC
 
 from kag.interface.builder.scanner_abc import ScannerABC

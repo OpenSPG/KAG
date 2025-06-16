@@ -105,5 +105,6 @@ __all__ = [
     "KnowledgeUnitSchemaFreeExtractor",
     "ChunkExtractor",
     "OutlineExtractor",
+    "SummaryExtractor",
     "MemoryGraphWriter",
 ]

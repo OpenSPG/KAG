@@ -149,7 +149,7 @@ class Environment:
         return self._closest_config(path.parent, path)
 
     def dump(self, path=None, **kwargs):
-        with open(path or self._config_path, "w") as f:
+        with open(path or self._config_path, "w", encoding="utf-8", newline="\n") as f:
             yaml.dump(self._config, f)
 
 

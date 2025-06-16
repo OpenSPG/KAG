@@ -87,7 +87,7 @@ class VectorChunkRetriever(RetrieverABC):
                 if score >= self.score_threshold:
                     chunks.append(
                         ChunkData(
-                            content=item["node"]["content"],
+                            content=item["node"].get("content", ""),
                             title=item["node"]["name"],
                             chunk_id=item["node"]["id"],
                             score=score,
