@@ -198,6 +198,9 @@ class PprChunkRetriever(RetrieverABC):
         return matched_docs
 
     def linking_matched_entities(self, query: str, **kwargs):
+        start_entities = kwargs.get("start_entities", [])
+        if start_entities:
+            return start_entities
         matched_entities = []
         ner_maps = {}
         ner_start_time = time.time()
