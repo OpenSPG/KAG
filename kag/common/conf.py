@@ -140,6 +140,8 @@ def load_config(prod: bool = False, config_file: str = None):
                     config["project"][key] = prompt_config[key]
         if "vectorizer" in config and "vectorize_model" not in config:
             config["vectorize_model"] = config["vectorizer"]
+        # host_addr on server may be incorrect, override it.
+        config["project"][KAGConstants.KAG_PROJECT_HOST_ADDR_KEY] = host_addr
         return config
     else:
         if not validate_config_file(config_file):
