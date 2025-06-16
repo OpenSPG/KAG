@@ -9,6 +9,9 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+from kag.builder.prompt.default.knowledge_unit import KnowledgeUnitPrompt
+from kag.builder.prompt.default.knowledge_unit_ner import OpenIENERKnowledgeUnitPrompt
+from kag.builder.prompt.default.knowledge_unit_triple import OpenIEKnowledgeUnitTriplePrompt
 from kag.builder.prompt.default.ner import OpenIENERPrompt as DefaultOpenIENERPrompt
 from kag.builder.prompt.default.std import (
     OpenIEEntitystandardizationdPrompt as DefaultOpenIEEntitystandardizationdPrompt,
@@ -51,4 +54,7 @@ __all__ = [
     "TableContextPrompt",
     "TableRowColSummaryPrompt",
     "AtomicQueryExtractPrompt",
+    "KnowledgeUnitPrompt",
+    "OpenIENERKnowledgeUnitPrompt",
+    "OpenIEKnowledgeUnitTriplePrompt",
 ]
