@@ -255,11 +255,9 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
                 kb_project_ids.append(kb_project_id)
                 kb_task_project_id = f"{task_id}_{kb_project_id}"
 
-                # 创建KB专用配置管理器
                 kb_conf = KAGConfigMgr()
                 kb_conf.update_conf(kb)
 
-                # 合并全局配置
                 global_config = kb.get(KAGConstants.PROJECT_CONFIG_KEY, {})
                 kb_conf.global_config.initialize(**global_config)
                 project_client = ProjectClient(host_addr=host_addr, project_id=kb_project_id)
@@ -281,7 +279,6 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
             except Exception as e:
                 logger.error(f"KB配置初始化失败: {str(e)}", exc_info=True)
 
-    # 创建Reporter
     reporter_config = {
         "type": main_config.get("reporter", "open_spg_reporter"),
         "task_id": task_id,
@@ -312,7 +309,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
             f"An exception occurred while processing query: {query}. Error: {str(e)}",
             exc_info=True,
         )
-        # 使用查询语言判断生成错误信息
+
         if is_chinese(query):
             answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
         else:
