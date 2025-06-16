@@ -29,15 +29,15 @@ logger = logging.getLogger()
 chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 
 
-@RetrieverABC.register("diagram_retriever")
-class DiagramRetriever(RetrieverABC):
+@RetrieverABC.register("table_retriever")
+class TableRetriever(RetrieverABC):
     def __init__(
         self,
         vectorize_model: VectorizeModelABC = None,
         search_api: SearchApiABC = None,
         graph_api: GraphApiABC = None,
         top_k: int = 10,
-        score_threshold=0.85,
+        score_threshold=0.8,
         **kwargs,
     ):
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
@@ -63,57 +63,61 @@ class DiagramRetriever(RetrieverABC):
         self.score_threshold = score_threshold
         super().__init__(top_k, **kwargs)
 
-    def get_diagram(self, query, top_k) -> List[str]:
-        topk_diagram_ids = {}
+    def get_table(self, query, top_k) -> List[str]:
+        topk_table_ids = {}
         query_vector = self.vectorize_model.vectorize(query)
 
         # recall top_k outline
-        top_k_diagrams_from_name = self.search_api.search_vector(
-            label=self.schema_helper.get_label_within_prefix("Diagram"),
+        top_k_tables_from_name = self.search_api.search_vector(
+            label=self.schema_helper.get_label_within_prefix("Table"),
             query_vector=query_vector,
             property_key="name",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
-        top_k_diagrams_from_content = self.search_api.search_vector(
-            label=self.schema_helper.get_label_within_prefix("Diagram"),
+        top_k_tables_from_content = self.search_api.search_vector(
+            label=self.schema_helper.get_label_within_prefix("Table"),
             query_vector=query_vector,
             property_key="content",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
-        top_k_diagrams_from_beforeText = self.search_api.search_vector(
-            label=self.schema_helper.get_label_within_prefix("Diagram"),
+        top_k_tables_from_beforeText = self.search_api.search_vector(
+            label=self.schema_helper.get_label_within_prefix("Table"),
             query_vector=query_vector,
             property_key="beforeText",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
-        top_k_diagrams_from_afterText = self.search_api.search_vector(
-            label=self.schema_helper.get_label_within_prefix("Diagram"),
+        top_k_tables_from_afterText = self.search_api.search_vector(
+            label=self.schema_helper.get_label_within_prefix("Table"),
             query_vector=query_vector,
             property_key="afterText",
             topk=top_k,
+            ef_search=top_k * 3,
         )
 
         for item in (
-            top_k_diagrams_from_name
-            + top_k_diagrams_from_content
-            + top_k_diagrams_from_beforeText
-            + top_k_diagrams_from_afterText
+            top_k_tables_from_name
+            + top_k_tables_from_content
+            + top_k_tables_from_beforeText
+            + top_k_tables_from_afterText
         ):
             node_score = item.get("score", 0.0)
             if node_score >= self.score_threshold:
                 key = item["node"]["id"]
-                value = max(node_score, topk_diagram_ids.get(key, 0.0))
-                topk_diagram_ids[key] = value
+                value = max(node_score, topk_table_ids.get(key, 0.0))
+                topk_table_ids[key] = value
 
-        return topk_diagram_ids
+        return topk_table_ids
 
-    def get_chunk_data(self, diagram_id, score=0.0):
+    def get_chunk_data(self, table_id, score=0.0):
         node = self.graph_api.get_entity_prop_by_id(
-            label=self.schema_helper.get_label_within_prefix("Diagram"),
-            biz_id=diagram_id,
+            label=self.schema_helper.get_label_within_prefix("Table"),
+            biz_id=table_id,
         )
         node_dict = dict(node.items())
 
@@ -124,15 +128,15 @@ class DiagramRetriever(RetrieverABC):
         return ChunkData(
             content=content,
             title=node_dict["name"].replace("_split_0", ""),
-            chunk_id=diagram_id,
+            chunk_id=table_id,
             score=score,
         )
 
-    def get_related_chunks(self, diagram_ids):
+    def get_related_chunks(self, table_ids):
         chunks = []
 
-        for diagram_id, score in diagram_ids.items():
-            chunks.append(self.get_chunk_data(diagram_id, score=score))
+        for table_id, score in table_ids.items():
+            chunks.append(self.get_chunk_data(table_id, score=score))
         return chunks
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
@@ -146,11 +150,11 @@ class DiagramRetriever(RetrieverABC):
                 logger.error("chunk query is emtpy", exc_info=True)
                 return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
-            # recall diagram_ids through semantic vector
-            topk_diagram_ids = self.get_diagram(query, top_k)
+            # recall table_ids through semantic vector
+            topk_table_ids = self.get_table(query, top_k)
 
-            # get diagram data for each diagram
-            chunks = self.get_related_chunks(topk_diagram_ids)
+            # get table data for each table
+            chunks = self.get_related_chunks(topk_table_ids)
 
             # to retrieve output
             out = RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=chunks)

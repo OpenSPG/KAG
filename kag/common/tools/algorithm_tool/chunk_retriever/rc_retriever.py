@@ -5,7 +5,7 @@ from typing import Optional
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import LogicFormConfiguration
 from kag.common.text_sim_by_vector import TextSimilarity
-from kag.interface import Task, VectorizeModelABC, RetrieverABC, RetrieverOutput
+from kag.interface import VectorizeModelABC, RetrieverABC, RetrieverOutput
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.interface.solver.reporter_abc import ReporterABC
 

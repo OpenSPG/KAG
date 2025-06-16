@@ -1,24 +1,28 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
   api_key: sk-
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   model: qwen2.5-7b-instruct
-  temperature: 0.7
-  type: maas
+  enable_check: false
+  max_tokens: 8192
 
-chat_llm: &chat_llm
-  api_key: sk-
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
-  temperature: 0.0
-  type: maas
 
 ner_llm:
-  api_key: sk-
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  model: qwen-max-latest
-  temperature: 0.0
   type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-7b-instruct
+  enable_check: false
+  max_tokens: 1024
+
+chat_llm: &chat_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-
+  model: qwen2.5-72b-instruct
+  enable_check: false
+  max_tokens: 1024
 
 vectorize_model: &vectorize_model
   api_key: sk-
@@ -36,8 +40,8 @@ log:
 project:
   biz_scene: default
   host_addr: http://127.0.0.1:8887
-  id: '10'
-  language: en
+  id: '1'
+  language: zh
   namespace: AFAC2024
 #------------project configuration end----------------#
 
@@ -54,13 +58,30 @@ e1:
     type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
 
 e2: &e2
-  type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
-
-e3: &e3
   type: chunk_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
 
+e3: &e3
+  type: outline_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+
 e4: &e4
-  type: table_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
+  llm_module: *openie_llm
+  chunk_summary_prompt:
+    type: default_chunk_summary
+
+e5: &e5
+  type: table_extractor
+  llm: *openie_llm
+  table_context_prompt:
+    type: table_context
+  table_row_col_summary_prompt:
+    type: table_row_col_summary
+
+e6: &e6
+  type: atomic_query_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
+  llm: *openie_llm
+  prompt:
+    type: atomic_query_extract
 
 kag_builder_pipeline:
   chain:
@@ -69,6 +90,8 @@ kag_builder_pipeline:
       - *e2
       - *e3
       - *e4
+      - *e5
+      - *e6
     reader:
       type: md_reader # kag.builder.component.reader.dict_reader.DictReader
       cut_depth: 6
@@ -84,53 +107,118 @@ kag_builder_pipeline:
     writer:
       type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
   num_threads_per_chain: 1
-  num_chains: 16
-  max_concurrency: 10
+  num_chains: 1
+  max_concurrency: 1
   scanner:
+    #type: file_scanner
     type: dir_file_scanner # kag.builder.component.scanner.directory_scanner.DirectoryScanner
     file_suffix: md
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
 search_api: &search_api
-  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+  type: openspg_search_api 
+  #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
 
 graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 r1: &r1
-  type: vector_chunk_retriever
+  type: atomic_query_chunk_retriever
   vectorize_model: *vectorize_model
   search_api: *search_api
+  graph_api: *graph_api
+  llm_client: *chat_llm
+  query_rewrite_prompt:
+    type: atomic_query_rewrite_prompt
   top_k: 10
 
-r2:
-  type: text_chunk_retriever
+r2: &r2
+  type: outline_chunk_retriever
+  vectorize_model: *vectorize_model
   search_api: *search_api
+  graph_api: *graph_api
   top_k: 10
 
 r3: &r3
-  type: outline_chunk_retriever # recall chunk through outline
+  type: summary_chunk_retriever
+  vectorize_model: *vectorize_model
   search_api: *search_api
   graph_api: *graph_api
+  score_threshold: 0.8
+  top_k: 10
+
+r4: &r4
+  type: vector_chunk_retriever
   vectorize_model: *vectorize_model
-  top_k: 5
+  search_api: *search_api
+  graph_api: *graph_api
+  score_threshold: 0.8
+  top_k: 10
+
+r5: &r5
+  type: table_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  top_k: 10
 
 retriever_executor: &retriever_executor
   type: evidence_based_reasoner
   llm: *chat_llm
   retrievers:
-    - *r1
-    - *r3
+   - *r1
+   - *r2
+   - *r3
+   - *r4
+   - *r5
   merger:
     type: kag_merger
 
+retriever_executor_rerank: &retriever_executor_rerank
+  type: long_context_reasoner
+  llm: *chat_llm
+  retrievers:
+    - *r1
+    - *r2
+    - *r3
+    - *r4
+    - *r5
+  merger:
+    type: kag_merger
+  context_select_llm: *chat_llm
+  context_select_prompt:
+    type: context_select_prompt
+  vectorize_model: *vectorize_model
+
+kag_hybrid_executor: &kag_hybrid_executor_conf
+  type: kag_hybrid_executor
+  lf_rewriter:
+    type: kag_spo_lf
+    llm_client: *chat_llm
+    lf_trans_prompt:
+      type: default_spo_retriever_decompose
+    vectorize_model: *vectorize_model
+  flow: |
+    kg_cs->kg_fr->kag_merger;rc->kag_merger
 
 
-kag_solver_pipeline:
+kag_output_executor: &kag_output_executor_conf
+  type: kag_output_executor
+
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
+
+
+py_code_based_math_executor: &py_code_based_math_executor_conf
+  type: py_code_based_math_executor
+  llm: *chat_llm
+
+
+kag_solver_pipeline_tc:
   type: kag_static_pipeline
   planner:
-    type: kag_static_planner
+    type: kag_afac_static_planner
     llm: *chat_llm
     plan_prompt:
       type: retriever_static_planning
@@ -139,8 +227,30 @@ kag_solver_pipeline:
   executors:
     - *retriever_executor
   generator:
-    type: llm_generator
+    type: llm_generator_with_thought
     llm_client: *chat_llm
     generated_prompt:
       type: default_multi_hop_generator
 #------------kag-solver configuration end----------------#
+
+
+kag_solver_pipeline:
+  type: kag_iterative_pipeline
+  planner:
+    type: kag_iterative_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: default_thought_iterative_planning
+    rewrite_prompt:
+      type: default_query_rewrite
+  executors:
+    - *retriever_executor_rerank
+    # - *kag_hybrid_executor_conf
+    - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
+    - *kag_output_executor_conf
+  generator:
+    type: llm_generator_with_thought
+    llm_client: *chat_llm
+    generated_prompt:
+      type: default_multi_hop_generator

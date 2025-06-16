@@ -138,7 +138,9 @@ class EmbeddingVectorManager(object):
             embeddings.extend(sparse_vectorizer.vectorize(texts[start:end]))
         return embeddings
 
-    async def _agenerate_dense_vectors(self, dense_vectorizer, text_batch, batch_size=32):
+    async def _agenerate_dense_vectors(
+        self, dense_vectorizer, text_batch, batch_size=32
+    ):
         texts = list(text_batch)
         if not texts:
             return []
@@ -151,11 +153,15 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
-            tasks.append(asyncio.create_task(dense_vectorizer.avectorize(texts[start:end])))
+            tasks.append(
+                asyncio.create_task(dense_vectorizer.avectorize(texts[start:end]))
+            )
         results = await asyncio.gather(*tasks)
         return [item for sublist in results for item in sublist]
 
-    async def _agenerate_sparse_vectors(self, sparse_vectorizer, text_batch, batch_size=32):
+    async def _agenerate_sparse_vectors(
+        self, sparse_vectorizer, text_batch, batch_size=32
+    ):
         texts = list(text_batch)
         if not texts:
             return []
@@ -176,7 +182,9 @@ class EmbeddingVectorManager(object):
                     sub_texts.append("none")
             if len(sub_texts) == 0:
                 continue
-            tasks.append(asyncio.create_task(sparse_vectorizer.avectorize(texts[start:end])))
+            tasks.append(
+                asyncio.create_task(sparse_vectorizer.avectorize(texts[start:end]))
+            )
         results = await asyncio.gather(*tasks)
         return [item for sublist in results for item in sublist]
 
@@ -192,17 +200,23 @@ class EmbeddingVectorManager(object):
 
     def batch_generate_sparse(self, sparse_vectorizer, batch_size=32):
         text_batch = self._get_sparse_text_batch()
-        vectors = self._generate_sparse_vectors(sparse_vectorizer, text_batch, batch_size)
+        vectors = self._generate_sparse_vectors(
+            sparse_vectorizer, text_batch, batch_size
+        )
         self._fill_vectors(vectors, text_batch)
 
     async def abatch_generate_dense(self, dense_vectorizer, batch_size=32):
         text_batch = self._get_dense_text_batch()
-        vectors = await self._agenerate_dense_vectors(dense_vectorizer, text_batch, batch_size)
+        vectors = await self._agenerate_dense_vectors(
+            dense_vectorizer, text_batch, batch_size
+        )
         self._fill_vectors(vectors, text_batch)
 
     async def abatch_generate_sparse(self, sparse_vectorizer, batch_size=32):
         text_batch = self._get_sparse_text_batch()
-        vectors = await self._agenerate_sparse_vectors(sparse_vectorizer, text_batch, batch_size)
+        vectors = await self._agenerate_sparse_vectors(
+            sparse_vectorizer, text_batch, batch_size
+        )
         self._fill_vectors(vectors, text_batch)
 
     def patch(self):
@@ -356,7 +370,9 @@ class BatchVectorizer(VectorizerABC):
                     IndexTypeEnum.SparseVector,
                     IndexTypeEnum.TextAndSparseVector,
                 ]:
-                    sparse_vec_meta[type_name].append(get_sparse_vector_field_name(prop_name))
+                    sparse_vec_meta[type_name].append(
+                        get_sparse_vector_field_name(prop_name)
+                    )
         vec_meta = dense_vec_meta, sparse_vec_meta
         return vec_meta
 
@@ -381,7 +397,10 @@ class BatchVectorizer(VectorizerABC):
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
         generator = EmbeddingVectorGenerator(
-            self.vectorize_model, self.vec_meta, self.disable_generation, self.sparse_vectorize_model
+            self.vectorize_model,
+            self.vec_meta,
+            self.disable_generation,
+            self.sparse_vectorize_model,
         )
         generator.batch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(
@@ -414,7 +433,10 @@ class BatchVectorizer(VectorizerABC):
             node_list.append((node, properties))
             node_batch.append((node.label, properties.copy()))
         generator = EmbeddingVectorGenerator(
-            self.vectorize_model, self.vec_meta, self.disable_generation, self.sparse_vectorize_model
+            self.vectorize_model,
+            self.vec_meta,
+            self.disable_generation,
+            self.sparse_vectorize_model,
         )
         await generator.abatch_generate(node_batch, self.batch_size)
         for (node, properties), (_node_label, new_properties) in zip(

@@ -79,9 +79,7 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
 
 
 class KgRetrieverTemplate:
-    def __init__(
-        self, path_select: PathSelect, entity_linking, **kwargs
-    ):
+    def __init__(self, path_select: PathSelect, entity_linking, **kwargs):
         self.path_select = path_select
         self.entity_linking = entity_linking
         self.kwargs = kwargs

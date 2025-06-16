@@ -671,7 +671,7 @@ class KgGraph(RetrievedData):
         self.entity_map[alias] = data_values
 
     def merge_kg_graph(self, other, wo_intersect=True):
-        for k,v in other.answered_alias.items():
+        for k, v in other.answered_alias.items():
             if isinstance(v, list):
                 for d in v:
                     self.add_answered_alias(k, d)
@@ -1041,7 +1041,7 @@ class KgGraph(RetrievedData):
 
 
 class ChunkData(RetrievedData):
-    def __init__(self, content="", title="", chunk_id="", score=0.0, properties = None):
+    def __init__(self, content="", title="", chunk_id="", score=0.0, properties=None):
         super().__init__()
         self.content = content
         self.title = title

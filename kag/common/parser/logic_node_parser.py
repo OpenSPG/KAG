@@ -344,6 +344,7 @@ class ParseLogicForm:
                     for o_type in o_type_set:
                         type_info = TypeInfo()
                         type_info.un_std_entity_type = p_unstd_type
+
                         def check_type_is_exists(type_name):
                             if type_name is None or type_name == "Entity":
                                 return False
@@ -356,35 +357,50 @@ class ParseLogicForm:
                                     o_candis_set = self.schema.sp_o[sp_index]
                                     for candis in o_candis_set:
                                         spo_zh = f"{s_type.un_std_entity_type}_{p_unstd_type}_{candis}"
-                                        type_info.std_entity_type = self.schema.get_spo_with_p(
-                                            self.schema.spo_zh_en[spo_zh]
+                                        type_info.std_entity_type = (
+                                            self.schema.get_spo_with_p(
+                                                self.schema.spo_zh_en[spo_zh]
+                                            )
                                         )
                                         break
-                            if not type_info.std_entity_type and not check_type_is_exists(s_type.std_entity_type):
+                            if (
+                                not type_info.std_entity_type
+                                and not check_type_is_exists(s_type.std_entity_type)
+                            ):
                                 op_index = (o_type.un_std_entity_type, p_unstd_type)
                                 if op_index in self.schema.op_s:
                                     s_candis_set = self.schema.op_s[op_index]
                                     for candis in s_candis_set:
                                         spo_zh = f"{candis}_{p_unstd_type}_{o_type.un_std_entity_type}"
-                                        type_info.std_entity_type = self.schema.get_spo_with_p(
-                                            self.schema.spo_zh_en[spo_zh]
+                                        type_info.std_entity_type = (
+                                            self.schema.get_spo_with_p(
+                                                self.schema.spo_zh_en[spo_zh]
+                                            )
                                         )
                                         break
 
                             if (
-                                    not type_info.std_entity_type
-                                    and check_type_is_exists(s_type.std_entity_type)
-                                    and check_type_is_exists(o_type.std_entity_type)
+                                not type_info.std_entity_type
+                                and check_type_is_exists(s_type.std_entity_type)
+                                and check_type_is_exists(o_type.std_entity_type)
                             ):
-                                so_index = (s_type.un_std_entity_type, o_type.un_std_entity_type)
+                                so_index = (
+                                    s_type.un_std_entity_type,
+                                    o_type.un_std_entity_type,
+                                )
                                 if so_index not in self.schema.so_p:
-                                    so_index = (o_type.un_std_entity_type, s_type.un_std_entity_type)
+                                    so_index = (
+                                        o_type.un_std_entity_type,
+                                        s_type.un_std_entity_type,
+                                    )
                                 candis_set = self.schema.so_p[so_index]
                                 for p_candis in candis_set:
                                     if p_candis == p_unstd_type:
                                         spo_zh = f"{s_type.un_std_entity_type}_{p_candis}_{o_type.un_std_entity_type}"
-                                        type_info.std_entity_type = self.schema.get_spo_with_p(
-                                            self.schema.spo_zh_en[spo_zh]
+                                        type_info.std_entity_type = (
+                                            self.schema.get_spo_with_p(
+                                                self.schema.spo_zh_en[spo_zh]
+                                            )
                                         )
 
                             if not type_info.std_entity_type:
@@ -393,13 +409,17 @@ class ParseLogicForm:
                                     s_type.std_entity_type, []
                                 )
                                 if s_attr_zh_en and p_unstd_type in s_attr_zh_en:
-                                    type_info.std_entity_type = s_attr_zh_en[p_unstd_type]
+                                    type_info.std_entity_type = s_attr_zh_en[
+                                        p_unstd_type
+                                    ]
                                 if not type_info.std_entity_type:
                                     o_attr_zh_en = self.schema.attr_zh_en_by_label.get(
                                         o_type.std_entity_type, []
                                     )
                                     if o_attr_zh_en and p_unstd_type in o_attr_zh_en:
-                                        type_info.std_entity_type = o_attr_zh_en[p_unstd_type]
+                                        type_info.std_entity_type = o_attr_zh_en[
+                                            p_unstd_type
+                                        ]
 
                         if type_info.std_entity_type:
                             p_std_types.append(type_info)
@@ -573,15 +593,16 @@ class ParseLogicForm:
         type_info.un_std_entity_type = type_name
         return type_info
 
+
 def extract_steps_and_actions(text):
     # 提取 Step 和紧跟的 Action
     step_pattern = re.compile(
         r"([Ss][Tt][Ee][Pp]\d+):\s*(.*?)(?=\s*[Aa][Cc][Tt][Ii][Oo][Nn]\d+:|\s*[Ss][Tt][Ee][Pp]\d+:|$)",
-        re.DOTALL
+        re.DOTALL,
     )
     action_pattern = re.compile(
         r"([Aa][Cc][Tt][Ii][Oo][Nn]\d+):\s*(.*?)(?=\s*[Ss][Tt][Ee][Pp]\d+:|$)",
-        re.DOTALL
+        re.DOTALL,
     )
 
     steps = []
@@ -640,8 +661,8 @@ def parse_logic_form_with_str(response):
 
 
 if __name__ == "__main__":
-    d = 'Step1:  What continent is Panama in? Action1:Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) '
-    d = 'Step1:  What continent is Panama in? Action1: Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) '
+    d = "Step1:  What continent is Panama in? Action1:Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) "
+    d = "Step1:  What continent is Panama in? Action1: Retrieval(s=s1:sovereignState[`Panama`], p=p1:continent, o=o1:geographicRegion) "
     # d = 'Step1:  What continent is Panama in? '
 
     print(extract_steps_and_actions(d))

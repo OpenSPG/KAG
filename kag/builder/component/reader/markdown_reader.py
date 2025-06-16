@@ -375,6 +375,12 @@ class MarkDownReader(ReaderABC):
         content = re.sub(r"^\s+(#+\s)", r"\1", content, flags=re.MULTILINE)
         # Ensure blank line before headings
         content = re.sub(r"(?<=[^\n])\n(#+\s)", r"\n\n\1", content)
+
+        # Add a default title if content doesn't start with #
+        lines = content.strip().split("\n")
+        if lines and not lines[0].strip().startswith("#"):
+            content = f"# {lines[0].strip()}\n\n" + content
+
         return content
 
     def _build_document_tree(self, soup: BeautifulSoup) -> MarkdownNode:
@@ -1055,5 +1061,6 @@ if __name__ == "__main__":
     file_path = os.path.join(
         dir_path, "../../../../tests/unit/builder/data", "需求内容test.md"
     )
+    file_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AFAC2024/builder/data/BY04.md"
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)

@@ -9,12 +9,16 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import os
+import json
+import tempfile
+import portalocker
+
 try:
     from json_repair import loads
 except:
     from json import loads
 from dataclasses import dataclass
-from collections import defaultdict
 from threading import Lock
 from typing import Union, Dict, List, Any
 import logging
@@ -31,25 +35,54 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class TokenMeter:
+    task_id: str = "default-task[0]"
     completion_tokens: int = 0
     prompt_tokens: int = 0
     total_tokens: int = 0
+    in_memory: bool = True
+
+    @property
+    def ckpt_file(self):
+        if self.in_memory:
+            return None
+        tmp_dir = tempfile.gettempdir()
+        path = os.path.join(tmp_dir, f"token-meter-task-{self.task_id}.json")
+        return path
+
+    def load(self):
+        if self.in_memory:
+            return
+        if os.path.exists(self.ckpt_file):
+            with open(self.ckpt_file, "r") as reader:
+                portalocker.lock(reader, portalocker.LOCK_EX)
+                data = json.loads(reader.read())
+            self.completion_tokens = data["completion_tokens"]
+            self.prompt_tokens = data["prompt_tokens"]
+            self.total_tokens = data["total_tokens"]
+
+    def dump(self):
+        if self.in_memory:
+            return
+        data = {}
+
+        data["completion_tokens"] = self.completion_tokens
+        data["prompt_tokens"] = self.prompt_tokens
+        data["total_tokens"] = self.total_tokens
+        with open(self.ckpt_file, "w") as writer:
+            portalocker.lock(writer, portalocker.LOCK_EX)
+            writer.write(json.dumps(data))
 
     def update(
         self, completion_tokens: int = 0, prompt_tokens: int = 0, total_tokens: int = 0
     ):
+        self.load()
         self.completion_tokens += completion_tokens
         self.prompt_tokens += prompt_tokens
         self.total_tokens += total_tokens
-
-    def __add__(self, other: "TokenMeter") -> "TokenMeter":
-        return TokenMeter(
-            self.completion_tokens + other.completion_tokens,
-            self.prompt_tokens + other.prompt_tokens,
-            self.total_tokens + other.total_tokens,
-        )
+        self.dump()
 
     def to_dict(self):
+        self.load()
         return {
             "completion_tokens": self.completion_tokens,
             "prompt_tokens": self.prompt_tokens,
@@ -64,17 +97,26 @@ class TokenMeterFactory:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._meters = defaultdict(TokenMeter)
+            cls._instance._meters = {}
             cls._instance._lock = Lock()
         return cls._instance
 
-    def get_meter(self, task_id: str) -> TokenMeter:
+    def get_meter(self, task_id: str, token_meter_in_memory: bool = True) -> TokenMeter:
         with self._lock:
+            if task_id not in self._meters:
+                meter = TokenMeter(task_id=task_id, in_memory=token_meter_in_memory)
+                self._meters[task_id] = meter
             return self._meters[task_id]
 
     def remove_meter(self, task_id: str):
         with self._lock:
             if task_id in self._meters:
+                ckpt_file = self._meters[task_id].ckpt_file
+                try:
+                    if os.path.exists(ckpt_file):
+                        os.remove(ckpt_file)
+                except:
+                    pass
                 del self._meters[task_id]
 
     def get_all_meters(self) -> Dict[str, TokenMeter]:
@@ -94,19 +136,26 @@ class TokenMeterFactory:
 
 
 CURRENT_TASK_ID = contextvars.ContextVar("current_task_id", default="default-task[0]")
+TOKEN_METER_IN_MEMORY = contextvars.ContextVar("token_meter_in_memory", default=True)
 
 
 class LLMCallCcontext:
-    def __init__(self, task_id):
+    def __init__(self, task_id, token_meter_in_memory):
         self.task_id = task_id
-        self.token = None
+        self.token_meter_in_memory = token_meter_in_memory
+        self.task_id_token = None
+        self.token_meter_in_memory_token = None
 
     def __enter__(self):
-        self.token = CURRENT_TASK_ID.set(self.task_id)
+        self.task_id_token = CURRENT_TASK_ID.set(self.task_id)
+        self.token_meter_in_memory_token = TOKEN_METER_IN_MEMORY.set(
+            self.token_meter_in_memory
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        CURRENT_TASK_ID.reset(self.token)
+        CURRENT_TASK_ID.reset(self.task_id_token)
+        TOKEN_METER_IN_MEMORY.reset(self.token_meter_in_memory_token)
 
 
 class LLMClient(Registrable):
@@ -461,4 +510,6 @@ class LLMClient(Registrable):
     @staticmethod
     def get_token_meter():
         task_id = CURRENT_TASK_ID.get()
-        return TokenMeterFactory().get_meter(task_id)
+        token_meter_in_memory = TOKEN_METER_IN_MEMORY.get()
+
+        return TokenMeterFactory().get_meter(task_id, token_meter_in_memory)
