@@ -2,6 +2,9 @@ from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.schema_std import StdSchema
 from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate, \
     get_std_logic_form_parser, std_logic_node
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
+    KgRetrieverTemplate,
+)
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
 
 

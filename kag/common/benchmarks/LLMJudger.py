@@ -1,6 +1,5 @@
 from kag.interface import LLMClient
 from kag.common.conf import KAGConstants, KAGConfigAccessor
-from kag.common.registry.registrable import Registrable
 from kag.common.benchmarks.prompt.JudgerPrompt import JudgerPrompt
 
 

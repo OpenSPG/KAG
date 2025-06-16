@@ -119,7 +119,15 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
-            embeddings.extend(dense_vectorizer.vectorize(texts[start:end]))
+            sub_texts = []
+            for text in texts[start:end]:
+                if text.strip() != "":
+                    sub_texts.append(text)
+                else:
+                    sub_texts.append("none")
+            if len(sub_texts) == 0:
+                continue
+            embeddings.extend(dense_vectorizer.vectorize(sub_texts))
         return embeddings
 
     def _generate_sparse_vectors(self, sparse_vectorizer, text_batch, batch_size=32):
@@ -135,7 +143,15 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
-            embeddings.extend(sparse_vectorizer.vectorize(texts[start:end]))
+            sub_texts = []
+            for text in texts[start:end]:
+                if text.strip() != "":
+                    sub_texts.append(text)
+                else:
+                    sub_texts.append("none")
+            if len(sub_texts) == 0:
+                continue
+            embeddings.extend(sparse_vectorizer.vectorize(sub_texts))
         return embeddings
 
     async def _agenerate_dense_vectors(
@@ -153,6 +169,14 @@ class EmbeddingVectorManager(object):
         for idx in range(n_batchs):
             start = idx * batch_size
             end = min(start + batch_size, len(texts))
+            sub_texts = []
+            for text in texts[start:end]:
+                if text.strip() != "":
+                    sub_texts.append(text)
+                else:
+                    sub_texts.append("none")
+            if len(sub_texts) == 0:
+                continue
             tasks.append(
                 asyncio.create_task(dense_vectorizer.avectorize(texts[start:end]))
             )
