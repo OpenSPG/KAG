@@ -10,7 +10,6 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import json
 from typing import List
 
 from kag.builder.prompt.default.util import load_SPO_data

@@ -601,7 +601,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                         found_in_source_entity = source_entity
                         break
                 ent_type = self.get_stand_schema(ent_type)
-                if found_in_source_entity == None:
+                if found_in_source_entity is None:
                     found_in_source_entity = {"name": core_entity, "category": ent_type}
                     sub_graph.add_node(core_entity, core_entity, ent_type, {})
                 sub_graph.add_edge(

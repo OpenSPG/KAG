@@ -17,7 +17,6 @@ from kag.interface import SplitterABC
 from kag.builder.prompt.semantic_seg_prompt import SemanticSegPrompt
 from kag.builder.model.chunk import Chunk
 from kag.interface import LLMClient
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 

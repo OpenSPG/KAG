@@ -13,7 +13,6 @@
 import json
 from string import Template
 from typing import List
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import SpgTypeEnum
