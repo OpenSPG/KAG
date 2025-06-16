@@ -18,6 +18,7 @@ from kag.builder.prompt.default.util import load_knowIE_data
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
 
+
 @PromptABC.register("knowledge_unit")
 class KnowledgeUnitPrompt(PromptABC):
     template_en = """You are an assistant for document analysis and knowledge unit extraction. Please extract substantial discussions, arguments, or analyses from the input document chunks. Ensure that the extracted knowledge units are strictly related to the document's theme and are the core content that the author directly introduces, analyzes, or argues within the chunk.
@@ -172,17 +173,17 @@ input: $input
     def template_variables(self) -> List[str]:
         return ["input", "named_entities"]
 
-    def modify_knowledge_unit(self,text,lang = 'zh'):
+    def modify_knowledge_unit(self, text, lang="zh"):
         # 定义正则表达式模式
-        if lang == 'zh':
-    
+        if lang == "zh":
+
             pattern = r'"知识点\d+名称"\s*:\s*"([^"]+)"\s*,'
         else:
             pattern = r'"knowledge unit \d+ Name"\s*:\s*"([^"]+)",'
         # 使用re.sub函数进行替换
-            #print(pattern)
+        # print(pattern)
         modified_text = re.sub(pattern, r'"\1":', text)
-        
+
         # print("modified_text:",modified_text)
         return modified_text
 
@@ -195,15 +196,15 @@ input: $input
         return rsp
 
     def process_en(self, response: dict, **kwargs):
-        """  "No Mediocre Song Details":{
-    "Content": "\"No Mediocre\" is a song by American rapper T.I., released as the lead single from his ninth studio album \"Paperwork\" (2014). The track, produced by DJ Mustard, includes a guest appearance by Australian rapper Iggy Azalea. It peaked at number 69 on the US Billboard Hot 100 and was met with positive reviews for its production and Azalea's contribution.",
-    "Knowledge Type": "Factual Knowledge",
-    "Structural Content": "",
-    "Domain Ontology": "Music -> Hip Hop -> T.I. Discography -> No Mediocre",
-    "Core Entities": "T.I., No Mediocre, Paperwork, DJ Mustard, Iggy Azalea, US Billboard Hot 100",
-    "Related Query": ["What is the lead single from T.I.'s ninth studio album?", "Who produced the song 'No Mediocre'?", "What was the peak position of 'No Mediocre' on the US Billboard Hot 100?"],
-    "Extended Knowledge Points": ["T.I.'s discography", "DJ Mustard's production work", "Iggy Azalea's collaborations", "US Billboard Hot 100 chart", "Critical reception of 'No Mediocre'", "Soundtrack for 'Think Like a Man Too'"]
-  }"""
+        """ "No Mediocre Song Details":{
+          "Content": "\"No Mediocre\" is a song by American rapper T.I., released as the lead single from his ninth studio album \"Paperwork\" (2014). The track, produced by DJ Mustard, includes a guest appearance by Australian rapper Iggy Azalea. It peaked at number 69 on the US Billboard Hot 100 and was met with positive reviews for its production and Azalea's contribution.",
+          "Knowledge Type": "Factual Knowledge",
+          "Structural Content": "",
+          "Domain Ontology": "Music -> Hip Hop -> T.I. Discography -> No Mediocre",
+          "Core Entities": "T.I., No Mediocre, Paperwork, DJ Mustard, Iggy Azalea, US Billboard Hot 100",
+          "Related Query": ["What is the lead single from T.I.'s ninth studio album?", "Who produced the song 'No Mediocre'?", "What was the peak position of 'No Mediocre' on the US Billboard Hot 100?"],
+          "Extended Knowledge Points": ["T.I.'s discography", "DJ Mustard's production work", "Iggy Azalea's collaborations", "US Billboard Hot 100 chart", "Critical reception of 'No Mediocre'", "Soundtrack for 'Think Like a Man Too'"]
+        }"""
         ret = {}
         if "Content" in response.keys():
             ret["content"] = response["Content"]
@@ -221,14 +222,14 @@ input: $input
 
     def process_zh(self, response: dict, **kwargs):
         """ "2019年全国全国发电总量与结构": {
-    "内容": "2019年全国发电总量71422亿千瓦时，同比增长3.5%。其中火电占比72.3%，水电占比16.15%，核电占比4.88%，风电占比5.01%，太阳能占比1.64%",
-    "知识类型": "事实性知识",
-    "结构化内容": "",
-    "领域本体": "能源统计 -> 电力生产 -> 总体发电数据分析",
-    "核心实体": "发电总量结构,同比增长,2019年",
-    "关联问": ["2019年发电量结构分布", "2019年全国发电总量中不同类型发电量的占比"],
-    "扩展知识点": ["2018年全国发电总量与结构","发电方法"]
-  }"""
+          "内容": "2019年全国发电总量71422亿千瓦时，同比增长3.5%。其中火电占比72.3%，水电占比16.15%，核电占比4.88%，风电占比5.01%，太阳能占比1.64%",
+          "知识类型": "事实性知识",
+          "结构化内容": "",
+          "领域本体": "能源统计 -> 电力生产 -> 总体发电数据分析",
+          "核心实体": "发电总量结构,同比增长,2019年",
+          "关联问": ["2019年发电量结构分布", "2019年全国发电总量中不同类型发电量的占比"],
+          "扩展知识点": ["2018年全国发电总量与结构","发电方法"]
+        }"""
         ret = {}
         if "内容" in response.keys():
             ret["content"] = response["内容"]
@@ -249,6 +250,10 @@ input: $input
         # rsp = self.process_data(response)
         rsp = load_knowIE_data(response)
         ret = {}
-        for k,v in rsp.items():
-            ret[k] = self.process_en(v, **kwargs) if KAG_PROJECT_CONF.language=="en" else self.process_zh(v, **kwargs)
+        for k, v in rsp.items():
+            ret[k] = (
+                self.process_en(v, **kwargs)
+                if KAG_PROJECT_CONF.language == "en"
+                else self.process_zh(v, **kwargs)
+            )
         return ret

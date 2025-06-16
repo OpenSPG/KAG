@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from typing import List
 
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import get_recall_node_label
 
 from kag.interface import (

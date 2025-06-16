@@ -60,7 +60,8 @@ class SPGTypeMapping(MappingABC):
     )
     def init_schema(self, spg_type_name):
         self.schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         assert (
             spg_type_name in self.schema

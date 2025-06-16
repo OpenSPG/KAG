@@ -19,12 +19,11 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
-from kag.common.conf import KAG_PROJECT_CONF, KAGConstants, KAGConfigAccessor
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from kag.common.utils import generate_hash_id
-from kag.builder.prompt.utils import init_prompt_with_fallback
 from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
@@ -72,7 +71,8 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         kag_config = KAGConfigAccessor.get_config(task_id)
         kag_project_config = kag_config.global_config
         self.schema = SchemaClient(
-            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
+            host_addr=kag_project_config.host_addr,
+            project_id=kag_project_config.project_id,
         ).load()
         self.ner_prompt = ner_prompt
         self.kn_prompt = kn_prompt
@@ -91,11 +91,9 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             "Science and Technology": "ScienceAndTechnology",
             "Culture and Entertainment": "CulturalAndEntertainment",
             "Policy and Regulation": "PolicyAndRegulation",
-
             "Science": "ScienceAndTechnology",
             "Culture": "CulturalAndEntertainment",
             "Policy": "PolicyAndRegulation",
-
             "Technology": "ScienceAndTechnology",
             "Entertainment": "CulturalAndEntertainment",
             "Regulation": "PolicyAndRegulation",
@@ -104,7 +102,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             # "Others"
         }
 
-    def get_stand_schema(self,type_name):
+    def get_stand_schema(self, type_name):
         return self.SCHEMA_DICT.get(type_name, type_name)
 
     @property
@@ -117,13 +115,19 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
 
     def _named_entity_recognition_llm(self, passage: str):
         ner_result = self.llm.invoke(
-            {"input": passage}, self.ner_prompt, with_except=False,with_json_parse = False
+            {"input": passage},
+            self.ner_prompt,
+            with_except=False,
+            with_json_parse=False,
         )
         return ner_result
 
     async def _anamed_entity_recognition_llm(self, passage: str):
         ner_result = await self.llm.ainvoke(
-            {"input": passage}, self.ner_prompt, with_except=False,with_json_parse = False
+            {"input": passage},
+            self.ner_prompt,
+            with_except=False,
+            with_json_parse=False,
         )
         return ner_result
 
@@ -138,7 +142,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             name = item.name
             label = item.label
             label = self.get_stand_schema(label)
-            spg_type = self.schema.get( label)
+            spg_type = self.schema.get(label)
             if spg_type is None:
                 label = "Others"
                 spg_type = self.schema.get(label)
@@ -162,7 +166,6 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                 output.append(item)
         return output
 
-
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=10, max=60),
@@ -177,9 +180,9 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             The result of the named entity recognition operation.
         """
         ner_result = self._named_entity_recognition_llm(passage)
-        ner_parse_rst =  self._named_entity_recognition_process(passage, ner_result)
-        if not ner_parse_rst :
-            raise 
+        ner_parse_rst = self._named_entity_recognition_process(passage, ner_result)
+        if not ner_parse_rst:
+            raise
         return
 
     @retry(
@@ -218,7 +221,8 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         return self.llm.invoke(
             {"input": passage, "named_entities": entities},
             self.kn_prompt,
-            with_except=False,with_json_parse = False
+            with_except=False,
+            with_json_parse=False,
         )
 
     @retry(
@@ -240,7 +244,8 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         return await self.llm.ainvoke(
             {"input": passage, "named_entities": entities},
             self.kn_prompt,
-            with_except=False,with_json_parse = False
+            with_except=False,
+            with_json_parse=False,
         )
 
     @retry(
@@ -260,7 +265,8 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         return self.llm.invoke(
             {"input": passage, "entity_list": entities},
             self.triple_prompt,
-            with_except=False,with_json_parse = False
+            with_except=False,
+            with_json_parse=False,
         )
 
     @retry(
@@ -281,10 +287,13 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         return await self.llm.ainvoke(
             {"input": passage, "entity_list": entities},
             self.triple_prompt,
-            with_except=False,with_json_parse = False
+            with_except=False,
+            with_json_parse=False,
         )
 
-    def assemble_sub_graph_with_spg_properties(self, sub_graph: SubGraph, s_id, s_name, s_label, record):
+    def assemble_sub_graph_with_spg_properties(
+        self, sub_graph: SubGraph, s_id, s_name, s_label, record
+    ):
         properties = record
         tmp_properties = copy.deepcopy(record)
         s_label = self.get_stand_schema(s_label)
@@ -292,26 +301,28 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
 
         if spg_type is None:
             s_label = "Others"
-            spg_type =  self.schema.get(s_label)
+            spg_type = self.schema.get(s_label)
         record["category"] = s_label
 
-        domain_ontology = properties.get("ontology", '')
-        domain_ontology_set = [item.strip() for item in domain_ontology.split("->") if len(item.strip())>0]
+        domain_ontology = properties.get("ontology", "")
+        domain_ontology_set = [
+            item.strip()
+            for item in domain_ontology.split("->")
+            if len(item.strip()) > 0
+        ]
         if domain_ontology_set:
             last_id = None
             # 最高级的本体
-            if len(domain_ontology_set) >0:
+            if len(domain_ontology_set) > 0:
                 ontology = domain_ontology_set[0]
-                sub_graph.add_node(id=ontology, name=ontology,
-                                   label="SemanticConcept")
-                last_id =  ontology
+                sub_graph.add_node(id=ontology, name=ontology, label="SemanticConcept")
+                last_id = ontology
 
             # 中间的节点
             for i in range(1, len(domain_ontology_set)):
                 ontology = domain_ontology_set[i]
-                sub_graph.add_node(id=ontology, name=ontology,
-                                   label="SemanticConcept")
-               # 语义节点，name 即 id 符合预期
+                sub_graph.add_node(id=ontology, name=ontology, label="SemanticConcept")
+                # 语义节点，name 即 id 符合预期
                 sub_graph.add_edge(
                     s_id=domain_ontology_set[i],
                     s_label="SemanticConcept",
@@ -319,32 +330,37 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                     o_id=domain_ontology_set[i - 1],
                     o_label="SemanticConcept",
                 )
-                last_id = domain_ontology_set[i-1]
+                last_id = domain_ontology_set[i - 1]
 
             # 最后的节点
             ontology = domain_ontology_set[-1]
-            if (ontology not in s_name and s_label == "KnowledgeUnit") or ontology != s_name:
-                sub_graph.add_node(id=domain_ontology_set[-1], name=domain_ontology_set[-1],
-                                   label="SemanticConcept")
+            if (
+                ontology not in s_name and s_label == "KnowledgeUnit"
+            ) or ontology != s_name:
+                sub_graph.add_node(
+                    id=domain_ontology_set[-1],
+                    name=domain_ontology_set[-1],
+                    label="SemanticConcept",
+                )
 
                 last_id = domain_ontology_set[-1]
-                if len(domain_ontology_set) >1:
+                if len(domain_ontology_set) > 1:
                     # 语义节点，name 即 id 符合预期
                     sub_graph.add_edge(
                         s_id=domain_ontology_set[-1],
                         s_label="SemanticConcept",
                         p="isA",
-                        o_id=domain_ontology_set[- 2],
+                        o_id=domain_ontology_set[-2],
                         o_label="SemanticConcept",
                     )
 
-            if last_id :
+            if last_id:
                 # 知识点 belongto 语义节点
                 sub_graph.add_edge(
                     s_id=s_id,
                     s_label=s_label,
                     p="semantictype",
-                    o_id= last_id ,
+                    o_id=last_id,
                     o_label="SemanticConcept",
                 )
 
@@ -368,7 +384,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                                 # 知识点，语义属性拉边
                                 s_id=o_name,
                                 s_label=o_label,
-                                p=prop_name.replace("relatedQuery" ,"relatedTo"),
+                                p=prop_name.replace("relatedQuery", "relatedTo"),
                                 o_id=s_id,
                                 o_label=s_label,
                             )
@@ -403,7 +419,9 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             s_label = record.get("category", "")
             # s_id = generate_hash_id(f"{s_name}_{s_label}")
 
-            self.assemble_sub_graph_with_spg_properties(sub_graph,  s_name, s_name, s_label, record)
+            self.assemble_sub_graph_with_spg_properties(
+                sub_graph, s_name, s_name, s_label, record
+            )
         return sub_graph, entities
 
     @staticmethod
@@ -449,17 +467,24 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                 sub_graph.add_node(o_name, o_name, o_category)
             edge_type = to_camel_case(tri[1])
             properties = None
-            if tri[3] != '':
-                properties = {
-                    "condition": tri[3]
-                }
+            if tri[3] != "":
+                properties = {"condition": tri[3]}
             #  s_name ：头实体 ，o_name ： 尾实体
             if edge_type:
-                sub_graph.add_edge(s_name, s_category, edge_type, o_name, o_category, properties=properties)
+                sub_graph.add_edge(
+                    s_name,
+                    s_category,
+                    edge_type,
+                    o_name,
+                    o_category,
+                    properties=properties,
+                )
         return sub_graph
 
     @staticmethod
-    def assemble_sub_graph_with_chunk(sub_graph: SubGraph, entities: List[Dict], chunk: Chunk):
+    def assemble_sub_graph_with_chunk(
+        sub_graph: SubGraph, entities: List[Dict], chunk: Chunk
+    ):
         """
         Associates a Chunk object with the subgraph, adding it as a node and connecting it with existing nodes.
         Args:
@@ -470,7 +495,13 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         """
         for entity in entities:
             # 到 chunk.id,
-            sub_graph.add_edge(entity.get("name"), entity.get("category"), "source", chunk.id, CHUNK_TYPE)
+            sub_graph.add_edge(
+                entity.get("name"),
+                entity.get("category"),
+                "source",
+                chunk.id,
+                CHUNK_TYPE,
+            )
         sub_graph.add_node(
             chunk.id,
             chunk.name,
@@ -507,10 +538,15 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         return sub_graph
 
     def assemble_knowledge_unit(
-        self, sub_graph: SubGraph, source_entities: List[Dict], input_knowledge_units: Dict[str, Dict], triples: List[list]
+        self,
+        sub_graph: SubGraph,
+        source_entities: List[Dict],
+        input_knowledge_units: Dict[str, Dict],
+        triples: List[list],
     ):
         knowledge_unit_nodes = []
         knowledge_units = dict(input_knowledge_units)
+
         def triple_to_knowledge_unit(triple):
             ret = {}
             name = " ".join(triple)
@@ -518,30 +554,42 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             ret["knowledgetype"] = "triple"
             ret["core_entities"] = ",".join(triple)
             return name, ret
+
         for tri in triples:
             knowledge_unit_name, knowledge_unit_value = triple_to_knowledge_unit(tri)
-            if knowledge_unit_name not in  knowledge_units:
+            if knowledge_unit_name not in knowledge_units:
                 knowledge_units[knowledge_unit_name] = knowledge_unit_value
 
         for knowledge_name, knowledge_value in knowledge_units.items():
             if knowledge_value["knowledgetype"] == "triple":
                 knowledge_id = knowledge_name
             else:
-                knowledge_id = generate_hash_id(f"{knowledge_name}_{knowledge_value['content'].strip()[:100]}")
-            self.assemble_sub_graph_with_spg_properties(sub_graph, knowledge_id, knowledge_name, "KnowledgeUnit", knowledge_value)
+                knowledge_id = generate_hash_id(
+                    f"{knowledge_name}_{knowledge_value['content'].strip()[:100]}"
+                )
+            self.assemble_sub_graph_with_spg_properties(
+                sub_graph,
+                knowledge_id,
+                knowledge_name,
+                "KnowledgeUnit",
+                knowledge_value,
+            )
             sub_graph.add_node(
                 knowledge_id,
                 knowledge_name,
                 "KnowledgeUnit",
                 knowledge_value,
             )
-            knowledge_unit_nodes.append({
-                "name": knowledge_id ,
-                "category": "KnowledgeUnit"
-            })
+            knowledge_unit_nodes.append(
+                {"name": knowledge_id, "category": "KnowledgeUnit"}
+            )
 
             if knowledge_value["knowledgetype"] == "triple":
-                core_entities = {item.strip() : "Others" for item in knowledge_value.get("core_entities", "").split(",") if len(item.strip())>1 }
+                core_entities = {
+                    item.strip(): "Others"
+                    for item in knowledge_value.get("core_entities", "").split(",")
+                    if len(item.strip()) > 1
+                }
             else:
                 core_entities = knowledge_value.get("core_entities", {})
             for core_entity, ent_type in core_entities.items():
@@ -552,20 +600,18 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                     if core_entity == source_entity.get("name", ""):
                         found_in_source_entity = source_entity
                         break
-                ent_type = self.get_stand_schema( ent_type)
+                ent_type = self.get_stand_schema(ent_type)
                 if found_in_source_entity == None:
-                    found_in_source_entity = {
-                        "name": core_entity,
-                        "category": ent_type
-                    }
+                    found_in_source_entity = {"name": core_entity, "category": ent_type}
                     sub_graph.add_node(core_entity, core_entity, ent_type, {})
                 sub_graph.add_edge(
-                    found_in_source_entity.get("name"), found_in_source_entity.get("category"),
+                    found_in_source_entity.get("name"),
+                    found_in_source_entity.get("category"),
                     "source",
-                    knowledge_id, "KnowledgeUnit"
+                    knowledge_id,
+                    "KnowledgeUnit",
                 )
         return knowledge_unit_nodes
-
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -580,7 +626,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         """
 
         title = input.name
-        passage = title.split('_split_')[0] + "\n" + input.content
+        passage = title.split("_split_")[0] + "\n" + input.content
         out = []
         entities = self.named_entity_recognition(passage)
         sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
@@ -591,7 +637,9 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         knowledge_unit_entities = self.aknowledge_unit_extra(passage, filtered_entities)
         triples = (self.triples_extraction(passage, filtered_entities),)
 
-        knowledge_unit_nodes = self.assemble_knowledge_unit(sub_graph, entities, knowledge_unit_entities, triples)
+        knowledge_unit_nodes = self.assemble_knowledge_unit(
+            sub_graph, entities, knowledge_unit_entities, triples
+        )
         union_entities = entities + knowledge_unit_nodes
         self.assemble_sub_graph(sub_graph, input, union_entities, triples)
         out.append(sub_graph)
@@ -609,7 +657,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             List[Output]: A list of processed results, containing subgraph information.
         """
         title = input.name
-        passage = title.split('_split_')[0] + "\n" + input.content
+        passage = title.split("_split_")[0] + "\n" + input.content
         out = []
         entities = await self.anamed_entity_recognition(passage)
         sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
@@ -623,7 +671,9 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             self.aknowledge_unit_extra(passage, filtered_entities),
         )
 
-        knowledge_unit_nodes = self.assemble_knowledge_unit(sub_graph, entities, knowledge_unit_entities, triples)
+        knowledge_unit_nodes = self.assemble_knowledge_unit(
+            sub_graph, entities, knowledge_unit_entities, triples
+        )
         union_entities = entities + knowledge_unit_nodes
         self.assemble_sub_graph(sub_graph, input, union_entities, triples)
         out.append(sub_graph)

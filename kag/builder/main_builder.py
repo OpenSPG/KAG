@@ -11,7 +11,7 @@
 
 
 from kag.builder.runner import BuilderChainStreamRunner
-from kag.common.conf import KAG_CONFIG, KAGConfigAccessor
+from kag.common.conf import KAGConfigAccessor
 import logging
 
 from ruamel.yaml import YAML

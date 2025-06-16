@@ -30,6 +30,7 @@ class MemoryGraphWriter(SinkWriterABC):
     This class inherits from SinkWriterABC and provides the functionality to write SubGraphs
     to a Knowledge Graph storage system. It supports operations like upsert and delete.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

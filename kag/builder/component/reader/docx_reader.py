@@ -46,10 +46,9 @@ class DocxNode:
         self.content = content
         self.node_type = node_type
         self.children: List[DocxNode] = []
-        self.properties: Dict[
-            str, str
-        ] = {}  # Store additional properties like style, indent level, etc.
-
+        self.properties: Dict[str, str] = (
+            {}
+        )  # Store additional properties like style, indent level, etc.
 
     def __str__(self):
         return f"{self.node_type}({self.level}): {self.display_title}"
@@ -82,7 +81,7 @@ class DocxReader(ReaderABC):
         llm: LLMClient = None,
         cut_depth: int = 5,
         length_splitter: LengthSplitter = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the DocxReader with an optional LLMClient instance.
@@ -740,9 +739,11 @@ class DocxReader(ReaderABC):
                         name=full_title,
                         label="Chunk",
                         properties={
-                            "content": chunk_content[:100] + "..."
-                            if len(chunk_content) > 100
-                            else chunk_content
+                            "content": (
+                                chunk_content[:100] + "..."
+                                if len(chunk_content) > 100
+                                else chunk_content
+                            )
                         },
                     )
                     nodes.append(chunk_node)

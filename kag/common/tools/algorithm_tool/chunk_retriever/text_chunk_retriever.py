@@ -1,6 +1,5 @@
 import logging
 
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.search_api.search_api_abc import SearchApiABC

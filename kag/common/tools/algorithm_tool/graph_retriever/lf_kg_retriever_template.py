@@ -1,7 +1,6 @@
 import logging
 from typing import List, Optional
 
-from kag.interface import LLMClient
 from kag.common.conf import KAGGlobalConf
 from kag.common.config import LogicFormConfiguration
 from kag.common.parser.schema_std import StdSchema

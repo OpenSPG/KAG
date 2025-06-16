@@ -13,7 +13,6 @@ import logging
 from typing import List
 
 import knext.common.cache
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.common.tools.search_api.search_api_abc import SearchApiABC

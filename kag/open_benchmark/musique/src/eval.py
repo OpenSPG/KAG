@@ -8,7 +8,6 @@ from kag.common.registry import Functor
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
-from kag.common.registry import import_modules_from_path
 
 logger = logging.getLogger(__name__)
 

@@ -19,6 +19,7 @@ from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 
+
 @PromptABC.register("knowledge_unit_ner")
 class OpenIENERKnowledgeUnitPrompt(PromptABC):
     template_en = """
@@ -239,7 +240,7 @@ input: $input
         return rsp
 
     def process_en(self, response: dict, **kwargs):
-        """        "Name": "2023 International Biodiversity Summit",
+        """ "Name": "2023 International Biodiversity Summit",
         "Category": "Event",
         "Domain Ontology": "Conference -> Scientific Conference -> Environmental Conference",
         "Description": "An international conference focused on biodiversity conservation held in 2023",
@@ -261,14 +262,14 @@ input: $input
         return ret
 
     def process_zh(self, response: dict, **kwargs):
-        """    {
-        "名称": "当阳县五七干校",
-        "类型": "组织机构",
-        "领域本体": "教育 -> 历史教育机构 -> 五七干校",
-        "解释": "当阳县五七干校是1975年2月根据县委指示增设的一所干校，于1978年8月撤销。",
-        "标准名": "当阳县五七干校",
-        "同义词": []
-    }"""
+        """{
+            "名称": "当阳县五七干校",
+            "类型": "组织机构",
+            "领域本体": "教育 -> 历史教育机构 -> 五七干校",
+            "解释": "当阳县五七干校是1975年2月根据县委指示增设的一所干校，于1978年8月撤销。",
+            "标准名": "当阳县五七干校",
+            "同义词": []
+        }"""
         ret = {}
         if "名称" in response.keys():
             ret["name"] = response["名称"]
@@ -285,9 +286,13 @@ input: $input
         return ret
 
     def parse_response(self, response: str, **kwargs):
-        rsp =  load_NER_data(response)
+        rsp = load_NER_data(response)
         # rsp = self.process_data(response)
         ret = []
         for r in rsp:
-            ret.append(self.process_en(r, **kwargs) if KAG_PROJECT_CONF.language=="en" else self.process_zh(r, **kwargs))
+            ret.append(
+                self.process_en(r, **kwargs)
+                if KAG_PROJECT_CONF.language == "en"
+                else self.process_zh(r, **kwargs)
+            )
         return ret

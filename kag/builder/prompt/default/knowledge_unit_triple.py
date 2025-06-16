@@ -16,6 +16,7 @@ from typing import List
 from kag.builder.prompt.default.util import load_SPO_data
 from kag.interface import PromptABC
 
+
 @PromptABC.register("knowledge_unit_triple")
 class OpenIEKnowledgeUnitTriplePrompt(PromptABC):
     template_en = """You are an expert specializing in knowledge graph relation extraction. Please refer to the given entity list to extract potential relations between any entities from the provided text, and list them in quadruple format. 
@@ -134,5 +135,5 @@ output: [
         return ["entity_list", "input"]
 
     def parse_response(self, response: str, **kwargs):
-        standardized_triples =  load_SPO_data(response)
+        standardized_triples = load_SPO_data(response)
         return standardized_triples

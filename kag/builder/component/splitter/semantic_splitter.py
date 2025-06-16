@@ -38,7 +38,7 @@ class SemanticSplitter(SplitterABC):
         llm: LLMClient,
         kept_char_pattern: str = None,
         split_length: int = 1000,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the SemanticSplitter with the given LLMClient, kept character pattern, and split length.
