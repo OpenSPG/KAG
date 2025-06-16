@@ -198,17 +198,17 @@ o relevant information was found.
 {% endif %}""",
             },
             "retrieved_info_digest": {
-                "zh": """{% if node_num != 0 or edges_num != 0 %}检索的子图中共有 {{ node_num | default(0) }} 个节点和 {{ edges_num | default(0) }} 条边。
+                "zh": """{% if (nodes_num is defined and nodes_num != 0) or (edges_num is defined and edges_num != 0) %}检索的子图中共有 {{ nodes_num | default(0) }} 个节点和 {{ edges_num | default(0) }} 条边。
 {% endif %}
 {%if chunk_num != 0 %}共检索到 {{ chunk_num }} 篇文档。
 {% endif %}
-{%if (chunk_num is not defined or chunk_num == 0) and (node_num == 0 and edges_num == 0) %}未检索到相关信息。
+{%if (chunk_num is not defined or chunk_num == 0) and ((nodes_num is not defined or nodes_num == 0) and (edges_num is not defined and edges_num == 0)) %}未检索到相关信息。
 {% endif %}""",
-                "en": """{% if node_num != 0 or edges_num != 0 %}The retrieved subgraph contains {{ node_num | default(0) }} nodes and {{ edges_num | default(0) }} edges.
+                "en": """{% if(nodes_num is defined and nodes_num != 0) or (edges_num is defined and edges_num != 0)  %}The retrieved subgraph contains {{ nodes_num | default(0) }} nodes and {{ edges_num | default(0) }} edges.
 {% endif %}
 {%if chunk_num != 0 %}{{ chunk_num }} document(s) were retrieved.
 {% endif %}
-{%if (chunk_num is not defined or chunk_num == 0) and (node_num == 0 and edges_num == 0) %}No relevant information was found.
+{%if (chunk_num is not defined or chunk_num == 0) and ((nodes_num is not defined or nodes_num == 0) and (edges_num is not defined and edges_num == 0)) %}No relevant information was found.
 {% endif %}"""
             },
             "retrieved_doc_digest": {
