@@ -106,10 +106,13 @@ class EvalQa:
         hit5 = 0.0
         hitall = 0.0
         for metric in metrics_list:
-            recall_data = metric["recall"]
-            hit3 += recall_data["recall_top3"]
-            hit5 += recall_data["recall_top5"]
-            hitall += recall_data["recall_all"]
+            if "recall" in metric:
+                recall_data = metric["recall"]
+            else:
+                recall_data = metric
+            hit3 += recall_data.get("recall_top3", 0)
+            hit5 += recall_data.get("recall_top5", 0)
+            hitall += recall_data.get("recall_all", 0)
         recall_metrics["hit3"] = hit3 / len(metrics_list)
         recall_metrics["hit5"] = hit5 / len(metrics_list)
         recall_metrics["hitall"] = hitall / len(metrics_list)
@@ -135,7 +138,7 @@ class EvalQa:
         self, qa_list, res_file_path, thread_num=1, upper_limit=10
     ):
         ckpt = CheckpointerManager.get_checkpointer(
-            {"type": "diskcache", "ckpt_dir": "ckpt"}
+            {"type": "diskcache", "ckpt_dir": f"{self.task_name}_ckpt"}
         )
         res_qa = []
         semaphore = asyncio.Semaphore(thread_num)  # 控制并发度

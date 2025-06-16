@@ -4,8 +4,8 @@ from kag.common.registry.registrable import Registrable
 from kag.common.benchmarks.prompt.JudgerPrompt import JudgerPrompt
 
 
-class LLMJudger(Registrable):
-    def __int__(self, llm: LLMClient = None, **kwargs):
+class LLMJudger:
+    def __init__(self, llm: LLMClient = None, **kwargs):
         self.llm = llm
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         kag_config = KAGConfigAccessor.get_config(task_id)
