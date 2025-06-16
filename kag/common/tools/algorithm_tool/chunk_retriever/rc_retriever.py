@@ -44,9 +44,6 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
         )
-        self.graph_api = graph_api or GraphApiABC.from_config(
-            {"type": "openspg_graph_api"}
-        )
 
         self.vector_chunk_retriever = vector_chunk_retriever or VectorChunkRetriever(
             vectorize_model=self.vectorize_model, search_api=self.search_api

@@ -327,6 +327,12 @@ Chunk(文本块): EntityType
                     "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
                     "kag_qa_task_config_key": kb_task_project_id
                 },
+                "std_schema": {
+                    "type": "default_std_schema",
+                    "vectorize_model": vectorize_model_config,
+                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
+                    "kag_qa_task_config_key": kb_task_project_id
+                },
                 "llm": llm_config,
                 "kag_qa_task_config_key": kb_task_project_id
             },
@@ -347,7 +353,19 @@ Chunk(文本块): EntityType
                     "vectorize_model": vectorize_model_config,
                     "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
                     "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "kag_qa_task_config_key": kb_task_project_id,
+                    "ner": {
+                        "type": "ner",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                        "ner_prompt": {
+                            "type": "default_question_ner",
+                            "kag_qa_task_config_key": kb_task_project_id,
+                        },
+                        "std_prompt": {
+                            "type": "default_std"
+                        },
+                        "llm_module": llm_config
+                    }
                 },
                 "entity_linking": {
                     "type": "entity_linking",
@@ -356,6 +374,12 @@ Chunk(文本块): EntityType
                     "vectorize_model": vectorize_model_config,
                     "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
                     "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
+                    "kag_qa_task_config_key": kb_task_project_id
+                },
+                "std_schema": {
+                    "type": "default_std_schema",
+                    "vectorize_model": vectorize_model_config,
+                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
                     "kag_qa_task_config_key": kb_task_project_id
                 },
                 "llm": llm_config,

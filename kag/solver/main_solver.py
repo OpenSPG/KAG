@@ -63,7 +63,6 @@ def replace_placeholders(config, replacements):
 
 
 def load_yaml_files_from_conf_dir():
-
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     conf_dir = os.path.join(current_dir, "pipelineconf")
@@ -77,7 +76,6 @@ def load_yaml_files_from_conf_dir():
         if filename.endswith(".yml") or filename.endswith(".yaml"):
             file_path = os.path.join(conf_dir, filename)
             with open(file_path, "r", encoding="utf-8") as file:
-
                 yaml_content = yaml.safe_load(file)
                 yaml_data[yaml_content["pipeline_name"]] = yaml_content
 
@@ -108,7 +106,7 @@ def get_pipeline_conf(use_pipeline_name, config):
                 value = config.get(backup_key)
         if value is None:
             raise RuntimeError(
-                f"Placeholder '{placeholder}' '{'or '+backup_key if backup_key else ''}' not found in config."
+                f"Placeholder '{placeholder}' '{'or ' + backup_key if backup_key else ''}' not found in config."
             )
         if "llm" in placeholder or "vectorizer" in placeholder:
             value["enable_check"] = False
@@ -178,55 +176,55 @@ async def do_index_pipeline(query, qa_config, reporter):
 
 
 async def do_qa_pipeline(use_pipeline, query, qa_config, reporter, task_id, kb_project_ids):
-	retriever_configs = []
-	kb_configs = qa_config.get("kb", [])
-	for kb_project_id in kb_project_ids:
-		kb_task_project_id = f"{task_id}_{kb_project_id}"
-		try:
-			kag_config = KAGConfigAccessor.get_config(kb_task_project_id)
-			matched_kb = next((kb for kb in kb_configs if kb.get("id") == kb_project_id), None)
-			if not matched_kb:
-				reporter.warning(f"Knowledge base with id {kb_project_id} not found in qa_config['kb']")
-				continue
+    retriever_configs = []
+    kb_configs = qa_config.get("kb", [])
+    for kb_project_id in kb_project_ids:
+        kb_task_project_id = f"{task_id}_{kb_project_id}"
+        try:
+            kag_config = KAGConfigAccessor.get_config(kb_task_project_id)
+            matched_kb = next((kb for kb in kb_configs if kb.get("id") == kb_project_id), None)
+            if not matched_kb:
+                reporter.warning(f"Knowledge base with id {kb_project_id} not found in qa_config['kb']")
+                continue
 
-			for index_name in matched_kb.get("index_list", []):
-				index_manager = KAGIndexManager.from_config(
-					{
-						"type": index_name,
-						"llm_config": qa_config["llm"],
-						"vectorize_model_config": kag_config.all_config["vectorize_model"],
-					}
-				)
-				retriever_configs.extend(
-					index_manager.build_retriever_config(
-						qa_config["llm"], kag_config.all_config["vectorize_model"],
-						kag_qa_task_config_key=kb_task_project_id
-					)
-				)
-		except Exception as e:
-			reporter.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
-			continue
-	qa_config["retrievers"] = retriever_configs
+            for index_name in matched_kb.get("index_list", []):
+                index_manager = KAGIndexManager.from_config(
+                    {
+                        "type": index_name,
+                        "llm_config": qa_config["llm"],
+                        "vectorize_model_config": kag_config.all_config["vectorize_model"],
+                    }
+                )
+                retriever_configs.extend(
+                    index_manager.build_retriever_config(
+                        qa_config["llm"], kag_config.all_config["vectorize_model"],
+                        kag_qa_task_config_key=kb_task_project_id
+                    )
+                )
+        except Exception as e:
+            reporter.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
+            continue
+    qa_config["retrievers"] = retriever_configs
 
-	if use_pipeline in qa_config.keys():
-		custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
-	else:
-		custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
+    if use_pipeline in qa_config.keys():
+        custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
+    else:
+        custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
 
-	self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
-	self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
-	self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
-	if not self_cognition_res:
-		if custom_pipeline_conf:
-			pipeline_config = custom_pipeline_conf
-		else:
-			pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
-		logger.error(f"pipeline conf: \n{pipeline_config}")
-		pipeline = SolverPipelineABC.from_config(pipeline_config)
-		answer = await pipeline.ainvoke(query, reporter=reporter)
-	else:
-		answer = self_cognition_res
-	return answer
+    self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
+    self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
+    self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+    if not self_cognition_res:
+        if custom_pipeline_conf:
+            pipeline_config = custom_pipeline_conf
+        else:
+            pipeline_config = get_pipeline_conf(use_pipeline, qa_config)
+        logger.error(f"pipeline conf: \n{pipeline_config}")
+        pipeline = SolverPipelineABC.from_config(pipeline_config)
+        answer = await pipeline.ainvoke(query, reporter=reporter)
+    else:
+        answer = self_cognition_res
+    return answer
 
 
 async def qa(task_id, query, project_id, host_addr, app_id, params={}):
@@ -289,7 +287,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
-        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline"],
+        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline", "hybrid_pipeline"],
         "report_all_references": use_pipeline == "index_pipeline",
     }
     reporter = ReporterABC.from_config(reporter_config)
@@ -329,15 +327,15 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
 class SolverMain:
     def invoke(
-        self,
-        project_id: int,
-        task_id: int,
-        query: str,
-        session_id: str = "0",
-        is_report=True,
-        host_addr="http://127.0.0.1:8887",
-        params=None,
-        app_id="",
+            self,
+            project_id: int,
+            task_id: int,
+            query: str,
+            session_id: str = "0",
+            is_report=True,
+            host_addr="http://127.0.0.1:8887",
+            params=None,
+            app_id="",
     ):
         answer = None
         if params is None:
@@ -369,22 +367,20 @@ if __name__ == "__main__":
     # init_kag_config(
     #     "4200052", "https://spg-pre.alipay.com"
     # )
-	config = {
-
-	}
-	params = {
-		"config": config
-	}
-	res = SolverMain().invoke(
-		2100007,
-		11200009,
-		# "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
-		"周杰伦有哪些专辑",
-		"9500005",
-		True,
-			# host_addr="http://spg-pre.alipay.com",
-			host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
-			params=params,
-		)
-	print("*" * 80)
-	print("The Answer is: ", res)
+    config = {}
+    params = {
+        "config": config
+    }
+    res = SolverMain().invoke(
+        2100007,
+        11200009,
+        # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
+        "周杰伦有哪些专辑",
+        "9500005",
+        True,
+        # host_addr="http://spg-pre.alipay.com",
+        host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
+        params=params,
+    )
+    print("*" * 80)
+    print("The Answer is: ", res)
