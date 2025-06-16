@@ -29,12 +29,12 @@ class StdSchema(Registrable):
         super().__init__(**kwargs)
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
+        self.kag_project_config = kag_config.global_config
         self.schema: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": kag_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )

@@ -14,7 +14,6 @@ from typing import List, Type, Dict
 
 from kag.interface import AlignerABC
 from knext.schema.client import BASIC_TYPES
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.builder.model.spg_record import SPGRecord
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
@@ -31,12 +30,9 @@ class SPGAligner(AlignerABC):
     """
 
     def __init__(self, **kwargs):
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         super().__init__(**kwargs)
         self.spg_types = SchemaClient(
-            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()
 
     @property

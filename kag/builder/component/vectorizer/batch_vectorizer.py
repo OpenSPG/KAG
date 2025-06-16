@@ -15,7 +15,6 @@ from typing import List, Optional
 from tenacity import stop_after_attempt, retry
 
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 from kag.common.utils import get_vector_field_name, get_sparse_vector_field_name
 from kag.interface import VectorizerABC, VectorizeModelABC, SparseVectorizeModelABC
@@ -358,10 +357,7 @@ class BatchVectorizer(VectorizerABC):
             vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
             batch_size (int): The size of the batches in which to process the nodes. Defaults to 32.
         """
-        super().__init__()
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
+        super().__init__(**kwargs)
         self.project_id = self.kag_project_config.project_id
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()

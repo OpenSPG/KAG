@@ -15,7 +15,6 @@ from typing import Dict, List
 from kag.builder.model.sub_graph import SubGraph
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import MappingABC
 
 
@@ -50,11 +49,8 @@ class RelationMapping(MappingABC):
             **kwargs: Additional keyword arguments passed to the parent class constructor.
         """
         super().__init__(**kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         schema = SchemaClient(
-            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"
         assert object_name in schema, f"{object_name} is not a valid SPG type name"

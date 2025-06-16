@@ -65,11 +65,7 @@ class PDFReader(ReaderABC):
         self.is_ocr = is_ocr
         self.llm = llm
         self.length_splitter = length_splitter
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
-        language = kag_project_config.language
-        self.prompt = OutlinePrompt(language)
+        self.prompt = OutlinePrompt(self.language)
 
     @property
     def input_types(self):
