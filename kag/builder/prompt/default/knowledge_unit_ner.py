@@ -13,10 +13,11 @@
 import json
 from string import Template
 from typing import List
+
+from kag.builder.prompt.default.util import load_NER_data
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
-from util import *
 
 @PromptABC.register("knowledge_unit_ner")
 class OpenIENERKnowledgeUnitPrompt(PromptABC):
@@ -40,7 +41,7 @@ If the entity type does not exist, return an empty list. Please respond in JSON 
 
 ### schema
 [ 
-    "Person", "Geographic Location", "Event", "Organization", "Finance", "Healthcare", "Education", "Science and Technology", "Culture and Entertainment", "Policy and Regulation", "Creature",  "Time",  "Others"
+$schema
 ]
 
 ### Example:
@@ -111,7 +112,7 @@ input:$input
 
 ### schema
 [ 
-    "人物", "地理位置", "事件", "组织机构", "金融经济", "医疗健康", "教育", "科技", "文化娱乐", "政策法规", "生物物种", "时间", "其他"
+$schema
 ]
 
 ### Example:
@@ -220,7 +221,7 @@ input: $input
         super().__init__(language, **kwargs)
         self.schema = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
-        ).extract_types()
+        ).extract_types(KAG_PROJECT_CONF.language)
         self.template = Template(self.template).safe_substitute(
             schema=json.dumps(self.schema)
         )
@@ -252,7 +253,7 @@ input: $input
         if "Domain Ontology" in response.keys():
             ret["ontology"] = response["Domain Ontology"]
         if "Standard Name" in response.keys():
-            ret["officialname"] = response["Standard Name"]
+            ret["officialName"] = response["Standard Name"]
         if "Synonyms" in response.keys():
             ret["synonyms"] = response["Synonyms"]
         if "Description" in response.keys():
@@ -274,9 +275,9 @@ input: $input
         if "类型" in response.keys():
             ret["category"] = response["类型"]
         if "领域本体" in response.keys():
-            ret["domain_ontology"] = response["领域本体"]
+            ret["ontology"] = response["领域本体"]
         if "标准名" in response.keys():
-            ret["office_name"] = response["标准名"]
+            ret["officialName"] = response["标准名"]
         if "同义词" in response.keys():
             ret["synonyms"] = response["同义词"]
         if "解释" in response.keys():

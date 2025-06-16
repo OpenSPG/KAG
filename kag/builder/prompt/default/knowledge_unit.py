@@ -11,11 +11,12 @@
 # or implied.
 
 import json
+import re
 from typing import List
 
+from kag.builder.prompt.default.util import load_knowIE_data
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface import PromptABC
-from util import *
 
 @PromptABC.register("knowledge_unit")
 class KnowledgeUnitPrompt(PromptABC):
@@ -34,10 +35,6 @@ class KnowledgeUnitPrompt(PromptABC):
 - Procedural Knowledge: Knowledge about how to perform tasks or operations, including program code, algorithms, operational steps, experimental processes, equation sets for problem-solving, etc.
 - Analytical Knowledge: Knowledge derived through logical analysis, calculations, induction, deduction, etc., to support views or conclusions, answering 'why' and 'how to derive conclusions' questions.
 
-### Entity Types
-[ 
-    "Person", "Geographic Location", "Event", "Organization", "Finance", "Healthcare", "Education", "Science and Technology", "Culture and Entertainment", "Policy and Regulation", "Creature",  "Time",  "Others"
-]
 
 ### Output Format:
 {
@@ -238,7 +235,7 @@ input: $input
         if "知识类型" in response.keys():
             ret["knowledgetype"] = response["知识类型"]
         if "领域本体" in response.keys():
-            ret["domain_ontology"] = response["领域本体"]
+            ret["ontology"] = response["领域本体"]
         if "核心实体" in response.keys():
             ret["core_entities"] = response["核心实体"]
         if "关联问" in response.keys():

@@ -13,8 +13,8 @@
 import json
 from typing import List
 
+from kag.builder.prompt.default.util import load_SPO_data
 from kag.interface import PromptABC
-from util import *
 
 @PromptABC.register("knowledge_unit_triple")
 class OpenIEKnowledgeUnitTriplePrompt(PromptABC):
@@ -134,27 +134,5 @@ output: [
         return ["entity_list", "input"]
 
     def parse_response(self, response: str, **kwargs):
-        rsp = response
-
         standardized_triples =  load_SPO_data(response)
-        # if isinstance(rsp, str):
-        #     rsp = json.loads(rsp)
-        # if isinstance(rsp, dict) and "output" in rsp:
-        #     rsp = rsp["output"]
-        # if isinstance(rsp, dict) and "triples" in rsp:
-        #     triples = rsp["triples"]
-        # else:
-        #     triples = rsp
-        #
-        # standardized_triples = []
-        # for triple in triples:
-        #     if isinstance(triple, list):
-        #         standardized_triples.append(triple)
-        #     elif isinstance(triple, dict):
-        #         s = triple.get("subject")
-        #         p = triple.get("predicate")
-        #         o = triple.get("object")
-        #         if s and p and o:
-        #             standardized_triples.append([s, p, o])
-
         return standardized_triples
