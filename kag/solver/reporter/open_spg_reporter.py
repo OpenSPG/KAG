@@ -9,7 +9,6 @@ from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import (
-    KgGraph,
     EntityData,
     RelationData,
 )
