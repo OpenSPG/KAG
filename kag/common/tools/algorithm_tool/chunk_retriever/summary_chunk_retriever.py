@@ -15,7 +15,6 @@ from typing import List
 import knext.common.cache
 import logging
 
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.interface import (
     RetrieverABC,

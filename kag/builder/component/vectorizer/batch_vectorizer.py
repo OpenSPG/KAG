@@ -348,7 +348,7 @@ class BatchVectorizer(VectorizerABC):
         batch_size: int = 32,
         disable_generation: Optional[List[str]] = None,
         sparse_vectorize_model: SparseVectorizeModelABC = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the BatchVectorizer with the specified vectorization model and batch size.

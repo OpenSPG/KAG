@@ -13,7 +13,7 @@
 import asyncio
 from typing import List, Optional
 
-from kag.common.conf import KAGConfigAccessor, KAGConstants, KAGConfigMgr
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface.common.model.retriever_data import KgGraph, ChunkData, DocData
 from kag.interface.common.tools import ToolABC
 from kag.interface.solver.planner_abc import Task
