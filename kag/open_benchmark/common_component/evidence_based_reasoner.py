@@ -12,7 +12,7 @@
 # flake8: noqa
 import asyncio
 import json
-from typing import List, Optional
+from typing import List
 from kag.interface import (
     ExecutorABC,
     LLMClient,
@@ -21,7 +21,6 @@ from kag.interface import (
     RetrieverOutputMerger,
     RetrieverABC,
 )
-from kag.interface.solver.reporter_abc import ReporterABC
 
 
 @ExecutorABC.register("evidence_based_reasoner")
@@ -37,7 +36,6 @@ class EvidenceBasedReasoner(ExecutorABC):
         self.merger = merger
 
     async def ainvoke(self, query: str, task: Task, context: Context, **kwargs):
-        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
 
         retrieval_futures = []
         for retriever in self.retrievers:
@@ -98,12 +96,6 @@ Thought: The question asks about the origin of the last name Sylvester during th
             {"query": task.arguments["query"], "response": response}, ensure_ascii=False
         )
 
-        reporter.add_report_line(
-            "reference",
-            f"{query}_kag_retriever_result",
-            merged,
-            "FINISH",
-        )
         return response
 
     def schema(self, func_name: str = None):
