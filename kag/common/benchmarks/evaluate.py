@@ -7,6 +7,7 @@ from .LLMJudger import LLMJudger
 from .evaUtils import get_em_f1
 from .evaUtils import compare_summarization_answers
 from .evaUtils import compute_rouge
+from ..conf import KAG_CONFIG
 from ..config import get_default_chat_llm_config
 from ..utils import processing_phrases
 from enum import Enum
@@ -31,6 +32,7 @@ class Evaluate:
     ):
         self.embedding_factory = embedding_factory
         self.metrics = metrics or [MetricType.EM_F1, MetricType.LLM]
+        self.llm_name = "llm_judge"
 
     def generate_id(self, title, content):
         return processing_phrases(f"{title}\n{content}").replace("\n", "")
@@ -346,7 +348,10 @@ class Evaluate:
             if metric == MetricType.EM_F1:
                 total_metrics.update(self.getEmAndF1(predictionlist, goldlist))
             if metric == MetricType.LLM:
-                llm_conf = get_default_chat_llm_config()
+                if "llm_judge" in KAG_CONFIG.all_config:
+                    llm_conf = KAG_CONFIG.all_config["llm_judge"]
+                else:
+                    llm_conf = get_default_chat_llm_config()
                 llm_conf["enable_check"] = False
                 llm_client = LLMClient.from_config(llm_conf)
                 total_metrics.update(

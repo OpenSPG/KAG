@@ -230,6 +230,7 @@ def running_paras():
     parser.add_argument("--qa_file", type=str, help="test file name in /data")
     parser.add_argument("--thread_num", type=int, help="thread num to run", default=10)
     parser.add_argument("--upper_limit", type=int, help="upper limit", default=1000)
+    parser.add_argument("--run_name", type=str, help="run name", default="kag_master")
     parser.add_argument(
         "--res_file", type=str, help="record store file", default="benchmark.txt"
     )
