@@ -35,7 +35,9 @@ def extract_admin_types(input_file, output_file):
             if len(parts) >= 3 and parts[1] == "type" and "行政区" in parts[2]:
                 admin_name = parts[0]
                 admin_type = parts[2]
-                admin_id = admin_id_map.get(admin_name, "")  # 获取对应的ID，如果没有则为空字符串
+                admin_id = admin_id_map.get(
+                    admin_name, ""
+                )  # 获取对应的ID，如果没有则为空字符串
 
                 admin_types.append(
                     {

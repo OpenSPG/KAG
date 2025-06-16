@@ -17,7 +17,9 @@ def load_knowIE_data(respond, lang="en"):
             extract_ret_str = extract_ret_str[left_pos:right_pos].strip()
             extract_ret = json.loads(extract_ret_str)
         except Exception as e:
-            logger.warning(f"load_knowIE_data retry0 has exception {e} {respond}", exc_info=True)
+            logger.warning(
+                f"load_knowIE_data retry0 has exception {e} {respond}", exc_info=True
+            )
             try:
                 extract_ret_str = "{" + "{".join(respond.split("{")[1:])
                 extract_ret_str = extract_ret_str.split("}\n}")[0] + "}\n}"
@@ -29,7 +31,10 @@ def load_knowIE_data(respond, lang="en"):
                 )
                 extract_ret = json.loads(extract_ret_str)
             except Exception as e:
-                logger.warning(f"load_knowIE_data retry1 has exception {e} {respond}", exc_info=True)
+                logger.warning(
+                    f"load_knowIE_data retry1 has exception {e} {respond}",
+                    exc_info=True,
+                )
                 try:
                     if "```json" in extract_ret_str:
                         extract_ret_str = extract_ret_str.split("```json")[1]
@@ -43,7 +48,10 @@ def load_knowIE_data(respond, lang="en"):
                         )  # .replace('\"Sleazy\"' ,'\\\"Sleazy\\\"').replace('\\\"Planet of the Apes\\\"' ,'Planet of the Apes') #.replace("\\", '\\\\').replace("\'", "\\\'")
                     extract_ret = json.loads(extract_ret)
                 except Exception as e:
-                    logger.warning(f"load_knowIE_data retry2 has exception {e} {respond}", exc_info=True)
+                    logger.warning(
+                        f"load_knowIE_data retry2 has exception {e} {respond}",
+                        exc_info=True,
+                    )
                     try:
                         extract_ret = json.loads(extract_ret_str + "}")
                     except:
@@ -70,7 +78,7 @@ def load_NER_data(respond):
             extract_ret_str = "[" + "[".join(extract_ret_str.split("[")[1:])
             extract_ret_str = "]".join(extract_ret_str.split("]")[:-1]) + "]"
             extract_ret = json.loads(extract_ret_str)
-        except Exception as e:
+        except:
             try:
                 extract_ret_str = extract_ret_str.strip() + "}]"
                 extract_ret = json.loads(extract_ret_str)
@@ -181,7 +189,9 @@ def check_data(line, data_type="knowIE", language="zh"):
                     .replace("\\", "\\\\")
                 )
             except Exception as e:
-                logger.warning(f"check_data retry2 has exception {e} {line}", exc_info=True)
+                logger.warning(
+                    f"check_data retry2 has exception {e} {line}", exc_info=True
+                )
                 return None
     if data_type == "knowIE":
         if not isinstance(info, dict):
@@ -190,44 +200,44 @@ def check_data(line, data_type="knowIE", language="zh"):
         for name in info:
 
             if (
-                    language == "zh"
-                    and "知识点" not in name
-                    and len(
-                set(info[name].keys())
-                & set(
-                    [
-                        "内容",
-                        "知识类型",
-                        "结构化内容",
-                        "领域本体",
-                        "核心实体",
-                        "关联问",
-                        "扩展知识点",
-                    ]
+                language == "zh"
+                and "知识点" not in name
+                and len(
+                    set(info[name].keys())
+                    & set(
+                        [
+                            "内容",
+                            "知识类型",
+                            "结构化内容",
+                            "领域本体",
+                            "核心实体",
+                            "关联问",
+                            "扩展知识点",
+                        ]
+                    )
                 )
-            )
-                    >= 6
+                >= 6
             ):
                 check_data[name] = info[name]
             # elif language == "en" and "knowledge unit" not in name and lsn(set(info[name].keys()) & set([ "Name","Type", "Domain Ontology", "Description","Standard Name", "Synonyms"])) >=6:
             elif language == "en" and isinstance(info[name], dict):
                 if (
-                        "knowledge unit" not in name
-                        and len(
-                    set(info[name].keys())
-                    & set(
-                        [
-                            "Content",
-                            "Knowledge Type",
-                            "Structured Content",
-                            "Domain Ontology",
-                            "Core Entities",
-                            "Related Query",
-                            "Extended Knowledge Points",
-                        ]
+                    "knowledge unit" not in name
+                    and len(
+                        set(info[name].keys())
+                        & set(
+                            [
+                                "Content",
+                                "Knowledge Type",
+                                "Structured Content",
+                                "Domain Ontology",
+                                "Core Entities",
+                                "Related Query",
+                                "Extended Knowledge Points",
+                            ]
+                        )
                     )
-                )
-                        >= 6
+                    >= 6
                 ):
                     check_data[name] = info[name]
         if len(check_data) > 0:
@@ -241,29 +251,29 @@ def check_data(line, data_type="knowIE", language="zh"):
         for ner in info:
             if language == "en" and isinstance(ner, dict):
                 if (
-                        len(
-                            set(ner.keys())
-                            & set(
-                                [
-                                    "Name",
-                                    "Type",
-                                    "Domain Ontology",
-                                    "Description",
-                                    "Standard Name",
-                                    "Synonyms",
-                                ]
-                            )
+                    len(
+                        set(ner.keys())
+                        & set(
+                            [
+                                "Name",
+                                "Type",
+                                "Domain Ontology",
+                                "Description",
+                                "Standard Name",
+                                "Synonyms",
+                            ]
                         )
-                        == 6
+                    )
+                    == 6
                 ):
                     check_data.append(ner)
             if language == "zh" and isinstance(ner, dict):
                 if (
-                        len(
-                            set(ner.keys())
-                            & set(["名称", "类型", "领域本体", "解释", "标准名", "同义词"])
-                        )
-                        == 6
+                    len(
+                        set(ner.keys())
+                        & set(["名称", "类型", "领域本体", "解释", "标准名", "同义词"])
+                    )
+                    == 6
                 ):
                     check_data.append(ner)
         if len(check_data) > 0:
@@ -288,7 +298,9 @@ def check_data(line, data_type="knowIE", language="zh"):
                     spo = spo + [""]
                     valid["_".join(spo)] = spo
             except Exception as e:
-                logger.warning(f"check_data spo parsed. has exception {e} {spo}", exc_info=True)
+                logger.warning(
+                    f"check_data spo parsed. has exception {e} {spo}", exc_info=True
+                )
                 continue
         check_data = list(valid.values())
         if len(check_data) > 0:

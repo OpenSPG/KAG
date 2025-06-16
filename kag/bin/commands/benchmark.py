@@ -134,6 +134,8 @@ class KAGBenchmark(Registrable):
             return loop.run_until_complete(coro)
         except RuntimeError:
             return asyncio.run(coro)
+
+
 def run_benchmark(config, result_queue):
     workdir = config.pop("root_dir")
     print(f"workdir = {workdir}")

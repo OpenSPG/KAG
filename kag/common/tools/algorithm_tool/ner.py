@@ -22,7 +22,7 @@ class Ner(ToolABC):
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         with_semantic=False,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)

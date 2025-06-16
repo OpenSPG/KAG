@@ -86,7 +86,7 @@ class BuilderChainRunner(Registrable):
         num_chains: int = 2,
         num_threads_per_chain: int = 8,
         max_concurrency: int = 100,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -306,7 +306,7 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         num_chains: int = 2,
         num_threads_per_chain: int = 8,
         register_path: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the BuilderChainRunner instance.

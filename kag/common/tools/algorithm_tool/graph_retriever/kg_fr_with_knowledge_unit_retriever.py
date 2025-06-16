@@ -5,13 +5,24 @@ from typing import List
 from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.common.parser.schema_std import StdSchema
-from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate, \
-    get_std_logic_form_parser, std_logic_node
+from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
+    KgRetrieverTemplate,
+    get_std_logic_form_parser,
+    std_logic_node,
+)
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
 from kag.common.utils import get_recall_node_label
-from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context, SchemaUtils, VectorizeModelABC, KgGraph, \
-    EntityData
+from kag.interface import (
+    LLMClient,
+    RetrieverABC,
+    RetrieverOutput,
+    Context,
+    SchemaUtils,
+    VectorizeModelABC,
+    KgGraph,
+    EntityData,
+)
 
 from kag.common.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
     PprChunkRetriever,
@@ -85,7 +96,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             {
                 "type": "openspg_graph_api",
                 "project_id": self.kb_project_config.project_id,
-                "host_addr": self.kb_project_config.host_addr
+                "host_addr": self.kb_project_config.host_addr,
             }
         )
 
@@ -93,7 +104,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             {
                 "type": "openspg_graph_api",
                 "project_id": self.kb_project_config.project_id,
-                "host_addr": self.kb_project_config.host_addr
+                "host_addr": self.kb_project_config.host_addr,
             }
         )
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
@@ -109,10 +120,12 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 err_msg="No logical-form node found",
             )
         context = kwargs.get("context", Context())
-        logical_node = std_logic_node(task_cache_id=self.kb_project_config.project_id,
-                                      logic_node=logical_node,
-                                      logic_parser=self.std_parser,
-                                      context=context)
+        logical_node = std_logic_node(
+            task_cache_id=self.kb_project_config.project_id,
+            logic_node=logical_node,
+            logic_parser=self.std_parser,
+            context=context,
+        )
         graph_data = self.template.invoke(
             query=query,
             logic_nodes=[logical_node],
@@ -150,6 +163,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 top_entity["node"]["__labels__"]
             )
             return recalled_entity
+
         # 1、atomic query search
         top_atmoic_query_units = self.search_api.search_vector(
             label=self.schema_helper.get_label_within_prefix("AtomicQuery"),
@@ -162,7 +176,6 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             score = top_entity["score"]
             if score > 0.7:
                 matched_entities.append(convert_search_rst_2_entity(top_entity))
-
 
         # 2 knowledge unit
         top_knowledge_units = self.search_api.search_vector(
@@ -181,11 +194,13 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
         logical_node = kwargs.get("logical_node", None)
         if task is not None and logical_node is not None:
 
-            triple_knowledges_units = self.recall_knowledge_unit_by_tripe(logical_node=logical_node,
-                                                                          graph_data=graph_data)
+            triple_knowledges_units = self.recall_knowledge_unit_by_tripe(
+                logical_node=logical_node, graph_data=graph_data
+            )
             for triple_knowledges_unit in triple_knowledges_units:
-                matched_entities.append(convert_search_rst_2_entity(triple_knowledges_unit))
-
+                matched_entities.append(
+                    convert_search_rst_2_entity(triple_knowledges_unit)
+                )
 
         output: RetrieverOutput = self.ppr_chunk_retriever_tool.invoke(
             task=task,
@@ -200,7 +215,9 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
         output.retriever_method = self.schema().get("name", "")
         return output
 
-    def recall_knowledge_unit_by_tripe(self, logical_node: GetSPONode, graph_data: KgGraph):
+    def recall_knowledge_unit_by_tripe(
+        self, logical_node: GetSPONode, graph_data: KgGraph
+    ):
         # 拼接三元组用于检索
         def generate_entity_mention(node: SPOBase):
 
@@ -225,12 +242,18 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
         for s_mention in s_mentions:
             for o_mention in o_mentions:
                 triple_query = f"{s_mention} {p_mention} {o_mention}"
-                rst_set = self.search_api.search_vector(label=self.schema_helper.get_label_within_prefix("KnowledgeUnit"), property_key="name", query_vector=self.vectorize_model.vectorize(triple_query), topk=self.top_k)
+                rst_set = self.search_api.search_vector(
+                    label=self.schema_helper.get_label_within_prefix("KnowledgeUnit"),
+                    property_key="name",
+                    query_vector=self.vectorize_model.vectorize(triple_query),
+                    topk=self.top_k,
+                )
                 for r in rst_set:
-                    if r['score'] < 0.7:
+                    if r["score"] < 0.7:
                         continue
                     knowledge_unit_set.append(r)
         return knowledge_unit_set
+
     def schema(self):
         return {
             "name": "kg_fr_retriever",

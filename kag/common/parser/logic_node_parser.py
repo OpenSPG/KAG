@@ -467,7 +467,8 @@ class ParseLogicForm:
 
         parsed_entity_set[alias_name] = edge
         return edge
-    def std_logic_form(self, node: LogicNode, sub_query, parsed_entity_set = None):
+
+    def std_logic_form(self, node: LogicNode, sub_query, parsed_entity_set=None):
         if parsed_entity_set is None:
             parsed_entity_set = {}
         if isinstance(node, GetSPONode):
@@ -485,6 +486,7 @@ class ParseLogicForm:
                 }
             )
         return node
+
     def parse_logic_form(
         self, input_str: str, parsed_entity_set={}, sub_query=None, query=None
     ):
@@ -507,7 +509,9 @@ class ParseLogicForm:
                 node.s = s
         elif operator in ["get_spo", "retrieval", "retriever"]:
             node: GetSPONode = GetSPONode.parse_node(args_str)
-            node = self.std_logic_form(node=node, sub_query=sub_query, parsed_entity_set=parsed_entity_set)
+            node = self.std_logic_form(
+                node=node, sub_query=sub_query, parsed_entity_set=parsed_entity_set
+            )
         elif operator in ["math"]:
             node: MathNode = MathNode.parse_node(args_str, output_name)
         elif operator in ["deduce"]:

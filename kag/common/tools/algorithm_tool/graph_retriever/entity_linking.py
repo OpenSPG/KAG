@@ -25,7 +25,7 @@ class EntityLinking(ToolABC):
         recognition_threshold: float = 0.8,
         top_k: int = 5,
         exclude_types: List[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize entity linking components with default configurations
         Args:

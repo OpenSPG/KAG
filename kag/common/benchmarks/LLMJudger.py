@@ -9,6 +9,7 @@ class LLMJudger:
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         kag_config = KAGConfigAccessor.get_config(task_id)
         self.kag_project_config = kag_config.global_config
+
     """
         judge whether prediction is consistent with gold
     """

@@ -394,9 +394,9 @@ class Evaluate:
         # Iterate over prediction and gold lists to calculate EM and F1 scores
         hits = 0
         for question, prediction, gold in tqdm(
-                zip(questionList, predictionlist, goldlist),
-                total=len(questionList),
-                desc="Evaluating predictions"
+            zip(questionList, predictionlist, goldlist),
+            total=len(questionList),
+            desc="Evaluating predictions",
         ):
             response = llm_judger.judge_by_llm(
                 question=question, prediction=prediction, gold=gold

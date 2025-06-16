@@ -276,9 +276,7 @@ class PprChunkRetriever(RetrieverABC):
 
         pagerank_start_time = time.time()
         if len(matched_entities):
-            pagerank_res = self.calculate_pagerank_scores(
-                matched_entities, top_k=top_k
-            )
+            pagerank_res = self.calculate_pagerank_scores(matched_entities, top_k=top_k)
         else:
             pagerank_res = {}
         logger.info(
@@ -311,7 +309,9 @@ class PprChunkRetriever(RetrieverABC):
                         properties=node,
                     )
                 )
-        return RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=matched_docs)
+        return RetrieverOutput(
+            retriever_method=self.schema().get("name", ""), chunks=matched_docs
+        )
 
     def schema(self):
         return {

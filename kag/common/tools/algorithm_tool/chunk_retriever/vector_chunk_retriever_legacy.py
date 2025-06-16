@@ -17,7 +17,10 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @ToolABC.register("vector_chunk_retriever_legacy")
 class VectorChunkRetriever(ToolABC):
     def __init__(
-        self, vectorize_model: VectorizeModelABC = None, search_api: SearchApiABC = None, **kwargs
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        **kwargs,
     ):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)

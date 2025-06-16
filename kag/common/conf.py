@@ -206,7 +206,7 @@ KAG_PROJECT_CONF = KAG_CONFIG.global_config
 """
 KAG_QA_TASK_CONFIG stores per-task configuration and should be cleaned up after use.
 """
-KAG_QA_TASK_CONFIG:Dict[str, KAGConfigMgr] = {}
+KAG_QA_TASK_CONFIG: Dict[str, KAGConfigMgr] = {}
 KAG_QA_TASK_CONFIG_LOCK = threading.Lock()
 
 
@@ -255,6 +255,7 @@ class KAGConfigAccessor:
         with KAG_QA_TASK_CONFIG_LOCK:
             if task_with_kb_id in KAG_QA_TASK_CONFIG:
                 del KAG_QA_TASK_CONFIG[task_with_kb_id]
+
 
 def init_env(config_file: str = None):
     project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)

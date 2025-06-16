@@ -80,7 +80,9 @@ class SparseBGEM3VectorizeModel(SparseVectorizeModelABC):
         if isinstance(texts, str):
             return result_vectors[0]
         else:
-            assert len(texts) == len(result_vectors), f"Input size mismatch: {len(texts)} != {len(result_vectors)}"
+            assert len(texts) == len(
+                result_vectors
+            ), f"Input size mismatch: {len(texts)} != {len(result_vectors)}"
             return result_vectors
 
     def vectorize(
