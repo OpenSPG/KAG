@@ -9,14 +9,13 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
-import logging
 import re
 from typing import List
 
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC
 
 
-@PlannerABC.register("kag_static_planner")
+@PlannerABC.register("kag_afac_static_planner")
 class KAGStaticPlanner(PlannerABC):
     """Static planner that generates task plans using LLM with query rewriting capability.
 
@@ -87,13 +86,11 @@ class KAGStaticPlanner(PlannerABC):
                 return False
             return True
         except Exception as e:
-            # import logging # Make sure logging is imported if not already at the top of the file
-            logger = logging.getLogger(__name__)  # Get a logger instance
-            logger.warning(
-                f"LLM call failed in finish_judger for query '{query}'. Error: {e}",
-                exc_info=True,
-            )
-            return False  # Treat as potentially bad answer
+            print(f"Failed to run finish_judger, info: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return True
 
     async def query_rewrite(self, task: Task, **kwargs):
         """Performs asynchronous query rewriting using LLM and context.
@@ -133,19 +130,7 @@ class KAGStaticPlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
-        num_iteration = kwargs.get("num_iteration", 0)
-
-        return self.llm.invoke(
-            {
-                "query": query,
-                "executors": kwargs.get("executors", []),
-            },
-            self.plan_prompt,
-            with_json_parse=self.plan_prompt.is_json_format(),
-            segment_name="thinker",
-            tag_name=f"Static planning {num_iteration}",
-            **kwargs,
-        )
+        return [Task(executor="Retriever", arguments={"query": query})]
 
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.
@@ -158,15 +143,4 @@ class KAGStaticPlanner(PlannerABC):
         Returns:
             List[Task]: Generated task sequence
         """
-        num_iteration = kwargs.get("num_iteration", 0)
-        return await self.llm.ainvoke(
-            {
-                "query": query,
-                "executors": kwargs.get("executors", []),
-            },
-            self.plan_prompt,
-            with_json_parse=self.plan_prompt.is_json_format(),
-            segment_name="thinker",
-            tag_name=f"Static planning {num_iteration}",
-            **kwargs,
-        )
+        return [Task(executor="Retriever", arguments={"query": query})]

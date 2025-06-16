@@ -69,6 +69,7 @@ def _convert_spo_to_graph(graph_id, spo_retrieved_or_entities, kag_project_confi
     edges = []
 
     for spo_or_entity in spo_retrieved_or_entities:
+
         def get_label(type_en, type_zh):
             type_name = type_zh if kag_project_config.language == "zh" else type_en
             if not type_name:

@@ -20,18 +20,30 @@ from kag.interface import (
     RetrieverOutputMerger,
     RetrieverOutput,
     Task,
-    Context, KgGraph, LLMClient, PromptABC, EntityData, SchemaUtils, Prop,
+    Context,
+    KgGraph,
+    LLMClient,
+    PromptABC,
+    EntityData,
+    SchemaUtils,
+    Prop,
 )
 from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
 
-
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
-    def __init__(self, retrievers: List[RetrieverABC], merger: RetrieverOutputMerger, enable_summary = False, llm_module: LLMClient = None,
-                 summary_prompt: PromptABC = None, **kwargs):
+    def __init__(
+        self,
+        retrievers: List[RetrieverABC],
+        merger: RetrieverOutputMerger,
+        enable_summary=False,
+        llm_module: LLMClient = None,
+        summary_prompt: PromptABC = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         kag_config = KAGConfigAccessor.get_config(task_id)
@@ -205,7 +217,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 entity
             )
         report_graph = all_spo + chunk_graph
-        if len(report_graph) != 0:
+        if len(report_graph):
             self.report_content(
                 reporter,
                 tag_id,

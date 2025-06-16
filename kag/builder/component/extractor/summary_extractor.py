@@ -7,8 +7,9 @@ from kag.builder.prompt.utils import init_prompt_with_fallback
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import ExtractorABC, LLMClient, PromptABC
+from kag.interface.common.model.chunk import ChunkTypeEnum
 from knext.common.base.runnable import Input, Output
-from knext.schema.client import CHUNK_TYPE
+from knext.schema.client import CHUNK_TYPE, TABLE_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -56,10 +57,15 @@ class SummaryExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
-        if "/" not in input.name:
-            summary_name = input.name
+        if input.type == ChunkTypeEnum.Text:
+            o_label = CHUNK_TYPE
         else:
-            summary_name = input.name.split("/")[-1]
+            o_label = TABLE_TYPE
+
+        # if "/" not in input.name:
+        summary_name = input.name
+        # else:
+        #     summary_name = input.name.split("/")[-1]
 
         index = summary_name.find("_split")
         if index != -1:
@@ -95,13 +101,13 @@ class SummaryExtractor(ExtractorABC):
                 properties={},
             )
 
-        # add Summary_relateTo_Chunk edge
+        # add Summary_sourceChunk_Chunk edge
         sub_graph.add_edge(
             s_id=input.id,
             s_label="Summary",
-            p="relateTo",
-            o_id=f"{input.id}_{input.name}",
-            o_label=CHUNK_TYPE,
+            p="sourceChunk",
+            o_id=f"{input.id}",
+            o_label=o_label,
             properties={},
         )
 

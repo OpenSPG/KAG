@@ -1,13 +1,13 @@
 import logging
 import time
-from typing import List, Optional
+
 
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.schema_std import StdSchema
 from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import KgRetrieverTemplate, \
     get_std_logic_form_parser, std_logic_node
 from kag.interface import LLMClient, RetrieverABC, RetrieverOutput, Context
-from kag.interface.solver.reporter_abc import ReporterABC
+
 
 from kag.common.tools.algorithm_tool.chunk_retriever.ppr_chunk_retriever import (
     PprChunkRetriever,
@@ -25,7 +25,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
     def __init__(
         self,
         path_select: PathSelect = None,
-        entity_linking: EntityLinking =None,
+        entity_linking: EntityLinking = None,
         llm: LLMClient = None,
         ppr_chunk_retriever_tool: RetrieverABC = None,
         std_schema: StdSchema = None,
@@ -65,10 +65,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         self.std_parser = get_std_logic_form_parser(std_schema, self.kb_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
-
-        query = task.arguments.get(
-            "rewrite_query", task.arguments["query"]
-        )
+        query = task.arguments.get("rewrite_query", task.arguments["query"])
         logical_node = task.arguments.get("logic_form_node", None)
         if not logical_node:
             return RetrieverOutput(
@@ -86,12 +83,11 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             graph_data=context.variables_graph,
             is_exact_match=True,
             name=self.name,
-            **kwargs
+            **kwargs,
         )
 
-
         entities = []
-        selected_rel = []
+        # selected_rel = []
         if graph_data is not None:
             s_entities = graph_data.get_entity_by_alias_without_attr(
                 logical_node.s.alias_name
@@ -133,7 +129,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
                     "logic_form_node": {
                         "type": "object",
                         "description": "Logic node for context retrieval",
-                    }
+                    },
                 },
                 "required": ["query", "logic_form_node"],
             },

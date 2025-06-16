@@ -120,7 +120,9 @@ class EntityLinking(ToolABC):
             result.append(node)
         return result
 
-    def recall_entity(self, query: str, name: str, type_name: str = None, topk_k: int = None):
+    def recall_entity(
+        self, query: str, name: str, type_name: str = None, topk_k: int = None
+    ):
         # Determine the query type based on the entity's standard type or set it to "Entity" if not specified
         query_type = type_name
         if query_type is None:
@@ -199,6 +201,7 @@ class EntityLinking(ToolABC):
                 exc_info=True,
             )
             return []
+
     def invoke(self, query, name, type_name, topk_k=None, **kwargs) -> List[EntityData]:
         """Perform entity linking by combining vector and text search strategies
         Args:
@@ -256,7 +259,7 @@ class EntityLinking(ToolABC):
             return retdata[: self.top_k]
         except Exception as e:
             logger.error(
-                f"Error in entity_linking {query} name={name} type={with_prefix_type}: {e}",
+                f"Error in entity_linking {query} name={name} type={type_name}: {e}",
                 exc_info=True,
             )
             return []

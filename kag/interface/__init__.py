@@ -18,9 +18,6 @@ from kag.interface.common.vectorize_model import (
     SparseVectorizeModelABC,
     SparseEmbeddingVector,
 )
-from kag.interface.indexer.index import IndexABC
-
-from kag.interface.common.vectorize_model import VectorizeModelABC, EmbeddingVector
 from kag.interface.common.rerank_model import RerankModelABC
 from kag.interface.common.model.retriever_data import (
     RetrievedData,

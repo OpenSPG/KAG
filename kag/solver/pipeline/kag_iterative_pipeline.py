@@ -121,12 +121,12 @@ class KAGIterativePipeline(SolverPipelineABC):
             task, executor = await self.planning(
                 query, context, num_iteration=num_iteration, **kwargs
             )
-            
+
             if executor == self.finish_executor:
                 context.append_task(task)  # Add finish task to context
                 finished_by_executor = True
                 break
-            
+
             # Execute the task first
             await executor.ainvoke(query, task, context, **kwargs)
             # Add task to context only after successful execution
@@ -137,6 +137,6 @@ class KAGIterativePipeline(SolverPipelineABC):
                 f"Pipeline reached max_iteration ({self.max_iteration}) "
                 f"without finishing for query: {query}"
             )
-        
+
         answer = await self.generator.ainvoke(query, context, **kwargs)
         return answer
