@@ -11,7 +11,9 @@
 # or implied.
 from kag.builder.prompt.default.knowledge_unit import KnowledgeUnitPrompt
 from kag.builder.prompt.default.knowledge_unit_ner import OpenIENERKnowledgeUnitPrompt
-from kag.builder.prompt.default.knowledge_unit_triple import OpenIEKnowledgeUnitTriplePrompt
+from kag.builder.prompt.default.knowledge_unit_triple import (
+    OpenIEKnowledgeUnitTriplePrompt,
+)
 from kag.builder.prompt.default.ner import OpenIENERPrompt as DefaultOpenIENERPrompt
 from kag.builder.prompt.default.std import (
     OpenIEEntitystandardizationdPrompt as DefaultOpenIEEntitystandardizationdPrompt,

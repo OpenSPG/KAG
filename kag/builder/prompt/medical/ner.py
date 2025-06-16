@@ -51,7 +51,8 @@ class OpenIENERPrompt(PromptABC):
         kag_config = KAGConfigAccessor.get_config(task_id)
         kag_project_config = kag_config.global_config
         self.schema = SchemaClient(
-            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
+            host_addr=kag_project_config.host_addr,
+            project_id=kag_project_config.project_id,
         ).extract_types(kag_project_config.language)
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 

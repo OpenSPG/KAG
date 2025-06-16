@@ -111,6 +111,7 @@ class RetrieverABC(ToolABC):
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         self.kag_config = KAGConfigAccessor.get_config(task_id)
         self.kag_project_config = self.kag_config.global_config
+
     @property
     def input_types(self):
         return str

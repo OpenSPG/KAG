@@ -36,15 +36,19 @@ logger = logging.getLogger()
 def get_node_unique_id(biz_id, label):
     return f"{biz_id}_{label}"
 
+
 def configure_device(use_mps=True):
     if torch.cuda.is_available():
         device = "cuda"
-    elif use_mps and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    elif (
+        use_mps and hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    ):
         device = "mps"
     else:
         device = "cpu"
     logger.info(f"Using device: {device}")
     return device
+
 
 class MemoryGraph:
     _instances = {}

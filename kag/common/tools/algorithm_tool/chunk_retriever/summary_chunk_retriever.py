@@ -63,7 +63,6 @@ class SummaryChunkRetriever(RetrieverABC):
             )
         )
 
-
     async def _get_summaries(self, query, top_k) -> List[str]:
         topk_summary_ids = []
         query_vector = self.vectorize_model.vectorize(query)
@@ -167,7 +166,10 @@ class SummaryChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg="query is empty")
+                return RetrieverOutput(
+                    retriever_method=self.schema().get("name", ""),
+                    err_msg="query is empty",
+                )
 
             # recall summary through semantic vector
             topk_summary_ids = await self._get_summaries(query, top_k)
@@ -189,7 +191,9 @@ class SummaryChunkRetriever(RetrieverABC):
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     @property
     def input_indices(self):

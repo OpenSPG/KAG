@@ -45,7 +45,9 @@ class LLMGeneratorWithThought(GeneratorABC):
             task_query = task.arguments.get("rewrite_query", task.arguments["query"])
             print(f"task.result = {task.result}")
             if isinstance(task.result, RetrieverOutput):
-                thoughts.append(f"Sub-Query: {task.arguments['query']}\n {task.result.summary}")
+                thoughts.append(
+                    f"Sub-Query: {task.arguments['query']}\n {task.result.summary}"
+                )
                 retrieved_docs = task.result
             else:
                 result = str(task.result)

@@ -95,7 +95,11 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 component_name=retriever.schema().get("name"),
             )
             retrieval_tasks.append(
-                asyncio.create_task(retriever.ainvoke(task, context=context, segment_name=tag_id, **kwargs))
+                asyncio.create_task(
+                    retriever.ainvoke(
+                        task, context=context, segment_name=tag_id, **kwargs
+                    )
+                )
             )
         outputs = await asyncio.gather(*retrieval_tasks)
         for output in outputs:
@@ -122,7 +126,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.do_data_report(merged, reporter, tag_id, "kag_merger", "kag_merger_digest")
         if self.enable_summary:
             # summary
-            chunks = merged.chunks[:self.summary_chunks_num]
+            chunks = merged.chunks[: self.summary_chunks_num]
 
             selected_rel = []
             for graph in merged.graphs:
@@ -213,9 +217,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             entity_prop["content"] = chunk.content
             entity_prop["score"] = chunk.score
             entity.prop = Prop.from_dict(entity_prop, "Chunk", None)
-            chunk_graph.append(
-                entity
-            )
+            chunk_graph.append(entity)
         report_graph = all_spo + chunk_graph
         if len(report_graph):
             self.report_content(

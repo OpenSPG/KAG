@@ -24,7 +24,8 @@ class StdSchema(Registrable):
     def __init__(
         self,
         vectorize_model: VectorizeModelABC = None,
-        search_api: SearchApiABC = None, **kwargs
+        search_api: SearchApiABC = None,
+        **kwargs
     ):
         super().__init__(**kwargs)
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)

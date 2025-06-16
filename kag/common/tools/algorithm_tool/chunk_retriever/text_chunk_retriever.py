@@ -25,7 +25,6 @@ class TextChunkRetriever(RetrieverABC):
             )
         )
 
-
     def invoke(self, task, **kwargs) -> RetrieverOutput:
         top_k = kwargs.get("top_k", self.top_k)
         query = task.arguments["query"]
@@ -54,7 +53,9 @@ class TextChunkRetriever(RetrieverABC):
             )
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     def schema(self):
         return {

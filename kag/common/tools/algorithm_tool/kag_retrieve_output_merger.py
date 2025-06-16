@@ -15,7 +15,8 @@ from kag.interface import (
     Task,
     RetrieverOutputMerger,
     RetrieverOutput,
-    ChunkData, KgGraph,
+    ChunkData,
+    KgGraph,
 )
 
 
@@ -147,4 +148,8 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
         for x in retrieve_outputs:
             for g in x.graphs:
                 graph.merge_kg_graph(g)
-        return RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=merged, graphs=[graph])
+        return RetrieverOutput(
+            retriever_method=self.schema().get("name", ""),
+            chunks=merged,
+            graphs=[graph],
+        )

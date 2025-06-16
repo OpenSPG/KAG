@@ -51,11 +51,17 @@ class EvaFor2wiki(EvalQa):
         for context_item in sample["context"]:
             context_map[context_item[0]] = context_item[1]
         for supporting_fact in supporting_facts:
-            gold_list.append(processing_phrases(supporting_fact[0]).strip('"').replace(" ", ""))
+            gold_list.append(
+                processing_phrases(supporting_fact[0]).strip('"').replace(" ", "")
+            )
         predictionlist = []
         for ref in references:
-            predictionlist.append(processing_phrases(ref["title"]).strip('"').replace(" ", ""))
-        return eva_obj.recall_top(predictionlist=predictionlist, goldlist=gold_list, is_chunk_data=False)
+            predictionlist.append(
+                processing_phrases(ref["title"]).strip('"').replace(" ", "")
+            )
+        return eva_obj.recall_top(
+            predictionlist=predictionlist, goldlist=gold_list, is_chunk_data=False
+        )
 
     def do_metrics_eval(
         self, questionList: List[str], predictions: List[str], golds: List[str]
@@ -87,7 +93,9 @@ def eval(qa_file_path, thread_num=10, upper_limit=1000, collect_file="benchmark.
 
 if __name__ == "__main__":
     # benchmark common component
-    common_component = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../../common_component")
+    common_component = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "../../common_component"
+    )
     import_modules_from_path(common_component)
     delay_run(hours=0)
     # 解析命令行参数

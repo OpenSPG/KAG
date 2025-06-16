@@ -32,7 +32,7 @@ def extract_ids(text):
 
 
 def generate_ref_doc_set(
-        tag_name, ref_type, retrieved_data_list: list, refer_ids: list
+    tag_name, ref_type, retrieved_data_list: list, refer_ids: list
 ):
     refer = []
     refer_doc_maps = {}
@@ -161,7 +161,9 @@ def render_jinja2_template(template_str, context):
         template = Template(template_str, undefined=SilentUndefined)
         return template.render(**context).strip()
     except Exception as e:
-        logging.error(f"Jinja2 rendering failed: {e}, Original template: {template_str}")
+        logging.error(
+            f"Jinja2 rendering failed: {e}, Original template: {template_str}"
+        )
         return template_str.strip()  # Fallback to raw template string on failure
 
 
@@ -209,7 +211,7 @@ o relevant information was found.
 {%if chunk_num != 0 %}{{ chunk_num }} document(s) were retrieved.
 {% endif %}
 {%if (chunk_num is not defined or chunk_num == 0) and ((nodes_num is not defined or nodes_num == 0) and (edges_num is not defined and edges_num == 0)) %}No relevant information was found.
-{% endif %}"""
+{% endif %}""",
             },
             "retrieved_doc_digest": {
                 "zh": """{% if chunk_num is not defined or chunk_num == 0 %}
@@ -221,11 +223,11 @@ o relevant information was found.
 No relevant documents were retrieved.
 {% else %}
 {{ chunk_num }} document(s) were retrieved.
-{% endif %}"""
+{% endif %}""",
             },
             "next_finish": {
                 "zh": "检索信息不足以回答，需要继续检索。",
-                "en": "Insufficient information retrieved to answer, need to continue retrieving."
+                "en": "Insufficient information retrieved to answer, need to continue retrieving.",
             },
             "next_retrieved_finish": {
                 "zh": """{% if edges_num is not defined or edges_num == 0 %}
@@ -237,40 +239,28 @@ No relevant documents were retrieved.
         There are no edges in the subgraph related to the question. Further document retrieval is needed.
         {% else %}
         There are {{ edges_num }} edges in the retrieved subgraph that are related to the question, and chunk retrieval is still needed.
-        {% endif %}"""
+        {% endif %}""",
             },
-            "retrieved_finish": {
-                "zh": "",
-                "en": ""
-            },
-            "task_executing": {
-                "en": "Executing...",
-                "zh": "执行中..."
-            },
+            "retrieved_finish": {"zh": "", "en": ""},
+            "task_executing": {"en": "Executing...", "zh": "执行中..."},
             "kg_fr": {
                 "en": "Open Information Extraction Graph Retrieve",
-                "zh": "开放信息抽取层检索"
+                "zh": "开放信息抽取层检索",
             },
-            "kg_cs": {
-                "en": "SPG Graph Retrieve",
-                "zh": "SPG知识层检索"
-            },
-            "kg_rc": {
-                "en": "RawChunk Retrieve",
-                "zh": "文档检索"
-            },
+            "kg_cs": {"en": "SPG Graph Retrieve", "zh": "SPG知识层检索"},
+            "kg_rc": {"en": "RawChunk Retrieve", "zh": "文档检索"},
             "kag_merger": {
                 "zh": """{% if chunk_num is not defined or chunk_num == 0 %}
 未检索到相关文档。
 {% else %}
 重排序文档，取top {{ chunk_num }}。
 {% endif %}""",
-        "en": """{% if chunk_num is not defined or chunk_num == 0 %}
+                "en": """{% if chunk_num is not defined or chunk_num == 0 %}
 No relevant documents were found.
 {% else %}
 Rerank the documents and take the top {{ chunk_num }}.
-{% endif %}"""
-            }
+{% endif %}""",
+            },
         }
         self.tag_mapping = {
             "Graph Show": {
@@ -421,10 +411,15 @@ Rewritten question:\n{content}
 
     def generate_content(self, report_id, tpl, datas, content_params, graph_list):
         end_word = "." if self.kag_project_config.language == "en" else "。"
-        if isinstance(datas, list) and datas and (
-                isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData)):
+        if (
+            isinstance(datas, list)
+            and datas
+            and (isinstance(datas[0], RelationData) or isinstance(datas[0], EntityData))
+        ):
             graph_id = f"graph_{generate_random_string(3)}"
-            graph_list.append(_convert_spo_to_graph(graph_id, datas, self.kag_project_config))
+            graph_list.append(
+                _convert_spo_to_graph(graph_id, datas, self.kag_project_config)
+            )
             tpl = self.get_tag_template("Graph Show")
             datas = f"""<graph id={graph_id}></graph>"""
         if tpl:
@@ -458,9 +453,9 @@ Rewritten question:\n{content}
         params["status"] = step_status
 
         if (
-                is_overwrite
-                or report_id not in self.report_stream_data
-                or (not isinstance(report_content, str))
+            is_overwrite
+            or report_id not in self.report_stream_data
+            or (not isinstance(report_content, str))
         ):
             tag_template = self.get_tag_template(tag_name)
             self.report_stream_data[report_id] = {

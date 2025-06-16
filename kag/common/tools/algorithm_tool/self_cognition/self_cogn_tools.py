@@ -20,7 +20,10 @@ from kag.solver.utils import init_prompt_with_fallback
 @ToolABC.register("self_cognition")
 class SelfCognExecutor(ToolABC):
     def __init__(
-        self, llm_module: LLMClient = None, self_cognition_prompt: PromptABC = None, **kwargs
+        self,
+        llm_module: LLMClient = None,
+        self_cognition_prompt: PromptABC = None,
+        **kwargs,
     ):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)

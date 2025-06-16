@@ -66,7 +66,8 @@ class SPGPrompt(PromptABC):
         """
         super().__init__(language=language, **kwargs)
         self.schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:

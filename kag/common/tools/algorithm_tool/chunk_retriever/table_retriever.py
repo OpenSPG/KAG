@@ -59,7 +59,6 @@ class TableRetriever(RetrieverABC):
         )
         self.score_threshold = score_threshold
 
-
     def get_table(self, query, top_k) -> List[str]:
         topk_table_ids = {}
         query_vector = self.vectorize_model.vectorize(query)
@@ -154,13 +153,17 @@ class TableRetriever(RetrieverABC):
             chunks = self.get_related_chunks(topk_table_ids)
 
             # to retrieve output
-            out = RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=chunks)
+            out = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), chunks=chunks
+            )
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     @property
     def input_indices(self):
