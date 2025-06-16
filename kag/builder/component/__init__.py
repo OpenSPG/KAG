@@ -103,5 +103,6 @@ __all__ = [
     "AtomicQueryExtractor",
     "ChunkExtractor",
     "OutlineExtractor",
+    "SummaryExtractor",
     "MemoryGraphWriter",
 ]
