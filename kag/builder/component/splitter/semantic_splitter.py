@@ -50,7 +50,7 @@ class SemanticSplitter(SplitterABC):
             split_length (int, optional): The maximum length of each chunk after splitting. Defaults to 1000.
             **kwargs: Additional keyword arguments to be passed to the superclass.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         # Chinese/ASCII characters
         if kept_char_pattern is None:
             self.kept_char_pattern = re.compile(
@@ -60,10 +60,7 @@ class SemanticSplitter(SplitterABC):
             self.kept_char_pattern = re.compile(kept_char_pattern)
         self.split_length = split_length
         self.llm = llm
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
-        self.semantic_seg_op = SemanticSegPrompt(kag_project_config.language)
+        self.semantic_seg_op = SemanticSegPrompt(self.kag_project_config.language)
 
     @property
     def input_types(self) -> Type[Input]:

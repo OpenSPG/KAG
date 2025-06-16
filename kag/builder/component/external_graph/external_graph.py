@@ -14,7 +14,6 @@ import numpy as np
 import logging
 from typing import List, Union, Dict
 from kag.interface import ExternalGraphLoaderABC, MatchConfig
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.builder.model.sub_graph import Node, Edge, SubGraph
 from knext.schema.client import SchemaClient
 
@@ -47,10 +46,7 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
             edges (List[Edge]): A list of Edge objects representing the edges in the graph.
             match_config (MatchConfig): The configuration for matching query str to graph nodes.
         """
-        super().__init__(match_config)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
+        super().__init__(match_config, **kwargs)
         self.schema = SchemaClient(
             host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()

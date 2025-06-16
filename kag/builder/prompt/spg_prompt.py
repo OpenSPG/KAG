@@ -20,7 +20,6 @@ from knext.schema.client import SchemaClient
 from knext.schema.model.base import SpgTypeEnum, ConstraintTypeEnum
 from knext.schema.model.schema_helper import SPGTypeName
 from kag.builder.model.spg_record import SPGRecord
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from knext.schema.client import OTHER_TYPE
 
 logger = logging.getLogger(__name__)
@@ -66,11 +65,8 @@ class SPGPrompt(PromptABC):
             **kwargs: Additional keyword arguments.
         """
         super().__init__(language=language, **kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         self.schema = SchemaClient(
-            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()
         self.spg_type_names = spg_type_names
         if not spg_type_names:

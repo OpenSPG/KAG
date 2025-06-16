@@ -48,15 +48,12 @@ class KGWriter(SinkWriterABC):
             **kwargs: Additional keyword arguments passed to the superclass.
         """
         super().__init__(**kwargs)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
         if project_id is None:
-            self.project_id = kag_project_config.project_id
+            self.project_id = self.kag_project_config.project_id
         else:
             self.project_id = project_id
         self.client = GraphClient(
-            host_addr=kag_project_config.host_addr, project_id=project_id
+            host_addr=self.kag_project_config.host_addr, project_id=project_id
         )
         self.delete = delete
 

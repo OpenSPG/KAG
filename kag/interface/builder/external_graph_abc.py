@@ -57,14 +57,14 @@ class ExternalGraphLoaderABC(BuilderComponent):
 
     """
 
-    def __init__(self, match_config: MatchConfig):
+    def __init__(self, match_config: MatchConfig, **kwargs):
         """
         Initializes the ExternalGraphLoaderABC with the specified match configuration.
 
         Args:
             match_config (MatchConfig): The configuration for matching operations.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.match_config = match_config
 
     def dump(self) -> List[SubGraph]:

@@ -27,12 +27,12 @@ class Ner(ToolABC):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         kag_config = KAGConfigAccessor.get_config(task_id)
-        kag_project_config = kag_config.global_config
+        self.kag_project_config = kag_config.global_config
         self.ner_prompt = ner_prompt or init_prompt_with_fallback(
-            "question_ner", kag_project_config.biz_scene
+            "question_ner", self.kag_project_config.biz_scene
         )
         self.std_prompt = std_prompt or init_prompt_with_fallback(
-            "std", kag_project_config.biz_scene
+            "std", self.kag_project_config.biz_scene
         )
         self.llm_module = llm_module
         self.with_semantic = with_semantic
