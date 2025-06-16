@@ -11,9 +11,9 @@
 # or implied.
 
 from typing import Type, List
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface import SplitterABC
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
-from kag.interface.builder.base import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from kag.builder.component.splitter.base_table_splitter import BaseTableSplitter
@@ -39,6 +39,7 @@ class LengthSplitter(BaseTableSplitter):
         split_length: int = 500,
         window_length: int = 100,
         strict_length: bool = False,
+        **kwargs
     ):
         """
         Initializes the LengthSplitter with the specified split length and window length.
@@ -52,6 +53,9 @@ class LengthSplitter(BaseTableSplitter):
         self.split_length = split_length
         self.window_length = window_length
         self.strict_length = strict_length
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
 
     @property
     def input_types(self) -> Type[Input]:
@@ -86,7 +90,7 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[str]: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!" if KAG_PROJECT_CONF.language == "en" else "。？！"
+        sentence_delimiters = ".。？?！!" if self.kag_project_config.language == "en" else "。？！"
         output = []
         start = 0
         for idx, char in enumerate(content):

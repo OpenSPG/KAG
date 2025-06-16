@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import VectorizeModelABC
 
 
@@ -21,15 +21,18 @@ logger = logging.getLogger()
 class MemoryGraphApi(GraphApiABC):
     def __init__(self, graph_path, vectorize_model=None, **kwargs):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.memory_graph_path = graph_path
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            kag_config.all_config["vectorize_model"]
         )
         from kag.common.graphstore.memory_graph import MemoryGraph
 
         self.graph = MemoryGraph(
-            KAG_PROJECT_CONF.namespace, self.memory_graph_path, vectorize_model
+            kag_project_config.namespace, self.memory_graph_path, vectorize_model
         )
 
     def get_entity(self, entity: SPOEntity) -> List[EntityData]:

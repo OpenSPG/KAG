@@ -20,7 +20,7 @@ import tempfile
 
 from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.parser.logic_node_parser import MathNode
 from kag.interface import LLMClient, ExecutorABC, Task, Context
 from kag.interface.solver.planner_abc import format_task_dep_context
@@ -69,8 +69,11 @@ class PyBasedMathExecutor(ExecutorABC):
         super().__init__(**kwargs)
         self.llm = llm
         self.tries = tries
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.expression_builder = init_prompt_with_fallback(
-            "expression_builder", KAG_PROJECT_CONF.biz_scene
+            "expression_builder", kag_project_config.biz_scene
         )
 
     @retry(stop=stop_after_attempt(3), reraise=True)

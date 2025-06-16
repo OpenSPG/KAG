@@ -21,7 +21,7 @@ from knext.schema.model.base import SpgTypeEnum
 from knext.schema.model.schema_helper import (
     PropertyName,
 )
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAG_PROJECT_CONF, KAGConstants, KAGConfigAccessor
 from kag.interface.builder.mapping_abc import MappingABC
 from kag.common.registry import Functor
 
@@ -53,6 +53,9 @@ class SPGTypeMapping(MappingABC):
         self.property_mapping = property_mapping
         self.link_funcs: Dict = dict()
         self.fuse_func = fuse_func
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
 
     @retry(
         stop=stop_after_attempt(3),
@@ -61,7 +64,7 @@ class SPGTypeMapping(MappingABC):
     )
     def init_schema(self, spg_type_name):
         self.schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
         ).load()
         assert (
             spg_type_name in self.schema

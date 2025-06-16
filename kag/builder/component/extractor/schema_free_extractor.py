@@ -19,7 +19,7 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.model.sub_graph import SubGraph
@@ -54,6 +54,7 @@ class SchemaFreeExtractor(ExtractorABC):
         std_prompt: PromptABC = None,
         triple_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
+        **kwargs
     ):
         """
         Initializes the KAGExtractor with the specified parameters.
@@ -66,15 +67,18 @@ class SchemaFreeExtractor(ExtractorABC):
             external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
         """
         super().__init__()
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.llm = llm
         self.schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+            host_addr=kag_project_config.host_addr, project_id=kag_project_config.project_id
         ).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt
         self.triple_prompt = triple_prompt
 
-        biz_scene = KAG_PROJECT_CONF.biz_scene
+        biz_scene = kag_project_config.biz_scene
         if self.ner_prompt is None:
             self.ner_prompt = init_prompt_with_fallback("ner", biz_scene)
         if self.std_prompt is None:

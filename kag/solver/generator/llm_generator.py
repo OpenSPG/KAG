@@ -14,7 +14,7 @@ from typing import Optional
 
 from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface import GeneratorABC, LLMClient, PromptABC
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
@@ -54,6 +54,9 @@ class LLMGenerator(GeneratorABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.llm_client = llm_client
         self.generated_prompt = generated_prompt
         self.chunk_reranker = chunk_reranker or RerankByVector.from_config(
@@ -63,10 +66,10 @@ class LLMGenerator(GeneratorABC):
         )
         if enable_ref:
             self.with_out_ref_prompt = init_prompt_with_fallback(
-                "without_refer_generator_prompt", KAG_PROJECT_CONF.biz_scene
+                "without_refer_generator_prompt", kag_project_config.biz_scene
             )
             self.with_ref_prompt = init_prompt_with_fallback(
-                "refer_generator_prompt", KAG_PROJECT_CONF.biz_scene
+                "refer_generator_prompt", kag_project_config.biz_scene
             )
         self.enable_ref = enable_ref
 

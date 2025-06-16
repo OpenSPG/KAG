@@ -12,7 +12,7 @@
 import asyncio
 from typing import List, Optional
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
 from kag.interface import (
     ExecutorABC,
@@ -45,25 +45,21 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.retrievers = retrievers
         self.merger = merger
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
         self.summary_prompt = summary_prompt or init_prompt_with_fallback(
-            "thought_then_answer", KAG_PROJECT_CONF.biz_scene
+            "thought_then_answer", self.kag_project_config.biz_scene
         )
 
         self.enable_summary = enable_summary
 
-        self.schema_helper: SchemaUtils = SchemaUtils(
-            LogicFormConfiguration(
-                {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
-                }
-            )
-        )
+        self.summary_chunks_num = kwargs.get("summary_chunk_num", 5)
 
     def inovke(
         self, query: str, task: Task, context: Context, **kwargs
@@ -81,7 +77,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         task_query = task.arguments["query"]
         retrieval_tasks = []
-        tag_id = f"{task_query}_begin_kag_retriever"
+        tag_id = f"{task_query}_begin_task"
         self.report_content(
             reporter,
             "thinker",
@@ -99,7 +95,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 component_name=retriever.schema().get("name"),
             )
             retrieval_tasks.append(
-                asyncio.create_task(retriever.ainvoke(task, context=context, **kwargs))
+                asyncio.create_task(retriever.ainvoke(task, context=context, segment_name=tag_id, **kwargs))
             )
         outputs = await asyncio.gather(*retrieval_tasks)
         for output in outputs:
@@ -126,15 +122,15 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.do_data_report(merged, reporter, tag_id, "kag_merger", "kag_merger_digest")
         if self.enable_summary:
             # summary
-            formatted_docs = []
-            for doc in merged.chunks:
+            chunks = merged.chunks[:self.summary_chunks_num]
+
+            selected_rel = []
+            for graph in merged.graphs:
+                selected_rel += list(set(graph.get_all_spo()))
+            selected_rel = list(set(selected_rel))
+            formatted_docs = [str(rel) for rel in selected_rel]
+            for doc in chunks:
                 formatted_docs.append(f"{doc.content}")
-            if len(formatted_docs) == 0:
-                selected_rel = []
-                for graph in merged.graphs:
-                    selected_rel += list(set(graph.get_all_spo()))
-                selected_rel = list(set(selected_rel))
-                formatted_docs = [str(rel) for rel in selected_rel]
 
             deps_context = format_task_dep_context(task.parents)
             summary_response = self.llm_module.invoke(
@@ -146,6 +142,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 self.summary_prompt,
                 with_json_parse=False,
                 with_except=True,
+                segment_name=tag_id,
                 tag_name=f"begin_summary_{task_query}",
                 **kwargs,
             )
@@ -188,6 +185,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             merged_graph.merge_kg_graph(graph)
         nodes_num += len(merged_graph.get_all_entity())
         edges_num += len(merged_graph.get_all_spo())
+
         content = "kag_merger_digest_failed"
         if chunk_num > 0 or edges_num > 0 or nodes_num > 0:
             content = show_info_digest
@@ -204,31 +202,26 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             **kwargs,
         )
         all_spo = merged_graph.get_all_spo()
-        if len(all_spo) != 0:
-            self.report_content(
-                reporter,
-                tag_id,
-                f"{tag_id}_graph",
-                all_spo,
-                "FINISH",
-            )
         chunk_graph = []
         for chunk in output.chunks:
             entity = EntityData(
                 entity_id=chunk.chunk_id,
                 name=chunk.title,
-                node_type=self.schema_helper.get_label_within_prefix("Chunk"),
+                node_type=chunk.properties.get("__labels__"),
             )
             entity_prop = dict(chunk.properties) if chunk.properties else {}
             entity_prop["content"] = chunk.content
             entity_prop["score"] = chunk.score
-            entity.prop = Prop.from_dict(entity_prop, "Chunk", self.schema_helper)
-            chunk_graph.append(entity)
-        if len(chunk_graph):
+            entity.prop = Prop.from_dict(entity_prop, "Chunk", None)
+            chunk_graph.append(
+                entity
+            )
+        report_graph = all_spo + chunk_graph
+        if len(report_graph):
             self.report_content(
                 reporter,
                 tag_id,
-                f"{tag_id}_graph_chunk",
-                chunk_graph,
+                f"spo_graph",
+                report_graph,
                 "FINISH",
             )
