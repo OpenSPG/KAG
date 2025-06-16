@@ -9,7 +9,6 @@ from .evaUtils import compare_summarization_answers
 from .evaUtils import compute_rouge
 from ..config import get_default_chat_llm_config
 from ..utils import processing_phrases
-
 from enum import Enum
 
 from ...interface import LLMClient
@@ -389,11 +388,15 @@ class Evaluate:
         # llm = LLMClient.from_config(KAG_CONFIG.all_config["chat_llm"])
         # Iterate over prediction and gold lists to calculate EM and F1 scores
         hits = 0
-        for question, prediction, gold in zip(questionList, predictionlist, goldlist):
-            resposne = llm_judger.judge_by_llm(
+        for question, prediction, gold in tqdm(
+                zip(questionList, predictionlist, goldlist),
+                total=len(questionList),
+                desc="Evaluating predictions"
+        ):
+            response = llm_judger.judge_by_llm(
                 question=question, prediction=prediction, gold=gold
             )
-            if resposne.lower() == "true":
+            if response.lower() == "true":
                 hits += 1
 
         # Calculate consistency
