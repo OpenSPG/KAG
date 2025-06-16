@@ -145,8 +145,14 @@ class FuzzyOneHopSelect(PathSelect):
 
         for result_ in result:
             spo = result_[0]
-            spo_p_name = spo_name_map.get(spo, None)
-            spo_retrieved.append([spo, spo_p_name])
+            try:
+                spo_p_name = spo_name_map.get(spo, None)
+                spo_retrieved.append([spo, spo_p_name])
+            except Exception as e:
+                logger.warning(
+                    f"retrieval_relation: p={p}, candi_set={sen_condi_set}, p_std spo={spo}, except={e}",
+                    exc_info=True,
+                )
         return spo_retrieved
 
     def match_spo(self, n: GetSPONode, one_hop_graph_list: List[OneHopGraphData]):

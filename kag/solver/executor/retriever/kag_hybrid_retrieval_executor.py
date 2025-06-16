@@ -47,14 +47,6 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
 
         self.enable_summary = enable_summary
 
-        self.schema_helper: SchemaUtils = SchemaUtils(
-            LogicFormConfiguration(
-                {
-                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
-                }
-            )
-        )
         self.summary_chunks_num = kwargs.get("summary_chunk_num", 5)
 
     def inovke(
@@ -203,12 +195,12 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             entity = EntityData(
                 entity_id=chunk.chunk_id,
                 name=chunk.title,
-                node_type=self.schema_helper.get_label_within_prefix("Chunk"),
+                node_type=chunk.properties.get("__labels__"),
             )
             entity_prop = dict(chunk.properties) if chunk.properties else {}
             entity_prop["content"] = chunk.content
             entity_prop["score"] = chunk.score
-            entity.prop = Prop.from_dict(entity_prop, "Chunk", self.schema_helper)
+            entity.prop = Prop.from_dict(entity_prop, "Chunk", None)
             chunk_graph.append(
                 entity
             )

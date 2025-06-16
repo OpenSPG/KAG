@@ -64,7 +64,7 @@ class PprChunkRetriever(RetrieverABC):
             kag_config.all_config["vectorize_model"]
         )
 
-        self.ner = ner or Ner(llm_module=llm_client)
+        self.ner = ner or Ner(llm_module=llm_client, **kwargs)
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
 
