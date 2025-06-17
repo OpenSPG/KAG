@@ -86,9 +86,9 @@ class KagOutputExecutor(ExecutorABC):
         result = []
         for alias in logic_node.alias_name_set:
             if context.variables_graph.has_alias(alias.alias_name):
-                result.append(
-                    context.variables_graph.get_answered_alias(alias.alias_name)
-                )
+                alias_answer = context.variables_graph.get_answered_alias(alias.alias_name)
+                if alias_answer:
+                    result.append(alias_answer)
         if not result:
             dep_context = []
             for p in task.parents:

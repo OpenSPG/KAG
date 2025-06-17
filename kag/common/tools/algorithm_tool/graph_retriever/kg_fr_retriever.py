@@ -68,57 +68,64 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         self.std_parser = get_std_logic_form_parser(std_schema, self.kag_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
-        query = task.arguments.get("rewrite_query", task.arguments["query"])
-        logical_node = task.arguments.get("logic_form_node", None)
-        if not logical_node:
+        try:
+            query = task.arguments.get("rewrite_query", task.arguments["query"])
+            logical_node = task.arguments.get("logic_form_node", None)
+            if not logical_node:
+                return RetrieverOutput(
+                    retriever_method=self.schema().get("name", ""),
+                    err_msg="No logical-form node found",
+                )
+            context = kwargs.get("context", Context())
+            logical_node = std_logic_node(
+                task_cache_id=self.kag_project_config.project_id,
+                logic_node=logical_node,
+                logic_parser=self.std_parser,
+                context=context,
+            )
+            graph_data = self.template.invoke(
+                query=query,
+                logic_nodes=[logical_node],
+                graph_data=context.variables_graph,
+                is_exact_match=True,
+                name=self.name,
+                **kwargs,
+            )
+
+            entities = []
+            # selected_rel = []
+            if graph_data is not None:
+                s_entities = graph_data.get_entity_by_alias_without_attr(
+                    logical_node.s.alias_name
+                )
+                if s_entities:
+                    entities.extend(s_entities)
+                o_entities = graph_data.get_entity_by_alias_without_attr(
+                    logical_node.o.alias_name
+                )
+                if o_entities:
+                    entities.extend(o_entities)
+                entities = list(set(entities))
+
+            start_time = time.time()
+            output: RetrieverOutput = self.ppr_chunk_retriever_tool.invoke(
+                task=task,
+                start_entities=entities,
+                top_k=self.top_k,
+            )
+
+            logger.info(
+                f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
+            )
+            output.graphs = [graph_data]
+            output.retriever_method = self.schema().get("name", "")
+            return output
+        except Exception as e:
+            logger.error(e, exc_info=True)
             return RetrieverOutput(
                 retriever_method=self.schema().get("name", ""),
-                err_msg="No logical-form node found",
+                err_msg=f"{task} {e}",
             )
-        context = kwargs.get("context", Context())
-        logical_node = std_logic_node(
-            task_cache_id=self.kag_project_config.project_id,
-            logic_node=logical_node,
-            logic_parser=self.std_parser,
-            context=context,
-        )
-        graph_data = self.template.invoke(
-            query=query,
-            logic_nodes=[logical_node],
-            graph_data=context.variables_graph,
-            is_exact_match=True,
-            name=self.name,
-            **kwargs,
-        )
-
-        entities = []
-        # selected_rel = []
-        if graph_data is not None:
-            s_entities = graph_data.get_entity_by_alias_without_attr(
-                logical_node.s.alias_name
-            )
-            if s_entities:
-                entities.extend(s_entities)
-            o_entities = graph_data.get_entity_by_alias_without_attr(
-                logical_node.o.alias_name
-            )
-            if o_entities:
-                entities.extend(o_entities)
-            entities = list(set(entities))
-
-        start_time = time.time()
-        output: RetrieverOutput = self.ppr_chunk_retriever_tool.invoke(
-            task=task,
-            start_entities=entities,
-            top_k=self.top_k,
-        )
-
-        logger.info(
-            f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
-        )
-        output.graphs = [graph_data]
-        output.retriever_method = self.schema().get("name", "")
-        return output
 
     def schema(self):
         return {
