@@ -170,16 +170,16 @@ class SubGraph(object):
         self.nodes = nodes
         self.edges = edges
 
-    def get_node_by_id(self, id):
+    def get_node_by_id(self, id, label):
         for n in self.nodes:
-            if n.id == id:
+            if n.id == id and n.label == label:
                 return n
         return None
 
     def add_node(self, id: str, name: str, label: str, properties=None):
         if not properties:
             properties = dict()
-        store_node = self.get_node_by_id(id)
+        store_node = self.get_node_by_id(id, label)
         if not store_node:
             self.nodes.append(
                 Node(_id=id, name=name, label=label, properties=properties)

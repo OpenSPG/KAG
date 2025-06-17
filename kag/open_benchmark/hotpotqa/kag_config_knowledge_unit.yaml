@@ -26,7 +26,7 @@ project:
   host_addr: http://127.0.0.1:8887
   id: '1'
   language: en
-  namespace: TwoWiki
+  namespace: HotpotQA
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
@@ -63,7 +63,7 @@ kag_builder_pipeline:
   num_threads_per_chain: 1
   num_chains: 16
   scanner:
-    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
 #------------kag-builder configuration end----------------#
 
 
