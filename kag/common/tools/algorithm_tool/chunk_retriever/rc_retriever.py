@@ -53,9 +53,15 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         )
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
-        output = self.vector_chunk_retriever.invoke(task=task, **kwargs)
-        output.retriever_method = self.schema().get("name", "")
-        return output
+        try:
+            output = self.vector_chunk_retriever.invoke(task=task, **kwargs)
+            output.retriever_method = self.schema().get("name", "")
+            return output
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=f"{task} {e}"
+            )
 
     def schema(self):
         return {
