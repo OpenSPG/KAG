@@ -36,6 +36,7 @@ pdfminer.six==20231228
 ollama
 tenacity
 pyhocon
+scikit-learn
 zodb
 matplotlib
 PyPDF2
