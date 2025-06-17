@@ -260,7 +260,7 @@ Chunk(文本块): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建chunk 索引，实现chunk 的检索，一般用于检索与chunk 相关的chunk"
 
     @classmethod
     def build_extractor_config(
@@ -350,7 +350,7 @@ Table(表格): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return "通过构建表格索引，实现表格的检索"
+        return "通过构建表格索引，实现表格的检索，一般用于检索与表格相关的chunk"
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
