@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 import numpy as np
-from kag.common.conf import KAG_CONFIG, KAGConfigAccessor, KAGConstants
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface import VectorizeModelABC as Vectorizer
 
 logger = logging.getLogger()

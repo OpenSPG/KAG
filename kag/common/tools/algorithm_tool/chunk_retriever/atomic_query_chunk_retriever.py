@@ -70,7 +70,6 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         )
         self.score_threshold = score_threshold
 
-
     def recall_doc_by_atomic_query(self, atomic_query):
         entity = EntityData(
             entity_id=atomic_query["node"]["id"],
@@ -212,6 +211,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             return loop.run_until_complete(coro)
         except RuntimeError:
             return asyncio.run(coro)
+
     def invoke(self, task: Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
         context = kwargs.get("context", None)
@@ -221,7 +221,9 @@ class AtomicQueryChunkRetriever(RetrieverABC):
                 return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
             # recall atomic queries
-            top_k_atomic_queries = self.sync_wrapper(self.recall_atomic_query(query, context))
+            top_k_atomic_queries = self.sync_wrapper(
+                self.recall_atomic_query(query, context)
+            )
             query_texts = [item["node"]["name"] for item in top_k_atomic_queries]
             query_text_related_chunks = []
             for query_text in query_texts:
@@ -246,15 +248,21 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             ]
 
             # recall atomic_relatedTo_chunks
-            chunks = self.sync_wrapper(self.recall_sourceChunks_chunks(top_k_atomic_queries))
+            chunks = self.sync_wrapper(
+                self.recall_sourceChunks_chunks(top_k_atomic_queries)
+            )
 
             chunks = chunks + query_text_related_chunks
 
-            out = RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=chunks)
+            out = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), chunks=chunks
+            )
             return out
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     def schema(self):
         return {

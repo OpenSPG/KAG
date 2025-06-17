@@ -13,7 +13,6 @@ import logging
 from typing import List
 
 import knext.common.cache
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
@@ -59,7 +58,6 @@ class TableRetriever(RetrieverABC):
             )
         )
         self.score_threshold = score_threshold
-
 
     def get_table(self, query, top_k) -> List[str]:
         topk_table_ids = {}
@@ -155,13 +153,17 @@ class TableRetriever(RetrieverABC):
             chunks = self.get_related_chunks(topk_table_ids)
 
             # to retrieve output
-            out = RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=chunks)
+            out = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), chunks=chunks
+            )
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     @property
     def input_indices(self):

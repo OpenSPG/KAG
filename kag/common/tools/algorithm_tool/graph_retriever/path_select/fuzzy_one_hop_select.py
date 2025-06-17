@@ -35,7 +35,7 @@ class FuzzyOneHopSelect(PathSelect):
         graph_api: GraphApiABC = None,
         search_api: SearchApiABC = None,
         spo_retrieval_prompt: PromptABC = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
@@ -205,7 +205,10 @@ class FuzzyOneHopSelect(PathSelect):
                 continue
             one_hop_graph = revert_graph_map[std_spo_text]
             rel_set = one_hop_graph.get_std_p_value_by_spo_text(
-                std_p, std_spo_text, len(n.p.value_list) != 0, self.kag_project_config.language
+                std_p,
+                std_spo_text,
+                len(n.p.value_list) != 0,
+                self.kag_project_config.language,
             )
             result += rel_set
         return result

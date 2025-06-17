@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from typing import List
 
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import get_recall_node_label
 
 from kag.interface import (
@@ -195,6 +194,9 @@ class PprChunkRetriever(RetrieverABC):
         return matched_docs
 
     def linking_matched_entities(self, query: str, **kwargs):
+        start_entities = kwargs.get("start_entities", [])
+        if start_entities:
+            return start_entities
         matched_entities = []
         ner_maps = {}
         ner_start_time = time.time()
@@ -274,9 +276,7 @@ class PprChunkRetriever(RetrieverABC):
 
         pagerank_start_time = time.time()
         if len(matched_entities):
-            pagerank_res = self.calculate_pagerank_scores(
-                matched_entities, top_k=top_k
-            )
+            pagerank_res = self.calculate_pagerank_scores(matched_entities, top_k=top_k)
         else:
             pagerank_res = {}
         logger.info(
@@ -309,7 +309,9 @@ class PprChunkRetriever(RetrieverABC):
                         properties=node,
                     )
                 )
-        return RetrieverOutput(retriever_method=self.schema().get("name", ""), chunks=matched_docs)
+        return RetrieverOutput(
+            retriever_method=self.schema().get("name", ""), chunks=matched_docs
+        )
 
     def schema(self):
         return {

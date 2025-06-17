@@ -37,7 +37,7 @@ class KAGPostProcessor(PostProcessorABC):
         self,
         similarity_threshold: float = None,
         external_graph: ExternalGraphLoaderABC = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the KAGPostProcessor instance.
@@ -48,7 +48,8 @@ class KAGPostProcessor(PostProcessorABC):
         """
         super().__init__(**kwargs)
         self.schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         self.similarity_threshold = similarity_threshold
         self.external_graph = external_graph

@@ -50,7 +50,8 @@ class RelationMapping(MappingABC):
         """
         super().__init__(**kwargs)
         schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         assert subject_name in schema, f"{subject_name} is not a valid SPG type name"
         assert object_name in schema, f"{object_name} is not a valid SPG type name"

@@ -19,10 +19,11 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.utils import processing_phrases, to_camel_case
-from kag.builder.model.chunk import Chunk, ChunkTypeEnum
+from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
-from kag.builder.prompt.utils import init_prompt_with_fallback
+from kag.common.utils import generate_hash_id
 from knext.schema.client import OTHER_TYPE, CHUNK_TYPE, BASIC_TYPES
 from knext.common.base.runnable import Input, Output
 from knext.schema.client import SchemaClient
@@ -30,9 +31,8 @@ from knext.schema.client import SchemaClient
 logger = logging.getLogger(__name__)
 
 
-@ExtractorABC.register("schema_free")
-@ExtractorABC.register("schema_free_extractor")
-class SchemaFreeExtractor(ExtractorABC):
+@ExtractorABC.register("knowledge_unit_extractor")
+class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
     """
     A class for extracting knowledge graph subgraphs from text using a large language model (LLM).
     Inherits from the Extractor base class.
@@ -50,7 +50,7 @@ class SchemaFreeExtractor(ExtractorABC):
         self,
         llm: LLMClient,
         ner_prompt: PromptABC = None,
-        std_prompt: PromptABC = None,
+        kn_prompt: PromptABC = None,
         triple_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
         **kwargs,
@@ -65,32 +65,45 @@ class SchemaFreeExtractor(ExtractorABC):
             triple_prompt (PromptABC, optional): The prompt for triple extraction. Defaults to None.
             external_graph (ExternalGraphLoaderABC, optional): The external graph loader. Defaults to None.
         """
-        super().__init__(**kwargs)
+        super().__init__()
         self.llm = llm
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr,
-            project_id=self.kag_project_config.project_id,
+            host_addr=kag_project_config.host_addr,
+            project_id=kag_project_config.project_id,
         ).load()
         self.ner_prompt = ner_prompt
-        self.std_prompt = std_prompt
+        self.kn_prompt = kn_prompt
         self.triple_prompt = triple_prompt
-
-        biz_scene = self.kag_project_config.biz_scene
-        if self.ner_prompt is None:
-            self.ner_prompt = init_prompt_with_fallback("ner", biz_scene)
-        if self.std_prompt is None:
-            self.std_prompt = init_prompt_with_fallback("std", biz_scene)
-        if self.triple_prompt is None:
-            self.triple_prompt = init_prompt_with_fallback("triple", biz_scene)
-
         self.external_graph = external_graph
-        table_extractor_config = {
-            "type": "table_extractor",
-            "llm": self.llm.to_config(),
-            "table_context_prompt": "table_context",
-            "table_row_col_summary_prompt": "table_row_col_summary",
+
+        self.SCHEMA_DICT = {
+            # "Person",
+            "Geographic Location": "GeoLocation",
+            "Location": "GeoLocation",
+            # "Event",
+            # "Organization",
+            # "Finance",
+            # "Healthcare",
+            # "Education",
+            "Science and Technology": "ScienceAndTechnology",
+            "Culture and Entertainment": "CulturalAndEntertainment",
+            "Policy and Regulation": "PolicyAndRegulation",
+            "Science": "ScienceAndTechnology",
+            "Culture": "CulturalAndEntertainment",
+            "Policy": "PolicyAndRegulation",
+            "Technology": "ScienceAndTechnology",
+            "Entertainment": "CulturalAndEntertainment",
+            "Regulation": "PolicyAndRegulation",
+            # "Creature",
+            # "Time",
+            # "Others"
         }
-        self.table_extractor = ExtractorABC.from_config(table_extractor_config)
+
+    def get_stand_schema(self, type_name):
+        return self.SCHEMA_DICT.get(type_name, type_name)
 
     @property
     def input_types(self) -> Type[Input]:
@@ -100,19 +113,21 @@ class SchemaFreeExtractor(ExtractorABC):
     def output_types(self) -> Type[Output]:
         return SubGraph
 
-    @staticmethod
-    def output_indices() -> List[str]:
-        return ["spo_graph_index", "chunk_index"]
-
     def _named_entity_recognition_llm(self, passage: str):
         ner_result = self.llm.invoke(
-            {"input": passage}, self.ner_prompt, with_except=False
+            {"input": passage},
+            self.ner_prompt,
+            with_except=False,
+            with_json_parse=False,
         )
         return ner_result
 
     async def _anamed_entity_recognition_llm(self, passage: str):
         ner_result = await self.llm.ainvoke(
-            {"input": passage}, self.ner_prompt, with_except=False
+            {"input": passage},
+            self.ner_prompt,
+            with_except=False,
+            with_json_parse=False,
         )
         return ner_result
 
@@ -126,9 +141,11 @@ class SchemaFreeExtractor(ExtractorABC):
         for item in extra_ner_result:
             name = item.name
             label = item.label
+            label = self.get_stand_schema(label)
             spg_type = self.schema.get(label)
             if spg_type is None:
                 label = "Others"
+                spg_type = self.schema.get(label)
                 item.label = label
             description = item.properties.get("desc", "")
             semantic_type = item.properties.get("semanticType", label)
@@ -163,7 +180,10 @@ class SchemaFreeExtractor(ExtractorABC):
             The result of the named entity recognition operation.
         """
         ner_result = self._named_entity_recognition_llm(passage)
-        return self._named_entity_recognition_process(passage, ner_result)
+        ner_parse_rst = self._named_entity_recognition_process(passage, ner_result)
+        if not ner_parse_rst:
+            raise
+        return
 
     @retry(
         stop=stop_after_attempt(3),
@@ -179,6 +199,7 @@ class SchemaFreeExtractor(ExtractorABC):
             The result of the named entity recognition operation.
         """
         ner_result = await self._anamed_entity_recognition_llm(passage)
+
         return self._named_entity_recognition_process(passage, ner_result)
 
     @retry(
@@ -186,7 +207,7 @@ class SchemaFreeExtractor(ExtractorABC):
         wait=wait_exponential(multiplier=10, max=60),
         reraise=True,
     )
-    def named_entity_standardization(self, passage: str, entities: List[Dict]):
+    def knowledge_unit_extra(self, passage: str, entities: List[Dict]):
         """
         Standardizes named entities.
 
@@ -199,8 +220,9 @@ class SchemaFreeExtractor(ExtractorABC):
         """
         return self.llm.invoke(
             {"input": passage, "named_entities": entities},
-            self.std_prompt,
+            self.kn_prompt,
             with_except=False,
+            with_json_parse=False,
         )
 
     @retry(
@@ -208,7 +230,7 @@ class SchemaFreeExtractor(ExtractorABC):
         wait=wait_exponential(multiplier=10, max=60),
         reraise=True,
     )
-    async def anamed_entity_standardization(self, passage: str, entities: List[Dict]):
+    async def aknowledge_unit_extra(self, passage: str, entities: List[Dict]):
         """
         Standardizes named entities.
 
@@ -221,8 +243,9 @@ class SchemaFreeExtractor(ExtractorABC):
         """
         return await self.llm.ainvoke(
             {"input": passage, "named_entities": entities},
-            self.std_prompt,
+            self.kn_prompt,
             with_except=False,
+            with_json_parse=False,
         )
 
     @retry(
@@ -243,6 +266,7 @@ class SchemaFreeExtractor(ExtractorABC):
             {"input": passage, "entity_list": entities},
             self.triple_prompt,
             with_except=False,
+            with_json_parse=False,
         )
 
     @retry(
@@ -264,6 +288,119 @@ class SchemaFreeExtractor(ExtractorABC):
             {"input": passage, "entity_list": entities},
             self.triple_prompt,
             with_except=False,
+            with_json_parse=False,
+        )
+
+    def assemble_sub_graph_with_spg_properties(
+        self, sub_graph: SubGraph, s_id, s_name, s_label, record
+    ):
+        properties = record
+        tmp_properties = copy.deepcopy(record)
+        s_label = self.get_stand_schema(s_label)
+        spg_type = self.schema.get(s_label)
+
+        if spg_type is None:
+            s_label = "Others"
+            spg_type = self.schema.get(s_label)
+        record["category"] = s_label
+
+        domain_ontology = properties.get("ontology", "")
+        domain_ontology_set = [
+            item.strip()
+            for item in domain_ontology.split("->")
+            if len(item.strip()) > 0
+        ]
+        if domain_ontology_set:
+            last_id = None
+            # 最高级的本体
+            if len(domain_ontology_set) > 0:
+                ontology = domain_ontology_set[0]
+                sub_graph.add_node(id=ontology, name=ontology, label="SemanticConcept")
+                last_id = ontology
+
+            # 中间的节点
+            for i in range(1, len(domain_ontology_set)):
+                ontology = domain_ontology_set[i]
+                sub_graph.add_node(id=ontology, name=ontology, label="SemanticConcept")
+                # 语义节点，name 即 id 符合预期
+                sub_graph.add_edge(
+                    s_id=domain_ontology_set[i],
+                    s_label="SemanticConcept",
+                    p="isA",
+                    o_id=domain_ontology_set[i - 1],
+                    o_label="SemanticConcept",
+                )
+                last_id = domain_ontology_set[i - 1]
+
+            # 最后的节点
+            ontology = domain_ontology_set[-1]
+            if (
+                ontology not in s_name and s_label == "KnowledgeUnit"
+            ) or ontology != s_name:
+                sub_graph.add_node(
+                    id=domain_ontology_set[-1],
+                    name=domain_ontology_set[-1],
+                    label="SemanticConcept",
+                )
+
+                last_id = domain_ontology_set[-1]
+                if len(domain_ontology_set) > 1:
+                    # 语义节点，name 即 id 符合预期
+                    sub_graph.add_edge(
+                        s_id=domain_ontology_set[-1],
+                        s_label="SemanticConcept",
+                        p="isA",
+                        o_id=domain_ontology_set[-2],
+                        o_label="SemanticConcept",
+                    )
+
+            if last_id:
+                # 知识点 belongto 语义节点
+                sub_graph.add_edge(
+                    s_id=s_id,
+                    s_label=s_label,
+                    p="semantictype",
+                    o_id=last_id,
+                    o_label="SemanticConcept",
+                )
+
+        for prop_name, prop_value in properties.items():
+            if prop_value == "NAN":
+                tmp_properties.pop(prop_name)
+                continue
+            if prop_name in spg_type.properties:
+                from knext.schema.model.property import Property
+
+                prop: Property = spg_type.properties.get(prop_name)
+                o_label = prop.object_type_name_en
+                if o_label not in BASIC_TYPES:
+                    if isinstance(prop_value, str):
+                        prop_value = [prop_value]
+                    for o_name in prop_value:
+                        sub_graph.add_node(id=o_name, name=o_name, label=o_label)
+                        # 属性拉边，name 即 id 符合预期
+                        if "relatedQuery" in prop_name:
+                            sub_graph.add_edge(
+                                # 知识点，语义属性拉边
+                                s_id=o_name,
+                                s_label=o_label,
+                                p=prop_name.replace("relatedQuery", "relatedTo"),
+                                o_id=s_id,
+                                o_label=s_label,
+                            )
+                        else:
+                            sub_graph.add_edge(
+                                # 知识点，语义属性拉边
+                                s_id=s_id,
+                                s_label=s_label,
+                                p=prop_name,
+                                o_id=o_name,
+                                o_label=o_label,
+                            )
+                    tmp_properties.pop(prop_name)
+        record["properties"] = tmp_properties
+        sub_graph.add_node(
+            id=s_id, name=s_name, label=s_label, properties=record["properties"]
         )
 
     def assemble_sub_graph_with_spg_records(self, entities: List[Dict]):
@@ -280,37 +417,10 @@ class SchemaFreeExtractor(ExtractorABC):
         for record in entities:
             s_name = record.get("name", "")
             s_label = record.get("category", "")
-            properties = record.get("properties", {})
-            tmp_properties = copy.deepcopy(properties)
-            spg_type = self.schema.get(s_label)
-            if spg_type is None:
-                s_label = "Others"
-                spg_type = self.schema.get(s_label)
-            for prop_name, prop_value in properties.items():
-                if prop_value == "NAN":
-                    tmp_properties.pop(prop_name)
-                    continue
-                if prop_name in spg_type.properties:
-                    from knext.schema.model.property import Property
+            # s_id = generate_hash_id(f"{s_name}_{s_label}")
 
-                    prop: Property = spg_type.properties.get(prop_name)
-                    o_label = prop.object_type_name_en
-                    if o_label not in BASIC_TYPES:
-                        if isinstance(prop_value, str):
-                            prop_value = [prop_value]
-                        for o_name in prop_value:
-                            sub_graph.add_node(id=o_name, name=o_name, label=o_label)
-                            sub_graph.add_edge(
-                                s_id=s_name,
-                                s_label=s_label,
-                                p=prop_name,
-                                o_id=o_name,
-                                o_label=o_label,
-                            )
-                        tmp_properties.pop(prop_name)
-            record["properties"] = tmp_properties
-            sub_graph.add_node(
-                id=s_name, name=s_name, label=s_label, properties=properties
+            self.assemble_sub_graph_with_spg_properties(
+                sub_graph, s_name, s_name, s_label, record
             )
         return sub_graph, entities
 
@@ -338,7 +448,7 @@ class SchemaFreeExtractor(ExtractorABC):
             return None, None
 
         for tri in triples:
-            if len(tri) != 3:
+            if len(tri) != 4:
                 continue
             s_category, s_name = get_category_and_name(entities, tri[0])
             tri[0] = processing_phrases(tri[0])
@@ -356,13 +466,25 @@ class SchemaFreeExtractor(ExtractorABC):
                 o_category = OTHER_TYPE
                 sub_graph.add_node(o_name, o_name, o_category)
             edge_type = to_camel_case(tri[1])
+            properties = None
+            if tri[3] != "":
+                properties = {"condition": tri[3]}
+            #  s_name ：头实体 ，o_name ： 尾实体
             if edge_type:
-                sub_graph.add_edge(s_name, s_category, edge_type, o_name, o_category)
-
+                sub_graph.add_edge(
+                    s_name,
+                    s_category,
+                    edge_type,
+                    o_name,
+                    o_category,
+                    properties=properties,
+                )
         return sub_graph
 
     @staticmethod
-    def assemble_sub_graph_with_chunk(sub_graph: SubGraph, chunk: Chunk):
+    def assemble_sub_graph_with_chunk(
+        sub_graph: SubGraph, entities: List[Dict], chunk: Chunk
+    ):
         """
         Associates a Chunk object with the subgraph, adding it as a node and connecting it with existing nodes.
         Args:
@@ -371,8 +493,15 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             The constructed subgraph.
         """
-        for node in sub_graph.nodes:
-            sub_graph.add_edge(node.id, node.label, "source", chunk.id, CHUNK_TYPE)
+        for entity in entities:
+            # 到 chunk.id,
+            sub_graph.add_edge(
+                entity.get("name"),
+                entity.get("category"),
+                "source",
+                chunk.id,
+                CHUNK_TYPE,
+            )
         sub_graph.add_node(
             chunk.id,
             chunk.name,
@@ -404,91 +533,85 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             The constructed subgraph.
         """
-        self.assemble_sub_graph_with_entities(sub_graph, entities)
         self.assemble_sub_graph_with_triples(sub_graph, entities, triples)
-        self.assemble_sub_graph_with_chunk(sub_graph, chunk)
+        self.assemble_sub_graph_with_chunk(sub_graph, entities, chunk)
         return sub_graph
 
-    def assemble_sub_graph_with_entities(
-        self, sub_graph: SubGraph, entities: List[Dict]
+    def assemble_knowledge_unit(
+        self,
+        sub_graph: SubGraph,
+        source_entities: List[Dict],
+        input_knowledge_units: Dict[str, Dict],
+        triples: List[list],
     ):
-        """
-        Assembles a subgraph using named entities.
+        knowledge_unit_nodes = []
+        knowledge_units = dict(input_knowledge_units)
 
-        Args:
-            sub_graph (SubGraph): The subgraph object to be assembled.
-            entities (List[Dict]): A list containing entity information.
-        """
+        def triple_to_knowledge_unit(triple):
+            ret = {}
+            name = " ".join(triple)
+            ret["content"] = name
+            ret["knowledgetype"] = "triple"
+            ret["core_entities"] = ",".join(triple)
+            return name, ret
 
-        for ent in entities:
-            name = processing_phrases(ent["name"])
+        for tri in triples:
+            knowledge_unit_name, knowledge_unit_value = triple_to_knowledge_unit(tri)
+            if knowledge_unit_name not in knowledge_units:
+                knowledge_units[knowledge_unit_name] = knowledge_unit_value
+
+        for knowledge_name, knowledge_value in knowledge_units.items():
+            if knowledge_value["knowledgetype"] == "triple":
+                knowledge_id = knowledge_name
+            else:
+                knowledge_id = generate_hash_id(
+                    f"{knowledge_name}_{knowledge_value['content'].strip()[:100]}"
+                )
+            self.assemble_sub_graph_with_spg_properties(
+                sub_graph,
+                knowledge_id,
+                knowledge_name,
+                "KnowledgeUnit",
+                knowledge_value,
+            )
             sub_graph.add_node(
-                name,
-                name,
-                ent["category"],
-                {
-                    "desc": ent.get("description", ""),
-                    "semanticType": ent.get("type", ""),
-                    **ent.get("properties", {}),
-                },
+                knowledge_id,
+                knowledge_name,
+                "KnowledgeUnit",
+                knowledge_value,
+            )
+            knowledge_unit_nodes.append(
+                {"name": knowledge_id, "category": "KnowledgeUnit"}
             )
 
-            if "official_name" in ent:
-                official_name = processing_phrases(ent["official_name"])
-                if official_name != name:
-                    sub_graph.add_node(
-                        official_name,
-                        official_name,
-                        ent["category"],
-                        {
-                            "desc": ent.get("description", ""),
-                            "semanticType": ent.get("type", ""),
-                            **ent.get("properties", {}),
-                        },
-                    )
-                    sub_graph.add_edge(
-                        name,
-                        ent["category"],
-                        "OfficialName",
-                        official_name,
-                        ent["category"],
-                    )
-
-    def append_official_name(
-        self, source_entities: List[Dict], entities_with_official_name: List[Dict]
-    ):
-        """
-        Appends official names to entities.
-
-        Args:
-            source_entities (List[Dict]): A list of source entities.
-            entities_with_official_name (List[Dict]): A list of entities with official names.
-        """
-        try:
-            tmp_dict = {}
-            for tmp_entity in entities_with_official_name:
-                if "name" in tmp_entity:
-                    name = tmp_entity["name"]
-                elif "entity" in tmp_entity:
-                    name = tmp_entity["entity"]
-                else:
+            if knowledge_value["knowledgetype"] == "triple":
+                core_entities = {
+                    item.strip(): "Others"
+                    for item in knowledge_value.get("core_entities", "").split(",")
+                    if len(item.strip()) > 1
+                }
+            else:
+                core_entities = knowledge_value.get("core_entities", {})
+            for core_entity, ent_type in core_entities.items():
+                if core_entity == "":
                     continue
-                category = tmp_entity["category"]
-                if self.schema.get(category, None) is None:
-                    category = "Others"
-                official_name = tmp_entity["official_name"]
-                key = f"{category}{name}"
-                tmp_dict[key] = official_name
-
-            for tmp_entity in source_entities:
-                name = tmp_entity["name"]
-                category = tmp_entity["category"]
-                key = f"{category}{name}"
-                if key in tmp_dict:
-                    official_name = tmp_dict[key]
-                    tmp_entity["official_name"] = official_name
-        except Exception as e:
-            logger.warn(f"failed to process official name, info: {e}")
+                found_in_source_entity = None
+                for source_entity in source_entities:
+                    if core_entity == source_entity.get("name", ""):
+                        found_in_source_entity = source_entity
+                        break
+                ent_type = self.get_stand_schema(ent_type)
+                if found_in_source_entity is None:
+                    found_in_source_entity = {"name": core_entity, "category": ent_type}
+                    sub_graph.add_node(core_entity, core_entity, ent_type, {})
+                sub_graph.add_edge(
+                    found_in_source_entity.get("name"),
+                    found_in_source_entity.get("category"),
+                    "source",
+                    knowledge_id,
+                    "KnowledgeUnit",
+                )
+        return knowledge_unit_nodes
 
     def _invoke(self, input: Input, **kwargs) -> List[Output]:
         """
@@ -501,10 +624,9 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
-        print("Enter schema free extractor======================")
-        logger.info("Enter schema free extractor======================")
+
         title = input.name
-        passage = title + "\n" + input.content
+        passage = title.split("_split_")[0] + "\n" + input.content
         out = []
         entities = self.named_entity_recognition(passage)
         sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
@@ -512,13 +634,15 @@ class SchemaFreeExtractor(ExtractorABC):
             {k: v for k, v in ent.items() if k in ["name", "category"]}
             for ent in entities
         ]
+        knowledge_unit_entities = self.aknowledge_unit_extra(passage, filtered_entities)
         triples = (self.triples_extraction(passage, filtered_entities),)
-        std_entities = self.named_entity_standardization(passage, filtered_entities)
-        self.append_official_name(entities, std_entities)
-        self.assemble_sub_graph(sub_graph, input, entities, triples)
+
+        knowledge_unit_nodes = self.assemble_knowledge_unit(
+            sub_graph, entities, knowledge_unit_entities, triples
+        )
+        union_entities = entities + knowledge_unit_nodes
+        self.assemble_sub_graph(sub_graph, input, union_entities, triples)
         out.append(sub_graph)
-        print("Exit schema free extractor=================")
-        logger.info("Exit schema free extractor=================")
         return out
 
     async def _ainvoke(self, input: Input, **kwargs) -> List[Output]:
@@ -532,12 +656,8 @@ class SchemaFreeExtractor(ExtractorABC):
         Returns:
             List[Output]: A list of processed results, containing subgraph information.
         """
-
-        if self.table_extractor is not None and input.type == ChunkTypeEnum.Table:
-            return self.table_extractor._invoke(input)
-
         title = input.name
-        passage = title + "\n" + input.content
+        passage = title.split("_split_")[0] + "\n" + input.content
         out = []
         entities = await self.anamed_entity_recognition(passage)
         sub_graph, entities = self.assemble_sub_graph_with_spg_records(entities)
@@ -545,12 +665,16 @@ class SchemaFreeExtractor(ExtractorABC):
             {k: v for k, v in ent.items() if k in ["name", "category"]}
             for ent in entities
         ]
-        triples, std_entities = await asyncio.gather(
+
+        triples, knowledge_unit_entities = await asyncio.gather(
             self.atriples_extraction(passage, filtered_entities),
-            self.anamed_entity_standardization(passage, filtered_entities),
+            self.aknowledge_unit_extra(passage, filtered_entities),
         )
 
-        self.append_official_name(entities, std_entities)
-        self.assemble_sub_graph(sub_graph, input, entities, triples)
+        knowledge_unit_nodes = self.assemble_knowledge_unit(
+            sub_graph, entities, knowledge_unit_entities, triples
+        )
+        union_entities = entities + knowledge_unit_nodes
+        self.assemble_sub_graph(sub_graph, input, union_entities, triples)
         out.append(sub_graph)
         return out

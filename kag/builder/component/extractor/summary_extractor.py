@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 @ExtractorABC.register("summary_extractor")
 class SummaryExtractor(ExtractorABC):
     def __init__(
-        self, llm_module: LLMClient = None, chunk_summary_prompt: PromptABC = None, **kwargs
+        self,
+        llm_module: LLMClient = None,
+        chunk_summary_prompt: PromptABC = None,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_module = llm_module or LLMClient.from_config(

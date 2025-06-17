@@ -25,6 +25,7 @@ class FileScanner(ScannerABC):
     This class is responsible for reading SINGLE file and returning the path as a list of strings.
     It inherits from `ScannerABC` and overrides the necessary methods to handle file-specific operations.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -52,7 +53,9 @@ class FileScanner(ScannerABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(self.kag_project_config.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(
+                self.kag_project_config.ckpt_dir, "file_scanner"
+            )
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             from urllib.parse import urlparse

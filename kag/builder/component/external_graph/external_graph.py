@@ -32,11 +32,7 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
     """
 
     def __init__(
-        self,
-        nodes: List[Node],
-        edges: List[Edge],
-        match_config: MatchConfig,
-        **kwargs
+        self, nodes: List[Node], edges: List[Edge], match_config: MatchConfig, **kwargs
     ):
         """
         Initializes the DefaultExternalGraphLoader with the given nodes, edges, and match configuration.
@@ -48,7 +44,8 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
         """
         super().__init__(match_config, **kwargs)
         self.schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         for node in nodes:
             if node.label not in self.schema:

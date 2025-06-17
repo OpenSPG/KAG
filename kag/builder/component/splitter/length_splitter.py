@@ -38,7 +38,7 @@ class LengthSplitter(BaseTableSplitter):
         split_length: int = 500,
         window_length: int = 100,
         strict_length: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes the LengthSplitter with the specified split length and window length.
@@ -86,7 +86,9 @@ class LengthSplitter(BaseTableSplitter):
         Returns:
             List[str]: A list of sentences.
         """
-        sentence_delimiters = ".。？?！!" if self.kag_project_config.language == "en" else "。？！"
+        sentence_delimiters = (
+            ".。？?！!" if self.kag_project_config.language == "en" else "。？！"
+        )
         output = []
         start = 0
         for idx, char in enumerate(content):
