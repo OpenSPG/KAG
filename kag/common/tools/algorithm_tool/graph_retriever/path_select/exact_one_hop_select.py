@@ -2,7 +2,7 @@ import logging
 import time
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import VectorizeModelABC
 from kag.interface.solver.model.one_hop_graph import (
     EntityData,
@@ -36,13 +36,17 @@ class ExactOneHopSelect(PathSelect):
         vectorize_model: VectorizeModelABC = None,
         graph_api: GraphApiABC = None,
         search_api: SearchApiABC = None,
+        **kwargs,
     ):
         super().__init__()
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": kag_project_config.host_addr,
                 }
             )
         )
@@ -55,7 +59,7 @@ class ExactOneHopSelect(PathSelect):
         )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            kag_config.all_config["vectorize_model"]
         )
         self.text_similarity = TextSimilarity(vectorize_model)
 

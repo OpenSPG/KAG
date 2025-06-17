@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.utils import get_recall_node_label
 
 from kag.interface import (
@@ -44,8 +43,8 @@ class PprChunkRetriever(RetrieverABC):
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
@@ -58,10 +57,10 @@ class PprChunkRetriever(RetrieverABC):
         )
 
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
 
-        self.ner = ner or Ner(llm_module=llm_client)
+        self.ner = ner or Ner(llm_module=llm_client, **kwargs)
         self.match_threshold = match_threshold
         self.pagerank_weight = pagerank_weight
 
@@ -195,6 +194,9 @@ class PprChunkRetriever(RetrieverABC):
         return matched_docs
 
     def linking_matched_entities(self, query: str, **kwargs):
+        start_entities = kwargs.get("start_entities", [])
+        if start_entities:
+            return start_entities
         matched_entities = []
         ner_maps = {}
         ner_start_time = time.time()
@@ -274,9 +276,7 @@ class PprChunkRetriever(RetrieverABC):
 
         pagerank_start_time = time.time()
         if len(matched_entities):
-            pagerank_res = self.calculate_pagerank_scores(
-                matched_entities, top_k=top_k * 20
-            )
+            pagerank_res = self.calculate_pagerank_scores(matched_entities, top_k=top_k)
         else:
             pagerank_res = {}
         logger.info(
@@ -295,7 +295,7 @@ class PprChunkRetriever(RetrieverABC):
             pagerank_scores.items(), key=lambda item: item[1], reverse=True
         )
         if is_need_get_doc:
-            matched_docs = self.get_all_docs_by_id([query], sorted_scores, top_k * 20)
+            matched_docs = self.get_all_docs_by_id([query], sorted_scores, top_k)
         else:
             matched_docs = []
             for doc_id, score in sorted_scores:
@@ -309,7 +309,9 @@ class PprChunkRetriever(RetrieverABC):
                         properties=node,
                     )
                 )
-        return RetrieverOutput(chunks=matched_docs)
+        return RetrieverOutput(
+            retriever_method=self.schema().get("name", ""), chunks=matched_docs
+        )
 
     def schema(self):
         return {

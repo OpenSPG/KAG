@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 import numpy as np
-from kag.common.conf import KAG_CONFIG
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface import VectorizeModelABC as Vectorizer
 
 logger = logging.getLogger()
@@ -31,9 +31,11 @@ def split_list(input_list, max_length=30):
 
 
 class TextSimilarity:
-    def __init__(self, vectorizer: Vectorizer = None):
+    def __init__(self, vectorizer: Vectorizer = None, **kwargs):
         if vectorizer is None:
-            vectorizer_conf = KAG_CONFIG.all_config["vectorize_model"]
+            task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+            kag_config = KAGConfigAccessor.get_config(task_id)
+            vectorizer_conf = kag_config.all_config["vectorize_model"]
             self.vectorize_model = Vectorizer.from_config(vectorizer_conf)
         else:
             self.vectorize_model = vectorizer

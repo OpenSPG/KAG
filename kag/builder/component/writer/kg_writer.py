@@ -14,12 +14,11 @@ import logging
 import asyncio
 from enum import Enum
 from typing import Type, Dict, List, Union
-
+from kag.common.conf import KAG_PROJECT_CONF
 from knext.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
 from kag.interface.builder.base import BuilderComponentData
-from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -50,11 +49,11 @@ class KGWriter(SinkWriterABC):
         """
         super().__init__(**kwargs)
         if project_id is None:
-            self.project_id = KAG_PROJECT_CONF.project_id
+            self.project_id = self.kag_project_config.project_id
         else:
             self.project_id = project_id
         self.client = GraphClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=project_id
+            host_addr=self.kag_project_config.host_addr, project_id=project_id
         )
         self.delete = delete
 

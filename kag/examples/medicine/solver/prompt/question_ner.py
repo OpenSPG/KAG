@@ -61,7 +61,7 @@ D. INH+RF
         super().__init__(language, **kwargs)
         self.schema = SchemaClient(
             host_addr=KAG_PROJECT_CONF.host_addr, project_id=self.project_id
-        ).extract_types()
+        ).extract_types(KAG_PROJECT_CONF.language)
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property

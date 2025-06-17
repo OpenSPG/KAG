@@ -12,6 +12,8 @@
 
 import asyncio
 from typing import List, Optional
+
+from kag.common.conf import KAGConfigAccessor, KAGConstants
 from kag.interface.common.model.retriever_data import KgGraph, ChunkData, DocData
 from kag.interface.common.tools import ToolABC
 from kag.interface.solver.planner_abc import Task
@@ -35,6 +37,7 @@ class RetrieverOutput:
         docs: Optional[List[DocData]] = None,
         retriever_method: str = "",
         summary: str = "",
+        err_msg: str = "",
     ):
         """Initializes retrieval output container with optional data components.
 
@@ -51,6 +54,7 @@ class RetrieverOutput:
         self.docs = docs if docs else []
         self.retriever_method = retriever_method
         self.summary = summary
+        self.err_msg = err_msg
 
     def __str__(self):
         """Generates human-readable string representation of retrieval results.
@@ -104,6 +108,9 @@ class RetrieverABC(ToolABC):
         """
         self.top_k = top_k
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        self.kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = self.kag_config.global_config
 
     @property
     def input_types(self):

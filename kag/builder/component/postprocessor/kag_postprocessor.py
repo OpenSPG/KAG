@@ -15,7 +15,7 @@ from tenacity import stop_after_attempt, retry
 from kag.interface import PostProcessorABC
 from kag.interface import ExternalGraphLoaderABC
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAGConstants, KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants
 from kag.common.utils import get_vector_field_name
 from knext.search.client import SearchClient
 from knext.schema.client import SchemaClient, OTHER_TYPE
@@ -37,6 +37,7 @@ class KAGPostProcessor(PostProcessorABC):
         self,
         similarity_threshold: float = None,
         external_graph: ExternalGraphLoaderABC = None,
+        **kwargs,
     ):
         """
         Initializes the KAGPostProcessor instance.
@@ -45,9 +46,10 @@ class KAGPostProcessor(PostProcessorABC):
             similarity_threshold (float, optional): The similarity threshold for entity linking. Defaults to 0.9.
             external_graph (ExternalGraphLoaderABC, optional): An instance of ExternalGraphLoaderABC for external graph-based linking. Defaults to None.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         self.similarity_threshold = similarity_threshold
         self.external_graph = external_graph
@@ -63,7 +65,7 @@ class KAGPostProcessor(PostProcessorABC):
         Returns:
             str: The formatted label.
         """
-        namespace = KAG_PROJECT_CONF.namespace
+        namespace = self.kag_project_config.namespace
         if label.split(".")[0] == namespace:
             return label
         return f"{namespace}.{label}"
@@ -73,7 +75,7 @@ class KAGPostProcessor(PostProcessorABC):
         Initializes the search client for entity linking.
         """
         self._search_client = SearchClient(
-            KAG_PROJECT_CONF.host_addr, KAG_PROJECT_CONF.project_id
+            self.kag_project_config.host_addr, self.kag_project_config.project_id
         )
 
     def filter_invalid_data(self, graph: SubGraph):

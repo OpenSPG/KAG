@@ -183,7 +183,9 @@ Note:
                 f"Problematic DAG data: {actual_dag_data}"
             )
             raise ValueError(error_message)
-        except Exception as e:  # Catch any other unexpected errors from create_tasks_from_dag
+        except (
+            Exception
+        ) as e:  # Catch any other unexpected errors from create_tasks_from_dag
             error_message = (
                 f"An unexpected error occurred while creating tasks from DAG. Error: {e}. "
                 f"Problematic DAG data: {actual_dag_data}"

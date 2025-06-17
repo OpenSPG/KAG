@@ -2,7 +2,7 @@ import logging
 import time
 from typing import List, Dict
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 from knext.graph.client import GraphClient
 from knext.reasoner.rest.models.reason_task import ReasonTask
@@ -65,8 +65,11 @@ def convert_node_to_json(node_str):
 class OpenSPGGraphApi(GraphApiABC):
     def __init__(self, project_id=None, host_addr=None, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = project_id or KAG_PROJECT_CONF.project_id
-        self.host_addr = host_addr or KAG_PROJECT_CONF.host_addr
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
+        self.project_id = project_id or kag_project_config.project_id
+        self.host_addr = host_addr or kag_project_config.host_addr
 
         self.schema: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(

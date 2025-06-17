@@ -23,6 +23,9 @@ class VectorizerABC(BuilderComponent):
     the `invoke` method.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @property
     def input_types(self):
         return SubGraph

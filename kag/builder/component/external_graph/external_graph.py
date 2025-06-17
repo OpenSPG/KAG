@@ -14,7 +14,6 @@ import numpy as np
 import logging
 from typing import List, Union, Dict
 from kag.interface import ExternalGraphLoaderABC, MatchConfig
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.builder.model.sub_graph import Node, Edge, SubGraph
 from knext.schema.client import SchemaClient
 
@@ -33,10 +32,7 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
     """
 
     def __init__(
-        self,
-        nodes: List[Node],
-        edges: List[Edge],
-        match_config: MatchConfig,
+        self, nodes: List[Node], edges: List[Edge], match_config: MatchConfig, **kwargs
     ):
         """
         Initializes the DefaultExternalGraphLoader with the given nodes, edges, and match configuration.
@@ -46,9 +42,10 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
             edges (List[Edge]): A list of Edge objects representing the edges in the graph.
             match_config (MatchConfig): The configuration for matching query str to graph nodes.
         """
-        super().__init__(match_config)
+        super().__init__(match_config, **kwargs)
         self.schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         for node in nodes:
             if node.label not in self.schema:
@@ -79,7 +76,7 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
 
     def _init_search(self):
         self._search_client = SearchClient(
-            KAG_PROJECT_CONF.host_addr, KAG_PROJECT_CONF.project_id
+            self.kag_project_config.host_addr, self.kag_project_config.project_id
         )
 
     def _group_by_label(self, data: Union[List[Node], List[Edge]]):
@@ -122,13 +119,13 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
     def get_allowed_labels(self, labels: List[str] = None):
         allowed_labels = []
 
-        namespace = KAG_PROJECT_CONF.namespace
+        namespace = self.kag_project_config.namespace
         if labels is None:
             allowed_labels = [f"{namespace}.{x}" for x in self.node_labels]
         else:
             for label in labels:
                 # remove namespace
-                if label.startswith(KAG_PROJECT_CONF.namespace):
+                if label.startswith(self.kag_project_config.namespace):
                     label = label.split(".")[1]
                 if label in self.node_labels:
                     allowed_labels.append(f"{namespace}.{label}")

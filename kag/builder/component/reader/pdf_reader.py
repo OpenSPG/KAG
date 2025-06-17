@@ -23,7 +23,6 @@ from kag.interface import ReaderABC
 
 from kag.builder.prompt.outline_prompt import OutlinePrompt
 from kag.interface import LLMClient
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from pdfminer.high_level import extract_pages
@@ -65,8 +64,7 @@ class PDFReader(ReaderABC):
         self.is_ocr = is_ocr
         self.llm = llm
         self.length_splitter = length_splitter
-        language = KAG_PROJECT_CONF.language
-        self.prompt = OutlinePrompt(language)
+        self.prompt = OutlinePrompt(self.language)
 
     @property
     def input_types(self):

@@ -100,7 +100,9 @@ class PrqaExecutor(ExecutorABC):
             completion_1 = self.send_cypher_messages(message_list)
 
             if not completion_1.tool_calls:
-                raise ValueError(f"{question} 查询失败，此时tool_calls 为空或为 None，无法继续处理")
+                raise ValueError(
+                    f"{question} 查询失败，此时tool_calls 为空或为 None，无法继续处理"
+                )
             tool = completion_1.tool_calls[0]
             args = json.loads(tool.function.arguments)
             cypher_query = args.get("cypher_query")
@@ -169,9 +171,11 @@ class PrqaExecutor(ExecutorABC):
                         path_data = {
                             "nodes": [
                                 {
-                                    "element_id": node.element_id
-                                    if hasattr(node, "element_id")
-                                    else None,
+                                    "element_id": (
+                                        node.element_id
+                                        if hasattr(node, "element_id")
+                                        else None
+                                    ),
                                     "labels": list(node.labels),
                                     "properties": {
                                         k: v
@@ -183,9 +187,11 @@ class PrqaExecutor(ExecutorABC):
                             ],
                             "relationships": [
                                 {
-                                    "element_id": rel.element_id
-                                    if hasattr(rel, "element_id")
-                                    else None,
+                                    "element_id": (
+                                        rel.element_id
+                                        if hasattr(rel, "element_id")
+                                        else None
+                                    ),
                                     "type": rel.type,
                                     "start_node": rel.start_node.element_id,
                                     "end_node": rel.end_node.element_id,
@@ -270,7 +276,8 @@ class PrqaExecutor(ExecutorABC):
                     end_id = rel.get("end_node")
 
                     start_name = node_map.get(
-                        start_id, f"未知起点_{start_id[-4:]}" if start_id else "完全未知起点"
+                        start_id,
+                        f"未知起点_{start_id[-4:]}" if start_id else "完全未知起点",
                     )
                     end_name = node_map.get(
                         end_id, f"未知终点_{end_id[-4:]}" if end_id else "完全未知终点"
@@ -315,7 +322,8 @@ class PrqaExecutor(ExecutorABC):
         for message in messages:
             if message["role"] == "system":
                 message["content"] = message["content"].replace(
-                    "需要的关系类型从如下关系中挑选：", f"需要的关系类型从如下关系中挑选：{relationships_str}"
+                    "需要的关系类型从如下关系中挑选：",
+                    f"需要的关系类型从如下关系中挑选：{relationships_str}",
                 )
 
         return messages

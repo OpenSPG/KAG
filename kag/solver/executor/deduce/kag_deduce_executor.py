@@ -3,7 +3,7 @@ import re
 
 from typing import Any, Optional
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import DeduceNode
 from kag.interface import ExecutorABC, LLMClient, PromptABC, Context
@@ -35,23 +35,28 @@ class KagDeduceExecutor(ExecutorABC):
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.deduce_choice_prompt = deduce_choice_prompt or init_prompt_with_fallback(
-            "deduce_choice", KAG_PROJECT_CONF.biz_scene
+            "deduce_choice", kag_project_config.biz_scene
         )
         self.deduce_entail_prompt = deduce_entail_prompt or init_prompt_with_fallback(
-            "deduce_entail", KAG_PROJECT_CONF.biz_scene
+            "deduce_entail", kag_project_config.biz_scene
         )
         self.deduce_extractor_prompt = (
             deduce_extractor_prompt
-            or init_prompt_with_fallback("deduce_extractor", KAG_PROJECT_CONF.biz_scene)
+            or init_prompt_with_fallback(
+                "deduce_extractor", kag_project_config.biz_scene
+            )
         )
         self.deduce_judge_prompt = deduce_judge_prompt or init_prompt_with_fallback(
-            "deduce_judge", KAG_PROJECT_CONF.biz_scene
+            "deduce_judge", kag_project_config.biz_scene
         )
         self.deduce_multi_choice_prompt = (
             deduce_multi_choice_prompt
             or init_prompt_with_fallback(
-                "deduce_multi_choice", KAG_PROJECT_CONF.biz_scene
+                "deduce_multi_choice", kag_project_config.biz_scene
             )
         )
 

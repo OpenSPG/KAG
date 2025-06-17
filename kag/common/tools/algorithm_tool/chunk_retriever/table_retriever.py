@@ -13,7 +13,6 @@ import logging
 from typing import List
 
 import knext.common.cache
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
@@ -40,8 +39,9 @@ class TableRetriever(RetrieverABC):
         score_threshold=0.8,
         **kwargs,
     ):
+        super().__init__(top_k, **kwargs)
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
@@ -52,13 +52,12 @@ class TableRetriever(RetrieverABC):
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
         self.score_threshold = score_threshold
-        super().__init__(top_k, **kwargs)
 
     def get_table(self, query, top_k) -> List[str]:
         topk_table_ids = {}
@@ -145,7 +144,7 @@ class TableRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput()
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
             # recall table_ids through semantic vector
             topk_table_ids = self.get_table(query, top_k)
@@ -154,13 +153,17 @@ class TableRetriever(RetrieverABC):
             chunks = self.get_related_chunks(topk_table_ids)
 
             # to retrieve output
-            out = RetrieverOutput(chunks=chunks)
+            out = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), chunks=chunks
+            )
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput()
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     @property
     def input_indices(self):

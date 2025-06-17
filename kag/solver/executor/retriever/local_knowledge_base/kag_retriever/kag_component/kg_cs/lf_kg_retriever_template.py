@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import LLMClient
 from kag.interface.solver.base_model import SPOEntity, LogicNode
 from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
@@ -55,10 +55,13 @@ class KgRetrieverTemplate:
         self, path_select: PathSelect, entity_linking, llm_module: LLMClient, **kwargs
     ):
         super().__init__(**kwargs)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
         self.path_select = path_select
         self.entity_linking = entity_linking
         self.solve_question_without_docs_prompt = init_prompt_with_fallback(
-            "solve_question_without_docs", KAG_PROJECT_CONF.biz_scene
+            "solve_question_without_docs", kag_project_config.biz_scene
         )
         self.llm_module = llm_module
 
