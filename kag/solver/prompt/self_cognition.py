@@ -1,6 +1,6 @@
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import PromptABC
 
 
@@ -17,6 +17,9 @@ class SelfCognitionPrompt(PromptABC):
 Extended Requirements: Questions related to self-recognition are also considered, such as "What is your website?"
 Requirements:
 Directly answer “Yes” or “No”."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def template_variables(self) -> List[str]:
@@ -35,7 +38,7 @@ Directly answer “Yes” or “No”."""
     def parse_response(self, response: str, **kwargs):
         try:
             response = response.strip()
-            if KAG_PROJECT_CONF.language == "en":
+            if self.kag_project_config.language == "en":
                 return self.parse_response_en(response)
             return self.parse_response_zh(response)
         except Exception as e:

@@ -19,7 +19,6 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import processing_phrases, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
@@ -47,6 +46,7 @@ class SchemaConstraintExtractor(ExtractorABC):
         relation_prompt: PromptABC = None,
         event_prompt: PromptABC = None,
         external_graph: ExternalGraphLoaderABC = None,
+        **kwargs,
     ):
         """
         Initializes the SchemaBasedExtractor instance.
@@ -59,17 +59,18 @@ class SchemaConstraintExtractor(ExtractorABC):
             event_prompt (PromptABC, optional): The prompt for event extraction. Defaults to None.
             external_graph (ExternalGraphLoaderABC, optional): The external graph loader for additional data. Defaults to None.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.llm = llm
         self.schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         self.ner_prompt = ner_prompt
         self.std_prompt = std_prompt
         self.relation_prompt = relation_prompt
         self.event_prompt = event_prompt
 
-        biz_scene = KAG_PROJECT_CONF.biz_scene
+        biz_scene = self.kag_project_config.biz_scene
         if self.ner_prompt is None:
             self.ner_prompt = init_prompt_with_fallback("ner", biz_scene)
         if self.std_prompt is None:

@@ -7,7 +7,7 @@ from typing import List, Any, Optional
 
 from tenacity import stop_after_attempt, retry
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface import ExecutorABC, ExecutorResponse, LLMClient, Context
@@ -207,8 +207,11 @@ class KagHybridExecutor(ExecutorABC):
         super().__init__(**kwargs)
         self.lf_rewriter: KAGLFRewriter = lf_rewriter
         self.flow_str = flow
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.solve_question_without_spo_prompt = init_prompt_with_fallback(
-            "summary_question", KAG_PROJECT_CONF.biz_scene
+            "summary_question", self.kag_project_config.biz_scene
         )
         self.llm_client = llm_client or LLMClient.from_config(
             get_default_chat_llm_config()

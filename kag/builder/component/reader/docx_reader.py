@@ -19,7 +19,6 @@ from kag.interface import LLMClient
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface import ReaderABC
 from kag.builder.prompt.outline_prompt import OutlinePrompt
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.utils import generate_hash_id
 from knext.common.base.runnable import Input, Output
 from kag.builder.model.sub_graph import SubGraph, Node, Edge
@@ -47,9 +46,9 @@ class DocxNode:
         self.content = content
         self.node_type = node_type
         self.children: List[DocxNode] = []
-        self.properties: Dict[
-            str, str
-        ] = {}  # Store additional properties like style, indent level, etc.
+        self.properties: Dict[str, str] = (
+            {}
+        )  # Store additional properties like style, indent level, etc.
 
     def __str__(self):
         return f"{self.node_type}({self.level}): {self.display_title}"
@@ -82,6 +81,7 @@ class DocxReader(ReaderABC):
         llm: LLMClient = None,
         cut_depth: int = 5,
         length_splitter: LengthSplitter = None,
+        **kwargs,
     ):
         """
         Initializes the DocxReader with an optional LLMClient instance.
@@ -91,9 +91,9 @@ class DocxReader(ReaderABC):
             cut_depth (int): The heading level at which to cut the document into chunks. Defaults to 5.
             length_splitter (LengthSplitter): An optional LengthSplitter instance for splitting long chunks. Defaults to None.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.llm = llm
-        self.prompt = OutlinePrompt(KAG_PROJECT_CONF.language)
+        self.prompt = OutlinePrompt(self.kag_project_config.language)
         self.cut_depth = cut_depth
         self.length_splitter = length_splitter
 
@@ -739,9 +739,11 @@ class DocxReader(ReaderABC):
                         name=full_title,
                         label="Chunk",
                         properties={
-                            "content": chunk_content[:100] + "..."
-                            if len(chunk_content) > 100
-                            else chunk_content
+                            "content": (
+                                chunk_content[:100] + "..."
+                                if len(chunk_content) > 100
+                                else chunk_content
+                            )
                         },
                     )
                     nodes.append(chunk_node)

@@ -15,7 +15,6 @@ from typing import List, Optional
 from tenacity import stop_after_attempt, retry
 
 from kag.builder.model.sub_graph import SubGraph
-from kag.common.conf import KAG_PROJECT_CONF
 
 from kag.common.utils import get_vector_field_name, get_sparse_vector_field_name
 from kag.interface import VectorizerABC, VectorizeModelABC, SparseVectorizeModelABC
@@ -349,6 +348,7 @@ class BatchVectorizer(VectorizerABC):
         batch_size: int = 32,
         disable_generation: Optional[List[str]] = None,
         sparse_vectorize_model: SparseVectorizeModelABC = None,
+        **kwargs,
     ):
         """
         Initializes the BatchVectorizer with the specified vectorization model and batch size.
@@ -357,8 +357,8 @@ class BatchVectorizer(VectorizerABC):
             vectorize_model (VectorizeModelABC): The model used for generating embedding vectors.
             batch_size (int): The size of the batches in which to process the nodes. Defaults to 32.
         """
-        super().__init__()
-        self.project_id = KAG_PROJECT_CONF.project_id
+        super().__init__(**kwargs)
+        self.project_id = self.kag_project_config.project_id
         # self._init_graph_store()
         self.vec_meta = self._init_vec_meta()
         self.vectorize_model = vectorize_model
@@ -376,7 +376,7 @@ class BatchVectorizer(VectorizerABC):
         dense_vec_meta = defaultdict(list)
         sparse_vec_meta = defaultdict(list)
         schema_client = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=self.project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.project_id
         )
         spg_types = schema_client.load()
         for type_name, spg_type in spg_types.items():

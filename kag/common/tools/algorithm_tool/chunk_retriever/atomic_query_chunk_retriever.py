@@ -13,7 +13,6 @@
 import knext.common.cache
 import logging
 import asyncio
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import (
     RetrieverABC,
     VectorizeModelABC,
@@ -49,10 +48,11 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         score_threshold=0.85,
         **kwargs,
     ):
+        super().__init__(top_k, **kwargs)
         self.llm_client = llm_client
         self.query_rewrite_prompt = query_rewrite_prompt
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
@@ -60,17 +60,15 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         self.graph_api = graph_api or GraphApiABC.from_config(
             {"type": "openspg_graph_api"}
         )
-
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
         self.score_threshold = score_threshold
-        super().__init__(top_k, **kwargs)
 
     def recall_doc_by_atomic_query(self, atomic_query):
         entity = EntityData(
@@ -206,16 +204,26 @@ class AtomicQueryChunkRetriever(RetrieverABC):
 
         return res_chunk_list
 
+    @staticmethod
+    def sync_wrapper(coro):
+        try:
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(coro)
+        except RuntimeError:
+            return asyncio.run(coro)
+
     def invoke(self, task: Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
         context = kwargs.get("context", None)
         try:
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput()
+                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
 
             # recall atomic queries
-            top_k_atomic_queries = asyncio.run(self.recall_atomic_query(query, context))
+            top_k_atomic_queries = self.sync_wrapper(
+                self.recall_atomic_query(query, context)
+            )
             query_texts = [item["node"]["name"] for item in top_k_atomic_queries]
             query_text_related_chunks = []
             for query_text in query_texts:
@@ -240,15 +248,21 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             ]
 
             # recall atomic_relatedTo_chunks
-            chunks = asyncio.run(self.recall_sourceChunks_chunks(top_k_atomic_queries))
+            chunks = self.sync_wrapper(
+                self.recall_sourceChunks_chunks(top_k_atomic_queries)
+            )
 
             chunks = chunks + query_text_related_chunks
 
-            out = RetrieverOutput(chunks=chunks)
+            out = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), chunks=chunks
+            )
             return out
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     def schema(self):
         return {

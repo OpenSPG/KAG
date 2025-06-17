@@ -21,7 +21,6 @@ from knext.schema.model.base import SpgTypeEnum
 from knext.schema.model.schema_helper import (
     PropertyName,
 )
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.interface.builder.mapping_abc import MappingABC
 from kag.common.registry import Functor
 
@@ -34,7 +33,7 @@ class SPGTypeMapping(MappingABC):
 
     Attributes:
         spg_type_name (SPGTypeName): The name of the SPG type.
-        fuse_op (FuseOpABC, optional): The user-defined fuse operator. Defaults to None.
+        fuse_func (FuseOpABC, optional): The user-defined fuse operator. Defaults to None.
     """
 
     def __init__(
@@ -61,7 +60,8 @@ class SPGTypeMapping(MappingABC):
     )
     def init_schema(self, spg_type_name):
         self.schema = SchemaClient(
-            host_addr=KAG_PROJECT_CONF.host_addr, project_id=KAG_PROJECT_CONF.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         assert (
             spg_type_name in self.schema

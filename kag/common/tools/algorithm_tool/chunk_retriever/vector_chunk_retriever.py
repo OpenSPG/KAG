@@ -13,7 +13,6 @@
 import knext.common.cache
 import logging
 
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG
 from kag.interface import RetrieverABC, VectorizeModelABC, ChunkData, RetrieverOutput
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
@@ -35,8 +34,9 @@ class VectorChunkRetriever(RetrieverABC):
         score_threshold=0.85,
         **kwargs,
     ):
+        super().__init__(top_k, **kwargs)
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            KAG_CONFIG.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
         self.search_api = search_api or SearchApiABC.from_config(
             {"type": "openspg_search_api"}
@@ -44,13 +44,12 @@ class VectorChunkRetriever(RetrieverABC):
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": KAG_PROJECT_CONF.project_id,
-                    "KAG_PROJECT_HOST_ADDR": KAG_PROJECT_CONF.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
         self.score_threshold = score_threshold
-        super().__init__(top_k, **kwargs)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
@@ -61,7 +60,10 @@ class VectorChunkRetriever(RetrieverABC):
                 return cached
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+                return RetrieverOutput(
+                    retriever_method=self.schema().get("name", ""),
+                    err_msg="query is empty",
+                )
             query_vector = self.vectorize_model.vectorize(query)
             top_k_docs = self.search_api.search_vector(
                 label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
@@ -98,7 +100,9 @@ class VectorChunkRetriever(RetrieverABC):
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     def schema(self):
         return {

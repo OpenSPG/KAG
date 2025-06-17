@@ -13,7 +13,7 @@
 import os
 import logging
 from typing import Dict
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import ExecutorABC, LLMClient, Context, PromptABC
 from kag.solver.executor.mcp.mcp_client import MCPClient
 
@@ -40,6 +40,9 @@ class McpExecutor(ExecutorABC):
         self.env = dict(env)
         self.llm = llm
         self.mcp_client = MCPClient(self.llm, self.prompt)
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
 
     def download_data(self, input: str, **kwargs):
         """
@@ -56,7 +59,9 @@ class McpExecutor(ExecutorABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "mcp_service")
+            local_file_path = os.path.join(
+                self.kag_project_config.ckpt_dir, "mcp_service"
+            )
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             from urllib.parse import urlparse

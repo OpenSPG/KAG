@@ -3,6 +3,8 @@ import logging
 import os
 import time
 from typing import List
+
+from kag.common.utils import processing_phrases
 from kag.interface import LLMClient
 from kag.common.registry import Functor
 from kag.common.benchmarks.evaluate import Evaluate
@@ -37,31 +39,29 @@ class EvaFor2wiki(EvalQa):
         info, status = reporter.generate_report_data()
         return answer, {"info": info.to_dict(), "status": status}
 
-    async def async_process_sample(self, data):
-        sample_idx, sample, ckpt = data
-        question = sample["question"]
-        gold = sample["answer"]
-        try:
-            if ckpt and question in ckpt:
-                print(f"found existing answer to question: {question}")
-                prediction, trace_log = ckpt.read_from_ckpt(question)
-            else:
-                prediction, trace_log = await self.qa(query=question, gold=gold)
-                if ckpt:
-                    ckpt.write_to_ckpt(question, (prediction, trace_log))
-            metrics = self.do_metrics_eval([question], [prediction], [gold])
-            return sample_idx, prediction, metrics, trace_log
-        except Exception as e:
-            import traceback
-
-            logger.warning(
-                f"process sample failed with error:{traceback.print_exc()}\nfor: {sample['question']} {e}"
-            )
-            return None
-
     def load_data(self, file_path):
         with open(file_path, "r") as f:
             return json.load(f)
+
+    def do_recall_eval(self, sample, references):
+        eva_obj = Evaluate()
+        supporting_facts = sample["supporting_facts"]
+        context_map = {}
+        gold_list = []
+        for context_item in sample["context"]:
+            context_map[context_item[0]] = context_item[1]
+        for supporting_fact in supporting_facts:
+            gold_list.append(
+                processing_phrases(supporting_fact[0]).strip('"').replace(" ", "")
+            )
+        predictionlist = []
+        for ref in references:
+            predictionlist.append(
+                processing_phrases(ref["title"]).strip('"').replace(" ", "")
+            )
+        return eva_obj.recall_top(
+            predictionlist=predictionlist, goldlist=gold_list, is_chunk_data=False
+        )
 
     def do_metrics_eval(
         self, questionList: List[str], predictions: List[str], golds: List[str]
@@ -92,7 +92,11 @@ def eval(qa_file_path, thread_num=10, upper_limit=1000, collect_file="benchmark.
 
 
 if __name__ == "__main__":
-    import_modules_from_path("./src")
+    # benchmark common component
+    common_component = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "../../common_component"
+    )
+    import_modules_from_path(common_component)
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()

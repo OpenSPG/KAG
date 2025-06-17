@@ -4,7 +4,6 @@ from typing import List
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
-from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import ExtractorABC, LLMClient, PromptABC
 from kag.interface.common.model.chunk import ChunkTypeEnum
@@ -17,14 +16,17 @@ logger = logging.getLogger(__name__)
 @ExtractorABC.register("summary_extractor")
 class SummaryExtractor(ExtractorABC):
     def __init__(
-        self, llm_module: LLMClient = None, chunk_summary_prompt: PromptABC = None
+        self,
+        llm_module: LLMClient = None,
+        chunk_summary_prompt: PromptABC = None,
+        **kwargs,
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
         self.chunk_summary_prompt = chunk_summary_prompt or init_prompt_with_fallback(
-            "chunk_summary", KAG_PROJECT_CONF.biz_scene
+            "chunk_summary", self.kag_project_config.biz_scene
         )
 
     @property

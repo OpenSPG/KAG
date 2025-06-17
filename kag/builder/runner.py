@@ -18,7 +18,7 @@ import asyncio
 import threading
 from typing import Dict
 from tqdm.asyncio import tqdm
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.registry import Registrable
 from kag.common.utils import reset, bold, red, generate_hash_id
 from kag.common.checkpointer import CheckpointerManager
@@ -86,6 +86,7 @@ class BuilderChainRunner(Registrable):
         num_chains: int = 2,
         num_threads_per_chain: int = 8,
         max_concurrency: int = 100,
+        **kwargs,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -102,7 +103,10 @@ class BuilderChainRunner(Registrable):
         self.num_chains = num_chains
         self.num_threads_per_chain = num_threads_per_chain
         self.max_concurrency = max_concurrency
-        self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
+        self.ckpt_dir = kag_project_config.ckpt_dir
 
         self.checkpointer = CheckpointerManager.get_checkpointer(
             {
@@ -302,6 +306,7 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         num_chains: int = 2,
         num_threads_per_chain: int = 8,
         register_path: str = None,
+        **kwargs,
     ):
         """
         Initializes the BuilderChainRunner instance.
@@ -318,7 +323,10 @@ class BuilderChainStreamRunner(BuilderChainRunner):
         self.chain = chain
         self.num_chains = num_chains
         self.num_threads_per_chain = num_threads_per_chain
-        self.ckpt_dir = KAG_PROJECT_CONF.ckpt_dir
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
+        self.ckpt_dir = kag_project_config.ckpt_dir
         self.register_path = register_path
         # self.checkpointer = CheckpointerManager.get_checkpointer(
         #     {

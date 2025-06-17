@@ -5,7 +5,7 @@ from typing import List, Dict
 
 from tenacity import stop_after_attempt, retry
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import ToolABC, PromptABC, LLMClient
 from kag.interface.solver.base_model import SPOEntity
 from kag.solver.utils import init_prompt_with_fallback
@@ -22,13 +22,17 @@ class Ner(ToolABC):
         ner_prompt: PromptABC = None,
         std_prompt: PromptABC = None,
         with_semantic=False,
+        **kwargs,
     ):
         super().__init__()
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.ner_prompt = ner_prompt or init_prompt_with_fallback(
-            "question_ner", KAG_PROJECT_CONF.biz_scene
+            "question_ner", self.kag_project_config.biz_scene
         )
         self.std_prompt = std_prompt or init_prompt_with_fallback(
-            "std", KAG_PROJECT_CONF.biz_scene
+            "std", self.kag_project_config.biz_scene
         )
         self.llm_module = llm_module
         self.with_semantic = with_semantic

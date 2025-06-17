@@ -11,7 +11,10 @@
 # or implied.
 # flake8: noqa
 import json
-from kag.interface import GeneratorABC, LLMClient, PromptABC
+from typing import Optional
+
+from kag.interface import GeneratorABC, LLMClient, PromptABC, RetrieverOutput
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
@@ -39,14 +42,27 @@ class LLMGeneratorWithThought(GeneratorABC):
         chunks = []
         thoughts = []
         for task in context.gen_task(False):
+            task_query = task.arguments.get("rewrite_query", task.arguments["query"])
             print(f"task.result = {task.result}")
-            task_result = json.loads(task.result)
-            subq = task_result["query"]
-            suba = task_result["response"]
-            thoughts.append(f"Sub-Query: {subq}\n{suba}")
-            retrieved_docs = task.memory.get("retriever")
+            if isinstance(task.result, RetrieverOutput):
+                thoughts.append(
+                    f"Sub-Query: {task.arguments['query']}\n {task.result.summary}"
+                )
+                retrieved_docs = task.result
+            else:
+                result = str(task.result)
+                try:
+                    task_result = json.loads(result)
+                    subq = task_result["query"]
+                    suba = task_result["response"]
+                    thoughts.append(f"Sub-Query: {subq}\n{suba}")
+                except Exception:
+                    thoughts.append(f"Sub-Query: {task_query}\n {task.result}")
+
+                retrieved_docs = task.memory.get("retriever")
+
             if retrieved_docs and self.chunk_reranker:
-                rerank_queries.append(task.arguments["query"])
+                rerank_queries.append(task_query)
                 chunks.append(retrieved_docs.chunks)
         rerank_chunks = self.chunk_reranker.invoke(query, rerank_queries, chunks)
         total_reference_source = rerank_chunks
@@ -71,4 +87,13 @@ NOTE:
         if "Answer: " not in response:
             raise ValueError(f"no answer found in response: {response}")
         answer = response.split("Answer:")[1].strip()
+
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+        if reporter:
+            reporter.add_report_line(
+                "generator", "final_generator_input", prompt, "FINISH"
+            )
+            reporter.add_report_line(
+                "generator_reference", "reference_chunk", rerank_chunks, "FINISH"
+            )
         return answer

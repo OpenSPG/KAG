@@ -14,7 +14,6 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Generator, List
 from kag.interface.builder.base import BuilderComponent
-from kag.common.conf import KAG_PROJECT_CONF
 from knext.common.base.runnable import Input, Output
 
 
@@ -28,6 +27,9 @@ class ScannerABC(BuilderComponent, ABC):
 
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @property
     def input_types(self) -> Input:
         return str
@@ -37,7 +39,7 @@ class ScannerABC(BuilderComponent, ABC):
         return Any
 
     @abstractmethod
-    def load_data(self, input: Input, **kwargs) -> List[Output]:
+    def load_data(self, input: Input) -> List[Output]:
         """
         Abstract method to load data from the input source.
 
@@ -46,7 +48,6 @@ class ScannerABC(BuilderComponent, ABC):
 
         Args:
             input (Input): The input source to load data from.
-            **kwargs: Additional keyword arguments.
 
         Returns:
             List[Output]: A list of processed results.
@@ -89,16 +90,15 @@ class ScannerABC(BuilderComponent, ABC):
 
         Args:
             input (Input): The input source to load data from.
-            **kwargs: Additional keyword arguments.
 
         Yields:
             The items within the sharded range.
         """
-        data = self.load_data(input, **kwargs)
+        data = self.load_data(input)
         for item in self._generate(data):
             yield item
 
-    def download_data(self, input: Input, **kwargs) -> List[Output]:
+    def download_data(self, input: Input) -> List[Output]:
         """
         Downloads data from a given input URL or returns the input directly if it is not a URL.
 
@@ -113,7 +113,9 @@ class ScannerABC(BuilderComponent, ABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(KAG_PROJECT_CONF.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(
+                self.kag_project_config.ckpt_dir, "file_scanner"
+            )
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             # local_file = os.path.join(local_file_path, os.path.basename(input))

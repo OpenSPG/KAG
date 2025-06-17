@@ -11,7 +11,7 @@
 # or implied.
 import os
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config
 from kag.interface import LLMClient, PromptABC, ToolABC
 from kag.solver.utils import init_prompt_with_fallback
@@ -20,14 +20,20 @@ from kag.solver.utils import init_prompt_with_fallback
 @ToolABC.register("self_cognition")
 class SelfCognExecutor(ToolABC):
     def __init__(
-        self, llm_module: LLMClient = None, self_cognition_prompt: PromptABC = None
+        self,
+        llm_module: LLMClient = None,
+        self_cognition_prompt: PromptABC = None,
+        **kwargs,
     ):
         super().__init__()
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
         self.self_cognition_prompt = self_cognition_prompt or init_prompt_with_fallback(
-            "self_cognition", KAG_PROJECT_CONF.biz_scene
+            "self_cognition", self.kag_project_config.biz_scene
         )
 
         self.docs_zh = [
@@ -56,7 +62,7 @@ class SelfCognExecutor(ToolABC):
         )
 
     def get_docs(self):
-        if KAG_PROJECT_CONF.language == "zh":
+        if self.kag_project_config.language == "zh":
             return self.docs_zh
         else:
             return self.docs_en

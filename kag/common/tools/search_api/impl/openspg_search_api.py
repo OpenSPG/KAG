@@ -1,6 +1,6 @@
 from typing import List
 
-from kag.common.conf import KAG_PROJECT_CONF
+from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
 from knext.search.client import SearchClient
 
@@ -9,8 +9,11 @@ from knext.search.client import SearchClient
 class OpenSPGSearchAPI(SearchApiABC):
     def __init__(self, project_id=None, host_addr=None, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = project_id or KAG_PROJECT_CONF.project_id
-        self.host_addr = host_addr or KAG_PROJECT_CONF.host_addr
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        kag_project_config = kag_config.global_config
+        self.project_id = project_id or kag_project_config.project_id
+        self.host_addr = host_addr or kag_project_config.host_addr
         self.sc = SearchClient(
             host_addr=self.host_addr, project_id=int(self.project_id)
         )
