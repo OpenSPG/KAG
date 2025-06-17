@@ -81,13 +81,13 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             )
         )
         self.top_k = top_k
-        self.std_parser = get_std_logic_form_parser(std_schema, self.kb_project_config)
+        self.std_parser = get_std_logic_form_parser(std_schema, self.kag_project_config)
 
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
-                    "KAG_PROJECT_ID": self.kb_project_config.project_id,
-                    "KAG_PROJECT_HOST_ADDR": self.kb_project_config.host_addr,
+                    "KAG_PROJECT_ID": self.kag_project_config.project_id,
+                    "KAG_PROJECT_HOST_ADDR": self.kag_project_config.host_addr,
                 }
             )
         )
@@ -95,20 +95,20 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
         self.graph_api = graph_api or GraphApiABC.from_config(
             {
                 "type": "openspg_graph_api",
-                "project_id": self.kb_project_config.project_id,
-                "host_addr": self.kb_project_config.host_addr,
+                "project_id": self.kag_project_config.project_id,
+                "host_addr": self.kag_project_config.host_addr,
             }
         )
 
         self.search_api = search_api or SearchApiABC.from_config(
             {
                 "type": "openspg_graph_api",
-                "project_id": self.kb_project_config.project_id,
-                "host_addr": self.kb_project_config.host_addr,
+                "project_id": self.kag_project_config.project_id,
+                "host_addr": self.kag_project_config.host_addr,
             }
         )
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
-            self.kb_config.all_config["vectorize_model"]
+            self.kag_config.all_config["vectorize_model"]
         )
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
@@ -121,7 +121,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             )
         context = kwargs.get("context", Context())
         logical_node = std_logic_node(
-            task_cache_id=self.kb_project_config.project_id,
+            task_cache_id=self.kag_project_config.project_id,
             logic_node=logical_node,
             logic_parser=self.std_parser,
             context=context,

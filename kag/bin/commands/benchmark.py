@@ -141,6 +141,11 @@ def run_benchmark(config, result_queue):
     print(f"workdir = {workdir}")
     os.chdir(workdir)
     import_modules_from_path("./")
+    # import benchmark common component
+    common_component = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "../../open_benchmark/common_component"
+    )
+    import_modules_from_path(common_component)
     runner = KAGBenchmark.from_config(config)
     result = runner.invoke()
     result_queue.put((runner.job_name, result))

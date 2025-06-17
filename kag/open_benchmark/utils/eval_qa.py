@@ -101,6 +101,8 @@ class EvalQa:
         total_metrics = {
             "processNum": len(metrics_list),
         }
+        if total_metrics["processNum"] == 0:
+            return total_metrics
         recall_metrics = {}
         hit3 = 0.0
         hit5 = 0.0
@@ -110,6 +112,8 @@ class EvalQa:
                 recall_data = metric["recall"]
             else:
                 recall_data = metric
+            if recall_data is None:
+                continue
             hit3 += recall_data.get("recall_top3", 0)
             hit5 += recall_data.get("recall_top5", 0)
             hitall += recall_data.get("recall_all", 0)

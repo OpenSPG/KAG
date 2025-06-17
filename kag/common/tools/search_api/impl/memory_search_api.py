@@ -35,7 +35,7 @@ class MemorySearchAPI(SearchApiABC):
             label=label,
             property_key=property_key,
             query_vector=[query_vector],
-            topk=topk,
+            topk=int(topk),
         )
         if res:
             return res[0]

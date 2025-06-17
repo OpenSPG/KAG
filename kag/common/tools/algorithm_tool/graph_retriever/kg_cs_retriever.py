@@ -1,3 +1,4 @@
+import logging
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.schema_std import StdSchema
 from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
@@ -12,6 +13,8 @@ from kag.common.tools.algorithm_tool.graph_retriever.entity_linking import Entit
 from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select import (
     PathSelect,
 )
+
+logger = logging.getLogger()
 
 
 @RetrieverABC.register("kg_cs_open_spg")
@@ -47,32 +50,38 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         self.std_parser = get_std_logic_form_parser(std_schema, self.kag_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
-
-        query = task.arguments.get("rewrite_query", task.arguments["query"])
-        logical_node = task.arguments.get("logic_form_node", None)
-        if not logical_node:
+        try:
+            query = task.arguments.get("rewrite_query", task.arguments["query"])
+            logical_node = task.arguments.get("logic_form_node", None)
+            if not logical_node:
+                return RetrieverOutput(
+                    retriever_method=self.schema().get("name", ""),
+                    err_msg="No logic node found in task arguments",
+                )
+            context = kwargs.get("context", Context())
+            logical_node = std_logic_node(
+                task_cache_id=self.kag_project_config.project_id,
+                logic_node=logical_node,
+                logic_parser=self.std_parser,
+                context=context,
+            )
+            kg_graph = self.template.invoke(
+                query=query,
+                logic_nodes=[logical_node],
+                graph_data=context.variables_graph,
+                is_exact_match=True,
+                name=self.name,
+                **kwargs
+            )
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), graphs=[kg_graph]
+            )
+        except Exception as e:
+            logger.warning(f"retriever with exception : {e}", exc_info=True)
             return RetrieverOutput(
                 retriever_method=self.schema().get("name", ""),
-                err_msg="No logic node found in task arguments",
+                err_msg=f"{task} {e}",
             )
-        context = kwargs.get("context", Context())
-        logical_node = std_logic_node(
-            task_cache_id=self.kag_project_config.project_id,
-            logic_node=logical_node,
-            logic_parser=self.std_parser,
-            context=context,
-        )
-        kg_graph = self.template.invoke(
-            query=query,
-            logic_nodes=[logical_node],
-            graph_data=context.variables_graph,
-            is_exact_match=True,
-            name=self.name,
-            **kwargs
-        )
-        return RetrieverOutput(
-            retriever_method=self.schema().get("name", ""), graphs=[kg_graph]
-        )
 
     def schema(self):
         return {
