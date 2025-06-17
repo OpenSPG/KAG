@@ -199,9 +199,8 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
                 schema=self.schema_helper, schema_retrieval=self.std_schema
             )
         else:
-            self.logic_node_parser = ParseLogicForm(
-                schema=None, schema_retrieval=None
-            )
+            self.logic_node_parser = ParseLogicForm(schema=None, schema_retrieval=None)
+
     def is_json_format(self):
         return False
 

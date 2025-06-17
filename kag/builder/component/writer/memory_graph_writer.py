@@ -15,7 +15,6 @@ from typing import Type, List
 
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from knext.common.base.runnable import Input, Output
 
 logger = logging.getLogger(__name__)
@@ -30,6 +29,7 @@ class MemoryGraphWriter(SinkWriterABC):
     This class inherits from SinkWriterABC and provides the functionality to write SubGraphs
     to a Knowledge Graph storage system. It supports operations like upsert and delete.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

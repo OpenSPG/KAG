@@ -33,7 +33,6 @@ from kag.interface.common.model.chunk import Chunk, ChunkTypeEnum
 from kag.interface.common.model.doc import Doc
 from kag.interface.common.model.spg_record import SPGRecord
 from kag.interface.common.model.sub_graph import Node, Edge, SubGraph
-from kag.interface.indexer.index import IndexABC
 from kag.interface.common.tools import ToolABC
 
 from kag.interface.builder.scanner_abc import ScannerABC
@@ -50,7 +49,6 @@ from kag.interface.builder.external_graph_abc import (
 )
 from kag.interface.builder.builder_chain_abc import KAGBuilderChain
 from kag.interface.builder.postprocessor_abc import PostProcessorABC
-from kag.interface.indexer.index import IndexABC
 from kag.interface.solver.base import KagBaseModule, Question
 from kag.interface.solver.context import Context
 

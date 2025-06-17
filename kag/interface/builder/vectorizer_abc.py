@@ -22,6 +22,7 @@ class VectorizerABC(BuilderComponent):
     in a SubGraph. It inherits from BuilderComponent, ensuring that any subclass must implement
     the `invoke` method.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

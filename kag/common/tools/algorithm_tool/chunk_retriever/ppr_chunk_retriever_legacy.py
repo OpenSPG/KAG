@@ -38,7 +38,7 @@ class PprChunkRetriever(ToolABC):
         pagerank_weight: float = 0.5,
         ner: Ner = None,
         el: EntityLinking = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)

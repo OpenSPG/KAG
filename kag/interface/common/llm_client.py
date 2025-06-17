@@ -166,7 +166,7 @@ class LLMClient(Registrable):
     """
 
     def __init__(
-        self, name: str, max_rate: float = 1000, time_period: float = 1, **kwargs
+        self, name: str = "", max_rate: float = 1000, time_period: float = 1, **kwargs
     ):
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)

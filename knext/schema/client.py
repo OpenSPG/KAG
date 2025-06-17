@@ -18,6 +18,8 @@ from knext.common.rest import ApiClient, Configuration
 from knext.schema import rest
 from knext.schema.model.base import BaseSpgType, AlterOperationEnum, SpgTypeEnum
 from knext.schema.model.relation import Relation
+from knext.schema.model.spg_type import IndexType
+from knext.schema.rest import BasicType
 
 cache = knext.common.cache.SchemaCache()
 
@@ -185,9 +187,16 @@ class SchemaClient(Client):
         }
         return schema
 
-    def extract_types(self):
+    def extract_types(self, language):
         schema = self.load()
-        types = [t for t in schema.keys() if t not in [CHUNK_TYPE] + BASIC_TYPES]
+        types = []
+        for t in schema.keys():
+            schema_type = schema[t]
+            if isinstance(schema_type, IndexType) or isinstance(schema_type, BasicType):
+                continue
+            if t in [CHUNK_TYPE] + BASIC_TYPES:
+                continue
+            types.append(schema_type.name_zh if language == "zh" else schema_type.name_en)
         return types
 
     def extract_types_zh_mapping(self):

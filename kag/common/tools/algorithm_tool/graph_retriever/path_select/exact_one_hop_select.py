@@ -36,7 +36,7 @@ class ExactOneHopSelect(PathSelect):
         vectorize_model: VectorizeModelABC = None,
         graph_api: GraphApiABC = None,
         search_api: SearchApiABC = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)

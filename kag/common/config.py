@@ -1,4 +1,4 @@
-from kag.common.conf import KAG_PROJECT_CONF, KAG_CONFIG, KAGConfigAccessor
+from kag.common.conf import KAG_PROJECT_CONF, KAGConfigAccessor
 
 
 def get_default_chat_llm_config(task_id=None):

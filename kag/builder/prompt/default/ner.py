@@ -13,7 +13,6 @@
 import json
 from string import Template
 from typing import List
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
 from knext.schema.model.base import SpgTypeEnum
@@ -150,7 +149,8 @@ class OpenIENERPrompt(PromptABC):
     def __init__(self, language: str = "", **kwargs):
         super().__init__(language, **kwargs)
         project_schema = SchemaClient(
-            host_addr=self.kag_project_config.host_addr, project_id=self.kag_project_config.project_id
+            host_addr=self.kag_project_config.host_addr,
+            project_id=self.kag_project_config.project_id,
         ).load()
         self.schema = []
         for name, value in project_schema.items():

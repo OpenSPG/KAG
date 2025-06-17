@@ -1,6 +1,5 @@
 import logging
 
-from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
@@ -25,7 +24,6 @@ class TextChunkRetriever(RetrieverABC):
                 }
             )
         )
-
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
         top_k = kwargs.get("top_k", self.top_k)
@@ -55,7 +53,9 @@ class TextChunkRetriever(RetrieverABC):
             )
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            return RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
     def schema(self):
         return {

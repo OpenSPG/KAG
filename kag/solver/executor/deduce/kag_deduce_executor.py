@@ -46,7 +46,9 @@ class KagDeduceExecutor(ExecutorABC):
         )
         self.deduce_extractor_prompt = (
             deduce_extractor_prompt
-            or init_prompt_with_fallback("deduce_extractor", kag_project_config.biz_scene)
+            or init_prompt_with_fallback(
+                "deduce_extractor", kag_project_config.biz_scene
+            )
         )
         self.deduce_judge_prompt = deduce_judge_prompt or init_prompt_with_fallback(
             "deduce_judge", kag_project_config.biz_scene

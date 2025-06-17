@@ -67,10 +67,14 @@ class KAGIndexManager(Registrable):
     def retrieval_method(self) -> str:
         return ""
 
-    def build_extractor_config(self, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        self, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         return []
 
-    def build_retriever_config(self, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        self, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         return []
 
 
@@ -136,19 +140,23 @@ AtomicQuery(原子问): EntityType
         return ""
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "atomic_query_extractor",
                 "llm": llm_config,
                 "prompt": {"type": "atomic_query_extract"},
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             }
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -156,24 +164,36 @@ AtomicQuery(原子问): EntityType
                 "vectorize_model": vectorize_model_config,
                 "llm_client": llm_config,
                 "query_rewrite_prompt": {"type": "atomic_query_rewrite_prompt"},
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
             {
                 "type": "vector_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
             {
                 "type": "text_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
         ]
 
@@ -222,32 +242,42 @@ Chunk(文本块): EntityType
         return ""
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "naive_rag_extractor",
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             }
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "vector_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
             {
                 "type": "text_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
         ]
 
@@ -505,18 +535,22 @@ Chunk(文本块): EntityType
         return ""
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "schema_free_extractor",
                 "llm": llm_config,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             }
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -524,27 +558,42 @@ Chunk(文本块): EntityType
                 "path_select": {
                     "type": "exact_one_hop_select",
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "graph_api": {
+                        "type": "openspg_graph_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "entity_linking": {
                     "type": "entity_linking",
                     "recognition_threshold": 0.9,
                     "exclude_types": ["Chunk"],
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "graph_api": {
+                        "type": "openspg_graph_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "std_schema": {
                     "type": "default_std_schema",
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "llm": llm_config,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
             {
                 "type": "kg_fr_open_spg",
@@ -553,16 +602,28 @@ Chunk(文本块): EntityType
                     "type": "fuzzy_one_hop_select",
                     "llm_client": llm_config,
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "graph_api": {
+                        "type": "openspg_graph_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "ppr_chunk_retriever_tool": {
                     "type": "ppr_chunk_retriever",
                     "llm_client": llm_config,
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "graph_api": {
+                        "type": "openspg_graph_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
                     "kag_qa_task_config_key": kb_task_project_id,
                     "ner": {
                         "type": "ner",
@@ -571,40 +632,50 @@ Chunk(文本块): EntityType
                             "type": "default_question_ner",
                             "kag_qa_task_config_key": kb_task_project_id,
                         },
-                        "std_prompt": {
-                            "type": "default_std"
-                        },
-                        "llm_module": llm_config
-                    }
+                        "std_prompt": {"type": "default_std"},
+                        "llm_module": llm_config,
+                    },
                 },
                 "entity_linking": {
                     "type": "entity_linking",
                     "recognition_threshold": 0.8,
                     "exclude_types": ["Chunk"],
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "graph_api": {
+                        "type": "openspg_graph_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "std_schema": {
                     "type": "default_std_schema",
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "llm": llm_config,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
             {
                 "type": "rc_open_spg",
                 "vector_chunk_retriever": {
                     "type": "vector_chunk_retriever",
                     "vectorize_model": vectorize_model_config,
-                    "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id},
-                    "kag_qa_task_config_key": kb_task_project_id
+                    "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                    },
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "vectorize_model": vectorize_model_config,
                 "top_k": 20,
-                "kag_qa_task_config_key": kb_task_project_id
+                "kag_qa_task_config_key": kb_task_project_id,
             },
         ]

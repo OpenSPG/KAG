@@ -26,8 +26,10 @@ class ScannerABC(BuilderComponent, ABC):
     It inherits from `BuilderComponent` and `ABC` (Abstract Base Class).
 
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
     @property
     def input_types(self) -> Input:
         return str
@@ -111,7 +113,9 @@ class ScannerABC(BuilderComponent, ABC):
         if input.startswith("http://") or input.startswith("https://"):
             from kag.common.utils import download_from_http
 
-            local_file_path = os.path.join(self.kag_project_config.ckpt_dir, "file_scanner")
+            local_file_path = os.path.join(
+                self.kag_project_config.ckpt_dir, "file_scanner"
+            )
             if not os.path.exists(local_file_path):
                 os.makedirs(local_file_path)
             # local_file = os.path.join(local_file_path, os.path.basename(input))

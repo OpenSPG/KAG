@@ -1,7 +1,6 @@
 import logging
 from typing import List, Optional
 
-from kag.interface import LLMClient
 from kag.common.conf import KAGGlobalConf
 from kag.common.config import LogicFormConfiguration
 from kag.common.parser.schema_std import StdSchema
@@ -17,6 +16,7 @@ from kag.common.tools.algorithm_tool.graph_retriever.path_select.path_select imp
 )
 
 logger = logging.getLogger()
+
 
 def get_std_logic_form_parser(std_schema: StdSchema, kb_project_conf: KAGGlobalConf):
     logger.info(
@@ -36,14 +36,21 @@ def get_std_logic_form_parser(std_schema: StdSchema, kb_project_conf: KAGGlobalC
         from_config_func=StdSchema.from_config,
     )
 
-    return ParseLogicForm(
-        schema=schema_helper, schema_retrieval=std_schema
-    )
-def std_logic_node(task_cache_id, logic_node: LogicNode, logic_parser: ParseLogicForm, context: Context):
+    return ParseLogicForm(schema=schema_helper, schema_retrieval=std_schema)
+
+
+def std_logic_node(
+    task_cache_id, logic_node: LogicNode, logic_parser: ParseLogicForm, context: Context
+):
     parsed_entity_set = context.kwargs.get(str(task_cache_id), {})
-    std_node = logic_parser.std_logic_form(node=logic_node, sub_query=logic_node.sub_query, parsed_entity_set= parsed_entity_set)
+    std_node = logic_parser.std_logic_form(
+        node=logic_node,
+        sub_query=logic_node.sub_query,
+        parsed_entity_set=parsed_entity_set,
+    )
     context.kwargs[str(task_cache_id)] = parsed_entity_set
     return std_node
+
 
 def _store_lf_node_structure(kg_graph: KgGraph, logic_node: GetSPONode):
     """Store logical node structure in knowledge graph
