@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 def load_knowIE_data(respond, lang="en"):
     try:
         extract_ret = json.loads(respond)
-    except Exception as e:
-        logger.warning(f"load_knowIE_data has exception {e} {respond}", exc_info=True)
+    except:
         extract_ret_str = modify_knowledge_unit(respond)
         try:
             left_pos = respond.find("{") if respond.find("{") >= 0 else 0

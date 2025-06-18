@@ -86,9 +86,12 @@ class RetrieverOutput:
             - 'docs': List of dictionaries from DocData objects
         """
         return {
-            "graphs": [x.to_dict() for x in self.graphs],
+            "graphs": [str(x.get_all_spo()) for x in self.graphs],
             "chunks": [x.to_dict() for x in self.chunks],
             "docs": [x.to_dict() for x in self.docs],
+            "retriever_method": self.retriever_method,
+            "summary": self.summary,
+            "err_msg": self.err_msg,
         }
 
 
