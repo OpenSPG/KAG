@@ -14,6 +14,7 @@ from typing import List, Optional
 
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface import (
     ExecutorABC,
     RetrieverABC,
@@ -28,6 +29,7 @@ from kag.interface import (
     SchemaUtils,
     Prop,
 )
+from kag.interface.solver.base_model import SPOEntity
 from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
@@ -59,7 +61,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
 
         self.enable_summary = enable_summary
 
-        self.summary_chunks_num = kwargs.get("summary_chunk_num", 5)
+        self.summary_chunks_num = kwargs.get("summary_chunk_num", 10)
 
     def inovke(
         self, query: str, task: Task, context: Context, **kwargs
@@ -151,6 +153,29 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 **kwargs,
             )
             merged.summary = summary_response
+            logical_node = task.arguments.get("logic_form_node", None)
+            if logical_node and isinstance(logical_node, GetSPONode):
+                target_answer =  merged.summary.split("Answer:")[1].strip()
+                s_entities = context.variables_graph.get_entity_by_alias(logical_node.s.alias_name)
+                if not s_entities and not logical_node.s.get_mention_name() and isinstance(logical_node.s, SPOEntity):
+                    logical_node.s.entity_name = target_answer
+                    context.kwargs[logical_node.s.alias_name] = logical_node.s
+                o_entities = context.variables_graph.get_entity_by_alias(logical_node.o.alias_name)
+                if not o_entities and not logical_node.o.get_mention_name() and isinstance(logical_node.o, SPOEntity):
+                    logical_node.o.entity_name = target_answer
+                    context.kwargs[logical_node.o.alias_name] = logical_node.o
+
+
+                context.variables_graph.add_answered_alias(
+                    logical_node.s.alias_name.alias_name, summary_response
+                )
+                context.variables_graph.add_answered_alias(
+                    logical_node.p.alias_name.alias_name, summary_response
+                )
+                context.variables_graph.add_answered_alias(
+                    logical_node.o.alias_name.alias_name, summary_response
+                )
+
         self.report_content(
             reporter,
             "reference",
