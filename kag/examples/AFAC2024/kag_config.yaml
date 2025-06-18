@@ -191,17 +191,6 @@ retriever_executor_rerank: &retriever_executor_rerank
     type: context_select_prompt
   vectorize_model: *vectorize_model
 
-kag_hybrid_executor: &kag_hybrid_executor_conf
-  type: kag_hybrid_executor
-  lf_rewriter:
-    type: kag_spo_lf
-    llm_client: *chat_llm
-    lf_trans_prompt:
-      type: default_spo_retriever_decompose
-    vectorize_model: *vectorize_model
-  flow: |
-    kg_cs->kg_fr->kag_merger;rc->kag_merger
-
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
@@ -245,7 +234,6 @@ kag_solver_pipeline:
       type: default_query_rewrite
   executors:
     - *retriever_executor_rerank
-    # - *kag_hybrid_executor_conf
     - *py_code_based_math_executor_conf
     - *kag_deduce_executor_conf
     - *kag_output_executor_conf

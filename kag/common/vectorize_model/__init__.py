@@ -10,6 +10,10 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+from kag.common.vectorize_model.local_bge_model import (
+    LocalBGEVectorizeModel,
+    LocalBGEM3VectorizeModel,
+)
 from kag.common.vectorize_model.openai_model import OpenAIVectorizeModel
 from kag.common.vectorize_model.mock_model import MockVectorizeModel
 from kag.common.vectorize_model.sparse_bge_m3_model import SparseBGEM3VectorizeModel
@@ -19,6 +23,8 @@ from kag.common.vectorize_model.vectorize_model_config_checker import (
 
 
 __all__ = [
+    "LocalBGEM3VectorizeModel",
+    "LocalBGEVectorizeModel",
     "OpenAIVectorizeModel",
     "MockVectorizeModel",
     "SparseBGEM3VectorizeModel",
