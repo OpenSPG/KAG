@@ -98,10 +98,9 @@ AtomicQuery(原子问): EntityType
         msg = """
         索引构建的成本：
         
-        1、抽取模型消耗：7B xx tokens
-        2、向量模型消耗：bge-m3 xx tokens
-        3、耗时：xx 分钟
-        4、存储：xx GB
+        1、抽取模型消耗：7B 121535 tokens
+        2、耗时：109.5 秒
+        3、文件字数：10万字
         """
         return msg
 
@@ -137,7 +136,7 @@ AtomicQuery(原子问): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建原子问，实现原子问的检索，一般用于检索与原子问相关的chunk"
 
     @classmethod
     def build_extractor_config(
@@ -229,17 +228,39 @@ Chunk(文本块): EntityType
     def applicable_scenarios(self) -> str:
         msg = """
         检索方法描述：
+
+        基础索引，适用性广，一般场景都可以使用。Chunk 索引一般不允许用户变更。
         
+
         # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
         chunks1 = recall_chunks(rewrite(sub_query))
+
+        # recall_atomic_questions, 基于question title，通过bm25/emb 等实现atomic question召回
+        # get_qa_associate_chunks, 基于chunk 与 question 的关联，实现chunk召回
+        chunks2 = get_qa_associate_chunks(recall_atomic_question(rewrite(sub_query)))
+
+        # recall_summary, 基于summary title，通过bm25/emb 等实现summary召回
+        # get_summary_associate_chunks, 基于chunk 与summary 的关联实现chunk召回
+        chunks3 = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))
+
+        # recall_outline，基于outline title, 通过bm25/emb 等实现outline召回
+        # recall_outline, 基于outline_childOf->outline, 实现outline 扩展召回
+        # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
+        chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
+
+        # recall_diagram，基于diagram title, 通过bm25/emb 等实现diagram召回
+        # get_diagram_associate_chunks, 基于chunk 与 diagram 关联实现chunk 召回
+        chunks5 = get_diagram_associate_chunks(recall_diagram(rewrite(sub_query)))
+
         ……
-        return [chunks1]
+
+        return [chunks1,chunks2,chunks3,chunks4, chunks5,…]
         """
         return msg
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建chunk 索引，实现chunk 的检索，一般用于检索与chunk 相关的chunk"
 
     @classmethod
     def build_extractor_config(
@@ -329,7 +350,7 @@ Table(表格): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建表格索引，实现表格的检索，一般用于检索与表格相关的chunk"
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
@@ -378,10 +399,9 @@ Summary(文本摘要): EntityType
         msg = """
         索引构建的成本：
         
-        1、抽取模型消耗：7B xx tokens
-        2、向量模型消耗：bge-m3 xx tokens
-        3、耗时：xx 分钟
-        4、存储：xx GB
+        1、抽取模型消耗：7B 88701 tokens
+        2、耗时：85.2 秒钟
+        3、文件字数：10万字
         """
         return msg
 
@@ -399,7 +419,7 @@ Summary(文本摘要): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过大模型总结的摘要，实现摘要的检索，一般用于检索与摘要相关的chunk"
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
@@ -469,7 +489,7 @@ Outline(标题大纲): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建时文本的大纲，实现大纲的检索，一般用于检索与大纲相关的chunk"
 
     @classmethod
     def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict):
@@ -532,7 +552,7 @@ Chunk(文本块): EntityType
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建chunk 与 图谱的关联，实现chunk 的检索，一般用于检索与图谱相关的chunk"
 
     @classmethod
     def build_extractor_config(
