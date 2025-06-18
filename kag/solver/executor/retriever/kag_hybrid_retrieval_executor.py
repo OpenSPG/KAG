@@ -151,6 +151,13 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 **kwargs,
             )
             merged.summary = summary_response
+        self.report_content(
+            reporter,
+            "reference",
+            f"{task_query}_kag_retriever_result",
+            merged,
+            "FINISH",
+        )
         task.update_result(merged)
         return merged
 

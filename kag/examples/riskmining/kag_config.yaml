@@ -46,41 +46,52 @@ chain_vectorizer:
   type: batch
   vectorize_model: *vectorize_model
 
-kg_cs:
+kg_cs: &kg_cs
   type: kg_cs_open_spg
   path_select:
     type: exact_one_hop_select
+    graph_api: *graph_api
+    search_api: *search_api
   entity_linking:
     type: entity_linking
+    graph_api: *graph_api
+    search_api: *search_api
     recognition_threshold: 0.9
     exclude_types:
-      - Chunk
+      - "Chunk"
 
-kg_fr:
+kg_fr: &kg_fr
   type: kg_fr_open_spg
   top_k: 20
+  graph_api: *graph_api
+  search_api: *search_api
+  vectorize_model:  *vectorize_model
   path_select:
     type: fuzzy_one_hop_select
-    llm_client: *chat_llm
+    llm_client: *openie_llm
+    graph_api: *graph_api
+    search_api: *search_api
   ppr_chunk_retriever_tool:
     type: ppr_chunk_retriever
-    llm_client: *openie_llm
-    ner:
-      type: ner
-      llm_module: *openie_llm
-      ner_prompt: default_ner
+    llm_client: *chat_llm
+    graph_api: *graph_api
+    search_api: *search_api
   entity_linking:
     type: entity_linking
+    graph_api: *graph_api
+    search_api: *search_api
     recognition_threshold: 0.8
     exclude_types:
-      - Chunk
+      - "Chunk"
 
-
-rc:
+rc: &rc
   type: rc_open_spg
   vector_chunk_retriever:
-    type: vector_chunk_retriever
+    type: vector_chunk_retriever_legacy
     vectorize_model: *vectorize_model
+    search_api: *search_api
+  graph_api: *graph_api
+  search_api: *search_api
   vectorize_model: *vectorize_model
   top_k: 20
 
@@ -91,17 +102,18 @@ kag_merger:
   summary_prompt:
     type: default_thought_then_answer
   vectorize_model: *vectorize_model
+  graph_api: *graph_api
+  search_api: *search_api
 
 kag_hybrid_executor: &kag_hybrid_executor_conf
-  type: kag_hybrid_executor
-  lf_rewriter:
-    type: kag_spo_lf
-    llm_client: *chat_llm
-    lf_trans_prompt:
-      type: default_spo_retriever_decompose
-    vectorize_model: *vectorize_model
-  flow: |
-    kg_cs->kg_fr->kag_merger;rc->kag_merger
+  type: kag_hybrid_retrieval_executor
+  retrievers:
+    - *kg_cs
+    - *kg_fr
+    - *rc
+  merger:
+    type: kag_merger
+  enable_summary:  true
 
 
 kag_output_executor: &kag_output_executor_conf
