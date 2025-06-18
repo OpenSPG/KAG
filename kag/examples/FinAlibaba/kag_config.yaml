@@ -1,8 +1,8 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
   model: qwen2.5-7b-instruct
   enable_check: false
   max_tokens: 8092
@@ -10,23 +10,23 @@ openie_llm: &openie_llm
 
 ner_llm: &ner_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
   model: qwen2.5-7b-instruct
   enable_check: false
   max_tokens: 1024
 
 chat_llm: &chat_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: sk-
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
   model: qwen2.5-72b-instruct
   enable_check: false
   max_tokens: 1024
 
 vectorize_model: &vectorize_model
-  api_key: sk-
-  base_url: https://api.siliconflow.cn/v1/
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
