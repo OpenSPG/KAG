@@ -34,7 +34,7 @@ class TxtCheckPointer(CheckPointer):
         """
         ckpt = {}
         if os.path.exists(self._ckpt_file_path):
-            with open(self._ckpt_file_path, "r") as reader:
+            with open(self._ckpt_file_path, "r", encoding="utf-8", newline="\n") as reader:
                 for line in reader:
                     data = json.loads(line)
                     ckpt[data["id"]] = data["value"]
