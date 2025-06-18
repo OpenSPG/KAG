@@ -18,13 +18,13 @@ class AffairQaDemo:
     init for kag client
     """
 
-    def qa(self, query):
+    def qa(self, query, **kwargs):
         resp = SolverPipelineABC.from_config(
             KAG_CONFIG.all_config["kag_solver_pipeline"]
         )
         import asyncio
 
-        answer = asyncio.run(resp.ainvoke(query))
+        answer = asyncio.run(resp.ainvoke(query, **kwargs))
 
         logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
         return answer
@@ -44,7 +44,7 @@ class AffairQaDemo:
                 sample_id = sample["id"]
                 question = sample["question"]
                 gold = sample["answer"]
-                prediction = self.qa(question)
+                prediction = self.qa(question, gold=gold)
 
                 evaObj = Evaluate()
                 metrics = evaObj.getBenchMark([question], [prediction], gold)

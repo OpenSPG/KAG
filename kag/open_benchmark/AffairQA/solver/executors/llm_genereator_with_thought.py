@@ -16,7 +16,6 @@ from kag.interface.solver.base_model import Identifier
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     to_reference_list,
 )
-from kag.tools.algorithm_tool.rerank.rerank_by_vector import RerankByVector
 
 
 @GeneratorABC.register("llm_generator_with_thought")
@@ -24,16 +23,10 @@ class LLMGeneratorWithThought(GeneratorABC):
     def __init__(
         self,
         llm_client: LLMClient,
-        chunk_reranker: RerankByVector = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_client = llm_client
-        self.chunk_reranker = chunk_reranker or RerankByVector.from_config(
-            {
-                "type": "rerank_by_vector",
-            }
-        )
 
     def invoke(self, query, context, **kwargs):
         rerank_queries = []
