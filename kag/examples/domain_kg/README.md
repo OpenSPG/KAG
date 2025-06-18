@@ -75,8 +75,3 @@ rm -rf ./builder/ckpt
 rm -rf ./solver/ckpt
 ```
 
-To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
-```
