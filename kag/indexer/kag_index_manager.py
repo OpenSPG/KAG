@@ -82,7 +82,7 @@ class KAGIndexManager(Registrable):
 class AtomicIndexManager(KAGIndexManager):
     @property
     def name(self):
-        return "Atomic Query based Index Manager"
+        return "基于原子查询的索引管理器"
 
     @property
     def schema(self) -> str:
@@ -108,29 +108,11 @@ AtomicQuery(原子问): EntityType
     def applicable_scenarios(self) -> str:
         msg = """
         检索方法描述：
-        
-        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
-        chunks1 = recall_chunks(rewrite(sub_query))
-        
+
         # recall_atomic_questions, 基于question title，通过bm25/emb 等实现atomic question召回
         # get_qa_associate_chunks, 基于chunk 与 question 的关联，实现chunk召回
         chunks2 = get_qa_associate_chunks(recall_atomic_question(rewrite(sub_query)))
         
-        # recall_summary, 基于summary title，通过bm25/emb 等实现summary召回
-        # get_summary_associate_chunks, 基于chunk 与summary 的关联实现chunk召回
-        chunks3 = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))
-        
-        # recall_outline，基于outline title, 通过bm25/emb 等实现outline召回
-        # recall_outline, 基于outline_childOf->outline, 实现outline 扩展召回
-        # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
-        chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
-        
-        # recall_table，基于table title, 通过bm25/emb 等实现table召回
-        # get_table_associate_chunks, 基于chunk 与 table 关联实现chunk 召回
-        chunks5 = get_table_associate_chunks(recall_table(rewrite(sub_query)))
-        
-        ……
-        return [chunks1,chunks2,chunks3,chunks4, chunks5,…]
         """
         return msg
 
@@ -201,7 +183,7 @@ AtomicQuery(原子问): EntityType
 class ChunkIndexManager(KAGIndexManager):
     @property
     def name(self):
-        return "Chunk based Index Manager"
+        return "基于文本块的索引管理器"
 
     @property
     def schema(self) -> str:
@@ -217,10 +199,9 @@ Chunk(文本块): EntityType
         msg = """
         索引构建的成本：
         
-        1、抽取模型消耗：7B xx tokens
-        2、向量模型消耗：bge-m3 xx tokens
-        3、耗时：xx 分钟
-        4、存储：xx GB
+        1、抽取模型消耗：7B 0 tokens
+        2、耗时：1.5 秒
+        3、文件字数：10万字
         """
         return msg
 
@@ -229,32 +210,9 @@ Chunk(文本块): EntityType
         msg = """
         检索方法描述：
 
-        基础索引，适用性广，一般场景都可以使用。Chunk 索引一般不允许用户变更。
-        
-
         # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
         chunks1 = recall_chunks(rewrite(sub_query))
 
-        # recall_atomic_questions, 基于question title，通过bm25/emb 等实现atomic question召回
-        # get_qa_associate_chunks, 基于chunk 与 question 的关联，实现chunk召回
-        chunks2 = get_qa_associate_chunks(recall_atomic_question(rewrite(sub_query)))
-
-        # recall_summary, 基于summary title，通过bm25/emb 等实现summary召回
-        # get_summary_associate_chunks, 基于chunk 与summary 的关联实现chunk召回
-        chunks3 = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))
-
-        # recall_outline，基于outline title, 通过bm25/emb 等实现outline召回
-        # recall_outline, 基于outline_childOf->outline, 实现outline 扩展召回
-        # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
-        chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
-
-        # recall_diagram，基于diagram title, 通过bm25/emb 等实现diagram召回
-        # get_diagram_associate_chunks, 基于chunk 与 diagram 关联实现chunk 召回
-        chunks5 = get_diagram_associate_chunks(recall_diagram(rewrite(sub_query)))
-
-        ……
-
-        return [chunks1,chunks2,chunks3,chunks4, chunks5,…]
         """
         return msg
 
@@ -307,7 +265,7 @@ Chunk(文本块): EntityType
 class TableIndexManager(KAGIndexManager):
     @property
     def name(self):
-        return "Table based Index Manager"
+        return "基于表格的索引管理器"
 
     @property
     def schema(self) -> str:
@@ -329,10 +287,9 @@ Table(表格): EntityType
         msg = """
         索引构建的成本：
         
-        1、抽取模型消耗：7B xx tokens
-        2、向量模型消耗：bge-m3 xx tokens
-        3、耗时：xx 分钟
-        4、存储：xx GB
+        1、抽取模型消耗：7B 0 tokens
+        2、耗时：1.5 秒
+        3、文件字数：10万字
         """
         return msg
 
@@ -341,10 +298,11 @@ Table(表格): EntityType
         msg = """
         检索方法描述：
         
-        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
-        chunks1 = recall_chunks(rewrite(sub_query))
-        ……
-        return [chunks1]
+        
+        # recall_table，基于table title, 通过bm25/emb 等实现table召回
+        # get_table_associate_chunks, 基于chunk 与 table 关联实现chunk 召回
+        chunks5 = get_table_associate_chunks(recall_table(rewrite(sub_query)))
+
         """
         return msg
 
@@ -380,7 +338,7 @@ Table(表格): EntityType
 class SummaryIndexManager(KAGIndexManager):
     @property
     def name(self):
-        return "Summary based Index Manager"
+        return "基于摘要的索引管理器"
 
     @property
     def schema(self) -> str:
@@ -410,10 +368,10 @@ Summary(文本摘要): EntityType
         msg = """
         检索方法描述：
         
-        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
-        chunks1 = recall_chunks(rewrite(sub_query))
-        ……
-        return [chunks1]
+        # recall_summary, 基于summary title，通过bm25/emb 等实现summary召回
+        # get_summary_associate_chunks, 基于chunk 与summary 的关联实现chunk召回
+        chunks3 = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))
+
         """
         return msg
 
@@ -449,7 +407,7 @@ Summary(文本摘要): EntityType
 class OutlineIndexManager(KAGIndexManager):
     @property
     def name(self):
-        return "Outline based Index Manager"
+        return "基于大纲的索引管理器"
 
     @property
     def schema(self) -> str:
@@ -468,10 +426,9 @@ Outline(标题大纲): EntityType
         msg = """
         索引构建的成本：
         
-        1、抽取模型消耗：7B xx tokens
-        2、向量模型消耗：bge-m3 xx tokens
-        3、耗时：xx 分钟
-        4、存储：xx GB
+        1、抽取模型消耗：7B 0 tokens
+        2、耗时：9.4 秒
+        3、文件字数：10万字
         """
         return msg
 
@@ -480,10 +437,10 @@ Outline(标题大纲): EntityType
         msg = """
         检索方法描述：
         
-        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
-        chunks1 = recall_chunks(rewrite(sub_query))
-        ……
-        return [chunks1]
+        # recall_outline，基于outline title, 通过bm25/emb 等实现outline召回
+        # recall_outline, 基于outline_childOf->outline, 实现outline 扩展召回
+        # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
+        chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
         """
         return msg
 
@@ -516,7 +473,7 @@ Outline(标题大纲): EntityType
 class KAGHybridIndexManager(KAGIndexManager):
     @property
     def name(self):
-        return "Chunk and Graph based hybrid Index Manager"
+        return "基于文本块和图谱的混合索引管理器"
 
     @property
     def schema(self) -> str:
@@ -530,23 +487,12 @@ Chunk(文本块): EntityType
     @property
     def index_cost(self) -> str:
         msg = """
-        索引构建的成本：
-        
-        1、抽取模型消耗：7B xx tokens
-        2、向量模型消耗：bge-m3 xx tokens
-        3、耗时：xx 分钟
-        4、存储：xx GB
         """
         return msg
 
     @property
     def applicable_scenarios(self) -> str:
         msg = """
-        检索方法描述：
-        
-        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
-        chunks1 = recall_chunks(rewrite(sub_query))
-        return [chunks1]
         """
         return msg
 

@@ -249,6 +249,7 @@ class EntityLinking(ToolABC):
                     recalled_entity.score = recall["score"]
                     recalled_entity.biz_id = recall["node"]["id"]
                     recalled_entity.name = recall["node"]["name"]
+                    recalled_entity.set_properties(recall["node"])
                     recalled_entity.type = get_recall_node_label(
                         recall["node"]["__labels__"]
                     )
