@@ -7,7 +7,7 @@ chat_llm: &chat_llm
 
 mcp_executor:
   type: mcp_executor
-  store_path: ./web_search_server.py
+  store_path: ./google_web_search_server.py
   name: mcp-server-web-search
   description: Web search mcp, which provides an interface tool for searching the entire web by google
   llm: *chat_llm
