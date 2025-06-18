@@ -142,6 +142,11 @@ class EntityData:
         self.type_zh: str = node_type_zh
         self.score = 1.0
 
+    def set_properties(self, prop: dict):
+        for k, v in prop.items():
+            if not hasattr(self, k):
+                setattr(self, k, v)
+
     def get_name(self):
         return self.name
 
@@ -168,14 +173,12 @@ class EntityData:
         return f"{type_name}[{self.get_short_name()}]"
 
     def to_json(self):
-        return {
-            "prop": {} if self.prop is None else self.prop.to_json(),
-            "biz_id": self.biz_id,
-            "name": self.name,
-            "description": self.description,
-            "type": self.type,
-            "type_zh": self.type_zh,
-        }
+        res_json = {}
+        for k, v in self.__dict__.items():
+            if "vector" in k:
+                continue
+            res_json[k] = v
+        return res_json
 
     def get_attribute_value(self, p):
         if self.prop is None:

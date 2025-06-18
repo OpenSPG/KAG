@@ -1,13 +1,15 @@
 import logging
 import os
+import json
+import re
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Dict, Any
+
+
 from kag.common.conf import KAG_CONFIG
 from kag.common.registry import import_modules_from_path
 from kag.common.benchmarks.evaluate import Evaluate
-import json
-import re
-from typing import List, Dict, Any
-import argparse
-
 from kag.interface.common.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -31,6 +33,30 @@ def extract_answer_from_prediction(prediction: str) -> str:
 
 
 class AffairQAEvaluate(Evaluate):
+    def _process_item(self, item: Dict[str, Any]):
+        """Helper function to process a single QA item."""
+        if "prediction" not in item or item["prediction"] is None:
+            logger.warning(
+                f"ID {item.get('id', 'N/A')} missing prediction, skipping evaluation."
+            )
+            return None
+        if "answer" not in item or item["answer"] is None:
+            logger.warning(
+                f"ID {item.get('id', 'N/A')} missing answer, skipping evaluation."
+            )
+            return None
+        if "question" not in item or item["question"] is None:
+            logger.warning(
+                f"ID {item.get('id', 'N/A')} missing question, skipping evaluation."
+            )
+            return None
+
+        question = item["question"]
+        prediction_extracted = extract_answer_from_prediction(item["prediction"])
+        ans = item["answer"]
+        gold_answer = str(ans[0]) if isinstance(ans, list) else str(ans)
+        return question, prediction_extracted, gold_answer
+
     def run_affair_qa_evaluation(
         self, qa_data: List[Dict[str, Any]], llm_client: LLMClient
     ) -> Dict[str, Any]:
@@ -38,46 +64,23 @@ class AffairQAEvaluate(Evaluate):
         Runs the complete evaluation for AffairQA data using inherited Evaluate methods.
         Expects qa_data to contain 'question', 'prediction', 'answer'.
         """
-        questions = []
-        predictions_extracted = []
-        gold_answers = []
-
         logger.info(f"Starting comprehensive evaluation for {len(qa_data)} QA pairs.")
 
-        valid_pairs = 0
-        for item in qa_data:
-            if "prediction" not in item or item["prediction"] is None:
-                logger.warning(
-                    f"ID {item.get('id', 'N/A')} missing prediction, skipping evaluation."
-                )
-                continue
-            if "answer" not in item or item["answer"] is None:
-                logger.warning(
-                    f"ID {item.get('id', 'N/A')} missing answer, skipping evaluation."
-                )
-                continue
-            if "question" not in item or item["question"] is None:
-                logger.warning(
-                    f"ID {item.get('id', 'N/A')} missing question, skipping evaluation."
-                )
-                continue
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(self._process_item, qa_data))
 
-            questions.append(item["question"])
-            predictions_extracted.append(
-                extract_answer_from_prediction(item["prediction"])
-            )
-            ans = item["answer"]
-            gold_answers.append(str(ans[0]) if isinstance(ans, list) else str(ans))
-            valid_pairs += 1
+        processed_results = [r for r in results if r is not None]
 
-        if not predictions_extracted:
+        if not processed_results:
             logger.error("No valid predictions found to evaluate.")
             return {"error": "No valid data for evaluation"}
+
+        questions, predictions_extracted, gold_answers = zip(*processed_results)
 
         # --- Calculate Metrics using inherited methods ---
         logger.info("Calculating EM/F1 metrics...")
         em_f1_sim_metrics = self.getBenchMark(
-            questions, predictions_extracted, gold_answers
+            list(questions), list(predictions_extracted), list(gold_answers)
         )
 
         # --- Aggregate Results ---
@@ -124,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_file",
         type=str,
-        default=os.path.join(dir_path, "data/res1.json"),  # Default input
+        default=os.path.join(dir_path, "data/res18.json"),  # Default input
         help="Path to the input JSON file containing questions, answers, and predictions (e.g., res1.json).",
     )
     args = parser.parse_args()
