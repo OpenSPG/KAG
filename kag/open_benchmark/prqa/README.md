@@ -1,4 +1,4 @@
-# KAG Example: TwoWiki
+# KAG Example: Peaple Realation Query & Answer
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
