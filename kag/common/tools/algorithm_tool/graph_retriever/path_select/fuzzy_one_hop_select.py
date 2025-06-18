@@ -93,13 +93,37 @@ class FuzzyOneHopSelect(PathSelect):
         un_std_p = f"{start_value_type}{'[' + n.get_ele_name('s') + ']' if n.get_ele_name('s') != '' else ''} {un_std_p} {target_value_type}{'[' + n.get_ele_name('o') + ']'}"
         return un_std_p
 
+    # def _selected_rel_by_llm(self, question, mention, candis):
+    #     return self.llm_client.invoke(
+    #         {"question": question, "mention": mention, "candis": candis},
+    #         self.spo_retrieval_prompt,
+    #         with_json_parse=True,
+    #         with_except=True,
+    #     )
     def _selected_rel_by_llm(self, question, mention, candis):
-        return self.llm_client.invoke(
-            {"question": question, "mention": mention, "candis": candis},
-            self.spo_retrieval_prompt,
-            with_json_parse=True,
-            with_except=True,
-        )
+        try:
+            response = self.llm_client.invoke(
+                {"question": question, "mention": mention, "candis": candis},
+                self.spo_retrieval_prompt,
+                with_json_parse=True,
+                with_except=True,
+            )
+            if not isinstance(response, list) or not all(isinstance(i, str) for i in response):
+                logger.warning("LLM returned invalid index format: %s", response)
+                return []
+            try:
+                indices = [int(i) for i in response]
+            except ValueError:
+                logger.warning("LLM returned non-integer index: %s", response)
+                return []
+
+            valid_indices = [i for i in indices if 0 <= i < len(candis)]
+            selected_sp = [candis[i] for i in valid_indices]
+
+            return selected_sp
+        except Exception as e:
+            logger.error("Error during SPO retrieval: %s", e, exc_info=True)
+            return []
 
     def select_relation(self, p_mention, p_candis, query=""):
         if not p_mention:
@@ -108,7 +132,11 @@ class FuzzyOneHopSelect(PathSelect):
         intersection = []
         res = []
         try:
+            start_time = time.time()
             res = self._selected_rel_by_llm(query, p_mention, p_candis)
+            logger.debug(
+                f"find_best_match_p_name_by_entity_list _selected_rel_by_llm  cost={time.time() - start_time}"
+            )
             for res_ in res:
                 intersection.append(res_)
         except Exception as e:
