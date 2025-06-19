@@ -153,19 +153,19 @@ def is_chinese(text):
 async def do_index_pipeline(query, qa_config, reporter):
     if "chat" not in qa_config or "index_list" not in qa_config["chat"]:
         raise RuntimeError("chat or index_list not found in qa_config.")
-    index_names = qa_config["chat"]["index_list"]
+    index_names = qa_config.get("chat", {}).get("index_list", [])
     retriever_configs = []
     for index_name in index_names:
         try:
             index_manager = KAGIndexManager.from_config(
                 {
                     "type": index_name,
-                    "llm_config": qa_config["llm"],
-                    "vectorize_model_config": qa_config["vectorize_model"],
+                    "llm_config": qa_config.get("llm", {}),
+                    "vectorize_model_config": qa_config.get("vectorize_model", {}),
                 }
             )
             retriever_configs += index_manager.build_retriever_config(
-                qa_config["llm"], qa_config["vectorize_model"]
+                qa_config.get("llm", {}), qa_config.get("vectorize_model", {})
             )
         except Exception as e:
             raise RuntimeError(f"not found index {index_name}")
@@ -191,13 +191,13 @@ async def do_qa_pipeline(use_pipeline, query, qa_config, reporter, task_id, kb_p
                 index_manager = KAGIndexManager.from_config(
                     {
                         "type": index_name,
-                        "llm_config": qa_config["llm"],
-                        "vectorize_model_config": kag_config.all_config["vectorize_model"],
+                        "llm_config": qa_config.get("llm", {}),
+                        "vectorize_model_config": kag_config.all_config.get("vectorize_model", {}),
                     }
                 )
                 retriever_configs.extend(
                     index_manager.build_retriever_config(
-                        qa_config["llm"], kag_config.all_config["vectorize_model"],
+                        qa_config.get("llm", {}), kag_config.all_config.get("vectorize_model", {}),
                         kag_qa_task_config_key=kb_task_project_id
                     )
                 )
@@ -372,11 +372,11 @@ if __name__ == "__main__":
         2100007,
         11200009,
         # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
-        "周杰伦有哪些专辑",
+        "营业执照不通过",
         "9500005",
         True,
-        # host_addr="http://spg-pre.alipay.com",
-        host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
+        host_addr="http://spg-pre.alipay.com",
+        # host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
         params=params,
     )
     print("*" * 80)
