@@ -17,7 +17,7 @@ from typing import List
 
 
 class KagMcpServer(object):
-    _supported_tools = "qa-pipeline", "retrieve"
+    _supported_tools = "qa-pipeline", "kb-retrieve"
     _default_server_name = "kag"
     _default_sse_port = 3000
 
@@ -99,8 +99,8 @@ class KagMcpServer(object):
         for name in self._enabled_tools:
             if name == "qa-pipeline":
                 self._add_qa_pipeline_tool()
-            elif name == "retrieve":
-                self._add_retrieve_tool()
+            elif name == "kb-retrieve":
+                self._add_kb_retrieve_tool()
             else:
                 assert False
 
@@ -121,8 +121,8 @@ class KagMcpServer(object):
 
         self._mcp_server.add_tool(qa_pipeline)
 
-    def _add_retrieve_tool(self) -> None:
-        async def retrieve(query: str) -> str:
+    def _add_kb_retrieve_tool(self) -> None:
+        async def kb_retrieve(query: str) -> str:
             """
             Query the knowledge-base with `query` to retrieve SPO-triples and document chunks.
 
@@ -147,14 +147,14 @@ class KagMcpServer(object):
             await executor.ainvoke(query=query, task=task, context=context)
             data = {
                 "summary": task.result.summary,
-                "references": task.result.to_reference_list(),
+                "references": task.result.to_dict(),
             }
             result = json.dumps(
                 data, separators=(",", ": "), indent=4, ensure_ascii=False
             )
             return result
 
-        self._mcp_server.add_tool(retrieve)
+        self._mcp_server.add_tool(kb_retrieve)
 
     def serve(self) -> None:
         if self._transport == "sse":
