@@ -220,6 +220,9 @@ class EntityLinking(ToolABC):
         # 4. Text search fallback
         # 5. Semantic type re-ranking
         # 6. Final filtering and sorting
+        if not topk_k:
+            topk_k = self.top_k
+        recognition_threshold = kwargs.get("recognition_threshold", self.recognition_threshold)
         retdata = []
         if name is None:
             return retdata
@@ -231,7 +234,7 @@ class EntityLinking(ToolABC):
                 type_name_set = type_name
             total_recall_entities = []
             for type_name in type_name_set:
-                recall_nodes = self.recall_entity(query, name, type_name, topk_k)
+                recall_nodes = self.recall_entity(query, name, type_name, topk_k * 5)
                 total_recall_entities += recall_nodes
 
             # Final sorting based on score
@@ -243,7 +246,7 @@ class EntityLinking(ToolABC):
             for recall in sorted_people_dicts:
                 if (
                     len(sorted_people_dicts) != 0
-                    and recall["score"] >= self.recognition_threshold
+                    and recall["score"] >= recognition_threshold
                 ):
                     recalled_entity = EntityData()
                     recalled_entity.score = recall["score"]
@@ -257,7 +260,7 @@ class EntityLinking(ToolABC):
                 else:
                     break
 
-            return retdata[: self.top_k]
+            return retdata[: topk_k]
         except Exception as e:
             logger.error(
                 f"Error in entity_linking {query} name={name} type={type_name}: {e}",

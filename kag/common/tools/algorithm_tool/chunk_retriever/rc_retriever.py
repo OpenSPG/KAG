@@ -1,5 +1,5 @@
 import logging
-
+import time
 
 from kag.common.config import LogicFormConfiguration
 from kag.common.text_sim_by_vector import TextSimilarity
@@ -53,16 +53,19 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         )
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
+        start_time = time.time()
         try:
             output = self.vector_chunk_retriever.invoke(task=task, **kwargs)
             output.retriever_method = self.schema().get("name", "")
-            return output
         except Exception as e:
             logger.error(e, exc_info=True)
-            return RetrieverOutput(
+            output = RetrieverOutput(
                 retriever_method=self.schema().get("name", ""), err_msg=f"{task} {e}"
             )
-
+        logger.debug(
+            f"{self.schema().get('name', '')} `{task.arguments['query']}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
+        )
+        return output
     def schema(self):
         return {
             "name": "kg_rc_retriever",

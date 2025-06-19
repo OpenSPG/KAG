@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional
 
 from kag.common.conf import KAGGlobalConf
@@ -42,6 +43,7 @@ def get_std_logic_form_parser(std_schema: StdSchema, kb_project_conf: KAGGlobalC
 def std_logic_node(
     task_cache_id, logic_node: LogicNode, logic_parser: ParseLogicForm, context: Context
 ):
+    start_time = time.time()
     parsed_entity_set = context.kwargs.get(str(task_cache_id), {})
     std_node = logic_parser.std_logic_form(
         node=logic_node,
@@ -49,6 +51,7 @@ def std_logic_node(
         parsed_entity_set=parsed_entity_set,
     )
     context.kwargs[str(task_cache_id)] = parsed_entity_set
+    logger.debug(f"std_logic_node cost {time.time() - start_time}")
     return std_node
 
 
