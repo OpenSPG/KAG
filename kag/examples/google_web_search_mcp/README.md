@@ -1,10 +1,9 @@
 # KAG Example: Google Web Search MCP
 
-Here is a Google Web Search MCP that takes the search question entered by the user as input and returns the relevant web page. Here, we only show the execution effect of MCP. If you need to link to KAG for retrieval, please visit OPENSPG to create the corresponding knowledge base and application, and link MCP to KAG and use it.
-
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
+Here is a Google Web Search MCP that takes the search question entered by the user as input and returns the relevant web page. Here, we only show the execution effect of MCP. If you need to link to KAG for retrieval, please visit OpenSPG to create the corresponding knowledge base and application, and link MCP to KAG and use it.
 
 ## 1. Precondition
 
@@ -18,14 +17,13 @@ Please refer to [Quick Start](https://openspg.yuque.com/ndx6g9/cwh47i/rs7gr8g4s5
 cd kag/examples/google_web_search_mcp
 ```
 
-### Step 2：Configure models
+### Step 2: Configure models
 
 Update the generative model configurations ``chat_llm`` in [kag_config.yaml](./kag_config.yaml).
 
-You need to fill in correct ``api_key``。If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
+You need to fill in correct ``api_key``. If your model providers and model names are different from the default values, you also need to update ``base_url`` and ``model``.
 
-
-### Step 6：Execute tasks
+### Step 3: Execute the QA tasks
 
 In the directory, execute [google_web_search_client.py](./google_web_search_client.py) 
 
@@ -34,7 +32,9 @@ python google_web_search_client.py
 ```
 
 Example problems:
+
 1. Why is the sky blue?
 2. What is Dundar effect?
 
-After launch, please input the questions you want to ask, we will retrieve the relevant web page through google, and then return the results to you.
+After launch, please input the questions you want to ask, we will retrieve the relevant web page through Google, and then return the results to you.
+

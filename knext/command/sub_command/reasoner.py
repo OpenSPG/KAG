@@ -29,7 +29,7 @@ def execute_reasoner_job(file, dsl, output=None, proj_path="./"):
     """
     client = ReasonerClient(host_addr=env.host_addr, project_id=int(env.project_id))
     if file and not dsl:
-        with open(file, "r") as f:
+        with open(file, "r", encoding="utf-8", newline="\n") as f:
             dsl_content = f.read()
     elif not file and dsl:
         dsl_content = dsl

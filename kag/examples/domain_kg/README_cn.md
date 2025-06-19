@@ -3,7 +3,7 @@
 [English](./README.md) |
 [简体中文](./README_cn.md)
 
-本示例提供了一个医疗领域知识注入的案例，其中领域知识图谱的节点为医学名词，关系为isA。文档内容为部分医学名词的介绍。
+本示例提供了一个医疗领域知识注入的案例，其中领域知识图谱的节点为医学名词，关系为 isA。文档内容为部分医学名词的介绍。
 
 
 ## 1. 前置条件
@@ -34,7 +34,7 @@ knext project restore --host_addr http://127.0.0.1:8887 --proj_path .
 
 ### Step 4：提交 schema
 
-执行以下命令提交 schema [TwoWiki.schema](./schema/TwoWiki.schema)。
+执行以下命令提交 schema [DomainKG.schema](./schema/DomainKG.schema)。
 
 ```bash
 knext schema commit
@@ -42,15 +42,14 @@ knext schema commit
 
 ### Step 5：构建知识图谱
 
-
-我们首先需要将领域知识图谱注入到图数据库中，这样在对非结构化文档进行图谱构建的时候，PostProcessor组件可以将抽取出的节点与领域知识图谱节点进行链指（标准化）。
+我们首先需要将领域知识图谱注入到图数据库中，这样在对非结构化文档进行图谱构建的时候，PostProcessor 组件可以将抽取出的节点与领域知识图谱节点进行链指（标准化）。
 在 [builder](./builder) 目录执行 [injection.py](./builder/injection.py) ，注入图数据。
 
 ```bash
 cd builder && python injection.py && cd ..
 ```
 
-注意，KAG为领域知识图谱注入提供了一个特殊的KAGBuilderChain实现，即DomainKnowledgeInjectChain，其注册名为domain_kg_inject_chain。由于领域知识注入不涉及到扫描文件或目录，可以直接调用builder chain 的invoke接口启动任务。
+注意，KAG为领域知识图谱注入提供了一个特殊的 ``KAGBuilderChain`` 实现，即 ``DomainKnowledgeInjectChain``，其注册名为 ``domain_kg_inject_chain``。由于领域知识注入不涉及到扫描文件或目录，可以直接调用 builder chain 的 ``invoke`` 接口启动任务。
 
 接下来，在 [builder](./builder) 目录执行 [indexer.py](./builder/indexer.py) 构建知识图谱。
 
@@ -75,8 +74,3 @@ rm -rf ./builder/ckpt
 rm -rf ./solver/ckpt
 ```
 
-若要删除 KAG 项目及关联的知识图谱，可执行以下类似命令，将 OpenSPG server 地址和 KAG 项目 id 换为实际的值。
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
-```

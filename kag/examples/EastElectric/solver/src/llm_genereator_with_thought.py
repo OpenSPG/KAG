@@ -66,7 +66,9 @@ class LLMGeneratorWithThought(GeneratorABC):
             2. 如果您认为所提供的文件无法回答问题，请回答“未知”。
             """
 
-        prompt = f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}问题: {query}"
+        prompt = (
+            f"{system_instruction}\n\n召回文档:\n{refer_data}\n思考:\n{thoughts}问题: {query}"
+        )
         response = self.llm_client(prompt)
         if "答案：" not in response:
             raise ValueError(f"no answer found in response: {response}")

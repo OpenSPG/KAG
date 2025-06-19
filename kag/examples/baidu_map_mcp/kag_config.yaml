@@ -2,7 +2,7 @@
 
 chat_llm: &chat_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   api_key: key
   model: qwen2.5-72b-instruct
 

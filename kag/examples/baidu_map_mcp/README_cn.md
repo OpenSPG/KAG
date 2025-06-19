@@ -1,10 +1,9 @@
 # KAG 示例: Baidu Map MCP
 
-这里是一个Baidu Map MCP，将用户输入的搜索问题作为输入，返回百度地图相关的查询结果。在此处只是展示MCP的执行效果，如果需要链接到KAG上进行检索，请访问 OPENSPG 创建对应的知识库和应用，将MCP链接到KAG中并使用。
-
-
 [English](./README.md) |
 [简体中文](./README_cn.md)
+
+这里是一个 Baidu Map MCP，将用户输入的搜索问题作为输入，返回百度地图相关的查询结果。在此处只是展示 MCP 的执行效果，如果需要链接到 KAG 上进行检索，请访问 OpenSPG 创建对应的知识库和应用，将 MCP 链接到 KAG 中并使用。
 
 ## 1. 前置条件
 
@@ -26,7 +25,7 @@ cd kag/examples/baidu_map_mcp
 
 您需要设置正确的 ``api_key`` 以及 ``BAIDU_MAPS_API_KEY`` 。如果使用的模型供应商和模型名与默认值不同，您还需要更新 ``base_url`` 和 ``model``。
 
-### Step 6：执行 QA 任务
+### Step 3：执行 QA 任务
 
 在目录中执行 [baidu_map_mcp_client.py](./baidu_map_mcp_client.py)。
 
@@ -34,8 +33,10 @@ cd kag/examples/baidu_map_mcp
 python baidu_map_mcp_client.py
 ```
 问题示例：
-1、杭州西湖区的明天的天气怎么样？
-2、从杭州市蚂蚁A空间回上海市蚂蚁S空间，自驾的路线是什么？
-3、上海虹桥火车站的位置经纬度是什么？
+
+1. 杭州西湖区的明天的天气怎么样？
+2. 从杭州市蚂蚁A空间回上海市蚂蚁S空间，自驾的路线是什么？
+3. 上海虹桥火车站的位置经纬度是什么？
 
 启动后请您输入想要询问的问题，我们会通过百度地图检索到相关的信息，然后将结果返还给您。
+

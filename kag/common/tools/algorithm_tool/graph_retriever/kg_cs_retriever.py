@@ -25,7 +25,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         entity_linking: EntityLinking = None,
         llm: LLMClient = None,
         std_schema: StdSchema = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.name = kwargs.get("name", "kg_cs")
@@ -71,7 +71,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                 graph_data=context.variables_graph,
                 is_exact_match=True,
                 name=self.name,
-                **kwargs
+                **kwargs,
             )
             return RetrieverOutput(
                 retriever_method=self.schema().get("name", ""), graphs=[kg_graph]

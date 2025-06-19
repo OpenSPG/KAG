@@ -59,7 +59,7 @@ knext schema commit
 cd builder && python indexer.py && cd ..
 ```
 
-### Step 7：生成答案
+### Step 7：执行 QA 任务
 
 在 [solver](./solver) 目录执行 [eval.py](./solver/eval.py) 生成答案。
 
@@ -67,33 +67,12 @@ cd builder && python indexer.py && cd ..
 cd solver && python eval.py && cd ..
 ```
 
-生成的结果被保存至 ``./solver/data/csqa_kag_answers.json``.
-
-### Step 8：（可选）获取其他系统生成的答案
-
-按 LightRAG [Reproduce](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#reproduce) 所述复现步骤生成问题的答案，将结果保存至 [./solver/data/csqa_lightrag_answers.json](./solver/data/csqa_lightrag_answers.json)。由于我们提交了一份 LightRAG 生成的答案，因此本步骤是可选的。
-
-### Step 9：计算指标
-
-更新 [summarization_metrics.py](./solver/summarization_metrics.py) 和 [factual_correctness.py](./solver/factual_correctness.py) 中的大模型配置并执行它们以计算指标。
-
-```bash
-python ./solver/summarization_metrics.py
-python ./solver/factual_correctness.py
-```
-
-### Step 10：（可选）清理
+### Step 8：（可选）清理
 
 若要删除 checkpoint，可执行以下命令。
 
 ```bash
 rm -rf ./builder/ckpt
-rm -rf ./solver/ckpt
-```
-
-若要删除 KAG 项目及关联的知识图谱，可执行以下类似命令，将 OpenSPG server 地址和 KAG 项目 id 换为实际的值。
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
+rm -rf ./solver/csqa_ckpt
 ```
 

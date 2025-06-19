@@ -88,9 +88,7 @@ class OutlinePrompt(PromptABC):
     def parse_response(self, response: str, **kwargs):
         # 如果返回结果是字符串，先去除 Markdown 语法，再使用 ast.literal_eval 转换成列表
         if isinstance(response, str):
-            cleaned_data = response.strip(
-                "`python\n[] \n"
-            )  # 去除 Markdown 语法和多余的空格
+            cleaned_data = response.strip("`python\n[] \n")  # 去除 Markdown 语法和多余的空格
             cleaned_data = "[" + cleaned_data + "]"  # 恢复为列表格式
             try:
                 parsed_data = ast.literal_eval(cleaned_data)

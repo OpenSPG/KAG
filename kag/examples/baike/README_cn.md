@@ -61,9 +61,3 @@ cd solver && python eval.py && cd ..
 rm -rf ./builder/ckpt
 ```
 
-若要删除 KAG 项目及关联的知识图谱，可执行以下类似命令，将 OpenSPG server 地址和 KAG 项目 id 换为实际的值。
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
-```
-

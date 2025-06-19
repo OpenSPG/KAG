@@ -198,6 +198,8 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         res_chunk_list = []
         chunk_id_set = set()
         for chunk in chunks:
+            if chunk is None:
+                continue
             if chunk.chunk_id not in chunk_id_set:
                 chunk_id_set.add(chunk.chunk_id)
                 res_chunk_list.append(chunk)

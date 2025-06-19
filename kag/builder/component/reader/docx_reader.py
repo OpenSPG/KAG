@@ -46,9 +46,9 @@ class DocxNode:
         self.content = content
         self.node_type = node_type
         self.children: List[DocxNode] = []
-        self.properties: Dict[str, str] = (
-            {}
-        )  # Store additional properties like style, indent level, etc.
+        self.properties: Dict[
+            str, str
+        ] = {}  # Store additional properties like style, indent level, etc.
 
     def __str__(self):
         return f"{self.node_type}({self.level}): {self.display_title}"
