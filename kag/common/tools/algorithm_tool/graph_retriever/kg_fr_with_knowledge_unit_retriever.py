@@ -129,6 +129,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
         return ent_list
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
+        start_time = time.time()
         query = task.arguments.get("rewrite_query", task.arguments["query"])
         logical_node = task.arguments.get("logic_form_node", None)
         if not logical_node:
@@ -178,7 +179,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             return recalled_entity
 
         if not matched_entities:
-            candidate_entities = self.get_ner(query)
+            candidate_entities = [] #self.get_ner(query)
             s_mention_name = logical_node.s.get_mention_name()
             if s_mention_name:
                 candidate_entities.append(s_mention_name)
@@ -186,18 +187,11 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             if o_mention_name:
                 candidate_entities.append(o_mention_name)
             for entity in candidate_entities:
-                top_entities = self.search_api.search_vector(
-                    label="Entity",
-                    property_key="name",
-                    query_vector=self.vectorize_model.vectorize(entity),
-                    topk=1,
-                )
-                for top_entity in top_entities:
-                    score = top_entity["score"]
-                    if score > 0.7:
-                        matched_entities.append(convert_search_rst_2_entity(top_entity))
+                lined_entities = self.entity_linking.invoke(query=query, name=entity, type_name="Entity", topk_k=1, recognition_threshold=0.7)
+                if lined_entities:
+                    matched_entities.extend(lined_entities)
 
-        start_time = time.time()
+
 
         query_vector = self.vectorize_model.vectorize(query)
 
@@ -251,8 +245,8 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 err_msg="No matched entities found",
             )
 
-        logger.info(
-            f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
+        logger.debug(
+            f"{self.schema().get('name', '')} `{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
         )
         output.graphs = [graph_data]
         output.retriever_method = self.schema().get("name", "")

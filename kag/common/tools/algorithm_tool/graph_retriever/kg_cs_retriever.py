@@ -1,4 +1,6 @@
 import logging
+import time
+
 from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.schema_std import StdSchema
 from kag.common.tools.algorithm_tool.graph_retriever.lf_kg_retriever_template import (
@@ -50,8 +52,10 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         self.std_parser = get_std_logic_form_parser(std_schema, self.kag_project_config)
 
     def invoke(self, task, **kwargs) -> RetrieverOutput:
+        start_time = time.time()
+        query = task.arguments.get("rewrite_query", task.arguments["query"])
+
         try:
-            query = task.arguments.get("rewrite_query", task.arguments["query"])
             logical_node = task.arguments.get("logic_form_node", None)
             if not logical_node:
                 return RetrieverOutput(
@@ -73,15 +77,19 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                 name=self.name,
                 **kwargs,
             )
-            return RetrieverOutput(
+            output = RetrieverOutput(
                 retriever_method=self.schema().get("name", ""), graphs=[kg_graph]
             )
         except Exception as e:
-            logger.warning(f"retriever with exception : {e}", exc_info=True)
-            return RetrieverOutput(
+            logger.warning(f"{query} retriever with exception : {e}", exc_info=True)
+            output = RetrieverOutput(
                 retriever_method=self.schema().get("name", ""),
                 err_msg=f"{task} {e}",
             )
+        logger.debug(
+            f"{self.schema().get('name', '')} `{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
+        )
+        return output
 
     def schema(self):
         return {
