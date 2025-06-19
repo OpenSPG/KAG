@@ -3,7 +3,7 @@ from kag.interface.solver.retriever_abc import RetrieverABC
 
 if __name__ == "__main__":
     llm_config = {
-        "api_key": "sk-",
+        "api_key": "key",
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         "model": "qwen-max-latest",
         "type": "maas",
@@ -16,8 +16,8 @@ if __name__ == "__main__":
         "query_rewrite_prompt": {"type": "atomic_query_rewrite_prompt"},
         "vectorize_model": {
             "type": "openai",
-            "base_url": "https://api.siliconflow.cn/v1/",
-            "api_key": "sk-",
+            "base_url": "https://api.siliconflow.cn/v1",
+            "api_key": "key",
             "model": "BAAI/bge-m3",
             "vector_dimensions": 1024,
         },

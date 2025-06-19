@@ -70,12 +70,6 @@ To delete the checkpoints, execute the following command.
 rm -rf ./src/ckpt
 ```
 
-To delete the KAG project and related knowledge graph, execute the following similar command. Replace the OpenSPG server address and KAG project id with actual values.
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
-```
-
 ### Step 8: (Optional) Try the larger datasets
 
 Restart from Step 1 and modify [indexer.py](./src/indexer.py) and [eval.py](./src/eval.py) to try the larger datasets.

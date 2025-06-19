@@ -108,7 +108,9 @@ class FuzzyOneHopSelect(PathSelect):
                 with_json_parse=True,
                 with_except=True,
             )
-            if not isinstance(response, list) or not all(isinstance(i, str) for i in response):
+            if not isinstance(response, list) or not all(
+                isinstance(i, str) for i in response
+            ):
                 logger.warning("LLM returned invalid index format: %s", response)
                 return []
             try:

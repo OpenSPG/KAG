@@ -140,7 +140,7 @@ Default password: openspg@kag
 **Windows 开发者**
 
 ```
-# 安装官方 Python 3.8.10 或更新版本，安装 Git。
+# 安装官方 Python 3.10 或更新版本，安装 Git。
 
 # 创建、激活 Python 虚拟环境：py -m venv kag-demo && kag-demo\Scripts\activate
 

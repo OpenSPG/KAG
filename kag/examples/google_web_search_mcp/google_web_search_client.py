@@ -30,7 +30,7 @@ async def chat_loop(client):
 
 async def cleanup(client):
     """Clean up resources"""
-    await client.exit_stack.aclose()
+    await client.mcp_client.exit_stack.aclose()
 
 
 async def main():

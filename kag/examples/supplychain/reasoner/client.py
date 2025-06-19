@@ -13,7 +13,7 @@ def read_dsl_files(directory):
     for filename in os.listdir(directory):
         if filename.endswith(".dsl"):
             file_path = os.path.join(directory, filename)
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, "r", encoding="utf-8", newline="\n") as file:
                 content = file.read()
                 dsl_contents.append(content)
 
