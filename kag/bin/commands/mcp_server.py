@@ -16,12 +16,10 @@ from kag.bin.base import Command
 
 @Command.register("run_kag_mcp_server")
 class RunKagMcpServer(Command):
-    def add_to_parser(self, subparsers: argparse._SubParsersAction): # noqa
+    def add_to_parser(self, subparsers: argparse._SubParsersAction):  # noqa
         from kag.mcp.server.kag_mcp_server import KagMcpServer
 
-        parser = subparsers.add_parser(
-            "mcp-server", help="Run KAG MCP server"
-        )
+        parser = subparsers.add_parser("mcp-server", help="Run KAG MCP server")
         KagMcpServer.add_options(parser)
         parser.set_defaults(func=self.get_handler())
 

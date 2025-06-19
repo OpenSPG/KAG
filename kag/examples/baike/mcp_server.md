@@ -34,7 +34,7 @@ In Cursor, use the following configuration to connect to the KAG MCP server:
     "mcpServers": {
         "kag": {
             "url": "http://127.0.0.1:3000/sse"
-        } 
+        }
     }
 }
 ```

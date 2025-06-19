@@ -34,7 +34,7 @@ kag mcp-server --help
     "mcpServers": {
         "kag": {
             "url": "http://127.0.0.1:3000/sse"
-        } 
+        }
     }
 }
 ```

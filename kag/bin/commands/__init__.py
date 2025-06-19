@@ -14,4 +14,10 @@ from kag.bin.commands.builder import BuilderJobSubmit
 from kag.bin.commands.benchmark import KAGBenchmark, RunBenchmark
 from kag.bin.commands.mcp_server import RunKagMcpServer
 
-__all__ = ["ListRegisterInfo", "BuilderJobSubmit", "KAGBenchmark", "RunBenchmark", "RunKagMcpServer"]
+__all__ = [
+    "ListRegisterInfo",
+    "BuilderJobSubmit",
+    "KAGBenchmark",
+    "RunBenchmark",
+    "RunKagMcpServer",
+]

@@ -23,18 +23,30 @@ class KagMcpServer(object):
 
     @classmethod
     def add_options(cls, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("-t", "--transport",
-                            help="specify MCP server transport; default to sse",
-                            type=str, default="sse", choices=("sse", "stdio"))
-        parser.add_argument("-p", "--port",
-                            help="specify sse server port; default to %d" % cls._default_sse_port,
-                            type=int, default=cls._default_sse_port)
+        parser.add_argument(
+            "-t",
+            "--transport",
+            help="specify MCP server transport; default to sse",
+            type=str,
+            default="sse",
+            choices=("sse", "stdio"),
+        )
+        parser.add_argument(
+            "-p",
+            "--port",
+            help="specify sse server port; default to %d" % cls._default_sse_port,
+            type=int,
+            default=cls._default_sse_port,
+        )
         all_supported_tools = ",".join(cls._supported_tools)
-        parser.add_argument("--enabled-tools",
-                            help="specify enabled tools, a comma separated list; "
-                                 "default to qa-pipeline; "
-                                 "use 'all' for all supported tools: %s" % all_supported_tools,
-                            type=str, default="qa-pipeline")
+        parser.add_argument(
+            "--enabled-tools",
+            help="specify enabled tools, a comma separated list; "
+            "default to qa-pipeline; "
+            "use 'all' for all the supported tools: %s" % all_supported_tools,
+            type=str,
+            default="qa-pipeline",
+        )
 
     @classmethod
     def run(cls, args: argparse.Namespace) -> None:
@@ -74,7 +86,7 @@ class KagMcpServer(object):
             raise ModuleNotFoundError(message)
 
     def _create_mcp_server(self) -> None:
-        from mcp.server.fastmcp import FastMCP # noqa
+        from mcp.server.fastmcp import FastMCP  # noqa
 
         if self._transport == "sse":
             mcp_server = FastMCP(self._default_server_name, port=self._port)
@@ -122,7 +134,9 @@ class KagMcpServer(object):
             from kag.interface import Task
             from kag.interface import Context
 
-            executor = ExecutorABC.from_config(KAG_CONFIG.all_config["kag_hybrid_executor"])
+            executor = ExecutorABC.from_config(
+                KAG_CONFIG.all_config["kag_hybrid_executor"]
+            )
             executor_schema = executor.schema()
             executor_name = executor_schema["name"]
             executor_arguments = {
@@ -135,7 +149,9 @@ class KagMcpServer(object):
                 "summary": task.result.summary,
                 "references": task.result.to_reference_list(),
             }
-            result = json.dumps(data, separators=(",", ": "), indent=4, ensure_ascii=False)
+            result = json.dumps(
+                data, separators=(",", ": "), indent=4, ensure_ascii=False
+            )
             return result
 
         self._mcp_server.add_tool(retrieve)
