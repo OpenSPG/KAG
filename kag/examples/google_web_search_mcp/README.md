@@ -36,5 +36,5 @@ Example problems:
 1. Why is the sky blue?
 2. What is Dundar effect?
 
-After launch, please input the questions you want to ask, we will retrieve the relevant web page through google, and then return the results to you.
+After launch, please input the questions you want to ask, we will retrieve the relevant web page through Google, and then return the results to you.
 
