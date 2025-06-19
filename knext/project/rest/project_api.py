@@ -484,7 +484,6 @@ class ProjectApi(object):
 
         # Authentication setting
         auth_settings = []  # noqa: E501
-        import pdb; pdb.set_trace()
         return self.api_client.call_api(
             '/project/update', 'POST',
             path_params,
