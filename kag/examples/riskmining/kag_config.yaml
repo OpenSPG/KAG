@@ -127,7 +127,7 @@ py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor
   llm: *chat_llm
 
-solver_pipeline:
+kag_solver_pipeline:
   type: kag_static_pipeline
   planner:
     type: lf_kag_static_planner

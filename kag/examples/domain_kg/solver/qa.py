@@ -9,7 +9,7 @@ logger = logging.getLogger()
 
 async def qa(query):
     reporter: TraceLogReporter = TraceLogReporter()
-    resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["solver_pipeline"])
+    resp = SolverPipelineABC.from_config(KAG_CONFIG.all_config["kag_solver_pipeline"])
     answer = await resp.ainvoke(query, reporter=reporter)
 
     logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
