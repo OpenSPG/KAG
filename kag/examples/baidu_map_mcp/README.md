@@ -32,6 +32,7 @@ python baidu_map_mcp_client.py
 ```
 
 Example problems:
+
 1. What will the weather be like tomorrow in the West Lake District of Hangzhou?
 2. What is the self-driving route from Ant A space in Hangzhou to Ant S space in Shanghai?
 3. What is the latitude and longitude of Shanghai Hongqiao Railway Station?
