@@ -77,7 +77,7 @@ class ProjectClient(Client):
         return project
 
     def update(self, id, namespace, config, visibility=None, tag=None, userNo=None):
-        project_create_request = rest.ProjectCreateRequest(id=id, name=namespace, config=config, visibility=visibility, tag=tag,user_no=userNo)
+        project_create_request = rest.ProjectCreateRequest(id=id, name=namespace, config=config, visibility=visibility, tag=tag,userNo=userNo)
         project = self._rest_client.project_update_post(
             project_create_request=project_create_request
         )
