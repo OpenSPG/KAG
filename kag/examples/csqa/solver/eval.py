@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class CsQaEvaluator(EvalQa):
-    def __init__(self, solver_pipeline_name="solver_pipeline"):
+    def __init__(self, solver_pipeline_name="kag_solver_pipeline"):
         self.task_name = "csqa"
         super().__init__(self.task_name, solver_pipeline_name)
         self.solver_pipeline_name = solver_pipeline_name

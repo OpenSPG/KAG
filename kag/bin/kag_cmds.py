@@ -21,7 +21,12 @@ def build_parser():
         help="subcommands supported by kag",
     )
     # add registered commands to parser
-    cmds = ["register_info", "submit_builder_job", "run_benchmark"]
+    cmds = [
+        "register_info",
+        "submit_builder_job",
+        "run_benchmark",
+        "run_kag_mcp_server",
+    ]
     add_commands(subparsers, cmds)
     return parser
 

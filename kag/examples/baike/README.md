@@ -53,6 +53,8 @@ Execute [eval.py](./solver/eval.py) in the [solver](./solver) directory to ask d
 cd solver && python eval.py && cd ..
 ```
 
+We have implemented an MCP server in KAG, allowing the knowledge base built by KAG to be exposed via the MCP server for integration with agents that support the MCP protocol. Please refer to [KAG MCP Server Example: BaiKe](./mcp_server.md).
+
 ### Step 7: (Optional) Cleanup
 
 To delete the checkpoints, execute the following command.
