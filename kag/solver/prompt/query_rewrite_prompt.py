@@ -39,9 +39,7 @@ class QueryRewritePrompt(PromptABC):
 \nexample字段中给出了一个简单的示例供参考。请直接返回改写后的问题字符串，正如example的output字段一样。
         """,
         "example": {
-            "input": {
-                "query": "{{0.output}}获得的奖项中，有哪些是{{1.output}}没有获得过的"
-            },
+            "input": {"query": "{{0.output}}获得的奖项中，有哪些是{{1.output}}没有获得过的"},
             "context": {
                 "0": {
                     "output": [

@@ -268,10 +268,7 @@ def check_data(line, data_type="knowIE", language="zh"):
                     check_data.append(ner)
             if language == "zh" and isinstance(ner, dict):
                 if (
-                    len(
-                        set(ner.keys())
-                        & set(["名称", "类型", "领域本体", "解释", "标准名", "同义词"])
-                    )
+                    len(set(ner.keys()) & set(["名称", "类型", "领域本体", "解释", "标准名", "同义词"]))
                     == 6
                 ):
                     check_data.append(ner)

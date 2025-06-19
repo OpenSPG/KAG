@@ -47,8 +47,7 @@ class PrqaPlanner(PlannerABC):
                     instruct_content = message["content"]
                     if "上一次的判断错误，请重新思考" not in instruct_content:
                         updated_instruct = (
-                            instruct_content.strip()
-                            + "\n上一次的判断错误，请重新思考。"
+                            instruct_content.strip() + "\n上一次的判断错误，请重新思考。"
                         )
                         message["content"] = updated_instruct
                     break  # 修改完成后直接退出循环
