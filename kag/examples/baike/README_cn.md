@@ -53,6 +53,8 @@ cd builder && python indexer.py && cd ..
 cd solver && python eval.py && cd ..
 ```
 
+我们在 KAG 中实现了 MCP server，可以将 KAG 构建的知识库通过 MCP server 的形式暴露出来，供支持 MCP 协议的 Agent 集成。参考 [KAG MCP Server 示例：百科问答（BaiKe）](./mcp_server_cn.md)。
+
 ### Step 7：（可选）清理
 
 若要删除 checkpoint，可执行以下命令。
