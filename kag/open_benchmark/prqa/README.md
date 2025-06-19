@@ -1,4 +1,4 @@
-# KAG Example: TwoWiki
+# KAG Example: Peaple Realation Query & Answer
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
@@ -77,8 +77,3 @@ rm -rf ./builder/ckpt
 rm -rf ./solver/ckpt
 ```
 
-To delete the KAG project and associated knowledge graph, execute a command similar to the following, replacing the OpenSPG server address and KAG project id with actual values:
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
-```

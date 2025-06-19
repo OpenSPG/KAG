@@ -30,11 +30,10 @@ async def chat_loop(client):
 
 async def cleanup(client):
     """Clean up resources"""
-    await client.exit_stack.aclose()
+    await client.mcp_client.exit_stack.aclose()
 
 
 async def main():
-    server_script_path = "./map.py"
     executor = ExecutorABC.from_config(KAG_CONFIG.all_config["mcp_executor"])
     client = executor
 

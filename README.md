@@ -150,7 +150,7 @@ Refer to the 3.1 section to complete the installation of the engine & dependent 
 **Windows developers**
 
 ```text
-# Install the official Python 3.8.10 or later, install Git.
+# Install the official Python 3.10 or later, install Git.
 
 # Create and activate Python venv: py -m venv kag-demo && kag-demo\Scripts\activate
 

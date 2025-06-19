@@ -8,11 +8,7 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("example_resp_generator")
 class RespGenerator(PromptABC):
-    template_zh = (
-        "基于给定的引用信息回答问题。"
-        "\n输出答案，并且给出理由。"
-        "\n给定的引用信息：'$content'\n问题：'$query'"
-    )
+    template_zh = "基于给定的引用信息回答问题。" "\n输出答案，并且给出理由。" "\n给定的引用信息：'$content'\n问题：'$query'"
     template_en = (
         "Answer the question based on the given reference."
         "\nGive me the answer and why."

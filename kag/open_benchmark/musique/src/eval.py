@@ -32,7 +32,11 @@ class EvaForMusique(EvalQa):
         gold_list = []
         question_decomposition = sample["question_decomposition"]
         for qd in question_decomposition:
-            gold_list.append(processing_phrases(paragraphs[qd["paragraph_support_idx"]]["title"]).replace(" ", ""))
+            gold_list.append(
+                processing_phrases(
+                    paragraphs[qd["paragraph_support_idx"]]["title"]
+                ).replace(" ", "")
+            )
         predictionlist = []
         for ref in references:
             predictionlist.append(

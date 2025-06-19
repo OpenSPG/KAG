@@ -172,7 +172,7 @@ docker compose -f docker-compose.yml up -d
 **Windows開発者**
 
 ```text
-# 公式のPython 3.8.10以降をインストールし、Gitをインストールします。
+# 公式のPython 3.10以降をインストールし、Gitをインストールします。
 
 # Python仮想環境の作成とアクティベート：py -m venv kag-demo && kag-demo\Scripts\activate
 

@@ -203,9 +203,13 @@ class DefaultExternalGraphLoader(ExternalGraphLoaderABC):
             DefaultExternalGraphLoader: An instance of DefaultExternalGraphLoader initialized with the data from the JSON files.
         """
         nodes = []
-        for item in json.load(open(node_file_path, "r")):
+        for item in json.load(
+            open(node_file_path, "r", encoding="utf-8", newline="\n")
+        ):
             nodes.append(Node.from_dict(item))
         edges = []
-        for item in json.load(open(edge_file_path, "r")):
+        for item in json.load(
+            open(edge_file_path, "r", encoding="utf-8", newline="\n")
+        ):
             edges.append(Edge.from_dict(item))
         return cls(nodes=nodes, edges=edges, match_config=match_config)

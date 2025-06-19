@@ -137,7 +137,7 @@ class PprChunkRetriever(RetrieverABC):
                 )
                 node_dict = dict(node.items())
                 return doc_id, ChunkData(
-                    content=node_dict["content"].replace("_split_0", ""),
+                    content=node_dict.get("content", "").replace("_split_0", ""),
                     title=node_dict["name"].replace("_split_0", ""),
                     chunk_id=doc_id,
                     score=doc_score,
@@ -177,7 +177,7 @@ class PprChunkRetriever(RetrieverABC):
                             logger.warning(f"{query} matched docs is empty")
                         matched_docs.append(
                             ChunkData(
-                                content=item["node"]["content"],
+                                content=item["node"].get("content", ""),
                                 title=item["node"]["name"],
                                 chunk_id=item["node"]["id"],
                                 score=item["score"],

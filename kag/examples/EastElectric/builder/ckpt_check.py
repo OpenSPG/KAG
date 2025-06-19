@@ -8,5 +8,8 @@ checkpointer: CheckPointer = CheckpointerManager.get_checkpointer(
     }
 )
 
-tmp_key = checkpointer.keys()[-1]
-print(checkpointer.read_from_ckpt(tmp_key))
+if checkpointer.size() > 0:
+    tmp_key = checkpointer.keys()[-1]
+    print(checkpointer.read_from_ckpt(tmp_key))
+else:
+    print("checkpoint is empty")

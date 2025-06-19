@@ -143,6 +143,7 @@ def run_benchmark(config, result_queue):
     import_modules_from_path("./")
     # import benchmark common component
     import kag.open_benchmark.common_component
+
     runner = KAGBenchmark.from_config(config)
     result = runner.invoke()
     result_queue.put((runner.job_name, result))

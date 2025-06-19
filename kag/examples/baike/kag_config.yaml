@@ -1,21 +1,21 @@
 #------------project configuration start----------------#
 openie_llm: &openie_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   api_key: key
   model: qwen2.5-7b-instruct-1m
   enable_check: false
 
 chat_llm: &chat_llm
   type: maas
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
   api_key: key
   model: qwen2.5-72b-instruct
   enable_check: false
 
 vectorize_model: &vectorize_model
   api_key: key
-  base_url: https://api.siliconflow.cn/v1/
+  base_url: https://api.siliconflow.cn/v1
   model: BAAI/bge-m3
   type: openai
   vector_dimensions: 1024
@@ -88,14 +88,14 @@ kg_cs: &kg_cs
     search_api: *search_api
     recognition_threshold: 0.9
     exclude_types:
-      - "Chunk"
+      - Chunk
 
 kg_fr: &kg_fr
   type: kg_fr_open_spg
   top_k: 20
   graph_api: *graph_api
   search_api: *search_api
-  vectorize_model:  *vectorize_model
+  vectorize_model: *vectorize_model
   path_select:
     type: fuzzy_one_hop_select
     llm_client: *openie_llm
@@ -112,7 +112,7 @@ kg_fr: &kg_fr
     search_api: *search_api
     recognition_threshold: 0.8
     exclude_types:
-      - "Chunk"
+      - Chunk
 
 rc: &rc
   type: rc_open_spg
@@ -143,7 +143,7 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
     - *rc
   merger:
     type: kag_merger
-  enable_summary:  true
+  enable_summary: true
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
