@@ -153,19 +153,19 @@ def is_chinese(text):
 async def do_index_pipeline(query, qa_config, reporter):
     if "chat" not in qa_config or "index_list" not in qa_config["chat"]:
         raise RuntimeError("chat or index_list not found in qa_config.")
-    index_names = qa_config["chat"]["index_list"]
+    index_names = qa_config.get("chat", {}).get("index_list", [])
     retriever_configs = []
     for index_name in index_names:
         try:
             index_manager = KAGIndexManager.from_config(
                 {
                     "type": index_name,
-                    "llm_config": qa_config["llm"],
-                    "vectorize_model_config": qa_config["vectorize_model"],
+                    "llm_config": qa_config.get("llm", {}),
+                    "vectorize_model_config": qa_config.get("vectorize_model", {}),
                 }
             )
             retriever_configs += index_manager.build_retriever_config(
-                qa_config["llm"], qa_config["vectorize_model"]
+                qa_config.get("llm", {}), qa_config.get("vectorize_model", {})
             )
         except Exception as e:
             raise RuntimeError(f"not found index {index_name}")
@@ -175,30 +175,39 @@ async def do_index_pipeline(query, qa_config, reporter):
     return await pipeline.ainvoke(query, reporter=reporter)
 
 
-async def do_qa_pipeline(use_pipeline, query, qa_config, reporter, task_id, kb_project_ids):
+async def do_qa_pipeline(
+    use_pipeline, query, qa_config, reporter, task_id, kb_project_ids
+):
     retriever_configs = []
     kb_configs = qa_config.get("kb", [])
     for kb_project_id in kb_project_ids:
         kb_task_project_id = f"{task_id}_{kb_project_id}"
         try:
             kag_config = KAGConfigAccessor.get_config(kb_task_project_id)
-            matched_kb = next((kb for kb in kb_configs if kb.get("id") == kb_project_id), None)
+            matched_kb = next(
+                (kb for kb in kb_configs if kb.get("id") == kb_project_id), None
+            )
             if not matched_kb:
-                reporter.warning(f"Knowledge base with id {kb_project_id} not found in qa_config['kb']")
+                reporter.warning(
+                    f"Knowledge base with id {kb_project_id} not found in qa_config['kb']"
+                )
                 continue
 
             for index_name in matched_kb.get("index_list", []):
                 index_manager = KAGIndexManager.from_config(
                     {
                         "type": index_name,
-                        "llm_config": qa_config["llm"],
-                        "vectorize_model_config": kag_config.all_config["vectorize_model"],
+                        "llm_config": qa_config.get("llm", {}),
+                        "vectorize_model_config": kag_config.all_config.get(
+                            "vectorize_model", {}
+                        ),
                     }
                 )
                 retriever_configs.extend(
                     index_manager.build_retriever_config(
-                        qa_config["llm"], kag_config.all_config["vectorize_model"],
-                        kag_qa_task_config_key=kb_task_project_id
+                        qa_config.get("llm", {}),
+                        kag_config.all_config.get("vectorize_model", {}),
+                        kag_qa_task_config_key=kb_task_project_id,
                     )
                 )
         except Exception as e:
@@ -260,7 +269,9 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
                 global_config = kb.get(KAGConstants.PROJECT_CONFIG_KEY, {})
                 kb_conf.global_config.initialize(**global_config)
-                project_client = ProjectClient(host_addr=host_addr, project_id=kb_project_id)
+                project_client = ProjectClient(
+                    host_addr=host_addr, project_id=kb_project_id
+                )
                 project = project_client.get_by_id(kb_project_id)
 
                 kb_conf.global_config.project_id = kb_project_id
@@ -292,14 +303,15 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     try:
         await reporter.start()
         if use_pipeline == "index_pipeline":
-            answer = await do_index_pipeline(
-                query, main_config, reporter
-            )
+            answer = await do_index_pipeline(query, main_config, reporter)
         else:
             answer = await do_qa_pipeline(
-                use_pipeline, query, main_config, reporter,
+                use_pipeline,
+                query,
+                main_config,
+                reporter,
                 task_id=task_id,
-                kb_project_ids=kb_project_ids
+                kb_project_ids=kb_project_ids,
             )
 
         reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
@@ -324,15 +336,15 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
 class SolverMain:
     def invoke(
-            self,
-            project_id: int,
-            task_id: int,
-            query: str,
-            session_id: str = "0",
-            is_report=True,
-            host_addr="http://127.0.0.1:8887",
-            params=None,
-            app_id="",
+        self,
+        project_id: int,
+        task_id: int,
+        query: str,
+        session_id: str = "0",
+        is_report=True,
+        host_addr="http://127.0.0.1:8887",
+        params=None,
+        app_id="",
     ):
         answer = None
         if params is None:
@@ -365,18 +377,16 @@ if __name__ == "__main__":
     #     "4200052", "https://spg-pre.alipay.com"
     # )
     config = {}
-    params = {
-        "config": config
-    }
+    params = {"config": config}
     res = SolverMain().invoke(
         2100007,
         11200009,
         # "阿里巴巴2024年截止到9月30日的总收入是多少元？ 如果把这笔钱于当年10月3日存入银行并于12月29日取出，银行日利息是万分之0.9，本息共可取出多少元？",
-        "周杰伦有哪些专辑",
+        "营业执照不通过",
         "9500005",
         True,
-        # host_addr="http://spg-pre.alipay.com",
-        host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
+        host_addr="http://spg-pre.alipay.com",
+        # host_addr="http://antspg-gz00b-006001164035.sa128-sqa.alipay.net:8887",
         params=params,
     )
     print("*" * 80)

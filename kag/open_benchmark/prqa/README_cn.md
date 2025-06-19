@@ -1,4 +1,4 @@
-# KAG 示例：TwoWiki
+# KAG 示例：Peaple Realation Query & Answer
 
 [English](./README.md) |
 [简体中文](./README_cn.md)
@@ -76,11 +76,5 @@ python ./evaluator.py
 ```bash
 rm -rf ./builder/ckpt
 rm -rf ./solver/ckpt
-```
-
-若要删除 KAG 项目及关联的知识图谱，可执行以下类似命令，将 OpenSPG server 地址和 KAG 项目 id 换为实际的值。
-
-```bash
-curl http://127.0.0.1:8887/project/api/delete?projectId=1
 ```
 

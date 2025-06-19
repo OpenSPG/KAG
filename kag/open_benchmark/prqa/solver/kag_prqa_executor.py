@@ -100,9 +100,7 @@ class PrqaExecutor(ExecutorABC):
             completion_1 = self.send_cypher_messages(message_list)
 
             if not completion_1.tool_calls:
-                raise ValueError(
-                    f"{question} 查询失败，此时tool_calls 为空或为 None，无法继续处理"
-                )
+                raise ValueError(f"{question} 查询失败，此时tool_calls 为空或为 None，无法继续处理")
             tool = completion_1.tool_calls[0]
             args = json.loads(tool.function.arguments)
             cypher_query = args.get("cypher_query")

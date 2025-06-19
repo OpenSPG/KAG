@@ -42,7 +42,7 @@ class ProjectCreateRequest(object):
         'auto_schema': 'str',
         'visibility': 'str',
         'tag': 'str',
-        'user_no': 'str'
+        'userNo': 'str'
     }
 
     attribute_map = {
@@ -55,10 +55,10 @@ class ProjectCreateRequest(object):
         'auto_schema': 'autoSchema',
         'visibility': 'visibility',
         'tag': 'tag',
-        'user_no': 'userNo'
+        'userNo': 'userNo'
     }
 
-    def __init__(self, id=None, name=None, desc=None, namespace=None, tenant_id=None, config=None, auto_schema=None, visibility='PRIVATE', tag='LOCAL', user_no='openspg', local_vars_configuration=None):  # noqa: E501
+    def __init__(self, id=None, name=None, desc=None, namespace=None, tenant_id=None, config=None, auto_schema=None, visibility='PRIVATE', tag='LOCAL', userNo='openspg', local_vars_configuration=None):  # noqa: E501
         """ProjectCreateRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -73,7 +73,7 @@ class ProjectCreateRequest(object):
         self._auto_schema = None
         self._visibility = None
         self._tag = None
-        self._user_no = None
+        self._userNo = None
         self.discriminator = None
 
         if id is not None:
@@ -92,8 +92,8 @@ class ProjectCreateRequest(object):
             self.auto_schema = auto_schema
         self.visibility = visibility
         self.tag = tag
-        if user_no is not None:
-            self.user_no = user_no
+        if userNo is not None:
+            self.userNo = userNo
 
     @property
     def id(self):
@@ -301,25 +301,25 @@ class ProjectCreateRequest(object):
         self._tag = tag
 
     @property
-    def user_no(self):
-        """Gets the user_no of this ProjectCreateRequest.  # noqa: E501
+    def userNo(self):
+        """Gets the userNo of this ProjectCreateRequest.  # noqa: E501
 
 
-        :return: The user_no of this ProjectCreateRequest.  # noqa: E501
+        :return: The userNo of this ProjectCreateRequest.  # noqa: E501
         :rtype: str
         """
-        return self._user_no
+        return self._userNo
 
-    @user_no.setter
-    def user_no(self, user_no):
-        """Sets the user_no of this ProjectCreateRequest.
+    @userNo.setter
+    def userNo(self, userNo):
+        """Sets the userNo of this ProjectCreateRequest.
 
 
-        :param user_no: The user_no of this ProjectCreateRequest.  # noqa: E501
+        :param userNo: The userNo of this ProjectCreateRequest.  # noqa: E501
         :type: str
         """
 
-        self._user_no = user_no
+        self._userNo = userNo
 
     def to_dict(self):
         """Returns the model properties as a dict"""

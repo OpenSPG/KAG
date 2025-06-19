@@ -338,7 +338,7 @@ class SchemaFreeExtractor(ExtractorABC):
             return None, None
 
         for tri in triples:
-            if len(tri) != 3:
+            if tri is None or len(tri) != 3:
                 continue
             s_category, s_name = get_category_and_name(entities, tri[0])
             tri[0] = processing_phrases(tri[0])

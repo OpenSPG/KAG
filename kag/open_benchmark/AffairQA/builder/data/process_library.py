@@ -118,9 +118,7 @@ if __name__ == "__main__":
     output_file = os.path.join(dir_path, "图书馆.csv")
     parser = argparse.ArgumentParser(description="处理图书馆数据")
     parser.add_argument("--input_file", default=input_file, help="输入文件路径")
-    parser.add_argument(
-        "-o", "--output", default=output_file, help="输出文件路径，默认覆盖原文件"
-    )
+    parser.add_argument("-o", "--output", default=output_file, help="输出文件路径，默认覆盖原文件")
     parser.add_argument(
         "-f",
         "--format",
