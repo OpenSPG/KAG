@@ -72,6 +72,9 @@ class Node(object):
             and self.properties == other.properties
         )
 
+    def __str__(self):
+        return f"{self.name}[{self.label}]"
+
 
 class Edge(object):
     id: str
@@ -106,6 +109,8 @@ class Edge(object):
             f"{self.from_id}{self.from_type}{self.to_id}{self.to_type}{self.label}{self.id}"
         )
 
+    def __str__(self):
+        return f"{self.from_id}[{self.from_type}]-[{self.label}]->{self.to_id}[{self.to_type}]"
     @classmethod
     def from_spg_record(
         cls,
