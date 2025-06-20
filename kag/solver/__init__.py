@@ -4,9 +4,6 @@ from kag.solver.executor.retriever.kag_model_hybrid_executor import KAGModelHybr
 from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor import (
     ChunkRetrievedExecutor,
 )
-from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
-    KAGHybridRetrievalExecutor,
-)
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KagHybridExecutor,
 )
@@ -79,7 +76,6 @@ __all__ = [
     "McpExecutor",
     "FinishExecutor",
     "MockRetrieverExecutor",
-    "KAGHybridRetrievalExecutor",
     "KAGModelHybridRetrievalExecutor",
     "KagHybridExecutor",
     "ChunkRetrievedExecutor",

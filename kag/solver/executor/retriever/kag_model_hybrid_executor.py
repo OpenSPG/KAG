@@ -24,7 +24,7 @@ from kag.interface import (
     PromptABC,
 )
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.solver import KAGHybridRetrievalExecutor
+from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import KAGHybridRetrievalExecutor
 
 logger = logging.getLogger()
 
