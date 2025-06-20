@@ -473,3 +473,29 @@ def extract_specific_tag_content(text, tag):
     pattern = rf"<{tag}\b[^>]*>(.*?)</{tag}>"
     matches = re.findall(pattern, text, flags=re.DOTALL)
     return [content.strip() for content in matches]
+
+
+def extract_box_answer(text):
+    pattern = r"\\boxed\{([^}]*)\}"
+    extracted_answers = re.findall(pattern, text)
+    if len(extracted_answers) == 0:
+        return ""
+    else:
+        return extracted_answers[0]
+
+
+def search_plan_extraction(text):
+    text = text.replace("\n", "")
+    pattern = r'(?i)<search.*?>.*?</search>'
+    matches = re.findall(pattern, text)
+
+    # 提取内容部分
+    extracted_plans = []
+    for match in matches:
+        # 使用非贪婪匹配提取内容
+        plan = re.search(r'<search.*?>(.*?)</search>', match, re.IGNORECASE).group(1)
+        extracted_plans.append(plan)
+    if len(extracted_plans) == 0:
+        return ""
+    else:
+        return extracted_plans[0].strip()
