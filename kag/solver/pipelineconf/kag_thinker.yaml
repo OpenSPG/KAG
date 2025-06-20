@@ -7,7 +7,9 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
   retrievers: "{retrievers}"
   merger:
     type: kag_merger
-  enable_summary:  true
+  kag_sub_question_think_prompt:
+    type: kag_subquestion_think
+  llm_module: "{chat_llm}"
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
@@ -24,8 +26,12 @@ py_code_based_math_executor: &py_code_based_math_executor_conf
 solver_pipeline:
   type: kag_static_pipeline
   planner:
-    type: kag_model_iterative_planner
+    type: kag_model_planner
     llm: "{chat_llm}"
+    system_prompt:
+      type: kag_clarification
+    clarification_prompt:
+      type: kag_system
   executors:
     - *kag_hybrid_executor_conf
     - *py_code_based_math_executor_conf
@@ -34,5 +40,7 @@ solver_pipeline:
   generator:
     type: kag_model_generator # kag.solver.implementation.default_generator.DefaultGenerator
     llm_client: "{chat_llm}"
+    generate_answer_prompt:
+      type: kag_generate_answer
 
 #------------kag-solver configuration end----------------#

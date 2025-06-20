@@ -211,7 +211,7 @@ async def do_qa_pipeline(
                     )
                 )
         except Exception as e:
-            reporter.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
+            logger.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
             continue
     qa_config["retrievers"] = retriever_configs
 
