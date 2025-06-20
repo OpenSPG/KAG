@@ -76,6 +76,7 @@ class BaseSpgType(object):
         "STANDARD_TYPE": "StandardType",
         "ENTITY_TYPE": "EntityType",
         "EVENT_TYPE": "EventType",
+        "INDEX_TYPE": "IndexType",
         "CONCEPT_TYPE": "ConceptType",
     }
 
