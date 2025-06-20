@@ -9,6 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import kag.solver.prompt.kag_model
 from kag.solver.prompt.context_select_prompt import ContextSelectPrompt
 from kag.solver.prompt.deduce_choice import DeduceChoice
 from kag.solver.prompt.deduce_entail import DeduceEntail

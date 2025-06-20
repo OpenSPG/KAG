@@ -1,0 +1,38 @@
+#------------kag-solver configuration start----------------#
+pipeline_name: kag_thinker_pipeline
+
+
+kag_hybrid_executor: &kag_hybrid_executor_conf
+  type: kag_model_hybrid_retrieval_executor
+  retrievers: "{retrievers}"
+  merger:
+    type: kag_merger
+  enable_summary:  true
+
+kag_output_executor: &kag_output_executor_conf
+  type: kag_output_executor
+  llm_module: "{chat_llm}"
+
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
+  llm_module: "{chat_llm}"
+
+py_code_based_math_executor: &py_code_based_math_executor_conf
+  type: py_code_based_math_executor
+  llm: "{chat_llm}"
+
+solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: kag_model_iterative_planner
+    llm: "{chat_llm}"
+  executors:
+    - *kag_hybrid_executor_conf
+    - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
+    - *kag_output_executor_conf
+  generator:
+    type: kag_model_generator # kag.solver.implementation.default_generator.DefaultGenerator
+    llm_client: "{chat_llm}"
+
+#------------kag-solver configuration end----------------#
