@@ -33,14 +33,9 @@ from knext.schema.client import CHUNK_TYPE
 logger = logging.getLogger()
 
 
-def get_node_unique_id(biz_id, label):
-    return f"{biz_id}_{label}"
-
-
 class MemoryGraph:
     _instances = {}
     _lock = Lock()
-    _dict_lock = Lock()
 
     def __new__(cls, namespace, ckpt_dir, vectorizer):
         path = ckpt_dir
@@ -77,9 +72,8 @@ class MemoryGraph:
             self._backend_graph = ig.Graph.Read(graph_pickle, "picklez")
             for idx in range(self._backend_graph.vcount()):
                 node = self._backend_graph.vs[idx]
-                unique_id = get_node_unique_id(node.id, node.label)
-                self.name2id[unique_id] = idx
-                self.id2name[idx] = unique_id
+                self.name2id[node["id"]] = idx
+                self.id2name[idx] = node["id"]
                 if node["label"] == self.chunk_label:
                     self.chunk_ids.add(idx)
                 else:
@@ -111,11 +105,10 @@ class MemoryGraph:
             graphs = checkpointer.read_from_ckpt(k)
             for graph in graphs:
                 for node in graph.nodes:
-                    unique_id = get_node_unique_id(node.id, node.label)
-                    if unique_id not in self.name2id:
-                        self.name2id[unique_id] = n_nodes
-                        self.id2name[n_nodes] = unique_id
-                        node_attr_map[unique_id] = node
+                    if node.id not in self.name2id:
+                        self.name2id[node.id] = n_nodes
+                        self.id2name[n_nodes] = node.id
+                        node_attr_map[node.id] = node
                         if node.label == self.chunk_label:
                             self.chunk_ids.add(n_nodes)
                         else:
@@ -131,13 +124,11 @@ class MemoryGraph:
             graphs = checkpointer.read_from_ckpt(k)
             for graph in graphs:
                 for edge in graph.edges:
-                    from_unique_id = get_node_unique_id(edge.from_id, edge.from_type)
-                    to_unique_id = get_node_unique_id(edge.to_id, edge.to_type)
-                    if from_unique_id in self.name2id and to_unique_id in self.name2id:
+                    if edge.from_id in self.name2id and edge.to_id in self.name2id:
                         edge_map[n_edges] = (
                             (
-                                self.name2id[from_unique_id],
-                                self.name2id[to_unique_id],
+                                self.name2id[edge.from_id],
+                                self.name2id[edge.to_id],
                             ),
                             edge,
                         )
@@ -220,10 +211,14 @@ class MemoryGraph:
         return one_hop
 
     def _get_vertex(self, biz_id, label):
-        unique_id = get_node_unique_id(biz_id, label)
-        if unique_id not in self.name2id:
-            raise ValueError(f"no such entity {label} {biz_id}")
-        return self._backend_graph.vs[self.name2id[unique_id]]
+        try:
+            vertex = self._backend_graph.vs.find(id=biz_id, label=label)
+        except (KeyError, ValueError):
+            vertex = None
+        if vertex is None:
+            message = f"no such entity {label} {biz_id}"
+            raise ValueError(message)
+        return vertex
 
     @staticmethod
     def _create_entity_from_vertex(vertex, biz_id=None, label=None) -> EntityData:
@@ -287,24 +282,8 @@ class MemoryGraph:
         """
         reset_prob = np.zeros(self._backend_graph.vcount())
         for start_node in start_nodes:
-            node_biz_id = start_node.get("id", start_node.get("name"))
-            if "type" in start_node.keys():
-                node_type = start_node["type"]
-            elif "__labels__" in start_node.keys():
-                labels = start_node["__labels__"]
-                node_type = None
-                for label in labels:
-                    if label == "Entity":
-                        continue
-                    node_type = label
-                    break
-            else:
-                node_type = None
-            if node_type is not None:
-                node_unique_id = get_node_unique_id(node_biz_id, node_type)
-            else:
-                continue
-            node_id = self.name2id[node_unique_id]
+            node_name = start_node.get("id", start_node.get("name"))
+            node_id = self.name2id[node_name]
             reset_prob[node_id] = 1
         scores = self._backend_graph.personalized_pagerank(
             vertices=range(self._backend_graph.vcount()),
@@ -358,27 +337,6 @@ class MemoryGraph:
             traceback.print_exc()
             return []
 
-    def get_cached_tensor(self, label_nodes, label, vector_field_name, device):
-        emb_cache_key = f"{label}-{vector_field_name}"
-
-        if emb_cache_key in self._emb_cache:
-            filtered_nodes, filtered_vectors = self._emb_cache[emb_cache_key]
-        else:
-            vectors = label_nodes.get_attribute_values(vector_field_name)
-            filtered_nodes = []
-            filtered_vectors = []
-            for node, vector in zip(label_nodes, vectors):
-                if vector is not None:
-                    filtered_nodes.append(node)
-                    filtered_vectors.append(vector)
-
-            filtered_vectors = torch.tensor(filtered_vectors, dtype=torch.float32).to(
-                device
-            )
-            with self._dict_lock:
-                self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
-        return filtered_nodes, filtered_vectors
-
     def vector_search(self, label, property_key, query_vector: list, topk=10, **kwargs):
         """
         Execute vector searching.
@@ -398,23 +356,21 @@ class MemoryGraph:
                 nodes = self._backend_graph.vs.select(label=label)
             except (KeyError, ValueError):
                 return []
-        # print(f"len(nodes) = {len(nodes)}")
+        print(f"len(nodes) = {len(nodes)}")
         vector_field_name = self._get_vector_field_name(property_key)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        filtered_nodes, filtered_vectors = self.get_cached_tensor(
-            label_nodes=nodes,
-            label=label,
-            vector_field_name=vector_field_name,
-            device=device,
-        )
-        if filtered_vectors.numel() == 0:
-            return []
+        vectors = nodes.get_attribute_values(vector_field_name)
+        filtered_nodes = []
+        filtered_vectors = []
+        for node, vector in zip(nodes, vectors):
+            if vector is not None:
+                filtered_nodes.append(node)
+                filtered_vectors.append(vector)
 
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        filtered_vectors = torch.tensor(filtered_vectors).to(device)
         if isinstance(query_vector, str):
             query_vector = self._vectorizer.vectorize(query_vector)
-        query_vector = (
-            torch.tensor(query_vector, dtype=torch.float32).unsqueeze(1).to(device)
-        )
+        query_vector = torch.tensor(query_vector).unsqueeze(1).to(device)
         cosine_similarity = filtered_vectors @ query_vector
         scores = 0.5 * cosine_similarity + 0.5
 
@@ -453,50 +409,53 @@ class MemoryGraph:
             else:
                 return torch.matmul(M, v.T)
 
-        try:
-            if label == "Entity":
-                nodes = self._backend_graph.vs
-            else:
-                try:
-                    nodes = self._backend_graph.vs.select(label=label)
-                except (KeyError, ValueError):
-                    return []
-
-            vector_field_name = self._get_vector_field_name(property_key)
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            filtered_nodes, filtered_vectors = self.get_cached_tensor(
-                label_nodes=nodes,
-                label=label,
-                vector_field_name=vector_field_name,
-                device=device,
-            )
-
-            if filtered_vectors.numel() == 0:
+        if label == "Entity":
+            nodes = self._backend_graph.vs
+        else:
+            try:
+                nodes = self._backend_graph.vs.select(label=label)
+            except (KeyError, ValueError):
                 return []
-            query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
-            cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
 
-            top_data = cosine_similarity.topk(
-                k=min(topk, len(cosine_similarity)), dim=0
+        vector_field_name = self._get_vector_field_name(property_key)
+        emb_cache_key = f"{label}-{vector_field_name}"
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if emb_cache_key in self._emb_cache:
+            filtered_nodes, filtered_vectors = self._emb_cache[emb_cache_key]
+        else:
+            vectors = nodes.get_attribute_values(vector_field_name)
+            filtered_nodes = []
+            filtered_vectors = []
+            for node, vector in zip(nodes, vectors):
+                if vector is not None:
+                    filtered_nodes.append(node)
+                    filtered_vectors.append(vector)
+
+            filtered_vectors = torch.tensor(filtered_vectors, dtype=torch.float32).to(
+                device
             )
-            top_indices = top_data.indices.to("cpu")
-            top_values = top_data.values.to("cpu")
-            output = []
-            for idx in range(query_vector.shape[0]):
-                items = []
-                for index, score in zip(top_indices[:, idx], top_values[:, idx]):
-                    node = filtered_nodes[index.item()]
-                    node_attributes = node.attributes()
-                    if "__labels__" not in node_attributes:
-                        node_attributes["__labels__"] = list(
-                            set([node_attributes.get("label"), "Entity"])
-                        )
-                    items.append({"node": node_attributes, "score": score.item()})
-                output.append(items)
-            return output
-        except Exception as e:
-            logger.warning(f"batch_vector_search failed {e}", exc_info=True)
+            self._emb_cache[emb_cache_key] = [filtered_nodes, filtered_vectors]
+        if filtered_vectors.numel() == 0:
             return []
+        query_vector = torch.tensor(query_vector, dtype=torch.float32).to(device)
+        cosine_similarity = batch_cosine_similarity(query_vector, filtered_vectors)
+
+        top_data = cosine_similarity.topk(k=min(topk, len(cosine_similarity)), dim=0)
+        top_indices = top_data.indices.to("cpu")
+        top_values = top_data.values.to("cpu")
+        output = []
+        for idx in range(query_vector.shape[0]):
+            items = []
+            for index, score in zip(top_indices[:, idx], top_values[:, idx]):
+                node = filtered_nodes[index.item()]
+                node_attributes = node.attributes()
+                if "__labels__" not in node_attributes:
+                    node_attributes["__labels__"] = list(
+                        set([node_attributes.get("label"), "Entity"])
+                    )
+                items.append({"node": node_attributes, "score": score.item()})
+            output.append(items)
+        return output
 
     @staticmethod
     def _get_vector_field_name(property_key: str) -> str:
@@ -586,9 +545,6 @@ class MemoryGraph:
             edge = self._backend_graph.es[old_num_edges + k]
             update_edge_attributes(edge, arc)
 
-    def dump(self, dump_path=None):
-        if dump_path:
-            graph_pickle = os.path.join(dump_path, "graph")
-        else:
-            graph_pickle = os.path.join(self.ckpt_dir, "graph")
+    def dump(self):
+        graph_pickle = os.path.join(self.ckpt_dir, "graph")
         self._backend_graph.write(graph_pickle, "picklez")

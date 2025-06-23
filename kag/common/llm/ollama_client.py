@@ -47,6 +47,7 @@ class OllamaClient(LLMClient):
             base_url (str): The base URL for the Ollama API.
             timeout (float): The timeout duration for the service request. Defaults to None, means no timeout.
         """
+        print("OllamaClient")
         name = kwargs.pop("name", None)
         if not name:
             name = f"{base_url}{model}"
@@ -103,6 +104,7 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
+            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -113,15 +115,15 @@ class OllamaClient(LLMClient):
             #     rsp = f"{reasoning_content}\n{content}"
             # else:
             #     rsp = content
-            rsp = response["message"]["content"]
-            tool_calls = response["message"].get("tool_calls", None)
+            rsp = response.message.content
+            tool_calls = response.message.tool_calls
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
 
             for chunk in response:
-                if chunk["message"]["content"] is not None:
-                    rsp += chunk["message"]["content"]
+                if chunk.message.content is not None:
+                    rsp += chunk.message.content
                     if reporter:
                         reporter.add_report_line(
                             segment_name,
@@ -129,13 +131,6 @@ class OllamaClient(LLMClient):
                             rsp,
                             status="RUNNING",
                         )
-        # Remove <think> </think> blocks from the response
-        if "<think>" in rsp and "</think>" in rsp:
-            think_start = rsp.find("<think>")
-            think_end = rsp.find("</think>") + len("</think>")
-            rsp = rsp[:think_start] + rsp[think_end:]
-            # Clean up any extra whitespace that might be left
-            rsp = rsp.strip()
         if reporter:
             reporter.add_report_line(
                 segment_name,
@@ -186,6 +181,7 @@ class OllamaClient(LLMClient):
             messages=messages,
             stream=self.stream,
             tools=tools,
+            max_tokens=self.max_tokens,
         )
         if not self.stream:
             # reasoning_content = getattr(
@@ -222,10 +218,3 @@ class OllamaClient(LLMClient):
         if tools and tool_calls:
             return response.message
         return rsp
-
-
-if __name__ == "__main__":
-    client = OllamaClient(
-        model="qwen2.5:7b", base_url="http://localhost:11434", stream=True
-    )
-    print(client("你好"))

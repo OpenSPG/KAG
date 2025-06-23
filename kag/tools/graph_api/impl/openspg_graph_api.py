@@ -168,6 +168,8 @@ class OpenSPGGraphApi(GraphApiABC):
         return [self.convert_raw_data_to_node(row[0], False, {}) for row in tables.data]
 
     def get_entity_one_hop(self, entity: EntityData) -> OneHopGraphData:
+        print("entity")
+        print(entity)
         start_time = time.time()
         s_id_param = generate_gql_id_params([entity.biz_id])
         dsl_query = f"""
@@ -214,13 +216,19 @@ class OpenSPGGraphApi(GraphApiABC):
             s_entity = self.convert_raw_data_to_node(
                 row[s_index], enable_cache=True, cached_map=cached_map
             )
+            # print("s_entity")
+            # print(s_entity)
             o_entity = self.convert_raw_data_to_node(
                 row[o_index], enable_cache=False, cached_map=cached_map
             )
+            # print("o_entity")
+            # print(o_entity)
             rel = self.convert_raw_data_to_rel(row[p_index], s_entity, o_entity)
             s_one_hop: OneHopGraphData = self._get_cached_one_hop_graph(
                 s_entity.biz_id, s_entity.type, cached_map
             )
+            # print("rel")
+            # print(rel)
             if rel.from_entity == s_entity:
                 update_cached_one_hop_rel(s_one_hop.out_relations, rel)
             else:
@@ -229,7 +237,11 @@ class OpenSPGGraphApi(GraphApiABC):
         return cached_map
 
     def execute_dsl(self, dsl: str, **kwargs) -> TableData:
+        # print("dsl:")
+        # print(dsl)
         res = self.rc.syn_execute(dsl_content=dsl, **kwargs)
+        # print("res")
+        # print(res)
         task_resp: ReasonTask = res.task
         if task_resp is None or task_resp.status != "FINISH":
             logger.debug(f"execute dsl failed! {res}")

@@ -29,6 +29,7 @@ class GraphApi(object):
     """
 
     def __init__(self, api_client=None):
+        print("GraphApi")
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client

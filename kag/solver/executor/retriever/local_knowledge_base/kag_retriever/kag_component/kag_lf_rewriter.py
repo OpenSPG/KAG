@@ -42,6 +42,7 @@ class KAGGetSpoLF(KAGLFRewriter):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        print("kag_spo_lf")
         self.llm_client = llm_client
         self.lf_trans_prompt = lf_trans_prompt
 

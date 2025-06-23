@@ -28,6 +28,7 @@ class KAGConstants(object):
     LOCAL_SCHEMA_URL = "http://localhost:8887"
     DEFAULT_KAG_CONFIG_FILE_NAME = "default_config.yaml"
     KAG_CONFIG_FILE_NAME = "kag_config.yaml"
+    # KAG_CONFIG_FILE_NAME = "test_config.yaml"
     DEFAULT_KAG_CONFIG_PATH = os.path.join(__file__, DEFAULT_KAG_CONFIG_FILE_NAME)
     KAG_CFG_PREFIX = "KAG"
     GLOBAL_CONFIG_KEY = "global"

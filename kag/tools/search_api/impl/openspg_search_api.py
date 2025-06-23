@@ -9,6 +9,7 @@ from knext.search.client import SearchClient
 class OpenSPGSearchAPI(SearchApiABC):
     def __init__(self, project_id=None, host_addr=None, **kwargs):
         super().__init__(**kwargs)
+        print("openspg_search_api")
         self.project_id = project_id or KAG_PROJECT_CONF.project_id
         self.host_addr = host_addr or KAG_PROJECT_CONF.host_addr
         self.sc = SearchClient(
@@ -28,6 +29,7 @@ class OpenSPGSearchAPI(SearchApiABC):
     def search_vector(
         self, label, property_key, query_vector, topk=10, ef_search=None, params=None
     ) -> List:
+        print("openspg_search_api  search_vector")
         res = self.sc.search_vector(
             label=label,
             property_key=property_key,

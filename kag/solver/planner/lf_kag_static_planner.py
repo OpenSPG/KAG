@@ -35,6 +35,7 @@ class KAGLFStaticPlanner(PlannerABC):
         rewrite_prompt: PromptABC,
         **kwargs,
     ):
+        print("lf_kag_static_planner")
         super().__init__(**kwargs)
         self.llm = llm
         self.plan_prompt = plan_prompt
@@ -164,6 +165,13 @@ class KAGLFStaticPlanner(PlannerABC):
             List[Task]: Generated task sequence
         """
         num_iteration = kwargs.get("num_iteration", 0)
+        print("执行planner ainvoke")
+        # print(kwargs.get("executors", []))
+        # [{'name': 'Retriever', 'description': 'Retrieve relevant knowledge from the local knowledge base.', 'parameters': {'query': {'type': 'string', 'description': 'User-provided query for retrieval.', 'optional': False}}}, 
+        # {'name': 'Math', 'description': "Used to address users' math or computational problems.", 'parameters': {'query': {'type': 'string', 'description': "The computable problem derived from the user's input question, retaining the essential information for the calculation target and dependencies.", 'optional': False}}}, 
+        # {'name': 'Deduce', 'description': 'Deduce answer from context or llm knowledge', 'parameters': {'query': {'type': 'string', 'description': 'User-provided query for answer.', 'optional': False}}}, 
+        # {'name': 'Output', 'description': 'Output answer from knowledge.', 'parameters': {'query': {'type': 'string', 'description': 'User-provided query for answer.', 'optional': False}}}]
+
         return await self.llm.ainvoke(
             {
                 "query": query,

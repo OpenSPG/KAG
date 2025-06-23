@@ -142,6 +142,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
     ]
 
     def __init__(self, std_schema: StdSchema = None, **kwargs):
+        print("default_lf_static_planning")
         self.template_zh = f"""
             {{
                 "time": "今天是{get_now(language='zh')}"
@@ -176,7 +177,6 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
             }}   
                 """
         super().__init__(**kwargs)
-
         self.schema_helper: SchemaUtils = SchemaUtils(
             LogicFormConfiguration(
                 {
@@ -273,6 +273,7 @@ class RetrieverLFStaticPlanningPrompt(PromptABC):
         return ret
 
     def parse_response(self, response: str, **kwargs):
+        print("default_lf_static_planning parse_response")
         sub_queries, logic_forms = self.parse_steps(response)
         logic_forms = self._parse_lf(sub_queries, logic_forms)
         tasks_dep = {}

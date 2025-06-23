@@ -16,7 +16,7 @@ def replace_qota(s: str):
 
 def generate_label(s: SPOBase, heads: List[EntityData], schema):
     if heads:
-        return list(set([f"`{h.type}`" for h in heads]))
+        return list(set([f"{h.type}" for h in heads]))
 
     if not isinstance(s, SPOEntity):
         return ["Entity"]

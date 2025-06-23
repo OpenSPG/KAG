@@ -38,7 +38,7 @@ class LLMClient(Registrable):
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
         self.enable_check = kwargs.get("enable_check", True)
-        self.max_tokens = kwargs.get("max_tokens", 8192)
+        self.max_tokens = kwargs.get("max_tokens", 16384)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -180,7 +180,7 @@ class LLMClient(Registrable):
         if isinstance(prompt, list):
             prompt = ""
             kwargs["messages"] = prompt
-        logger.debug(f"Prompt: {prompt}")
+        # logger.debug(f"Prompt: {prompt}")
         if not prompt:
             return result
         response = ""
@@ -232,6 +232,7 @@ class LLMClient(Registrable):
         result = []
         prompt = prompt_op.build_prompt(variables)
         # logger.info(f"Prompt: {prompt}")
+
         if not prompt:
             return result
         if isinstance(prompt, list):
@@ -240,6 +241,8 @@ class LLMClient(Registrable):
 
         response = ""
         tools = kwargs.get("tools", None)
+        print("tools")
+        print(tools)
         if tools:
             with_json_parse = False
 
@@ -250,6 +253,8 @@ class LLMClient(Registrable):
                     if with_json_parse
                     else self.acall(prompt, **kwargs)
                 )
+                print("response:")
+                print(response)
                 if tools:
                     return response
                 else:
@@ -257,6 +262,8 @@ class LLMClient(Registrable):
                         response, model=self.model, **variables
                     )
                     logger.debug(f"Result: {result}")
+                    print("after parse_response result:")
+                    print(result)
             except Exception as e:
                 import traceback
 

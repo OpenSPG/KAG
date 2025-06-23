@@ -142,6 +142,9 @@ class SearchApi(object):
         # Authentication setting
         auth_settings = []  # noqa: E501
 
+        print("search_text_post_with_http_info body_params")
+        print(body_params)
+
         return self.api_client.call_api(
             "/search/text",
             "POST",
@@ -249,6 +252,9 @@ class SearchApi(object):
         header_params["Accept"] = self.api_client.select_header_accept(
             ["application/json"]
         )  # noqa: E501
+
+        print("search_vector_post_with_http_info")
+        # print(body_params) 
 
         # HTTP header `Content-Type`
         header_params[

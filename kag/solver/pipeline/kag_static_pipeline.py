@@ -43,6 +43,7 @@ class KAGStaticPipeline(SolverPipelineABC):
         max_iteration: int = 10,
     ):
         super().__init__()
+        print("kag_static_pipeline")
         self.planner = planner
         self.executors = executors
         self.generator = generator
@@ -121,11 +122,16 @@ class KAGStaticPipeline(SolverPipelineABC):
         num_retry = 1
         while True:
             context: Context = Context()
+            print("开始执行planner")
             tasks = await self.planning(query, context, **kwargs)
 
             for task in tasks:
                 context.add_task(task)
+                print(task)
 
+            
+
+            print(print("开始执行excutor"))
             for task_group in context.gen_task(group=True):
                 await asyncio.gather(
                     *[
@@ -136,6 +142,7 @@ class KAGStaticPipeline(SolverPipelineABC):
                     ]
                 )
 
+            print("开始执行generator")
             answer = await self.generator.ainvoke(query, context, **kwargs)
             from kag.common.utils import red, green, reset
 

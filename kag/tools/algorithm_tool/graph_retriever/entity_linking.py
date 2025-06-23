@@ -11,6 +11,8 @@ from kag.common.utils import get_recall_node_label
 from kag.common.config import LogicFormConfiguration
 from kag.tools.graph_api.graph_api_abc import GraphApiABC
 from kag.tools.search_api.search_api_abc import SearchApiABC
+from kag.jiuyuansolver.pg_impl import PostgresDB
+
 
 logger = logging.getLogger()
 
@@ -71,7 +73,8 @@ class EntityLinking(ToolABC):
         """
         sematic_type_list = []
         for candis in candis_nodes:
-            node = candis["node"]
+            # node = candis["node"]
+            node = candis["properties"]
             if "semanticType" not in node.keys() or node["semanticType"] == "":
                 continue
             sematic_type_list.append(node["semanticType"])
@@ -83,19 +86,23 @@ class EntityLinking(ToolABC):
         for i in sematic_match_score_list:
             sematic_match_score_map[i[0]] = i[1]
         for node in candis_nodes:
-            recall_node_label = get_recall_node_label(node["node"]["__labels__"])
+            # recall_node_label = get_recall_node_label(node["node"]["__labels__"])
+            recall_node_label = get_recall_node_label([node["label"]])
             without_prefix_label = self.schema_helper.get_label_without_prefix(
                 recall_node_label
             )
             if without_prefix_label.lower() == sematic_type.lower():
                 node["type_match_score"] = node["score"]
             elif (
-                "semanticType" not in node["node"].keys()
-                or node["node"]["semanticType"] == ""
+                # "semanticType" not in node["node"].keys()
+                # or node["node"]["semanticType"] == ""
+                "semanticType" not in node["properties"].keys()
+                or node["properties"]["semanticType"] == ""
             ):
                 node["type_match_score"] = 0.3 * node["score"]
             else:
-                type_score = sematic_match_score_map[node["node"]["semanticType"]]
+                # type_score = sematic_match_score_map[node["node"]["semanticType"]]
+                type_score = sematic_match_score_map[node["properties"]["semanticType"]]
                 if type_score < 0.6:
                     type_score = 0.3
                 node["type_match_score"] = node["score"] * type_score
@@ -109,7 +116,8 @@ class EntityLinking(ToolABC):
             return type_nodes
         result = []
         for node in type_nodes:
-            recall_node_label = get_recall_node_label(node["node"]["__labels__"])
+            # recall_node_label = get_recall_node_label(node["node"]["__labels__"])
+            recall_node_label = get_recall_node_label([node["label"]])
             label_name = self.schema_helper.get_label_without_prefix(recall_node_label)
             if label_name in self.exclude_types:
                 continue
@@ -152,12 +160,21 @@ class EntityLinking(ToolABC):
 
             recall_topk = topk_k or self.top_k
 
+            # print("recall_topk")
+            # print(recall_topk)
+            # print("entity linking")
+            # print(name)
+            # print("with_prefix_type")
+            # print(with_prefix_type)
+
+
             # Adjust recall_topk if the query type is not an entity
             if "entity" not in query_type.lower():
                 recall_topk = 10
 
             vectorize_start_time = time.time()
             # Vectorize the entity name for vector-based search
+
             query_vector = self.vectorize_model.vectorize(name)
             logger.info(
                 f"`{name}` Vectorization completed in {time.time() - vectorize_start_time:.2f} seconds."
@@ -165,47 +182,121 @@ class EntityLinking(ToolABC):
 
             vector_search_start_time = time.time()
             # Perform a vector-based search using the determined query type
-            typed_nodes = self.search_api.search_vector(
-                label=with_prefix_type,
-                property_key="name",
-                query_vector=query_vector,
-                topk=recall_topk,
-            )
-            logger.info(
-                f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
-            )
-            if len(typed_nodes) == 0:
-                vector_search_entity_start_time = time.time()
-                typed_nodes = self.search_api.search_vector(
-                    label="Entity",
+
+            db_config = {
+                    "host": "localhost",
+                    "port": 5432,
+                    "user": "wr",
+                    "password": "your_password",
+                    "database": "test"
+                }
+            # 创建数据库连接
+            db = PostgresDB(db_config)
+
+            try:
+                # 连接数据库
+                db.sync_connect()
+                
+                # 搜索最相似的节点
+                typed_nodes = db.sync_find_most_similar_vector(
+                    node_type = with_prefix_type,
                     property_key="name",
-                    query_vector=query_vector,
-                    topk=recall_topk,
-                )
-                logger.info(
-                    f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
+                    vector=query_vector,
+                    table="graph_nodes",
+                    threshold=-1,
+                    topk=recall_topk
                 )
 
-            # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
-
-            if query_type not in ["Others", "Entity"]:
-                content_search_start_time = time.time()
-                content_vector = self.vectorize_model.vectorize(query)
-                content_recall_nodes = self.search_api.search_vector(
-                    label="Entity",
-                    property_key="desc",
-                    query_vector=content_vector,
-                    topk=recall_topk,
-                )
                 logger.info(
-                    f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes."
+                    f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
                 )
-            else:
-                content_recall_nodes = []
+
+                if len(typed_nodes) == 0:
+                    vector_search_entity_start_time = time.time()
+
+                    typed_nodes = db.sync_find_most_similar_vector(
+                        node_type = "",
+                        property_key="name",
+                        vector=query_vector,
+                        table="graph_nodes",
+                        threshold=-1,
+                        topk=recall_topk
+                    )
+
+                    logger.info(
+                        f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
+                    )
+
+                # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
+
+                if query_type not in ["Others", "Entity"]:
+                    content_search_start_time = time.time()
+                    content_vector = self.vectorize_model.vectorize(query)
+
+                    content_recall_nodes = db.sync_find_most_similar_vector(
+                        node_type = "",
+                        property_key="desc",
+                        vector=content_vector,
+                        table="graph_nodes",
+                        threshold=-1,
+                        topk=recall_topk
+                    )
+                    logger.info(
+                        f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes."
+                    )
+                else:
+                    content_recall_nodes = []
+
+            except Exception as e:
+                logger.error(f"搜索过程中出错: {str(e)}")
+            finally:
+                db.sync_close()
+
+
+
+            # typed_nodes = self.search_api.search_vector(
+            #     label=with_prefix_type,
+            #     property_key="name",
+            #     query_vector=query_vector,
+            #     topk=recall_topk,
+            # )
+            # logger.info(
+            #     f"`{name}` Vector-based search completed in {time.time() - vector_search_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
+            # )
+            # if len(typed_nodes) == 0:
+            #     vector_search_entity_start_time = time.time()
+            #     typed_nodes = self.search_api.search_vector(
+            #         label="Entity",
+            #         property_key="name",
+            #         query_vector=query_vector,
+            #         topk=recall_topk,
+            #     )
+            #     logger.info(
+            #         f"`{name}` Vector-based search with label: Entity completed in {time.time() - vector_search_entity_start_time:.2f} seconds. Found {len(typed_nodes)} nodes."
+            #     )
+            # # Perform an additional vector-based search on the content if the query type is not "Others" or "Entity"
+            # if query_type not in ["Others", "Entity"]:
+            #     content_search_start_time = time.time()
+            #     content_vector = self.vectorize_model.vectorize(query)
+            #     content_recall_nodes = self.search_api.search_vector(
+            #         label="Entity",
+            #         property_key="desc",
+            #         query_vector=content_vector,
+            #         topk=recall_topk,
+            #     )
+            #     logger.info(
+            #         f"`{name}` Content-based vector search completed in {time.time() - content_search_start_time:.2f} seconds. Found {len(content_recall_nodes)} nodes."
+            #     )
+            # else:
+            #     content_recall_nodes = []
+
+
+
 
             # Combine the results from both searches
             sorted_nodes = typed_nodes + content_recall_nodes
             sorted_nodes = self.filter_target_types(sorted_nodes)
+
 
             # Fallback to text-based search if no nodes are found
             if len(sorted_nodes) == 0:
@@ -223,6 +314,7 @@ class EntityLinking(ToolABC):
                 sorted_nodes, key=lambda node: node["score"], reverse=True
             )
 
+
             # Create EntityData objects for the top results that meet the recognition threshold
             for recall in sorted_people_dicts:
                 if (
@@ -231,15 +323,17 @@ class EntityLinking(ToolABC):
                 ):
                     recalled_entity = EntityData()
                     recalled_entity.score = recall["score"]
-                    recalled_entity.biz_id = recall["node"]["id"]
-                    recalled_entity.name = recall["node"]["name"]
+                    # recalled_entity.biz_id = recall["node"]["id"]
+                    recalled_entity.biz_id = recall["node_id"]
+                    # recalled_entity.name = recall["node"]["name"]
+                    recalled_entity.name = recall["name"]
                     recalled_entity.type = get_recall_node_label(
-                        recall["node"]["__labels__"]
+                        # recall["node"]["__labels__"]
+                        [recall["label"]]
                     )
                     retdata.append(recalled_entity)
                 else:
                     break
-
             return retdata[: self.top_k]
         except Exception as e:
             logger.error(

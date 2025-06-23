@@ -29,6 +29,7 @@ class ReasonerClient(Client):
     """SPG Reasoner Client."""
 
     def __init__(self, host_addr: str = None, project_id: int = None, namespace=None):
+        print("ReasonerClient")
         super().__init__(host_addr, str(project_id))
         self._rest_client: rest.ReasonerApi = rest.ReasonerApi(
             api_client=ApiClient(configuration=Configuration(host=host_addr))

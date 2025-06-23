@@ -9,6 +9,7 @@ from kag.common.config import LogicFormConfiguration
 from kag.tools.search_api.search_api_abc import SearchApiABC
 
 from knext.schema.client import CHUNK_TYPE
+from kag.jiuyuansolver.pg_impl import PostgresDB
 
 logger = logging.getLogger()
 chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
@@ -44,20 +45,60 @@ class VectorChunkRetriever(ToolABC):
                 logger.error("chunk query is emtpy", exc_info=True)
                 return {}
             query_vector = self.vectorize_model.vectorize(query)
-            top_k_docs = self.search_api.search_vector(
-                label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
-                property_key="content",
-                query_vector=query_vector,
-                topk=top_k,
-            )
-            scores = {
-                item["node"]["id"]: {
-                    "score": item["score"],
-                    "content": item["node"]["content"],
-                    "name": item["node"]["name"],
+            # print("CHUNK_TYPE")
+            # print(self.schema_helper.get_label_within_prefix(CHUNK_TYPE))
+
+            db_config = {
+                    "host": "localhost",
+                    "port": 5432,
+                    "user": "wr",
+                    "password": "your_password",
+                    "database": "test"
                 }
-                for item in top_k_docs
-            }
+            # 创建数据库连接
+            db = PostgresDB(db_config)
+
+
+            try:
+                # 连接数据库
+                db.sync_connect()
+                
+                # 搜索最相似的文本
+                top_k_docs = db.sync_find_most_similar_vector(
+                    node_type = self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+                    property_key="content",
+                    vector=query_vector,
+                    table="graph_nodes",
+                    threshold=-1,
+                    topk=top_k
+                )
+                scores = {
+                    item["properties"]["id"]: {
+                        "score": item["score"],
+                        "content": item["properties"]["content"],
+                        "name": item["properties"]["name"],
+                    }
+                    for item in top_k_docs
+                }
+            except Exception as e:
+                logger.error(f"搜索过程中出错: {str(e)}")
+            finally:
+                db.sync_close()
+
+            # top_k_docs = self.search_api.search_vector(
+            #     label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+            #     property_key="content",
+            #     query_vector=query_vector,
+            #     topk=top_k,
+            # )
+            # scores = {
+            #     item["node"]["id"]: {
+            #         "score": item["score"],
+            #         "content": item["node"]["content"],
+            #         "name": item["node"]["name"],
+            #     }
+            #     for item in top_k_docs
+            # }
             chunk_cached_by_query_map.put(query, scores)
         except Exception as e:
             scores = dict()

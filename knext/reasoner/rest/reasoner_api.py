@@ -142,6 +142,9 @@ class ReasonerApi(object):
         # Authentication setting
         auth_settings = []  # noqa: E501
 
+        print("query_spg_type_post_with_http_info body_params")
+        print(body_params)
+
         return self.api_client.call_api(
             "/query/spgType",
             "POST",
@@ -363,6 +366,10 @@ class ReasonerApi(object):
         body_params = None
         if "reason_task" in local_var_params:
             body_params = local_var_params["reason_task"]
+
+        # print("reason_task")
+        # print(body_params)
+
         # HTTP header `Accept`
         header_params["Accept"] = self.api_client.select_header_accept(
             ["application/json"]

@@ -131,6 +131,7 @@ def process_planning(think_str):
 @ReporterABC.register("open_spg_reporter")
 class OpenSPGReporter(ReporterABC):
     def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
+        print("open_spg_reporter")
         super().__init__(**kwargs)
         self.last_report = None
         self._lock = threading.Lock()

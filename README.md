@@ -23,7 +23,6 @@
     <a href="https://github.com/OpenSPG/KAG/blob/main/LICENSE">
         <img height="21" src="https://img.shields.io/badge/License-Apache--2.0-ffffff?labelColor=d4eaf7&color=2e6cc4" alt="license">
     </a>
-    <a href="https://deepwiki.com/Like0x/KAG"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 <p align="center">
    <a href="https://discord.gg/PURG77zhQ7">

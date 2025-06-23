@@ -13,6 +13,7 @@ from kag.common.config import LogicFormConfiguration
 
 class SchemaUtils:
     def __init__(self, config: LogicFormConfiguration):
+        print("SchemaUtils")
         self.config: LogicFormConfiguration = config
         self.prefix = config.prefix
         self.prefix_concat_sign = "."

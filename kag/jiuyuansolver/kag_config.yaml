@@ -1,0 +1,162 @@
+#------------project configuration start----------------#
+openie_llm: &openie_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-909121fc92b54a9ea60d31953744831d
+  model: deepseek-r1-distill-llama-70b
+  enable_check: false
+
+chat_llm: &chat_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: sk-909121fc92b54a9ea60d31953744831d
+  model: deepseek-r1-distill-llama-70b
+  enable_check: false
+
+vectorize_model: &vectorize_model
+  api_key: sk-sownmopqjybvflroiptimrwgheoirxfmypifhpeirzmyflcb
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+  enable_check: false
+vectorizer: *vectorize_model
+
+log:
+  level: INFO
+
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: en
+  namespace: TwoWikiTest
+#------------project configuration end----------------#
+
+#------------kag-builder configuration start----------------#
+kag_builder_pipeline:
+  chain:
+    type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
+    extractor:
+      type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+      llm: *openie_llm
+      ner_prompt:
+        type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
+      std_prompt:
+        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+      triple_prompt:
+        type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+    reader:
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
+    post_processor:
+      type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
+    splitter:
+      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 100000
+      window_length: 0
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+    writer:
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+  num_threads_per_chain: 1
+  num_chains: 16
+  scanner:
+    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+#------------kag-builder configuration end----------------#
+
+#------------kag-solver configuration start----------------#
+search_api:
+  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+
+graph_api:
+  type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+
+
+kg_cs:
+  type: kg_cs_open_spg
+  path_select:
+    type: exact_one_hop_select
+  entity_linking:
+    type: entity_linking
+    recognition_threshold: 0.9
+    exclude_types:
+      - Chunk
+
+kg_fr:
+  type: kg_fr_open_spg
+  top_k: 20
+  path_select:
+    type: fuzzy_one_hop_select
+    llm_client: *chat_llm
+  ppr_chunk_retriever_tool:
+    type: ppr_chunk_retriever
+    llm_client: *openie_llm
+  entity_linking:
+    type: entity_linking
+    recognition_threshold: 0.8
+    exclude_types:
+      - Chunk
+
+
+rc:
+  type: rc_open_spg
+  vector_chunk_retriever:
+    type: vector_chunk_retriever
+    vectorize_model: *vectorize_model
+  vectorize_model: *vectorize_model
+  top_k: 20
+
+kag_merger:
+  type: kg_merger
+  top_k: 20
+  llm_module: *chat_llm
+  summary_prompt:
+    type: default_thought_then_answer
+  vectorize_model: *vectorize_model
+
+kag_hybrid_executor: &kag_hybrid_executor_conf
+  type: kag_hybrid_executor
+  lf_rewriter:
+    type: kag_spo_lf
+    llm_client: *chat_llm
+    lf_trans_prompt:
+      type: default_spo_retriever_decompose
+    vectorize_model: *vectorize_model
+  flow: |
+    kg_cs->kg_fr->kag_merger;rc->kag_merger
+
+
+kag_output_executor: &kag_output_executor_conf
+  type: kag_output_executor
+
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
+
+
+py_code_based_math_executor: &py_code_based_math_executor_conf
+  type: py_code_based_math_executor
+  llm: *chat_llm
+
+solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: lf_kag_static_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: default_lf_static_planning
+    rewrite_prompt:
+      type: default_rewrite_sub_task_query
+  executors:
+    - *kag_hybrid_executor_conf
+    - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
+    - *kag_output_executor_conf
+  generator:
+    type: llm_generator # kag.solver.implementation.default_generator.DefaultGenerator
+    llm_client: *chat_llm
+    generated_prompt:
+      type: default_refer_generator_prompt
+    enable_ref: true
+
+#------------kag-solver configuration end----------------#

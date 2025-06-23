@@ -32,7 +32,10 @@ class SearchClient(Client):
         req = TextSearchRequest(
             self._project_id, query_string, label_constraints, topk, params
         )
-        records = self._rest_client.search_text_post(text_search_request=req)
+        # records = self._rest_client.search_text_post(text_search_request=req)
+        records = []
+        print("search_text records")
+        print(records)
         return [idx_record_to_dict(record) for record in records]
 
     def search_vector(
@@ -41,6 +44,8 @@ class SearchClient(Client):
         req = VectorSearchRequest(
             self._project_id, label, property_key, query_vector, ef_search, topk, params
         )
+        print("req")
+        # print(req)  原始问题的1024维度向量
         records = self._rest_client.search_vector_post(vector_search_request=req)
         return [idx_record_to_dict(record) for record in records]
 

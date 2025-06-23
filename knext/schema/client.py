@@ -19,6 +19,8 @@ from knext.schema import rest
 from knext.schema.model.base import BaseSpgType, AlterOperationEnum, SpgTypeEnum
 from knext.schema.model.relation import Relation
 
+import json
+
 cache = knext.common.cache.SchemaCache()
 
 
@@ -33,6 +35,7 @@ BASIC_TYPES = [TEXT_TYPE, INTEGER_TYPE, FLOAT_TYPE]
 
 class SchemaSession:
     def __init__(self, client, project_id):
+        print("SchemaSession")
         self._alter_spg_types: List[BaseSpgType] = []
         self._rest_client = client
         self._project_id = project_id
@@ -41,11 +44,18 @@ class SchemaSession:
         self.__spg_types = {}
         self._init_spg_types()
 
+
+
     def _init_spg_types(self):
         """Query project schema and init SPG types in session."""
-        project_schema = self._rest_client.schema_query_project_schema_get(
-            self._project_id
-        )
+        # project_schema = self._rest_client.schema_query_project_schema_get(
+        #     self._project_id
+        # )
+
+        with open("/root/softwares/kag_project/KAG-master/kag/jiuyuansolver/schema3.py", 'r', encoding='utf-8') as file:
+            content = file.read()
+        project_schema = ApiClient().jiuyuan_deserialize(content, "ProjectSchema")
+
         for spg_type in project_schema.spg_types:
             spg_type_name = spg_type.basic_info.name.name
             type_class = BaseSpgType.by_type_enum(spg_type.spg_type_enum)
@@ -136,6 +146,7 @@ class SchemaClient(Client):
     """ """
 
     def __init__(self, host_addr: str = None, project_id: str = None):
+        print("SchemaClient")
         super().__init__(host_addr, project_id)
         self._session = None
         self._rest_client: rest.SchemaApi = rest.SchemaApi(

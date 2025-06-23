@@ -2,19 +2,19 @@
 openie_llm: &openie_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-7b-instruct-1m
+  api_key: sk-1669cb8260604d538df0589e7abf07f4
+  model: deepseek-r1-distill-llama-70b
   enable_check: false
 
 chat_llm: &chat_llm
   type: maas
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
-  api_key: key
-  model: qwen2.5-72b-instruct
+  api_key: sk-1669cb8260604d538df0589e7abf07f4
+  model: deepseek-r1-distill-llama-70b
   enable_check: false
 
 vectorize_model: &vectorize_model
-  api_key: key
+  api_key: sk-sownmopqjybvflroiptimrwgheoirxfmypifhpeirzmyflcb
   base_url: https://api.siliconflow.cn/v1/
   model: BAAI/bge-m3
   type: openai
@@ -30,7 +30,7 @@ project:
   host_addr: http://127.0.0.1:8887
   id: "1"
   language: en
-  namespace: HotpotQA
+  namespace: TwoWikiTest
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
@@ -62,7 +62,7 @@ kag_builder_pipeline:
   num_threads_per_chain: 1
   num_chains: 16
   scanner:
-    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+    type: 2wiki_dataset_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
 #------------kag-builder configuration end----------------#
 
 #------------kag-solver configuration start----------------#
