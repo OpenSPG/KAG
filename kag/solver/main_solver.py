@@ -211,7 +211,7 @@ async def do_qa_pipeline(
                     )
                 )
         except Exception as e:
-            reporter.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
+            logger.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
             continue
     qa_config["retrievers"] = retriever_configs
 
@@ -289,13 +289,16 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
             except Exception as e:
                 logger.error(f"KB配置初始化失败: {str(e)}", exc_info=True)
+    reporter_map = {
+        "kag_thinker_pipeline": "kag_open_spg_reporter"
+    }
 
     reporter_config = {
-        "type": main_config.get("reporter", "open_spg_reporter"),
+        "type": reporter_map.get(use_pipeline, "open_spg_reporter"),
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
-        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline"],
+        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline", "kag_thinker_pipeline"],
         "report_all_references": use_pipeline == "index_pipeline",
     }
     reporter = ReporterABC.from_config(reporter_config)

@@ -104,11 +104,7 @@ class Environment:
 
     @property
     def host_addr(self):
-        host_addr = self.project_config.get("host_addr", None)
-        if host_addr is None:
-            host_addr = DEFAULT_HOST_ADDR
-            logger.warning(f"project host_addr is not defined, use default host_addr: {host_addr}")
-        return host_addr
+        return self.project_config.get("host_addr", None)
 
     def get_config(self):
         """

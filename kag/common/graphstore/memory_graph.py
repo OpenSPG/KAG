@@ -46,7 +46,7 @@ def configure_device(use_mps=True):
         device = "mps"
     else:
         device = "cpu"
-    logger.info(f"Using device: {device}")
+    logger.debug(f"Using device: {device}")
     return device
 
 

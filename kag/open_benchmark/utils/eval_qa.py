@@ -23,6 +23,7 @@ class EvalQa:
         self.task_name = task_name
 
     async def qa(self, query, gold):
+        start_time = time.time()
         reporter: TraceLogReporter = TraceLogReporter()
 
         pipeline = SolverPipelineABC.from_config(
@@ -30,7 +31,7 @@ class EvalQa:
         )
         answer = await pipeline.ainvoke(query, reporter=reporter, gold=gold)
 
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n")
+        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n cost={time.time() - start_time}")
 
         info, status = reporter.generate_report_data()
         return answer, {"info": info.to_dict(), "status": status}
@@ -144,37 +145,65 @@ class EvalQa:
         ckpt = CheckpointerManager.get_checkpointer(
             {"type": "diskcache", "ckpt_dir": f"{self.task_name}_ckpt"}
         )
+        batch_size = 20
         res_qa = []
-        semaphore = asyncio.Semaphore(thread_num)  # 控制并发度
-
-        async def bounded_process_sample(data):
-            async with semaphore:
-                return await self.async_process_sample(data)
-
-        tasks = [
-            asyncio.create_task(bounded_process_sample((sample_idx, sample, ckpt)))
-            for sample_idx, sample in enumerate(qa_list[:upper_limit])
-        ]
         metrics_list = []
-        for task in tqdm(
-            asyncio.as_completed(tasks),
-            total=len(tasks),
-            desc=f"parallelQaAndEvaluate {self.task_name} completing: ",
-        ):
-            result = await task
-            if result is not None:
-                sample_idx, prediction, metrics, traceLog = result
-                sample = qa_list[sample_idx]
 
-                sample["prediction"] = prediction
-                sample["traceLog"] = traceLog
-                sample["metrics"] = metrics
-                metrics_list.append(metrics)
-                res_qa.append(sample)
+        queue = asyncio.Queue()
+        total_tasks = min(len(qa_list), upper_limit)
 
-                if sample_idx % 20 == 0:
-                    await self.async_write_json(res_file_path, res_qa)
-        await self.async_write_json(res_file_path, res_qa)
+        # 填充任务进队列
+        for idx in range(total_tasks):
+            await queue.put((idx, qa_list[idx], ckpt))
+
+        # 进度条
+        progress_bar = tqdm(total=total_tasks, desc=f"parallelQaAndEvaluate {self.task_name}")
+
+        # 消费者逻辑
+        async def worker():
+            while True:
+                try:
+                    data = await queue.get()
+                    if data is None:
+                        break
+                    sample_idx, sample, ckpt = data
+
+                    # 处理样本
+                    result = await self.async_process_sample(data)
+                    if result is not None:
+                        _, prediction, metrics, traceLog = result
+                        sample["prediction"] = prediction
+                        sample["traceLog"] = traceLog
+                        sample["metrics"] = metrics
+                        metrics_list.append(metrics)
+                        res_qa.append(sample)
+
+                        if len(res_qa) % batch_size == 0:
+                            await self.async_write_json(res_file_path, res_qa)
+
+                    # 更新进度条
+                    progress_bar.update(1)
+                    queue.task_done()
+                except Exception as e:
+                    logger.error(f"Worker error: {e}")
+                    queue.task_done()
+
+        # 启动 workers
+        workers = [asyncio.create_task(worker()) for _ in range(thread_num)]
+
+        # 等待所有任务完成
+        await queue.join()
+
+        # 停止 workers
+        for _ in workers:
+            await queue.put(None)
+        await asyncio.gather(*workers)
+
+        # 写入剩余数据
+        if len(res_qa) % batch_size != 0:
+            await self.async_write_json(res_file_path, res_qa)
+
+        progress_bar.close()
 
         return res_qa, metrics_list
 

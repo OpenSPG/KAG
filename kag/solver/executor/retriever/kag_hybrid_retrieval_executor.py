@@ -10,10 +10,15 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 import asyncio
+import time
+import logging
+from collections import defaultdict
 from typing import List, Optional
-
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
+from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface import (
     ExecutorABC,
     RetrieverABC,
@@ -25,13 +30,14 @@ from kag.interface import (
     LLMClient,
     PromptABC,
     EntityData,
-    SchemaUtils,
     Prop,
 )
+from kag.interface.solver.base_model import SPOEntity
 from kag.interface.solver.planner_abc import format_task_dep_context
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.utils import init_prompt_with_fallback
 
+logger = logging.getLogger()
 
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
@@ -39,6 +45,8 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self,
         retrievers: List[RetrieverABC],
         merger: RetrieverOutputMerger,
+        context_select_llm: LLMClient = None,
+        context_select_prompt: PromptABC = None,
         enable_summary=False,
         llm_module: LLMClient = None,
         summary_prompt: PromptABC = None,
@@ -59,24 +67,166 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
 
         self.enable_summary = enable_summary
 
-        self.summary_chunks_num = kwargs.get("summary_chunk_num", 5)
+        self.context_select_llm = context_select_llm or LLMClient.from_config(
+            get_default_chat_llm_config()
+        )
+        self.context_select_prompt = context_select_prompt or PromptABC.from_config({
+            "type": "context_select_prompt"
+        })
 
-    def inovke(
-        self, query: str, task: Task, context: Context, **kwargs
-    ) -> RetrieverOutput:
-        outputs = []
+    def context_select(self, query: str, sorted_chunks):
+        chunks = []
+        for idx, item in enumerate(sorted_chunks):
+            chunks.append({"idx": idx, "content": item.content})
+        variables = {"question": query, "context": chunks}
+        response = self.context_select_llm.invoke(
+            variables, self.context_select_prompt
+        )
+        selected_context = response["context"]
+        indices = []
+        if len(selected_context) > 0:
+            indices.extend(selected_context)
+        for i in range(min(4, len(sorted_chunks))):
+            if i not in indices:
+                indices.append(i)
+        return [sorted_chunks[x] for x in indices]
+
+    def do_retrieval(self, task_query, tag_id, task, context: Context, **kwargs) -> RetrieverOutput:
+        start_time = time.time()
+        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
+
+        # Step 1: Group retrievers by their 'priority' attribute.
+        # This allows us to execute them in priority order.
+        priority_groups = defaultdict(list)
         for retriever in self.retrievers:
-            outputs.append(retriever.invoke(task, **kwargs))
+            # Default to priority 1 if not explicitly set
+            priority = getattr(retriever, 'priority', 1)
+            priority_groups[priority].append(retriever)
 
-        merged = self.merger.invoke(task, outputs, **kwargs)
-        return merged
+        # Step 2: Sort the priorities in ascending order (lower number = higher priority)
+        sorted_priorities = sorted(priority_groups.keys())
 
-    async def ainvoke(
-        self, query: str, task: Task, context: Context, **kwargs
-    ) -> RetrieverOutput:
+        retrieved_data = RetrieverOutput()
+
+        # Step 3: Process each group in order of increasing priority
+        for priority in sorted_priorities:
+            group = priority_groups[priority]
+            logger.debug(f"Executing retrievers with priority={priority}")
+
+            outputs = []  # To collect output from each retriever
+            # Use a thread pool executor to run all retrievers in this group concurrently
+            with ThreadPoolExecutor(max_workers=len(group)) as executor:
+                futures = []
+                for retriever in group:
+                    # Report the beginning of each sub-retriever execution
+                    self.report_content(
+                        reporter,
+                        tag_id,
+                        f"begin_sub_kag_retriever_{retriever.schema().get('name')}",
+                        "task_executing",
+                        "FINISH",
+                        component_name=retriever.schema().get("name"),
+                    )
+
+                    # Prepare function and submit to thread pool
+                    func = partial(retriever.invoke, task, context=context, segment_name=tag_id, **kwargs)
+                    future = executor.submit(func)
+                    futures.append((future, retriever))
+
+                # Collect results from each future
+                for future, retriever in futures:
+                    try:
+                        output = future.result()  # Wait for result
+                        outputs.append(output)
+
+                        # Log data report after successful execution
+                        self.do_data_report(
+                            output,
+                            reporter,
+                            tag_id,
+                            f"begin_sub_kag_retriever_{output.retriever_method}",
+                            "retrieved_info_digest",
+                        )
+
+                        # Extract SPOs (Subject-Predicate-Object triples) from output graphs
+                        spos = []
+                        for graph in output.graphs:
+                            spos += graph.get_all_spo()
+                        spos = list(set(spos))  # Deduplicate
+
+                        # Add report line if there are any SPOs
+                        if spos:
+                            reporter.add_report_line(
+                                tag_id,
+                                f"end_sub_kag_retriever_{output.retriever_method}",
+                                spos,
+                                "FINISH",
+                            )
+                    except Exception as e:
+                        logger.error(f"Error executing retriever {retriever}: {e}")
+            if len(outputs) > 1:
+                merged_start_time = time.time()
+                retrieved_data = self.merger.invoke(task, outputs, **kwargs)
+                logger.debug(
+                    f"kag hybrid retrieval {task_query} priority {priority} merged cost={time.time() - merged_start_time}")
+            elif len(outputs) == 1:
+                retrieved_data = outputs[0]
+            else:
+                retrieved_data = RetrieverOutput()
+            # judge is break
+            if (retrieved_data.graphs and retrieved_data.graphs[
+                0].get_all_spo()) or retrieved_data.chunks or retrieved_data.docs:
+                break
+        # Log total cost time for all retrievers
+        logger.debug(f"kag hybrid retrieval {task_query} retriever cost={time.time() - start_time}")
+
+        self.do_data_report(retrieved_data, reporter, tag_id, "kag_merger", "kag_merger_digest")
+
+        return retrieved_data
+
+    def do_summary(self, task_query, tag_id, task, retrieved_data: RetrieverOutput, context: Context, **kwargs):
+        if not self.enable_summary:
+            return retrieved_data
+        # summary
+        selected_rel = []
+        for graph in retrieved_data.graphs:
+            selected_rel += list(set(graph.get_all_spo()))
+        selected_rel = list(set(selected_rel))
+        formatted_docs = [str(rel) for rel in selected_rel]
+        if retrieved_data.chunks:
+            selected_chunks = self.context_select(task_query, retrieved_data.chunks)
+            for doc in selected_chunks:
+                formatted_docs.append(f"{doc.content}")
+
+        deps_context = format_task_dep_context(task.parents)
+        summary_start_time = time.time()
+        summary_response = self.llm_module.invoke(
+            {
+                "cur_question": task_query,
+                "questions": "\n\n".join(deps_context),
+                "docs": "\n\n".join(formatted_docs),
+            },
+            self.summary_prompt,
+            with_json_parse=False,
+            with_except=True,
+            segment_name=tag_id,
+            tag_name=f"begin_summary_{task_query}",
+            **kwargs,
+        )
+        retrieved_data.summary = summary_response
+        logger.debug(f"kag hybrid retrieval {task_query} summary cost={time.time() - summary_start_time}")
+        return retrieved_data
+
+    def do_main(self, task_query, tag_id, task, context, **kwargs):
+        retrieved_data = self.do_retrieval(task_query, tag_id, task, context, **kwargs)
+        retrieved_data = self.do_summary(task_query, tag_id, task, retrieved_data, context, **kwargs)
+        return retrieved_data
+
+    def invoke(self, query, task, context: Context, **kwargs) -> RetrieverOutput:
+        start_time = time.time()
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         task_query = task.arguments["query"]
-        retrieval_tasks = []
+
         tag_id = f"{task_query}_begin_task"
         self.report_content(
             reporter,
@@ -85,81 +235,47 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             "",
             "FINISH",
         )
-        for retriever in self.retrievers:
-            self.report_content(
-                reporter,
-                tag_id,
-                f"begin_sub_kag_retriever_{retriever.schema().get('name')}",
-                "task_executing",
-                "FINISH",
-                component_name=retriever.schema().get("name"),
-            )
-            retrieval_tasks.append(
-                asyncio.create_task(
-                    retriever.ainvoke(
-                        task, context=context, segment_name=tag_id, **kwargs
-                    )
-                )
-            )
-        outputs = await asyncio.gather(*retrieval_tasks)
-        for output in outputs:
-            self.do_data_report(
-                output,
-                reporter,
-                tag_id,
-                f"begin_sub_kag_retriever_{output.retriever_method}",
-                "retrieved_info_digest",
-            )
-            spos = []
-            for graph in output.graphs:
-                spos += graph.get_all_spo()
-            spos = list(set(spos))
-            if spos:
-                reporter.add_report_line(
-                    tag_id,
-                    f"end_sub_kag_retriever_{output.retriever_method}",
-                    spos,
-                    "FINISH",
-                )
+        try:
+            retrieved_data = self.do_main(task_query, tag_id, task, context, **kwargs)
+        except Exception as e:
+            logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
+            retrieved_data = RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
 
-        merged = await self.merger.ainvoke(task, outputs, **kwargs)
-        self.do_data_report(merged, reporter, tag_id, "kag_merger", "kag_merger_digest")
-        if self.enable_summary:
-            # summary
-            chunks = merged.chunks[: self.summary_chunks_num]
-
-            selected_rel = []
-            for graph in merged.graphs:
-                selected_rel += list(set(graph.get_all_spo()))
-            selected_rel = list(set(selected_rel))
-            formatted_docs = [str(rel) for rel in selected_rel]
-            for doc in chunks:
-                formatted_docs.append(f"{doc.content}")
-
-            deps_context = format_task_dep_context(task.parents)
-            summary_response = self.llm_module.invoke(
-                {
-                    "cur_question": task_query,
-                    "questions": "\n\n".join(deps_context),
-                    "docs": "\n\n".join(formatted_docs),
-                },
-                self.summary_prompt,
-                with_json_parse=False,
-                with_except=True,
-                segment_name=tag_id,
-                tag_name=f"begin_summary_{task_query}",
-                **kwargs,
-            )
-            merged.summary = summary_response
         self.report_content(
             reporter,
             "reference",
             f"{task_query}_kag_retriever_result",
-            merged,
+            retrieved_data,
             "FINISH",
         )
-        task.update_result(merged)
-        return merged
+
+        retrieved_data.task = task
+        logical_node = task.arguments.get("logic_form_node", None)
+        if logical_node and isinstance(logical_node, GetSPONode) and retrieved_data.summary:
+            if isinstance(retrieved_data.summary, str):
+                target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
+                s_entities = context.variables_graph.get_entity_by_alias(logical_node.s.alias_name)
+                if not s_entities and not logical_node.s.get_mention_name() and isinstance(logical_node.s, SPOEntity):
+                    logical_node.s.entity_name = target_answer
+                    context.kwargs[logical_node.s.alias_name] = logical_node.s
+                o_entities = context.variables_graph.get_entity_by_alias(logical_node.o.alias_name)
+                if not o_entities and not logical_node.o.get_mention_name() and isinstance(logical_node.o, SPOEntity):
+                    logical_node.o.entity_name = target_answer
+                    context.kwargs[logical_node.o.alias_name] = logical_node.o
+
+            context.variables_graph.add_answered_alias(
+                logical_node.s.alias_name.alias_name, retrieved_data.summary
+            )
+            context.variables_graph.add_answered_alias(
+                logical_node.p.alias_name.alias_name, retrieved_data.summary
+            )
+            context.variables_graph.add_answered_alias(
+                logical_node.o.alias_name.alias_name, retrieved_data.summary
+            )
+
+        task.update_result(retrieved_data)
+        logger.debug(f"kag hybrid retrieval {task_query} cost={time.time() - start_time}")
+        return retrieved_data
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

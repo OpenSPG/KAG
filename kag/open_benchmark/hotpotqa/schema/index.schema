@@ -16,6 +16,8 @@ Summary(摘要): IndexType
   properties:
     title(标题): Text
       index: TextAndVector
+    content(内容): Text
+      index: TextAndVector
   relations:
     relateTo(关联文本块): Chunk
     childOf(上级摘要): Summary
@@ -62,6 +64,8 @@ Diagram(图表): IndexType
 Outline(大纲): IndexType
   properties:
     title(标题): Text
+      index: TextAndVector
+    content(内容): Text
       index: TextAndVector
   relations:
     relateTo(关联文本块): Chunk
