@@ -123,7 +123,11 @@ class KagDeduceExecutor(ExecutorABC):
                 else:
                     continue
             contents.append(c)
-        contents = "input params:\n" + "\n".join(contents) if contents else ""
+        contents = "\ninput information:\n" + "\n".join(contents) if contents else ""
+
+        for k, v in context.kwargs.get("step_answer", {}).items():
+            if k in task_query:
+                contents +=  f"\n{k}={v}\n"
 
         result = []
         final_if_answered = False

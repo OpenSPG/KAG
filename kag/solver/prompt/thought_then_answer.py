@@ -17,8 +17,11 @@ from kag.interface import PromptABC
 @PromptABC.register("default_thought_then_answer")
 class ThoughtThenAnswerPrompt(PromptABC):
 
-    template_en = """As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
+    template_en = """As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly.
+
 NOTE: If the provided information does not directly answer the question, you must use your internal knowledge in combination with reasoning to derive a reasonable answer.
+
+Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
 
 Docs:
 Sylvester
@@ -53,7 +56,11 @@ $questions
 
 $cur_question
 """
-    template_zh = """作为一位擅长解决复杂多跳问题的专家，我需要你的帮助来解决一个多跳问题。该问题已被分割成多个简单的单跳查询，其中每个问题可能依赖于前面问题的回答。我会提供有关如何解决这些初步问题的见解，或者直接提供答案，这些对于准确解答至关重要。此外，我将提供与当前问题相关的文本摘录，建议你仔细阅读并理解这些内容。请以“思考: ”开头，概述你的逐步思考过程，以得出结论。以“结论: ”结尾，提供一个清晰且精确的回答，不要包含额外的评论。
+    template_zh = """作为一位擅长解决复杂多跳问题的专家，我需要你的帮助来解决一个多跳问题。该问题已被分割成多个简单的单跳查询，其中每个问题可能依赖于前面问题的回答。我会提供有关如何解决这些初步问题的见解，或者直接提供答案，这些对于准确解答至关重要。此外，我将提供与当前问题相关的文本摘录，建议你仔细阅读并理解这些内容。
+
+注意：如果提供的信息无法直接回答问题，请结合你的内部知识和逻辑推理得出一个合理的答案。
+
+请以“思考: ”开头，概述你的逐步思考过程，以得出结论。以“结论: ”结尾，提供一个清晰且精确的回答，不要包含额外的评论。
 
 文档：
 Sylvester
