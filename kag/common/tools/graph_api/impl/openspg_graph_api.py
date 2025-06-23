@@ -70,18 +70,21 @@ class OpenSPGGraphApi(GraphApiABC):
         kag_project_config = kag_config.global_config
         self.project_id = project_id or kag_project_config.project_id
         self.host_addr = host_addr or kag_project_config.host_addr
-
-        self.schema: SchemaUtils = SchemaUtils(
-            LogicFormConfiguration(
-                {
-                    "KAG_PROJECT_ID": str(self.project_id),
-                    "KAG_PROJECT_HOST_ADDR": self.host_addr,
-                }
+        if self.project_id is not None and self.host_addr is not None:
+            self.schema: SchemaUtils = SchemaUtils(
+                LogicFormConfiguration(
+                    {
+                        "KAG_PROJECT_ID": str(self.project_id),
+                        "KAG_PROJECT_HOST_ADDR": self.host_addr,
+                    }
+                )
             )
-        )
 
-        self.rc = ReasonerClient(self.host_addr, int(str(self.project_id)))
-        self.gr = GraphClient(self.host_addr, int(str(self.project_id)))
+            self.rc = ReasonerClient(self.host_addr, int(str(self.project_id)))
+            self.gr = GraphClient(self.host_addr, int(str(self.project_id)))
+        else:
+            self.rc = None
+            self.gr = None
 
         self.cache_one_hop_graph: [str, OneHopGraphData] = {}
 
@@ -232,6 +235,9 @@ class OpenSPGGraphApi(GraphApiABC):
         return cached_map
 
     def execute_dsl(self, dsl: str, **kwargs) -> TableData:
+        if self.rc is None:
+            logger.warning(f"{dsl} current is None")
+            return TableData()
         res = self.rc.syn_execute(dsl_content=dsl, **kwargs)
         task_resp: ReasonTask = res.task
         if task_resp is None or task_resp.status != "FINISH":
@@ -243,6 +249,8 @@ class OpenSPGGraphApi(GraphApiABC):
     def calculate_pagerank_scores(
         self, target_vertex_type, start_nodes: List[Dict], top_k=10
     ) -> Dict:
+        if self.gr is None:
+            return {}
         target_vertex_type_with_prefix = self.schema.get_label_within_prefix(
             target_vertex_type
         )
@@ -251,6 +259,8 @@ class OpenSPGGraphApi(GraphApiABC):
         )
 
     def get_entity_prop_by_id(self, biz_id, label) -> Dict:
+        if self.rc is None:
+            return {}
         return self.rc.query_node(label=label, id_value=biz_id)
 
 

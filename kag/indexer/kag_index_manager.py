@@ -631,6 +631,10 @@ Chunk(文本块): EntityType
             },
             {
                 "type": "rc_open_spg",
+                "search_api": {
+                        "type": "openspg_search_api",
+                        "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "vector_chunk_retriever": {
                     "type": "vector_chunk_retriever",
                     "vectorize_model": vectorize_model_config,

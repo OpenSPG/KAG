@@ -252,15 +252,16 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         retrieved_data.task = task
         logical_node = task.arguments.get("logic_form_node", None)
         if logical_node and isinstance(logical_node, GetSPONode) and retrieved_data.summary:
-            target_answer = retrieved_data.summary.split("Answer:")[1].strip()
-            s_entities = context.variables_graph.get_entity_by_alias(logical_node.s.alias_name)
-            if not s_entities and not logical_node.s.get_mention_name() and isinstance(logical_node.s, SPOEntity):
-                logical_node.s.entity_name = target_answer
-                context.kwargs[logical_node.s.alias_name] = logical_node.s
-            o_entities = context.variables_graph.get_entity_by_alias(logical_node.o.alias_name)
-            if not o_entities and not logical_node.o.get_mention_name() and isinstance(logical_node.o, SPOEntity):
-                logical_node.o.entity_name = target_answer
-                context.kwargs[logical_node.o.alias_name] = logical_node.o
+            if isinstance(retrieved_data.summary, str):
+                target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
+                s_entities = context.variables_graph.get_entity_by_alias(logical_node.s.alias_name)
+                if not s_entities and not logical_node.s.get_mention_name() and isinstance(logical_node.s, SPOEntity):
+                    logical_node.s.entity_name = target_answer
+                    context.kwargs[logical_node.s.alias_name] = logical_node.s
+                o_entities = context.variables_graph.get_entity_by_alias(logical_node.o.alias_name)
+                if not o_entities and not logical_node.o.get_mention_name() and isinstance(logical_node.o, SPOEntity):
+                    logical_node.o.entity_name = target_answer
+                    context.kwargs[logical_node.o.alias_name] = logical_node.o
 
             context.variables_graph.add_answered_alias(
                 logical_node.s.alias_name.alias_name, retrieved_data.summary
