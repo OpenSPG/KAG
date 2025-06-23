@@ -82,18 +82,19 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                                                             segment_name=tag_id, tag_name=cur_turn_tag_name,
                                                             num_turns=num_turns,
                                                             reporter=reporter)
-            messages.append({
-                "role": "assistant",
-                "content": subquestion_response,
-            })
-            if "<search>" not in subquestion_response:
+
+            if subquestion_response and "<search>" not in subquestion_response:
+                messages.append({
+                    "role": "assistant",
+                    "content": subquestion_response,
+                })
                 if "<answer>" in subquestion_response:
                     answer_content = extract_specific_tag_content(subquestion_response, "answer")[0]
                 else:
                     answer_content = subquestion_response
                 predict = extract_box_answer(answer_content)
                 if not predict:
-                    predict = answer_content[0]
+                    predict = answer_content
                 step_answer = context.kwargs.get("step_answer", {})
                 step_answer[f"#{step_id}"] = predict
                 context.kwargs["step_answer"] = step_answer
@@ -103,6 +104,10 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
 
                 break
             else:
+                messages.append({
+                    "role": "assistant",
+                    "content": subquestion_response,
+                })
                 if "<search>" in subquestion_response:
                     search = search_plan_extraction(subquestion_response)
                     # 有时候会缺失</search>训练时需要优化<search>内容，不需要直接换行

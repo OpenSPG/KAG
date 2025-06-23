@@ -143,6 +143,7 @@ AtomicQuery(原子问): EntityType
             {
                 "type": "atomic_query_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
+                "score_threshold": 0.7,
                 "llm_client": llm_config,
                 "query_rewrite_prompt": {"type": "atomic_query_rewrite_prompt"},
                 "search_api": {
@@ -158,6 +159,7 @@ AtomicQuery(原子问): EntityType
             },
             {
                 "type": "vector_chunk_retriever",
+                "score_threshold": 0.7,
                 "vectorize_model": vectorize_model_config,
                 "search_api": {
                     "type": "openspg_search_api",
