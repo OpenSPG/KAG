@@ -48,7 +48,9 @@ class KagModelGenerator(GeneratorABC):
         for task in context.gen_task(False):
             tasks.append(task)
             if task.executor != "Output":
-                results.append(to_task_context_str(task.get_task_context()))
+                task_result = to_task_context_str(task.get_task_context())
+                if task_result:
+                    results.append(task_result)
         if tasks[-1].executor == "Output":
             last_question = tasks[-1].arguments.get("origin_query", tasks[-1].arguments["query"])
         messages = context.kwargs.get("messages", [])

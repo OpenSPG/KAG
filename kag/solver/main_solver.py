@@ -295,7 +295,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
-        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline"],
+        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline", "kag_thinker_pipeline"],
         "report_all_references": use_pipeline == "index_pipeline",
     }
     reporter = ReporterABC.from_config(reporter_config)

@@ -88,6 +88,7 @@ __all__ = [
     "LLMGenerator",
     "KagModelGenerator",
     "OpenSPGReporter",
+    "KAGOpenSPGReporter",
     "TraceLogReporter",
     "LLMIndexGenerator",
     "IndexPipeline",
@@ -99,5 +100,6 @@ from kag.solver.prompt.thought_iterative_planning_prompt import (
 from kag.common.tools.algorithm_tool.self_cognition.self_cogn_tools import (
     SelfCognExecutor,
 )
+from kag.solver.reporter.open_spg_kag_model_reporter import KAGOpenSPGReporter
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter

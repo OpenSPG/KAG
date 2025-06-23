@@ -74,7 +74,17 @@ def _find_entities(kg_graph: KgGraph, symbol_entity: SPOEntity, query: str, el):
     # Try existing entities in knowledge graph
     entities = kg_graph.get_entity_by_alias_without_attr(symbol_entity.alias_name)
     if entities:
-        return entities
+        if hasattr(el, "schema_helper"):
+            schema_helper = el.schema_helper
+        else:
+            schema_helper = None
+
+        ret_entities = []
+        for e in entities:
+            if e.type in schema_helper.full_name_2_node_en.keys():
+                ret_entities.append(e)
+        if ret_entities:
+            return ret_entities
     # Perform entity linking if possible
     if symbol_entity.entity_name:
         entities = el.invoke(
@@ -103,7 +113,9 @@ class KgRetrieverTemplate:
     ) -> KgGraph:
         segment_name = kwargs.get("segment_name", "thinker")
         component_name = kwargs.get("name", "")
-        kg_graph = graph_data or KgGraph()
+        kg_graph = KgGraph()
+        if graph_data:
+            kg_graph.merge_kg_graph(graph_data)
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
         used_lf = []
         for logic_node in logic_nodes:

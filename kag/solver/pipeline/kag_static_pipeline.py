@@ -95,7 +95,7 @@ class KAGStaticPipeline(SolverPipelineABC):
             context: Execution context for dependency resolution
             **kwargs: Additional execution parameters
         """
-        if self.planner.check_require_rewrite(task):
+        if hasattr(self.planner, 'check_require_rewrite') and self.planner.check_require_rewrite(task):
             task.update_memory("origin_arguments", task.arguments)
             updated_args = await self.planner.query_rewrite(task, query=query, context=context, **kwargs)
             task.arguments.update(updated_args)
