@@ -65,7 +65,7 @@ class KAGIndexManager(Registrable):
 
     @property
     def retrieval_method(self) -> str:
-        return ""
+        return "通过构建原子问，实现原子问的检索，一般用于检索与原子问相关的chunk"
 
     def build_extractor_config(
         self, llm_config: Dict, vectorize_model_config: Dict, **kwargs
@@ -83,6 +83,10 @@ class AtomicIndexManager(KAGIndexManager):
     @property
     def name(self):
         return "基于原子查询的索引管理器"
+
+    @property
+    def description(self) -> str:
+        return "该索引管理器通过从文档中抽取独立的、可回答的原子查询（AtomicQuery）来构建索引。它旨在将复杂问题分解，并通过检索与这些原子问题最相关的文本块（Chunk）来提供精确的上下文，特别适用于需要细粒度问答的场景。"
 
     @property
     def schema(self) -> str:
@@ -106,15 +110,17 @@ AtomicQuery(原子问): IndexType
 
     @property
     def applicable_scenarios(self) -> str:
-        msg = """
-        检索方法描述：
+        return """
+        **适用场景**: 适用于事实问答、FAQ等可以通过简单问句精确匹配找到答案的场景。
 
-        # recall_atomic_questions, 基于question title，通过bm25/emb 等实现atomic question召回
-        # get_qa_associate_chunks, 基于chunk 与 question 的关联，实现chunk召回
-        chunks2 = get_qa_associate_chunks(recall_atomic_question(rewrite(sub_query)))
+        **检索流程**:
+        1. `rewrite(sub_query)`: 对用户问题进行重写，使其更规范。
+        2. `recall_atomic_question(...)`: 基于重写后的问题，通过语义或文本匹配召回相似的原子问题。
+        3. `get_qa_associate_chunks(...)`: 根据召回的原子问题，找到与之关联的文本块作为最终答案来源。
         
+        **代码示例**:
+        `chunks = get_qa_associate_chunks(recall_atomic_question(rewrite(sub_query)))`
         """
-        return msg
 
     @property
     def retrieval_method(self) -> str:
@@ -188,6 +194,10 @@ class ChunkIndexManager(KAGIndexManager):
         return "基于文本块的索引管理器"
 
     @property
+    def description(self) -> str:
+        return "该索引管理器将文档直接分割成文本块（Chunk），并为这些文本块创建向量和文本索引。这是一种直接而高效的索引方式（Naive RAG），适用于对整个文档进行语义或关键字检索，快速定位包含相关信息的文本片段。"
+
+    @property
     def schema(self) -> str:
         return """
 Chunk(文本块): IndexType
@@ -209,14 +219,16 @@ Chunk(文本块): IndexType
 
     @property
     def applicable_scenarios(self) -> str:
-        msg = """
-        检索方法描述：
+        return """
+        **适用场景**: 适用于通用、开放式的文档问答，当问题没有特定结构，需要在大量非结构化文本中寻找答案时。
 
-        # recall_chunks,基于chunk name/content, 通过bm25/emb 等实现chunk召回
-        chunks1 = recall_chunks(rewrite(sub_query))
+        **检索流程**:
+        1. `rewrite(sub_query)`: 对用户问题进行重写。
+        2. `recall_chunks(...)`: 直接在所有文本块中进行向量或关键词搜索，召回最相关的文本块。
 
+        **代码示例**:
+        `chunks = recall_chunks(rewrite(sub_query))`
         """
-        return msg
 
     @property
     def retrieval_method(self) -> str:
@@ -270,6 +282,10 @@ class TableIndexManager(KAGIndexManager):
         return "基于表格的索引管理器"
 
     @property
+    def description(self) -> str:
+        return "该索引管理器专门用于识别和抽取文档中的表格数据，并为其内容、上下文（前后文本）创建索引。它能够精确地检索表格，并利用表格与周围文本的关联关系来召回相关的文本块，非常适合处理包含大量结构化表格数据的文档。"
+
+    @property
     def schema(self) -> str:
         return """
 Table(表格): IndexType
@@ -297,16 +313,17 @@ Table(表格): IndexType
 
     @property
     def applicable_scenarios(self) -> str:
-        msg = """
-        检索方法描述：
-        
-        
-        # recall_table，基于table title, 通过bm25/emb 等实现table召回
-        # get_table_associate_chunks, 基于chunk 与 table 关联实现chunk 召回
-        chunks5 = get_table_associate_chunks(recall_table(rewrite(sub_query)))
+        return """
+        **适用场景**: 当问题涉及到查询表格中的数据时，例如"XX产品的价格是多少？"或者需要引用表格内容进行回答的场景。
 
+        **检索流程**:
+        1. `rewrite(sub_query)`: 对用户问题进行重写。
+        2. `recall_table(...)`: 根据问题内容，搜索并召回最相关的表格。
+        3. `get_table_associate_chunks(...)`: 找到与召回表格相关联的文本块，提供更丰富的上下文。
+
+        **代码示例**:
+        `chunks = get_table_associate_chunks(recall_table(rewrite(sub_query)))`
         """
-        return msg
 
     @property
     def retrieval_method(self) -> str:
@@ -347,6 +364,10 @@ class SummaryIndexManager(KAGIndexManager):
         return "基于摘要的索引管理器"
 
     @property
+    def description(self) -> str:
+        return "该索引管理器利用大语言模型对文本块（Chunk）生成多层次的摘要（Summary），并基于这些摘要构建索引。通过检索摘要，可以快速理解大段文本的核心内容，并利用摘要与原始文本块的关联来召回详细信息，适用于需要信息概览和层层深入的检索场景。"
+
+    @property
     def schema(self) -> str:
         return """
 Summary(文本摘要): IndexType
@@ -371,15 +392,17 @@ Summary(文本摘要): IndexType
 
     @property
     def applicable_scenarios(self) -> str:
-        msg = """
-        检索方法描述：
-        
-        # recall_summary, 基于summary title，通过bm25/emb 等实现summary召回
-        # get_summary_associate_chunks, 基于chunk 与summary 的关联实现chunk召回
-        chunks3 = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))
+        return """
+        **适用场景**: 适用于需要对长文档进行归纳总结，或者需要从宏观到微观层层钻取信息的场景。
 
+        **检索流程**:
+        1. `rewrite(sub_query)`: 对用户问题进行重写。
+        2. `recall_summary(...)`: 根据问题搜索并召回最相关的摘要。
+        3. `get_summary_associate_chunks(...)`: 通过召回的摘要，找到其对应的原始文本块，提供详细信息。
+
+        **代码示例**:
+        `chunks = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))`
         """
-        return msg
 
     @property
     def retrieval_method(self) -> str:
@@ -420,6 +443,10 @@ class OutlineIndexManager(KAGIndexManager):
         return "基于大纲的索引管理器"
 
     @property
+    def description(self) -> str:
+        return "该索引管理器通过解析文档的结构（如标题层级）来构建大纲（Outline）索引。这种索引保留了文档的层次结构，允许用户通过检索章节标题来快速定位到文档的特定部分，并召回与该大纲节点相关的文本块。"
+
+    @property
     def schema(self) -> str:
         return """
 Outline(标题大纲): IndexType
@@ -444,15 +471,17 @@ Outline(标题大纲): IndexType
 
     @property
     def applicable_scenarios(self) -> str:
-        msg = """
-        检索方法描述：
-        
-        # recall_outline，基于outline title, 通过bm25/emb 等实现outline召回
-        # recall_outline, 基于outline_childOf->outline, 实现outline 扩展召回
-        # get_outline_associate_chunks, 基于chunk 与 summary 关联实现chunk 召回
-        chunks4 = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))
+        return """
+        **适用场景**: 适用于结构化文档的问答，特别是当问题与文档的特定章节或标题相关时。
+
+        **检索流程**:
+        1. `rewrite(sub_query)`: 对用户问题进行重写。
+        2. `recall_outline(...)`: 根据问题搜索召回最相关的大纲标题，并可沿着大纲层级扩展。
+        3. `get_outline_associate_chunks(...)`: 根据召回的大纲，找到其对应的文本块。
+
+        **代码示例**:
+        `chunks = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))`
         """
-        return msg
 
     @property
     def retrieval_method(self) -> str:
@@ -488,6 +517,10 @@ class KAGHybridIndexManager(KAGIndexManager):
     @property
     def name(self):
         return "基于文本块和图谱的混合索引管理器"
+
+    @property
+    def description(self) -> str:
+        return "该索引管理器是一种混合方法，它结合了知识图谱（KG）和文本块（Chunk）的优点。它首先从文本中抽取实体和关系构建图谱，然后将文本块与图谱节点关联起来。在检索时，它同时利用图谱的结构化查询能力（CS/FR Retriever）和文本的向量检索能力，实现更精准、更具推理能力的检索，特别适合复杂的问答任务。"
 
     @property
     def schema(self) -> str:
@@ -533,22 +566,16 @@ AtomicQuery(原子问): IndexType
 
     @property
     def applicable_scenarios(self) -> str:
+        return """
+        **适用场景**: 适用于需要深度推理和关联分析的复杂问题。它能够理解问题的结构，并在知识图谱和文本块之间进行联合查询，应对需要跨领域知识或多跳推理的场景。
 
-        msg = """
-        检索方法描述：
+        **检索流程（多路并行）**:
+        - **路径1 (FR)**: `kg_fr_retriever(query)` -> 自由文本检索，召回相关文本块。
+        - **路径2 (CS)**: `kg_cs_retriever(logic_form)` -> 基于问题的逻辑结构，在图谱中进行精确检索。
+        - **路径3 (RC)**: `vector_chunk_retriever(query)` -> 纯向量检索，作为补充召回。
         
-        # 先根据子问题进行原始问召回
-        atomic_queries = get_atomic_queries(sub_query)
-        # 再据子问题召回知识点
-        knowledge_units = get_knowledge_units(sub_query)
-        # 根据logical-form召回知识点
-        knowledge_units += get_knowledge_units(logcal-form)
-        # 根据logical-form召回实体和关系点
-        entities = get_entities(logical_form)
-        # 使用ppr召回chunk
-        chunks = get_ppr_chunks(atomic_queries+knowledge_units+entities)
+        最终将多路结果融合，提供最全面的答案依据。
         """
-        return msg
 
     @property
     def retrieval_method(self) -> str:
