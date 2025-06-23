@@ -80,18 +80,37 @@ class VectorChunkRetriever(RetrieverABC):
                 ef_search=top_k / 2 * 3,
             )
             top_k_docs = top_k_docs_name + top_k_docs
+
+            merged = {}
+            chunk_map = {}
             chunks = []
             for item in top_k_docs:
                 score = item.get("score", 0.0)
                 if score >= self.score_threshold:
-                    chunks.append(
-                        ChunkData(
+                    chunk = ChunkData(
                             content=item["node"].get("content", ""),
                             title=item["node"]["name"],
                             chunk_id=item["node"]["id"],
                             score=score,
                         )
+                    if chunk.chunk_id not in merged:
+                        merged[chunk.chunk_id] = score
+                    if merged[chunk.chunk_id] < score:
+                        merged[chunk.chunk_id] = score
+                    chunk_map[chunk.chunk_id] = chunk
+
+            sorted_chunk_ids = sorted(merged.items(), key=lambda x: -x[1])
+            for item in sorted_chunk_ids:
+                chunk_id, score = item
+                chunk = chunk_map[chunk_id]
+                chunks.append(
+                    ChunkData(
+                        content=chunk.content,
+                        title=chunk.title,
+                        chunk_id=chunk.chunk_id,
+                        score=score,
                     )
+                )
             out = RetrieverOutput(
                 chunks=chunks, retriever_method=self.schema().get("name", "")
             )

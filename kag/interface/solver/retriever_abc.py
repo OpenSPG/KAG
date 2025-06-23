@@ -38,6 +38,7 @@ class RetrieverOutput:
         retriever_method: str = "",
         summary: str = "",
         err_msg: str = "",
+        task: Task = None,
     ):
         """Initializes retrieval output container with optional data components.
 
@@ -55,6 +56,7 @@ class RetrieverOutput:
         self.retriever_method = retriever_method
         self.summary = summary
         self.err_msg = err_msg
+        self.task = task
 
     def __str__(self):
         """Generates human-readable string representation of retrieval results.
@@ -73,6 +75,7 @@ class RetrieverOutput:
                 f"Retrieved Docs:\n{docs}",
                 f"Retriever Method: {self.retriever_method}",
                 f"Summary:\n{self.summary}",
+                f"Task:\n{self.task}"
             ]
         )
 
@@ -92,6 +95,7 @@ class RetrieverOutput:
             "retriever_method": self.retriever_method,
             "summary": self.summary,
             "err_msg": self.err_msg,
+            "task": str(self.task) if self.task else "",
         }
 
 
@@ -114,6 +118,7 @@ class RetrieverABC(ToolABC):
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         self.kag_config = KAGConfigAccessor.get_config(task_id)
         self.kag_project_config = self.kag_config.global_config
+        self.priority = kwargs.get("priority", 1)
 
     @property
     def input_types(self):

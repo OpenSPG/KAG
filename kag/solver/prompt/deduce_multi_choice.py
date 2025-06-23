@@ -8,20 +8,37 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("default_deduce_multi_choice")
 class DeduceMutiChoice(PromptABC):
-    template_zh = (
-        "根据提供的选项及相关答案，请选择其中至少一个选项回答问题“$instruction”。"
-        "无需解释；"
-        "如果没有可选择的选项，直接回复“无相关信息”无需解释"
-        "\n【信息】：“$memory”\n请确保所提供的信息直接准确地来自检索文档，不允许任何自身推测。"
-    )
-    template_en = (
-        "Based on the provided options and related answers, choose at least one option to respond to the question '$instruction'."
-        "No explanation is needed;"
-        "If there are no available options, simply reply 'No relevant information' without explanation."
-        "\n[Information]: '$memory'"
-        "\nEnsure that the information provided comes directly and accurately from the retrieved document, "
-        "without any speculation."
-    )
+    template_zh =  """角色：
+你是一个逻辑推理助手，专门根据提供的参考信息从多个选项中选择一个或多个答案来回答问题。
+
+指令：
+1. 分析【信息】部分中包含的引用变量（例如：o1, o2）及其问答对；
+2. 理解【问题】是否引用了这些变量或与其相关；
+3. 基于提供的选项及相关信息，从中选择至少一个选项作为回答；
+4. 如果没有任何可选答案，请直接回复“无相关信息”，无需解释。
+
+注意：只能使用给定的信息进行推断，禁止任何假设或自行补充内容。
+
+【信息】：
+$memory
+
+【问题】：
+$instruction
+
+答案："""
+    template_en = """You are a logical reasoning assistant. Please follow these strict instructions:
+
+Analyze the provided [Information] which contains reference variables (e.g., o1, o2) with Q&A pairs.
+Evaluate the [Question] which may reference these variables.
+Based on the provided options and related variables, choose at least one option to respond to the question
+If there are no available options, simply reply 'No relevant information' without explanation.
+[Information]:
+$memory
+
+[Question]:
+$instruction
+
+Answer:"""
 
     @property
     def template_variables(self) -> List[str]:

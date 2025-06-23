@@ -28,23 +28,18 @@ class EvaForMusique(EvalQa):
 
     def do_recall_eval(self, sample, references):
         eva_obj = Evaluate()
-        paragraphs = sample["paragraphs"]
-        gold_list = []
-        question_decomposition = sample["question_decomposition"]
-        for qd in question_decomposition:
-            gold_list.append(
-                processing_phrases(
-                    paragraphs[qd["paragraph_support_idx"]]["title"]
-                ).replace(" ", "")
+        paragraph_support_idx_set = [
+            idx["paragraph_support_idx"] for idx in sample["question_decomposition"]
+        ]
+        golds = []
+        for idx in paragraph_support_idx_set:
+            golds.append(
+                eva_obj.generate_id(
+                    sample["paragraphs"][idx]["title"],
+                    sample["paragraphs"][idx]["paragraph_text"],
+                )
             )
-        predictionlist = []
-        for ref in references:
-            predictionlist.append(
-                processing_phrases(ref["title"]).strip('"').replace(" ", "")
-            )
-        return eva_obj.recall_top(
-            predictionlist=predictionlist, goldlist=gold_list, is_chunk_data=False
-        )
+        return eva_obj.recall_top(predictionlist=references, goldlist=golds)
 
     def do_metrics_eval(
         self, questionList: List[str], predictions: List[str], golds: List[str]
@@ -76,10 +71,7 @@ def eval(qa_file_path, thread_num=10, upper_limit=1000, collect_file="benchmark.
 
 if __name__ == "__main__":
     # benchmark common component
-    common_component = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), "../../common_component"
-    )
-    import_modules_from_path(common_component)
+    import kag.open_benchmark.common_component
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()

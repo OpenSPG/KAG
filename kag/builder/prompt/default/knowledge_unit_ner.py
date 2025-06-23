@@ -253,6 +253,8 @@ input: $input
             ret["category"] = response["Category"]
         if "Domain Ontology" in response.keys():
             ret["ontology"] = response["Domain Ontology"]
+            if isinstance(ret["ontology"], list):
+                ret["ontology"] = " -> ".join(ret["ontology"])
         if "Standard Name" in response.keys():
             ret["officialName"] = response["Standard Name"]
         if "Synonyms" in response.keys():
@@ -290,6 +292,10 @@ input: $input
         # rsp = self.process_data(response)
         ret = []
         for r in rsp:
+            if isinstance(r, list) and len(r):
+                r = r[0]
+            if not isinstance(r, dict):
+                continue
             ret.append(
                 self.process_en(r, **kwargs)
                 if KAG_PROJECT_CONF.language == "en"
