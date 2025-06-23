@@ -289,9 +289,12 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
             except Exception as e:
                 logger.error(f"KB配置初始化失败: {str(e)}", exc_info=True)
+    reporter_map = {
+        "kag_thinker_pipeline": "kag_open_spg_reporter"
+    }
 
     reporter_config = {
-        "type": main_config.get("reporter", "open_spg_reporter"),
+        "type": reporter_map.get(use_pipeline, "open_spg_reporter"),
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
