@@ -82,30 +82,18 @@ class KAGLFStaticPlanner(PlannerABC):
         Returns:
             str: Rewritten query with resolved dynamic references
         """
-        reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
-
         query = task.arguments["query"]
         tag_id = f"{query}_begin_task"
-
-        if reporter:
-            reporter.add_report_line(
-                segment="thinker",
-                tag_name=tag_id,
-                content="",
-                status="INIT",
-                step=task.name,
-                overwrite=False,
-            )
         # print(f"Old query: {query}")
         deps_context = format_task_dep_context(task.parents)
-        context = {
+        generate_context = {
             "target question": kwargs.get("query"),
             "history_qa": deps_context,
         }
         new_query = await self.llm.ainvoke(
             {
                 "input": query,
-                "content": json.dumps(context, indent=2, ensure_ascii=False),
+                "content": json.dumps(generate_context, indent=2, ensure_ascii=False),
             },
             self.rewrite_prompt,
             segment_name=tag_id,
@@ -116,7 +104,8 @@ class KAGLFStaticPlanner(PlannerABC):
         logic_form_node = task.arguments.get("logic_form_node", None)
         if logic_form_node:
             logic_form_node.sub_query = new_query
-            return {"rewrite_query": new_query, "logic_form_node": logic_form_node}
+            return {"rewrite_query": new_query, "origin_query": query, "query": new_query,
+                    "logic_form_node": logic_form_node}
         # print(f"query rewrite context = {context}")
         # print(f"New query: {new_query}")
         return {"query": new_query}

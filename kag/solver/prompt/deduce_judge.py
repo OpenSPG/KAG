@@ -8,22 +8,43 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("default_deduce_judge")
 class DeduceJudge(PromptABC):
-    template_zh = (
-        "根据提供的信息，请首先判断是否能够直接判断问题“$instruction”。如果可以直接回答，请直接根据提供信息对问题给出判断是或者否，"
-        "无需解释；"
-        "如果没有任何相关信息，回复“无相关信息”并且在后面跟上理由。"
-        "\n【信息】：“$memory”\n请确保所提供的信息直接准确地来自检索文档，不允许任何自身推测。"
-        "\n【问题】：“$instruction”"
-    )
-    template_en = (
-        "Based on the provided information, first determine if the question '$instruction' can be directly assessed. "
-        "If it can be directly answered, simply respond with Yes or No based on the provided information, no explanation needed;"
-        "If there is no relevant information, simply reply 'No relevant information' without explanation."
-        "\n[Information]: '$memory'"
-        "\nEnsure that the information provided comes directly and accurately from the retrieved document, "
-        "without any speculation."
-        "\n[Question]: '$instruction'"
-    )
+    template_zh = """角色：
+你是一个逻辑推理助手，专门根据提供的参考信息判断问题是否成立。
+
+指令：
+1. 分析【信息】部分中包含的引用变量（例如：o1, o2）及其问答对；
+2. 判断【问题】是否引用了这些变量或与其相关；
+3. 仅输出以下三种结果之一：
+   - “是”——如果信息确认问题陈述；
+   - “否”——如果信息与问题陈述矛盾；
+   - “无相关信息”——如果无法根据给定信息作出判断，并请附上理由。
+
+注意：只能使用给定的信息进行判断，禁止任何假设或自行补充内容。
+
+【信息】：
+$memory
+
+【问题】：
+$instruction
+
+答案："""
+    template_en = """You are a logical reasoning assistant. Please follow these strict instructions:
+
+Analyze the provided [Information] which contains reference variables (e.g., o1, o2) with Q&A pairs.
+Evaluate the [Question] which may reference these variables.
+Output only one of these three values:
+Yes if the information confirms the statement in the question
+No if the information contradicts the statement
+No relevant information if the question cannot be answered with the given data
+[Information]:
+$memory
+
+[Question]:
+$instruction
+
+Answer:
+{Output only Yes/No/No relevant information}
+"""
 
     @property
     def template_variables(self) -> List[str]:

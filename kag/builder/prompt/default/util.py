@@ -14,11 +14,9 @@ def load_knowIE_data(respond, lang="en"):
             left_pos = respond.find("{") if respond.find("{") >= 0 else 0
             right_pos = respond.rfind("}") + 1
             extract_ret_str = extract_ret_str[left_pos:right_pos].strip()
+            extract_ret_str = extract_ret_str.replace("\\'", "'")
             extract_ret = json.loads(extract_ret_str)
-        except Exception as e:
-            logger.warning(
-                f"load_knowIE_data retry0 has exception {e} {respond}", exc_info=True
-            )
+        except:
             try:
                 extract_ret_str = "{" + "{".join(respond.split("{")[1:])
                 extract_ret_str = extract_ret_str.split("}\n}")[0] + "}\n}"
@@ -29,11 +27,7 @@ def load_knowIE_data(respond, lang="en"):
                     extract_ret_str,
                 )
                 extract_ret = json.loads(extract_ret_str)
-            except Exception as e:
-                logger.warning(
-                    f"load_knowIE_data retry1 has exception {e} {respond}",
-                    exc_info=True,
-                )
+            except:
                 try:
                     if "```json" in extract_ret_str:
                         extract_ret_str = extract_ret_str.split("```json")[1]
@@ -71,6 +65,7 @@ def load_NER_data(respond):
             extract_ret_str = extract_ret_str.split("output:")[1]
         if "```" in extract_ret_str:
             extract_ret_str = extract_ret_str.split("```")[0]
+        extract_ret_str = extract_ret_str.replace("\\'", "'")
         extract_ret = json.loads(extract_ret_str)
     except:
         try:
@@ -97,7 +92,7 @@ def load_SPO_data(respond):
             extract_ret_str = extract_ret_str.split("\n```")[0]
         if "input:\n" in extract_ret_str:
             extract_ret_str = extract_ret_str.split("input:\n")[0]
-
+        extract_ret_str = extract_ret_str.replace("\\'", "'")
         rst = check_data(extract_ret_str, "spo", "zh")
         if rst and len(rst) > 0:
             return rst
@@ -283,10 +278,9 @@ def check_data(line, data_type="knowIE", language="zh"):
         valid = {}
         for spo in info:
             try:
-                if len(spo[1].strip()) == 0:
+                if isinstance(spo, list) and (len(spo) < 3 or len(spo[1].strip()) == 0):
                     continue
-
-                if isinstance(spo, list) and len(spo) == 4:
+                elif isinstance(spo, list) and len(spo) == 4:
                     if spo[0] == spo[3]:
                         spo[3] = ""
                     valid["_".join(spo)] = spo

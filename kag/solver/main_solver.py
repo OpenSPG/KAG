@@ -211,7 +211,7 @@ async def do_qa_pipeline(
                     )
                 )
         except Exception as e:
-            reporter.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
+            logger.error(f"Error processing kb_project_id {kb_project_id}: {str(e)}")
             continue
     qa_config["retrievers"] = retriever_configs
 
@@ -249,6 +249,16 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         if isinstance(main_config.get("chat"), dict)
         else params.get("usePipeline", "think_pipeline")
     )
+
+    # process llm
+    if "extra_body" in main_config["llm"] and main_config["llm"]["type"] in ["openai", "ant_openai", "maas", "vllm"]:
+        extra_body = main_config["llm"]["extra_body"]
+        if isinstance(extra_body, str):
+            try:
+                extra_body_json = json.loads(extra_body)
+            except:
+                extra_body_json = {}
+            main_config["llm"]["extra_body"] = extra_body_json
 
     kb_configs = {}
     kb_project_ids = []
@@ -289,13 +299,16 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
             except Exception as e:
                 logger.error(f"KB配置初始化失败: {str(e)}", exc_info=True)
+    reporter_map = {
+        "kag_thinker_pipeline": "kag_open_spg_reporter"
+    }
 
     reporter_config = {
-        "type": main_config.get("reporter", "open_spg_reporter"),
+        "type": reporter_map.get(use_pipeline, "open_spg_reporter"),
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
-        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline"],
+        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline", "kag_thinker_pipeline"],
         "report_all_references": use_pipeline == "index_pipeline",
     }
     reporter = ReporterABC.from_config(reporter_config)
@@ -313,8 +326,8 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
                 task_id=task_id,
                 kb_project_ids=kb_project_ids,
             )
-
-        reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
+        if answer:
+            reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
 
     except Exception as e:
         logger.warning(
@@ -326,7 +339,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
             answer = f"抱歉，处理查询 {query} 时发生异常。错误：{str(e)}, 请重试。"
         else:
             answer = f"Sorry, An exception occurred while processing query: {query}. Error: {str(e)}, please retry."
-        reporter.add_report_line("answer", "error", answer, "ERROR")
+        reporter.add_report_line("answer", "Final Answer", answer, "ERROR")
 
     finally:
         await reporter.stop()

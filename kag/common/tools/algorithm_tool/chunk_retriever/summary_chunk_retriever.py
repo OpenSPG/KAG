@@ -21,7 +21,7 @@ from kag.interface import (
     VectorizeModelABC,
     ChunkData,
     RetrieverOutput,
-    EntityData,
+    EntityData, Task,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
@@ -36,13 +36,13 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @RetrieverABC.register("summary_chunk_retriever")
 class SummaryChunkRetriever(RetrieverABC):
     def __init__(
-        self,
-        vectorize_model: VectorizeModelABC = None,
-        search_api: SearchApiABC = None,
-        graph_api: GraphApiABC = None,
-        top_k: int = 10,
-        score_threshold=0.85,
-        **kwargs,
+            self,
+            vectorize_model: VectorizeModelABC = None,
+            search_api: SearchApiABC = None,
+            graph_api: GraphApiABC = None,
+            top_k: int = 10,
+            score_threshold=0.85,
+            **kwargs,
     ):
         super().__init__(top_k, **kwargs)
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
@@ -63,33 +63,29 @@ class SummaryChunkRetriever(RetrieverABC):
             )
         )
 
-    async def _get_summaries(self, query, top_k) -> List[str]:
+    def _get_summaries(self, query, top_k) -> List[str]:
         topk_summary_ids = []
         query_vector = self.vectorize_model.vectorize(query)
 
         # recall top_k summaries
-        top_k_summaries = await asyncio.to_thread(
-            lambda: self.search_api.search_vector(
+        top_k_summaries = self.search_api.search_vector(
                 label=self.schema_helper.get_label_within_prefix("Summary"),
                 property_key="content",
                 query_vector=query_vector,
                 topk=top_k,
                 ef_search=top_k * 3,
             )
-        )
         for item in top_k_summaries:
             topk_summary_ids.append(item["node"]["id"])
 
         return topk_summary_ids
 
-    async def _get_children_summary_ids(self, summary_id) -> List[str]:
+    def _get_children_summary_ids(self, summary_id) -> List[str]:
         entity = EntityData(
             entity_id=summary_id,
             node_type=self.schema_helper.get_label_within_prefix("Summary"),
         )
-        oneHopGraphData = await asyncio.to_thread(
-            lambda: self.graph_api.get_entity_one_hop(entity)
-        )
+        oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
         if not oneHopGraphData:
             return []
         if not oneHopGraphData.in_relations:
@@ -103,20 +99,17 @@ class SummaryChunkRetriever(RetrieverABC):
         get children summaries of current summary
     """
 
-    async def _get_children_summaries(self, summary_ids):
-        tasks = []
+    def _get_children_summaries(self, summary_ids):
+        results = []
         for summary_id in summary_ids:
-            tasks.append(self._get_children_summary_ids(summary_id))
-        results = await asyncio.gather(*tasks)
+            results.append(self._get_children_summary_ids(summary_id))
         children_summary_ids = set(item for result in results for item in result)
         return children_summary_ids
 
-    async def _get_chunk_data(self, chunk_id, score=0.0):
-        node = await asyncio.to_thread(
-            lambda: self.graph_api.get_entity_prop_by_id(
-                label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
-                biz_id=chunk_id,
-            )
+    def _get_chunk_data(self, chunk_id, score=0.0):
+        node = self.graph_api.get_entity_prop_by_id(
+            label=self.schema_helper.get_label_within_prefix(CHUNK_TYPE),
+            biz_id=chunk_id,
         )
         node_dict = dict(node.items())
         return ChunkData(
@@ -126,14 +119,12 @@ class SummaryChunkRetriever(RetrieverABC):
             score=score,
         )
 
-    async def _get_related_chunk_ids(self, summary_id) -> List[str]:
+    def _get_related_chunk_ids(self, summary_id) -> List[str]:
         entity = EntityData(
             entity_id=summary_id,
             node_type=self.schema_helper.get_label_within_prefix("Summary"),
         )
-        oneHopGraphData = await asyncio.to_thread(
-            lambda: self.graph_api.get_entity_one_hop(entity)
-        )
+        oneHopGraphData = self.graph_api.get_entity_one_hop(entity)
 
         # parse oneHopGraphData and get related chunks
         chunk_ids = set()
@@ -144,20 +135,18 @@ class SummaryChunkRetriever(RetrieverABC):
         # chunk_id 和summary_id 一致，先暂时返回summary_id
         return [summary_id]
 
-    async def _get_related_chunks(self, summary_ids):
-        tasks = []
+    def _get_related_chunks(self, summary_ids):
+        results = []
         for summary_id in summary_ids:
-            tasks.append(self._get_related_chunk_ids(summary_id))
-        results = await asyncio.gather(*tasks)
+            results.append(self._get_related_chunk_ids(summary_id))
         chunk_ids = set(item for result in results for item in result)
 
-        tasks = []
+        chunks = []
         for chunk_id in chunk_ids:
-            tasks.append(self._get_chunk_data(chunk_id))
-        chunks = await asyncio.gather(*tasks)
+            chunks.append(self._get_chunk_data(chunk_id))
         return chunks
 
-    async def ainvoke(self, task, **kwargs) -> RetrieverOutput:
+    def invoke(self, task: Task, **kwargs) -> RetrieverOutput:
         query = task.arguments["query"]
         top_k = kwargs.get("top_k", self.top_k)
         try:
@@ -172,13 +161,13 @@ class SummaryChunkRetriever(RetrieverABC):
                 )
 
             # recall summary through semantic vector
-            topk_summary_ids = await self._get_summaries(query, top_k)
+            topk_summary_ids = self._get_summaries(query, top_k)
 
             # recall children summaries
-            children_summary_ids = await self._get_children_summaries(topk_summary_ids)
+            children_summary_ids = self._get_children_summaries(topk_summary_ids)
 
             # get related chunk for each summary
-            chunks = await self._get_related_chunks(
+            chunks = self._get_related_chunks(
                 topk_summary_ids + list(children_summary_ids)
             )
 
