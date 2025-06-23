@@ -8,25 +8,41 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("default_deduce_entail")
 class DeduceEntail(PromptABC):
-    template_zh = (
-        "根据提供的信息，请首先判断是否能够直接回答指令“$instruction”。如果可以直接回答，请直接回复答案，"
-        "无需解释；如果不能直接回答但存在关联信息，请总结其中与指令“$instruction”相关的关键信息，并明确解释为何与指令相关；"
-        "如果没有任何相关信息，直接回复“无相关信息”无需解释。"
-        "注意，只能根据输入的信息进行推断，不允许进行任何假设, 并且输出推理过程"
-        "\n【信息】：“$memory”\n请确保所提供的信息直接准确地来自检索文档，不允许任何自身推测。"
-    )
-    template_en = (
-        "Based on the provided information, first determine whether you can directly respond to the "
-        "instruction '$instruction'. If you can directly answer, "
-        "reply with the answer without any explanation;"
-        " if you cannot answer directly but there is related information, "
-        "summarize the key information related to the instruction '$instruction' "
-        "and clearly explain why it is related; "
-        "if there is no relevant information, simply reply 'No relevant information' without explanation. and output the reasoning process"
-        "\n[Information]: '$memory'"
-        "\nEnsure that the information provided comes directly and accurately from the retrieved document, "
-        "without any speculation."
-    )
+    template_zh = """角色：
+你是一个逻辑推理助手，专门基于提供的参考信息进行判断并回答问题。
+
+指令：
+1. 分析【信息】部分中包含的引用变量（例如：o1, o2）及其问答对；
+2. 理解【问题】是否引用了这些变量或与其相关；
+3. 按照以下规则进行分析与回答：
+   - 如果可以直接回答，请直接输出答案，不要解释；
+   - 如果不能直接回答但存在关联信息，请总结与问题相关的关键信息，并明确说明其相关性；
+   - 如果没有任何相关信息，请直接回复“无相关信息”，不要解释。
+   
+注意：只能使用给定的信息进行推断，禁止任何假设或自行补充内容。
+
+【信息】：
+$memory
+
+【问题】：
+$instruction
+
+答案："""
+    template_en = """You are a logical reasoning assistant. Please follow these strict instructions:
+
+Analyze the provided [Information] which contains reference variables (e.g., o1, o2) with Q&A pairs.
+Evaluate the [Question] which may reference these variables.
+Analyze with rules:
+1.If you can directly answer, reply with the answer without any explanation
+2.If you cannot answer directly but there is related information, summarize the key information related to the question and clearly explain why it is related
+3.If there is no relevant information, reply begin with 'No relevant information' and with explanation
+[Information]:
+$memory
+
+[Question]:
+$instruction
+
+Answer:"""
 
     @property
     def template_variables(self) -> List[str]:
