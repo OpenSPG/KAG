@@ -61,11 +61,11 @@ class KAGGlobalConf:
     def initialize(self, **kwargs):
         self.project_id = kwargs.pop(
             KAGConstants.KAG_PROJECT_ID_KEY,
-            os.getenv(KAGConstants.ENV_KAG_PROJECT_ID, "1"),
+            os.getenv(KAGConstants.ENV_KAG_PROJECT_ID, None),
         )
         self.host_addr = kwargs.pop(
             KAGConstants.KAG_PROJECT_HOST_ADDR_KEY,
-            os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR, "http://127.0.0.1:8887"),
+            os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR, None),
         )
         self.biz_scene = kwargs.pop(KAGConstants.KAG_BIZ_SCENE_KEY, "default")
         self.language = kwargs.pop(KAGConstants.KAG_LANGUAGE_KEY, "en")
@@ -260,10 +260,11 @@ class KAGConfigAccessor:
 def init_env(config_file: str = None):
     project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
     host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
-    if project_id and host_addr and not validate_config_file(config_file):
+    prod = False
+    if project_id is not None and host_addr is not None and not validate_config_file(config_file):
         prod = True
-    else:
-        prod = False
+        os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
+        os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     global KAG_CONFIG
     KAG_CONFIG.initialize(prod, config_file)
 
@@ -272,8 +273,6 @@ def init_env(config_file: str = None):
     else:
         msg = "Done init config from local file"
     logger.debug(msg)
-    os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
-    os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
         pprint.pprint(KAG_CONFIG.all_config, indent=2)

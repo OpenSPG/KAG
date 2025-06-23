@@ -49,7 +49,7 @@ class LLMGeneratorWithThought(GeneratorABC):
                     f"Sub-Query: {task.arguments['query']}\n {task.result.summary}"
                 )
                 retrieved_docs = task.result
-            else:
+            elif task.executor != "Output":
                 result = str(task.result)
                 try:
                     task_result = json.loads(result)
@@ -60,6 +60,8 @@ class LLMGeneratorWithThought(GeneratorABC):
                     thoughts.append(f"Sub-Query: {task_query}\n {task.result}")
 
                 retrieved_docs = task.memory.get("retriever")
+            else:
+                retrieved_docs = []
 
             if retrieved_docs and self.chunk_reranker:
                 rerank_queries.append(task_query)

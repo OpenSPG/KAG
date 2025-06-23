@@ -14,23 +14,30 @@ class OpenSPGSearchAPI(SearchApiABC):
         kag_project_config = kag_config.global_config
         self.project_id = project_id or kag_project_config.project_id
         self.host_addr = host_addr or kag_project_config.host_addr
-        self.sc = SearchClient(
-            host_addr=self.host_addr, project_id=int(self.project_id)
-        )
+        if self.host_addr is None or self.project_id is None:
+            self.sc = None
+        else:
+            self.sc = SearchClient(
+                host_addr=self.host_addr, project_id=int(self.project_id)
+            )
 
     def search_text(
         self, query_string, label_constraints=None, topk=10, params=None
     ) -> List:
-        return self.sc.search_text(
-            query_string=query_string,
-            label_constraints=label_constraints,
-            topk=topk,
-            params=params,
-        )
+        if self.sc:
+            return self.sc.search_text(
+                query_string=query_string,
+                label_constraints=label_constraints,
+                topk=topk,
+                params=params,
+            )
+        return []
 
     def search_vector(
         self, label, property_key, query_vector, topk=10, ef_search=None, params=None
     ) -> List:
+        if self.sc is None:
+            return []
         res = self.sc.search_vector(
             label=label,
             property_key=property_key,
@@ -44,6 +51,8 @@ class OpenSPGSearchAPI(SearchApiABC):
         return res
 
     def search_custom(self, custom_query, params=None) -> List:
+        if self.sc is None:
+            return []
         return self.sc.search_custom(
             custom_query=custom_query,
             params=params,

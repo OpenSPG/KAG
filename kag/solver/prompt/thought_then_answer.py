@@ -18,6 +18,7 @@ from kag.interface import PromptABC
 class ThoughtThenAnswerPrompt(PromptABC):
 
     template_en = """As an adept specialist in resolving intricate multi-hop questions, I require your assistance in addressing a multi-hop question. The question has been segmented into multiple straightforward single-hop inquiries, wherein each question may depend on the responses to preceding questions, i.e., the question body may contain content such as "{{i.output}}", which means the answer of ith sub-question. I will furnish you with insights on how to address these preliminary questions, or the answers themselves, which are essential for accurate resolution. Furthermore, I will provide textual excerpts pertinent to the current question, which you are advised to peruse and comprehend thoroughly. Begin your reply with "Thought: ", where you'll outline the step-by-step thought process that leads to your conclusion. End with "Answer: " to deliver a clear and precise response without any extra commentary.
+NOTE: If the provided information does not directly answer the question, you must use your internal knowledge in combination with reasoning to derive a reasonable answer.
 
 Docs:
 Sylvester

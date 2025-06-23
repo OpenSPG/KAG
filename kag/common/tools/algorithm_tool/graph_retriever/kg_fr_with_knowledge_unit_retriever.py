@@ -111,7 +111,25 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             self.kag_config.all_config["vectorize_model"]
         )
 
+    def get_ner(self,  text):
+
+        if ">>" in text:
+            ent_list = [ text.split(">>")[0].strip()]
+            text =  text.split(">>")[1]
+        else:
+            ent_list = []
+
+        prompt = "Identify 3 to 5 keywords in the following input sentence and return them. The return format should be a single string with the keywords separated by commas. \ninput:" + text + " \noutput:"
+        try:
+            response = self.llm(prompt)
+            ent_list = ent_list + response.split(',')
+            ent_list = [k.strip() for k in ent_list if len(k.strip() )>0  ]
+        except:
+            pass
+        return ent_list
+
     def invoke(self, task, **kwargs) -> RetrieverOutput:
+        start_time = time.time()
         query = task.arguments.get("rewrite_query", task.arguments["query"])
         logical_node = task.arguments.get("logic_form_node", None)
         if not logical_node:
@@ -150,10 +168,6 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 matched_entities.extend(o_entities)
             matched_entities = list(set(matched_entities))
 
-        start_time = time.time()
-
-        query_vector = self.vectorize_model.vectorize(query)
-
         def convert_search_rst_2_entity(top_entity):
             recalled_entity = EntityData()
             recalled_entity.score = top_entity["score"]
@@ -163,6 +177,25 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 top_entity["node"]["__labels__"]
             )
             return recalled_entity
+
+        if not matched_entities:
+            candidate_entities = [] #self.get_ner(query)
+            s_mention_name = logical_node.s.get_mention_name()
+            if s_mention_name:
+                candidate_entities.append(s_mention_name)
+            o_mention_name = logical_node.o.get_mention_name()
+            if o_mention_name:
+                candidate_entities.append(o_mention_name)
+            for entity in candidate_entities:
+                lined_entities = self.entity_linking.invoke(query=query, name=entity, type_name="Entity", topk_k=1, recognition_threshold=0.7)
+                if lined_entities:
+                    matched_entities.extend(lined_entities)
+
+
+
+        query_vector = self.vectorize_model.vectorize(query)
+
+
 
         # 1、atomic query search
         top_atmoic_query_units = self.search_api.search_vector(
@@ -191,7 +224,6 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 matched_entities.append(convert_search_rst_2_entity(top_entity))
 
         # recall from logical form
-        logical_node = kwargs.get("logical_node", None)
         if task is not None and logical_node is not None:
 
             triple_knowledges_units = self.recall_knowledge_unit_by_tripe(
@@ -201,15 +233,20 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 matched_entities.append(
                     convert_search_rst_2_entity(triple_knowledges_unit)
                 )
+        if matched_entities:
+            output: RetrieverOutput = self.ppr_chunk_retriever_tool.invoke(
+                task=task,
+                start_entities=matched_entities,
+                top_k=self.top_k,
+            )
+        else:
+            output = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""),
+                err_msg="No matched entities found",
+            )
 
-        output: RetrieverOutput = self.ppr_chunk_retriever_tool.invoke(
-            task=task,
-            start_entities=matched_entities,
-            top_k=self.top_k,
-        )
-
-        logger.info(
-            f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
+        logger.debug(
+            f"{self.schema().get('name', '')} `{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
         )
         output.graphs = [graph_data]
         output.retriever_method = self.schema().get("name", "")
@@ -226,8 +263,9 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
                 return [f"{node.get_un_std_entity_first_type_or_std()} {mention}"]
             s_datas: List[EntityData] = graph_data.get_entity_by_alias(node.alias_name)
             s_names = []
-            for s in s_datas:
-                s_names.append(s.name)
+            if s_datas is not None:
+                for s in s_datas:
+                    s_names.append(s.name)
             ret = list(set(s_names))
             if len(ret):
                 return ret

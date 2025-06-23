@@ -1,14 +1,13 @@
 from kag.solver.executor.deduce.kag_deduce_executor import KagDeduceExecutor
 from kag.solver.executor.deduce.kag_output_executor import KagOutputExecutor
+from kag.solver.executor.retriever.kag_model_hybrid_executor import KAGModelHybridRetrievalExecutor
 from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor import (
     ChunkRetrievedExecutor,
-)
-from kag.solver.executor.retriever.kag_hybrid_retrieval_executor import (
-    KAGHybridRetrievalExecutor,
 )
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KagHybridExecutor,
 )
+from kag.solver.generator.kag_model_generator import KagModelGenerator
 from kag.solver.generator.llm_index_generator import LLMIndexGenerator
 from kag.solver.pipeline.index_pipeline import IndexPipeline
 from kag.solver.pipeline.kag_iterative_pipeline import KAGIterativePipeline
@@ -18,6 +17,7 @@ from kag.solver.pipeline.naive_rag_pipeline import NaiveRAGPipeline
 from kag.solver.pipeline.naive_generation_pipeline import NaiveGenerationPipeline
 from kag.solver.pipeline.self_cognition_pipeline import SelfCognitionPipeline
 from kag.solver.planner.kag_iterative_planner import KAGIterativePlanner
+from kag.solver.planner.kag_model_planner import KAGModelPlanner
 from kag.solver.planner.kag_static_planner import KAGStaticPlanner
 from kag.solver.planner.lf_kag_static_planner import KAGLFStaticPlanner
 from kag.solver.planner.mcp_planner import MCPPlanner
@@ -58,6 +58,7 @@ __all__ = [
     "NaiveGenerationPipeline",
     "KAGIterativePlanner",
     "KAGStaticPlanner",
+    "KAGModelPlanner",
     "MCPPlanner",
     "DefaultIterativePlanningPrompt",
     "DefaultStaticPlanningPrompt",
@@ -75,7 +76,7 @@ __all__ = [
     "McpExecutor",
     "FinishExecutor",
     "MockRetrieverExecutor",
-    "KAGHybridRetrievalExecutor",
+    "KAGModelHybridRetrievalExecutor",
     "KagHybridExecutor",
     "ChunkRetrievedExecutor",
     "KagOutputExecutor",
@@ -85,7 +86,9 @@ __all__ = [
     "MockMathExecutor",
     "MockGenerator",
     "LLMGenerator",
+    "KagModelGenerator",
     "OpenSPGReporter",
+    "KAGOpenSPGReporter",
     "TraceLogReporter",
     "LLMIndexGenerator",
     "IndexPipeline",
@@ -97,5 +100,6 @@ from kag.solver.prompt.thought_iterative_planning_prompt import (
 from kag.common.tools.algorithm_tool.self_cognition.self_cogn_tools import (
     SelfCognExecutor,
 )
+from kag.solver.reporter.open_spg_kag_model_reporter import KAGOpenSPGReporter
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter
