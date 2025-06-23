@@ -29,9 +29,9 @@ solver_pipeline:
     type: kag_model_planner
     llm: "{chat_llm}"
     system_prompt:
-      type: kag_clarification
-    clarification_prompt:
       type: kag_system
+    clarification_prompt:
+      type: kag_clarification
   executors:
     - *kag_hybrid_executor_conf
     - *py_code_based_math_executor_conf

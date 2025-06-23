@@ -66,7 +66,7 @@ class KAGModelPlanner(PlannerABC):
         plan_prompt (PromptABC): Prompt template for planning requests
     """
 
-    def __init__(self, llm: LLMClient, system_prompt: PromptABC, clarification_prompt, **kwargs):
+    def __init__(self, llm: LLMClient, system_prompt: PromptABC, clarification_prompt: PromptABC, **kwargs):
         super().__init__(**kwargs)
         self.llm = llm
 

@@ -8,13 +8,14 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("kag_generate_answer")
 class KagGenerateAnswerPrompt(PromptABC):
-    template_zh = (
-        "根据提供的选项及相关答案，请选择其中一个选项回答问题“$instruction”。"
-        "无需解释；"
-        "如果没有可选择的选项，直接回复“无相关信息”无需解释"
-        "注意，只能根据输入的信息进行推断，不允许进行任何假设"
-        "\n【信息】：“$memory”\n请确保所提供的信息直接准确地来自检索文档，不允许任何自身推测。"
-    )
+    template_zh = """根据问题、前n个子问题及其答案（由#n表示）来回答最后一个子问题。请用<answer>\\boxed{你的答案}</answer>的格式包裹你的答案。 
+问题:
+$question
+子问题:
+$sub_questions
+最后一个子问题:
+$last_question
+输出:"""
     template_en = """Answer the last question based on question, the first n sub-questions and their answers (indicated by #n), and wrap the result with <answer>\\boxed{your answer}</answer>. 
 question:
 $question

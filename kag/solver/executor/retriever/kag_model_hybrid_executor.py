@@ -44,6 +44,7 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
         self.logic_node_parser = ParseLogicForm(
             schema=None, schema_retrieval=None
         )
+        self.top_k = kwargs.get("top_k", 3)
 
     def do_main(self, task_query, tag_id, task, context, **kwargs):
         start_time = time.time()
@@ -85,9 +86,12 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                 "role": "assistant",
                 "content": subquestion_response,
             })
-            if "<answer>" in subquestion_response:
-                answer_content = extract_specific_tag_content(subquestion_response, "answer")
-                predict = extract_box_answer(answer_content[0])
+            if "<search>" not in subquestion_response:
+                if "<answer>" in subquestion_response:
+                    answer_content = extract_specific_tag_content(subquestion_response, "answer")[0]
+                else:
+                    answer_content = subquestion_response
+                predict = extract_box_answer(answer_content)
                 if not predict:
                     predict = answer_content[0]
                 step_answer = context.kwargs.get("step_answer", {})
@@ -95,7 +99,7 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                 context.kwargs["step_answer"] = step_answer
                 retriever_output.summary = predict
                 if retriever_output.graphs and len(retriever_output.graphs[0].get_all_spo()):
-                    context.variables_graph.merge_kg_graph(retriever_output.graphs[0].graph_data)
+                    context.variables_graph.merge_kg_graph(retriever_output.graphs[0])
 
                 break
             else:
@@ -141,7 +145,7 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                             spos = [str(spo) for spo in retriever_output.graphs[0].get_all_spo()]
                             spos_str = ";".join(spos)
                             recall_information_list.append(spos_str)
-                        for chunk in retriever_output.chunks:
+                        for chunk in retriever_output.chunks[:self.top_k]:
                             recall_information_list.append(chunk.content)
                         recall_str = "<references>" + "\n\n".join(recall_information_list) + "</references>"
                         messages.append({
