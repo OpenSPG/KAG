@@ -87,7 +87,7 @@ class AtomicIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
-AtomicQuery(原子问): EntityType
+AtomicQuery(原子问): IndexType
   properties:
     content(内容): Text
       index: TextAndVector
@@ -190,7 +190,7 @@ class ChunkIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
-Chunk(文本块): EntityType
+Chunk(文本块): IndexType
      properties:
         content(内容): Text
           index: TextAndVector        
@@ -272,7 +272,7 @@ class TableIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
-Table(表格): EntityType
+Table(表格): IndexType
     properties:
         content(内容): Text
           index: TextAndVector
@@ -349,7 +349,7 @@ class SummaryIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
-Summary(文本摘要): EntityType
+Summary(文本摘要): IndexType
      properties:
         content(内容): Text
           index: TextAndVector
@@ -422,7 +422,7 @@ class OutlineIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
-Outline(标题大纲): EntityType
+Outline(标题大纲): IndexType
      properties:
         content(内容): Text
           index: TextAndVector
@@ -492,27 +492,67 @@ class KAGHybridIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
-Chunk(文本块): EntityType
+Chunk(文本块): IndexType
      properties:
         content(内容): Text
-          index: TextAndVector        
+          index: TextAndVector  
+
+KnowledgeUnit(知识点): IndexType
+     properties:
+        structedContent(结构化文本): Text
+          index: TextAndVector
+        ontology(本体): Text
+        desc(描述): Text
+            index: TextAndVector
+        relatedQuery(关联问): AtomicQuery
+        extendedKnowledge(关联外扩知识点):Text
+        content(内容): Text
+            index: TextAndVector
+        knowledgeType(知识类型): Text
+
+AtomicQuery(原子问): IndexType
+  properties:
+    title(标题): Text
+      index: TextAndVector
+  relations:
+    relateTo(关联文本块): Chunk
+    similar(相似问题): AtomicQuery
+    relatedTo(相关): KnowledgeUnit      
         """
 
     @property
     def index_cost(self) -> str:
         msg = """
+        索引构建的成本：
+
+        1、抽取模型消耗：7B 4634332 tokens
+        2、耗时：1425 秒
+        3、文件字数：10万字
         """
         return msg
 
     @property
     def applicable_scenarios(self) -> str:
+
         msg = """
+        检索方法描述：
+        
+        # 先根据子问题进行原始问召回
+        atomic_queries = get_atomic_queries(sub_query)
+        # 再据子问题召回知识点
+        knowledge_units = get_knowledge_units(sub_query)
+        # 根据logical-form召回知识点
+        knowledge_units += get_knowledge_units(logcal-form)
+        # 根据logical-form召回实体和关系点
+        entities = get_entities(logical_form)
+        # 使用ppr召回chunk
+        chunks = get_ppr_chunks(atomic_queries+knowledge_units+entities)
         """
         return msg
 
     @property
     def retrieval_method(self) -> str:
-        return "通过构建chunk 与 图谱的关联，实现chunk 的检索，一般用于检索与图谱相关的chunk"
+        return "通过构建chunk 与 图谱的关联，实现图谱、chunk 的检索，一般用于检索与图谱相关的chunk"
 
     @classmethod
     def build_extractor_config(
@@ -576,7 +616,7 @@ Chunk(文本块): EntityType
                 "kag_qa_task_config_key": kb_task_project_id,
             },
             {
-                "type": "kg_fr_open_spg",
+                "type": "kg_fr_knowledge_unit",
                 "top_k": 20,
                 "path_select": {
                     "type": "fuzzy_one_hop_select",
