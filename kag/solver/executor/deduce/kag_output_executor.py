@@ -95,6 +95,8 @@ class KagOutputExecutor(ExecutorABC):
             dep_context = []
             for p in task.parents:
                 dep_context.append(p.get_task_context())
+            if not dep_context:
+                logger.warning(f"no dep context the query is:{query}")
             result = self.llm_module.invoke(
                 {"question": query, "context": dep_context},
                 self.summary_prompt,

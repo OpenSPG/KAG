@@ -23,6 +23,7 @@ from kag.interface.solver.reporter_abc import do_report
 logging.getLogger("openai").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
+import json
 
 AzureADTokenProvider = Callable[[], str]
 
@@ -148,6 +149,15 @@ class OpenAIClient(LLMClient):
             rsp = response.choices[0].message.content
             tool_calls = response.choices[0].message.tool_calls
             usages.append(response.usage)
+            if self.model in ["corpus_tianchang_qwen2_5_72b_instruct"]:
+                # 特殊模型格式处理
+                message_content = response.choices[0].message.content
+                data_dict = json.loads(message_content)
+                rsp = data_dict["choices"][0]["message"]["content"]
+                tool_calls = data_dict["choices"][0]["message"]["tool_calls"]
+            else:
+                rsp = response.choices[0].message.content
+                tool_calls = response.choices[0].message.tool_calls
         else:
             rsp = ""
             tool_calls = None  # TODO: Handle tool calls in stream mode
@@ -234,6 +244,15 @@ class OpenAIClient(LLMClient):
             rsp = response.choices[0].message.content
             tool_calls = response.choices[0].message.tool_calls
             usages.append(response.usage)
+            if self.model in ["corpus_tianchang_qwen2_5_72b_instruct"]:
+                # 特殊模型格式处理
+                message_content = response.choices[0].message.content
+                data_dict = json.loads(message_content)
+                rsp = data_dict["choices"][0]["message"]["content"]
+                tool_calls = data_dict["choices"][0]["message"]["tool_calls"]
+            else:
+                rsp = response.choices[0].message.content
+                tool_calls = response.choices[0].message.tool_calls
         else:
             rsp = ""
             tool_calls = None
