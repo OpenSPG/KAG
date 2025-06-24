@@ -483,6 +483,12 @@ def extract_box_answer(text):
     else:
         return extracted_answers[0]
 
+def remove_boxed(text):
+    # 匹配 \boxed{内容} 并提取内容部分
+    pattern = r'\\boxed\{([^}]*)\}'
+    # 使用正则替换为仅保留大括号中的内容
+    result = re.sub(pattern, r'\1', text)
+    return result
 
 def search_plan_extraction(text):
     text = text.replace("\n", "")

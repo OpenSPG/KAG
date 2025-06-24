@@ -3,7 +3,7 @@ from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.parser.logic_node_parser import extract_steps_and_actions
 
 from kag.interface.solver.reporter_abc import ReporterABC
-from kag.common.utils import extract_tag_content
+from kag.common.utils import extract_tag_content, remove_boxed
 from kag.solver.reporter.open_spg_reporter import OpenSPGReporter
 
 logger = logging.getLogger()
@@ -40,6 +40,7 @@ def process_planning(think_str):
 
 def process_tag_template(text):
     if isinstance(text, str):
+        text = remove_boxed(text)
         all_tags = extract_tag_content(text)
         if len(all_tags) == 0:
             return text

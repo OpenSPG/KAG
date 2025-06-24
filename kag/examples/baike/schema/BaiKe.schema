@@ -1,10 +1,5 @@
 namespace BaiKe
 
-Chunk(文本块): EntityType
-     properties:
-        content(内容): Text
-          index: TextAndVector
-
 ArtificialObject(人造物体): EntityType
      properties:
         desc(描述): Text
