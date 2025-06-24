@@ -237,25 +237,7 @@ class KAGConfigAccessor:
         :param config: Configuration object to store
         """
         with KAG_QA_TASK_CONFIG_LOCK:
-            KAG_QA_TASK_CONFIG[task_with_kb_id] = config
-
-    @staticmethod
-    def set_kb_config(task_id, kb_project_id, kb_config):
-        """Setting up kb specific configuration (separate namespace)"""
-        config_key = f"{task_id}_{kb_project_id}"
-        with KAG_QA_TASK_CONFIG_LOCK:
-            KAG_QA_TASK_CONFIG[config_key] = kb_config
-
-    @staticmethod
-    def cleanup_task_config(task_with_kb_id):
-        """
-        Remove the configuration for a specific task.
-
-        :param task_with_kb_id: Task ID whose configuration needs to be cleaned up
-        """
-        with KAG_QA_TASK_CONFIG_LOCK:
-            if task_with_kb_id in KAG_QA_TASK_CONFIG:
-                del KAG_QA_TASK_CONFIG[task_with_kb_id]
+            KAG_QA_TASK_CONFIG.put(task_with_kb_id, config)
 
 
 def init_env(config_file: str = None):
@@ -264,16 +246,15 @@ def init_env(config_file: str = None):
     prod = False
     if project_id is not None and host_addr is not None and not validate_config_file(config_file):
         prod = True
-        os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
-        os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     global KAG_CONFIG
     KAG_CONFIG.initialize(prod, config_file)
-
     if prod:
         msg = "Done init config from server"
     else:
         msg = "Done init config from local file"
     logger.debug(msg)
+    os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
+    os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
         pprint.pprint(KAG_CONFIG.all_config, indent=2)

@@ -101,7 +101,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
 
         self.search_api = search_api or SearchApiABC.from_config(
             {
-                "type": "openspg_graph_api",
+                "type": "openspg_search_api",
                 "project_id": self.kag_project_config.project_id,
                 "host_addr": self.kag_project_config.host_addr,
             }

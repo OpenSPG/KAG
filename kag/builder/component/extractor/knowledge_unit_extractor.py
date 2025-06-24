@@ -183,7 +183,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         ner_parse_rst = self._named_entity_recognition_process(passage, ner_result)
         if not ner_parse_rst:
             raise
-        return
+        return ner_parse_rst
 
     @retry(
         stop=stop_after_attempt(3),
@@ -241,7 +241,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
         Returns:
             Standardized entity information.
         """
-        return await self.llm.ainvoke(
+        return self.llm.invoke(
             {"input": passage, "named_entities": entities},
             self.kn_prompt,
             with_except=False,
@@ -583,15 +583,12 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             knowledge_unit_nodes.append(
                 {"name": knowledge_id, "category": "KnowledgeUnit"}
             )
+            core_entities = {}
+            for item in knowledge_value.get("core_entities", "").split(","):
+                if not item.strip():
+                    continue
+                core_entities[item.strip()] = "Others"
 
-            if knowledge_value["knowledgetype"] == "triple":
-                core_entities = {
-                    item.strip(): "Others"
-                    for item in knowledge_value.get("core_entities", "").split(",")
-                    if len(item.strip()) > 1
-                }
-            else:
-                core_entities = knowledge_value.get("core_entities", {})
             for core_entity, ent_type in core_entities.items():
                 if core_entity == "":
                     continue
@@ -634,8 +631,8 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             {k: v for k, v in ent.items() if k in ["name", "category"]}
             for ent in entities
         ]
-        knowledge_unit_entities = self.aknowledge_unit_extra(passage, filtered_entities)
-        triples = (self.triples_extraction(passage, filtered_entities),)
+        knowledge_unit_entities = self.knowledge_unit_extra(passage, filtered_entities)
+        triples = self.triples_extraction(passage, filtered_entities)
 
         knowledge_unit_nodes = self.assemble_knowledge_unit(
             sub_graph, entities, knowledge_unit_entities, triples

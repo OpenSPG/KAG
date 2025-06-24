@@ -588,7 +588,10 @@ AtomicQuery(原子问): IndexType
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
-                "type": "schema_free_extractor",
+                "type": "knowledge_unit_extractor",
+                "ner_prompt": "knowledge_unit_ner",
+                "triple_prompt": "knowledge_unit_triple",
+                "kn_prompt": "knowledge_unit",
                 "llm": llm_config,
                 "kag_qa_task_config_key": kb_task_project_id,
             }
@@ -645,6 +648,14 @@ AtomicQuery(原子问): IndexType
             {
                 "type": "kg_fr_knowledge_unit",
                 "top_k": 20,
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "path_select": {
                     "type": "fuzzy_one_hop_select",
                     "llm_client": llm_config,
@@ -719,6 +730,7 @@ AtomicQuery(原子问): IndexType
                 "vector_chunk_retriever": {
                     "type": "vector_chunk_retriever",
                     "vectorize_model": vectorize_model_config,
+                    "score_threshold": 0.65,
                     "search_api": {
                         "type": "openspg_search_api",
                         "kag_qa_task_config_key": kb_task_project_id,

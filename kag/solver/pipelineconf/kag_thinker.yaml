@@ -38,9 +38,10 @@ solver_pipeline:
     - *kag_deduce_executor_conf
     - *kag_output_executor_conf
   generator:
-    type: kag_model_generator # kag.solver.implementation.default_generator.DefaultGenerator
+    type: llm_index_generator
     llm_client: "{chat_llm}"
-    generate_answer_prompt:
-      type: kag_generate_answer
+    generated_prompt:
+      type: default_refer_generator_prompt
+    enable_ref: true
 
 #------------kag-solver configuration end----------------#

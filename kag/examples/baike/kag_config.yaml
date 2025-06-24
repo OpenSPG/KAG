@@ -39,16 +39,14 @@ kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      type: schema_constraint_extractor # kag.builder.component.extractor.schema_constraint_extractor.SchemaConstraintExtractor
+      type: knowledge_unit_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
       llm: *openie_llm
       ner_prompt:
-        type: spg_entity # kag.builder.prompt.spg_prompt.SPGEntityPrompt
-      event_prompt:
-        type: spg_event # kag.builder.prompt.spg_prompt.SPGEventPrompt
-      std_prompt:
-        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
-      relation_prompt:
-        type: spg_relation # kag.builder.prompt.spg_prompt.SPGRelationPrompt
+        type: knowledge_unit_ner
+      triple_prompt:
+        type: knowledge_unit_triple
+      kn_prompt:
+        type: knowledge_unit
     reader:
       type: txt_reader # kag.builder.component.reader.txt_reader.TXTReader
     post_processor:
@@ -124,16 +122,6 @@ rc: &rc
   search_api: *search_api
   vectorize_model: *vectorize_model
   top_k: 20
-
-kag_merger:
-  type: kg_merger
-  top_k: 20
-  llm_module: *chat_llm
-  summary_prompt:
-    type: default_thought_then_answer
-  vectorize_model: *vectorize_model
-  graph_api: *graph_api
-  search_api: *search_api
 
 kag_hybrid_executor: &kag_hybrid_executor_conf
   type: kag_hybrid_retrieval_executor
