@@ -26,14 +26,14 @@ from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 logger = logging.getLogger(__name__)
 
 
-class EvaForAFAC2024(EvalQa):
+class EvaForNetOperatorQA(EvalQa):
     """
     init for kag client
     """
 
     def __init__(self, solver_pipeline_name="kag_solver_pipeline"):
         super().__init__(
-            task_name="afac2024", solver_pipeline_name=solver_pipeline_name
+            task_name="NetOperatorQA", solver_pipeline_name=solver_pipeline_name
         )
 
     async def qa(self, query, gold, **kwargs):
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         thread_num=args.thread_num,
         upper_limit=args.upper_limit,
         collect_file=args.res_file,
-        eval_obj=EvaForAFAC2024(),
+        eval_obj=EvaForNetOperatorQA(),
     )
     end = time.time()
     token_meter = LLMClient.get_token_meter()

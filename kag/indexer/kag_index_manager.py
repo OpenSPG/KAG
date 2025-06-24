@@ -220,7 +220,7 @@ Chunk(文本块): EntityType
     @property
     def applicable_scenarios(self) -> str:
         return """
-        **适用场景**: 适用于通用、开放式的文档问答，当问题没有特定结构，需要在大量非结构化文本中寻找答案时。
+        **适用场景**: 适用于通用、开放式的文档问答，当问题没有特定结构，需要在大量非结构化文本中寻找答案时，主要用于md、pdf等文件问答。
 
         **检索流程**:
         1. `rewrite(sub_query)`: 对用户问题进行重写。
@@ -316,6 +316,14 @@ Table(表格): EntityType
         return """
         **适用场景**: 当问题涉及到查询表格中的数据时，例如"XX产品的价格是多少？"或者需要引用表格内容进行回答的场景。
 
+        """
+
+    @property
+    def retrieval_method(self) -> str:
+        return """
+        通过构建表格索引，实现表格的检索，一般用于检索与表格相关的chunk
+
+
         **检索流程**:
         1. `rewrite(sub_query)`: 对用户问题进行重写。
         2. `recall_table(...)`: 根据问题内容，搜索并召回最相关的表格。
@@ -325,12 +333,10 @@ Table(表格): EntityType
         `chunks = get_table_associate_chunks(recall_table(rewrite(sub_query)))`
         """
 
-    @property
-    def retrieval_method(self) -> str:
-        return "通过构建表格索引，实现表格的检索，一般用于检索与表格相关的chunk"
-
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -343,14 +349,22 @@ Table(表格): EntityType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "table_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id,},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id,},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
                 "kag_qa_task_config_key": kb_task_project_id,
             },
@@ -395,6 +409,14 @@ Summary(文本摘要): EntityType
         return """
         **适用场景**: 适用于需要对长文档进行归纳总结，或者需要从宏观到微观层层钻取信息的场景。
 
+        """
+
+    @property
+    def retrieval_method(self) -> str:
+        return """
+        通过大模型总结的摘要，实现摘要的检索，一般用于检索与摘要相关的chunk
+        
+
         **检索流程**:
         1. `rewrite(sub_query)`: 对用户问题进行重写。
         2. `recall_summary(...)`: 根据问题搜索并召回最相关的摘要。
@@ -404,12 +426,10 @@ Summary(文本摘要): EntityType
         `chunks = get_summary_associate_chunks(recall_summary(rewrite(sub_query)))`
         """
 
-    @property
-    def retrieval_method(self) -> str:
-        return "通过大模型总结的摘要，实现摘要的检索，一般用于检索与摘要相关的chunk"
-
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -421,14 +441,22 @@ Summary(文本摘要): EntityType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "summary_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id,},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id,},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
                 "score_threshold": 0.8,
                 "kag_qa_task_config_key": kb_task_project_id,
@@ -474,7 +502,14 @@ Outline(标题大纲): EntityType
         return """
         **适用场景**: 适用于结构化文档的问答，特别是当问题与文档的特定章节或标题相关时。
 
-        **检索流程**:
+        """
+
+    @property
+    def retrieval_method(self) -> str:
+        return """
+        通过构建时文本的大纲，实现大纲的检索，一般用于检索与大纲相关的chunk
+        
+                **检索流程**:
         1. `rewrite(sub_query)`: 对用户问题进行重写。
         2. `recall_outline(...)`: 根据问题搜索召回最相关的大纲标题，并可沿着大纲层级扩展。
         3. `get_outline_associate_chunks(...)`: 根据召回的大纲，找到其对应的文本块。
@@ -483,12 +518,10 @@ Outline(标题大纲): EntityType
         `chunks = get_outline_associate_chunks(recall_outline(rewrite(sub_query)))`
         """
 
-    @property
-    def retrieval_method(self) -> str:
-        return "通过构建时文本的大纲，实现大纲的检索，一般用于检索与大纲相关的chunk"
-
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -498,14 +531,22 @@ Outline(标题大纲): EntityType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "outline_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id,},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id,},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
                 "kag_qa_task_config_key": kb_task_project_id,
             },
@@ -542,6 +583,14 @@ Chunk(文本块): EntityType
         return """
         **适用场景**: 适用于需要深度推理和关联分析的复杂问题。它能够理解问题的结构，并在知识图谱和文本块之间进行联合查询，应对需要跨领域知识或多跳推理的场景。
 
+        """
+
+    @property
+    def retrieval_method(self) -> str:
+        return """
+        通过构建chunk 与 图谱的关联，实现chunk 的检索，一般用于检索与图谱相关的chunk
+        
+
         **检索流程（多路并行）**:
         - **路径1 (FR)**: `kg_fr_retriever(query)` -> 自由文本检索，召回相关文本块。
         - **路径2 (CS)**: `kg_cs_retriever(logic_form)` -> 基于问题的逻辑结构，在图谱中进行精确检索。
@@ -549,10 +598,6 @@ Chunk(文本块): EntityType
         
         最终将多路结果融合，提供最全面的答案依据。
         """
-
-    @property
-    def retrieval_method(self) -> str:
-        return "通过构建chunk 与 图谱的关联，实现chunk 的检索，一般用于检索与图谱相关的chunk"
 
     @classmethod
     def build_extractor_config(
@@ -686,8 +731,8 @@ Chunk(文本块): EntityType
             {
                 "type": "rc_open_spg",
                 "search_api": {
-                        "type": "openspg_search_api",
-                        "kag_qa_task_config_key": kb_task_project_id,
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "vector_chunk_retriever": {
                     "type": "vector_chunk_retriever",
