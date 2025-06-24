@@ -20,6 +20,7 @@ from jinja2 import Template
 from pathlib import Path
 from typing import Union, Optional, Dict
 
+import knext.common.cache
 from knext.project.client import ProjectClient
 
 logger = logging.getLogger()
@@ -206,13 +207,13 @@ KAG_PROJECT_CONF = KAG_CONFIG.global_config
 """
 KAG_QA_TASK_CONFIG stores per-task configuration and should be cleaned up after use.
 """
-KAG_QA_TASK_CONFIG: Dict[str, KAGConfigMgr] = {}
+KAG_QA_TASK_CONFIG  = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 KAG_QA_TASK_CONFIG_LOCK = threading.Lock()
 
 
 class KAGConfigAccessor:
     @staticmethod
-    def get_config(task_with_kb_id=None):
+    def get_config(task_with_kb_id=None) -> KAGConfigMgr:
         """
         Get the configuration information.
 
