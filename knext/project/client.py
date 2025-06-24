@@ -22,7 +22,7 @@ class ProjectClient(Client):
 
     def __init__(self, host_addr: str = None, project_id: int = None):
         super().__init__(host_addr, project_id)
-        if host_addr is None or project_id is None:
+        if host_addr is None:
             self._rest_client = None
         else:
             self._rest_client = rest.ProjectApi(

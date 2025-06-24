@@ -102,8 +102,7 @@ def _recover_project(prj_path: str):
             fg="bright_red",
         )
         sys.exit()
-
-    client = ProjectClient()
+    client = ProjectClient(host_addr=env.host_addr, project_id=env.project_id)
     project = client.get(namespace=namespace) or client.create(
         name=project_name, 
         desc=desc, 

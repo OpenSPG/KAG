@@ -36,11 +36,11 @@ def commit_schema():
         knext.project.DEFAULT_INDEX_FILE,
     )
     if Path(schema_file).exists():
-        ml = SPGSchemaMarkLang(schema_file)
+        ml = SPGSchemaMarkLang(schema_file, host_addr=env.host_addr, project_id=env.project_id)
     else:
         ml = None
     if Path(index_file).exists():
-        index_ml = SPGSchemaMarkLang(index_file)
+        index_ml = SPGSchemaMarkLang(index_file, host_addr=env.host_addr, project_id=env.project_id)
     else:
         index_ml = None
     if ml is None and index_ml is None:
