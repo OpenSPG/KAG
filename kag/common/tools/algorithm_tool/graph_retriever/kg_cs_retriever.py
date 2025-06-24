@@ -30,7 +30,6 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.name = kwargs.get("name", "kg_cs")
         self.llm = llm or LLMClient.from_config(get_default_chat_llm_config())
         self.path_select = path_select or PathSelect.from_config(
             {"type": "exact_one_hop_select"}
@@ -59,7 +58,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
             logical_node = task.arguments.get("logic_form_node", None)
             if not logical_node:
                 return RetrieverOutput(
-                    retriever_method=self.schema().get("name", ""),
+                    retriever_method=self.name,
                     err_msg="No logic node found in task arguments",
                 )
             context = kwargs.get("context", Context())
@@ -78,16 +77,16 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                 **kwargs,
             )
             output = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), graphs=[kg_graph]
+                retriever_method=self.name, graphs=[kg_graph]
             )
         except Exception as e:
             logger.warning(f"{query} retriever with exception : {e}", exc_info=True)
             output = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""),
+                retriever_method=self.name,
                 err_msg=f"{task} {e}",
             )
         logger.debug(
-            f"{self.schema().get('name', '')} `{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
+            f"{self.name} `{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
         )
         return output
 

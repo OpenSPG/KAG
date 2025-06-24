@@ -220,7 +220,7 @@ class AtomicQueryChunkRetriever(RetrieverABC):
         try:
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
-                return RetrieverOutput(retriever_method=self.schema().get("name", ""))
+                return RetrieverOutput(retriever_method=self.name)
 
             # recall atomic queries
             top_k_atomic_queries = self.sync_wrapper(
@@ -257,13 +257,13 @@ class AtomicQueryChunkRetriever(RetrieverABC):
             chunks = chunks + query_text_related_chunks
 
             out = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), chunks=chunks
+                retriever_method=self.name, chunks=chunks
             )
             return out
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+                retriever_method=self.name, err_msg=str(e)
             )
 
     def schema(self):

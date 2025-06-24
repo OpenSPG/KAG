@@ -49,12 +49,12 @@ class TextChunkRetriever(RetrieverABC):
                     )
                 )
             return RetrieverOutput(
-                chunks=chunks, retriever_method=self.schema().get("name", "")
+                chunks=chunks, retriever_method=self.name
             )
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+                retriever_method=self.name, err_msg=str(e)
             )
 
     def schema(self):

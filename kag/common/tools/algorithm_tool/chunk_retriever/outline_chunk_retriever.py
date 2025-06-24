@@ -140,7 +140,7 @@ class OutlineChunkRetriever(RetrieverABC):
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
                 return RetrieverOutput(
-                    retriever_method=self.schema().get("name", ""),
+                    retriever_method=self.name,
                     err_msg="chunk query is empty",
                 )
 
@@ -157,7 +157,7 @@ class OutlineChunkRetriever(RetrieverABC):
 
             # to retrieve output
             out = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), chunks=chunks
+                retriever_method=self.name, chunks=chunks
             )
             chunk_cached_by_query_map.put(query, out)
             return out
@@ -165,9 +165,14 @@ class OutlineChunkRetriever(RetrieverABC):
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+                retriever_method=self.name, err_msg=str(e)
             )
 
     @property
     def input_indices(self):
         return ["Outline"]
+
+    def schema(self):
+        return {
+            "name": "outline_chunk_retriever"
+        }

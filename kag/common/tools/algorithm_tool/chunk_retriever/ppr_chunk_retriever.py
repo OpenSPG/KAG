@@ -310,7 +310,7 @@ class PprChunkRetriever(RetrieverABC):
                     )
                 )
         return RetrieverOutput(
-            retriever_method=self.schema().get("name", ""), chunks=matched_docs
+            retriever_method=self.name, chunks=matched_docs
         )
 
     def schema(self):
