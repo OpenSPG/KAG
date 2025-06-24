@@ -122,10 +122,10 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                     self.report_content(
                         reporter,
                         tag_id,
-                        f"begin_sub_kag_retriever_{retriever.schema().get('name')}",
+                        f"begin_sub_kag_retriever_{retriever.name}",
                         "task_executing",
                         "FINISH",
-                        component_name=retriever.schema().get("name"),
+                        component_name=retriever.name,
                     )
 
                     # Prepare function and submit to thread pool

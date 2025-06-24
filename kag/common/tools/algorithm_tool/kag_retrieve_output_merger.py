@@ -43,7 +43,6 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
             **kwargs: Additional keyword arguments for base class initialization.
         """
         super().__init__(**kwargs)
-        self.name = "kag_merger"
         self.merge_method = merge_method
         if self.merge_method.lower().strip() == "weightd":
             self.score_normalizer = self.min_max_normalize
@@ -149,7 +148,12 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
             for g in x.graphs:
                 graph.merge_kg_graph(g)
         return RetrieverOutput(
-            retriever_method=self.schema().get("name", ""),
+            retriever_method=self.name,
             chunks=merged,
             graphs=[graph],
         )
+
+    def schema(self):
+        return {
+            "name": "kag_merger"
+        }

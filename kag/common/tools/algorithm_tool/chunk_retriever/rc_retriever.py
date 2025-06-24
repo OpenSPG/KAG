@@ -26,7 +26,6 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.name = kwargs.get("name", "kg_rc")
         self.top_k = top_k
         self.vectorize_model = vectorize_model
         self.text_similarity = TextSimilarity(vectorize_model)
@@ -50,11 +49,11 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
         start_time = time.time()
         try:
             output = self.vector_chunk_retriever.invoke(task=task, **kwargs)
-            output.retriever_method = self.schema().get("name", "")
+            output.retriever_method = self.name
         except Exception as e:
             logger.error(e, exc_info=True)
             output = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=f"{task} {e}"
+                retriever_method=self.name, err_msg=f"{task} {e}"
             )
         logger.debug(
             f"{self.schema().get('name', '')} `{task.arguments['query']}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"

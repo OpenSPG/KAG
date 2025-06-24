@@ -156,7 +156,7 @@ class SummaryChunkRetriever(RetrieverABC):
             if not query:
                 logger.error("chunk query is emtpy", exc_info=True)
                 return RetrieverOutput(
-                    retriever_method=self.schema().get("name", ""),
+                    retriever_method=self.name,
                     err_msg="query is empty",
                 )
 
@@ -173,7 +173,7 @@ class SummaryChunkRetriever(RetrieverABC):
 
             # to retrieve output
             out = RetrieverOutput(
-                chunks=chunks, retriever_method=self.schema().get("name", "")
+                chunks=chunks, retriever_method=self.name
             )
             chunk_cached_by_query_map.put(query, out)
             return out
@@ -181,9 +181,14 @@ class SummaryChunkRetriever(RetrieverABC):
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
             return RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+                retriever_method=self.name, err_msg=str(e)
             )
 
     @property
     def input_indices(self):
         return ["Summary"]
+
+    def schema(self):
+        return {
+            "name": "summary_chunk_retriever"
+        }

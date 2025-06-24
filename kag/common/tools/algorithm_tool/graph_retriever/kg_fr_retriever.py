@@ -36,7 +36,6 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.name = kwargs.get("name", "kg_fr")
         self.llm = llm or LLMClient.from_config(get_default_chat_llm_config())
         self.path_select = path_select or PathSelect.from_config(
             {"type": "fuzzy_one_hop_select"}
@@ -73,7 +72,7 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
             logical_node = task.arguments.get("logic_form_node", None)
             if not logical_node:
                 return RetrieverOutput(
-                    retriever_method=self.schema().get("name", ""),
+                    retriever_method=self.name,
                     err_msg="No logical-form node found",
                 )
             context = kwargs.get("context", Context())
@@ -118,12 +117,12 @@ class KgFreeRetrieverWithOpenSPGRetriever(RetrieverABC):
                 f"`{query}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
             )
             output.graphs = [graph_data]
-            output.retriever_method = self.schema().get("name", "")
+            output.retriever_method = self.name
             return output
         except Exception as e:
             logger.error(e, exc_info=True)
             return RetrieverOutput(
-                retriever_method=self.schema().get("name", ""),
+                retriever_method=self.name,
                 err_msg=f"{task} {e}",
             )
 
