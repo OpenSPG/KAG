@@ -104,11 +104,11 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
 
                 break
             else:
-                messages.append({
-                    "role": "assistant",
-                    "content": subquestion_response,
-                })
                 if "<search>" in subquestion_response:
+                    messages.append({
+                        "role": "assistant",
+                        "content": subquestion_response,
+                    })
                     search = search_plan_extraction(subquestion_response)
                     # 有时候会缺失</search>训练时需要优化<search>内容，不需要直接换行
                     if len(search) == 0:
@@ -117,6 +117,9 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                     try:
                         sub_queries, logic_forms = parse_logic_form_with_str(search)
                         logic_forms = self.logic_node_parser.parse_logic_form_set(logic_forms, sub_queries, task_query)
+                        if not logic_forms:
+                            logic_node.sub_query = search
+                            logic_forms = [logic_node]
                     except Exception as e:
                         logger.warning(f"kag model think can not extra lf from {search} {e}")
                         logic_node.sub_query = search
@@ -142,7 +145,7 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                                 "query": target_query,
                                 "logic_form_node": logic_forms[0]
                             })
-                        retriever_output = self.do_retrieval(task_query=target_query, tag_id=tag_id, task=cur_task,
+                        retriever_output = self.do_retrieval(task_query=target_query, tag_id=cur_turn_tag_name, task=cur_task,
                                                              context=context, **kwargs)
 
                         recall_information_list = []
@@ -158,7 +161,7 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                             "content": recall_str,
                         })
                     except Exception as e:
-                        logger.error(f"kag flow exception! {e}", exc_info=True)
+                        logger.error(f"kag flow exception! {e} search={search}", exc_info=True)
                         self.report_content(
                             reporter,
                             cur_turn_tag_name,
@@ -167,6 +170,11 @@ class KAGModelHybridRetrievalExecutor(KAGHybridRetrievalExecutor):
                             "INIT",
                             step=task.name,
                         )
+                else:
+                    messages.append({
+                        "role": "assistant",
+                        "content": subquestion_response,
+                    })
 
         context.kwargs["messages"] = messages
         return retriever_output
