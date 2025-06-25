@@ -2,7 +2,7 @@ import logging
 import time
 from typing import Any, Optional
 
-from kag.interface import ExecutorABC, ToolABC
+from kag.interface import ExecutorABC, RetrieverABC
 from kag.interface.solver.reporter_abc import ReporterABC
 from kag.solver.executor.retriever.local_knowledge_base.kag_retriever.kag_hybrid_executor import (
     KAGRetrievedResponse,
@@ -16,7 +16,7 @@ logger = logging.getLogger()
 
 @ExecutorABC.register("chunk_retrieved_executor")
 class ChunkRetrievedExecutor(ExecutorABC):
-    def __init__(self, top_k, retriever: ToolABC, **kwargs):
+    def __init__(self, top_k, retriever: RetrieverABC, **kwargs):
         super().__init__(**kwargs)
         self.retriever = retriever
         self.top_k = top_k
@@ -43,23 +43,11 @@ class ChunkRetrievedExecutor(ExecutorABC):
             "FINISH",
             overwrite=False,
         )
-        retrieved_result = self.retriever.invoke(query=task_query, top_k=self.top_k)
+        retrieved_result = self.retriever.invoke(task, context=context, **kwargs)
 
         # Log the retrieved results
         logger.debug(f"Retrieved results: {retrieved_result}")
 
-        chunk_datas = []
-        for k, v in retrieved_result.items():
-            chunk_datas.append(
-                ChunkData(
-                    content=v["content"],
-                    title=v["name"],
-                    chunk_id=k,
-                    score=v["score"],
-                    properties=v,
-                )
-            )
-        kag_response.chunk_datas = chunk_datas
         self.report_content(
             reporter,
             "reference",
@@ -72,7 +60,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
             reporter,
             f"{task_query}_begin_kag_retriever",
             f"{task_query}_end_kag_retriever",
-            f"{len(chunk_datas)}",
+            f"{len(retrieved_result.chunks)}",
             "FINISH",
         )
 
@@ -81,8 +69,7 @@ class ChunkRetrievedExecutor(ExecutorABC):
         logger.info(
             f"Finished retrieval process for query: {task_query}. Duration: {end_time - start_time} bytes"
         )
-        kag_response.summary = "retrieved by local knowledgebase"
-        store_results(task, kag_response)
+        task.update_result(retrieved_result)
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

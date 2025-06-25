@@ -208,10 +208,16 @@ KAG_PROJECT_CONF = KAG_CONFIG.global_config
 KAG_QA_TASK_CONFIG stores per-task configuration and should be cleaned up after use.
 """
 KAG_QA_TASK_CONFIG  = knext.common.cache.LinkCache(maxsize=100, ttl=300)
-KAG_QA_TASK_CONFIG_LOCK = threading.Lock()
-
 
 class KAGConfigAccessor:
+    @staticmethod
+    def get_default_config():
+        if KAG_CONFIG.global_config.project_id:
+            return KAG_CONFIG
+        for k in KAG_QA_TASK_CONFIG.cache.keys():
+            return KAG_QA_TASK_CONFIG.get(k)
+        return KAG_CONFIG
+
     @staticmethod
     def get_config(task_with_kb_id=None) -> KAGConfigMgr:
         """
@@ -224,9 +230,8 @@ class KAGConfigAccessor:
         :return: Corresponding configuration object
         """
         if task_with_kb_id is not None:
-            with KAG_QA_TASK_CONFIG_LOCK:
-                return KAG_QA_TASK_CONFIG.get(task_with_kb_id)
-        return KAG_CONFIG
+            return KAG_QA_TASK_CONFIG.get(task_with_kb_id)
+        return KAGConfigAccessor.get_default_config()
 
     @staticmethod
     def set_task_config(task_with_kb_id, config: KAGConfigMgr):
@@ -236,8 +241,7 @@ class KAGConfigAccessor:
         :param task_with_kb_id: Task ID
         :param config: Configuration object to store
         """
-        with KAG_QA_TASK_CONFIG_LOCK:
-            KAG_QA_TASK_CONFIG.put(task_with_kb_id, config)
+        KAG_QA_TASK_CONFIG.put(task_with_kb_id, config)
 
 
 def init_env(config_file: str = None):

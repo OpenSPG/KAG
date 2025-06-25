@@ -149,32 +149,6 @@ def is_chinese(text):
     chinese_pattern = re.compile(r"[\u4e00-\u9fff]+")
     return bool(chinese_pattern.search(text))
 
-
-async def do_index_pipeline(query, qa_config, reporter):
-    if "chat" not in qa_config or "index_list" not in qa_config["chat"]:
-        raise RuntimeError("chat or index_list not found in qa_config.")
-    index_names = qa_config.get("chat", {}).get("index_list", [])
-    retriever_configs = []
-    for index_name in index_names:
-        try:
-            index_manager = KAGIndexManager.from_config(
-                {
-                    "type": index_name,
-                    "llm_config": qa_config.get("llm", {}),
-                    "vectorize_model_config": qa_config.get("vectorize_model", {}),
-                }
-            )
-            retriever_configs += index_manager.build_retriever_config(
-                qa_config.get("llm", {}), qa_config.get("vectorize_model", {})
-            )
-        except Exception as e:
-            raise RuntimeError(f"not found index {index_name}")
-    qa_config["retrievers"] = retriever_configs
-    pipeline_config = get_pipeline_conf("index_pipeline", qa_config)
-    pipeline = SolverPipelineABC.from_config(pipeline_config)
-    return await pipeline.ainvoke(query, reporter=reporter)
-
-
 async def do_qa_pipeline(
     use_pipeline, query, qa_config, reporter, task_id, kb_project_ids
 ):
@@ -219,10 +193,12 @@ async def do_qa_pipeline(
         custom_pipeline_conf = copy.deepcopy(qa_config.get(use_pipeline, None))
     else:
         custom_pipeline_conf = copy.deepcopy(qa_config.get("solver_pipeline", None))
-
-    self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
-    self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
-    self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+    if use_pipeline not in ["index_pipeline"]:
+        self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
+        self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
+        self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+    else:
+        self_cognition_res = False
     if not self_cognition_res:
         if custom_pipeline_conf:
             pipeline_config = custom_pipeline_conf
@@ -262,7 +238,8 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
     kb_configs = {}
     kb_project_ids = []
-
+    vectorize_model = {}
+    global_index_set = main_config.get("chat", {}).get("index_list", [])
     if isinstance(main_config.get("kb"), list):
         kbs = main_config["kb"]
         for kb in kbs:
@@ -293,12 +270,24 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
                     kb_conf.update_conf({"llm": main_config["llm"]})
                 if "vectorizer" in kb:
                     kb_conf.update_conf({"vectorize_model": kb["vectorizer"]})
-
+                    vectorize_model = kb["vectorizer"]
+                if "index_list" not in kb and global_index_set:
+                    kb["index_list"] = global_index_set
                 KAGConfigAccessor.set_task_config(kb_task_project_id, kb_conf)
                 kb_configs[kb_project_id] = (kb_task_project_id, kb_conf)
-
             except Exception as e:
                 logger.error(f"KB配置初始化失败: {str(e)}", exc_info=True)
+    if "vectorize_model" not in main_config.keys():
+        main_config["vectorize_model"] = vectorize_model
+
+    if vectorize_model:
+        KAG_CONFIG.update_conf({
+            "vectorize_model": vectorize_model
+        })
+    if main_config["llm"]:
+        KAG_CONFIG.update_conf({
+            "llm": main_config["llm"]
+        })
     reporter_map = {
         "kag_thinker_pipeline": "kag_open_spg_reporter"
     }
@@ -315,17 +304,15 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
 
     try:
         await reporter.start()
-        if use_pipeline == "index_pipeline":
-            answer = await do_index_pipeline(query, main_config, reporter)
-        else:
-            answer = await do_qa_pipeline(
-                use_pipeline,
-                query,
-                main_config,
-                reporter,
-                task_id=task_id,
-                kb_project_ids=kb_project_ids,
-            )
+        answer = await do_qa_pipeline(
+            use_pipeline,
+            query,
+            main_config,
+            reporter,
+            task_id=task_id,
+            kb_project_ids=kb_project_ids,
+        )
+
         if answer:
             reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
 

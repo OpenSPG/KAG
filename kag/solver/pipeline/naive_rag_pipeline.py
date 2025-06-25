@@ -71,7 +71,7 @@ class NaiveRAGPipeline(SolverPipelineABC):
         """
         tasks_dep = {}
         tasks_dep[0] = {
-            "executor": "Retriever",
+            "executor": "ChunkRetriever",
             "dependent_task_ids": [],
             "arguments": {"query": query},
         }
