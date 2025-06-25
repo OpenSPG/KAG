@@ -1,0 +1,1893 @@
+found config file: /home/zhenzhi/code/KAG/kag/examples/finqa/kag_config.yaml
+Done initialize project config with host addr http://localhost:8887 and project_id 1
+Done init config from local file: set KAG_DEBUG_DUMP_CONFIG=1 to dump config
+finqa data list len 1147
+Processing /tmp/tableeval/c7f92d53d222d57cba41475652d49e5e.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/5 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  20%|██        | 1/5 [00:13<00:55, 13.98s/it][A
+KAG Extraction From Chunk:  40%|████      | 2/5 [00:14<00:18,  6.14s/it][A
+KAG Extraction From Chunk:  60%|██████    | 3/5 [00:16<00:08,  4.15s/it][A
+KAG Extraction From Chunk:  80%|████████  | 4/5 [00:18<00:03,  3.16s/it][A
+KAG Extraction From Chunk: 100%|██████████| 5/5 [00:47<00:00, 12.65s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:47<00:00, 47.60s/it]Progress: 100%|██████████| 1/1 [00:47<00:00, 47.60s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the difference in percentage cumulative total shareholder return on masco common stock versus the s&p 500 index for the five year period ended 2017?
+INFO:root:sub_qa_pair_0: Calculate the percentage increase in cumulative total shareholder return for Masco common stock: ($318.46 - $100) / $100 * 100.
+Percentage increase: 218.46000%
+
+INFO:root:math_debug{'code': '\n# Initial investment\ninitial_investment = 100\n\n# Final cumulative total shareholder return\nfinal_return = 318.46\n\n# Calculate the percentage increase\npercentage_increase = ((final_return - initial_investment) / initial_investment) * 100\n\nprint(f"Percentage increase: {percentage_increase:.5f}%")\n', 'rst': 'Percentage increase: 218.46000%\n', 'error': None}
+INFO:root:sub_qa_pair_1: Calculate the percentage increase in cumulative total return for the S&P 500 index: ($206.49 - $100) / $100 * 100.
+Percentage increase: 106.49000%
+
+INFO:root:math_debug{'code': '\n# Initial investment\ninitial_investment = 100\n\n# Final value of the investment\nfinal_value = 206.49\n\n# Calculate the percentage increase\npercentage_increase = ((final_value - initial_investment) / initial_investment) * 100\n\n# Output the result\nprint(f"Percentage increase: {percentage_increase:.5f}%")\n', 'rst': 'Percentage increase: 106.49000%\n', 'error': None}
+INFO:root:sub_qa_pair_2: Calculate the difference between the two percentage increases.
+111.97000
+
+INFO:root:math_debug{'code': '\n# Extract the cumulative total returns\nmasco_return = 318.46\nsp500_return = 206.49\n\n# Calculate the percentage increases\ninitial_investment = 100\nmasco_increase = ((masco_return - initial_investment) / initial_investment) * 100\nsp500_increase = ((sp500_return - initial_investment) / initial_investment) * 100\n\n# Calculate the difference between the two percentage increases\ndifference = masco_increase - sp500_increase\n\n# Print the result\nprint(f"{difference:.5f}")\n', 'rst': '111.97000\n', 'error': None}
+####################################################################################################
+index=4,gold=1.1197,prediction=111.97
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 1}
+error index list={'error': [], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/b86645d56ab2911081d72ad0977adec7.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/22 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▍         | 1/22 [00:26<09:08, 26.10s/it][A
+KAG Extraction From Chunk:   9%|▉         | 2/22 [00:26<03:37, 10.85s/it][A
+KAG Extraction From Chunk:  14%|█▎        | 3/22 [00:33<02:52,  9.06s/it][A
+KAG Extraction From Chunk:  18%|█▊        | 4/22 [00:42<02:41,  8.98s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 5/22 [00:42<01:38,  5.78s/it][A
+KAG Extraction From Chunk:  32%|███▏      | 7/22 [00:54<01:31,  6.08s/it][A
+KAG Extraction From Chunk:  50%|█████     | 11/22 [00:59<00:34,  3.14s/it][A
+KAG Extraction From Chunk:  55%|█████▍    | 12/22 [00:59<00:26,  2.61s/it][A
+KAG Extraction From Chunk:  59%|█████▉    | 13/22 [01:19<00:54,  6.10s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 16/22 [01:19<00:20,  3.34s/it][A
+KAG Extraction From Chunk:  77%|███████▋  | 17/22 [01:20<00:13,  2.78s/it][A
+KAG Extraction From Chunk:  82%|████████▏ | 18/22 [01:30<00:17,  4.42s/it][A
+KAG Extraction From Chunk:  86%|████████▋ | 19/22 [01:37<00:14,  4.97s/it][A
+KAG Extraction From Chunk: 100%|██████████| 22/22 [01:44<00:00,  3.58s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:44<00:00, 104.49s/it]Progress: 100%|██████████| 1/1 [01:44<00:00, 104.49s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in total rental expense under operating leases from july 2 , 2005 to july 1 , 2006?
+INFO:root:sub_qa_pair_0: The total rental expense on July 2, 2005, was $92,710,000, and on July 1, 2006, it was $100,690,000. Calculate the percentage change in total rental expense from July 2, 2005, to July 1, 2006.
+Percentage change: 8.60749%
+
+INFO:root:math_debug{'code': '\n# Initial rental expense on July 2, 2005\ninitial_expense = 92710000\n\n# Final rental expense on July 1, 2006\nfinal_expense = 100690000\n\n# Calculate the change in expense\nchange = final_expense - initial_expense\n\n# Calculate the percentage change\npercentage_change = (change / initial_expense) * 100\n\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: 8.60749%\n', 'error': None}
+####################################################################################################
+index=5,gold=0.06757,prediction=8.60749
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 2}
+error index list={'error': [5], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/5b9d048362a1202b75d21107a400f01e.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/16 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   6%|▋         | 1/16 [00:19<04:54, 19.66s/it][A
+KAG Extraction From Chunk:  12%|█▎        | 2/16 [00:19<01:55,  8.23s/it][A
+KAG Extraction From Chunk:  19%|█▉        | 3/16 [00:25<01:31,  7.05s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 4/16 [00:32<01:23,  6.94s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 6/16 [00:41<00:55,  5.57s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 7/16 [00:41<00:36,  4.07s/it][A
+KAG Extraction From Chunk:  50%|█████     | 8/16 [00:41<00:24,  3.01s/it][A
+KAG Extraction From Chunk:  56%|█████▋    | 9/16 [00:51<00:35,  5.08s/it][A
+KAG Extraction From Chunk:  62%|██████▎   | 10/16 [00:54<00:27,  4.55s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 11/16 [00:56<00:17,  3.56s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 12/16 [00:57<00:11,  2.86s/it][A
+KAG Extraction From Chunk:  88%|████████▊ | 14/16 [01:00<00:04,  2.21s/it][A
+KAG Extraction From Chunk:  94%|█████████▍| 15/16 [01:02<00:02,  2.17s/it][A
+KAG Extraction From Chunk: 100%|██████████| 16/16 [01:46<00:00, 13.04s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:46<00:00, 106.25s/it]Progress: 100%|██████████| 1/1 [01:46<00:00, 106.25s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what portion of the total noncancelable future lease commitments are due in fiscal year of 2019?
+INFO:root:sub_qa_pair_0: The total noncancelable future lease commitments are $559.8 million, and the amount due in fiscal year 2019 is $137.7 million. Calculate the portion of the total noncancelable future lease commitments due in fiscal year 2019.
+Portion of total noncancelable future lease commitments due in fiscal year 2019: 24.59807%
+
+INFO:root:math_debug{'code': '\n# Total noncancelable future lease commitments\ntotal_commitments = 559.8  # in million dollars\n\n# Amount due in fiscal year 2019\namount_due_2019 = 137.7  # in million dollars\n\n# Calculate the portion of the total commitments due in 2019\nportion_due_2019 = (amount_due_2019 / total_commitments) * 100\n\nprint(f"Portion of total noncancelable future lease commitments due in fiscal year 2019: {portion_due_2019:.5f}%")\n', 'rst': 'Portion of total noncancelable future lease commitments due in fiscal year 2019: 24.59807%\n', 'error': None}
+####################################################################################################
+index=12,gold=0.24566,prediction=24.59807
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 3}
+error index list={'error': [5, 12], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/bd246661cdc3501e8729a56be8bd0cb0.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/10 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  10%|█         | 1/10 [00:26<03:58, 26.45s/it][A
+KAG Extraction From Chunk:  20%|██        | 2/10 [00:35<02:09, 16.23s/it][A
+KAG Extraction From Chunk:  30%|███       | 3/10 [00:41<01:19, 11.36s/it][A
+KAG Extraction From Chunk:  40%|████      | 4/10 [00:44<00:48,  8.07s/it][A
+KAG Extraction From Chunk:  50%|█████     | 5/10 [00:44<00:26,  5.32s/it][A
+KAG Extraction From Chunk:  60%|██████    | 6/10 [00:45<00:14,  3.75s/it][A
+KAG Extraction From Chunk: 100%|██████████| 10/10 [00:50<00:00,  2.20s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:50<00:00, 50.94s/it]Progress: 100%|██████████| 1/1 [00:50<00:00, 50.94s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the average net revenue between 2016 and 2017 in millions
+INFO:root:sub_qa_pair_0: The net revenue in 2016 was $705.4 million, and the net revenue in 2017 was $703.1 million. Calculate the average net revenue between 2016 and 2017 in millions.
+Average net revenue: 704.25000 million
+
+INFO:root:math_debug{'code': '\n# Net revenues in millions\nnet_revenue_2016 = 705.4\nnet_revenue_2017 = 703.1\n\n# Calculate the average net revenue\naverage_net_revenue = (net_revenue_2016 + net_revenue_2017) / 2\n\nprint(f"Average net revenue: {average_net_revenue:.5f} million")\n', 'rst': 'Average net revenue: 704.25000 million\n', 'error': None}
+####################################################################################################
+index=17,gold=705.25,prediction=704.25000
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 4}
+error index list={'error': [5, 12, 17], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/8b08fd74f78d200286297b937cf6cefe.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/20 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/20 [00:12<03:52, 12.22s/it][A
+KAG Extraction From Chunk:  10%|█         | 2/20 [00:17<02:27,  8.17s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 3/20 [00:21<01:45,  6.23s/it][A
+KAG Extraction From Chunk:  20%|██        | 4/20 [00:35<02:31,  9.47s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 5/20 [00:36<01:36,  6.43s/it][A
+KAG Extraction From Chunk:  30%|███       | 6/20 [00:37<01:00,  4.34s/it][A
+KAG Extraction From Chunk:  35%|███▌      | 7/20 [00:37<00:38,  2.97s/it][A
+KAG Extraction From Chunk:  40%|████      | 8/20 [00:37<00:25,  2.11s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 9/20 [00:38<00:18,  1.67s/it][A
+KAG Extraction From Chunk:  50%|█████     | 10/20 [00:44<00:31,  3.11s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 13/20 [00:45<00:10,  1.45s/it][A
+KAG Extraction From Chunk:  70%|███████   | 14/20 [00:52<00:16,  2.72s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 15/20 [00:58<00:16,  3.39s/it][A
+KAG Extraction From Chunk:  80%|████████  | 16/20 [01:04<00:16,  4.11s/it][A
+KAG Extraction From Chunk:  95%|█████████▌| 19/20 [01:04<00:02,  2.01s/it][A
+KAG Extraction From Chunk: 100%|██████████| 20/20 [01:08<00:00,  2.31s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:08<00:00, 68.37s/it]Progress: 100%|██████████| 1/1 [01:08<00:00, 68.37s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: the combined amount of accrued interest and penalties related to tax positions taken on our tax returns and included in non-current income taxes payable was what percent of the total ending balance as of november 28 2008?
+INFO:root:sub_qa_pair_0: The combined amount of accrued interest and penalties is $15.3 million, and the total ending balance is $15.3 million. Calculate what percentage the combined amount is of the total ending balance.
+100.00000%
+
+INFO:root:math_debug{'code': '\n# Combined amount of accrued interest and penalties\ncombined_amount = 15.3  # in millions\n\n# Total ending balance\ntotal_balance = 15.3  # in millions\n\n# Calculate the percentage\npercentage = (combined_amount / total_balance) * 100\n\n# Output the result\nprint(f"{percentage:.5f}%")\n', 'rst': '100.00000%\n', 'error': None}
+####################################################################################################
+index=18,gold=0.10964,prediction=100.00000
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 5}
+error index list={'error': [5, 12, 17, 18], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/fd35681d0508297afcf176fb6a6a8f77.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/23 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/23 [00:15<05:37, 15.35s/it][A
+KAG Extraction From Chunk:   9%|▊         | 2/23 [00:16<02:29,  7.10s/it][A
+KAG Extraction From Chunk:  13%|█▎        | 3/23 [00:20<01:52,  5.62s/it][A
+KAG Extraction From Chunk:  17%|█▋        | 4/23 [00:30<02:22,  7.49s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 5/23 [00:31<01:31,  5.11s/it][A
+KAG Extraction From Chunk:  26%|██▌       | 6/23 [00:32<00:58,  3.45s/it][A
+KAG Extraction From Chunk:  30%|███       | 7/23 [00:32<00:38,  2.38s/it][A
+KAG Extraction From Chunk:  35%|███▍      | 8/23 [00:32<00:24,  1.66s/it][A
+KAG Extraction From Chunk:  39%|███▉      | 9/23 [00:53<01:47,  7.69s/it][A
+KAG Extraction From Chunk:  52%|█████▏    | 12/23 [00:53<00:36,  3.35s/it][A
+KAG Extraction From Chunk:  61%|██████    | 14/23 [01:02<00:33,  3.77s/it][A
+KAG Extraction From Chunk:  70%|██████▉   | 16/23 [01:18<00:36,  5.18s/it][A
+KAG Extraction From Chunk:  74%|███████▍  | 17/23 [01:18<00:25,  4.20s/it][A
+KAG Extraction From Chunk:  78%|███████▊  | 18/23 [01:23<00:21,  4.27s/it][A
+KAG Extraction From Chunk:  87%|████████▋ | 20/23 [01:23<00:08,  2.78s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 22/23 [01:24<00:01,  1.82s/it][A
+KAG Extraction From Chunk: 100%|██████████| 23/23 [01:41<00:00,  4.93s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:41<00:00, 101.53s/it]Progress: 100%|██████████| 1/1 [01:41<00:00, 101.53s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: in 2010 and 2009 , what was the total fair value in billions of assets segregated for the benefit of securities and futures brokerage customers?
+INFO:root:sub_qa_pair_0: The fair value in 2010 was $9.7 billion, and the fair value in 2009 was $10.2 billion. Calculate the total fair value in billions of assets segregated for the benefit of securities and futures brokerage customers for both years combined.
+Total fair value: 19.90000 billion
+
+INFO:root:math_debug{'code': '\n# Fair value in 2010\nfair_value_2010 = 9.7\n\n# Fair value in 2009\nfair_value_2009 = 10.2\n\n# Calculate total fair value for both years combined\ntotal_fair_value = fair_value_2010 + fair_value_2009\n\nprint(f"Total fair value: {total_fair_value:.5f} billion")\n', 'rst': 'Total fair value: 19.90000 billion\n', 'error': None}
+####################################################################################################
+index=19,gold=68.9,prediction=19.90000
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 6}
+error index list={'error': [5, 12, 17, 18, 19], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/6aa84f4753e4b6f04cb0ac52c585b9d9.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/24 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/24 [00:22<08:46, 22.88s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/24 [00:27<04:22, 11.93s/it][A
+KAG Extraction From Chunk:  17%|█▋        | 4/24 [00:45<03:25, 10.26s/it][A
+KAG Extraction From Chunk:  21%|██        | 5/24 [00:45<02:15,  7.12s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 6/24 [00:46<01:32,  5.12s/it][A
+KAG Extraction From Chunk:  29%|██▉       | 7/24 [00:46<01:01,  3.60s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 8/24 [00:47<00:44,  2.76s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 9/24 [00:47<00:29,  1.97s/it][A
+KAG Extraction From Chunk:  46%|████▌     | 11/24 [00:52<00:27,  2.11s/it][A
+KAG Extraction From Chunk:  50%|█████     | 12/24 [01:14<01:24,  7.05s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 13/24 [01:14<00:57,  5.23s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 14/24 [01:14<00:38,  3.87s/it][A
+KAG Extraction From Chunk:  62%|██████▎   | 15/24 [01:16<00:31,  3.48s/it][A
+KAG Extraction From Chunk:  67%|██████▋   | 16/24 [01:38<01:08,  8.54s/it][A
+KAG Extraction From Chunk:  71%|███████   | 17/24 [01:41<00:49,  7.07s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 18/24 [01:41<00:30,  5.10s/it][A
+KAG Extraction From Chunk:  79%|███████▉  | 19/24 [01:42<00:18,  3.73s/it][A
+KAG Extraction From Chunk:  83%|████████▎ | 20/24 [01:42<00:10,  2.66s/it][A
+KAG Extraction From Chunk:  88%|████████▊ | 21/24 [01:42<00:06,  2.02s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 23/24 [01:43<00:01,  1.13s/it][A
+KAG Extraction From Chunk: 100%|██████████| 24/24 [02:09<00:00,  7.28s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [02:09<00:00, 129.26s/it]Progress: 100%|██████████| 1/1 [02:09<00:00, 129.26s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in the commercial mortgage loans designated for sale at fair value from 2008 to 2009
+INFO:root:question: What were the values of commercial mortgage loans designated for sale at fair value in 2008 and 2009?
+INFO:root:question: What financial reports or disclosures from 2008 and 2009 provide information on commercial mortgage loans designated for sale at fair value?
+####################################################################################################
+index=20,gold=-0.08422,prediction=N/A
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 7}
+error index list={'error': [5, 12, 17, 18, 19, 20], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/6d9e34f021f99261e213db43b79e326a.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/4 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  25%|██▌       | 1/4 [00:12<00:37, 12.54s/it][A
+KAG Extraction From Chunk:  50%|█████     | 2/4 [00:12<00:10,  5.23s/it][A
+KAG Extraction From Chunk: 100%|██████████| 4/4 [00:17<00:00,  3.40s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:17<00:00, 17.31s/it]Progress: 100%|██████████| 1/1 [00:17<00:00, 17.31s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the difference in percentage cumulative 5-year total shareholder return on common stock fidelity national information services , inc . compared to the s&p 500 for the period ending 12/16?
+INFO:root:sub_qa_pair_0: The cumulative 5-year total shareholder return for FIS is 311.81%, and for the S&P 500, it is 98.18%. Calculate the difference in percentage cumulative 5-year total shareholder return on common stock Fidelity National Information Services, Inc. compared to the S&P 500 for the period ending 12/16.
+Difference in percentage cumulative 5-year total shareholder return: 213.63000%
+
+INFO:root:math_debug{'code': '\n# Cumulative 5-year total shareholder return for FIS\nfis_return = 311.81\n\n# Cumulative 5-year total shareholder return for S&P 500\nsp500_return = 98.18\n\n# Calculate the difference\ndifference = fis_return - sp500_return\n\n# Output the difference\nprint(f"Difference in percentage cumulative 5-year total shareholder return: {difference:.5f}%")\n', 'rst': 'Difference in percentage cumulative 5-year total shareholder return: 213.63000%\n', 'error': None}
+####################################################################################################
+index=21,gold=1.1363,prediction=213.63000
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 8}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/f17a62b932093c5777d644fce9c360f0.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/8 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  12%|█▎        | 1/8 [00:13<01:37, 13.96s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 2/8 [00:18<00:50,  8.36s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 3/8 [00:29<00:47,  9.45s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 6/8 [00:29<00:06,  3.27s/it][A
+KAG Extraction From Chunk: 100%|██████████| 8/8 [00:29<00:00,  2.02s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:29<00:00, 29.64s/it]Progress: 100%|██████████| 1/1 [00:29<00:00, 29.64s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: for the quarter ended march 312015 what was the percentage change in the share price from the highest to the lowest
+INFO:root:sub_qa_pair_0: The highest share price is $101.88, and the lowest share price is $93.21. Calculate the percentage change in the share price from the highest to the lowest.
+Percentage change: -8.51001%
+
+INFO:root:math_debug{'code': '\n# Highest and lowest share prices\nhighest_price = 101.88\nlowest_price = 93.21\n\n# Calculate the percentage change\npercentage_change = ((lowest_price - highest_price) / highest_price) * 100\n\n# Output the percentage change\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: -8.51001%\n', 'error': None}
+####################################################################################################
+index=22,gold=0.09302,prediction=-8.51001
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 9}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/131da04162275fe20288257975daef40.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/23 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/23 [00:08<03:03,  8.35s/it][A
+KAG Extraction From Chunk:   9%|▊         | 2/23 [00:18<03:16,  9.38s/it][A
+KAG Extraction From Chunk:  13%|█▎        | 3/23 [00:22<02:14,  6.72s/it][A
+KAG Extraction From Chunk:  17%|█▋        | 4/23 [00:25<01:41,  5.34s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 5/23 [00:28<01:24,  4.71s/it][A
+KAG Extraction From Chunk:  26%|██▌       | 6/23 [00:55<03:24, 12.05s/it][A
+KAG Extraction From Chunk:  30%|███       | 7/23 [00:57<02:20,  8.79s/it][A
+KAG Extraction From Chunk:  35%|███▍      | 8/23 [00:58<01:37,  6.51s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 10/23 [00:58<00:44,  3.44s/it][A
+KAG Extraction From Chunk:  48%|████▊     | 11/23 [00:59<00:32,  2.70s/it][A
+KAG Extraction From Chunk:  52%|█████▏    | 12/23 [00:59<00:22,  2.07s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 15/23 [01:00<00:08,  1.01s/it][A
+KAG Extraction From Chunk:  70%|██████▉   | 16/23 [01:12<00:23,  3.34s/it][A
+KAG Extraction From Chunk:  74%|███████▍  | 17/23 [01:23<00:29,  5.00s/it][A
+KAG Extraction From Chunk:  78%|███████▊  | 18/23 [01:23<00:19,  3.91s/it][A
+KAG Extraction From Chunk:  83%|████████▎ | 19/23 [01:25<00:13,  3.32s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 22/23 [01:26<00:01,  1.71s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:26<00:00, 86.33s/it]Progress: 100%|██████████| 1/1 [01:26<00:00, 86.33s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the total impairment costs recorded from 2003 to 2005 in millions
+INFO:root:sub_qa_pair_0: The impairment costs in 2003 were $0.8 million, in 2004 were $0.7 million, and in 2005 were $0.6 million. Calculate the total impairment costs from 2003 to 2005.
+Total impairment costs from 2003 to 2005: 2.10000 million
+
+INFO:root:math_debug{'code': '\n# Impairment costs from 2003 to 2005\nimpairment_2003 = 0.8\nimpairment_2004 = 0.7\nimpairment_2005 = 0.6\n\n# Calculate total impairment costs\ntotal_impairment = impairment_2003 + impairment_2004 + impairment_2005\n\nprint(f"Total impairment costs from 2003 to 2005: {total_impairment:.5f} million")\n', 'rst': 'Total impairment costs from 2003 to 2005: 2.10000 million\n', 'error': None}
+####################################################################################################
+index=28,gold=5.8,prediction=2.10000
+{'em': 1.0, 'f1': 1.0, 'answer_similarity': 0.0, 'processNum': 10}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/91782081b3386b3e76f2ce68dc8f1c26.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/26 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/26 [00:18<07:47, 18.71s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 3/26 [00:20<02:06,  5.49s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 4/26 [00:23<01:38,  4.48s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 6/26 [00:37<01:58,  5.90s/it][A
+KAG Extraction From Chunk:  35%|███▍      | 9/26 [00:37<00:49,  2.91s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 10/26 [00:38<00:37,  2.36s/it][A
+KAG Extraction From Chunk:  42%|████▏     | 11/26 [00:45<00:52,  3.52s/it][A
+KAG Extraction From Chunk:  46%|████▌     | 12/26 [00:53<01:03,  4.53s/it][A
+KAG Extraction From Chunk:  50%|█████     | 13/26 [00:56<00:52,  4.06s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 14/26 [00:56<00:36,  3.01s/it][A
+KAG Extraction From Chunk:  62%|██████▏   | 16/26 [00:58<00:21,  2.19s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 17/26 [01:14<00:48,  5.37s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 19/26 [01:16<00:25,  3.60s/it][A
+KAG Extraction From Chunk:  77%|███████▋  | 20/26 [01:16<00:17,  2.95s/it][A
+KAG Extraction From Chunk:  85%|████████▍ | 22/26 [01:17<00:07,  1.84s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 24/26 [01:25<00:05,  2.64s/it][A
+KAG Extraction From Chunk: 100%|██████████| 26/26 [01:28<00:00,  2.28s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:28<00:00, 88.46s/it]Progress: 100%|██████████| 1/1 [01:28<00:00, 88.46s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the borrowing under the term loan facility as a percentage of the total contractual maturities of long-term debt obligations due subsequent to december 31 , 2016?
+INFO:root:sub_qa_pair_0: The amount borrowed under the term loan facility is $3500 million, and the total contractual maturities of long-term debt obligations due subsequent to December 31, 2016, is $3081 million. Calculate the borrowing under the term loan facility as a percentage of the total contractual maturities of long-term debt obligations due subsequent to December 31, 2016.
+113.59948%
+
+INFO:root:math_debug{'code': '\n# Amount borrowed under the term loan facility\nterm_loan = 3500  # in million dollars\n\n# Total contractual maturities of long-term debt obligations\ntotal_maturities = 3081  # in million dollars\n\n# Calculate the percentage\npercentage = (term_loan / total_maturities) * 100\n\nprint(f"{percentage:.5f}%")\n', 'rst': '113.59948%\n', 'error': None}
+####################################################################################################
+index=29,gold=1.13599,prediction=113.59948
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 11}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/c022b43eb734c1df0e3385b517daa918.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/26 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/26 [00:18<07:30, 18.00s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/26 [00:29<05:46, 14.44s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 3/26 [00:30<03:03,  8.00s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 4/26 [00:30<01:48,  4.93s/it][A
+KAG Extraction From Chunk:  19%|█▉        | 5/26 [00:30<01:07,  3.22s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 7/26 [00:52<02:13,  7.01s/it][A
+KAG Extraction From Chunk:  31%|███       | 8/26 [00:52<01:36,  5.34s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 10/26 [00:53<00:49,  3.08s/it][A
+KAG Extraction From Chunk:  46%|████▌     | 12/26 [00:53<00:26,  1.92s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 14/26 [01:01<00:33,  2.77s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 15/26 [01:15<00:55,  5.07s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 17/26 [01:16<00:29,  3.27s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 18/26 [01:17<00:22,  2.75s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 19/26 [01:19<00:18,  2.60s/it][A
+KAG Extraction From Chunk:  77%|███████▋  | 20/26 [01:19<00:12,  2.01s/it][A
+KAG Extraction From Chunk:  81%|████████  | 21/26 [01:20<00:09,  1.85s/it][A
+KAG Extraction From Chunk:  85%|████████▍ | 22/26 [01:29<00:14,  3.69s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 25/26 [01:29<00:01,  1.73s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 25/26 [01:49<00:01,  1.73s/it][A
+KAG Extraction From Chunk: 100%|██████████| 26/26 [01:53<00:00,  6.31s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:53<00:00, 113.74s/it]Progress: 100%|██████████| 1/1 [01:53<00:00, 113.74s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what would the fair value of total securities available for sale be without the fair value of securities classified as corporate stocks as of december 31 , 2012?
+INFO:root:sub_qa_pair_0: The fair value of total securities available for sale is $51.0 billion, and the fair value of securities classified as corporate stocks is $367 million. Calculate the fair value of total securities available for sale without the fair value of securities classified as corporate stocks.
+Remaining securities: 50633000000.00000 dollars
+
+INFO:root:math_debug{'code': '\n# Fair value of total securities available for sale\ntotal_securities = 51.0 * 10**9  # in dollars\n\n# Fair value of securities classified as corporate stocks\ncorporate_stocks = 367 * 10**6  # in dollars\n\n# Calculate the fair value of total securities available for sale without corporate stocks\nremaining_securities = total_securities - corporate_stocks\n\nprint(f"Remaining securities: {remaining_securities:.5f} dollars")\n', 'rst': 'Remaining securities: 50633000000.00000 dollars\n', 'error': None}
+####################################################################################################
+index=34,gold=61545.0,prediction=50.63300
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 12}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/7dc561b3427c807c854c97fc25e509dc.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/20 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/20 [00:20<06:32, 20.66s/it][A
+KAG Extraction From Chunk:  10%|█         | 2/20 [00:25<03:20, 11.12s/it][A
+KAG Extraction From Chunk:  20%|██        | 4/20 [00:34<01:55,  7.19s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 5/20 [00:47<02:12,  8.85s/it][A
+KAG Extraction From Chunk:  30%|███       | 6/20 [00:47<01:26,  6.19s/it][A
+KAG Extraction From Chunk:  35%|███▌      | 7/20 [00:48<00:57,  4.45s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 9/20 [00:48<00:26,  2.44s/it][A
+KAG Extraction From Chunk:  50%|█████     | 10/20 [00:48<00:19,  1.93s/it][A
+KAG Extraction From Chunk:  60%|██████    | 12/20 [00:48<00:09,  1.15s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 13/20 [00:59<00:23,  3.36s/it][A
+KAG Extraction From Chunk:  70%|███████   | 14/20 [01:00<00:16,  2.70s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 15/20 [01:05<00:16,  3.40s/it][A
+KAG Extraction From Chunk:  80%|████████  | 16/20 [01:06<00:11,  2.82s/it][A
+KAG Extraction From Chunk:  85%|████████▌ | 17/20 [01:15<00:13,  4.45s/it][A
+KAG Extraction From Chunk:  95%|█████████▌| 19/20 [01:15<00:02,  2.55s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:16<00:00, 76.07s/it]Progress: 100%|██████████| 1/1 [01:16<00:00, 76.07s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: assuming the same level of settlements as in fiscal 2007 , what would be the ending balance at march 31 2008 in millions for unrecognized tax benefits?\\n
+INFO:root:sub_qa_pair_0: The ending balance of unrecognized tax benefits as of March 31, 2007, is $224,000, and the amount of settlements made in fiscal 2007 was $56,000. Calculate the ending balance at March 31, 2008, assuming the same level of settlements.
+Ending balance at March 31, 2008: $168000.00000
+
+INFO:root:math_debug{'code': '\n# Initial balance as of March 31, 2007\ninitial_balance = 224000\n\n# Settlements made in fiscal 2007\nsettlements = 56000\n\n# Calculate the ending balance at March 31, 2008\nending_balance = initial_balance - settlements\n\nprint(f"Ending balance at March 31, 2008: ${ending_balance:.5f}")\n', 'rst': 'Ending balance at March 31, 2008: $168000.00000\n', 'error': None}
+####################################################################################################
+index=35,gold=112.0,prediction=0.16800
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 13}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/89a7fe6fae587c2c6d6253b1d4b6a324.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/15 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   7%|▋         | 1/15 [00:14<03:23, 14.51s/it][A
+KAG Extraction From Chunk:  13%|█▎        | 2/15 [00:18<01:45,  8.12s/it][A
+KAG Extraction From Chunk:  20%|██        | 3/15 [00:37<02:38, 13.17s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 4/15 [00:38<01:32,  8.41s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 5/15 [00:40<01:00,  6.08s/it][A
+KAG Extraction From Chunk:  40%|████      | 6/15 [00:41<00:38,  4.26s/it][A
+KAG Extraction From Chunk:  60%|██████    | 9/15 [00:41<00:10,  1.77s/it][A
+KAG Extraction From Chunk:  80%|████████  | 12/15 [00:41<00:02,  1.02it/s][A
+KAG Extraction From Chunk:  93%|█████████▎| 14/15 [00:47<00:01,  1.64s/it][A
+KAG Extraction From Chunk: 100%|██████████| 15/15 [01:08<00:00,  4.99s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:08<00:00, 68.26s/it]Progress: 100%|██████████| 1/1 [01:08<00:00, 68.26s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: as of december 2007 what was the percent of the square footage in alpharetta georgia not yet leased
+INFO:root:question: What is the total square footage of commercial properties in Alpharetta, Georgia, as of December 2007, and how much of it was leased at that time?
+INFO:root:sub_qa_pair_0: What is the total square footage of commercial properties in Alpharetta, Georgia, as of December 2007?
+The total square footage of commercial properties in Alpharetta, Georgia, as of December 2007 is 219,000 square feet.
+
+### Reasoning:
+The document `#89a7fe6fae587c2c6d6253b1d4b6a324.md` explicitly states that Alpharetta, Georgia has approximately 219,000 square feet leased as of December 31, 2007. This information directly answers the question.
+
+### Original Text:
+`| location           |   approximate square footage | |:-------------------|-----------------------------:| | alpharetta georgia |                       219000 |`
+INFO:root:sub_qa_pair_1: What portion of the total square footage of commercial properties in Alpharetta, Georgia, was leased as of December 2007?
+The portion of the total square footage of commercial properties in Alpharetta, Georgia, that was leased as of December 2007 is **219,000 square feet**.
+
+### Reasoning:
+The document states that Alpharetta, Georgia, has approximately 219,000 square feet leased as of December 31, 2007. This is the only relevant information provided regarding the leased square footage in Alpharetta.
+
+### Original Text:
+`#89a7fe6fae587c2c6d6253b1d4b6a324.md / Summary of Significant Locations and Square Footage Leased as of December 31, 2007 / Alpharetta Georgia has approximately 219,000 square feet leased.`
+####################################################################################################
+index=37,gold=0.75799,prediction=0.00000
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 14}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/4dda3702127cbf4f320aa0b9fae50c26.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/17 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   6%|▌         | 1/17 [00:18<04:52, 18.30s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 2/17 [00:27<03:16, 13.13s/it][A
+KAG Extraction From Chunk:  24%|██▎       | 4/17 [00:28<01:05,  5.00s/it][A
+KAG Extraction From Chunk:  29%|██▉       | 5/17 [00:32<00:56,  4.69s/it][A
+KAG Extraction From Chunk:  35%|███▌      | 6/17 [00:55<01:54, 10.44s/it][A
+KAG Extraction From Chunk:  41%|████      | 7/17 [00:57<01:17,  7.79s/it][A
+KAG Extraction From Chunk:  47%|████▋     | 8/17 [00:57<00:50,  5.60s/it][A
+KAG Extraction From Chunk:  53%|█████▎    | 9/17 [01:00<00:36,  4.60s/it][A
+KAG Extraction From Chunk:  59%|█████▉    | 10/17 [01:00<00:23,  3.37s/it][A
+KAG Extraction From Chunk:  71%|███████   | 12/17 [01:00<00:09,  1.85s/it][A
+KAG Extraction From Chunk:  76%|███████▋  | 13/17 [01:01<00:05,  1.43s/it][A
+KAG Extraction From Chunk:  82%|████████▏ | 14/17 [01:01<00:03,  1.08s/it][A
+KAG Extraction From Chunk:  94%|█████████▍| 16/17 [01:05<00:01,  1.64s/it][A
+KAG Extraction From Chunk: 100%|██████████| 17/17 [01:56<00:00, 13.01s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:56<00:00, 116.26s/it]Progress: 100%|██████████| 1/1 [01:56<00:00, 116.26s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: as of december 31 , 2010 , what was the ratio of collateral pledged to the bank by its derivatives counterparties to overnight and other short-term borrowings
+INFO:root:sub_qa_pair_0: The total amount of collateral pledged to the bank by its derivatives counterparties as of December 31, 2010, was $19.3 million, and the total amount of overnight and other short-term borrowings was $0.5 million. Calculate the ratio of collateral pledged to the bank by its derivatives counterparties to overnight and other short-term borrowings.
+Ratio: 38.60000
+
+INFO:root:math_debug{'code': '\n# Total collateral pledged\ncollateral = 19.3  # in million dollars\n\n# Total overnight and short-term borrowings\nborrowings = 0.5  # in million dollars\n\n# Calculate the ratio\nratio = collateral / borrowings\n\nprint(f"Ratio: {ratio:.5f}")\n', 'rst': 'Ratio: 38.60000\n', 'error': None}
+####################################################################################################
+index=51,gold=4.6,prediction=38.6
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 15}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/15316d47a4fafde8e702bc833e25820d.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/15 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   7%|▋         | 1/15 [00:19<04:29, 19.26s/it][A
+KAG Extraction From Chunk:  13%|█▎        | 2/15 [00:34<03:40, 16.97s/it][A
+KAG Extraction From Chunk:  20%|██        | 3/15 [00:36<01:58,  9.90s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 4/15 [00:40<01:26,  7.87s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 5/15 [00:47<01:13,  7.35s/it][A
+KAG Extraction From Chunk:  40%|████      | 6/15 [00:47<00:45,  5.05s/it][A
+KAG Extraction From Chunk:  47%|████▋     | 7/15 [00:48<00:29,  3.70s/it][A
+KAG Extraction From Chunk:  53%|█████▎    | 8/15 [00:49<00:19,  2.73s/it][A
+KAG Extraction From Chunk:  60%|██████    | 9/15 [00:50<00:14,  2.34s/it][A
+KAG Extraction From Chunk:  67%|██████▋   | 10/15 [00:51<00:08,  1.74s/it][A
+KAG Extraction From Chunk:  93%|█████████▎| 14/15 [00:57<00:01,  1.69s/it][A
+KAG Extraction From Chunk: 100%|██████████| 15/15 [01:06<00:00,  2.88s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:06<00:00, 66.14s/it]Progress: 100%|██████████| 1/1 [01:06<00:00, 66.14s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: during 2008 what was the share price of the warrants exercised\\n
+INFO:root:question: What was the exercise price of the warrants in 2008?
+INFO:root:sub_qa_pair_0: What was the exercise price of the warrants issued in 2008?
+The exercise prices of the warrants issued in 2008 were $7.27, $10.91, and $31.44.
+
+**Reasoning and Original Text:**
+The document titled "#Summary of Outstanding Warrants as of December 28, 2008" provides a summary of warrants outstanding as of December 28, 2008, including details such as the number of shares, exercise price, and expiration date. The exercise prices listed in the table are $7.27, $10.91, and $31.44.
+
+```markdown
+| number of shares   | exercise price   | expiration date   |
+|:-------------------|:-----------------|:------------------|
+| 238510             | $ 7.27           | 4/25/2010         |
+| 864040             | $ 7.27           | 7/12/2010         |
+| 809246             | $ 10.91          | 11/23/2010        |
+| 1125734            | $ 10.91          | 1/19/2011         |
+| 18322320 ( 1 )     | $ 31.44          | 2/15/2014         |
+```
+####################################################################################################
+index=53,gold=1e-05,prediction=7.27, 10.91, 31.44
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 16}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/04ddaa3e3f9769fd1003db643be1e250.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/19 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/19 [00:14<04:16, 14.27s/it][A
+KAG Extraction From Chunk:  11%|█         | 2/19 [00:15<01:55,  6.82s/it][A
+KAG Extraction From Chunk:  16%|█▌        | 3/19 [00:24<02:02,  7.68s/it][A
+KAG Extraction From Chunk:  26%|██▋       | 5/19 [00:24<00:47,  3.36s/it][A
+KAG Extraction From Chunk:  32%|███▏      | 6/19 [00:58<02:38, 12.22s/it][A
+KAG Extraction From Chunk:  37%|███▋      | 7/19 [01:01<01:51,  9.32s/it][A
+KAG Extraction From Chunk:  42%|████▏     | 8/19 [01:05<01:25,  7.74s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 11/19 [01:05<00:27,  3.48s/it][A
+KAG Extraction From Chunk:  63%|██████▎   | 12/19 [01:05<00:19,  2.81s/it][A
+KAG Extraction From Chunk:  68%|██████▊   | 13/19 [01:06<00:13,  2.31s/it][A
+KAG Extraction From Chunk:  84%|████████▍ | 16/19 [01:12<00:06,  2.23s/it][A
+KAG Extraction From Chunk:  89%|████████▉ | 17/19 [01:12<00:03,  1.84s/it][A
+KAG Extraction From Chunk:  95%|█████████▍| 18/19 [01:14<00:01,  1.70s/it][A
+KAG Extraction From Chunk: 100%|██████████| 19/19 [01:33<00:00,  5.98s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:34<00:00, 94.07s/it]Progress: 100%|██████████| 1/1 [01:34<00:00, 94.07s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in the weighted average fair value on the date of the award of the common stock
+INFO:root:sub_qa_pair_0: The weighted average fair value on the date of the award is $63.43, and the weighted average fair value on the previous relevant date is $48.00. Calculate the percentage change in the weighted average fair value on the date of the award of the common stock.
+Percentage change: 32.14583%
+
+INFO:root:math_debug{'code': '\n# Weighted average fair value on the date of the award\ncurrent_value = 63.43\n\n# Weighted average fair value on the previous relevant date\nprevious_value = 48.00\n\n# Calculate the percentage change\npercentage_change = ((current_value - previous_value) / previous_value) * 100\n\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: 32.14583%\n', 'error': None}
+####################################################################################################
+index=56,gold=0.10563,prediction=32.14583
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 17}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/4e6869fb20e1fd2b4d5465b7490eb44d.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/16 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   6%|▋         | 1/16 [00:26<06:40, 26.70s/it][A
+KAG Extraction From Chunk:  12%|█▎        | 2/16 [00:32<03:23, 14.54s/it][A
+KAG Extraction From Chunk:  31%|███▏      | 5/16 [00:51<01:34,  8.60s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 6/16 [00:51<01:04,  6.48s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 7/16 [00:52<00:44,  4.91s/it][A
+KAG Extraction From Chunk:  50%|█████     | 8/16 [00:52<00:28,  3.62s/it][A
+KAG Extraction From Chunk:  56%|█████▋    | 9/16 [00:53<00:19,  2.78s/it][A
+KAG Extraction From Chunk:  62%|██████▎   | 10/16 [00:53<00:12,  2.02s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 11/16 [00:55<00:09,  1.98s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 12/16 [00:56<00:07,  1.77s/it][A
+KAG Extraction From Chunk:  88%|████████▊ | 14/16 [00:56<00:02,  1.04s/it][A
+KAG Extraction From Chunk:  94%|█████████▍| 15/16 [01:03<00:02,  2.34s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:03<00:00, 63.21s/it]Progress: 100%|██████████| 1/1 [01:03<00:00, 63.21s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the average number of shares issued to employees from 2013 to 2015
+INFO:root:sub_qa_pair_0: The number of shares issued to employees in 2013, 2014, and 2015 are 556,000, 439,000, and 411,636, respectively. Calculate the average number of shares issued to employees from 2013 to 2015.
+Average number of shares: 468878.66667
+
+INFO:root:math_debug{'code': '\n# Number of shares issued to employees in 2013, 2014, and 2015\nshares_2013 = 556000\nshares_2014 = 439000\nshares_2015 = 411636\n\n# Calculate the average number of shares from 2013 to 2015\naverage_shares = (shares_2013 + shares_2014 + shares_2015) / 3\n\n# Output the average number of shares\nprint(f"Average number of shares: {average_shares:.5f}")\n', 'rst': 'Average number of shares: 468878.66667\n', 'error': None}
+####################################################################################################
+index=59,gold=850636.0,prediction=468878.66667
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 18}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/c022b43eb734c1df0e3385b517daa918.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/26 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/26 [00:18<07:28, 17.94s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/26 [00:32<06:25, 16.06s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 3/26 [00:35<03:52, 10.12s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 4/26 [00:36<02:23,  6.53s/it][A
+KAG Extraction From Chunk:  19%|█▉        | 5/26 [00:37<01:32,  4.39s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 6/26 [00:37<00:58,  2.94s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 7/26 [00:37<00:40,  2.12s/it][A
+KAG Extraction From Chunk:  31%|███       | 8/26 [00:38<00:27,  1.54s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 10/26 [00:38<00:13,  1.14it/s][A
+KAG Extraction From Chunk:  46%|████▌     | 12/26 [00:54<00:52,  3.75s/it][A
+KAG Extraction From Chunk:  50%|█████     | 13/26 [00:56<00:42,  3.26s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 14/26 [01:08<01:04,  5.41s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 15/26 [01:08<00:44,  4.05s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 17/26 [01:22<00:48,  5.36s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 18/26 [01:25<00:38,  4.79s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 19/26 [01:25<00:25,  3.63s/it][A
+KAG Extraction From Chunk:  81%|████████  | 21/26 [01:25<00:10,  2.14s/it][A
+KAG Extraction From Chunk:  85%|████████▍ | 22/26 [01:26<00:06,  1.73s/it][A
+KAG Extraction From Chunk: 100%|██████████| 26/26 [01:52<00:00,  4.57s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:53<00:00, 113.09s/it]Progress: 100%|██████████| 1/1 [01:53<00:00, 113.09s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: in 2012 what was the percent of the total amortized assets that was made of total securities available for sale
+INFO:root:sub_qa_pair_0: The total amortized assets in 2012 were $59,801 million, and the total securities available for sale in 2012 was $51,000 million. Calculate the percentage of the total amortized assets that was made of total securities available for sale.
+Percentage: 85.28285%
+
+INFO:root:math_debug{'code': '\n# Total amortized assets in 2012 (in million dollars)\ntotal_amortized_assets = 59801\n\n# Total securities available for sale in 2012 (in million dollars)\ntotal_securities_available_for_sale = 51000\n\n# Calculate the percentage\npercentage = (total_securities_available_for_sale / total_amortized_assets) * 100\n\nprint(f"Percentage: {percentage:.5f}%")\n', 'rst': 'Percentage: 85.28285%\n', 'error': None}
+####################################################################################################
+index=67,gold=0.82686,prediction=85.28285
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 19}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/457bbbda0ed19c5d83f17913525e57e5.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/28 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▎         | 1/28 [00:16<07:22, 16.40s/it][A
+KAG Extraction From Chunk:   7%|▋         | 2/28 [00:21<04:07,  9.52s/it][A
+KAG Extraction From Chunk:  11%|█         | 3/28 [00:26<03:11,  7.66s/it][A
+KAG Extraction From Chunk:  14%|█▍        | 4/28 [00:26<01:53,  4.72s/it][A
+KAG Extraction From Chunk:  21%|██▏       | 6/28 [00:43<02:26,  6.67s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 7/28 [00:44<01:44,  5.00s/it][A
+KAG Extraction From Chunk:  29%|██▊       | 8/28 [00:44<01:12,  3.62s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 12/28 [00:46<00:26,  1.66s/it][A
+KAG Extraction From Chunk:  46%|████▋     | 13/28 [01:11<01:29,  5.98s/it][A
+KAG Extraction From Chunk:  50%|█████     | 14/28 [01:12<01:08,  4.88s/it][A
+KAG Extraction From Chunk:  54%|█████▎    | 15/28 [01:12<00:49,  3.83s/it][A
+KAG Extraction From Chunk:  61%|██████    | 17/28 [01:12<00:26,  2.37s/it][A
+KAG Extraction From Chunk:  68%|██████▊   | 19/28 [01:17<00:20,  2.32s/it][A
+KAG Extraction From Chunk:  71%|███████▏  | 20/28 [01:24<00:26,  3.29s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 21/28 [01:37<00:39,  5.65s/it][A
+KAG Extraction From Chunk:  79%|███████▊  | 22/28 [01:38<00:27,  4.52s/it][A
+KAG Extraction From Chunk:  82%|████████▏ | 23/28 [01:39<00:17,  3.43s/it][A
+KAG Extraction From Chunk: 100%|██████████| 28/28 [01:54<00:00,  3.16s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:54<00:00, 114.53s/it]Progress: 100%|██████████| 1/1 [01:54<00:00, 114.53s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in the weighted-average estimated fair value of employee stock options granted during from 2013 to 2014
+INFO:root:sub_qa_pair_0: The weighted-average estimated fair value of employee stock options granted in 2013 was $9.52, and in 2014 it was $11.02. Calculate the percentage change from 2013 to 2014.
+Percentage change: 15.75630%
+
+INFO:root:math_debug{'code': '\n# Values for the weighted-average estimated fair value of employee stock options\nvalue_2013 = 9.52\nvalue_2014 = 11.02\n\n# Calculate the percentage change\npercentage_change = ((value_2014 - value_2013) / value_2013) * 100\n\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: 15.75630%\n', 'error': None}
+####################################################################################################
+index=75,gold=0.12159,prediction=15.75630
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 20}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/5099ed08121b50345d9354d81bb17711.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/5 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  20%|██        | 1/5 [00:11<00:44, 11.04s/it][A
+KAG Extraction From Chunk:  40%|████      | 2/5 [00:11<00:14,  4.69s/it][A
+KAG Extraction From Chunk: 100%|██████████| 5/5 [00:15<00:00,  2.26s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:15<00:00, 15.23s/it]Progress: 100%|██████████| 1/1 [00:15<00:00, 15.24s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: the five year total return for the period ending 12/31/2012 on ball corporation stock was how much greater than the same return on the s&p 500?
+INFO:root:sub_qa_pair_0: The five-year total return for Ball Corporation stock is 107.62%, and the five-year total return for the S&P 500 is -2.87%. Calculate the difference between the two returns.
+Difference: 110.49000%
+
+INFO:root:math_debug{'code': '\n# Five-year total return for Ball Corporation stock\nball_return = 107.62\n\n# Five-year total return for the S&P 500\nsp500_return = -2.87\n\n# Calculate the difference between the two returns\ndifference = ball_return - sp500_return\n\nprint(f"Difference: {difference:.5f}%")\n', 'rst': 'Difference: 110.49000%\n', 'error': None}
+####################################################################################################
+index=79,gold=2.13755,prediction=110.49000
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 21}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/5099ed08121b50345d9354d81bb17711.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/5 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  20%|██        | 1/5 [00:04<00:18,  4.71s/it][A
+KAG Extraction From Chunk:  40%|████      | 2/5 [00:05<00:07,  2.53s/it][A
+KAG Extraction From Chunk:  60%|██████    | 3/5 [00:09<00:06,  3.13s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:09<00:00,  9.62s/it]Progress: 100%|██████████| 1/1 [00:09<00:00,  9.62s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+WARNING:kag.solver.retriever.impl.default_chunk_retrieval:76cdfbf914ccb58e62dc9bfae283b0f258a347b5248168ef63a0a9e2dd09b62d get_entity_prop_by_id failed: 'name'
+Traceback (most recent call last):
+  File "/home/zhenzhi/code/KAG/kag/solver/retriever/impl/default_chunk_retrieval.py", line 522, in get_all_docs_by_id
+    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+KeyError: 'name'
+WARNING:kag.solver.retriever.impl.default_chunk_retrieval:14a3cb8c19d5a4519d043d9ffa0bd184582cd89dbbd20227443d1ff0e193fa2f get_entity_prop_by_id failed: 'name'
+Traceback (most recent call last):
+  File "/home/zhenzhi/code/KAG/kag/solver/retriever/impl/default_chunk_retrieval.py", line 522, in get_all_docs_by_id
+    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+KeyError: 'name'
+WARNING:kag.solver.retriever.impl.default_chunk_retrieval:6fff11285feef9fbe69525f73d60c62261f3863c0ce2895ecf7c4a338d09701e get_entity_prop_by_id failed: 'name'
+Traceback (most recent call last):
+  File "/home/zhenzhi/code/KAG/kag/solver/retriever/impl/default_chunk_retrieval.py", line 522, in get_all_docs_by_id
+    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+KeyError: 'name'
+WARNING:kag.solver.retriever.impl.default_chunk_retrieval:4dfee0d088717172c3ac79cc931dca0398588f6c5a898c39bc3546ee98c50475 get_entity_prop_by_id failed: 'name'
+Traceback (most recent call last):
+  File "/home/zhenzhi/code/KAG/kag/solver/retriever/impl/default_chunk_retrieval.py", line 522, in get_all_docs_by_id
+    f"#{node_dict['name']}#{node_dict['content']}#{doc_score}"
+KeyError: 'name'
+INFO:root:question: the five year total return for the period ending 12/31/2012 on ball corporation stock was how much greater than the same return on the dj us containers & packaging index?
+INFO:root:sub_qa_pair_0: The five-year total return for Ball Corporation stock was 107.62%, and the five-year total return for the DJ US Containers & Packaging Index was 7.76%. Calculate the difference between the two returns.
+Difference: 99.86000%
+
+INFO:root:math_debug{'code': '\n# Five-year total return for Ball Corporation stock\nball_return = 107.62\n\n# Five-year total return for DJ US Containers & Packaging Index\ndj_return = 7.76\n\n# Calculate the difference between the two returns\ndifference = ball_return - dj_return\n\nprint(f"Difference: {difference:.5f}%")\n', 'rst': 'Difference: 99.86000%\n', 'error': None}
+####################################################################################################
+index=80,gold=110.49,prediction=99.86000
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 22}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/1552d14c161bf7c99eeed9b01ef63a4f.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/10 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  10%|█         | 1/10 [00:13<02:02, 13.57s/it][A
+KAG Extraction From Chunk:  20%|██        | 2/10 [00:18<01:06,  8.30s/it][A
+KAG Extraction From Chunk:  40%|████      | 4/10 [00:21<00:25,  4.27s/it][A
+KAG Extraction From Chunk:  50%|█████     | 5/10 [00:32<00:31,  6.21s/it][A
+KAG Extraction From Chunk:  60%|██████    | 6/10 [00:32<00:17,  4.46s/it][A
+KAG Extraction From Chunk: 100%|██████████| 10/10 [00:59<00:00,  5.91s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:59<00:00, 59.98s/it]Progress: 100%|██████████| 1/1 [00:59<00:00, 59.98s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the ratio of the purchase in december 2012 to the purchase in january 2013
+INFO:root:sub_qa_pair_0: The total purchase amount in December 2012 was $7,662,592, and the total purchase amount in January 2013 was $1.2 million. Calculate the ratio of the purchase in December 2012 to the purchase in January 2013.
+Ratio: 6.38549
+
+INFO:root:math_debug{'code': '\n# Total purchase amount in December 2012\ndec_2012 = 7662592\n\n# Total purchase amount in January 2013\njan_2013 = 1200000\n\n# Calculate the ratio of December 2012 to January 2013\nratio = dec_2012 / jan_2013\n\nprint(f"Ratio: {ratio:.5f}")\n', 'rst': 'Ratio: 6.38549\n', 'error': None}
+####################################################################################################
+index=82,gold=6.48512,prediction=6.38549
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 23}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/a39bc6f317b1f657c1b1929c24cc98df.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/23 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/23 [00:25<09:23, 25.63s/it][A
+KAG Extraction From Chunk:   9%|▊         | 2/23 [00:27<03:59, 11.39s/it][A
+KAG Extraction From Chunk:  13%|█▎        | 3/23 [00:30<02:36,  7.84s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 5/23 [00:55<03:08, 10.46s/it][A
+KAG Extraction From Chunk:  26%|██▌       | 6/23 [00:59<02:25,  8.58s/it][A
+KAG Extraction From Chunk:  30%|███       | 7/23 [00:59<01:37,  6.11s/it][A
+KAG Extraction From Chunk:  39%|███▉      | 9/23 [01:00<00:48,  3.43s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 10/23 [01:00<00:34,  2.65s/it][A
+KAG Extraction From Chunk:  57%|█████▋    | 13/23 [01:00<00:13,  1.32s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 15/23 [01:09<00:18,  2.34s/it][A
+KAG Extraction From Chunk:  74%|███████▍  | 17/23 [01:14<00:14,  2.38s/it][A
+KAG Extraction From Chunk:  78%|███████▊  | 18/23 [01:33<00:27,  5.54s/it][A
+KAG Extraction From Chunk:  91%|█████████▏| 21/23 [01:34<00:06,  3.16s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 22/23 [01:34<00:02,  2.66s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:34<00:00, 94.61s/it]Progress: 100%|██████████| 1/1 [01:34<00:00, 94.61s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in the cash dividends paid per common share from 2006 to 2007
+INFO:root:sub_qa_pair_0: The cash dividends paid per common share in 2006 were $1.08, and in 2007 they were $1.11. Calculate the percentage change in the cash dividends paid per common share from 2006 to 2007.
+Percentage change: 2.77778%
+
+INFO:root:math_debug{'code': '\n# Cash dividends per common share in 2006 and 2007\ndividend_2006 = 1.08\ndividend_2007 = 1.11\n\n# Calculate the percentage change\npercentage_change = ((dividend_2007 - dividend_2006) / dividend_2006) * 100\n\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: 2.77778%\n', 'error': None}
+####################################################################################################
+index=84,gold=2.02778,prediction=2.77778
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 24}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/1b9823fca2c9db37d4ebcf3e2982fa25.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/4 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  25%|██▌       | 1/4 [00:07<00:23,  7.99s/it][A
+KAG Extraction From Chunk:  50%|█████     | 2/4 [00:10<00:09,  4.69s/it][A
+KAG Extraction From Chunk: 100%|██████████| 4/4 [00:44<00:00, 12.57s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:44<00:00, 44.92s/it]Progress: 100%|██████████| 1/1 [00:44<00:00, 44.92s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the roi of an investment in ups from 2008 to 2009?
+INFO:root:sub_qa_pair_0: The beginning value of the investment is $100.00, and the ending value is $86.42. Calculate the ROI for the investment in UPS from 2008 to 2009.
+ROI: -13.58000%
+
+INFO:root:math_debug{'code': '\n# Beginning and ending values of the investment\nbeginning_value = 100.00\nending_value = 86.42\n\n# Calculate ROI (Return on Investment)\nroi = ((ending_value - beginning_value) / beginning_value) * 100\n\nprint(f"ROI: {roi:.5f}%")\n', 'rst': 'ROI: -13.58000%\n', 'error': None}
+####################################################################################################
+index=86,gold=0.07756,prediction=-13.58
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 25}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/d728eaf9090e408f78579c68fd2362a8.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/18 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   6%|▌         | 1/18 [00:16<04:47, 16.94s/it][A
+KAG Extraction From Chunk:  11%|█         | 2/18 [00:17<01:55,  7.20s/it][A
+KAG Extraction From Chunk:  17%|█▋        | 3/18 [00:32<02:43, 10.91s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 4/18 [00:32<01:33,  6.70s/it][A
+KAG Extraction From Chunk:  28%|██▊       | 5/18 [00:33<00:57,  4.40s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 6/18 [00:33<00:35,  2.98s/it][A
+KAG Extraction From Chunk:  39%|███▉      | 7/18 [00:59<01:56, 10.59s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 8/18 [01:06<01:32,  9.25s/it][A
+KAG Extraction From Chunk:  50%|█████     | 9/18 [01:06<00:57,  6.43s/it][A
+KAG Extraction From Chunk:  56%|█████▌    | 10/18 [01:06<00:36,  4.56s/it][A
+KAG Extraction From Chunk:  61%|██████    | 11/18 [01:06<00:22,  3.26s/it][A
+KAG Extraction From Chunk:  67%|██████▋   | 12/18 [01:07<00:14,  2.39s/it][A
+KAG Extraction From Chunk:  89%|████████▉ | 16/18 [01:07<00:01,  1.07it/s][A
+KAG Extraction From Chunk:  94%|█████████▍| 17/18 [01:11<00:01,  1.52s/it][A
+KAG Extraction From Chunk: 100%|██████████| 18/18 [01:12<00:00,  1.40s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:12<00:00, 72.89s/it]Progress: 100%|██████████| 1/1 [01:12<00:00, 72.89s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: as of december 31 , 2018 what was the percentage decline in the allowance for doubtful accounts
+INFO:root:sub_qa_pair_0: The allowance for doubtful accounts as of December 31, 2017, was $38.9 million, and as of December 31, 2018, it was $34.3 million. Calculate the percentage decline in the allowance for doubtful accounts.
+Percentage decline: 11.82519%
+
+INFO:root:math_debug{'code': '\n# Allowance for doubtful accounts as of December 31, 2017\nallowance_2017 = 38.9\n\n# Allowance for doubtful accounts as of December 31, 2018\nallowance_2018 = 34.3\n\n# Calculate the decline in the allowance\ndecline = allowance_2017 - allowance_2018\n\n# Calculate the percentage decline\npercentage_decline = (decline / allowance_2017) * 100\n\nprint(f"Percentage decline: {percentage_decline:.5f}%")\n', 'rst': 'Percentage decline: 11.82519%\n', 'error': None}
+####################################################################################################
+index=89,gold=-0.11825,prediction=11.82519
+{'em': 2.0, 'f1': 2.0, 'answer_similarity': 0.0, 'processNum': 26}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/488180b88708bd6130ff1ff4dd01dca2.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/9 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  11%|█         | 1/9 [00:13<01:50, 13.82s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 2/9 [00:18<00:59,  8.46s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 3/9 [00:19<00:28,  4.82s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 4/9 [00:30<00:36,  7.39s/it][A
+KAG Extraction From Chunk:  56%|█████▌    | 5/9 [00:30<00:19,  4.77s/it][A
+KAG Extraction From Chunk: 100%|██████████| 9/9 [00:33<00:00,  2.00s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:33<00:00, 33.16s/it]Progress: 100%|██████████| 1/1 [00:33<00:00, 33.16s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: counting indirect shares , how many shares would arthur d . levinson own in total?
+INFO:root:sub_qa_pair_0: The number of direct shares is 362,400, and the number of indirect shares is 2,000. Calculate the total number of shares Arthur D. Levinson owns.
+Total number of shares Arthur D. Levinson owns: 364400
+
+INFO:root:math_debug{'code': '\n# Number of direct shares\ndirect_shares = 362400\n\n# Number of indirect shares\nindirect_shares = 2000\n\n# Calculate total number of shares\ntotal_shares = direct_shares + indirect_shares\n\nprint(f"Total number of shares Arthur D. Levinson owns: {total_shares}")\n', 'rst': 'Total number of shares Arthur D. Levinson owns: 364400\n', 'error': None}
+####################################################################################################
+index=95,gold=364400.0,prediction=364400
+{'em': 3.0, 'f1': 3.0, 'answer_similarity': 0.0, 'processNum': 27}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/43016b0319e1e43e5f394cf50a46e394.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/20 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/20 [00:17<05:36, 17.73s/it][A
+KAG Extraction From Chunk:  10%|█         | 2/20 [00:21<02:51,  9.54s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 3/20 [00:28<02:18,  8.14s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 5/20 [00:41<01:50,  7.37s/it][A
+KAG Extraction From Chunk:  30%|███       | 6/20 [00:42<01:16,  5.46s/it][A
+KAG Extraction From Chunk:  40%|████      | 8/20 [00:42<00:36,  3.04s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 9/20 [00:42<00:25,  2.34s/it][A
+KAG Extraction From Chunk:  55%|█████▌    | 11/20 [00:42<00:12,  1.40s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 13/20 [00:52<00:19,  2.77s/it][A
+KAG Extraction From Chunk:  80%|████████  | 16/20 [00:56<00:08,  2.02s/it][A
+KAG Extraction From Chunk:  85%|████████▌ | 17/20 [00:57<00:05,  1.98s/it][A
+KAG Extraction From Chunk:  90%|█████████ | 18/20 [01:02<00:05,  2.52s/it][A
+KAG Extraction From Chunk:  95%|█████████▌| 19/20 [01:02<00:01,  1.99s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:02<00:00, 62.87s/it]Progress: 100%|██████████| 1/1 [01:02<00:00, 62.87s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the percentage decrease in receivables from the money pool from 2010 to 2011?
+INFO:root:sub_qa_pair_0: The receivables from the money pool in 2010 were $63,003,000, and in 2011 they were $23,596,000. Calculate the percentage decrease in receivables from 2010 to 2011.
+Percentage decrease: 62.54782%
+
+INFO:root:math_debug{'code': '\n# Receivables in 2010 and 2011 (in thousands of dollars)\nreceivables_2010 = 63003\nreceivables_2011 = 23596\n\n# Calculate the decrease in receivables\ndecrease = receivables_2010 - receivables_2011\n\n# Calculate the percentage decrease\npercentage_decrease = (decrease / receivables_2010) * 100\n\nprint(f"Percentage decrease: {percentage_decrease:.5f}%")\n', 'rst': 'Percentage decrease: 62.54782%\n', 'error': None}
+####################################################################################################
+index=98,gold=-0.62548,prediction=62.54782
+{'em': 3.0, 'f1': 3.0, 'answer_similarity': 0.0, 'processNum': 28}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/4c4b12f1bec1271e54434bfeebc9fa72.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/13 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   8%|▊         | 1/13 [00:22<04:35, 22.93s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 2/13 [00:23<01:44,  9.53s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 3/13 [00:24<01:00,  6.01s/it][A
+KAG Extraction From Chunk:  31%|███       | 4/13 [00:36<01:14,  8.32s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 5/13 [00:46<01:10,  8.87s/it][A
+KAG Extraction From Chunk:  46%|████▌     | 6/13 [00:48<00:45,  6.47s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 7/13 [00:48<00:26,  4.46s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 9/13 [00:49<00:09,  2.44s/it][A
+KAG Extraction From Chunk:  85%|████████▍ | 11/13 [00:49<00:03,  1.50s/it][A
+KAG Extraction From Chunk: 100%|██████████| 13/13 [00:52<00:00,  1.41s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:52<00:00, 52.20s/it]Progress: 100%|██████████| 1/1 [00:52<00:00, 52.21s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is awk's 2012 unrecognized tax benefit as a percentage of gross liabilities?
+INFO:root:sub_qa_pair_0: The unrecognized tax benefit for 2012 is $7,532, and the gross liabilities for 2012 are $180,993. Calculate the unrecognized tax benefit as a percentage of gross liabilities.
+4.16149%
+
+INFO:root:math_debug{'code': '\n# Unrecognized tax benefit for 2012\nunrecognized_tax_benefit = 7532\n\n# Gross liabilities for 2012\ngross_liabilities = 180993\n\n# Calculate the percentage\npercentage = (unrecognized_tax_benefit / gross_liabilities) * 100\n\nprint(f"{percentage:.5f}%")\n', 'rst': '4.16149%\n', 'error': None}
+####################################################################################################
+index=99,gold=0.04161,prediction=4.16149
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 29}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/911fefdff4df934fc469387690590194.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/17 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   6%|▌         | 1/17 [00:15<04:08, 15.54s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 2/17 [00:18<02:04,  8.28s/it][A
+KAG Extraction From Chunk:  18%|█▊        | 3/17 [00:31<02:27, 10.50s/it][A
+KAG Extraction From Chunk:  24%|██▎       | 4/17 [00:32<01:28,  6.78s/it][A
+KAG Extraction From Chunk:  35%|███▌      | 6/17 [00:33<00:36,  3.31s/it][A
+KAG Extraction From Chunk:  41%|████      | 7/17 [00:33<00:24,  2.45s/it][A
+KAG Extraction From Chunk:  47%|████▋     | 8/17 [00:59<01:20,  8.95s/it][A
+KAG Extraction From Chunk:  53%|█████▎    | 9/17 [00:59<00:52,  6.61s/it][A
+KAG Extraction From Chunk:  59%|█████▉    | 10/17 [01:01<00:35,  5.01s/it][A
+KAG Extraction From Chunk:  65%|██████▍   | 11/17 [01:01<00:22,  3.69s/it][A
+KAG Extraction From Chunk:  76%|███████▋  | 13/17 [01:01<00:08,  2.07s/it][A
+KAG Extraction From Chunk:  88%|████████▊ | 15/17 [01:01<00:02,  1.27s/it][A
+KAG Extraction From Chunk: 100%|██████████| 17/17 [01:35<00:00,  6.95s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:36<00:00, 96.07s/it]Progress: 100%|██████████| 1/1 [01:36<00:00, 96.07s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the percentage change in the total fair value of non-vested shares from 2009 to 2010?
+INFO:root:sub_qa_pair_0: What was the total fair value of non-vested shares in 2010?
+The total fair value of non-vested shares in 2010 was $29,946.
+
+**Reasoning and Original Text:**
+The document states that at the end of fiscal year 2010, 713 shares were non-vested with a weighted average grant-date fair value of $42. To calculate the total fair value, multiply the number of non-vested shares by the weighted average grant-date fair value:
+713 shares * $42 = $29,946.
+
+**Reference:**
+`#911fefdff4df934fc469387690590194.md / Changes in Non-Vested Restricted Stock Awards FY2009-2010 / At the end of fiscal year 2010, 713 shares were non-vested with a weighted average grant-date fair value of $42.`
+INFO:root:question: What was the total fair value of non-vested shares in 2009?
+INFO:root:sub_qa_pair_0: The fair value per non-vested share is $42, and the number of non-vested shares is 762. Calculate the total fair value of non-vested shares in 2009.
+Total fair value: $32004.00000
+
+INFO:root:math_debug{'code': '\n# Fair value per non-vested share\nfair_value_per_share = 42\n\n# Number of non-vested shares\nnum_shares = 762\n\n# Calculate total fair value\ntotal_fair_value = fair_value_per_share * num_shares\n\nprint(f"Total fair value: ${total_fair_value:.5f}")\n', 'rst': 'Total fair value: $32004.00000\n', 'error': None}
+INFO:root:question: What is the total fair value of non-vested shares in 2009 according to the evidence provided?
+INFO:root:sub_qa_pair_0: What is the total fair value of non-vested shares in 2009?
+$31,944
+
+**Reasoning and Original Text:**
+The total fair value of non-vested shares in 2009 is calculated by multiplying the number of non-vested shares at the end of fiscal year 2009 (762 shares) by their weighted average grant-date fair value ($42). This information is provided in the document: 
+
+*"At the end of fiscal year 2009, 762 shares were non-vested with a weighted average grant-date fair value of $42."*
+
+Calculation: 762 shares * $42 = $31,944.
+####################################################################################################
+index=103,gold=-0.04148,prediction=-6.253
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 30}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103], 'no_answer': [], 'system_error': []}
+####################################################################################################
+Processing /tmp/tableeval/7e2b327b550d9adc272994f9e5c0dad1.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/20 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/20 [00:20<06:34, 20.78s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 3/20 [00:29<02:28,  8.76s/it][A
+KAG Extraction From Chunk:  20%|██        | 4/20 [00:48<03:14, 12.14s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 5/20 [00:49<02:07,  8.47s/it][A
+KAG Extraction From Chunk:  30%|███       | 6/20 [00:50<01:25,  6.07s/it][A
+KAG Extraction From Chunk:  35%|███▌      | 7/20 [00:54<01:10,  5.46s/it][A
+KAG Extraction From Chunk:  40%|████      | 8/20 [00:54<00:46,  3.85s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 9/20 [00:54<00:29,  2.71s/it][A
+KAG Extraction From Chunk:  55%|█████▌    | 11/20 [00:55<00:13,  1.51s/it][A
+KAG Extraction From Chunk:  70%|███████   | 14/20 [01:04<00:13,  2.27s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 15/20 [01:04<00:09,  1.86s/it][A
+KAG Extraction From Chunk:  80%|████████  | 16/20 [01:09<00:09,  2.49s/it][A
+KAG Extraction From Chunk:  90%|█████████ | 18/20 [01:09<00:03,  1.57s/it][A
+KAG Extraction From Chunk: 100%|██████████| 20/20 [01:23<00:00,  3.50s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:23<00:00, 83.63s/it]Progress: 100%|██████████| 1/1 [01:23<00:00, 83.63s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the operating expenses in 2006 in millions
+INFO:root:question: What were the total operating expenses reported in the financial statements for the year 2006?
+INFO:root:question: What is the source document or financial report that contains the financial statements for the year 2006?
+INFO:root:sub_qa_pair_0: What is the source document or financial report that contains the financial statements for the year 2006?
+The source document or financial report that contains the financial statements for the year 2006 is the "Reconciliation of Cash Provided by Operating Activities to Free Cash Flow (2005-2007)."
+
+Reasoning: The document "#7e2b327b550d9adc272994f9e5c0dad1.md" explicitly presents financial figures for the year 2006, including cash provided by operating activities, cash used in investing activities, dividends paid, and free cash flow. This indicates that it contains the financial statements for 2006.
+
+Original text referenced:
+```
+#7e2b327b550d9adc272994f9e5c0dad1.md / Reconciliation of Cash Provided by Operating Activities to Free Cash Flow (2005-2007) / This column presents the financial figures for the year 2006, including cash provided by operating activities, cash used in investing activities, dividends paid, and free cash flow.
+```
+####################################################################################################
+index=108,gold=2688.88889,prediction=None
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 31}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/ab8a001df163136fbd2497739ff992b1.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/13 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   8%|▊         | 1/13 [00:15<03:11, 15.93s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 2/13 [00:17<01:19,  7.22s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 3/13 [00:18<00:44,  4.49s/it][A
+KAG Extraction From Chunk:  31%|███       | 4/13 [00:18<00:26,  2.92s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 5/13 [00:24<00:32,  4.05s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 7/13 [00:34<00:26,  4.37s/it][A
+KAG Extraction From Chunk:  62%|██████▏   | 8/13 [00:34<00:16,  3.36s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 12/13 [00:39<00:02,  2.08s/it][A
+KAG Extraction From Chunk: 100%|██████████| 13/13 [01:05<00:00,  6.24s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:05<00:00, 65.37s/it]Progress: 100%|██████████| 1/1 [01:05<00:00, 65.37s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the decrease in rental expense ( millions ) for operating leases in continuing operations from 2003 to 2003?
+INFO:root:question: What were the rental expenses for operating leases in continuing operations in 2003?
+INFO:root:question: What financial reports or disclosures from 2003 provide details on operating lease expenses for continuing operations?
+INFO:root:sub_qa_pair_0: What specific financial reports or disclosures from 2003 (e.g., 10-K, 10-Q) provide details on operating lease expenses for continuing operations?
+The 10-K and 10-Q reports from 2003 would provide details on operating lease expenses for continuing operations. Specifically, the 10-K report would include the future minimum lease commitments for 2003, which were reported as $30 million in total, with $4 million allocated to discontinued operations, as disclosed in the Future Minimum Lease Commitments as of December 31, 2002.
+
+**Reasoning and Original Text:**
+The Future Minimum Lease Commitments as of December 31, 2002, show that the lease commitment for the year 2003 was $30 million in total, with $4 million for discontinued operations. This information would typically be carried forward into the 2003 10-K and 10-Q reports. 
+
+**Original Text:**
+```
+#ab8a001df163136fbd2497739ff992b1.md / Future Minimum Lease Commitments as of December 31, 2002 / Lease commitment for the year 2003: total is $30 million, and $4 million is for discontinued operations.
+```
+INFO:root:sub_qa_pair_1: Where in these financial reports (e.g., notes to the financial statements, MD&A) are operating lease expenses typically disclosed?
+Operating lease expenses are typically disclosed in the notes to the financial statements.
+
+**Reasoning and Original Text Reference:**
+The provided documents mention rental expenses for operating leases in the context of financial reporting. For example, the text states: "rental expense for operating leases, excluding amounts related to the sale/leaseback discussed below, was $31 million, $32 million, and $13 million in the years ended December 31, 2002, 2001, and 2000, respectively." This information is typically found in the notes to the financial statements, which provide detailed disclosures about lease commitments and expenses.
+####################################################################################################
+index=109,gold=1.0,prediction=0.00000
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 32}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/642e37c811429d5055630ec021c1268f.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/25 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/25 [00:07<03:08,  7.85s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/25 [00:09<01:33,  4.07s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 3/25 [00:11<01:07,  3.07s/it][A
+KAG Extraction From Chunk:  16%|█▌        | 4/25 [00:13<01:02,  2.97s/it][A
+KAG Extraction From Chunk:  20%|██        | 5/25 [00:19<01:21,  4.07s/it][A
+KAG Extraction From Chunk:  24%|██▍       | 6/25 [00:21<00:58,  3.07s/it][A
+KAG Extraction From Chunk:  28%|██▊       | 7/25 [00:21<00:41,  2.29s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 11/25 [00:21<00:11,  1.21it/s][A
+KAG Extraction From Chunk:  52%|█████▏    | 13/25 [00:23<00:09,  1.32it/s][A
+KAG Extraction From Chunk:  56%|█████▌    | 14/25 [00:24<00:10,  1.08it/s][A
+KAG Extraction From Chunk:  60%|██████    | 15/25 [00:30<00:18,  1.90s/it][A
+KAG Extraction From Chunk:  64%|██████▍   | 16/25 [00:31<00:15,  1.69s/it][A
+KAG Extraction From Chunk:  68%|██████▊   | 17/25 [00:32<00:11,  1.46s/it][A
+KAG Extraction From Chunk:  72%|███████▏  | 18/25 [00:35<00:12,  1.84s/it][A
+KAG Extraction From Chunk:  76%|███████▌  | 19/25 [00:36<00:10,  1.68s/it][A
+KAG Extraction From Chunk:  84%|████████▍ | 21/25 [00:40<00:07,  1.86s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 23/25 [00:40<00:02,  1.18s/it][A
+KAG Extraction From Chunk: 100%|██████████| 25/25 [01:11<00:00,  6.26s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:11<00:00, 71.85s/it]Progress: 100%|██████████| 1/1 [01:11<00:00, 71.85s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:kag.solver.retriever.impl.default_chunk_retrieval:No entities matched for {}
+INFO:root:question: what was average worldwide net acreage expiring in the total three year period , in millions?
+INFO:root:sub_qa_pair_0: What was the total worldwide net acreage expiring in each of the three years?
+The total worldwide net acreage expiring was 586 thousand acres in 2014, 3057 thousand acres in 2015, and 236 thousand acres in 2016.
+
+### Reasoning:
+The document explicitly states the worldwide net undeveloped acreage expiring for each of the three years:
+- 586 thousand acres in 2014,
+- 3057 thousand acres in 2015,
+- 236 thousand acres in 2016.
+
+### Original Text:
+"Worldwide, there were 586 thousand net undeveloped acres expiring in 2014, 3057 thousand in 2015, and 236 thousand in 2016."
+INFO:root:sub_qa_pair_1: Sum the total worldwide net acreage expiring for 2014, 2015, and 2016: 586 thousand + 3057 thousand + 236 thousand.
+Total worldwide net acreage expiring: 3879.00000 thousand acres
+
+INFO:root:math_debug{'code': '\n# Net acreage expiring for each year\nacreage_2014 = 586\nacreage_2015 = 3057\nacreage_2016 = 236\n\n# Sum the total worldwide net acreage expiring for 2014, 2015, and 2016\ntotal_acreage = acreage_2014 + acreage_2015 + acreage_2016\n\nprint(f"Total worldwide net acreage expiring: {total_acreage:.5f} thousand acres")\n', 'rst': 'Total worldwide net acreage expiring: 3879.00000 thousand acres\n', 'error': None}
+INFO:root:sub_qa_pair_2: Divide the total by 3 to find the average.
+Average acreage: 1293.00000 thousand acres
+
+INFO:root:math_debug{'code': '\n# Extract the total worldwide net acreage expiring for each year\nacreage_2014 = 586\nacreage_2015 = 3057\nacreage_2016 = 236\n\n# Calculate the total acreage\ntotal_acreage = acreage_2014 + acreage_2015 + acreage_2016\n\n# Divide the total by 3 to find the average\naverage_acreage = total_acreage / 3\n\nprint(f"Average acreage: {average_acreage:.5f} thousand acres")\n', 'rst': 'Average acreage: 1293.00000 thousand acres\n', 'error': None}
+INFO:root:sub_qa_pair_3: Convert the average from thousands of acres to millions of acres.
+Average in millions of acres: 1.29300
+
+INFO:root:math_debug{'code': '\n# Extract the acreage data from the context\nacreage_2014 = 586  # thousand acres\nacreage_2015 = 3057  # thousand acres\nacreage_2016 = 236  # thousand acres\n\n# Calculate the average in thousands of acres\naverage_thousand_acres = (acreage_2014 + acreage_2015 + acreage_2016) / 3\n\n# Convert the average to millions of acres\naverage_million_acres = average_thousand_acres / 1000\n\nprint(f"Average in millions of acres: {average_million_acres:.5f}")\n', 'rst': 'Average in millions of acres: 1.29300\n', 'error': None}
+####################################################################################################
+index=114,gold=3879.0,prediction=1.293
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 33}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/aca99c1a24807c2dd38eec057d4a42e8.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/7 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  14%|█▍        | 1/7 [00:06<00:40,  6.72s/it][A
+KAG Extraction From Chunk:  29%|██▊       | 2/7 [00:06<00:14,  2.83s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 3/7 [00:07<00:08,  2.03s/it][A
+KAG Extraction From Chunk:  57%|█████▋    | 4/7 [00:08<00:04,  1.33s/it][A
+KAG Extraction From Chunk:  71%|███████▏  | 5/7 [00:08<00:01,  1.04it/s][A
+KAG Extraction From Chunk:  86%|████████▌ | 6/7 [00:09<00:01,  1.04s/it][A
+KAG Extraction From Chunk: 100%|██████████| 7/7 [00:11<00:00,  1.28s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:11<00:00, 11.50s/it]Progress: 100%|██████████| 1/1 [00:11<00:00, 11.50s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: by how much did the high of mktx stock increase from 2011 to march 2012?
+INFO:root:sub_qa_pair_0: The high price of MKTX stock in 2011 was $31.16, and the high price in March 2012 was $37.79. Calculate the increase in the high price of MKTX stock from 2011 to March 2012.
+Increase in high price: 6.63000
+
+INFO:root:math_debug{'code': '\n# High price in 2011\nhigh_2011 = 31.16\n\n# High price in March 2012\nhigh_march_2012 = 37.79\n\n# Calculate the increase\nincrease = high_march_2012 - high_2011\n\nprint(f"Increase in high price: {increase:.5f}")\n', 'rst': 'Increase in high price: 6.63000\n', 'error': None}
+####################################################################################################
+index=118,gold=0.21277,prediction=6.63000
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 34}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/8360cb171bab4ac161e1340059f6fd7a.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/18 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   6%|▌         | 1/18 [00:13<03:46, 13.30s/it][A
+KAG Extraction From Chunk:  17%|█▋        | 3/18 [00:18<01:19,  5.29s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 4/18 [00:31<01:52,  8.01s/it][A
+KAG Extraction From Chunk:  28%|██▊       | 5/18 [00:33<01:20,  6.18s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 6/18 [00:35<00:58,  4.85s/it][A
+KAG Extraction From Chunk:  39%|███▉      | 7/18 [00:36<00:38,  3.46s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 8/18 [00:36<00:24,  2.46s/it][A
+KAG Extraction From Chunk:  50%|█████     | 9/18 [00:36<00:15,  1.77s/it][A
+KAG Extraction From Chunk:  56%|█████▌    | 10/18 [00:37<00:10,  1.35s/it][A
+KAG Extraction From Chunk:  78%|███████▊  | 14/18 [00:45<00:07,  1.86s/it][A
+KAG Extraction From Chunk:  83%|████████▎ | 15/18 [00:47<00:05,  1.76s/it][A
+KAG Extraction From Chunk:  89%|████████▉ | 16/18 [00:51<00:04,  2.21s/it][A
+KAG Extraction From Chunk: 100%|██████████| 18/18 [00:55<00:00,  2.14s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:55<00:00, 55.17s/it]Progress: 100%|██████████| 1/1 [00:55<00:00, 55.17s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:kag.solver.retriever.impl.default_chunk_retrieval:No entities matched for {}
+INFO:root:question: what was the net change in tax positions in 2014
+INFO:root:sub_qa_pair_0: The gross liability for unrecognized tax benefits at the beginning of 2014 was $177,947, and at the end of 2014, it was $195,237. Calculate the net change in tax positions in 2014.
+Net change in tax positions: 17290.00000
+
+INFO:root:math_debug{'code': '\n# Gross liability at the beginning of 2014\nbeginning_liability = 177947\n\n# Gross liability at the end of 2014\nend_liability = 195237\n\n# Calculate the net change in tax positions\nnet_change = end_liability - beginning_liability\n\nprint(f"Net change in tax positions: {net_change:.5f}")\n', 'rst': 'Net change in tax positions: 17290.00000\n', 'error': None}
+####################################################################################################
+index=120,gold=17447.0,prediction=17290
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 35}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/c1ec1003b7b1c22263117e975e404030.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/7 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  14%|█▍        | 1/7 [00:10<01:04, 10.82s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 3/7 [00:11<00:12,  3.21s/it][A
+KAG Extraction From Chunk:  57%|█████▋    | 4/7 [00:14<00:09,  3.02s/it][A
+KAG Extraction From Chunk: 100%|██████████| 7/7 [00:43<00:00,  6.88s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:43<00:00, 43.05s/it]Progress: 100%|██████████| 1/1 [00:43<00:00, 43.05s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the anualized return for s&p 500 from 2012 to 2017?
+INFO:root:sub_qa_pair_0: The initial value of the S&P 500 at the end of 2012 is $100, and the final value at the end of 2017 is 208.14. Calculate the annualized return for the S&P 500 from 2012 to 2017.
+Annualized return: 0.15790
+
+INFO:root:math_debug{'code': '\n# Initial value of the S&P 500\ninitial_value = 100\n\n# Final value of the S&P 500\nfinal_value = 208.14\n\n# Number of years\nyears = 2017 - 2012\n\n# Calculate the annualized return\nannualized_return = (final_value / initial_value) ** (1 / years) - 1\n\nprint(f"Annualized return: {annualized_return:.5f}")\n', 'rst': 'Annualized return: 0.15790\n', 'error': None}
+####################################################################################################
+index=124,gold=0.01577,prediction=0.15790
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 36}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/bf343bae94565a91cc14fa4b8563b3f7.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/22 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▍         | 1/22 [00:14<05:05, 14.57s/it][A
+KAG Extraction From Chunk:   9%|▉         | 2/22 [00:17<02:30,  7.54s/it][A
+KAG Extraction From Chunk:  14%|█▎        | 3/22 [00:22<02:01,  6.40s/it][A
+KAG Extraction From Chunk:  18%|█▊        | 4/22 [00:26<01:40,  5.61s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 5/22 [00:28<01:12,  4.24s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 6/22 [00:37<01:34,  5.90s/it][A
+KAG Extraction From Chunk:  32%|███▏      | 7/22 [00:40<01:12,  4.82s/it][A
+KAG Extraction From Chunk:  36%|███▋      | 8/22 [00:45<01:11,  5.08s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 10/22 [00:46<00:32,  2.72s/it][A
+KAG Extraction From Chunk:  50%|█████     | 11/22 [00:46<00:24,  2.23s/it][A
+KAG Extraction From Chunk:  59%|█████▉    | 13/22 [00:46<00:11,  1.32s/it][A
+KAG Extraction From Chunk:  64%|██████▎   | 14/22 [00:54<00:21,  2.71s/it][A
+KAG Extraction From Chunk:  68%|██████▊   | 15/22 [00:54<00:14,  2.06s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 16/22 [01:08<00:31,  5.23s/it][A
+KAG Extraction From Chunk:  77%|███████▋  | 17/22 [01:08<00:19,  3.85s/it][A
+KAG Extraction From Chunk:  86%|████████▋ | 19/22 [01:09<00:06,  2.26s/it][A
+KAG Extraction From Chunk: 100%|██████████| 22/22 [01:23<00:00,  3.50s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:23<00:00, 83.74s/it]Progress: 100%|██████████| 1/1 [01:23<00:00, 83.74s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the net chance in non-vested performance awards in 2012 , ( in thousands ) ?
+INFO:root:sub_qa_pair_0: The beginning balance of non-vested performance awards in 2012 is 707,000 (in thousands), and the ending balance is 509,000 (in thousands). Calculate the net change in non-vested performance awards in 2012 (in thousands).
+Net change in non-vested performance awards in 2012: -198000.00000 thousands
+
+INFO:root:math_debug{'code': '\n# Beginning balance of non-vested performance awards in 2012 (in thousands)\nbeginning_balance = 707000\n\n# Ending balance of non-vested performance awards in 2012 (in thousands)\nending_balance = 509000\n\n# Calculate the net change\nnet_change = ending_balance - beginning_balance\n\nprint(f"Net change in non-vested performance awards in 2012: {net_change:.5f} thousands")\n', 'rst': 'Net change in non-vested performance awards in 2012: -198000.00000 thousands\n', 'error': None}
+####################################################################################################
+index=126,gold=-198.0,prediction=-198000
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 37}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/27b7735211880519a2191644b0a23a1a.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/15 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   7%|▋         | 1/15 [00:05<01:18,  5.58s/it][A
+KAG Extraction From Chunk:  13%|█▎        | 2/15 [00:11<01:11,  5.51s/it][A
+KAG Extraction From Chunk:  47%|████▋     | 7/15 [00:12<00:09,  1.25s/it][A
+KAG Extraction From Chunk:  60%|██████    | 9/15 [00:13<00:06,  1.13s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 11/15 [00:15<00:03,  1.04it/s][A
+KAG Extraction From Chunk:  80%|████████  | 12/15 [00:16<00:03,  1.06s/it][A
+KAG Extraction From Chunk:  87%|████████▋ | 13/15 [00:18<00:02,  1.13s/it][A
+KAG Extraction From Chunk:  93%|█████████▎| 14/15 [00:18<00:01,  1.04s/it][A
+KAG Extraction From Chunk: 100%|██████████| 15/15 [00:36<00:00,  5.25s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:37<00:00, 37.05s/it]Progress: 100%|██████████| 1/1 [00:37<00:00, 37.05s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: pursuant to the agreement , on march 30 , 2012 , what was the approximate price for each site the company purchased in thousands
+INFO:root:sub_qa_pair_0: The total cost of the purchase was $151,700 (in thousands), and the number of sites purchased was 800. Calculate the approximate price for each site in thousands.
+Price per site: 189.62500 thousand dollars
+
+INFO:root:math_debug{'code': '\n# Total cost in thousands\ntotal_cost = 151700\n\n# Number of sites\nnum_sites = 800\n\n# Calculate price per site in thousands\nprice_per_site = total_cost / num_sites\n\nprint(f"Price per site: {price_per_site:.5f} thousand dollars")\n', 'rst': 'Price per site: 189.62500 thousand dollars\n', 'error': None}
+####################################################################################################
+index=129,gold=0.18962,prediction=189.62500
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 38}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/81a4fcae34642f1980ba304da54d3920.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/21 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▍         | 1/21 [00:10<03:33, 10.69s/it][A
+KAG Extraction From Chunk:  10%|▉         | 2/21 [00:14<02:02,  6.46s/it][A
+KAG Extraction From Chunk:  14%|█▍        | 3/21 [00:16<01:24,  4.70s/it][A
+KAG Extraction From Chunk:  29%|██▊       | 6/21 [00:16<00:24,  1.62s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 8/21 [00:23<00:28,  2.16s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 9/21 [00:23<00:20,  1.75s/it][A
+KAG Extraction From Chunk:  52%|█████▏    | 11/21 [00:26<00:16,  1.65s/it][A
+KAG Extraction From Chunk:  62%|██████▏   | 13/21 [00:26<00:08,  1.09s/it][A
+KAG Extraction From Chunk:  67%|██████▋   | 14/21 [00:28<00:08,  1.28s/it][A
+KAG Extraction From Chunk:  71%|███████▏  | 15/21 [00:30<00:09,  1.51s/it][A
+KAG Extraction From Chunk:  81%|████████  | 17/21 [00:31<00:04,  1.14s/it][A
+KAG Extraction From Chunk:  86%|████████▌ | 18/21 [00:33<00:03,  1.19s/it][A
+KAG Extraction From Chunk:  95%|█████████▌| 20/21 [00:34<00:01,  1.04s/it][A
+KAG Extraction From Chunk: 100%|██████████| 21/21 [00:59<00:00,  6.14s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:59<00:00, 59.62s/it]Progress: 100%|██████████| 1/1 [00:59<00:00, 59.62s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: at december 31 , 2006 , what percentage of total future minimum commitments under existing non-cancelable leases and purchase obligations from lease obligations is due in 2008?
+INFO:root:sub_qa_pair_0: The total future minimum commitments from lease obligations in 2008 is $117 million. The total future minimum commitments from lease obligations overall is $144 million (2007) + $117 million (2008) + $94 million (2009) + $74 million (2010) + $60 million (2011) + $110 million (Thereafter). Calculate the percentage of the total future minimum commitments from lease obligations that is due in 2008.
+Percentage of total future minimum commitments due in 2008: 19.53255%
+
+INFO:root:math_debug{'code': '\n# Total future minimum commitments from lease obligations\ntotal_lease_commitments = 144 + 117 + 94 + 74 + 60 + 110\n\n# Commitments due in 2008\ncommitments_2008 = 117\n\n# Calculate the percentage\npercentage_2008 = (commitments_2008 / total_lease_commitments) * 100\n\nprint(f"Percentage of total future minimum commitments due in 2008: {percentage_2008:.5f}%")\n', 'rst': 'Percentage of total future minimum commitments due in 2008: 19.53255%\n', 'error': None}
+####################################################################################################
+index=135,gold=0.20207,prediction=19.53255
+{'em': 4.0, 'f1': 4.0, 'answer_similarity': 0.0, 'processNum': 39}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/f6e914e660f1b05d749bba211db2822b.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/32 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   3%|▎         | 1/32 [00:08<04:01,  7.80s/it][A
+KAG Extraction From Chunk:   6%|▋         | 2/32 [00:08<01:50,  3.70s/it][A
+KAG Extraction From Chunk:   9%|▉         | 3/32 [00:11<01:40,  3.46s/it][A
+KAG Extraction From Chunk:  16%|█▌        | 5/32 [00:11<00:41,  1.54s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 7/32 [00:12<00:26,  1.07s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 8/32 [00:17<00:43,  1.82s/it][A
+KAG Extraction From Chunk:  31%|███▏      | 10/32 [00:17<00:24,  1.10s/it][A
+KAG Extraction From Chunk:  34%|███▍      | 11/32 [00:19<00:30,  1.43s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 12/32 [00:21<00:28,  1.44s/it][A
+KAG Extraction From Chunk:  41%|████      | 13/32 [00:22<00:27,  1.46s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 14/32 [00:27<00:43,  2.41s/it][A
+KAG Extraction From Chunk:  56%|█████▋    | 18/32 [00:29<00:17,  1.23s/it][A
+KAG Extraction From Chunk:  62%|██████▎   | 20/32 [00:33<00:16,  1.38s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 22/32 [00:33<00:09,  1.01it/s][A
+KAG Extraction From Chunk:  72%|███████▏  | 23/32 [00:34<00:08,  1.03it/s][A
+KAG Extraction From Chunk:  75%|███████▌  | 24/32 [00:37<00:11,  1.38s/it][A
+KAG Extraction From Chunk:  78%|███████▊  | 25/32 [00:38<00:09,  1.34s/it][A
+KAG Extraction From Chunk:  81%|████████▏ | 26/32 [00:40<00:08,  1.47s/it][A
+KAG Extraction From Chunk:  84%|████████▍ | 27/32 [00:40<00:05,  1.13s/it][A
+KAG Extraction From Chunk:  91%|█████████ | 29/32 [00:40<00:02,  1.28it/s][A
+KAG Extraction From Chunk:  94%|█████████▍| 30/32 [00:42<00:02,  1.05s/it][A
+KAG Extraction From Chunk: 100%|██████████| 32/32 [01:30<00:00, 10.12s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:30<00:00, 90.55s/it]Progress: 100%|██████████| 1/1 [01:30<00:00, 90.55s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: if 2014 underlying operating profit increases at the same pace as 2013 , what would it be , in millions?
+INFO:root:sub_qa_pair_0: What was the underlying operating profit for 2012?
+The underlying operating profit for 2012 was $2014M.
+
+**Reasoning:**  
+The document `#f6e914e660f1b05d749bba211db2822b.md / Financial Metrics with Adjustments for Mark-to-Market and Project K Costs (2011-2013)` explicitly states the underlying operating profit values for 2013, 2012, and 2011 as $2098M, $2014M, and $2109M respectively. The value for 2012 is directly provided as $2014M.  
+
+**Original Text:**  
+"Underlying operating profit values for 2013, 2012, and 2011 are $2098M, $2014M, and $2109M respectively."
+INFO:root:sub_qa_pair_1: What was the underlying operating profit for 2013?
+The underlying operating profit for 2013 was $2098M.
+
+**Reasoning and Original Text Referenced:**
+The value for the underlying operating profit for 2013 is explicitly stated in the document `#f6e914e660f1b05d749bba211db2822b.md` under the section "Financial Metrics with Adjustments for Mark-to-Market and Project K Costs (2011-2013)". The table provided includes the following row:
+
+```
+| underlying operating profit ( d ) | $ 2098 |
+```
+
+This directly answers the question.
+INFO:root:sub_qa_pair_2: Calculate the growth rate of underlying operating profit from 2012 to 2013 using the formula: Growth Rate = ((2013 Profit - 2012 Profit) / 2012 Profit) * 100
+Growth rate: 4.17080%
+
+INFO:root:math_debug{'code': '\n# Extract the underlying operating profit for 2012 and 2013\nprofit_2012 = 2014  # in millions\nprofit_2013 = 2098  # in millions\n\n# Calculate the growth rate\ngrowth_rate = ((profit_2013 - profit_2012) / profit_2012) * 100\n\n# Output the growth rate\nprint(f"Growth rate: {growth_rate:.5f}%")\n', 'rst': 'Growth rate: 4.17080%\n', 'error': None}
+INFO:root:sub_qa_pair_3: Apply this growth rate to the 2013 profit to estimate the 2014 underlying operating profit.
+Estimated 2014 underlying operating profit: 2185.50348M
+
+INFO:root:math_debug{'code': '\n# Extract underlying operating profit for 2012 and 2013\nprofit_2012 = 2014\nprofit_2013 = 2098\n\n# Calculate the growth rate from 2012 to 2013\ngrowth_rate = (profit_2013 - profit_2012) / profit_2012\n\n# Apply the growth rate to 2013 profit to estimate 2014 profit\nestimated_profit_2014 = profit_2013 * (1 + growth_rate)\n\nprint(f"Estimated 2014 underlying operating profit: {estimated_profit_2014:.5f}M")\n', 'rst': 'Estimated 2014 underlying operating profit: 2185.50348M\n', 'error': None}
+####################################################################################################
+index=139,gold=2185.50348,prediction=2185.50348
+{'em': 5.0, 'f1': 5.0, 'answer_similarity': 0.0, 'processNum': 40}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/307319110d0fd6fd33f60e85bf679c4b.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/14 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   7%|▋         | 1/14 [00:07<01:32,  7.08s/it][A
+KAG Extraction From Chunk:  14%|█▍        | 2/14 [00:09<00:49,  4.10s/it][A
+KAG Extraction From Chunk:  21%|██▏       | 3/14 [00:12<00:38,  3.54s/it][A
+KAG Extraction From Chunk:  29%|██▊       | 4/14 [00:14<00:31,  3.10s/it][A
+KAG Extraction From Chunk:  36%|███▌      | 5/14 [00:14<00:18,  2.07s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 6/14 [00:19<00:25,  3.15s/it][A
+KAG Extraction From Chunk:  50%|█████     | 7/14 [00:20<00:15,  2.24s/it][A
+KAG Extraction From Chunk:  57%|█████▋    | 8/14 [00:20<00:09,  1.59s/it][A
+KAG Extraction From Chunk:  71%|███████▏  | 10/14 [00:20<00:03,  1.12it/s][A
+KAG Extraction From Chunk:  86%|████████▌ | 12/14 [00:24<00:02,  1.28s/it][A
+KAG Extraction From Chunk:  93%|█████████▎| 13/14 [00:25<00:01,  1.26s/it][A
+KAG Extraction From Chunk: 100%|██████████| 14/14 [00:40<00:00,  4.54s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:40<00:00, 40.44s/it]Progress: 100%|██████████| 1/1 [00:40<00:00, 40.44s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what would 2015 net revenue have been in millions assuming there was no impact from both the retail electric price change and the impact of volume/weather in the year?
+INFO:root:sub_qa_pair_0: The 2015 net revenue was $5829 million, the impact of the retail electric price change was $187 million, and the impact of volume/weather was $95 million. Calculate the 2015 net revenue without these impacts.
+2015 net revenue without impacts: 5547.00000 million
+
+INFO:root:math_debug{'code': '\n# Given data\nnet_revenue = 5829\nprice_change_impact = 187\nvolume_weather_impact = 95\n\n# Calculate net revenue without the impacts\nnet_revenue_without_impacts = net_revenue - price_change_impact - volume_weather_impact\n\n# Print the result\nprint(f"2015 net revenue without impacts: {net_revenue_without_impacts:.5f} million")\n', 'rst': '2015 net revenue without impacts: 5547.00000 million\n', 'error': None}
+####################################################################################################
+index=144,gold=6111.0,prediction=5547.00000
+{'em': 5.0, 'f1': 5.0, 'answer_similarity': 0.0, 'processNum': 41}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/d574c13d2ca6273c6e4b720081f02639.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/13 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   8%|▊         | 1/13 [00:04<00:57,  4.79s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 2/13 [00:07<00:38,  3.52s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 3/13 [00:09<00:27,  2.72s/it][A
+KAG Extraction From Chunk:  31%|███       | 4/13 [00:09<00:15,  1.70s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 5/13 [00:10<00:11,  1.44s/it][A
+KAG Extraction From Chunk:  46%|████▌     | 6/13 [00:11<00:10,  1.48s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 7/13 [00:14<00:10,  1.77s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 9/13 [00:14<00:03,  1.05it/s][A
+KAG Extraction From Chunk:  85%|████████▍ | 11/13 [00:16<00:01,  1.08it/s][A
+KAG Extraction From Chunk: 100%|██████████| 13/13 [00:21<00:00,  1.57s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:21<00:00, 21.56s/it]Progress: 100%|██████████| 1/1 [00:21<00:00, 21.56s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the current portion of the present value of lease obligations?
+INFO:root:sub_qa_pair_0: What is the current portion of the lease liabilities as disclosed in the financial statements?
+The current portion of the lease liabilities as of December 31, 2015, is $1,336.
+
+**Reasoning and Original Text:**  
+The document titled "Future Minimum Lease Payments and Obligations as of December 31, 2015" provides a table detailing the lease financing obligations. The table includes a line item for the "less current portion," which is listed as "-1336 (1336)." This indicates that the current portion of the lease liabilities is $1,336.  
+
+**Original Text:**  
+"| less current portion                                | -1336 ( 1336 )   |"
+INFO:root:question: What is the current portion of the present value of lease obligations as of December 31, 2015, and how is it calculated?
+INFO:root:sub_qa_pair_0: What is the total present value of lease obligations as of December 31, 2015?
+The total present value of lease obligations as of December 31, 2015, is $42,546.
+
+**Reasoning and Original Text:**
+The table titled *"Future Minimum Lease Payments and Obligations as of December 31, 2015"* explicitly states the present value of the obligation as $42,546. The relevant text is:  
+`| present value of obligation                         | 42546            |`
+INFO:root:sub_qa_pair_1: What is the schedule of lease payments (including amounts and due dates) for the obligations as of December 31, 2015?
+The schedule of lease payments as of December 31, 2015, is as follows:
+
+- **2016**: $5,754,000  
+- **2017**: $5,933,000  
+- **2018**: $6,113,000  
+- **2019**: $6,293,000  
+- **2020**: $6,477,000  
+- **Thereafter**: $18,810,000  
+
+**Reasoning**: The information is directly extracted from the table titled "Future Minimum Lease Payments and Obligations as of December 31, 2015," which details the annual lease payments due under the lease financing obligations. The amounts are listed in thousands of dollars.
+
+**Original Text**:  
+```
+| 2016                                                | $ 5754           |
+|:----------------------------------------------------|:-----------------|
+| 2017                                                | 5933             |
+| 2018                                                | 6113             |
+| 2019                                                | 6293             |
+| 2020                                                | 6477             |
+| thereafter                                          | 18810            |
+```
+INFO:root:question: What specific line item or calculation method in the table titled "Future Minimum Lease Payments and Obligations as of December 31, 2015" is used to determine the current portion of the present value of lease obligations?
+INFO:root:sub_qa_pair_0: Retrieve the table titled "Future Minimum Lease Payments and Obligations as of December 31, 2015" to identify the specific line item or calculation method used to determine the current portion of the present value of lease obligations.
+The specific line item used to determine the current portion of the present value of lease obligations is "less current portion" with a value of **$1,336**.
+
+**Reasoning and Original Text:**
+The table titled "Future Minimum Lease Payments and Obligations as of December 31, 2015" includes a line item labeled "less current portion" with a value of -1336 (1336), which directly represents the current portion of the present value of lease obligations.
+
+**Original Text:**
+```
+| present value of obligation                         | 42546            |
+| less current portion                                | -1336 ( 1336 )   |
+| long-term portion of obligation                     | $ 41210          |
+```
+####################################################################################################
+index=150,gold=0.0314,prediction=1336
+{'em': 5.0, 'f1': 5.0, 'answer_similarity': 0.0, 'processNum': 42}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150], 'no_answer': [], 'system_error': [108]}
+####################################################################################################
+Processing /tmp/tableeval/ad5eb6e7afc767b2fe98456cc6baa225.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/10 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  10%|█         | 1/10 [00:05<00:45,  5.08s/it][A
+KAG Extraction From Chunk:  20%|██        | 2/10 [00:08<00:31,  3.94s/it][A
+KAG Extraction From Chunk:  30%|███       | 3/10 [00:09<00:17,  2.53s/it][A
+KAG Extraction From Chunk:  40%|████      | 4/10 [00:10<00:11,  1.94s/it][A
+KAG Extraction From Chunk:  50%|█████     | 5/10 [00:10<00:07,  1.48s/it][A
+KAG Extraction From Chunk:  60%|██████    | 6/10 [00:14<00:09,  2.26s/it][A
+KAG Extraction From Chunk:  80%|████████  | 8/10 [00:14<00:02,  1.17s/it][A
+KAG Extraction From Chunk: 100%|██████████| 10/10 [00:30<00:00,  3.94s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:30<00:00, 30.47s/it]Progress: 100%|██████████| 1/1 [00:30<00:00, 30.47s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+ERROR:root:qa error
+Traceback (most recent call last):
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/solver/eval.py", line 115, in <module>
+    _prediction = qa(question=_question)
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/solver/eval.py", line 28, in qa
+    answer, traceLog = resp.run(question)
+  File "/home/zhenzhi/code/KAG/kag/solver/logic/solver_pipeline.py", line 67, in run
+    reason_res: LFExecuteResult = self.reasoner.reason(
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/reasoner/finqa_reasoner.py", line 95, in reason
+    best_chunks = self._rerank_docs(
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/reasoner/finqa_reasoner.py", line 176, in _rerank_docs
+    best_chunks.append(for_select_list[index])
+TypeError: list indices must be integers or slices, not float
+####################################################################################################
+index=151,gold=38290.0,prediction=None
+{'em': 5.0, 'f1': 5.0, 'answer_similarity': 0.0, 'processNum': 43}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150], 'no_answer': [], 'system_error': [108, 151]}
+####################################################################################################
+Processing /tmp/tableeval/2f98efe222129802f1356c80c2a34207.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/13 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   8%|▊         | 1/13 [00:10<02:00, 10.07s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 2/13 [00:10<00:47,  4.30s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 3/13 [00:13<00:36,  3.66s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 5/13 [00:13<00:13,  1.67s/it][A
+KAG Extraction From Chunk:  62%|██████▏   | 8/13 [00:14<00:04,  1.01it/s][A
+KAG Extraction From Chunk:  69%|██████▉   | 9/13 [00:16<00:04,  1.10s/it][A
+KAG Extraction From Chunk:  77%|███████▋  | 10/13 [00:18<00:03,  1.29s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 12/13 [00:19<00:01,  1.02s/it][A
+KAG Extraction From Chunk: 100%|██████████| 13/13 [01:07<00:00, 11.43s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:07<00:00, 67.91s/it]Progress: 100%|██████████| 1/1 [01:07<00:00, 67.91s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the value in thousands of unvested restricted stock and performance awards at the weighted-averagegrant-datefair value as of december 31 , 2017?\\n
+INFO:root:sub_qa_pair_0: The weighted-average grant-date fair value is $78.29, and the number of unvested shares is 1,226 thousand. Calculate the total value of unvested restricted stock and performance awards in thousands.
+Total value: 95983.54000 thousand
+
+INFO:root:math_debug{'code': '\n# Weighted-average grant-date fair value\nfair_value = 78.29\n\n# Number of unvested shares (in thousands)\nunvested_shares = 1226\n\n# Calculate the total value of unvested restricted stock and performance awards (in thousands)\ntotal_value = fair_value * unvested_shares\n\nprint(f"Total value: {total_value:.5f} thousand")\n', 'rst': 'Total value: 95983.54000 thousand\n', 'error': None}
+####################################################################################################
+index=156,gold=95983.54,prediction=95983.54000
+{'em': 6.0, 'f1': 6.0, 'answer_similarity': 0.0, 'processNum': 44}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150], 'no_answer': [], 'system_error': [108, 151]}
+####################################################################################################
+Processing /tmp/tableeval/053c6e880ad6519b00c7c189709eb886.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/33 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   3%|▎         | 1/33 [00:13<06:56, 13.03s/it][A
+KAG Extraction From Chunk:   6%|▌         | 2/33 [00:13<02:48,  5.45s/it][A
+KAG Extraction From Chunk:   9%|▉         | 3/33 [00:19<02:49,  5.65s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 5/33 [00:19<01:11,  2.56s/it][A
+KAG Extraction From Chunk:  18%|█▊        | 6/33 [00:19<00:49,  1.85s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 9/33 [00:19<00:20,  1.18it/s][A
+KAG Extraction From Chunk:  33%|███▎      | 11/33 [00:23<00:25,  1.15s/it][A
+KAG Extraction From Chunk:  36%|███▋      | 12/33 [00:28<00:41,  1.97s/it][A
+KAG Extraction From Chunk:  39%|███▉      | 13/33 [00:28<00:33,  1.66s/it][A
+KAG Extraction From Chunk:  42%|████▏     | 14/33 [00:30<00:32,  1.70s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 15/33 [00:31<00:25,  1.43s/it][A
+KAG Extraction From Chunk:  48%|████▊     | 16/33 [00:32<00:20,  1.24s/it][A
+KAG Extraction From Chunk:  52%|█████▏    | 17/33 [00:33<00:21,  1.35s/it][A
+KAG Extraction From Chunk:  55%|█████▍    | 18/33 [00:38<00:34,  2.33s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 19/33 [00:38<00:23,  1.70s/it][A
+KAG Extraction From Chunk:  67%|██████▋   | 22/33 [00:42<00:16,  1.53s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 24/33 [00:43<00:09,  1.02s/it][A
+KAG Extraction From Chunk:  79%|███████▉  | 26/33 [00:46<00:08,  1.21s/it][A
+KAG Extraction From Chunk:  85%|████████▍ | 28/33 [00:47<00:05,  1.00s/it][A
+KAG Extraction From Chunk:  88%|████████▊ | 29/33 [00:51<00:06,  1.56s/it][A
+KAG Extraction From Chunk:  97%|█████████▋| 32/33 [00:51<00:00,  1.13it/s][A
+KAG Extraction From Chunk: 100%|██████████| 33/33 [01:00<00:00,  2.32s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:00<00:00, 60.65s/it]Progress: 100%|██████████| 1/1 [01:00<00:00, 60.65s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+ERROR:root:qa error
+Traceback (most recent call last):
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/solver/eval.py", line 115, in <module>
+    _prediction = qa(question=_question)
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/solver/eval.py", line 28, in qa
+    answer, traceLog = resp.run(question)
+  File "/home/zhenzhi/code/KAG/kag/solver/logic/solver_pipeline.py", line 67, in run
+    reason_res: LFExecuteResult = self.reasoner.reason(
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/reasoner/finqa_reasoner.py", line 95, in reason
+    best_chunks = self._rerank_docs(
+  File "/home/zhenzhi/code/KAG/kag/examples/finqa/reasoner/finqa_reasoner.py", line 176, in _rerank_docs
+    best_chunks.append(for_select_list[index])
+IndexError: list index out of range
+####################################################################################################
+index=157,gold=349.0,prediction=None
+{'em': 6.0, 'f1': 6.0, 'answer_similarity': 0.0, 'processNum': 45}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/0dfd87249742461900a248290fb956e1.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/14 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   7%|▋         | 1/14 [00:05<01:13,  5.65s/it][A
+KAG Extraction From Chunk:  14%|█▍        | 2/14 [00:09<00:57,  4.83s/it][A
+KAG Extraction From Chunk:  29%|██▊       | 4/14 [00:11<00:23,  2.34s/it][A
+KAG Extraction From Chunk:  36%|███▌      | 5/14 [00:14<00:22,  2.55s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 6/14 [00:16<00:17,  2.24s/it][A
+KAG Extraction From Chunk:  50%|█████     | 7/14 [00:17<00:12,  1.83s/it][A
+KAG Extraction From Chunk:  57%|█████▋    | 8/14 [00:21<00:15,  2.61s/it][A
+KAG Extraction From Chunk:  64%|██████▍   | 9/14 [00:22<00:10,  2.05s/it][A
+KAG Extraction From Chunk:  93%|█████████▎| 13/14 [00:22<00:00,  1.28it/s][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:22<00:00, 22.48s/it]Progress: 100%|██████████| 1/1 [00:22<00:00, 22.48s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:kag.solver.retriever.impl.default_chunk_retrieval:No entities matched for {}
+INFO:root:question: what is the maximum depreciation rate that can be used for furniture fixtures and equipment?
+INFO:root:sub_qa_pair_0: What is the maximum depreciation rate for furniture, fixtures, and equipment under the relevant tax or accounting standards?
+The maximum depreciation rate for furniture, fixtures, and equipment is 33.33% per year.
+
+**Reasoning and Original Text:**
+The estimated useful life for furniture, fixtures, and equipment is stated to be 3 to 10 years. The maximum depreciation rate would correspond to the shortest useful life, which is 3 years. Using straight-line depreciation, the annual depreciation rate is calculated as 100% divided by the useful life. Therefore, for a 3-year useful life, the annual depreciation rate is 33.33%.
+
+**Original Text Reference:**
+`| furniture fixtures and equipment | 3 - 10  |` from the table titled "Estimated Useful Lives of Property and Equipment for Dollar General Corporation."
+####################################################################################################
+index=159,gold=33.33333,prediction=33.33333
+{'em': 7.0, 'f1': 7.0, 'answer_similarity': 0.0, 'processNum': 46}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/68ccc81bc889d49e782f90240b4e87cf.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/19 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/19 [00:06<01:56,  6.49s/it][A
+KAG Extraction From Chunk:  21%|██        | 4/19 [00:07<00:22,  1.51s/it][A
+KAG Extraction From Chunk:  26%|██▋       | 5/19 [00:08<00:18,  1.31s/it][A
+KAG Extraction From Chunk:  32%|███▏      | 6/19 [00:08<00:12,  1.02it/s][A
+KAG Extraction From Chunk:  37%|███▋      | 7/19 [00:09<00:10,  1.11it/s][A
+KAG Extraction From Chunk:  42%|████▏     | 8/19 [00:10<00:12,  1.13s/it][A
+KAG Extraction From Chunk:  47%|████▋     | 9/19 [00:13<00:15,  1.60s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 11/19 [00:15<00:11,  1.41s/it][A
+KAG Extraction From Chunk:  63%|██████▎   | 12/19 [00:18<00:11,  1.69s/it][A
+KAG Extraction From Chunk:  68%|██████▊   | 13/19 [00:19<00:09,  1.55s/it][A
+KAG Extraction From Chunk:  74%|███████▎  | 14/19 [00:24<00:12,  2.47s/it][A
+KAG Extraction From Chunk:  95%|█████████▍| 18/19 [00:26<00:01,  1.24s/it][A
+KAG Extraction From Chunk: 100%|██████████| 19/19 [00:28<00:00,  1.41s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:28<00:00, 28.68s/it]Progress: 100%|██████████| 1/1 [00:28<00:00, 28.68s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: as of december 31 , 2004 , how many shares of common stock were outstanding?
+INFO:root:question: What was the total number of shares of common stock issued by the company as of December 31, 2004?
+INFO:root:question: What was the total number of shares of common stock issued by the company as of December 31, 2004, according to the company's 2004 annual financial report?
+####################################################################################################
+index=160,gold=120000000.0,prediction=0
+{'em': 7.0, 'f1': 7.0, 'answer_similarity': 0.0, 'processNum': 47}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/fe0139eb9a68bae07eb30b6fbbc1818b.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/5 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  20%|██        | 1/5 [00:05<00:21,  5.31s/it][A
+KAG Extraction From Chunk:  40%|████      | 2/5 [00:07<00:10,  3.43s/it][A
+KAG Extraction From Chunk:  80%|████████  | 4/5 [00:13<00:03,  3.26s/it][A
+KAG Extraction From Chunk: 100%|██████████| 5/5 [00:28<00:00,  6.79s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:28<00:00, 28.45s/it]Progress: 100%|██████████| 1/1 [00:28<00:00, 28.45s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in the s&p 500 stock performance from 2014 to 2015
+INFO:root:sub_qa_pair_0: The value of the S&P 500 at the end of 2014 was 150.27, and the value at the end of 2015 was 161.43. Calculate the percentage change in the S&P 500 stock performance from 2014 to 2015.
+Percentage change: 7.42663%
+
+INFO:root:math_debug{'code': '\n# Initial value at the end of 2014\ninitial_value = 150.27\n\n# Final value at the end of 2015\nfinal_value = 161.43\n\n# Calculate the percentage change\npercentage_change = ((final_value - initial_value) / initial_value) * 100\n\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: 7.42663%\n', 'error': None}
+####################################################################################################
+index=166,gold=0.07427,prediction=7.42663
+{'em': 8.0, 'f1': 8.0, 'answer_similarity': 0.0, 'processNum': 48}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/4ad4163fc0b1b7f1c686cd9d5d3b10b7.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/20 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   5%|▌         | 1/20 [00:07<02:14,  7.06s/it][A
+KAG Extraction From Chunk:  10%|█         | 2/20 [00:10<01:23,  4.64s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 3/20 [00:10<00:48,  2.83s/it][A
+KAG Extraction From Chunk:  20%|██        | 4/20 [00:12<00:39,  2.46s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 5/20 [00:13<00:27,  1.85s/it][A
+KAG Extraction From Chunk:  30%|███       | 6/20 [00:14<00:22,  1.60s/it][A
+KAG Extraction From Chunk:  35%|███▌      | 7/20 [00:19<00:34,  2.64s/it][A
+KAG Extraction From Chunk:  45%|████▌     | 9/20 [00:19<00:15,  1.45s/it][A
+KAG Extraction From Chunk:  55%|█████▌    | 11/20 [00:20<00:08,  1.01it/s][A
+KAG Extraction From Chunk:  60%|██████    | 12/20 [00:21<00:07,  1.06it/s][A
+KAG Extraction From Chunk:  65%|██████▌   | 13/20 [00:22<00:07,  1.13s/it][A
+KAG Extraction From Chunk:  70%|███████   | 14/20 [00:24<00:08,  1.36s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 15/20 [00:24<00:05,  1.03s/it][A
+KAG Extraction From Chunk:  80%|████████  | 16/20 [00:25<00:03,  1.04it/s][A
+KAG Extraction From Chunk:  85%|████████▌ | 17/20 [00:27<00:03,  1.13s/it][A
+KAG Extraction From Chunk:  95%|█████████▌| 19/20 [00:27<00:00,  1.27it/s][A
+KAG Extraction From Chunk: 100%|██████████| 20/20 [01:00<00:00,  8.50s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:00<00:00, 60.61s/it]Progress: 100%|██████████| 1/1 [01:00<00:00, 60.61s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what portion of the long-term debt is due in the next 12 months?
+INFO:root:sub_qa_pair_0: The total long-term debt is $10,591 million, and the amount due within the next 12 months is $332 million. Calculate the portion of the long-term debt due in the next 12 months.
+Portion of long-term debt due in the next 12 months: 0.03135
+
+INFO:root:math_debug{'code': '\n# Total long-term debt\ntotal_long_term_debt = 10591  # in million dollars\n\n# Amount due within the next 12 months\namount_due_in_12_months = 332  # in million dollars\n\n# Calculate the portion of the long-term debt due in the next 12 months\nportion_due = amount_due_in_12_months / total_long_term_debt\n\nprint(f"Portion of long-term debt due in the next 12 months: {portion_due:.5f}")\n', 'rst': 'Portion of long-term debt due in the next 12 months: 0.03135\n', 'error': None}
+####################################################################################################
+index=169,gold=0.03135,prediction=0.03135
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 49}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/754b9311f809dd23fc797a754f00c612.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/26 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/26 [00:07<02:57,  7.08s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/26 [00:08<01:27,  3.65s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 3/26 [00:08<00:50,  2.18s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 4/26 [00:10<00:43,  1.99s/it][A
+KAG Extraction From Chunk:  19%|█▉        | 5/26 [00:14<00:56,  2.67s/it][A
+KAG Extraction From Chunk:  27%|██▋       | 7/26 [00:14<00:26,  1.41s/it][A
+KAG Extraction From Chunk:  35%|███▍      | 9/26 [00:14<00:14,  1.19it/s][A
+KAG Extraction From Chunk:  42%|████▏     | 11/26 [00:15<00:10,  1.39it/s][A
+KAG Extraction From Chunk:  46%|████▌     | 12/26 [00:17<00:12,  1.12it/s][A
+KAG Extraction From Chunk:  50%|█████     | 13/26 [00:17<00:09,  1.35it/s][A
+KAG Extraction From Chunk:  54%|█████▍    | 14/26 [00:22<00:20,  1.69s/it][A
+KAG Extraction From Chunk:  65%|██████▌   | 17/26 [00:22<00:08,  1.05it/s][A
+KAG Extraction From Chunk:  69%|██████▉   | 18/26 [00:24<00:09,  1.13s/it][A
+KAG Extraction From Chunk:  73%|███████▎  | 19/26 [00:27<00:10,  1.50s/it][A
+KAG Extraction From Chunk:  81%|████████  | 21/26 [00:28<00:05,  1.06s/it][A
+KAG Extraction From Chunk:  85%|████████▍ | 22/26 [00:30<00:05,  1.33s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 24/26 [00:31<00:02,  1.06s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 25/26 [00:33<00:01,  1.22s/it][A
+KAG Extraction From Chunk: 100%|██████████| 26/26 [00:45<00:00,  3.67s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:45<00:00, 45.49s/it]Progress: 100%|██████████| 1/1 [00:45<00:00, 45.50s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the percentage change in the minority interest from 2005 to 2006
+INFO:root:sub_qa_pair_0: The minority interest in 2005 was $ -3.5 million, and in 2006 was $ -3.7 million. Calculate the percentage change in the minority interest from 2005 to 2006.
+Percentage change: -5.71429%
+
+INFO:root:math_debug{'code': '\n# Minority interest values\nminority_interest_2005 = -3.5\nminority_interest_2006 = -3.7\n\n# Calculate the percentage change\npercentage_change = ((minority_interest_2006 - minority_interest_2005) / abs(minority_interest_2005)) * 100\n\nprint(f"Percentage change: {percentage_change:.5f}%")\n', 'rst': 'Percentage change: -5.71429%\n', 'error': None}
+####################################################################################################
+index=170,gold=-1.32432,prediction=-5.71429
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 50}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/642e37c811429d5055630ec021c1268f.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/25 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/25 [00:08<03:14,  8.11s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/25 [00:10<01:48,  4.73s/it][A
+KAG Extraction From Chunk:  12%|█▏        | 3/25 [00:18<02:17,  6.24s/it][A
+KAG Extraction From Chunk:  16%|█▌        | 4/25 [00:20<01:33,  4.47s/it][A
+KAG Extraction From Chunk:  24%|██▍       | 6/25 [00:20<00:41,  2.16s/it][A
+KAG Extraction From Chunk:  28%|██▊       | 7/25 [00:21<00:31,  1.74s/it][A
+KAG Extraction From Chunk:  32%|███▏      | 8/25 [00:21<00:23,  1.38s/it][A
+KAG Extraction From Chunk:  40%|████      | 10/25 [00:22<00:14,  1.02it/s][A
+KAG Extraction From Chunk:  44%|████▍     | 11/25 [00:22<00:10,  1.29it/s][A
+KAG Extraction From Chunk:  48%|████▊     | 12/25 [00:22<00:08,  1.54it/s][A
+KAG Extraction From Chunk:  52%|█████▏    | 13/25 [00:28<00:22,  1.88s/it][A
+KAG Extraction From Chunk:  56%|█████▌    | 14/25 [00:31<00:24,  2.19s/it][A
+KAG Extraction From Chunk:  60%|██████    | 15/25 [00:32<00:18,  1.90s/it][A
+KAG Extraction From Chunk:  64%|██████▍   | 16/25 [00:32<00:13,  1.53s/it][A
+KAG Extraction From Chunk:  68%|██████▊   | 17/25 [00:35<00:13,  1.69s/it][A
+KAG Extraction From Chunk:  80%|████████  | 20/25 [00:36<00:05,  1.03s/it][A
+KAG Extraction From Chunk:  84%|████████▍ | 21/25 [00:38<00:05,  1.28s/it][A
+KAG Extraction From Chunk:  96%|█████████▌| 24/25 [00:44<00:01,  1.52s/it][A
+KAG Extraction From Chunk: 100%|██████████| 25/25 [01:09<00:00,  5.90s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:09<00:00, 69.57s/it]Progress: 100%|██████████| 1/1 [01:09<00:00, 69.57s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was total acres expiring in millions for other africa?
+INFO:root:sub_qa_pair_0: What is the total number of acres expiring in millions for the "other Africa" category?
+2.983 million acres.
+
+**Reasoning:**  
+The total number of acres expiring in the "other Africa" category for the years 2014, 2015, and 2016 is provided in thousands: 189 (2014), 2605 (2015), and 189 (2016). Summing these values gives 2983 thousand acres, which is equivalent to 2.983 million acres.
+
+**Original text referenced:**  
+"Other Africa had 189, 2605, and 189 thousand net undeveloped acres expiring in 2014, 2015, and 2016 respectively."
+####################################################################################################
+index=174,gold=2983.0,prediction=2.98300
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 51}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/f287313d54cbb4a4ddab161a86563bfe.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/8 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:  12%|█▎        | 1/8 [00:09<01:03,  9.07s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 3/8 [00:09<00:11,  2.40s/it][A
+KAG Extraction From Chunk:  62%|██████▎   | 5/8 [00:12<00:06,  2.05s/it][A
+KAG Extraction From Chunk:  75%|███████▌  | 6/8 [00:14<00:04,  2.07s/it][A
+                                                                        [AProgress: 100%|██████████| 1/1 [00:14<00:00, 14.87s/it]Progress: 100%|██████████| 1/1 [00:14<00:00, 14.87s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what was the growth rate of the s&p 500 index from december 31 , 2004 to 2007
+INFO:root:sub_qa_pair_0: The initial value of the S&P 500 index on December 31, 2004, was 100, and the final value on December 31, 2007, was 128.16. Calculate the growth rate of the S&P 500 index from December 31, 2004 to 2007.
+Growth rate: 0.28160
+
+INFO:root:math_debug{'code': '\n# Initial value of the S&P 500 index on December 31, 2004\ninitial_value = 100\n\n# Final value of the S&P 500 index on December 31, 2007\nfinal_value = 128.16\n\n# Calculate the growth rate\ngrowth_rate = (final_value - initial_value) / initial_value\n\n# Output the growth rate\nprint(f"Growth rate: {growth_rate:.5f}")\n', 'rst': 'Growth rate: 0.28160\n', 'error': None}
+####################################################################################################
+index=183,gold=1.2816,prediction=0.28160
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 52}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174, 183], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/3c6391af6c35f22df831cb22363cd424.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/13 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   8%|▊         | 1/13 [00:07<01:34,  7.87s/it][A
+KAG Extraction From Chunk:  15%|█▌        | 2/13 [00:08<00:37,  3.37s/it][A
+KAG Extraction From Chunk:  23%|██▎       | 3/13 [00:09<00:22,  2.29s/it][A
+KAG Extraction From Chunk:  31%|███       | 4/13 [00:09<00:15,  1.69s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 5/13 [00:12<00:15,  1.88s/it][A
+KAG Extraction From Chunk:  54%|█████▍    | 7/13 [00:12<00:06,  1.14s/it][A
+KAG Extraction From Chunk:  62%|██████▏   | 8/13 [00:14<00:05,  1.13s/it][A
+KAG Extraction From Chunk:  69%|██████▉   | 9/13 [00:16<00:05,  1.49s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 12/13 [00:17<00:00,  1.18it/s][A
+KAG Extraction From Chunk: 100%|██████████| 13/13 [00:18<00:00,  1.00it/s][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:19<00:00, 19.03s/it]Progress: 100%|██████████| 1/1 [00:19<00:00, 19.03s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: by how much did changes in the company 2019s gross liability increase from 2011 to 2012?
+INFO:root:sub_qa_pair_0: The company's gross liability in 2011 was $158,578, and in 2012 was $180,993. Calculate the increase in gross liability from 2011 to 2012.
+Increase in gross liability: 22415.00000 dollars
+
+INFO:root:math_debug{'code': '\n# Gross liability in 2011\nliability_2011 = 158578\n\n# Gross liability in 2012\nliability_2012 = 180993\n\n# Calculate the increase in gross liability\nincrease_in_liability = liability_2012 - liability_2011\n\nprint(f"Increase in gross liability: {increase_in_liability:.5f} dollars")\n', 'rst': 'Increase in gross liability: 22415.00000 dollars\n', 'error': None}
+####################################################################################################
+index=185,gold=0.52977,prediction=22415.00000
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 53}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174, 183, 185], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/8f9276ed567437c505842c3b0ffc9bf4.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/12 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   8%|▊         | 1/12 [00:10<01:54, 10.40s/it][A
+KAG Extraction From Chunk:  25%|██▌       | 3/12 [00:13<00:35,  4.00s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 4/12 [00:19<00:37,  4.65s/it][A
+KAG Extraction From Chunk:  42%|████▏     | 5/12 [00:20<00:22,  3.25s/it][A
+KAG Extraction From Chunk:  83%|████████▎ | 10/12 [00:20<00:02,  1.00s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 11/12 [00:21<00:00,  1.04it/s][A
+KAG Extraction From Chunk: 100%|██████████| 12/12 [00:23<00:00,  1.24s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:23<00:00, 23.74s/it]Progress: 100%|██████████| 1/1 [00:23<00:00, 23.74s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the percentage increase in the fair value of option granted from 2013 to 2014?
+INFO:root:sub_qa_pair_0: The fair value of options granted in 2013 was $39.03, and in 2014 it was $44.11. Calculate the percentage increase in the fair value of options granted from 2013 to 2014.
+Percentage increase: 13.01563%
+
+INFO:root:math_debug{'code': '\n# Fair value of options granted in 2013 and 2014\nfair_value_2013 = 39.03\nfair_value_2014 = 44.11\n\n# Calculate the percentage increase\npercentage_increase = ((fair_value_2014 - fair_value_2013) / fair_value_2013) * 100\n\n# Output the result\nprint(f"Percentage increase: {percentage_increase:.5f}%")\n', 'rst': 'Percentage increase: 13.01563%\n', 'error': None}
+####################################################################################################
+index=186,gold=5.08,prediction=13.01563
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 54}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174, 183, 185, 186], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/727b35045688f5b8a9b42a14a4ad57b3.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/14 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   7%|▋         | 1/14 [00:06<01:30,  6.93s/it][A
+KAG Extraction From Chunk:  21%|██▏       | 3/14 [00:08<00:27,  2.49s/it][A
+KAG Extraction From Chunk:  43%|████▎     | 6/14 [00:11<00:11,  1.49s/it][A
+KAG Extraction From Chunk:  50%|█████     | 7/14 [00:11<00:08,  1.18s/it][A
+KAG Extraction From Chunk:  57%|█████▋    | 8/14 [00:14<00:09,  1.54s/it][A
+KAG Extraction From Chunk:  64%|██████▍   | 9/14 [00:17<00:10,  2.09s/it][A
+KAG Extraction From Chunk:  86%|████████▌ | 12/14 [00:19<00:02,  1.28s/it][A
+KAG Extraction From Chunk:  93%|█████████▎| 13/14 [00:21<00:01,  1.33s/it][A
+KAG Extraction From Chunk: 100%|██████████| 14/14 [00:29<00:00,  2.93s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:29<00:00, 29.58s/it]Progress: 100%|██████████| 1/1 [00:29<00:00, 29.58s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: as of december 312007 what was the percent of the schedule of the company 2019s future minimum payments to the total future minimum sponsorship and other marketing payments in 2008
+INFO:root:sub_qa_pair_0: What was the total future minimum sponsorship and other marketing payments for 2008 as of December 31, 2007?
+The total future minimum sponsorship and other marketing payments for 2008 as of December 31, 2007, was $14,684 thousand.
+
+**Reasoning:**  
+The document explicitly states that the amount of future minimum payment for the year 2008 is $14,684 thousand. This information is directly provided in the table under the section "Future Minimum Payments Under Sponsorship and Marketing Agreements."
+
+**Original Text:**  
+`#727b35045688f5b8a9b42a14a4ad57b3.md / Future Minimum Payments Under Sponsorship and Marketing Agreements / The amount of future minimum payment for the year 2008 is $14,684 thousand.`
+INFO:root:question: What are the future minimum payments for 2019 as of December 31, 2007, as stated in the company's financial documents?
+INFO:root:question: What specific financial document or section within the company's records from December 31, 2007, details the future minimum payments for 2019?
+INFO:root:sub_qa_pair_0: What specific financial document or section within the company's records from December 31, 2007, details the future minimum payments for 2019?
+The specific financial document or section within the company's records from December 31, 2007, that details the future minimum payments for 2019 is the **schedule of the company's future minimum payments under its sponsorship and other marketing agreements**.
+
+**Reasoning and Original Text Reference:**
+The documents mention a schedule of future minimum payments under sponsorship and other marketing agreements as of December 31, 2007. Specifically, it states:  
+*"the following is a schedule of the company 2019s future minimum payments under its sponsorship and other marketing agreements as of december 31 , 2007 : ( in thousands ) december 31 ."*  
+This schedule includes future minimum payments, which would cover obligations for 2019.
+####################################################################################################
+index=187,gold=0.27404,prediction=N/A
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 55}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174, 183, 185, 186, 187], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/c3b219a883c8b1fbcab1ec8adc1ba364.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/24 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▍         | 1/24 [00:07<02:47,  7.28s/it][A
+KAG Extraction From Chunk:   8%|▊         | 2/24 [00:10<01:42,  4.67s/it][A
+KAG Extraction From Chunk:  12%|█▎        | 3/24 [00:12<01:19,  3.78s/it][A
+KAG Extraction From Chunk:  17%|█▋        | 4/24 [00:13<00:52,  2.64s/it][A
+KAG Extraction From Chunk:  21%|██        | 5/24 [00:13<00:33,  1.74s/it][A
+KAG Extraction From Chunk:  33%|███▎      | 8/24 [00:18<00:24,  1.52s/it][A
+KAG Extraction From Chunk:  38%|███▊      | 9/24 [00:18<00:18,  1.20s/it][A
+KAG Extraction From Chunk:  46%|████▌     | 11/24 [00:20<00:15,  1.16s/it][A
+KAG Extraction From Chunk:  50%|█████     | 12/24 [00:25<00:23,  1.99s/it][A
+KAG Extraction From Chunk:  58%|█████▊    | 14/24 [00:26<00:13,  1.38s/it][A
+KAG Extraction From Chunk:  62%|██████▎   | 15/24 [00:28<00:13,  1.55s/it][A
+KAG Extraction From Chunk:  67%|██████▋   | 16/24 [00:28<00:09,  1.23s/it][A
+KAG Extraction From Chunk:  71%|███████   | 17/24 [00:31<00:11,  1.67s/it][A
+KAG Extraction From Chunk:  79%|███████▉  | 19/24 [00:31<00:05,  1.01s/it][A
+KAG Extraction From Chunk:  83%|████████▎ | 20/24 [00:33<00:04,  1.11s/it][A
+KAG Extraction From Chunk:  88%|████████▊ | 21/24 [00:35<00:04,  1.39s/it][A
+KAG Extraction From Chunk:  92%|█████████▏| 22/24 [00:35<00:02,  1.06s/it][A
+KAG Extraction From Chunk: 100%|██████████| 24/24 [00:37<00:00,  1.00it/s][A
+                                                                          [AProgress: 100%|██████████| 1/1 [00:37<00:00, 37.35s/it]Progress: 100%|██████████| 1/1 [00:37<00:00, 37.35s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: what is the minimum capital requirement as defined by the net capital rule in millions
+INFO:root:sub_qa_pair_0: The minimum capital requirement is $1.0 billion. Convert this value to millions.
+Minimum capital requirement: 1000.0 million
+
+INFO:root:math_debug{'code': '\n# Convert $1.0 billion to millions\nbillion = 1.0\nmillions = billion * 1000\n\nprint(f"Minimum capital requirement: {millions:.1f} million")\n', 'rst': 'Minimum capital requirement: 1000.0 million\n', 'error': None}
+####################################################################################################
+index=190,gold=1.4,prediction=1000.00000
+{'em': 9.0, 'f1': 9.0, 'answer_similarity': 0.0, 'processNum': 56}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174, 183, 185, 186, 187, 190], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################
+Processing /tmp/tableeval/173c12ef2144af67aba971da83ea20ca.md
+There are total 1 data to process, worker 0/1 will process range [0, 1)
+Progress:   0%|          | 0/1 [00:00<?, ?it/s]
+KAG Extraction From Chunk:   0%|          | 0/27 [00:00<?, ?it/s][A
+KAG Extraction From Chunk:   4%|▎         | 1/27 [00:07<03:23,  7.83s/it][A
+KAG Extraction From Chunk:   7%|▋         | 2/27 [00:09<01:49,  4.39s/it][A
+KAG Extraction From Chunk:  11%|█         | 3/27 [00:11<01:15,  3.16s/it][A
+KAG Extraction From Chunk:  15%|█▍        | 4/27 [00:13<01:00,  2.63s/it][A
+KAG Extraction From Chunk:  19%|█▊        | 5/27 [00:15<00:54,  2.48s/it][A
+KAG Extraction From Chunk:  22%|██▏       | 6/27 [00:21<01:16,  3.63s/it][A
+KAG Extraction From Chunk:  26%|██▌       | 7/27 [00:21<00:50,  2.51s/it][A
+KAG Extraction From Chunk:  30%|██▉       | 8/27 [00:21<00:33,  1.75s/it][A
+KAG Extraction From Chunk:  44%|████▍     | 12/27 [00:22<00:12,  1.22it/s][A
+KAG Extraction From Chunk:  48%|████▊     | 13/27 [00:28<00:23,  1.67s/it][A
+KAG Extraction From Chunk:  52%|█████▏    | 14/27 [00:28<00:17,  1.36s/it][A
+KAG Extraction From Chunk:  59%|█████▉    | 16/27 [00:36<00:26,  2.43s/it][A
+KAG Extraction From Chunk:  70%|███████   | 19/27 [00:39<00:13,  1.68s/it][A
+KAG Extraction From Chunk:  74%|███████▍  | 20/27 [00:40<00:10,  1.56s/it][A
+KAG Extraction From Chunk:  78%|███████▊  | 21/27 [00:44<00:12,  2.16s/it][A
+KAG Extraction From Chunk:  81%|████████▏ | 22/27 [00:47<00:11,  2.33s/it][A
+KAG Extraction From Chunk:  89%|████████▉ | 24/27 [00:52<00:07,  2.33s/it][A
+KAG Extraction From Chunk:  96%|█████████▋| 26/27 [00:52<00:01,  1.52s/it][A
+KAG Extraction From Chunk: 100%|██████████| 27/27 [01:14<00:00,  5.73s/it][A
+                                                                          [AProgress: 100%|██████████| 1/1 [01:14<00:00, 74.81s/it]Progress: 100%|██████████| 1/1 [01:14<00:00, 74.81s/it]
+[1m[31mDone process 1 records, with 1 successfully processed and 0 failures encountered.
+The log file is located at ckpt/kag_checkpoint_0_1.ckpt. Please access this file to obtain detailed task statistics.[0m
+INFO:root:question: in the table , what percentage of total aus net inflows for 2017 were long- term aus liquidity products?
+INFO:root:sub_qa_pair_0: What are the total Australian net inflows for 2017?
+The total Australian net inflows for 2017 were $18 billion.
+
+**Reasoning and Original Text Reference:**
+The documents indicate that in 2017, there were $23 billion of inflows ($20 billion in long-term assets and $3 billion in liquidity products) related to the acquisition of a portion of Verus Investors' outsourced chief investment officer business. Additionally, there were $5 billion of equity asset outflows due to the divestiture of local Australian-focused investment capabilities and fund platform. Therefore, the net inflows for 2017 are calculated as $23 billion (inflows) minus $5 billion (outflows), resulting in $18 billion.
+
+Original Text: "total aus net inflows/ ( outflows ) for 2017 included $ 23 billion of inflows ( $ 20 billion in long- term aus and $ 3 billion in liquidity products ) in connection with the acquisition of a portion of verus investors 2019 outsourced chief investment officer business ( verus acquisition ) and $ 5 billion of equity asset outflows in connection with the divestiture of our local australian- focused investment capabilities and fund platform ( australian divestiture ) ."
+INFO:root:sub_qa_pair_1: What is the portion of total Australian net inflows for 2017 that were long-term Australian liquidity products?
+The portion of total Australian net inflows for 2017 that were long-term Australian liquidity products was **$20 billion out of $23 billion**.
+
+**Reasoning and Original Text:**
+The document states that "total aus net inflows/(outflows) for 2017 included $23 billion of inflows ($20 billion in long-term aus and $3 billion in liquidity products)." This directly provides the figures needed to answer the question.
+
+**Reference:**
+`#GS/2018/page_78.pdf-4#GS/2018/page_78.pdf-4 and subsidiaries management 2019s discussion and analysis in the table above , total aus net inflows/ ( outflows ) for 2017 included $ 23 billion of inflows ( $ 20 billion in long- term aus and $ 3 billion in liquidity products ) in connection with the acquisition of a portion of verus investors 2019 outsourced chief investment officer business ( verus acquisition ) and $ 5 billion of equity asset outflows in connection with the divestiture of our local australian- focused investment capabilities and fund platform ( australian divestiture ).`
+####################################################################################################
+index=194,gold=0.86957,prediction=86.95652
+{'em': 10.0, 'f1': 10.0, 'answer_similarity': 0.0, 'processNum': 57}
+error index list={'error': [5, 12, 17, 18, 19, 20, 21, 22, 28, 34, 35, 37, 51, 53, 56, 59, 67, 75, 79, 80, 82, 84, 86, 89, 98, 103, 109, 114, 118, 120, 124, 126, 129, 135, 144, 150, 160, 170, 174, 183, 185, 186, 187, 190], 'no_answer': [], 'system_error': [108, 151, 157]}
+####################################################################################################

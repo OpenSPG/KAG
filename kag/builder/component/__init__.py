@@ -56,6 +56,7 @@ __all__ = [
     "DefaultExternalGraphLoader",
     "SchemaFreeExtractor",
     "SchemaConstraintExtractor",
+    "TableAndTextExtractor",
     "KAGAligner",
     "SPGAligner",
     "KAGPostProcessor",
