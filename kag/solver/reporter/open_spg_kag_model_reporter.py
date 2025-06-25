@@ -1,4 +1,6 @@
 import logging
+import re
+
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.parser.logic_node_parser import extract_steps_and_actions
 
@@ -13,6 +15,12 @@ class SafeDict(dict):
     def __missing__(self, key):
         return ""
 
+def remove_xml_tags(text):
+    # 正则表达式匹配所有 XML 标签，例如：<tag> 或 </tag> 或 <tag attr="value">
+    pattern = r'<[^>]+>'
+    # 用空字符串替换所有匹配项
+    clean_text = re.sub(pattern, '', text)
+    return clean_text
 
 def process_planning(think_str):
     result = []
@@ -67,7 +75,7 @@ def process_tag_template(text):
                 clean_text += xml_tag_template[tag_info[0]][KAG_PROJECT_CONF.language].format_map(SafeDict({
                     "content": content
                 }))
-        return clean_text
+        return remove_xml_tags(clean_text)
     return text
 
 

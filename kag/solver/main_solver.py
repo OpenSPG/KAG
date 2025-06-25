@@ -312,9 +312,7 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
             task_id=task_id,
             kb_project_ids=kb_project_ids,
         )
-
-        if answer:
-            reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
+        reporter.add_report_line("answer", "Final Answer", answer, "FINISH")
 
     except Exception as e:
         logger.warning(
@@ -360,6 +358,40 @@ class SolverMain:
                     app_id=app_id,
                 )
             )
+            logger.info(f"{query} answer={answer}")
+        except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+            logger.warning(
+                f"An exception occurred while processing query: {query}. Error: {str(e)}",
+                exc_info=True,
+            )
+        return answer
+
+    async def ainvoke(
+        self,
+        project_id: int,
+        task_id: int,
+        query: str,
+        session_id: str = "0",
+        is_report=True,
+        host_addr="http://127.0.0.1:8887",
+        params=None,
+        app_id="",
+    ):
+        answer = None
+        if params is None:
+            params = {}
+        try:
+            answer = await qa(
+                    task_id=task_id,
+                    project_id=project_id,
+                    host_addr=host_addr,
+                    query=query,
+                    params=params,
+                    app_id=app_id,
+                )
             logger.info(f"{query} answer={answer}")
         except Exception as e:
             import traceback

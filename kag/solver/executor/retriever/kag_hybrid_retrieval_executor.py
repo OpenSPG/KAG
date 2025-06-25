@@ -154,7 +154,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                         spos = list(set(spos))  # Deduplicate
 
                         # Add report line if there are any SPOs
-                        if spos:
+                        if reporter and spos:
                             reporter.add_report_line(
                                 tag_id,
                                 f"end_sub_kag_retriever_{output.retriever_method}",

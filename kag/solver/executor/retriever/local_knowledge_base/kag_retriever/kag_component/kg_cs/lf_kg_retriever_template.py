@@ -5,7 +5,7 @@ from tenacity import retry, stop_after_attempt
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import LLMClient
 from kag.interface.solver.base_model import SPOEntity, LogicNode
-from kag.interface.solver.reporter_abc import ReporterABC, DotRefresher
+from kag.interface.solver.reporter_abc import ReporterABC
 from kag.interface.solver.model.one_hop_graph import KgGraph, EntityData
 from kag.common.parser.logic_node_parser import GetSPONode
 
