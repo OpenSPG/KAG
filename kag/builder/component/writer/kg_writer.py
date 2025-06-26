@@ -53,7 +53,7 @@ class KGWriter(SinkWriterABC):
         else:
             self.project_id = project_id
         self.client = GraphClient(
-            host_addr=self.kag_project_config.host_addr, project_id=project_id
+            host_addr=self.kag_project_config.host_addr, project_id=self.project_id
         )
         self.delete = delete
 
