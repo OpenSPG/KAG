@@ -11,8 +11,14 @@
 # or implied.
 from typing import List, Optional
 
-from kag.common.parser.logic_node_parser import parse_logic_form_with_str, ParseLogicForm, GetSPONode, MathNode, \
-    DeduceNode, GetNode
+from kag.common.parser.logic_node_parser import (
+    parse_logic_form_with_str,
+    ParseLogicForm,
+    GetSPONode,
+    MathNode,
+    DeduceNode,
+    GetNode,
+)
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC, Context
 
 
@@ -66,15 +72,20 @@ class KAGModelPlanner(PlannerABC):
         plan_prompt (PromptABC): Prompt template for planning requests
     """
 
-    def __init__(self, llm: LLMClient, system_prompt: PromptABC, clarification_prompt: PromptABC, **kwargs):
+    def __init__(
+        self,
+        llm: LLMClient,
+        system_prompt: PromptABC,
+        clarification_prompt: PromptABC,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.llm = llm
 
-        self.logic_node_parser = ParseLogicForm(
-            schema=None, schema_retrieval=None
-        )
+        self.logic_node_parser = ParseLogicForm(schema=None, schema_retrieval=None)
         self.system_prompt = system_prompt
         self.clarification_prompt = clarification_prompt
+
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.
 
@@ -89,25 +100,41 @@ class KAGModelPlanner(PlannerABC):
         """
         context: Optional[Context] = kwargs.get("context", None)
         messages = context.kwargs.get("messages", [])
-        messages.append({"role": "system", "content": self.system_prompt.build_prompt({})})
-        messages.append({
-            "role": "user",
-            "content": self.clarification_prompt.build_prompt({"question": query}),
-        })
-        logic_form_response = await self.llm.acall(prompt="", messages=messages,
-                                                   segment_name="thinker",
-                                                   tag_name=f"Static planning",
-                                                   **kwargs)
-        messages.append({
-            "role": "assistant",
-            "content": logic_form_response,
-        })
+        messages.append(
+            {"role": "system", "content": self.system_prompt.build_prompt({})}
+        )
+        messages.append(
+            {
+                "role": "user",
+                "content": self.clarification_prompt.build_prompt({"question": query}),
+            }
+        )
+        logic_form_response = await self.llm.acall(
+            prompt="",
+            messages=messages,
+            segment_name="thinker",
+            tag_name=f"Static planning",
+            **kwargs,
+        )
+        messages.append(
+            {
+                "role": "assistant",
+                "content": logic_form_response,
+            }
+        )
         context.kwargs["messages"] = messages
-        logic_form_str = logic_form_response.split("</think>")[-1].strip().replace("<answer>", "").replace("</answer>",
-                                                                                                           "").strip()
+        logic_form_str = (
+            logic_form_response.split("</think>")[-1]
+            .strip()
+            .replace("<answer>", "")
+            .replace("</answer>", "")
+            .strip()
+        )
 
         sub_queries, logic_forms = parse_logic_form_with_str(logic_form_str)
-        logic_forms = self.logic_node_parser.parse_logic_form_set(logic_forms, sub_queries, query)
+        logic_forms = self.logic_node_parser.parse_logic_form_set(
+            logic_forms, sub_queries, query
+        )
 
         tasks_dep = {}
         for i, logic_form in enumerate(logic_forms):

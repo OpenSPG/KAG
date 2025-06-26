@@ -67,9 +67,9 @@ class PyBasedMathExecutor(ExecutorABC):
         super().__init__(**kwargs)
         self.llm = llm
         self.tries = tries
-        self.expression_builder = PromptABC.from_config({
-            "type": "default_expression_builder"
-        })
+        self.expression_builder = PromptABC.from_config(
+            {"type": "default_expression_builder"}
+        )
 
     @retry(stop=stop_after_attempt(3), reraise=True)
     def gen_py_code(self, query: str, context: str, error: str, **kwargs):

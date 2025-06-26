@@ -75,7 +75,7 @@ class RetrieverOutput:
                 f"Retrieved Docs:\n{docs}",
                 f"Retriever Method: {self.retriever_method}",
                 f"Summary:\n{self.summary}",
-                f"Task:\n{self.task}"
+                f"Task:\n{self.task}",
             ]
         )
 

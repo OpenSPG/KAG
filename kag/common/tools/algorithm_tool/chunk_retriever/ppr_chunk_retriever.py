@@ -309,9 +309,7 @@ class PprChunkRetriever(RetrieverABC):
                         properties=node,
                     )
                 )
-        return RetrieverOutput(
-            retriever_method=self.name, chunks=matched_docs
-        )
+        return RetrieverOutput(retriever_method=self.name, chunks=matched_docs)
 
     def schema(self):
         return {

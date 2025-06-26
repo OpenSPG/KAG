@@ -154,6 +154,4 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
         )
 
     def schema(self):
-        return {
-            "name": "kag_merger"
-        }
+        return {"name": "kag_merger"}

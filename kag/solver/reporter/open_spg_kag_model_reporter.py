@@ -15,12 +15,14 @@ class SafeDict(dict):
     def __missing__(self, key):
         return ""
 
+
 def remove_xml_tags(text):
     # 正则表达式匹配所有 XML 标签，例如：<tag> 或 </tag> 或 <tag attr="value">
-    pattern = r'<[^>]+>'
+    pattern = r"<[^>]+>"
     # 用空字符串替换所有匹配项
-    clean_text = re.sub(pattern, '', text)
+    clean_text = re.sub(pattern, "", text)
     return clean_text
+
 
 def process_planning(think_str):
     result = []
@@ -35,16 +37,24 @@ def process_planning(think_str):
             result.append("```")
             continue
 
-        step_content, step_head, action_content, action_head = extract_steps_and_actions(strip_line)
+        (
+            step_content,
+            step_head,
+            action_content,
+            action_head,
+        ) = extract_steps_and_actions(strip_line)
         if not step_content:
             result.append(strip_line)
             continue
         result.append(f"- {step_head}: {step_content}")
         if action_content:
-            result.append(f"""```logical-form-chain
+            result.append(
+                f"""```logical-form-chain
 {action_head}: {action_content}
-```""")
+```"""
+            )
     return "\n".join(result)
+
 
 def process_tag_template(text):
     if isinstance(text, str):
@@ -57,14 +67,8 @@ def process_tag_template(text):
                 "zh": "执行搜索:\n{content}\n",
                 "en": "Execute search:\n{content}\n",
             },
-            "think": {
-                "zh": "{content}\n",
-                "en": "{content}\n"
-            },
-            "answer": {
-                "zh": "{content}",
-                "en": "{content}"
-            }
+            "think": {"zh": "{content}\n", "en": "{content}\n"},
+            "answer": {"zh": "{content}", "en": "{content}"},
         }
         clean_text = ""
         for tag_info in all_tags:
@@ -72,9 +76,9 @@ def process_tag_template(text):
                 content = tag_info[1]
                 if "search" == tag_info[0]:
                     content = process_planning(content)
-                clean_text += xml_tag_template[tag_info[0]][KAG_PROJECT_CONF.language].format_map(SafeDict({
-                    "content": content
-                }))
+                clean_text += xml_tag_template[tag_info[0]][
+                    KAG_PROJECT_CONF.language
+                ].format_map(SafeDict({"content": content}))
         return remove_xml_tags(clean_text)
     return text
 
@@ -82,7 +86,9 @@ def process_tag_template(text):
 @ReporterABC.register("kag_open_spg_reporter")
 class KAGOpenSPGReporter(OpenSPGReporter):
     def __init__(self, task_id, host_addr=None, project_id=None, **kwargs):
-        super().__init__(task_id=task_id, host_addr=host_addr, project_id=project_id, **kwargs)
+        super().__init__(
+            task_id=task_id, host_addr=host_addr, project_id=project_id, **kwargs
+        )
         self.tag_mapping["begin_sub_kag_think"] = {
             "en": """
 
@@ -93,9 +99,11 @@ Start the {num_turns}th round of thinking
 
 开始第{num_turns}次思考
 
-{content}"""
+{content}""",
         }
 
     def add_report_line(self, segment, tag_name, content, status, **kwargs):
         content = process_tag_template(content)
-        super().add_report_line(segment=segment, tag_name=tag_name, content=content, status=status, **kwargs)
+        super().add_report_line(
+            segment=segment, tag_name=tag_name, content=content, status=status, **kwargs
+        )

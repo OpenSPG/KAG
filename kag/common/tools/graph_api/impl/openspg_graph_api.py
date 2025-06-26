@@ -215,7 +215,9 @@ class OpenSPGGraphApi(GraphApiABC):
             elif table.header[i] == "o":
                 o_index = i
         if s_index == -1 or o_index == -1 or p_index == -1:
-            raise RuntimeError(f"header must contains column 's','p','o', output={table.data}")
+            raise RuntimeError(
+                f"header must contains column 's','p','o', output={table.data}"
+            )
         for row in table.data:
             s_entity = self.convert_raw_data_to_node(
                 row[s_index], enable_cache=True, cached_map=cached_map
@@ -265,9 +267,15 @@ class OpenSPGGraphApi(GraphApiABC):
 
 
 if __name__ == "__main__":
-    rc = ReasonerClient(host_addr='http://antspg-gz00b-006003038079.sa128-sqa.alipay.net:8887', project_id=6400004)
+    rc = ReasonerClient(
+        host_addr="http://antspg-gz00b-006003038079.sa128-sqa.alipay.net:8887",
+        project_id=6400004,
+    )
     rc.get_reason_schema()
-    graph_api = OpenSPGGraphApi(project_id="6400004", host_addr='http://antspg-gz00b-006003038079.sa128-sqa.alipay.net:8887')
+    graph_api = OpenSPGGraphApi(
+        project_id="6400004",
+        host_addr="http://antspg-gz00b-006003038079.sa128-sqa.alipay.net:8887",
+    )
     entity = SPOEntity()
     entity.id_set.append("周杰伦")
     entity.type_set.append(TypeInfo("Person"))

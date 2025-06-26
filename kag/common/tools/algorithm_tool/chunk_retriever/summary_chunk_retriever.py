@@ -21,7 +21,8 @@ from kag.interface import (
     VectorizeModelABC,
     ChunkData,
     RetrieverOutput,
-    EntityData, Task,
+    EntityData,
+    Task,
 )
 from kag.interface.solver.model.schema_utils import SchemaUtils
 from kag.common.config import LogicFormConfiguration
@@ -36,13 +37,13 @@ chunk_cached_by_query_map = knext.common.cache.LinkCache(maxsize=100, ttl=300)
 @RetrieverABC.register("summary_chunk_retriever")
 class SummaryChunkRetriever(RetrieverABC):
     def __init__(
-            self,
-            vectorize_model: VectorizeModelABC = None,
-            search_api: SearchApiABC = None,
-            graph_api: GraphApiABC = None,
-            top_k: int = 10,
-            score_threshold=0.85,
-            **kwargs,
+        self,
+        vectorize_model: VectorizeModelABC = None,
+        search_api: SearchApiABC = None,
+        graph_api: GraphApiABC = None,
+        top_k: int = 10,
+        score_threshold=0.85,
+        **kwargs,
     ):
         super().__init__(top_k, **kwargs)
         self.vectorize_model = vectorize_model or VectorizeModelABC.from_config(
@@ -69,12 +70,12 @@ class SummaryChunkRetriever(RetrieverABC):
 
         # recall top_k summaries
         top_k_summaries = self.search_api.search_vector(
-                label=self.schema_helper.get_label_within_prefix("Summary"),
-                property_key="content",
-                query_vector=query_vector,
-                topk=top_k,
-                ef_search=top_k * 3,
-            )
+            label=self.schema_helper.get_label_within_prefix("Summary"),
+            property_key="content",
+            query_vector=query_vector,
+            topk=top_k,
+            ef_search=top_k * 3,
+        )
         for item in top_k_summaries:
             topk_summary_ids.append(item["node"]["id"])
 
@@ -172,23 +173,17 @@ class SummaryChunkRetriever(RetrieverABC):
             )
 
             # to retrieve output
-            out = RetrieverOutput(
-                chunks=chunks, retriever_method=self.name
-            )
+            out = RetrieverOutput(chunks=chunks, retriever_method=self.name)
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(
-                retriever_method=self.name, err_msg=str(e)
-            )
+            return RetrieverOutput(retriever_method=self.name, err_msg=str(e))
 
     @property
     def input_indices(self):
         return ["Summary"]
 
     def schema(self):
-        return {
-            "name": "summary_chunk_retriever"
-        }
+        return {"name": "summary_chunk_retriever"}

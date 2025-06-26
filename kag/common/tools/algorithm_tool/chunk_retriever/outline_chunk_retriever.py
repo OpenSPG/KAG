@@ -156,23 +156,17 @@ class OutlineChunkRetriever(RetrieverABC):
             )
 
             # to retrieve output
-            out = RetrieverOutput(
-                retriever_method=self.name, chunks=chunks
-            )
+            out = RetrieverOutput(retriever_method=self.name, chunks=chunks)
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(
-                retriever_method=self.name, err_msg=str(e)
-            )
+            return RetrieverOutput(retriever_method=self.name, err_msg=str(e))
 
     @property
     def input_indices(self):
         return ["Outline"]
 
     def schema(self):
-        return {
-            "name": "outline_chunk_retriever"
-        }
+        return {"name": "outline_chunk_retriever"}

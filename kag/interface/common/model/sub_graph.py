@@ -111,6 +111,7 @@ class Edge(object):
 
     def __str__(self):
         return f"{self.from_id}[{self.from_type}]-[{self.label}]->{self.to_id}[{self.to_type}]"
+
     @classmethod
     def from_spg_record(
         cls,

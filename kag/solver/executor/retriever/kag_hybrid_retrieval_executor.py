@@ -38,6 +38,7 @@ from kag.solver.utils import init_prompt_with_fallback
 
 logger = logging.getLogger()
 
+
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
     def __init__(
@@ -69,18 +70,16 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.context_select_llm = context_select_llm or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.context_select_prompt = context_select_prompt or PromptABC.from_config({
-            "type": "context_select_prompt"
-        })
+        self.context_select_prompt = context_select_prompt or PromptABC.from_config(
+            {"type": "context_select_prompt"}
+        )
 
     def context_select(self, query: str, sorted_chunks):
         chunks = []
         for idx, item in enumerate(sorted_chunks):
             chunks.append({"idx": idx, "content": item.content})
         variables = {"question": query, "context": chunks}
-        response = self.context_select_llm.invoke(
-            variables, self.context_select_prompt
-        )
+        response = self.context_select_llm.invoke(variables, self.context_select_prompt)
         selected_context = response["context"]
         indices = []
         if len(selected_context) > 0:
@@ -90,7 +89,9 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 indices.append(i)
         return [sorted_chunks[x] for x in indices]
 
-    def do_retrieval(self, task_query, tag_id, task, context: Context, **kwargs) -> RetrieverOutput:
+    def do_retrieval(
+        self, task_query, tag_id, task, context: Context, **kwargs
+    ) -> RetrieverOutput:
         start_time = time.time()
         reporter: Optional[ReporterABC] = kwargs.get("reporter", None)
 
@@ -99,7 +100,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         priority_groups = defaultdict(list)
         for retriever in self.retrievers:
             # Default to priority 1 if not explicitly set
-            priority = getattr(retriever, 'priority', 1)
+            priority = getattr(retriever, "priority", 1)
             priority_groups[priority].append(retriever)
 
         # Step 2: Sort the priorities in ascending order (lower number = higher priority)
@@ -128,7 +129,13 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                     )
 
                     # Prepare function and submit to thread pool
-                    func = partial(retriever.invoke, task, context=context, segment_name=tag_id, **kwargs)
+                    func = partial(
+                        retriever.invoke,
+                        task,
+                        context=context,
+                        segment_name=tag_id,
+                        **kwargs,
+                    )
                     future = executor.submit(func)
                     futures.append((future, retriever))
 
@@ -167,23 +174,39 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 merged_start_time = time.time()
                 retrieved_data = self.merger.invoke(task, outputs, **kwargs)
                 logger.debug(
-                    f"kag hybrid retrieval {task_query} priority {priority} merged cost={time.time() - merged_start_time}")
+                    f"kag hybrid retrieval {task_query} priority {priority} merged cost={time.time() - merged_start_time}"
+                )
             elif len(outputs) == 1:
                 retrieved_data = outputs[0]
             else:
                 retrieved_data = RetrieverOutput()
             # judge is break
-            if (retrieved_data.graphs and retrieved_data.graphs[
-                0].get_all_spo()) or retrieved_data.chunks or retrieved_data.docs:
+            if (
+                (retrieved_data.graphs and retrieved_data.graphs[0].get_all_spo())
+                or retrieved_data.chunks
+                or retrieved_data.docs
+            ):
                 break
         # Log total cost time for all retrievers
-        logger.debug(f"kag hybrid retrieval {task_query} retriever cost={time.time() - start_time}")
+        logger.debug(
+            f"kag hybrid retrieval {task_query} retriever cost={time.time() - start_time}"
+        )
 
-        self.do_data_report(retrieved_data, reporter, tag_id, "kag_merger", "kag_merger_digest")
+        self.do_data_report(
+            retrieved_data, reporter, tag_id, "kag_merger", "kag_merger_digest"
+        )
 
         return retrieved_data
 
-    def do_summary(self, task_query, tag_id, task, retrieved_data: RetrieverOutput, context: Context, **kwargs):
+    def do_summary(
+        self,
+        task_query,
+        tag_id,
+        task,
+        retrieved_data: RetrieverOutput,
+        context: Context,
+        **kwargs,
+    ):
         if not self.enable_summary:
             return retrieved_data
         # summary
@@ -213,12 +236,16 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             **kwargs,
         )
         retrieved_data.summary = summary_response
-        logger.debug(f"kag hybrid retrieval {task_query} summary cost={time.time() - summary_start_time}")
+        logger.debug(
+            f"kag hybrid retrieval {task_query} summary cost={time.time() - summary_start_time}"
+        )
         return retrieved_data
 
     def do_main(self, task_query, tag_id, task, context, **kwargs):
         retrieved_data = self.do_retrieval(task_query, tag_id, task, context, **kwargs)
-        retrieved_data = self.do_summary(task_query, tag_id, task, retrieved_data, context, **kwargs)
+        retrieved_data = self.do_summary(
+            task_query, tag_id, task, retrieved_data, context, **kwargs
+        )
         return retrieved_data
 
     def invoke(self, query, task, context: Context, **kwargs) -> RetrieverOutput:
@@ -227,19 +254,14 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         task_query = task.arguments["query"]
 
         tag_id = f"{task_query}_begin_task"
-        self.report_content(
-            reporter,
-            "thinker",
-            tag_id,
-            "",
-            "FINISH",
-            step=task.name
-        )
+        self.report_content(reporter, "thinker", tag_id, "", "FINISH", step=task.name)
         try:
             retrieved_data = self.do_main(task_query, tag_id, task, context, **kwargs)
         except Exception as e:
             logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
-            retrieved_data = RetrieverOutput(retriever_method=self.schema().get("name", ""), err_msg=str(e))
+            retrieved_data = RetrieverOutput(
+                retriever_method=self.schema().get("name", ""), err_msg=str(e)
+            )
 
         self.report_content(
             reporter,
@@ -251,15 +273,31 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
 
         retrieved_data.task = task
         logical_node = task.arguments.get("logic_form_node", None)
-        if logical_node and isinstance(logical_node, GetSPONode) and retrieved_data.summary:
+        if (
+            logical_node
+            and isinstance(logical_node, GetSPONode)
+            and retrieved_data.summary
+        ):
             if isinstance(retrieved_data.summary, str):
                 target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
-                s_entities = context.variables_graph.get_entity_by_alias(logical_node.s.alias_name)
-                if not s_entities and not logical_node.s.get_mention_name() and isinstance(logical_node.s, SPOEntity):
+                s_entities = context.variables_graph.get_entity_by_alias(
+                    logical_node.s.alias_name
+                )
+                if (
+                    not s_entities
+                    and not logical_node.s.get_mention_name()
+                    and isinstance(logical_node.s, SPOEntity)
+                ):
                     logical_node.s.entity_name = target_answer
                     context.kwargs[logical_node.s.alias_name] = logical_node.s
-                o_entities = context.variables_graph.get_entity_by_alias(logical_node.o.alias_name)
-                if not o_entities and not logical_node.o.get_mention_name() and isinstance(logical_node.o, SPOEntity):
+                o_entities = context.variables_graph.get_entity_by_alias(
+                    logical_node.o.alias_name
+                )
+                if (
+                    not o_entities
+                    and not logical_node.o.get_mention_name()
+                    and isinstance(logical_node.o, SPOEntity)
+                ):
                     logical_node.o.entity_name = target_answer
                     context.kwargs[logical_node.o.alias_name] = logical_node.o
 
@@ -274,7 +312,9 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             )
 
         task.update_result(retrieved_data)
-        logger.debug(f"kag hybrid retrieval {task_query} cost={time.time() - start_time}")
+        logger.debug(
+            f"kag hybrid retrieval {task_query} cost={time.time() - start_time}"
+        )
         return retrieved_data
 
     def schema(self) -> dict:

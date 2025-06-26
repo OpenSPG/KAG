@@ -76,9 +76,7 @@ class KgConstrainRetrieverWithOpenSPGRetriever(RetrieverABC):
                 name=self.name,
                 **kwargs,
             )
-            output = RetrieverOutput(
-                retriever_method=self.name, graphs=[kg_graph]
-            )
+            output = RetrieverOutput(retriever_method=self.name, graphs=[kg_graph])
         except Exception as e:
             logger.warning(f"{query} retriever with exception : {e}", exc_info=True)
             output = RetrieverOutput(

@@ -52,13 +52,12 @@ class RCRetrieverOnOpenSPG(RetrieverABC):
             output.retriever_method = self.name
         except Exception as e:
             logger.error(e, exc_info=True)
-            output = RetrieverOutput(
-                retriever_method=self.name, err_msg=f"{task} {e}"
-            )
+            output = RetrieverOutput(retriever_method=self.name, err_msg=f"{task} {e}")
         logger.debug(
             f"{self.schema().get('name', '')} `{task.arguments['query']}`  Retrieved chunks num: {len(output.chunks)} cost={time.time() - start_time}"
         )
         return output
+
     def schema(self):
         return {
             "name": "kg_rc_retriever",
