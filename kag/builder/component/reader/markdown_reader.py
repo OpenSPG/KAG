@@ -1065,6 +1065,5 @@ if __name__ == "__main__":
     file_path = os.path.join(
         dir_path, "../../../../tests/unit/builder/data", "需求内容test.md"
     )
-    file_path = "/Users/zhangxinhong.zxh/workspace/KAG/dep/KAG/kag/examples/AFAC2024/builder/data/BY04.md"
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)
