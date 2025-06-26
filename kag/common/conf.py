@@ -15,10 +15,9 @@ import logging
 import yaml
 import json
 import pprint
-import threading
 from jinja2 import Template
 from pathlib import Path
-from typing import Union, Optional, Dict
+from typing import Union, Optional
 
 import knext.common.cache
 from knext.project.client import ProjectClient

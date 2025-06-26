@@ -4,9 +4,8 @@ import os
 import time
 from typing import List
 
-from kag.common.utils import processing_phrases
 from kag.interface import LLMClient
-from kag.common.registry import Functor, import_modules_from_path
+from kag.common.registry import Functor
 from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
