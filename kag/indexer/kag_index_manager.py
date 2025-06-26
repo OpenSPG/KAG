@@ -91,14 +91,17 @@ class AtomicIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
+Chunk(文本块): IndexType
+     properties:
+        content(内容): Text
+          index: TextAndVector
 AtomicQuery(原子问): IndexType
   properties:
     title(标题): Text
       index: TextAndVector
   relations:
     sourceChunk(关联文本块): Chunk
-    similar(相似问题): AtomicQuery
-    relatedTo(相关): KnowledgeUnit    
+    similar(相似问题): AtomicQuery  
         """
 
     @property
@@ -292,6 +295,10 @@ class TableIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
+Chunk(文本块): IndexType
+     properties:
+        content(内容): Text
+          index: TextAndVector
 Table(表格): IndexType
     properties:
         content(内容): Text
@@ -374,6 +381,10 @@ class SummaryIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
+Chunk(文本块): IndexType
+     properties:
+        content(内容): Text
+          index: TextAndVector
 Summary(文本摘要): IndexType
      properties:
         content(内容): Text
@@ -453,6 +464,10 @@ class OutlineIndexManager(KAGIndexManager):
     @property
     def schema(self) -> str:
         return """
+Chunk(文本块): IndexType
+     properties:
+        content(内容): Text
+          index: TextAndVector
 Outline(标题大纲): IndexType
      properties:
         content(内容): Text

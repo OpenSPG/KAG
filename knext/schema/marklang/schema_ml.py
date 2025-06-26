@@ -150,9 +150,15 @@ class SPGSchemaMarkLang:
     types = {}
     defined_types = {}
 
-    def __init__(self, filename, with_server=True, host_addr=None, project_id=None):
+    def __init__(self, filename, with_server=True, host_addr=None, project_id=None, script_data_str=""):
         self.reset()
-        self.schema_file = filename
+        if script_data_str:
+            self.schema_file_data = script_data_str
+        elif os.path.exists(filename):
+            with open(filename, "r", encoding="utf-8") as f:
+                self.schema_file_data = f.read()
+        else:
+            raise Exception("Schema file not exists")
         self.current_line_num = 0
         if with_server:
             self.schema = SchemaClient(host_addr, project_id)
@@ -1039,9 +1045,7 @@ class SPGSchemaMarkLang:
         """
         Load and then parse the script file
         """
-
-        file = open(self.schema_file, "r", encoding="utf-8")
-        lines = file.read().splitlines()
+        lines = self.schema_file_data.splitlines()
         self.preload_types(lines)
         for line in lines:
             self.current_line_num += 1
