@@ -93,8 +93,12 @@ class AtomicIndexManager(KAGIndexManager):
         return """
 AtomicQuery(原子问): IndexType
   properties:
-    content(内容): Text
+    title(标题): Text
       index: TextAndVector
+  relations:
+    sourceChunk(关联文本块): Chunk
+    similar(相似问题): AtomicQuery
+    relatedTo(相关): KnowledgeUnit    
         """
 
     @property
