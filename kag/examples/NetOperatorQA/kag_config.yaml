@@ -42,7 +42,7 @@ project:
   host_addr: http://127.0.0.1:8887
   id: '1'
   language: zh
-  namespace: AFAC2024
+  namespace: NetOperatorQA
 #------------project configuration end----------------#
 
 #------------kag-builder configuration start----------------#
@@ -207,7 +207,7 @@ py_code_based_math_executor: &py_code_based_math_executor_conf
 kag_solver_pipeline_tc:
   type: kag_static_pipeline
   planner:
-    type: kag_afac_static_planner
+    type: kag_net_operator_static_planner
     llm: *chat_llm
     plan_prompt:
       type: retriever_static_planning

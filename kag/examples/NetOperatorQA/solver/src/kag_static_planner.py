@@ -15,7 +15,7 @@ from typing import List
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC
 
 
-@PlannerABC.register("kag_afac_static_planner")
+@PlannerABC.register("kag_net_operator_static_planner")
 class KAGStaticPlanner(PlannerABC):
     """Static planner that generates task plans using LLM with query rewriting capability.
 
