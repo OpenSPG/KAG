@@ -148,7 +148,7 @@ def load_config(prod: bool = False, config_file: str = None):
         if not validate_config_file(config_file):
             config_file = _closest_cfg()
         if os.path.exists(config_file) and os.path.isfile(config_file):
-            logger.info(f"found config file: {config_file}")
+            logger.debug(f"found config file: {config_file}")
             with open(config_file, "r") as reader:
                 config = reader.read()
                 config = Template(config).render(**dict(os.environ))
@@ -181,9 +181,9 @@ class KAGConfigMgr:
     def initialize(self, prod: bool = True, config_file: str = None):
         config = load_config(prod, config_file)
         if self._is_initialized:
-            logger.info("WARN: Reinitialize the KAG configuration.")
-            logger.info(f"original config: {self.config}\n\n")
-            logger.info(f"new config: {config}")
+            logger.debug("WARN: Reinitialize the KAG configuration.")
+            logger.debug(f"original config: {self.config}\n\n")
+            logger.debug(f"new config: {config}")
         self.prod = prod
         self.config = config
         global_config = self.config.get(KAGConstants.PROJECT_CONFIG_KEY, {})
@@ -261,6 +261,5 @@ def init_env(config_file: str = None):
     os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
-        pprint.pprint(KAG_CONFIG.all_config, indent=2)
         if dump_flag is not None and dump_flag.strip() == "1":
             pprint.pprint(KAG_CONFIG.all_config, indent=2)
