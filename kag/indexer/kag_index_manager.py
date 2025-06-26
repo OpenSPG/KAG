@@ -548,7 +548,7 @@ AtomicQuery(原子问): IndexType
     title(标题): Text
       index: TextAndVector
   relations:
-    relateTo(关联文本块): Chunk
+    sourceChunk(关联文本块): Chunk
     similar(相似问题): AtomicQuery
     relatedTo(相关): KnowledgeUnit      
         """
