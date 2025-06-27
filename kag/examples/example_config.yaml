@@ -38,14 +38,14 @@ kag_builder_pipeline:
   chain:
     type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
     extractor:
-      type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+      type: knowledge_unit_extractor
       llm: *openie_llm
       ner_prompt:
-        type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
-      std_prompt:
-        type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+        type: knowledge_unit_ner
       triple_prompt:
-        type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+        type: knowledge_unit_triple
+      kn_prompt:
+        type: knowledge_unit
     reader:
       type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
     post_processor:
@@ -75,6 +75,7 @@ graph_api: &graph_api
 
 kg_cs: &kg_cs
   type: kg_cs_open_spg
+  priority: 0
   path_select:
     type: exact_one_hop_select
     graph_api: *graph_api
@@ -85,14 +86,19 @@ kg_cs: &kg_cs
     search_api: *search_api
     recognition_threshold: 0.9
     exclude_types:
-      - "Chunk"
+      - Chunk
+      - AtomicQuery
+      - KnowledgeUnit
+      - Summary
+      - Outline
+      - Doc
 
 kg_fr: &kg_fr
-  type: kg_fr_open_spg
+  type: kg_fr_knowledge_unit
   top_k: 20
   graph_api: *graph_api
   search_api: *search_api
-  vectorize_model:  *vectorize_model
+  vectorize_model: *vectorize_model
   path_select:
     type: fuzzy_one_hop_select
     llm_client: *openie_llm
@@ -109,28 +115,24 @@ kg_fr: &kg_fr
     search_api: *search_api
     recognition_threshold: 0.8
     exclude_types:
-      - "Chunk"
+      - Chunk
+      - AtomicQuery
+      - KnowledgeUnit
+      - Summary
+      - Outline
+      - Doc
 
 rc: &rc
   type: rc_open_spg
   vector_chunk_retriever:
-    type: vector_chunk_retriever_legacy
+    type: vector_chunk_retriever
     vectorize_model: *vectorize_model
+    score_threshold: 0.65
     search_api: *search_api
   graph_api: *graph_api
   search_api: *search_api
   vectorize_model: *vectorize_model
   top_k: 20
-
-kag_merger:
-  type: kg_merger
-  top_k: 20
-  llm_module: *chat_llm
-  summary_prompt:
-    type: default_thought_then_answer
-  vectorize_model: *vectorize_model
-  graph_api: *graph_api
-  search_api: *search_api
 
 kag_hybrid_executor: &kag_hybrid_executor_conf
   type: kag_hybrid_retrieval_executor
@@ -142,13 +144,13 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
     type: kag_merger
   enable_summary:  true
 
-
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
+  llm_module: *chat_llm
 
 kag_deduce_executor: &kag_deduce_executor_conf
   type: kag_deduce_executor
-
+  llm_module: *chat_llm
 
 py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor

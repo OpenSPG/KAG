@@ -74,8 +74,10 @@ graph_api: &graph_api
   type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
 
 
+
 kg_cs: &kg_cs
   type: kg_cs_open_spg
+  priority: 0
   path_select:
     type: exact_one_hop_select
     graph_api: *graph_api
@@ -87,9 +89,14 @@ kg_cs: &kg_cs
     recognition_threshold: 0.9
     exclude_types:
       - Chunk
+      - AtomicQuery
+      - KnowledgeUnit
+      - Summary
+      - Outline
+      - Doc
 
 kg_fr: &kg_fr
-  type: kg_fr_open_spg
+  type: kg_fr_knowledge_unit
   top_k: 20
   graph_api: *graph_api
   search_api: *search_api
@@ -111,12 +118,18 @@ kg_fr: &kg_fr
     recognition_threshold: 0.8
     exclude_types:
       - Chunk
+      - AtomicQuery
+      - KnowledgeUnit
+      - Summary
+      - Outline
+      - Doc
 
 rc: &rc
   type: rc_open_spg
   vector_chunk_retriever:
-    type: vector_chunk_retriever_legacy
+    type: vector_chunk_retriever
     vectorize_model: *vectorize_model
+    score_threshold: 0.65
     search_api: *search_api
   graph_api: *graph_api
   search_api: *search_api
@@ -131,16 +144,20 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
     - *rc
   merger:
     type: kag_merger
-  enable_summary: true
+  enable_summary:  true
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
+  llm_module: *chat_llm
+
 kag_deduce_executor: &kag_deduce_executor_conf
   type: kag_deduce_executor
+  llm_module: *chat_llm
 
 py_code_based_math_executor: &py_code_based_math_executor_conf
   type: py_code_based_math_executor
-  llm: *openie_llm
+  llm: *chat_llm
+
 
 kag_solver_pipeline:
   type: kag_static_pipeline
@@ -157,7 +174,7 @@ kag_solver_pipeline:
     - *kag_deduce_executor_conf
     - *kag_output_executor_conf
   generator:
-    type: llm_generator
+    type: llm_index_generator
     llm_client: *chat_llm
     generated_prompt:
       type: default_refer_generator_prompt

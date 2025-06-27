@@ -179,7 +179,7 @@ kag_solver_pipeline:
   executors:
     - *retriever
   generator:
-    type: llm_generator
+    type: llm_index_generator
     llm_client: *chat_llm
     generated_prompt:
       type: default_multi_hop_generator
