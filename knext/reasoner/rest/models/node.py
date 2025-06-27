@@ -49,8 +49,8 @@ class Node(object):
         "question": "str",
         "answer": "str",
         "logs": "str",
-        'title': 'str',
-        'subgraph': 'list[SubGraph]'
+        "title": "str",
+        "subgraph": "list[SubGraph]",
     }
 
     attribute_map = {
@@ -59,8 +59,8 @@ class Node(object):
         "question": "question",
         "answer": "answer",
         "logs": "logs",
-        'title': 'title',
-        'subgraph': 'subgraph'
+        "title": "title",
+        "subgraph": "subgraph",
     }
 
     def __init__(

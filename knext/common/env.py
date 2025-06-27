@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Union, Optional
 
 yaml = YAML()
-yaml.default_flow_style = False 
+yaml.default_flow_style = False
 yaml.indent(mapping=2, sequence=4, offset=2)
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,11 @@ class Environment:
             try:
                 log_config = cls._instance.config.get("log", {})
                 value = log_config.get("level", "INFO")
-                logging.basicConfig(level=logging.getLevelName(value),
-                                    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-                                    datefmt='%Y-%m-%d %H:%M:%S')
+                logging.basicConfig(
+                    level=logging.getLevelName(value),
+                    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                )
             except:
                 logger.info("logger info not set")
         return cls._instance
@@ -47,13 +49,13 @@ class Environment:
     def config(self):
 
         closest_config = self._closest_config()
-        if not hasattr(self, '_config_path') or self._config_path != closest_config:
+        if not hasattr(self, "_config_path") or self._config_path != closest_config:
             self._config_path = closest_config
             self._config = self.get_config()
-            
+
         if self._config is None:
             self._config = self.get_config()
-                
+
         return self._config
 
     @property
@@ -63,7 +65,7 @@ class Environment:
 
     @property
     def config_path(self):
-        if not hasattr(self, '_config_path') or self._config_path is None:
+        if not hasattr(self, "_config_path") or self._config_path is None:
             self._config_path = self._closest_config()
         return self._config_path
 
@@ -77,7 +79,7 @@ class Environment:
         id = self.project_config.get("id", None)
         if id is None:
             logger.warning("can not find id in project config")
-            if os.getenv("KAG_PROJECT_ID",None):
+            if os.getenv("KAG_PROJECT_ID", None):
                 return os.getenv("KAG_PROJECT_ID")
             else:
                 raise Exception(
@@ -137,11 +139,16 @@ class Environment:
             return ""
         path = Path(path).resolve()
         cfg_files = list(path.glob("*.yaml"))
-        cfg_file = next((f for f in cfg_files if f.name == "kag_config.yaml"), cfg_files[0] if cfg_files else None)
+        cfg_file = next(
+            (f for f in cfg_files if f.name == "kag_config.yaml"),
+            cfg_files[0] if cfg_files else None,
+        )
         if cfg_file and cfg_file.exists():
             return str(cfg_file)
         if path.parent == path:
-            raise FileNotFoundError("No kag_config.yaml file found in current directory or any parent directories")
+            raise FileNotFoundError(
+                "No kag_config.yaml file found in current directory or any parent directories"
+            )
         return self._closest_config(path.parent, path)
 
     def dump(self, path=None, **kwargs):

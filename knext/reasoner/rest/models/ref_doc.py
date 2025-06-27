@@ -43,22 +43,30 @@ class RefDoc(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'id': 'str',
-        'content': 'str',
-        'document_id': 'str',
-        'document_name': 'str',
-        'url': 'str'
+        "id": "str",
+        "content": "str",
+        "document_id": "str",
+        "document_name": "str",
+        "url": "str",
     }
 
     attribute_map = {
-        'id': 'id',
-        'content': 'content',
-        'document_id': 'document_id',
-        'document_name': 'document_name',
-        'url': 'url'
+        "id": "id",
+        "content": "content",
+        "document_id": "document_id",
+        "document_name": "document_name",
+        "url": "url",
     }
 
-    def __init__(self, id=None, content=None, document_id=None, document_name=None, url=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        id=None,
+        content=None,
+        document_id=None,
+        document_name=None,
+        url=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """RefDoc - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -96,7 +104,9 @@ class RefDoc(object):
         :param id: The id of this RefDoc.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and id is None:  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and id is None
+        ):  # noqa: E501
             raise ValueError("Invalid value for `id`, must not be `None`")  # noqa: E501
 
         self._id = id
@@ -119,8 +129,12 @@ class RefDoc(object):
         :param content: The content of this RefDoc.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and content is None:  # noqa: E501
-            raise ValueError("Invalid value for `content`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and content is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `content`, must not be `None`"
+            )  # noqa: E501
 
         self._content = content
 
@@ -142,8 +156,12 @@ class RefDoc(object):
         :param document_id: The document_id of this RefDoc.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and document_id is None:  # noqa: E501
-            raise ValueError("Invalid value for `document_id`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and document_id is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `document_id`, must not be `None`"
+            )  # noqa: E501
 
         self._document_id = document_id
 
@@ -165,8 +183,13 @@ class RefDoc(object):
         :param document_name: The document_name of this RefDoc.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and document_name is None:  # noqa: E501
-            raise ValueError("Invalid value for `document_name`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation
+            and document_name is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `document_name`, must not be `None`"
+            )  # noqa: E501
 
         self._document_name = document_name
 
@@ -198,18 +221,20 @@ class RefDoc(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

@@ -144,6 +144,7 @@ class SchemaClient(Client):
         self._rest_client: rest.SchemaApi = rest.SchemaApi(
             api_client=ApiClient(configuration=Configuration(host=host_addr))
         )
+
     def query_spg_type(self, spg_type_name: str) -> BaseSpgType:
         """Query SPG type by name."""
         rest_model = self._rest_client.schema_query_spg_type_get(spg_type_name)
@@ -183,7 +184,12 @@ class SchemaClient(Client):
             k.split(".")[-1]: v
             for k, v in schema_session.spg_types.items()
             if v.spg_type_enum
-            in [SpgTypeEnum.Concept, SpgTypeEnum.Entity, SpgTypeEnum.Event, SpgTypeEnum.Index]
+            in [
+                SpgTypeEnum.Concept,
+                SpgTypeEnum.Entity,
+                SpgTypeEnum.Event,
+                SpgTypeEnum.Index,
+            ]
         }
         return schema
 
@@ -196,12 +202,16 @@ class SchemaClient(Client):
                 continue
             if t in [CHUNK_TYPE] + BASIC_TYPES:
                 continue
-            types.append(schema_type.name_zh if language == "zh" else schema_type.name_en)
+            types.append(
+                schema_type.name_zh if language == "zh" else schema_type.name_en
+            )
         return types
 
     def extract_types_zh_mapping(self):
         schema = self.load()
         schema_mapping = {
-            t: schema[t].name_zh for t in schema.keys() if t not in [CHUNK_TYPE] + BASIC_TYPES
+            t: schema[t].name_zh
+            for t in schema.keys()
+            if t not in [CHUNK_TYPE] + BASIC_TYPES
         }
         return schema_mapping

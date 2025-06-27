@@ -43,22 +43,30 @@ class StreamData(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'answer': 'str',
-        'reference': 'list[RefDocSet]',
-        'think': 'str',
-        'metrics': 'Metrics',
-        'subgraph': 'list[SubGraph]'
+        "answer": "str",
+        "reference": "list[RefDocSet]",
+        "think": "str",
+        "metrics": "Metrics",
+        "subgraph": "list[SubGraph]",
     }
 
     attribute_map = {
-        'answer': 'answer',
-        'reference': 'reference',
-        'think': 'think',
-        'metrics': 'metrics',
-        'subgraph': 'subgraph'
+        "answer": "answer",
+        "reference": "reference",
+        "think": "think",
+        "metrics": "metrics",
+        "subgraph": "subgraph",
     }
 
-    def __init__(self, answer=None, reference=None, think=None, metrics=None, subgraph=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        answer=None,
+        reference=None,
+        think=None,
+        metrics=None,
+        subgraph=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """StreamData - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -95,8 +103,12 @@ class StreamData(object):
         :param answer: The answer of this StreamData.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and answer is None:  # noqa: E501
-            raise ValueError("Invalid value for `answer`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and answer is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `answer`, must not be `None`"
+            )  # noqa: E501
 
         self._answer = answer
 
@@ -118,8 +130,12 @@ class StreamData(object):
         :param reference: The reference of this StreamData.  # noqa: E501
         :type: list[RefDocSet]
         """
-        if self.local_vars_configuration.client_side_validation and reference is None:  # noqa: E501
-            raise ValueError("Invalid value for `reference`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and reference is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `reference`, must not be `None`"
+            )  # noqa: E501
 
         self._reference = reference
 
@@ -141,8 +157,12 @@ class StreamData(object):
         :param think: The think of this StreamData.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and think is None:  # noqa: E501
-            raise ValueError("Invalid value for `think`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and think is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `think`, must not be `None`"
+            )  # noqa: E501
 
         self._think = think
 
@@ -164,8 +184,12 @@ class StreamData(object):
         :param metrics: The metrics of this StreamData.  # noqa: E501
         :type: Metrics
         """
-        if self.local_vars_configuration.client_side_validation and metrics is None:  # noqa: E501
-            raise ValueError("Invalid value for `metrics`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and metrics is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `metrics`, must not be `None`"
+            )  # noqa: E501
 
         self._metrics = metrics
 
@@ -187,8 +211,12 @@ class StreamData(object):
         :param subgraph: The subgraph of this StreamData.  # noqa: E501
         :type: list[SubGraph]
         """
-        if self.local_vars_configuration.client_side_validation and subgraph is None:  # noqa: E501
-            raise ValueError("Invalid value for `subgraph`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and subgraph is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `subgraph`, must not be `None`"
+            )  # noqa: E501
 
         self._subgraph = subgraph
 
@@ -199,18 +227,20 @@ class StreamData(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

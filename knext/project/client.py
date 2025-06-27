@@ -76,8 +76,14 @@ class ProjectClient(Client):
         desc = kwargs.get("desc", None)
         userNo = kwargs.get("userNo", "openspg")
         project_create_request = rest.ProjectCreateRequest(
-            name=name, desc=desc, namespace=namespace, config=config, auto_schema=auto_schema, visibility=visibility,
-            tag=tag, userNo=userNo
+            name=name,
+            desc=desc,
+            namespace=namespace,
+            config=config,
+            auto_schema=auto_schema,
+            visibility=visibility,
+            tag=tag,
+            userNo=userNo,
         )
 
         project = self._rest_client.project_create_post(
@@ -88,8 +94,14 @@ class ProjectClient(Client):
     def update(self, id, namespace, config, visibility=None, tag=None, userNo=None):
         if not self._rest_client:
             raise Exception("Please set KAG_PROJECT_HOST_ADDR and KAG_PROJECT_ID")
-        project_create_request = rest.ProjectCreateRequest(id=id, name=namespace, config=config, visibility=visibility,
-                                                           tag=tag, userNo=userNo)
+        project_create_request = rest.ProjectCreateRequest(
+            id=id,
+            name=namespace,
+            config=config,
+            visibility=visibility,
+            tag=tag,
+            userNo=userNo,
+        )
         project = self._rest_client.project_update_post(
             project_create_request=project_create_request
         )

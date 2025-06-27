@@ -33,32 +33,45 @@ class ProjectCreateRequest(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'id': 'int',
-        'name': 'str',
-        'desc': 'str',
-        'namespace': 'str',
-        'tenant_id': 'str',
-        'config': 'object',
-        'auto_schema': 'str',
-        'visibility': 'str',
-        'tag': 'str',
-        'userNo': 'str'
+        "id": "int",
+        "name": "str",
+        "desc": "str",
+        "namespace": "str",
+        "tenant_id": "str",
+        "config": "object",
+        "auto_schema": "str",
+        "visibility": "str",
+        "tag": "str",
+        "userNo": "str",
     }
 
     attribute_map = {
-        'id': 'id',
-        'name': 'name',
-        'desc': 'desc',
-        'namespace': 'namespace',
-        'tenant_id': 'tenantId',
-        'config': 'config',
-        'auto_schema': 'autoSchema',
-        'visibility': 'visibility',
-        'tag': 'tag',
-        'userNo': 'userNo'
+        "id": "id",
+        "name": "name",
+        "desc": "desc",
+        "namespace": "namespace",
+        "tenant_id": "tenantId",
+        "config": "config",
+        "auto_schema": "autoSchema",
+        "visibility": "visibility",
+        "tag": "tag",
+        "userNo": "userNo",
     }
 
-    def __init__(self, id=None, name=None, desc=None, namespace=None, tenant_id=None, config=None, auto_schema=None, visibility='PRIVATE', tag='LOCAL', userNo='openspg', local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        id=None,
+        name=None,
+        desc=None,
+        namespace=None,
+        tenant_id=None,
+        config=None,
+        auto_schema=None,
+        visibility="PRIVATE",
+        tag="LOCAL",
+        userNo="openspg",
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """ProjectCreateRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -260,13 +273,21 @@ class ProjectCreateRequest(object):
         :param visibility: The visibility of this ProjectCreateRequest.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and visibility is None:  # noqa: E501
-            raise ValueError("Invalid value for `visibility`, must not be `None`")  # noqa: E501
-        allowed_values = ["PUBLIC_READ", "PRIVATE"]  # noqa: E501
-        if self.local_vars_configuration.client_side_validation and visibility not in allowed_values:  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and visibility is None
+        ):  # noqa: E501
             raise ValueError(
-                "Invalid value for `visibility` ({0}), must be one of {1}"  # noqa: E501
-                .format(visibility, allowed_values)
+                "Invalid value for `visibility`, must not be `None`"
+            )  # noqa: E501
+        allowed_values = ["PUBLIC_READ", "PRIVATE"]  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation
+            and visibility not in allowed_values
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `visibility` ({0}), must be one of {1}".format(  # noqa: E501
+                    visibility, allowed_values
+                )
             )
 
         self._visibility = visibility
@@ -289,13 +310,21 @@ class ProjectCreateRequest(object):
         :param tag: The tag of this ProjectCreateRequest.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and tag is None:  # noqa: E501
-            raise ValueError("Invalid value for `tag`, must not be `None`")  # noqa: E501
-        allowed_values = ["LOCAL", "PUBLIC-NET"]  # noqa: E501
-        if self.local_vars_configuration.client_side_validation and tag not in allowed_values:  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and tag is None
+        ):  # noqa: E501
             raise ValueError(
-                "Invalid value for `tag` ({0}), must be one of {1}"  # noqa: E501
-                .format(tag, allowed_values)
+                "Invalid value for `tag`, must not be `None`"
+            )  # noqa: E501
+        allowed_values = ["LOCAL", "PUBLIC-NET"]  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation
+            and tag not in allowed_values
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `tag` ({0}), must be one of {1}".format(  # noqa: E501
+                    tag, allowed_values
+                )
             )
 
         self._tag = tag
@@ -328,18 +357,20 @@ class ProjectCreateRequest(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

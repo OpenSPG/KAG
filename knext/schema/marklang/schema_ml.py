@@ -150,7 +150,14 @@ class SPGSchemaMarkLang:
     types = {}
     defined_types = {}
 
-    def __init__(self, filename, with_server=True, host_addr=None, project_id=None, script_data_str=""):
+    def __init__(
+        self,
+        filename,
+        with_server=True,
+        host_addr=None,
+        project_id=None,
+        script_data_str="",
+    ):
         self.reset()
         if script_data_str:
             self.schema_file_data = script_data_str

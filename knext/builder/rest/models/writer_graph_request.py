@@ -48,7 +48,7 @@ class WriterGraphRequest(object):
         "operation": "str",
         "sub_graph": "object",
         "enable_lead_to": "bool",
-        "token": "str"
+        "token": "str",
     }
 
     attribute_map = {
@@ -56,17 +56,17 @@ class WriterGraphRequest(object):
         "operation": "operation",
         "sub_graph": "subGraph",
         "enable_lead_to": "enableLeadTo",
-        "token": "token"
+        "token": "token",
     }
 
     def __init__(
-            self,
-            project_id=None,
-            operation=None,
-            sub_graph=None,
-            enable_lead_to=None,
-            token=None,
-            local_vars_configuration=None,
+        self,
+        project_id=None,
+        operation=None,
+        sub_graph=None,
+        enable_lead_to=None,
+        token=None,
+        local_vars_configuration=None,
     ):  # noqa: E501
         """WriterGraphRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
