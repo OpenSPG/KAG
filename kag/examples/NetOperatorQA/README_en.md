@@ -50,9 +50,6 @@ The system provides two main retrieval configurations:
 - Vector retriever
 - Table retriever
 
-### Pipeline Selection
-- **kag_solver_pipeline**: Iterative pipeline supporting complex reasoning and multi-turn dialogue
-- **kag_solver_pipeline_tc**: Static pipeline optimized for telecommunications operator domain with faster response
 
 ## 2. Reproduction Steps
 
