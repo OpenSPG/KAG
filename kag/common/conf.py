@@ -264,7 +264,9 @@ def init_env(config_file: str = None):
     if KAG_PROJECT_CONF.project_id:
         os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     if KAG_PROJECT_CONF.host_addr:
-        os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
+        os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(
+            KAG_PROJECT_CONF.host_addr
+        )
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
         if dump_flag is not None and dump_flag.strip() == "1":
