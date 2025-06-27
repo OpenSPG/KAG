@@ -11,7 +11,6 @@ from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
 from kag.common.conf import KAG_CONFIG
-from kag.common.registry import import_modules_from_path
 from kag.interface import SolverPipelineABC
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
