@@ -11,7 +11,6 @@ from kag.common.benchmarks.evaluate import Evaluate
 from kag.examples.utils import delay_run
 from kag.open_benchmark.utils.eval_qa import EvalQa, running_paras, do_main
 from kag.common.conf import KAG_CONFIG
-from kag.common.registry import import_modules_from_path
 from kag.interface import SolverPipelineABC
 from kag.solver.reporter.trace_log_reporter import TraceLogReporter
 
@@ -93,10 +92,8 @@ def eval(qa_file_path, thread_num=10, upper_limit=1000, collect_file="benchmark.
 
 if __name__ == "__main__":
     # benchmark common component
-    common_component = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), "../../common_component"
-    )
-    import_modules_from_path(common_component)
+    import kag.open_benchmark.common_component  # noqa: F401
+
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()
