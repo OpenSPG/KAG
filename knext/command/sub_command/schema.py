@@ -78,5 +78,5 @@ def reg_concept_rule(file):
     """
     Register a concept rule according to DSL file.
     """
-    SPGConceptRuleMarkLang(file)
+    SPGConceptRuleMarkLang(file, host_addr=env.host_addr, project_id=env.project_id)
     click.secho(f"Concept rule is successfully registered", fg="bright_green")
