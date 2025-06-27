@@ -93,10 +93,7 @@ def eval(qa_file_path, thread_num=10, upper_limit=1000, collect_file="benchmark.
 
 if __name__ == "__main__":
     # benchmark common component
-    common_component = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)), "../../common_component"
-    )
-    import_modules_from_path(common_component)
+    import kag.open_benchmark.common_component  # noqa: F401
     delay_run(hours=0)
     # 解析命令行参数
     parser = running_paras()

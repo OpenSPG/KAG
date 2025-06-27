@@ -144,7 +144,7 @@ kag_hybrid_executor: &kag_hybrid_executor_conf
     - *rc
   merger:
     type: kag_merger
-  enable_summary:  true
+  enable_summary: true
 
 kag_output_executor: &kag_output_executor_conf
   type: kag_output_executor
