@@ -9,11 +9,13 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+import json
 from typing import List, Optional
 
 from kag.common.parser.logic_node_parser import parse_logic_form_with_str, ParseLogicForm, GetSPONode, MathNode, \
     DeduceNode, GetNode
 from kag.interface import PlannerABC, Task, LLMClient, PromptABC, Context
+from kag.interface.solver.planner_abc import format_task_dep_context
 
 
 def _get_dep_task_id(logic_forms):
@@ -66,7 +68,7 @@ class KAGModelPlanner(PlannerABC):
         plan_prompt (PromptABC): Prompt template for planning requests
     """
 
-    def __init__(self, llm: LLMClient, system_prompt: PromptABC, clarification_prompt: PromptABC, **kwargs):
+    def __init__(self, llm: LLMClient, system_prompt: PromptABC, clarification_prompt: PromptABC, rewrite_prompt: PromptABC,**kwargs):
         super().__init__(**kwargs)
         self.llm = llm
 
@@ -75,6 +77,56 @@ class KAGModelPlanner(PlannerABC):
         )
         self.system_prompt = system_prompt
         self.clarification_prompt = clarification_prompt
+        self.rewrite_prompt = rewrite_prompt
+
+
+    def check_require_rewrite(self, task: Task):
+        """Determines if query rewriting is needed based on parameter patterns.
+
+        Args:
+            task (Task): Task to check for rewrite requirements
+
+        Returns:
+            bool: True if query contains dynamic parameter references (e.g., {{1.output}})
+        """
+        return task.arguments.get("is_need_rewrite", False)
+
+    async def query_rewrite(self, task: Task, **kwargs):
+        """Performs asynchronous query rewriting using LLM and context.
+
+        Args:
+            task (Task): Task containing the query to rewrite
+
+        Returns:
+            str: Rewritten query with resolved dynamic references
+        """
+        query = task.arguments["query"]
+        tag_id = f"{query}_begin_task"
+        # print(f"Old query: {query}")
+        deps_context = format_task_dep_context(task.parents)
+        generate_context = {
+            "target question": kwargs.get("query"),
+            "history_qa": deps_context,
+        }
+        new_query = await self.llm.ainvoke(
+            {
+                "input": query,
+                "content": json.dumps(generate_context, indent=2, ensure_ascii=False),
+            },
+            self.rewrite_prompt,
+            segment_name=tag_id,
+            tag_name="Rewrite query",
+            with_json_parse=self.rewrite_prompt.is_json_format(),
+            **kwargs,
+        )
+        logic_form_node = task.arguments.get("logic_form_node", None)
+        if logic_form_node:
+            logic_form_node.sub_query = new_query
+            return {"rewrite_query": new_query, "origin_query": query, "query": new_query,
+                    "logic_form_node": logic_form_node}
+        # print(f"query rewrite context = {context}")
+        # print(f"New query: {new_query}")
+        return {"query": new_query}
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.
 
@@ -119,7 +171,7 @@ class KAGModelPlanner(PlannerABC):
                 "arguments": {
                     "query": logic_form.sub_query,
                     "logic_form_node": logic_form,
-                    "is_need_rewrite": False,
+                    "is_need_rewrite": True if task_deps else False,
                 },
             }
         return Task.create_tasks_from_dag(tasks_dep)
