@@ -77,7 +77,7 @@ class KAGModelPlanner(PlannerABC):
     def __init__(
         self,
         llm: LLMClient,
-        system_prompt: PromptABC,
+            system_prompt: PromptABC,
         clarification_prompt: PromptABC,
         rewrite_prompt: PromptABC,
         **kwargs,
