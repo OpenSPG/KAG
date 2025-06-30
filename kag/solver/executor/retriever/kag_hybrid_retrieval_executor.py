@@ -15,8 +15,11 @@ from collections import defaultdict
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+
+from tenacity import stop_after_attempt, retry, wait_exponential
+
 from kag.common.conf import KAGConstants, KAGConfigAccessor
-from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
+from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface import (
     ExecutorABC,
@@ -74,6 +77,10 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             {"type": "context_select_prompt"}
         )
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1))
+    def context_select_call(self, variables):
+        return self.context_select_llm.invoke(variables, self.context_select_prompt)
+
     def context_select(self, query: str, sorted_chunks):
         chunks = []
         for idx, item in enumerate(sorted_chunks):
@@ -88,6 +95,24 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             if i not in indices:
                 indices.append(i)
         return [sorted_chunks[x] for x in indices]
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1))
+    def summary_answer(
+        self, tag_id, task_query, deps_context, formatted_docs, **kwargs
+    ):
+        return self.llm_module.invoke(
+            {
+                "cur_question": task_query,
+                "questions": "\n\n".join(deps_context),
+                "docs": "\n\n".join(formatted_docs),
+            },
+            self.summary_prompt,
+            with_json_parse=False,
+            with_except=True,
+            segment_name=tag_id,
+            tag_name=f"begin_summary_{task_query}",
+            **kwargs,
+        )
 
     def do_retrieval(
         self, task_query, tag_id, task, context: Context, **kwargs
@@ -216,23 +241,24 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         selected_rel = list(set(selected_rel))
         formatted_docs = [str(rel) for rel in selected_rel]
         if retrieved_data.chunks:
-            selected_chunks = self.context_select(task_query, retrieved_data.chunks)
+            try:
+                selected_chunks = self.context_select(task_query, retrieved_data.chunks)
+            except Exception as e:
+                logger.warning(
+                    f"select context failed {e}, we use default top 10 to summary",
+                    exc_info=True,
+                )
+                selected_chunks = retrieved_data.chunks[:10]
             for doc in selected_chunks:
                 formatted_docs.append(f"{doc.content}")
 
         deps_context = format_task_dep_context(task.parents)
         summary_start_time = time.time()
-        summary_response = self.llm_module.invoke(
-            {
-                "cur_question": task_query,
-                "questions": "\n\n".join(deps_context),
-                "docs": "\n\n".join(formatted_docs),
-            },
-            self.summary_prompt,
-            with_json_parse=False,
-            with_except=True,
-            segment_name=tag_id,
-            tag_name=f"begin_summary_{task_query}",
+        summary_response = self.summary_answer(
+            tag_id=tag_id,
+            task_query=task_query,
+            deps_context=deps_context,
+            formatted_docs=formatted_docs,
             **kwargs,
         )
         retrieved_data.summary = summary_response
