@@ -73,7 +73,12 @@ In this process, each step can use different operators, such as exact match retr
 # 3. Release Notes
 
 ## 3.1 Latest Updates
-
+* 2025.06.27 : Released KAG 0.8.0 Version 
+  * Expanded two modes: Private Knowledge Base (including structured & unstructured data) and Public Network Knowledge Base, supporting integration of LBS, WebSearch, and other public data sources via MCP protocol.
+  * Enhanced Private Knowledge Base indexing capabilities, with built-in fundamental index types such as Outline, Summary, KnowledgeUnit, AtomicQuery, Chunk, and Table.
+  * Decoupled knowledge bases from applications: Knowledge Bases manage private data (structured & unstructured) and public data; Applications can associate with multiple knowledge bases and automatically adapt corresponding retrievers for data recall based on index types established during knowledge base construction.
+  * Fully embraced MCP, enabling KAG-powered inference QA (via MCP protocol) within agent workflows.
+  * Completed adaptation for the KAG-Thinker model. Through optimizations in breadth-wise problem decomposition, depth-wise solution derivation, knowledge boundary determination, and noise-resistant retrieval results, the framework's reasoning paradigm stability and logical rigor have been improved under the guidance of multi-round iterative thinking frameworks. 
 * 2025.04.17 : Released KAG 0.7 Version 
   * First, we refactored the KAG-Solver framework. Added support for two task planning modes, static and iterative, while implementing a more rigorous knowledge layering mechanism for the reasoning phase. 
   * Second, we optimized the product experience: introduced dual modes—"Simple Mode" and "Deep Reasoning"—during the reasoning phase, along with support for streaming inference output, automatic rendering of graph indexes, and linking generated content to original references. 
@@ -85,9 +90,7 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.2 Future Plans
 
-* Logical reasoning optimization, conversational tasks support
-* kag-model release, kag solution for event reasoning knowledge graph and medical knowledge graph
-* kag front-end open source, distributed build support, mathematical reasoning optimization
+* We will continue to focus on enhancing large models' ability to leverage external knowledge bases. Our goal is to achieve bidirectional enhancement and seamless integration between large models and symbolic knowledge, improving the factuality, rigor, and consistency of reasoning and Q&A in professional scenarios. We will also keep releasing updates to push the boundaries of capability and drive adoption in vertical domains.
 
 # 4. Quick Start
 
