@@ -19,7 +19,10 @@ from kag.interface import PromptABC, Task
 @PromptABC.register("context_select_prompt")
 class ContextSelectPrompt(PromptABC):
     template_en = """
-The Question field is the user's question, and Context is a batch of articles retrieved from the knowledge base that may contain the answer to the question. Please carefully analyze the question and each context, and return up to 5 contexts that may contain the answer to the question, and answer the question. If you think all the retrieved contexts are irrelevant to the question, return an empty list and set the answer to UNKNOWN. The return format refers to the example：
+The Question field is the user's question, and Context is a batch of articles retrieved from the knowledge base that may contain the answer to the question. Please carefully analyze the question and each context, and return up to 5 contexts that may contain the answer to the question, and answer the question. If you think all the retrieved contexts are irrelevant to the question, return an empty list and set the answer to UNKNOWN. 
+Note: 
+1. response must be json format, only json format, without explanation
+2. The return format refers to the example：
 
 Question:
 who is the performer of Hello Love?
@@ -68,7 +71,10 @@ Answer:
 """
 
     template_zh = """
-问题字段是用户的问题，Context是从知识库中检索到的可能包含问题答案的一批文章。请仔细分析问题和每个上下文，返回最多5个可能包含问题答案的上下文，并回答问题。如果你认为所有检索到的上下文都与问题无关，请返回空列表并将答案设置为UNKNOWN。返回格式参考示例：
+问题字段是用户的问题，Context是从知识库中检索到的可能包含问题答案的一批文章。请仔细分析问题和每个上下文，返回最多5个可能包含问题答案的上下文，并回答问题。如果你认为所有检索到的上下文都与问题无关，请返回空列表并将答案设置为UNKNOWN。
+注意：
+1、输出必须是json格式，只输出json格式内容，不需要带上解释
+2、返回格式参考下面示例：
 
 问题:
 谁是《Hello Love》的演唱者？
@@ -127,13 +133,17 @@ Answer:
         else:
             return f"{self.template_en}\nQuestion:\n{question}\nContext:\n{context}"
 
-    def parse_response(self, response: str, **kwargs):
+    def parse_response(self, rsp: str, **kwargs):
         if self.language == "zh":
-            if isinstance(response, str) and "答案:" in response:
-                response = response.split("答案:")[1]
+            if isinstance(rsp, str) and "答案:" in rsp:
+                response = rsp.split("答案:")[1]
+            else:
+                response = rsp
         else:
-            if isinstance(response, str) and "Answer:" in response:
-                response = response.split("Answer:")[1]
+            if isinstance(rsp, str) and "Answer:" in rsp:
+                response = rsp.split("Answer:")[1]
+            else:
+                response = rsp
         if isinstance(response, str):
             response = json.loads(response)
 

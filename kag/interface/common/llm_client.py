@@ -27,7 +27,7 @@ import contextvars
 from tenacity import retry, stop_after_attempt, wait_exponential
 from kag.interface import PromptABC
 from kag.common.registry import Registrable
-from kag.common.rate_limiter import RATE_LIMITER_MANGER
+from kag.common.rate_limiter import RATE_LIMITER_MANGER, SYNC_RATE_LIMITER_MANAGER
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 
 logger = logging.getLogger(__name__)
@@ -170,6 +170,9 @@ class LLMClient(Registrable):
     ):
         super().__init__(**kwargs)
         self.limiter = RATE_LIMITER_MANGER.get_rate_limiter(name, max_rate, time_period)
+        self.sync_limiter = SYNC_RATE_LIMITER_MANAGER.get_rate_limiter(
+            name, max_rate, time_period
+        )
         self.enable_check = kwargs.get("enable_check", True)
         self.max_tokens = kwargs.get("max_tokens", 8192)
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
@@ -324,6 +327,7 @@ class LLMClient(Registrable):
         if tools:
             with_json_parse = False
         try:
+            self.sync_limiter.acquire()
             response = (
                 self.call_with_json_parse(prompt=prompt, **kwargs)
                 if with_json_parse
