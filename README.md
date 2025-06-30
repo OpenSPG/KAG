@@ -74,11 +74,11 @@ In this process, each step can use different operators, such as exact match retr
 
 ## 3.1 Latest Updates
 * 2025.06.27 : Released KAG 0.8.0 Version 
-  * Support for two modes: private domain knowledge bases (including structured and unstructured data) and public domain knowledge bases. This includes the ability to integrate public web data sources such as LBS and WebSearch via the MCP protocol.
-  * Improved the management of private domain knowledge base indexing, incorporating multiple foundational index types such as Outline, Summary, KnowledgeUnit, AtomicQuery, Chunk, and Table. This supports developers in customizing indexes and synchronizing them with product interfaces.
-  * Decoupled the knowledge base from applications. The knowledge base now manages private domain data (both structured and unstructured) and public domain data, while applications can link to multiple knowledge bases. Based on the index types used during knowledge base construction, the system automatically adapts the corresponding retrieval engine to recall data.
-  * Fully embraced the MCP protocol, enabling seamless integration of KAG reasoning and Q&A into agent workflows (based on the MCP protocol).
-  * Adapted to the KAG-Thinker model. Through optimizations such as broad decomposition and deep solving of complex problems, knowledge boundary determination, and noise-resistant retrieval results, the stability of the KAG framework's reasoning paradigm and the rigor of its reasoning logic have been significantly improved under the guidance of iterative thinking paradigms. 
+  * Expanded two modes: Private Knowledge Base (including structured & unstructured data) and Public Network Knowledge Base, supporting integration of LBS, WebSearch, and other public data sources via MCP protocol.
+  * Enhanced Private Knowledge Base indexing capabilities, with built-in fundamental index types such as Outline, Summary, KnowledgeUnit, AtomicQuery, Chunk, and Table.
+  * Decoupled knowledge bases from applications: Knowledge Bases manage private data (structured & unstructured) and public data; Applications can associate with multiple knowledge bases and automatically adapt corresponding retrievers for data recall based on index types established during knowledge base construction.
+  * Fully embraced MCP, enabling KAG-powered inference QA (via MCP protocol) within agent workflows.
+  * Completed adaptation for the KAG-Thinker model. Through optimizations in breadth-wise problem decomposition, depth-wise solution derivation, knowledge boundary determination, and noise-resistant retrieval results, the framework's reasoning paradigm stability and logical rigor have been improved under the guidance of multi-round iterative thinking frameworks. 
 * 2025.04.17 : Released KAG 0.7 Version 
   * First, we refactored the KAG-Solver framework. Added support for two task planning modes, static and iterative, while implementing a more rigorous knowledge layering mechanism for the reasoning phase. 
   * Second, we optimized the product experience: introduced dual modes—"Simple Mode" and "Deep Reasoning"—during the reasoning phase, along with support for streaming inference output, automatic rendering of graph indexes, and linking generated content to original references. 
