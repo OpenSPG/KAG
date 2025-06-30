@@ -77,7 +77,7 @@ class KAGModelPlanner(PlannerABC):
     def __init__(
         self,
         llm: LLMClient,
-            system_prompt: PromptABC,
+        system_prompt: PromptABC,
         clarification_prompt: PromptABC,
         rewrite_prompt: PromptABC,
         **kwargs,
@@ -89,7 +89,6 @@ class KAGModelPlanner(PlannerABC):
         self.system_prompt = system_prompt
         self.clarification_prompt = clarification_prompt
         self.rewrite_prompt = rewrite_prompt
-
 
     def check_require_rewrite(self, task: Task):
         """Determines if query rewriting is needed based on parameter patterns.
@@ -133,11 +132,16 @@ class KAGModelPlanner(PlannerABC):
         logic_form_node = task.arguments.get("logic_form_node", None)
         if logic_form_node:
             logic_form_node.sub_query = new_query
-            return {"rewrite_query": new_query, "origin_query": query, "query": new_query,
-                    "logic_form_node": logic_form_node}
+            return {
+                "rewrite_query": new_query,
+                "origin_query": query,
+                "query": new_query,
+                "logic_form_node": logic_form_node,
+            }
         # print(f"query rewrite context = {context}")
         # print(f"New query: {new_query}")
         return {"query": new_query}
+
     async def ainvoke(self, query, **kwargs) -> List[Task]:
         """Asynchronously generates task plan using LLM.
 
