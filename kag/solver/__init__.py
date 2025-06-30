@@ -1,6 +1,8 @@
 from kag.solver.executor.deduce.kag_deduce_executor import KagDeduceExecutor
 from kag.solver.executor.deduce.kag_output_executor import KagOutputExecutor
-from kag.solver.executor.retriever.kag_model_hybrid_executor import KAGModelHybridRetrievalExecutor
+from kag.solver.executor.retriever.kag_model_hybrid_executor import (
+    KAGModelHybridRetrievalExecutor,
+)
 from kag.solver.executor.retriever.local_knowledge_base.chunk_retrieved_executor import (
     ChunkRetrievedExecutor,
 )

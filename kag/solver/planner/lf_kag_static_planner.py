@@ -104,8 +104,12 @@ class KAGLFStaticPlanner(PlannerABC):
         logic_form_node = task.arguments.get("logic_form_node", None)
         if logic_form_node:
             logic_form_node.sub_query = new_query
-            return {"rewrite_query": new_query, "origin_query": query, "query": new_query,
-                    "logic_form_node": logic_form_node}
+            return {
+                "rewrite_query": new_query,
+                "origin_query": query,
+                "query": new_query,
+                "logic_form_node": logic_form_node,
+            }
         # print(f"query rewrite context = {context}")
         # print(f"New query: {new_query}")
         return {"query": new_query}

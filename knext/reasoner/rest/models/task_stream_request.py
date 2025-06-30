@@ -42,19 +42,21 @@ class TaskStreamRequest(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    openapi_types = {
-        'task_id': 'str',
-        'content': 'StreamData',
-        'status_enum': 'str'
-    }
+    openapi_types = {"task_id": "str", "content": "StreamData", "status_enum": "str"}
 
     attribute_map = {
-        'task_id': 'taskId',
-        'content': 'content',
-        'status_enum': 'statusEnum'
+        "task_id": "taskId",
+        "content": "content",
+        "status_enum": "statusEnum",
     }
 
-    def __init__(self, task_id=None, content=None, status_enum=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        task_id=None,
+        content=None,
+        status_enum=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """TaskStreamRequest - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -87,8 +89,12 @@ class TaskStreamRequest(object):
         :param task_id: The task_id of this TaskStreamRequest.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and task_id is None:  # noqa: E501
-            raise ValueError("Invalid value for `task_id`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and task_id is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `task_id`, must not be `None`"
+            )  # noqa: E501
 
         self._task_id = task_id
 
@@ -110,8 +116,12 @@ class TaskStreamRequest(object):
         :param content: The content of this TaskStreamRequest.  # noqa: E501
         :type: StreamData
         """
-        if self.local_vars_configuration.client_side_validation and content is None:  # noqa: E501
-            raise ValueError("Invalid value for `content`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and content is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `content`, must not be `None`"
+            )  # noqa: E501
 
         self._content = content
 
@@ -133,8 +143,12 @@ class TaskStreamRequest(object):
         :param status_enum: The status_enum of this TaskStreamRequest.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and status_enum is None:  # noqa: E501
-            raise ValueError("Invalid value for `status_enum`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and status_enum is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `status_enum`, must not be `None`"
+            )  # noqa: E501
 
         self._status_enum = status_enum
 
@@ -145,18 +159,20 @@ class TaskStreamRequest(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

@@ -149,6 +149,7 @@ def is_chinese(text):
     chinese_pattern = re.compile(r"[\u4e00-\u9fff]+")
     return bool(chinese_pattern.search(text))
 
+
 async def do_qa_pipeline(
     use_pipeline, query, qa_config, reporter, task_id, kb_project_ids
 ):
@@ -196,7 +197,9 @@ async def do_qa_pipeline(
     if use_pipeline not in ["index_pipeline"]:
         self_cognition_conf = get_pipeline_conf("self_cognition_pipeline", qa_config)
         self_cognition_pipeline = SolverPipelineABC.from_config(self_cognition_conf)
-        self_cognition_res = await self_cognition_pipeline.ainvoke(query, reporter=reporter)
+        self_cognition_res = await self_cognition_pipeline.ainvoke(
+            query, reporter=reporter
+        )
     else:
         self_cognition_res = False
     if not self_cognition_res:
@@ -227,7 +230,12 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
     )
 
     # process llm
-    if "extra_body" in main_config["llm"] and main_config["llm"]["type"] in ["openai", "ant_openai", "maas", "vllm"]:
+    if "extra_body" in main_config["llm"] and main_config["llm"]["type"] in [
+        "openai",
+        "ant_openai",
+        "maas",
+        "vllm",
+    ]:
         extra_body = main_config["llm"]["extra_body"]
         if isinstance(extra_body, str):
             try:
@@ -281,23 +289,18 @@ async def qa(task_id, query, project_id, host_addr, app_id, params={}):
         main_config["vectorize_model"] = vectorize_model
 
     if vectorize_model:
-        KAG_CONFIG.update_conf({
-            "vectorize_model": vectorize_model
-        })
+        KAG_CONFIG.update_conf({"vectorize_model": vectorize_model})
     if main_config["llm"]:
-        KAG_CONFIG.update_conf({
-            "llm": main_config["llm"]
-        })
-    reporter_map = {
-        "kag_thinker_pipeline": "kag_open_spg_reporter"
-    }
+        KAG_CONFIG.update_conf({"llm": main_config["llm"]})
+    reporter_map = {"kag_thinker_pipeline": "kag_open_spg_reporter"}
 
     reporter_config = {
         "type": reporter_map.get(use_pipeline, "open_spg_reporter"),
         "task_id": task_id,
         "host_addr": host_addr,
         "project_id": project_id,
-        "thinking_enabled": use_pipeline in ["think_pipeline", "index_pipeline", "kag_thinker_pipeline"],
+        "thinking_enabled": use_pipeline
+        in ["think_pipeline", "index_pipeline", "kag_thinker_pipeline"],
         "report_all_references": use_pipeline == "index_pipeline",
     }
     reporter = ReporterABC.from_config(reporter_config)
@@ -385,13 +388,13 @@ class SolverMain:
             params = {}
         try:
             answer = await qa(
-                    task_id=task_id,
-                    project_id=project_id,
-                    host_addr=host_addr,
-                    query=query,
-                    params=params,
-                    app_id=app_id,
-                )
+                task_id=task_id,
+                project_id=project_id,
+                host_addr=host_addr,
+                query=query,
+                params=params,
+                app_id=app_id,
+            )
             logger.info(f"{query} answer={answer}")
         except Exception as e:
             import traceback

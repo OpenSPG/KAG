@@ -31,7 +31,9 @@ class EvalQa:
         )
         answer = await pipeline.ainvoke(query, reporter=reporter, gold=gold)
 
-        logger.info(f"\n\nso the answer for '{query}' is: {answer}\n\n cost={time.time() - start_time}")
+        logger.info(
+            f"\n\nso the answer for '{query}' is: {answer}\n\n cost={time.time() - start_time}"
+        )
 
         info, status = reporter.generate_report_data()
         return answer, {"info": info.to_dict(), "status": status}
@@ -157,7 +159,9 @@ class EvalQa:
             await queue.put((idx, qa_list[idx], ckpt))
 
         # 进度条
-        progress_bar = tqdm(total=total_tasks, desc=f"parallelQaAndEvaluate {self.task_name}")
+        progress_bar = tqdm(
+            total=total_tasks, desc=f"parallelQaAndEvaluate {self.task_name}"
+        )
 
         # 消费者逻辑
         async def worker():

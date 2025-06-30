@@ -33,26 +33,36 @@ class DataEdge(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'id': 'str',
-        '_from': 'str',
-        'from_type': 'str',
-        'to': 'str',
-        'to_type': 'str',
-        'label': 'str',
-        'properties': 'object'
+        "id": "str",
+        "_from": "str",
+        "from_type": "str",
+        "to": "str",
+        "to_type": "str",
+        "label": "str",
+        "properties": "object",
     }
 
     attribute_map = {
-        'id': 'id',
-        '_from': 'from',
-        'from_type': 'fromType',
-        'to': 'to',
-        'to_type': 'toType',
-        'label': 'label',
-        'properties': 'properties'
+        "id": "id",
+        "_from": "from",
+        "from_type": "fromType",
+        "to": "to",
+        "to_type": "toType",
+        "label": "label",
+        "properties": "properties",
     }
 
-    def __init__(self, id=None, _from=None, from_type=None, to=None, to_type=None, label=None, properties=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        id=None,
+        _from=None,
+        from_type=None,
+        to=None,
+        to_type=None,
+        label=None,
+        properties=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """DataEdge - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -93,7 +103,9 @@ class DataEdge(object):
         :param id: The id of this DataEdge.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and id is None:  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and id is None
+        ):  # noqa: E501
             raise ValueError("Invalid value for `id`, must not be `None`")  # noqa: E501
 
         self._id = id
@@ -116,8 +128,12 @@ class DataEdge(object):
         :param _from: The _from of this DataEdge.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and _from is None:  # noqa: E501
-            raise ValueError("Invalid value for `_from`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and _from is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `_from`, must not be `None`"
+            )  # noqa: E501
 
         self.__from = _from
 
@@ -139,8 +155,12 @@ class DataEdge(object):
         :param from_type: The from_type of this DataEdge.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and from_type is None:  # noqa: E501
-            raise ValueError("Invalid value for `from_type`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and from_type is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `from_type`, must not be `None`"
+            )  # noqa: E501
 
         self._from_type = from_type
 
@@ -162,7 +182,9 @@ class DataEdge(object):
         :param to: The to of this DataEdge.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and to is None:  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and to is None
+        ):  # noqa: E501
             raise ValueError("Invalid value for `to`, must not be `None`")  # noqa: E501
 
         self._to = to
@@ -185,8 +207,12 @@ class DataEdge(object):
         :param to_type: The to_type of this DataEdge.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and to_type is None:  # noqa: E501
-            raise ValueError("Invalid value for `to_type`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and to_type is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `to_type`, must not be `None`"
+            )  # noqa: E501
 
         self._to_type = to_type
 
@@ -208,8 +234,12 @@ class DataEdge(object):
         :param label: The label of this DataEdge.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and label is None:  # noqa: E501
-            raise ValueError("Invalid value for `label`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and label is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `label`, must not be `None`"
+            )  # noqa: E501
 
         self._label = label
 
@@ -231,8 +261,12 @@ class DataEdge(object):
         :param properties: The properties of this DataEdge.  # noqa: E501
         :type: object
         """
-        if self.local_vars_configuration.client_side_validation and properties is None:  # noqa: E501
-            raise ValueError("Invalid value for `properties`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and properties is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `properties`, must not be `None`"
+            )  # noqa: E501
 
         self._properties = properties
 
@@ -243,18 +277,20 @@ class DataEdge(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

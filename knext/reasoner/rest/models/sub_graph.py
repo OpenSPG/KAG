@@ -33,18 +33,24 @@ class SubGraph(object):
                             and the value is json key in definition.
     """
     openapi_types = {
-        'class_name': 'str',
-        'result_nodes': 'list[DataNode]',
-        'result_edges': 'list[DataEdge]'
+        "class_name": "str",
+        "result_nodes": "list[DataNode]",
+        "result_edges": "list[DataEdge]",
     }
 
     attribute_map = {
-        'class_name': 'className',
-        'result_nodes': 'resultNodes',
-        'result_edges': 'resultEdges'
+        "class_name": "className",
+        "result_nodes": "resultNodes",
+        "result_edges": "resultEdges",
     }
 
-    def __init__(self, class_name=None, result_nodes=None, result_edges=None, local_vars_configuration=None):  # noqa: E501
+    def __init__(
+        self,
+        class_name=None,
+        result_nodes=None,
+        result_edges=None,
+        local_vars_configuration=None,
+    ):  # noqa: E501
         """SubGraph - a model defined in OpenAPI"""  # noqa: E501
         if local_vars_configuration is None:
             local_vars_configuration = Configuration()
@@ -77,8 +83,12 @@ class SubGraph(object):
         :param class_name: The class_name of this SubGraph.  # noqa: E501
         :type: str
         """
-        if self.local_vars_configuration.client_side_validation and class_name is None:  # noqa: E501
-            raise ValueError("Invalid value for `class_name`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and class_name is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `class_name`, must not be `None`"
+            )  # noqa: E501
 
         self._class_name = class_name
 
@@ -100,8 +110,13 @@ class SubGraph(object):
         :param result_nodes: The result_nodes of this SubGraph.  # noqa: E501
         :type: list[DataNode]
         """
-        if self.local_vars_configuration.client_side_validation and result_nodes is None:  # noqa: E501
-            raise ValueError("Invalid value for `result_nodes`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation
+            and result_nodes is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `result_nodes`, must not be `None`"
+            )  # noqa: E501
 
         self._result_nodes = result_nodes
 
@@ -123,8 +138,13 @@ class SubGraph(object):
         :param result_edges: The result_edges of this SubGraph.  # noqa: E501
         :type: list[DataEdge]
         """
-        if self.local_vars_configuration.client_side_validation and result_edges is None:  # noqa: E501
-            raise ValueError("Invalid value for `result_edges`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation
+            and result_edges is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `result_edges`, must not be `None`"
+            )  # noqa: E501
 
         self._result_edges = result_edges
 
@@ -135,18 +155,20 @@ class SubGraph(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

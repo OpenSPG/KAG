@@ -60,7 +60,12 @@ class ReasonerClient(Client):
             k: v
             for k, v in schema_session.spg_types.items()
             if v.spg_type_enum
-            in [SpgTypeEnum.Concept, SpgTypeEnum.Entity, SpgTypeEnum.Event, SpgTypeEnum.Index]
+            in [
+                SpgTypeEnum.Concept,
+                SpgTypeEnum.Entity,
+                SpgTypeEnum.Event,
+                SpgTypeEnum.Index,
+            ]
         }
         return schema
 

@@ -42,13 +42,9 @@ class Metrics(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    openapi_types = {
-        'think_cost': 'int'
-    }
+    openapi_types = {"think_cost": "int"}
 
-    attribute_map = {
-        'think_cost': 'thinkCost'
-    }
+    attribute_map = {"think_cost": "thinkCost"}
 
     def __init__(self, think_cost=None, local_vars_configuration=None):  # noqa: E501
         """Metrics - a model defined in OpenAPI"""  # noqa: E501
@@ -79,8 +75,12 @@ class Metrics(object):
         :param think_cost: The think_cost of this Metrics.  # noqa: E501
         :type: int
         """
-        if self.local_vars_configuration.client_side_validation and think_cost is None:  # noqa: E501
-            raise ValueError("Invalid value for `think_cost`, must not be `None`")  # noqa: E501
+        if (
+            self.local_vars_configuration.client_side_validation and think_cost is None
+        ):  # noqa: E501
+            raise ValueError(
+                "Invalid value for `think_cost`, must not be `None`"
+            )  # noqa: E501
 
         self._think_cost = think_cost
 
@@ -91,18 +91,20 @@ class Metrics(object):
         for attr, _ in six.iteritems(self.openapi_types):
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[attr] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
-                result[attr] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].to_dict())
+                        if hasattr(item[1], "to_dict")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[attr] = value
 

@@ -341,7 +341,9 @@ Table(表格): IndexType
         return "通过构建表格索引，实现表格的检索，一般用于检索与表格相关的chunk"
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -354,14 +356,22 @@ Table(表格): IndexType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "table_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id,},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id,},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
                 "kag_qa_task_config_key": kb_task_project_id,
             },
@@ -424,7 +434,9 @@ Summary(文本摘要): IndexType
         return "通过大模型总结的摘要，实现摘要的检索，一般用于检索与摘要相关的chunk"
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -436,14 +448,22 @@ Summary(文本摘要): IndexType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "summary_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id,},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id,},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
                 "score_threshold": 0.8,
                 "kag_qa_task_config_key": kb_task_project_id,
@@ -507,7 +527,9 @@ Outline(标题大纲): IndexType
         return "通过构建时文本的大纲，实现大纲的检索，一般用于检索与大纲相关的chunk"
 
     @classmethod
-    def build_extractor_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_extractor_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
@@ -517,14 +539,22 @@ Outline(标题大纲): IndexType
         ]
 
     @classmethod
-    def build_retriever_config(cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs):
+    def build_retriever_config(
+        cls, llm_config: Dict, vectorize_model_config: Dict, **kwargs
+    ):
         kb_task_project_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         return [
             {
                 "type": "outline_chunk_retriever",
                 "vectorize_model": vectorize_model_config,
-                "search_api": {"type": "openspg_search_api", "kag_qa_task_config_key": kb_task_project_id,},
-                "graph_api": {"type": "openspg_graph_api", "kag_qa_task_config_key": kb_task_project_id,},
+                "search_api": {
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
+                "graph_api": {
+                    "type": "openspg_graph_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
+                },
                 "top_k": 10,
                 "kag_qa_task_config_key": kb_task_project_id,
             },
@@ -743,8 +773,8 @@ AtomicQuery(原子问): IndexType
             {
                 "type": "rc_open_spg",
                 "search_api": {
-                        "type": "openspg_search_api",
-                        "kag_qa_task_config_key": kb_task_project_id,
+                    "type": "openspg_search_api",
+                    "kag_qa_task_config_key": kb_task_project_id,
                 },
                 "vector_chunk_retriever": {
                     "type": "vector_chunk_retriever",

@@ -15,10 +15,9 @@ import logging
 import yaml
 import json
 import pprint
-import threading
 from jinja2 import Template
 from pathlib import Path
-from typing import Union, Optional, Dict
+from typing import Union, Optional
 
 import knext.common.cache
 from knext.project.client import ProjectClient
@@ -207,7 +206,8 @@ KAG_PROJECT_CONF = KAG_CONFIG.global_config
 """
 KAG_QA_TASK_CONFIG stores per-task configuration and should be cleaned up after use.
 """
-KAG_QA_TASK_CONFIG  = knext.common.cache.LinkCache(maxsize=100, ttl=300)
+KAG_QA_TASK_CONFIG = knext.common.cache.LinkCache(maxsize=100, ttl=300)
+
 
 class KAGConfigAccessor:
     @staticmethod
@@ -248,7 +248,11 @@ def init_env(config_file: str = None):
     project_id = os.getenv(KAGConstants.ENV_KAG_PROJECT_ID)
     host_addr = os.getenv(KAGConstants.ENV_KAG_PROJECT_HOST_ADDR)
     prod = False
-    if project_id is not None and host_addr is not None and not validate_config_file(config_file):
+    if (
+        project_id is not None
+        and host_addr is not None
+        and not validate_config_file(config_file)
+    ):
         prod = True
     global KAG_CONFIG
     KAG_CONFIG.initialize(prod, config_file)
@@ -260,7 +264,9 @@ def init_env(config_file: str = None):
     if KAG_PROJECT_CONF.project_id:
         os.environ[KAGConstants.ENV_KAG_PROJECT_ID] = str(KAG_PROJECT_CONF.project_id)
     if KAG_PROJECT_CONF.host_addr:
-        os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(KAG_PROJECT_CONF.host_addr)
+        os.environ[KAGConstants.ENV_KAG_PROJECT_HOST_ADDR] = str(
+            KAG_PROJECT_CONF.host_addr
+        )
     if len(KAG_CONFIG.all_config) > 0:
         dump_flag = os.getenv(KAGConstants.ENV_KAG_DEBUG_DUMP_CONFIG)
         if dump_flag is not None and dump_flag.strip() == "1":

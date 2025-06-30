@@ -19,7 +19,7 @@ from functools import partial
 from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.common.conf import KAGConstants, KAGConfigAccessor
-from kag.common.config import get_default_chat_llm_config, LogicFormConfiguration
+from kag.common.config import get_default_chat_llm_config
 from kag.common.parser.logic_node_parser import GetSPONode
 from kag.interface import (
     ExecutorABC,

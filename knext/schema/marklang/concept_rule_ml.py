@@ -44,9 +44,16 @@ class SPGConceptRuleMarkLang:
     is_reasoning = False
     is_priority = False
 
-    def __init__(self, filename):
+    def __init__(
+        self,
+        filename,
+        host_addr=None,
+        project_id=None,
+    ):
         self.current_line_num = 0
-        self.session = SchemaClient().create_session()
+        self.session = SchemaClient(
+            host_addr=host_addr, project_id=project_id
+        ).create_session()
         self.concept_client = rest.ConceptApi()
         self.load_script(filename)
 

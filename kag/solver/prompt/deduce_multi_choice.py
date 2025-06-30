@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 @PromptABC.register("default_deduce_multi_choice")
 class DeduceMutiChoice(PromptABC):
-    template_zh =  """角色：
+    template_zh = """角色：
 你是一个逻辑推理助手，专门根据提供的参考信息从多个选项中选择一个或多个答案来回答问题。
 
 指令：

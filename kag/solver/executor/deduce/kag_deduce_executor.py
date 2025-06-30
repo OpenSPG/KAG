@@ -33,26 +33,21 @@ class KagDeduceExecutor(ExecutorABC):
         self.llm_module = llm_module or LLMClient.from_config(
             get_default_chat_llm_config()
         )
-        self.deduce_choice_prompt = deduce_choice_prompt or PromptABC.from_config({
-            "type": "default_deduce_choice"
-        })
-        self.deduce_entail_prompt = deduce_entail_prompt or PromptABC.from_config({
-            "type": "default_deduce_entail"
-        })
-        self.deduce_extractor_prompt = (
-                deduce_extractor_prompt
-                or PromptABC.from_config({
-            "type": "default_deduce_extractor"
-        })
+        self.deduce_choice_prompt = deduce_choice_prompt or PromptABC.from_config(
+            {"type": "default_deduce_choice"}
         )
-        self.deduce_judge_prompt = deduce_judge_prompt or PromptABC.from_config({
-            "type": "default_deduce_judge"
-        })
+        self.deduce_entail_prompt = deduce_entail_prompt or PromptABC.from_config(
+            {"type": "default_deduce_entail"}
+        )
+        self.deduce_extractor_prompt = deduce_extractor_prompt or PromptABC.from_config(
+            {"type": "default_deduce_extractor"}
+        )
+        self.deduce_judge_prompt = deduce_judge_prompt or PromptABC.from_config(
+            {"type": "default_deduce_judge"}
+        )
         self.deduce_multi_choice_prompt = (
-                deduce_multi_choice_prompt
-                or PromptABC.from_config({
-            "type": "default_deduce_multi_choice"
-        })
+            deduce_multi_choice_prompt
+            or PromptABC.from_config({"type": "default_deduce_multi_choice"})
         )
 
         self.prompt_mapping = {
@@ -127,7 +122,7 @@ class KagDeduceExecutor(ExecutorABC):
 
         for k, v in context.kwargs.get("step_answer", {}).items():
             if k in task_query:
-                contents +=  f"\n{k}={v}\n"
+                contents += f"\n{k}={v}\n"
 
         result = []
         final_if_answered = False

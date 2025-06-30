@@ -110,19 +110,23 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             self.kag_config.all_config["vectorize_model"]
         )
 
-    def get_ner(self,  text):
+    def get_ner(self, text):
 
         if ">>" in text:
-            ent_list = [ text.split(">>")[0].strip()]
-            text =  text.split(">>")[1]
+            ent_list = [text.split(">>")[0].strip()]
+            text = text.split(">>")[1]
         else:
             ent_list = []
 
-        prompt = "Identify 3 to 5 keywords in the following input sentence and return them. The return format should be a single string with the keywords separated by commas. \ninput:" + text + " \noutput:"
+        prompt = (
+            "Identify 3 to 5 keywords in the following input sentence and return them. The return format should be a single string with the keywords separated by commas. \ninput:"
+            + text
+            + " \noutput:"
+        )
         try:
             response = self.llm(prompt)
-            ent_list = ent_list + response.split(',')
-            ent_list = [k.strip() for k in ent_list if len(k.strip() )>0  ]
+            ent_list = ent_list + response.split(",")
+            ent_list = [k.strip() for k in ent_list if len(k.strip()) > 0]
         except:
             pass
         return ent_list
@@ -178,7 +182,7 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             return recalled_entity
 
         if not matched_entities:
-            candidate_entities = [] #self.get_ner(query)
+            candidate_entities = []  # self.get_ner(query)
             s_mention_name = logical_node.s.get_mention_name()
             if s_mention_name:
                 candidate_entities.append(s_mention_name)
@@ -186,15 +190,17 @@ class KgFreeRetrieverWithKnowledgeUnitRetriever(RetrieverABC):
             if o_mention_name:
                 candidate_entities.append(o_mention_name)
             for entity in candidate_entities:
-                lined_entities = self.entity_linking.invoke(query=query, name=entity, type_name="Entity", topk_k=1, recognition_threshold=0.7)
+                lined_entities = self.entity_linking.invoke(
+                    query=query,
+                    name=entity,
+                    type_name="Entity",
+                    topk_k=1,
+                    recognition_threshold=0.7,
+                )
                 if lined_entities:
                     matched_entities.extend(lined_entities)
 
-
-
         query_vector = self.vectorize_model.vectorize(query)
-
-
 
         # 1、atomic query search
         top_atmoic_query_units = self.search_api.search_vector(

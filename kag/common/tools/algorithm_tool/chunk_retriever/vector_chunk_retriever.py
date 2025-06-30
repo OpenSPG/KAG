@@ -88,11 +88,11 @@ class VectorChunkRetriever(RetrieverABC):
                 score = item.get("score", 0.0)
                 if score >= self.score_threshold:
                     chunk = ChunkData(
-                            content=item["node"].get("content", ""),
-                            title=item["node"]["name"],
-                            chunk_id=item["node"]["id"],
-                            score=score,
-                        )
+                        content=item["node"].get("content", ""),
+                        title=item["node"]["name"],
+                        chunk_id=item["node"]["id"],
+                        score=score,
+                    )
                     if chunk.chunk_id not in merged:
                         merged[chunk.chunk_id] = score
                     if merged[chunk.chunk_id] < score:
@@ -111,17 +111,13 @@ class VectorChunkRetriever(RetrieverABC):
                         score=score,
                     )
                 )
-            out = RetrieverOutput(
-                chunks=chunks, retriever_method=self.name
-            )
+            out = RetrieverOutput(chunks=chunks, retriever_method=self.name)
             chunk_cached_by_query_map.put(query, out)
             return out
 
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(
-                retriever_method=self.name, err_msg=str(e)
-            )
+            return RetrieverOutput(retriever_method=self.name, err_msg=str(e))
 
     def schema(self):
         return {

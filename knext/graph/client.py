@@ -50,7 +50,9 @@ class GraphClient(Client):
         such as failures in running `run_pagerank_igraph_chunk`, are logged.
         """
         ppr_start_nodes = [
-            GetPageRankScoresRequestStartNodes(id=node.get("id",node["name"]), type=node["type"])
+            GetPageRankScoresRequestStartNodes(
+                id=node.get("id", node["name"]), type=node["type"]
+            )
             for node in start_nodes
         ]
         req = GetPageRankScoresRequest(
@@ -67,7 +69,7 @@ class GraphClient(Client):
             sub_graph=sub_graph,
             operation=operation,
             enable_lead_to=lead_to_builder,
-            token="openspg@8380255d4e49_"
+            token="openspg@8380255d4e49_",
         )
         self._rest_client.graph_writer_graph_post(writer_graph_request=request)
 

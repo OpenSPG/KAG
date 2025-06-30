@@ -590,7 +590,11 @@ class BaseSpgType(ABC):
     """Base class of `ConceptType`, `EntityType`, `EventType`, `StandardType`, `BasicType`."""
 
     _rest_model: Union[
-        rest.ConceptType, rest.EntityType, rest.IndexType, rest.EventType, rest.StandardType
+        rest.ConceptType,
+        rest.EntityType,
+        rest.IndexType,
+        rest.EventType,
+        rest.StandardType,
     ]
 
     def __init__(

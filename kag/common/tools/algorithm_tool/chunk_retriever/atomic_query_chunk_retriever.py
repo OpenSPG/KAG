@@ -256,15 +256,11 @@ class AtomicQueryChunkRetriever(RetrieverABC):
 
             chunks = chunks + query_text_related_chunks
 
-            out = RetrieverOutput(
-                retriever_method=self.name, chunks=chunks
-            )
+            out = RetrieverOutput(retriever_method=self.name, chunks=chunks)
             return out
         except Exception as e:
             logger.error(f"run calculate_sim_scores failed, info: {e}", exc_info=True)
-            return RetrieverOutput(
-                retriever_method=self.name, err_msg=str(e)
-            )
+            return RetrieverOutput(retriever_method=self.name, err_msg=str(e))
 
     def schema(self):
         return {

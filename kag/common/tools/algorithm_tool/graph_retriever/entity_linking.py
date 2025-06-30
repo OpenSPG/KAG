@@ -222,7 +222,9 @@ class EntityLinking(ToolABC):
         # 6. Final filtering and sorting
         if not topk_k:
             topk_k = self.top_k
-        recognition_threshold = kwargs.get("recognition_threshold", self.recognition_threshold)
+        recognition_threshold = kwargs.get(
+            "recognition_threshold", self.recognition_threshold
+        )
         retdata = []
         if name is None:
             return retdata
@@ -260,7 +262,7 @@ class EntityLinking(ToolABC):
                 else:
                     break
 
-            return retdata[: topk_k]
+            return retdata[:topk_k]
         except Exception as e:
             logger.error(
                 f"Error in entity_linking {query} name={name} type={type_name}: {e}",

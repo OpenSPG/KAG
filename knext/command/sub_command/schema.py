@@ -32,7 +32,9 @@ def commit_schema():
     )
 
     if Path(schema_file).exists():
-        ml = SPGSchemaMarkLang(schema_file, host_addr=env.host_addr, project_id=env.project_id)
+        ml = SPGSchemaMarkLang(
+            schema_file, host_addr=env.host_addr, project_id=env.project_id
+        )
     else:
         ml = None
     index_managers = KAGIndexManager.list_available()
@@ -49,7 +51,12 @@ def commit_schema():
         if not schema_str:
             continue
         schema_str = f"namespace {env.namespace}\n" + schema_str
-        cur_index_ml = SPGSchemaMarkLang(filename="", script_data_str=schema_str, host_addr=env.host_addr, project_id=env.project_id)
+        cur_index_ml = SPGSchemaMarkLang(
+            filename="",
+            script_data_str=schema_str,
+            host_addr=env.host_addr,
+            project_id=env.project_id,
+        )
         if index_ml is None:
             index_ml = cur_index_ml
         else:
@@ -78,5 +85,5 @@ def reg_concept_rule(file):
     """
     Register a concept rule according to DSL file.
     """
-    SPGConceptRuleMarkLang(file)
+    SPGConceptRuleMarkLang(file, host_addr=env.host_addr, project_id=env.project_id)
     click.secho(f"Concept rule is successfully registered", fg="bright_green")
