@@ -787,10 +787,8 @@ class MarkDownReader(ReaderABC):
                     name=f"{full_title} / Table {i+1}",
                     content=table_content,
                     type=ChunkTypeEnum.Table,
-                    metadata={
-                        "before_text": table.get("context", {}).get("before_text", ""),
-                        "after_text": table.get("context", {}).get("after_text", ""),
-                    },
+                    before_text=table.get("context", {}).get("before_text", ""),
+                    after_text=table.get("context", {}).get("after_text", ""),
                     file_name=os.path.basename(file_id),
                 )
                 table_chunks.append(table_chunk)
@@ -807,10 +805,8 @@ class MarkDownReader(ReaderABC):
                     name=f"{full_title} / Table {i+1}",
                     content=table_content,
                     type=ChunkTypeEnum.Table,
-                    metadata={
-                        "before_text": table.get("context", {}).get("before_text", ""),
-                        "after_text": table.get("context", {}).get("after_text", ""),
-                    },
+                    before_text=table.get("context", {}).get("before_text", ""),
+                    after_text=table.get("context", {}).get("after_text", ""),
                     file_name=os.path.basename(file_id),
                 )
                 table_chunks.append(table_chunk)
@@ -862,10 +858,8 @@ class MarkDownReader(ReaderABC):
                     name=f"{full_title} / Table {i+1}",
                     content=table_content,
                     type=ChunkTypeEnum.Table,
-                    metadata={
-                        "before_text": table.get("context", {}).get("before_text", ""),
-                        "after_text": table.get("context", {}).get("after_text", ""),
-                    },
+                    before_text=table.get("context", {}).get("before_text", ""),
+                    after_text=table.get("context", {}).get("after_text", ""),
                     file_name=os.path.basename(id),
                 )
                 outputs.append(table_chunk)
@@ -1065,5 +1059,6 @@ if __name__ == "__main__":
     file_path = os.path.join(
         dir_path, "../../../../tests/unit/builder/data", "需求内容test.md"
     )
+    file_path = "/Users/zhangxinhong.zxh/Downloads/overmemery.md"
     chunks = reader.invoke(file_path, write_ckpt=False)
     print(chunks)
