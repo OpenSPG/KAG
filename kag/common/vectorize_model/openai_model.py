@@ -28,7 +28,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        api_key: str = "",
+        api_key: str = "abc123",
         base_url: str = "",
         vector_dimensions: int = None,
         timeout: float = None,
