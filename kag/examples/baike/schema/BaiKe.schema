@@ -1,0 +1,139 @@
+namespace BaiKe
+
+SemanticConcept(语义概念): EntityType
+     properties:
+        desc(内容): Text
+            index: Text
+        isA(上位): SemanticConcept
+
+ArtificialObject(人造物体): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): ArtificialObject
+        officialName(标准名): ArtificialObject
+
+Astronomy(天文学): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Astronomy
+        officialName(标准名): Astronomy
+
+Building(建筑): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Building
+        officialName(标准名): Building
+
+Creature(生物): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Creature
+        officialName(标准名): Creature
+
+Concept(概念): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Concept
+        officialName(标准名): Concept
+
+Date(日期): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Date
+        officialName(标准名): Date
+
+GeographicLocation(地理位置): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): GeographicLocation
+        officialName(标准名): GeographicLocation
+
+Keyword(关键词): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Keyword
+        officialName(标准名): Keyword
+
+Medicine(药物): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Medicine
+        officialName(标准名): Medicine
+
+NaturalScience(自然科学): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): NaturalScience
+        officialName(标准名): NaturalScience
+
+Organization(组织机构): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Organization
+        officialName(标准名): Organization
+
+Person(人物): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Person
+        officialName(标准名): Person
+
+Transport(运输): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Transport
+        officialName(标准名): Transport
+
+Works(作品): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Works
+        officialName(标准名): Works
+
+Event(事件): EventType
+     properties:
+        subject(主体): Person
+        participants(参与者): Person
+            constraint: MultiValue
+        time(时间): Date
+        location(地点): GeographicLocation
+        abstract(摘要): Text
+            index: TextAndVector
+        type(事件类型): Text
+            index: Text
+
+Others(其他): EntityType
+     properties:
+        desc(描述): Text
+            index: TextAndVector
+        semanticType(语义类型): SemanticConcept
+        synonyms(同义词): Others
+        officialName(标准名): Others

@@ -1,0 +1,18 @@
+/*.whl
+/*.egg-info/
+/build/
+# *.json
+*.jsonl
+# *.csv
+#*.txt
+*.log
+*.out
+*.key
+*.jc
+*.pyc
+/dist
+.vscode/
+.idea/
+.venv/
+__pycache__/
+.DS_Store

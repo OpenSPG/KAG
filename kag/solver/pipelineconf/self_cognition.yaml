@@ -1,0 +1,20 @@
+#------------project configuration start----------------#
+pipeline_name: self_cognition_pipeline
+
+#------------kag-solver configuration start----------------#
+
+solver_pipeline:
+  type: self_cognition_pipeline
+  self_cogn_tool:
+    type: self_cognition
+    llm_module: "{chat_llm}"
+  generator:
+    type: llm_index_generator
+    llm_client: "{chat_llm}"
+    generated_prompt:
+      type: default_refer_generator_prompt
+    enable_ref: true
+
+llm: "{chat_llm}"
+
+#------------kag-solver configuration end----------------#

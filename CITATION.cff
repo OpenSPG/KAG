@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Liang"
+  given-names: "Lei"
+- family-names: "Sun"
+  given-names: "Mengshu"
+- family-names: "Gui"
+  given-names: "Zhengke"
+- family-names: "Zhu"
+  given-names: "Zhongshu"
+- family-names: "Jiang"
+  given-names: "Zhouyu"
+- family-names: "Zhong"
+  given-names: "Ling"
+- family-names: "Zhao"
+  given-names: "Peilong"
+- family-names: "Bo"
+  given-names: "Zhongpu"
+- family-names: "Yang"
+  given-names: "Jin"
+title: "KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation"
+version: 1.0.1
+publication: arXiv preprint arXiv:2409.13731
+year: 2024
+url: https://arxiv.org/abs/2409.13731
+doi: arXiv:2409.13731

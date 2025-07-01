@@ -1,0 +1,9 @@
+ckpt/
+csqa_ckpt/
+/cs.jsonl
+/solver/data/csqa_kag_answers.json
+/solver/csqa_qfs_res_*.json
+/solver/csqa_qfs_res_*.md
+/solver/csqa_res_*.json
+/solver/csqa_metrics_*.json
+/solver/benchmark.txt

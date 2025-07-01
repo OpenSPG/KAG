@@ -1,0 +1,21 @@
+#------------kag-solver configuration start----------------#
+pipeline_name: mcp_pipeline
+
+solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: mcp_planner
+  generator:
+    type: llm_generator
+    llm_client: "{chat_llm}"
+    generated_prompt:
+      type: default_without_refer_generator_prompt
+    chunk_reranker:
+      type: rerank_by_vector
+      vectorize_model: "{vectorize_model}"
+    enable_ref: true
+
+llm: "{chat_llm}"
+vectorize_model: "{vectorize_model}"
+
+#------------kag-solver configuration end----------------#

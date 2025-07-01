@@ -1,0 +1,187 @@
+#------------project configuration start----------------#
+openie_llm: &openie_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
+  model: qwen2.5-7b-instruct
+  enable_check: false
+  max_tokens: 8092
+
+
+ner_llm: &ner_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
+  model: qwen2.5-7b-instruct
+  enable_check: false
+  max_tokens: 1024
+
+chat_llm: &chat_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
+  model: qwen2.5-72b-instruct
+  enable_check: false
+  max_tokens: 1024
+
+vectorize_model: &vectorize_model
+  api_key: key
+  base_url: https://api.siliconflow.cn/v1
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+  max_rate: 1000
+  time_period: 60
+#vectorize_model: &vectorize_model
+#  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+#  api_key: sk-
+#  model: text-embedding-v3
+#  type: openai
+#  vector_dimensions: 1024
+#  max_rate: 1000
+#  time_period: 60
+vectorizer: *vectorize_model
+
+log:
+  level: INFO
+
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  language: zh
+  id: '12'
+  namespace: FinAlibaba3
+#------------project configuration end----------------#
+
+#------------kag-builder configuration start----------------#
+e1: &e1
+  type: schema_free_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  llm: *openie_llm
+  ner_prompt:
+    type: default_ner # kag.builder.prompt.default.ner.OpenIENERPrompt
+  std_prompt:
+    type: default_std # kag.builder.prompt.default.std.OpenIEEntitystandardizationdPrompt
+  triple_prompt:
+    type: default_triple # kag.builder.prompt.default.triple.OpenIETriplePrompt
+
+e2: &e2
+  type: outline_extractor # kag.builder.component.extractor.outline_extractor.OutlineExtractor
+
+e3: &e3
+  type: summary_extractor # kag.builder.component.extractor.summary_extractor.SummaryExtractor
+
+e4: &e4
+  type: chunk_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
+
+e5: &e5
+  type: table_extractor
+  llm: *openie_llm
+  table_context_prompt:
+    type: table_context
+  table_row_col_summary_prompt:
+    type: table_row_col_summary
+
+e6: &e6
+  type: atomic_query_extractor # kag.builder.component.extractor.chunk_extractor.ChunkExtractor
+  llm: *openie_llm
+  prompt:
+    type: atomic_query_extract
+
+kag_builder_pipeline:
+  chain:
+    type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
+    extractor:
+      - *e4
+      - *e6
+    reader:
+      type: md_reader # kag.builder.component.reader.dict_reader.DictReader
+      cut_depth: 6
+    post_processor:
+      type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
+    splitter:
+      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 1000
+      window_length: 0
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+      batch_size: 10
+    writer:
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+  num_threads_per_chain: 10
+  num_chains: 2
+  max_concurrency: 10
+  scanner:
+    type: file_scanner # kag.builder.component.scanner.dataset_scanner.HotpotqaCorpusScanner
+#------------kag-builder configuration end----------------#
+
+#------------kag-solver configuration start----------------#
+search_api: &search_api
+  type: openspg_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+
+graph_api: &graph_api
+  type: openspg_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+
+r1: &r1
+  type: atomic_query_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  llm_client: *chat_llm
+  query_rewrite_prompt:
+    type: atomic_query_rewrite_prompt
+  top_k: 10
+
+r2: &r2
+  type: outline_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  top_k: 10
+
+r3: &r3
+  type: summary_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  top_k: 10
+
+r4: &r4
+  type: vector_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  top_k: 10
+
+r5: &r5
+  type: table_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  top_k: 10
+
+retriever_executor: &retriever
+  type: kag_hybrid_retrieval_executor
+  retrievers:
+    - *r1
+  merger:
+    type: kag_merger
+
+kag_solver_pipeline:
+  type: kag_static_pipeline
+  planner:
+    type: kag_static_planner
+    llm: *chat_llm
+    plan_prompt:
+      type: retriever_static_planning
+    rewrite_prompt:
+      type: default_query_rewrite
+  executors:
+    - *retriever
+  generator:
+    type: llm_index_generator
+    llm_client: *chat_llm
+    generated_prompt:
+      type: default_multi_hop_generator
+
+#------------kag-solver configuration end----------------#

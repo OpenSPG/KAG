@@ -1,0 +1,32 @@
+#------------project configuration start----------------#
+
+chat_llm: &chat_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
+  model: qwen2.5-72b-instruct
+
+ollama_llm: &ollama_llm
+  type: ollama
+  model: qwen2.5:0.5b
+
+
+mcp_executor:
+  type: mcp_executor
+  store_path: ./map.py
+  name: baidu_map_mcp
+  description: Baidu Maps MCP, which covers geocoding, reverse geocoding, place search, route planning, and more, enables capabilities such as finding nearby places and planning travel routes.
+  env:
+    BAIDU_MAPS_API_KEY: key
+  llm: *chat_llm
+
+
+log:
+  level: INFO
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '7'
+  language: zh
+  namespace: Baidu_Map_MCP
+

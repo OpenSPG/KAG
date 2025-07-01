@@ -1,0 +1,199 @@
+llm: &llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: !ENV LLM_API_KEY
+  model: qwen2.5-72b-instruct
+
+ner_llm: &ner_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  api_key: !ENV LLM_API_KEY
+  model: qwen2.5-7b-instruct
+
+vectorize_model: &vectorize_model
+  api_key: !ENV VECTORIZE_MODEL_API_KEY
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+vectorizer: *vectorize_model
+
+log:
+  level: INFO
+
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: en
+  namespace: HotpotQA
+#------------project configuration end----------------#
+
+#------------kag-builder configuration start----------------#
+
+e1: &e1
+  type: knowledge_unit_extractor # kag.builder.component.extractor.schema_free_extractor.SchemaFreeExtractor
+  llm: *llm
+  ner_prompt:
+    type: knowledge_unit_ner
+  triple_prompt:
+    type: knowledge_unit_triple
+  kn_prompt:
+    type: knowledge_unit
+
+
+kag_builder_pipeline:
+  chain:
+    type: unstructured_builder_chain # kag.builder.default_chain.DefaultUnstructuredBuilderChain
+    extractor:
+      - *e1
+    reader:
+      type: dict_reader # kag.builder.component.reader.dict_reader.DictReader
+    post_processor:
+      type: kag_post_processor # kag.builder.component.postprocessor.kag_postprocessor.KAGPostProcessor
+    splitter:
+      type: length_splitter # kag.builder.component.splitter.length_splitter.LengthSplitter
+      split_length: 100000
+      window_length: 0
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+    writer:
+      type: memory_graph_writer # kag.builder.component.writer.kg_writer.KGWriter
+  num_threads_per_chain: 1
+  num_chains: 16
+  scanner:
+    type: hotpotqa_dataset_scanner # kag.builder.component.scanner.dataset_scanner.MusiqueCorpusScanner
+#------------kag-builder configuration end----------------#
+
+
+
+
+#------------kag-solver configuration start----------------#
+search_api: &search_api
+  type: memory_search_api #kag.solver.tools.search_api.impl.openspg_search_api.OpenSPGSearchAPI
+  graph_path: ./ckpt/MemoryGraphWriter
+  vectorize_model: *vectorize_model
+
+graph_api: &graph_api
+  type: memory_graph_api #kag.solver.tools.graph_api.impl.openspg_graph_api.OpenSPGGraphApi
+  graph_path: ./ckpt/MemoryGraphWriter
+  vectorize_model: *vectorize_model
+
+
+kg_cs: &kg_cs
+  type: kg_cs_open_spg
+  priority: 0
+  path_select:
+    type: exact_one_hop_select
+    graph_api: *graph_api
+    search_api: *search_api
+  entity_linking:
+    type: entity_linking
+    graph_api: *graph_api
+    search_api: *search_api
+    recognition_threshold: 0.9
+    exclude_types:
+      - Chunk
+      - AtomicQuery
+      - KnowledgeUnit
+      - Summary
+      - Outline
+      - Doc
+
+kg_fr: &kg_fr
+  type: kg_fr_knowledge_unit
+  top_k: 20
+  graph_api: *graph_api
+  search_api: *search_api
+  vectorize_model: *vectorize_model
+  path_select:
+    type: fuzzy_one_hop_select
+    llm_client: *ner_llm
+    graph_api: *graph_api
+    search_api: *search_api
+  ppr_chunk_retriever_tool:
+    type: ppr_chunk_retriever
+    llm_client: *llm
+    graph_api: *graph_api
+    search_api: *search_api
+  entity_linking:
+    type: entity_linking
+    graph_api: *graph_api
+    search_api: *search_api
+    recognition_threshold: 0.8
+    exclude_types:
+      - Chunk
+      - AtomicQuery
+      - KnowledgeUnit
+      - Summary
+      - Outline
+      - Doc
+
+rc: &rc
+  type: rc_open_spg
+  vector_chunk_retriever:
+    type: vector_chunk_retriever
+    vectorize_model: *vectorize_model
+    score_threshold: 0.65
+    search_api: *search_api
+  score_threshold: 0.65
+  graph_api: *graph_api
+  search_api: *search_api
+  vectorize_model: *vectorize_model
+  top_k: 20
+
+r3: &r3
+  type: summary_chunk_retriever
+  vectorize_model: *vectorize_model
+  search_api: *search_api
+  graph_api: *graph_api
+  score_threshold: 0.85
+  top_k: 10
+
+kag_hybrid_executor: &kag_hybrid_executor_conf
+  type: kag_hybrid_retrieval_executor
+  retrievers:
+    - *kg_cs
+    - *kg_fr
+    - *rc
+    - *r3
+  merger:
+    type: kag_merger
+  enable_summary:  true
+
+kag_output_executor: &kag_output_executor_conf
+  type: kag_output_executor
+  llm_module: *llm
+
+kag_deduce_executor: &kag_deduce_executor_conf
+  type: kag_deduce_executor
+  llm_module: *llm
+
+py_code_based_math_executor: &py_code_based_math_executor_conf
+  type: py_code_based_math_executor
+  llm: *llm
+
+kag_solver_pipeline:
+  type: kag_static_pipeline
+  max_iteration: 3
+  planner:
+    type: lf_kag_static_planner
+    llm: *llm
+    plan_prompt:
+      type: default_lf_static_planning
+    rewrite_prompt:
+      type: default_rewrite_sub_task_query
+  executors:
+    - *kag_hybrid_executor_conf
+    - *py_code_based_math_executor_conf
+    - *kag_deduce_executor_conf
+    - *kag_output_executor_conf
+  generator:
+    type: llm_index_generator
+    llm_client: *llm
+    generated_prompt:
+      type: default_multi_hop_generator
+    chunk_reranker:
+      type: rerank_by_vector
+#------------kag-solver configuration end----------------#

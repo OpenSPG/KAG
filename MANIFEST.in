@@ -1,0 +1,7 @@
+recursive-include kag *
+recursive-exclude kag/examples *
+recursive-exclude kag/open_benchmark *
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__

@@ -1,0 +1,23 @@
+#------------project configuration start----------------#
+chat_llm: &chat_llm
+  type: maas
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key: key
+  model: qwen-max-latest
+
+mcp_executor:
+  type: mcp_executor
+  store_path: ./google_web_search_server.py
+  name: mcp-server-web-search
+  description: Web search mcp, which provides an interface tool for searching the entire web by google
+  llm: *chat_llm
+
+
+log:
+  level: INFO
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '8'
+  language: zh
+  namespace: Web_Search_MCP

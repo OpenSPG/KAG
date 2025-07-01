@@ -1,0 +1,68 @@
+namespace RiskMining
+
+
+TaxOfRiskUser(风险用户): ConceptType
+	hypernymPredicate: isA
+
+TaxOfRiskApp(风险应用): ConceptType
+	hypernymPredicate: isA
+
+Cert(证书): EntityType
+	properties:
+		certNum(证书编号): Text
+
+App(应用): EntityType
+	properties:
+		riskMark(风险标记): Text
+		useCert(使用证书): Cert
+		IND#belongTo(属于): TaxOfRiskApp
+
+Company(企业): EntityType
+	properties:
+		hasPhone(电话号码): Text
+	relations:
+		hasCert(拥有证书): Cert
+		holdShare(持股): Company
+
+Device(设备): EntityType
+	properties:
+		umid(设备umid): Text
+		install(安装): App
+		    constraint: MultiValue
+
+Person(自然人): EntityType
+	properties:
+		age(年龄): Integer
+		hasPhone(电话号码): Text
+		IND#belongTo(属于): TaxOfRiskUser
+	relations:
+		hasDevice(拥有设备): Device
+		hasCert(拥有证书): Cert
+		holdShare(持股): Company
+		fundTrans(转账关系): Person
+			properties:
+				transDate(交易日期): Text
+				transAmt(交易金额): Integer
+		developed(开发): App
+			rule: [[
+			        Define (s:Person)-[p:developed]->(o:App) {
+				        STRUCTURE {
+				          	(s)-[:hasDevice]->(d:Device)-[:install]->(o)
+				        }
+						CONSTRAINT {
+						   deviceNum = group(s,o).count(d)
+						   R1("设备超过5"): deviceNum > 5
+						}
+					}
+      			  ]]
+		release(发布): App
+			rule: [[
+			        Define (s:Person)-[p:release]->(o:App) {
+                        STRUCTURE {
+						    (s)-[:holdShare]->(c:Company),
+						    (c)-[:hasCert]->(cert:Cert)<-[useCert]-(o)
+					    }
+					    CONSTRAINT {
+					    }
+					}
+      			  ]]

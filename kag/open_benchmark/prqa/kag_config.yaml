@@ -1,0 +1,71 @@
+#------------project configuration start----------------#
+openie_llm: &openie_llm
+  api_key:
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
+  type: maas
+
+chat_llm: &chat_llm
+  api_key:
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1/
+  model: qwen-max-latest
+  type: maas
+
+vectorize_model: &vectorize_model
+  api_key:
+  base_url: https://api.siliconflow.cn/v1/
+  model: BAAI/bge-m3
+  type: openai
+  vector_dimensions: 1024
+vectorizer: *vectorize_model
+
+log:
+  level: INFO
+
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: zh
+  namespace: PRQA
+#------------project configuration end----------------#
+
+#------------kag-builder configuration start----------------#
+spo_runner:
+  chain:
+    mapping:
+      o_id_col: object
+      p_type_col: relation
+      s_id_col: subject
+      sub_property_col: properties
+      type: spo_mapping # kag.builder.component.mapping.spo_mapping.SPOMapping
+    type: structured_builder_chain # kag.builder.default_chain.DefaultStructuredBuilderChain
+    vectorizer:
+      type: batch_vectorizer # kag.builder.component.vectorizer.batch_vectorizer.BatchVectorizer
+      vectorize_model: *vectorize_model
+    writer:
+      type: kg_writer # kag.builder.component.writer.kg_writer.KGWriter
+  scanner:
+    type: pr_scanner # kag.builder.component.scanner.pr_scanner.PRScanner
+  num_threads_per_chain: 64
+  num_chains: 1
+#------------kag-builder configuration end----------------#
+
+#------------kag-solver configuration start----------------#
+prqa_executor: &prqa_executor
+  type: kag_prqa_executor
+  llm: *chat_llm
+  neo4j_user:
+  neo4j_password:
+
+kag_solver_pipeline:
+  type: kag_prqa_pipeline
+  planner:
+    type: kag_prqa_planner
+    llm: *chat_llm
+  executor: *prqa_executor
+  generator:
+    type: kag_prqa_generator
+    llm: *openie_llm
+
+#------------kag-solver configuration end----------------#

@@ -1,0 +1,60 @@
+namespace NetOperatorQA
+
+Document(原始doc): EntityType
+     properties:
+        desc(内容): Text
+            index: TextAndVector
+
+Chunk(文本块): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Document
+
+Outline(标题大纲): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Chunk
+        childOf(子标题): Outline
+
+Summary(文本摘要): EntityType
+     properties:
+        content(内容): Text
+          index: TextAndVector
+     relations:
+        sourceChunk(关联): Chunk
+        childOf(子摘要): Summary
+
+Table(表格): EntityType
+    properties:
+        content(内容): Text
+          index: TextAndVector
+        beforeText(前缀): Text
+          index: TextAndVector
+        afterText(后缀): Text
+          index: TextAndVector
+    relations:
+        sourceChunk(关联): Chunk
+
+KnowledgeUnit(知识单元): EntityType
+     properties:
+        structed(结构化文本): Text
+        ontology(领域本体): Text
+             index: Text
+        keywords(关键词): Text
+             index: Text
+        desc(内容): Text
+            index: TextAndVector
+     relations:
+        sourceChunk(归属于): Chunk
+        sourceDoc(归属于): Document
+
+AtomicQuery(原子问题):  EntityType
+     properties:
+     relations:
+        sourceChunk(归属于): Chunk
+        sourceDoc(归属于): Document
+        relatTo(关联): KnowledgeUnit

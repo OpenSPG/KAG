@@ -1,0 +1,24 @@
+#------------project configuration start----------------#
+pipeline_name: index_pipeline
+
+#------------kag-solver configuration start----------------#
+
+
+retriever_executor: &retriever_executor
+  type: kag_hybrid_retrieval_executor
+  retrievers: "{retrievers}"
+  merger:
+    type: kag_merger
+
+solver_pipeline:
+  type: index_pipeline
+  executors:
+    - *retriever_executor
+  generator:
+    type: llm_index_generator
+    llm_client: "{chat_llm}"
+    chunk_reranker:
+      type: rerank_by_vector
+      vectorize_model: "{vectorize_model}"
+      rerank_top_k: -1
+#------------kag-solver configuration end----------------#
