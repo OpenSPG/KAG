@@ -111,8 +111,8 @@ class TableExtractor(ExtractorABC):
                 "id": input_table_chunk.id,
                 "name": name,
                 "content": content,
-                "beforeText": before_text,
-                "afterText": after_text,
+                "before_text": before_text,
+                "after_text": after_text,
             },
         )
 
