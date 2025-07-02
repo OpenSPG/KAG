@@ -61,7 +61,7 @@ class Chunk:
             "type": (
                 self.type.value if isinstance(self.type, ChunkTypeEnum) else self.type
             ),
-            "properties": self.kwargs,
+            "properties": json.dumps(self.kwargs),
         }
 
     @classmethod
@@ -71,7 +71,9 @@ class Chunk:
             name=input_.get("name"),
             content=input_.get("content"),
             type=input_.get("type"),
-            **input_.get("properties", {}),
+            **json.loads(input_.get("properties", {}))
+            if isinstance(input_.get("properties"), str)
+            else input_.get("properties", {}),
         )
 
 
