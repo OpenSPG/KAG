@@ -42,6 +42,15 @@ from kag.solver.utils import init_prompt_with_fallback
 logger = logging.getLogger()
 
 
+def _wrapped_invoke(retriever, task, context, segment_name, kwargs):
+    start_time = time.time()
+    output = retriever.invoke(
+        task, context=context, segment_name=segment_name, **kwargs
+    )
+    elapsed_time = time.time() - start_time
+    return output, elapsed_time
+
+
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
     def __init__(
@@ -76,6 +85,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.context_select_prompt = context_select_prompt or PromptABC.from_config(
             {"type": "context_select_prompt"}
         )
+        self.with_llm_select = kwargs.get("with_llm_select", True)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1))
     def context_select_call(self, variables):
@@ -152,22 +162,30 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                         "FINISH",
                         component_name=retriever.name,
                     )
-
+                    # Record start time before submitting the task
+                    start_time = time.time()
                     # Prepare function and submit to thread pool
                     func = partial(
-                        retriever.invoke,
+                        _wrapped_invoke,
+                        retriever,
                         task,
-                        context=context,
-                        segment_name=tag_id,
-                        **kwargs,
+                        context,
+                        tag_id,
+                        kwargs.copy(),
                     )
                     future = executor.submit(func)
+                    # Save future, retriever, and start_time together
                     futures.append((future, retriever))
 
                 # Collect results from each future
                 for future, retriever in futures:
                     try:
-                        output = future.result()  # Wait for result
+                        output, elapsed_time = future.result()  # Wait for result
+
+                        # Log the elapsed time for this retriever
+                        logger.info(
+                            f"Retriever {retriever.name} executed in {elapsed_time:.2f} seconds"
+                        )
                         outputs.append(output)
 
                         # Log data report after successful execution
@@ -241,13 +259,18 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         selected_rel = list(set(selected_rel))
         formatted_docs = [str(rel) for rel in selected_rel]
         if retrieved_data.chunks:
-            try:
-                selected_chunks = self.context_select(task_query, retrieved_data.chunks)
-            except Exception as e:
-                logger.warning(
-                    f"select context failed {e}, we use default top 10 to summary",
-                    exc_info=True,
-                )
+            if self.with_llm_select:
+                try:
+                    selected_chunks = self.context_select(
+                        task_query, retrieved_data.chunks
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"select context failed {e}, we use default top 10 to summary",
+                        exc_info=True,
+                    )
+                    selected_chunks = retrieved_data.chunks[:10]
+            else:
                 selected_chunks = retrieved_data.chunks[:10]
             for doc in selected_chunks:
                 formatted_docs.append(f"{doc.content}")
@@ -403,7 +426,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 node_type=chunk.properties.get("__labels__"),
             )
             entity_prop = dict(chunk.properties) if chunk.properties else {}
-            entity_prop["content"] = chunk.content
+            entity_prop["content"] = f"{chunk.content[:10]}..."
             entity_prop["score"] = chunk.score
             entity.prop = Prop.from_dict(entity_prop, "Chunk", None)
             chunk_graph.append(entity)

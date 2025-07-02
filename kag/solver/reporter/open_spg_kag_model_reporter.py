@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 
 from kag.common.conf import KAG_PROJECT_CONF
 from kag.common.parser.logic_node_parser import extract_steps_and_actions
@@ -72,14 +73,16 @@ def process_tag_template(text):
         }
         clean_text = ""
         for tag_info in all_tags:
+            content = tag_info[1]
             if tag_info[0] in xml_tag_template:
-                content = tag_info[1]
                 if "search" == tag_info[0]:
                     content = process_planning(content)
                 clean_text += xml_tag_template[tag_info[0]][
                     KAG_PROJECT_CONF.language
                 ].format_map(SafeDict({"content": content}))
-        return remove_xml_tags(clean_text)
+            else:
+                clean_text += content
+        text = remove_xml_tags(clean_text)
     return text
 
 

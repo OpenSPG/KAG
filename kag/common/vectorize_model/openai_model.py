@@ -54,7 +54,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         self.aclient = AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     @classmethod
-    def generate_key(cls, base_url, api_key, model, *args, **kwargs) -> str:
+    def generate_key(cls, base_url, model, api_key="", *args, **kwargs) -> str:
         return f"{cls}_{base_url}_{api_key}_{model}"
 
     def vectorize(

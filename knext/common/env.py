@@ -48,13 +48,16 @@ class Environment:
     @property
     def config(self):
 
-        closest_config = self._closest_config()
-        if not hasattr(self, "_config_path") or self._config_path != closest_config:
-            self._config_path = closest_config
-            self._config = self.get_config()
+        try:
+            closest_config = self._closest_config()
+            if not hasattr(self, "_config_path") or self._config_path != closest_config:
+                self._config_path = closest_config
+                self._config = self.get_config()
 
-        if self._config is None:
-            self._config = self.get_config()
+            if self._config is None:
+                self._config = self.get_config()
+        except:
+            return {}
 
         return self._config
 
