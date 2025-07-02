@@ -45,7 +45,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             base_url (str, optional): The base URL for the OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        name = self.generate_key(api_key, base_url, model)
+        name = self.generate_key(api_key if api_key else "abc123", base_url, model)
 
         super().__init__(name, vector_dimensions, max_rate, time_period)
         self.model = model
@@ -54,8 +54,8 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         self.aclient = AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     @classmethod
-    def generate_key(cls, base_url, api_key, model, *args, **kwargs) -> str:
-        return f"{cls}_{base_url}_{api_key}_{model}"
+    def generate_key(cls, base_url, model, *args, **kwargs) -> str:
+        return f"{cls}_{base_url}_{model}"
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]
