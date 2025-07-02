@@ -75,7 +75,7 @@ class KGWriter(SinkWriterABC):
         Returns:
             str: The formatted label.
         """
-        namespace = KAG_PROJECT_CONF.namespace
+        namespace = self.kag_project_config.namespace
         if label.split(".")[0] == namespace:
             return label
         return f"{namespace}.{label}"
