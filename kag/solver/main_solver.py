@@ -140,8 +140,6 @@ def get_pipeline_conf(use_pipeline_name, config):
             raise RuntimeError("mcpServers not found in config.")
         default_solver_pipeline["executors"] = mcp_executors
 
-    # update KAG_CONFIG
-    KAG_CONFIG.update_conf(default_pipeline_conf)
     return default_solver_pipeline
 
 
@@ -339,7 +337,7 @@ class SolverMain:
     def invoke(
         self,
         project_id: int,
-        task_id: int,
+        task_id,
         query: str,
         session_id: str = "0",
         is_report=True,

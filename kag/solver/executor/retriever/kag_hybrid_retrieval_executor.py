@@ -303,68 +303,71 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         task_query = task.arguments["query"]
 
         tag_id = f"{task_query}_begin_task"
-        self.report_content(reporter, "thinker", tag_id, "", "FINISH", step=task.name)
+        self.report_content(reporter, "thinker", tag_id, "", "INIT", step=task.name)
         try:
-            retrieved_data = self.do_main(task_query, tag_id, task, context, **kwargs)
-        except Exception as e:
-            logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
-            retrieved_data = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=str(e)
-            )
-
-        self.report_content(
-            reporter,
-            "reference",
-            f"{task_query}_kag_retriever_result",
-            retrieved_data,
-            "FINISH",
-        )
-
-        retrieved_data.task = task
-        logical_node = task.arguments.get("logic_form_node", None)
-        if (
-            logical_node
-            and isinstance(logical_node, GetSPONode)
-            and retrieved_data.summary
-        ):
-            if isinstance(retrieved_data.summary, str):
-                target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
-                s_entities = context.variables_graph.get_entity_by_alias(
-                    logical_node.s.alias_name
+            try:
+                retrieved_data = self.do_main(task_query, tag_id, task, context, **kwargs)
+            except Exception as e:
+                logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
+                retrieved_data = RetrieverOutput(
+                    retriever_method=self.schema().get("name", ""), err_msg=str(e)
                 )
-                if (
-                    not s_entities
-                    and not logical_node.s.get_mention_name()
-                    and isinstance(logical_node.s, SPOEntity)
-                ):
-                    logical_node.s.entity_name = target_answer
-                    context.kwargs[logical_node.s.alias_name] = logical_node.s
-                o_entities = context.variables_graph.get_entity_by_alias(
-                    logical_node.o.alias_name
+
+            self.report_content(
+                reporter,
+                "reference",
+                f"{task_query}_kag_retriever_result",
+                retrieved_data,
+                "FINISH",
+            )
+
+            retrieved_data.task = task
+            logical_node = task.arguments.get("logic_form_node", None)
+            if (
+                logical_node
+                and isinstance(logical_node, GetSPONode)
+                and retrieved_data.summary
+            ):
+                if isinstance(retrieved_data.summary, str):
+                    target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
+                    s_entities = context.variables_graph.get_entity_by_alias(
+                        logical_node.s.alias_name
+                    )
+                    if (
+                        not s_entities
+                        and not logical_node.s.get_mention_name()
+                        and isinstance(logical_node.s, SPOEntity)
+                    ):
+                        logical_node.s.entity_name = target_answer
+                        context.kwargs[logical_node.s.alias_name] = logical_node.s
+                    o_entities = context.variables_graph.get_entity_by_alias(
+                        logical_node.o.alias_name
+                    )
+                    if (
+                        not o_entities
+                        and not logical_node.o.get_mention_name()
+                        and isinstance(logical_node.o, SPOEntity)
+                    ):
+                        logical_node.o.entity_name = target_answer
+                        context.kwargs[logical_node.o.alias_name] = logical_node.o
+
+                context.variables_graph.add_answered_alias(
+                    logical_node.s.alias_name.alias_name, retrieved_data.summary
                 )
-                if (
-                    not o_entities
-                    and not logical_node.o.get_mention_name()
-                    and isinstance(logical_node.o, SPOEntity)
-                ):
-                    logical_node.o.entity_name = target_answer
-                    context.kwargs[logical_node.o.alias_name] = logical_node.o
+                context.variables_graph.add_answered_alias(
+                    logical_node.p.alias_name.alias_name, retrieved_data.summary
+                )
+                context.variables_graph.add_answered_alias(
+                    logical_node.o.alias_name.alias_name, retrieved_data.summary
+                )
 
-            context.variables_graph.add_answered_alias(
-                logical_node.s.alias_name.alias_name, retrieved_data.summary
+            task.update_result(retrieved_data)
+            logger.debug(
+                f"kag hybrid retrieval {task_query} cost={time.time() - start_time}"
             )
-            context.variables_graph.add_answered_alias(
-                logical_node.p.alias_name.alias_name, retrieved_data.summary
-            )
-            context.variables_graph.add_answered_alias(
-                logical_node.o.alias_name.alias_name, retrieved_data.summary
-            )
-
-        task.update_result(retrieved_data)
-        logger.debug(
-            f"kag hybrid retrieval {task_query} cost={time.time() - start_time}"
-        )
-        return retrieved_data
+            return retrieved_data
+        finally:
+            self.report_content(reporter, "thinker", tag_id, "", "FINISH", step=task.name, overwrite=False,)
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling
