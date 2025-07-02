@@ -100,8 +100,8 @@ class TableExtractor(ExtractorABC):
         file_name = input_table_chunk.kwargs.get("file_name", "")
         name = f"{file_name} / {input_table_chunk.name}"
         content = f"{name}\n{input_table_chunk.content}"
-        before_text = input_table_chunk.metadata.get("before_text", "")
-        after_text = input_table_chunk.metadata.get("after_text", "")
+        before_text = getattr(input_table_chunk, "before_text", "")
+        after_text = getattr(input_table_chunk, "after_text", "")
         sub_graph = SubGraph(nodes=[], edges=[])
         sub_graph.add_node(
             input_table_chunk.id,
@@ -111,8 +111,8 @@ class TableExtractor(ExtractorABC):
                 "id": input_table_chunk.id,
                 "name": name,
                 "content": content,
-                "beforeText": before_text,
-                "afterText": after_text,
+                "before_text": before_text,
+                "after_text": after_text,
             },
         )
 
@@ -155,8 +155,8 @@ class TableExtractor(ExtractorABC):
     def _get_table_context_str(self, table_chunk: Chunk):
         file_name = table_chunk.kwargs.get("file_name", "")
         section = table_chunk.name
-        before_text = table_chunk.kwargs["metadata"].get("before_text", "")
-        after_text = table_chunk.kwargs["metadata"].get("after_text", "")
+        before_text = getattr(table_chunk, "before_text", "")
+        after_text = getattr(table_chunk, "after_text", "")
         return (
             file_name
             + "\n"
