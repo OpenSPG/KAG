@@ -47,7 +47,6 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         """
         api_key = api_key if api_key else "abc123"
         name = self.generate_key(base_url, model, api_key)
-
         super().__init__(name, vector_dimensions, max_rate, time_period)
         self.model = model
         self.timeout = timeout
@@ -57,7 +56,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
         )
 
     @classmethod
-    def generate_key(cls, base_url, model, api_key="") -> str:
+    def generate_key(cls, base_url, model, api_key, *args, **kwargs) -> str:
         return f"{cls}_{base_url}_{model}_{api_key}"
 
     def vectorize(
@@ -268,5 +267,5 @@ if __name__ == "__main__":
         model="bge-m3", base_url="http://localhost:11434/v1"
     )
     texts = ["Hello, world!", "Hello, world!", "Hello, world!"]
-    embeddings = vectorize_model.vectorize(texts)
+    embeddings = vectorize_model.vectorize("texts")
     print(embeddings)
