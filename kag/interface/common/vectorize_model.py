@@ -38,6 +38,10 @@ class VectorizeModelABC(Registrable):
     _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
+        if "api_key" in kwargs:
+            pass
+        else:
+            kwargs["api_key"] = "abc123"
         key = cls.generate_key(*args, **kwargs)
 
         if key in cls._instances:

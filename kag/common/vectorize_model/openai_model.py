@@ -28,7 +28,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        api_key: str = "",
+        api_key: str = None,
         base_url: str = "",
         vector_dimensions: int = None,
         timeout: float = None,
@@ -45,17 +45,19 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             base_url (str, optional): The base URL for the OpenAI service. Defaults to "".
             vector_dimensions (int, optional): The number of dimensions for the embedding vectors. Defaults to None.
         """
-        name = self.generate_key(api_key, base_url, model)
-
+        api_key = api_key if api_key else "abc123"
+        name = self.generate_key(base_url, model, api_key)
         super().__init__(name, vector_dimensions, max_rate, time_period)
         self.model = model
         self.timeout = timeout
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
-        self.aclient = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=self.timeout)
+        self.aclient = AsyncOpenAI(
+            api_key=api_key, base_url=base_url, timeout=self.timeout
+        )
 
     @classmethod
-    def generate_key(cls, base_url, api_key, model, *args, **kwargs) -> str:
-        return f"{cls}_{base_url}_{api_key}_{model}"
+    def generate_key(cls, base_url, model, api_key, *args, **kwargs) -> str:
+        return f"{cls}_{base_url}_{model}_{api_key}"
 
     def vectorize(
         self, texts: Union[str, Iterable[str]]
@@ -84,7 +86,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
                     return [[] for _ in texts]  # Return empty vectors for all inputs
 
                 results = self.client.embeddings.create(
-                    input=filtered_texts, model=self.model, timeout=self.timeout
+                    input=filtered_texts, model=self.model
                 )
 
                 # Reconstruct the results with empty lists for empty strings
@@ -103,9 +105,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             elif isinstance(texts, str) and not texts.strip():
                 return []  # Return empty vector for empty string
             else:
-                results = self.client.embeddings.create(
-                    input=texts, model=self.model, timeout=self.timeout
-                )
+                results = self.client.embeddings.create(input=texts, model=self.model)
         except Exception as e:
             logger.error(f"Error: {e}")
             logger.error(f"input: {texts}")
@@ -136,7 +136,7 @@ class OpenAIVectorizeModel(VectorizeModelABC):
             texts = [text if text.strip() != "" else "none" for text in texts]
             try:
                 results = await self.aclient.embeddings.create(
-                    input=texts, model=self.model, timeout=self.timeout
+                    input=texts, model=self.model
                 )
             except Exception as e:
                 logger.error(f"Error: {e}")
@@ -199,6 +199,7 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
             api_version=api_version,
             azure_ad_token=azure_ad_token,
             azure_ad_token_provider=azure_ad_token_provider,
+            timeout=self.timeout,
         )
         self.aclient = AsyncAzureOpenAI(
             api_key=api_key,
@@ -208,6 +209,7 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
             api_version=api_version,
             azure_ad_token=azure_ad_token,
             azure_ad_token_provider=azure_ad_token_provider,
+            timeout=self.timeout,
         )
 
     @classmethod
@@ -226,9 +228,7 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
         Returns:
             Union[EmbeddingVector, Iterable[EmbeddingVector]]: The embedding vector(s) of the text(s).
         """
-        results = self.client.embeddings.create(
-            input=texts, model=self.model, timeout=self.timeout
-        )
+        results = self.client.embeddings.create(input=texts, model=self.model)
         results = [item.embedding for item in results.data]
         if isinstance(texts, str):
             assert len(results) == 1
@@ -251,7 +251,7 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
         """
         async with self.limiter:
             results = await self.aclient.embeddings.create(
-                input=texts, model=self.model, timeout=self.timeout
+                input=texts, model=self.model
             )
         results = [item.embedding for item in results.data]
         if isinstance(texts, str):
@@ -260,3 +260,12 @@ class AzureOpenAIVectorizeModel(VectorizeModelABC):
         else:
             assert len(results) == len(texts)
             return results
+
+
+if __name__ == "__main__":
+    vectorize_model = OpenAIVectorizeModel(
+        model="bge-m3", base_url="http://localhost:11434/v1"
+    )
+    texts = ["Hello, world!", "Hello, world!", "Hello, world!"]
+    embeddings = vectorize_model.vectorize("texts")
+    print(embeddings)
