@@ -11,42 +11,49 @@ logger = logging.getLogger(__name__)
 class ExpressionBuildr(PromptABC):
     template_zh = (
         f"今天是{get_now(language='zh')}。"
-        + """\n# instruction
+        + """
+# instruction
 根据给出的问题和数据，编写python代码，输出问题结果。
-为了便于理解，输出从context中提取的数据，输出中间计算过程和结果。
-注意严格根据输入内容进行编写代码,不允许进行假设
-例如伤残等级如果context中未提及,则认为没有被认定为残疾
-如果无法回答问题，直接返回：I don't know.
+从context中提取的数据必须显式赋值，所有计算步骤必须用代码实现，不得隐含推断。
+必须输出中间计算过程和结果，格式为print语句。
+如果context未提供必要数据或无法计算，直接打印"I don't know."
 
 # output format
-直接输出python代码，python版本为3.10，不要包含任何其他信息
+严格输出以下结构的python代码（版本3.10）：
+1. 数据提取部分：代码中涉及输入的数值需要从context及question中提取，不允许进行假设
+2. 计算过程：分步实现所有数学运算，每个步骤对应独立变量
+3. 输出：每个中间变量和最终结果必须用print语句输出
 
 # examples
 ## 例子1
 ### input
 #### question
-47000元按照万分之1.5一共612天，计算利息，一共多少钱？
+4百万元按照日利率万分之1.5，一共612天，计算利息，一共多少钱？
+#### context
+日利率万分之1.5
 ### output
 ```python
-# 初始本金
-principal = 47000
+# 初始本金（单位：百万）
+principal = 4  # 单位：百万
 
-# 利率（万分之1.5）
-rate = 1.5 / 10000
+# 日利率计算（万分之1.5）
+daily_rate = 1.5 / 10000
 
-# 天数
+# 计算周期
 days = 612
 
-# 计算年利率
-annual_rate = rate * 365
+# 单日利息计算
+daily_interest = principal * daily_rate
 
-# 计算利息
-interest = principal * (annual_rate / 365) * days
+# 累计利息计算
+total_interest = daily_interest * days
 
-# 输出总金额（本金+利息）
-total_amount = principal + interest
+# 总金额计算
+total_amount = principal + total_interest
 
-print(f"总金额：{total_amount:.2f}元")
+print(f"单日利息：{daily_interest:.2f}百万")
+print(f"累计利息：{total_interest:.2f}百万")
+print(f"总金额：{total_amount:.2f}百万")
 ```
 
 ## 例子2
@@ -70,13 +77,26 @@ revenue_2020 = revenue_2019 * (1 + growth_rate)
 print(f"2020年的预计收入为: {revenue_2020:.2f}万")
 ```
 
+## 例子3
+### input
+#### question
+47000元按照612天计算利息，本息一共多少钱？
+#### content
+
+### output
+```python
+# 未给出利率，无法计算
+print("未给出利率，无法计算")
+```
 # input
 ## question
 $question
 ## context
 $context
 ## error
-        $error"""
+$error
+## output
+"""
     )
     template_en = (
         f"Today is {get_now(language='en')}。\n"

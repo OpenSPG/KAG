@@ -548,7 +548,7 @@ Rewritten question:
             if self.last_report.to_dict() == request.to_dict():
                 return
             logger.info(
-                f"do_report: {content.answer} think={content.think} status={status_enum} ret={ret}"
+                f"do_report: think={content.think} {content.answer} status={status_enum} ret={ret}"
             )
             self.last_report = request
 

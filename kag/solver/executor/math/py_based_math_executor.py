@@ -131,9 +131,11 @@ class PyBasedMathExecutor(ExecutorABC):
         )
 
         parent_results = format_task_dep_context(task.parents)
-        parent_results = "\n".join(parent_results)
+        coder_content = context.kwargs.get("planner_thought", "") + "\n\n".join(
+            parent_results
+        )
 
-        parent_results += "\n\n" + contents
+        coder_content += "\n\n" + contents
         tries = self.tries
         error = None
 
@@ -141,7 +143,7 @@ class PyBasedMathExecutor(ExecutorABC):
             tries -= 1
             rst, error, code = self.run_once(
                 math_query,
-                parent_results,
+                coder_content,
                 error,
                 segment_name=tag_id,
                 tag_name=f"{task_query}_code_generator",
