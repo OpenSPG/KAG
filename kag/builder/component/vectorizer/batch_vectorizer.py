@@ -75,7 +75,7 @@ class EmbeddingVectorManager(object):
             field_name = get_sparse_vector_field_name(property_key)
             if field_name != vector_field:
                 continue
-            if property_value is None:
+            if property_value is None or property_value == "":
                 return None
             if not isinstance(property_value, str):
                 property_value = str(property_value)
