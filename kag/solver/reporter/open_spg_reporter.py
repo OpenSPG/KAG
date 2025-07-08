@@ -159,12 +159,12 @@ def render_jinja2_template(template_str, context):
     """
     try:
         template = Template(template_str, undefined=SilentUndefined)
-        return template.render(**context).strip()
+        return template.render(**context)
     except Exception as e:
         logging.error(
             f"Jinja2 rendering failed: {e}, Original template: {template_str}"
         )
-        return template_str.strip()  # Fallback to raw template string on failure
+        return template_str  # Fallback to raw template string on failure
 
 
 @ReporterABC.register("open_spg_reporter")
@@ -264,12 +264,12 @@ Rerank the documents and take the top {{ chunk_num }}.
         }
         self.tag_mapping = {
             "Graph Show": {
-                "en": "{content}",
-                "zh": "{content}",
+                "en": "{{ content }}",
+                "zh": "{{ content }}",
             },
             "Rewrite query": {
-                "en": "Rethinking question using LLM: {content}",
-                "zh": "根据依赖问题重写子问题: {content}",
+                "en": "Rethinking question using LLM: {{ content }}",
+                "zh": "根据依赖问题重写子问题: {{ content }}",
             },
             "language_setting": {
                 "en": "",
@@ -277,125 +277,153 @@ Rerank the documents and take the top {{ chunk_num }}.
             },
             "Iterative planning": {
                 "en": """
-<step status="{status}" title="Global planning">
+<step status="{{status}}" title="Global planning">
 
-{content}
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
                 "zh": """
-<step status="{status}" title="思考当前步骤">
+<step status="{{status}}" title="思考当前步骤">
 
-{content}
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
             },
             "Static planning": {
                 "en": """
-<step status="{status}" title="Global planning">
+<step status="{{status}}" title="Global planning">
 
-{content}
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
                 "zh": """
-<step status="{status}" title="思考全局步骤">
+<step status="{{status}}" title="思考全局步骤">
 
-{content}
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
             },
             "begin_sub_kag_retriever": {
-                "en": "Starting {component_name}: {content} {desc}",
-                "zh": "执行{component_name}: {content} {desc}",
+                "en": "Starting {{component_name}}: {{content}} {{desc}}",
+                "zh": "执行{{component_name}}: {{content}} {{desc}}",
             },
             "end_sub_kag_retriever": {
-                "en": " {content}",
-                "zh": " {content}",
+                "en": " {{ content }}",
+                "zh": " {{ content }}",
             },
             "rc_retriever_rewrite": {
                 "en": """
-<step status="{status}" title="Rewriting chunk retriever query">
+<step status="{{status}}" title="Rewriting chunk retriever query">
 
-Rewritten question:\n{content}
+Rewritten question:
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
                 "zh": """
-<step status="{status}" title="正在根据依赖问题重写检索子问题">
+<step status="{{status}}" title="正在根据依赖问题重写检索子问题">
 
-重写问题为：\n\n{content}
+重写问题为：
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
             },
             "rc_retriever_summary": {
-                "en": "Summarizing retrieved documents,{content}",
-                "zh": "对文档进行总结，{content}",
+                "en": "Summarizing retrieved documents,{{ content }}",
+                "zh": "对文档进行总结，{{ content }}",
             },
             "kg_retriever_summary": {
-                "en": "Summarizing retrieved graph,{content}",
-                "zh": "对召回的知识进行总结，{content}",
+                "en": "Summarizing retrieved graph,{{ content }}",
+                "zh": "对召回的知识进行总结，{{ content }}",
             },
             "retriever_summary": {
-                "en": "Summarizing retrieved documents,{content}",
-                "zh": "对文档进行总结，{content}",
+                "en": "Summarizing retrieved documents,{{ content }}",
+                "zh": "对文档进行总结，{{ content }}",
             },
             "begin_summary": {
-                "en": "Summarizing retrieved information, {content}",
-                "zh": "对检索的信息进行总结, {content}",
+                "en": "Summarizing retrieved information, {{ content }}",
+                "zh": "对检索的信息进行总结, {{ content }}",
             },
             "begin_task": {
                 "en": """
-<step status="{status}" title="Starting Task {step}">
+<step status="{{status}}" title="Starting Task {{step}}">
 
-{content}
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
                 "zh": """
-<step status="{status}" title="执行 {step}">
+<step status="{{status}}" title="执行 {{step}}">
 
-{content}
+{{ content }}
 
-</step>""",
+{% if status == 'success' %}
+</step>
+{% endif %}""",
             },
             "logic_node": {
                 "en": """Translate query to logic form expression
 
 
 ```json
-{content}
+{{ content }}
 ```""",
                 "zh": """将query转换成逻辑形式表达
 
 
 ```json
-{content}
+{{ content }}
 ```""",
             },
             "kag_retriever_result": {
-                "en": "Retrieved documents\n\n{content}",
-                "zh": "检索到的文档\n\n{content}",
+                "en": """Retrieved documents
+{{ content }}""",
+                "zh": """检索到的文档
+{{ content }}""",
             },
             "failed_kag_retriever": {
                 "en": """KAG retriever failed
 
 
 ```json
-{content}
+{{ content }}
 ```
 """,
                 "zh": """KAG检索失败
 
 
 ```json
-{content}
+{{ content }}
 ```
                 """,
             },
             "end_math_executor": {
-                "en": "Math executor completed\n\n{content}",
-                "zh": "计算结束\n\n{content}",
+                "en": """Math executor completed
+{{ content }}""",
+                "zh": """计算结束
+{{ content }}""",
             },
             "code_generator": {
-                "en": "Generating code\n \n{content}\n",
-                "zh": "正在生成代码\n \n{content}\n",
+                "en": """Generating code
+{{ content }}
+
+""",
+                "zh": """正在生成代码
+{{ content }}
+
+""",
             },
         }
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
@@ -425,7 +453,11 @@ Rewritten question:\n{content}
         if tpl:
             format_params = {"content": datas}
             format_params.update(content_params)
-            datas = tpl.format_map(SafeDict(format_params))
+            if "{" in tpl or "%}" in tpl:
+                rendered = render_jinja2_template(tpl, format_params)
+            else:
+                rendered = tpl.format_map(SafeDict(format_params))
+            datas = rendered
         elif str(datas).strip() != "":
             output = str(datas).strip()
             if output != "":
@@ -516,7 +548,7 @@ Rewritten question:\n{content}
             if self.last_report.to_dict() == request.to_dict():
                 return
             logger.info(
-                f"do_report: {content.answer} think={content.think} status={status_enum} ret={ret}"
+                f"do_report: think={content.think} {content.answer} status={status_enum} ret={ret}"
             )
             self.last_report = request
 

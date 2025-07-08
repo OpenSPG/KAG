@@ -463,9 +463,17 @@ def resolve_instance(
 
 
 def extract_tag_content(text):
-    # 匹配<tag>和</tag>之间的内容，支持任意标签名
-    matches = re.findall(r"<([^>]+)>(.*?)</\1>", text, flags=re.DOTALL)
-    return [(tag, content.strip()) for tag, content in matches]
+    pattern = r"<(\w+)\b[^>]*>(.*?)</\1>|<(\w+)\b[^>]*>([^<]*)|([^<]+)"
+    results = []
+    for match in re.finditer(pattern, text, re.DOTALL):
+        tag1, content1, tag2, content2, raw_text = match.groups()
+        if tag1:
+            results.append((tag1, content1))  # 保留原始内容（含空格）
+        elif tag2:
+            results.append((tag2, content2))  # 保留原始内容（含空格）
+        elif raw_text:
+            results.append(("", raw_text))  # 保留原始空格
+    return results
 
 
 def extract_specific_tag_content(text, tag):

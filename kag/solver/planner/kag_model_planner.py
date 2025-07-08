@@ -186,6 +186,7 @@ class KAGModelPlanner(PlannerABC):
             .replace("</answer>", "")
             .strip()
         )
+        context.kwargs["planner_thought"] = logic_form_response
 
         sub_queries, logic_forms = parse_logic_form_with_str(logic_form_str)
         logic_forms = self.logic_node_parser.parse_logic_form_set(

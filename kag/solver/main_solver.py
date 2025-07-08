@@ -140,8 +140,6 @@ def get_pipeline_conf(use_pipeline_name, config):
             raise RuntimeError("mcpServers not found in config.")
         default_solver_pipeline["executors"] = mcp_executors
 
-    # update KAG_CONFIG
-    KAG_CONFIG.update_conf(default_pipeline_conf)
     return default_solver_pipeline
 
 
@@ -167,8 +165,11 @@ async def do_qa_pipeline(
                     f"Knowledge base with id {kb_project_id} not found in qa_config['kb']"
                 )
                 continue
-
-            for index_name in matched_kb.get("index_list", []):
+            index_list = matched_kb.get("index_list", [])
+            if use_pipeline in ["default_pipeline"]:
+                # we only use chunk index
+                index_list = ["chunk_index"]
+            for index_name in index_list:
                 index_manager = KAGIndexManager.from_config(
                     {
                         "type": index_name,
@@ -339,7 +340,7 @@ class SolverMain:
     def invoke(
         self,
         project_id: int,
-        task_id: int,
+        task_id,
         query: str,
         session_id: str = "0",
         is_report=True,

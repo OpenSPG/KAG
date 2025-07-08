@@ -42,6 +42,15 @@ from kag.solver.utils import init_prompt_with_fallback
 logger = logging.getLogger()
 
 
+def _wrapped_invoke(retriever, task, context, segment_name, kwargs):
+    start_time = time.time()
+    output = retriever.invoke(
+        task, context=context, segment_name=segment_name, **kwargs
+    )
+    elapsed_time = time.time() - start_time
+    return output, elapsed_time
+
+
 @ExecutorABC.register("kag_hybrid_retrieval_executor")
 class KAGHybridRetrievalExecutor(ExecutorABC):
     def __init__(
@@ -76,6 +85,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.context_select_prompt = context_select_prompt or PromptABC.from_config(
             {"type": "context_select_prompt"}
         )
+        self.with_llm_select = kwargs.get("with_llm_select", True)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1))
     def context_select_call(self, variables):
@@ -152,22 +162,30 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                         "FINISH",
                         component_name=retriever.name,
                     )
-
+                    # Record start time before submitting the task
+                    start_time = time.time()
                     # Prepare function and submit to thread pool
                     func = partial(
-                        retriever.invoke,
+                        _wrapped_invoke,
+                        retriever,
                         task,
-                        context=context,
-                        segment_name=tag_id,
-                        **kwargs,
+                        context,
+                        tag_id,
+                        kwargs.copy(),
                     )
                     future = executor.submit(func)
+                    # Save future, retriever, and start_time together
                     futures.append((future, retriever))
 
                 # Collect results from each future
                 for future, retriever in futures:
                     try:
-                        output = future.result()  # Wait for result
+                        output, elapsed_time = future.result()  # Wait for result
+
+                        # Log the elapsed time for this retriever
+                        logger.info(
+                            f"Retriever {retriever.name} executed in {elapsed_time:.2f} seconds"
+                        )
                         outputs.append(output)
 
                         # Log data report after successful execution
@@ -241,13 +259,18 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         selected_rel = list(set(selected_rel))
         formatted_docs = [str(rel) for rel in selected_rel]
         if retrieved_data.chunks:
-            try:
-                selected_chunks = self.context_select(task_query, retrieved_data.chunks)
-            except Exception as e:
-                logger.warning(
-                    f"select context failed {e}, we use default top 10 to summary",
-                    exc_info=True,
-                )
+            if self.with_llm_select:
+                try:
+                    selected_chunks = self.context_select(
+                        task_query, retrieved_data.chunks
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"select context failed {e}, we use default top 10 to summary",
+                        exc_info=True,
+                    )
+                    selected_chunks = retrieved_data.chunks[:10]
+            else:
                 selected_chunks = retrieved_data.chunks[:10]
             for doc in selected_chunks:
                 formatted_docs.append(f"{doc.content}")
@@ -280,68 +303,81 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         task_query = task.arguments["query"]
 
         tag_id = f"{task_query}_begin_task"
-        self.report_content(reporter, "thinker", tag_id, "", "FINISH", step=task.name)
+        self.report_content(reporter, "thinker", tag_id, "", "INIT", step=task.name)
         try:
-            retrieved_data = self.do_main(task_query, tag_id, task, context, **kwargs)
-        except Exception as e:
-            logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
-            retrieved_data = RetrieverOutput(
-                retriever_method=self.schema().get("name", ""), err_msg=str(e)
-            )
-
-        self.report_content(
-            reporter,
-            "reference",
-            f"{task_query}_kag_retriever_result",
-            retrieved_data,
-            "FINISH",
-        )
-
-        retrieved_data.task = task
-        logical_node = task.arguments.get("logic_form_node", None)
-        if (
-            logical_node
-            and isinstance(logical_node, GetSPONode)
-            and retrieved_data.summary
-        ):
-            if isinstance(retrieved_data.summary, str):
-                target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
-                s_entities = context.variables_graph.get_entity_by_alias(
-                    logical_node.s.alias_name
+            try:
+                retrieved_data = self.do_main(
+                    task_query, tag_id, task, context, **kwargs
                 )
-                if (
-                    not s_entities
-                    and not logical_node.s.get_mention_name()
-                    and isinstance(logical_node.s, SPOEntity)
-                ):
-                    logical_node.s.entity_name = target_answer
-                    context.kwargs[logical_node.s.alias_name] = logical_node.s
-                o_entities = context.variables_graph.get_entity_by_alias(
-                    logical_node.o.alias_name
+            except Exception as e:
+                logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
+                retrieved_data = RetrieverOutput(
+                    retriever_method=self.schema().get("name", ""), err_msg=str(e)
                 )
-                if (
-                    not o_entities
-                    and not logical_node.o.get_mention_name()
-                    and isinstance(logical_node.o, SPOEntity)
-                ):
-                    logical_node.o.entity_name = target_answer
-                    context.kwargs[logical_node.o.alias_name] = logical_node.o
 
-            context.variables_graph.add_answered_alias(
-                logical_node.s.alias_name.alias_name, retrieved_data.summary
-            )
-            context.variables_graph.add_answered_alias(
-                logical_node.p.alias_name.alias_name, retrieved_data.summary
-            )
-            context.variables_graph.add_answered_alias(
-                logical_node.o.alias_name.alias_name, retrieved_data.summary
+            self.report_content(
+                reporter,
+                "reference",
+                f"{task_query}_kag_retriever_result",
+                retrieved_data,
+                "FINISH",
             )
 
-        task.update_result(retrieved_data)
-        logger.debug(
-            f"kag hybrid retrieval {task_query} cost={time.time() - start_time}"
-        )
-        return retrieved_data
+            retrieved_data.task = task
+            logical_node = task.arguments.get("logic_form_node", None)
+            if (
+                logical_node
+                and isinstance(logical_node, GetSPONode)
+                and retrieved_data.summary
+            ):
+                if isinstance(retrieved_data.summary, str):
+                    target_answer = retrieved_data.summary.split("Answer:")[-1].strip()
+                    s_entities = context.variables_graph.get_entity_by_alias(
+                        logical_node.s.alias_name
+                    )
+                    if (
+                        not s_entities
+                        and not logical_node.s.get_mention_name()
+                        and isinstance(logical_node.s, SPOEntity)
+                    ):
+                        logical_node.s.entity_name = target_answer
+                        context.kwargs[logical_node.s.alias_name] = logical_node.s
+                    o_entities = context.variables_graph.get_entity_by_alias(
+                        logical_node.o.alias_name
+                    )
+                    if (
+                        not o_entities
+                        and not logical_node.o.get_mention_name()
+                        and isinstance(logical_node.o, SPOEntity)
+                    ):
+                        logical_node.o.entity_name = target_answer
+                        context.kwargs[logical_node.o.alias_name] = logical_node.o
+
+                context.variables_graph.add_answered_alias(
+                    logical_node.s.alias_name.alias_name, retrieved_data.summary
+                )
+                context.variables_graph.add_answered_alias(
+                    logical_node.p.alias_name.alias_name, retrieved_data.summary
+                )
+                context.variables_graph.add_answered_alias(
+                    logical_node.o.alias_name.alias_name, retrieved_data.summary
+                )
+
+            task.update_result(retrieved_data)
+            logger.debug(
+                f"kag hybrid retrieval {task_query} cost={time.time() - start_time}"
+            )
+            return retrieved_data
+        finally:
+            self.report_content(
+                reporter,
+                "thinker",
+                tag_id,
+                "",
+                "FINISH",
+                step=task.name,
+                overwrite=False,
+            )
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling
@@ -403,7 +439,7 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
                 node_type=chunk.properties.get("__labels__"),
             )
             entity_prop = dict(chunk.properties) if chunk.properties else {}
-            entity_prop["content"] = chunk.content
+            entity_prop["content"] = f"{chunk.content[:10]}..."
             entity_prop["score"] = chunk.score
             entity.prop = Prop.from_dict(entity_prop, "Chunk", None)
             chunk_graph.append(entity)
