@@ -22,7 +22,7 @@ numpy>=1.23.1
 pypdf
 pandas
 pycryptodome
-markdown
+markdown==3.7
 bs4
 protobuf==3.20.1
 neo4j
