@@ -3,20 +3,17 @@ pipeline_name: default_pipeline
 
 #------------kag-solver configuration start----------------#
 
-
-chunk_retrieved_executor: &chunk_retrieved_executor_conf
-  type: chunk_retrieved_executor
-  top_k: 10
-  retriever:
-    type: vector_chunk_retriever
-    score_threshold: 0.65
-    vectorize_model: "{vectorize_model}"
-
+kag_retriever_executor: &kag_retriever_executor_conf
+  type: kag_hybrid_retrieval_executor
+  retrievers: "{retrievers}"
+  merger:
+    type: kag_merger
+  enable_summary:  false
 
 solver_pipeline:
   type: naive_rag_pipeline
   executors:
-    - *chunk_retrieved_executor_conf
+    - *kag_retriever_executor_conf
   generator:
     type: llm_index_generator
     llm_client: "{chat_llm}"

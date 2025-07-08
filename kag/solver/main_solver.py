@@ -165,8 +165,11 @@ async def do_qa_pipeline(
                     f"Knowledge base with id {kb_project_id} not found in qa_config['kb']"
                 )
                 continue
-
-            for index_name in matched_kb.get("index_list", []):
+            index_list = matched_kb.get("index_list", [])
+            if use_pipeline in ["default_pipeline"]:
+                # we only use chunk index
+                index_list = ["chunk_index"]
+            for index_name in index_list:
                 index_manager = KAGIndexManager.from_config(
                     {
                         "type": index_name,
