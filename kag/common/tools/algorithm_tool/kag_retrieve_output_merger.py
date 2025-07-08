@@ -139,7 +139,7 @@ class KAGRetrieverOutputMerger(RetrieverOutputMerger):
         """
         retrieved_chunks = kwargs.get("retrieved_chunks", None)
         chunk_lists = [x.chunks for x in retrieve_outputs]
-        merged = self.chunk_merge(chunk_lists, self.rrf_normalize)
+        merged = self.chunk_merge(chunk_lists, self.score_normalizer)
         if retrieved_chunks is not None:
             chunk_texts = [x.content for x in merged]
             retrieved_chunks.extend(chunk_texts)

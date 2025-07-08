@@ -14,7 +14,6 @@ import logging
 import asyncio
 from enum import Enum
 from typing import Type, Dict, List, Union
-from kag.common.conf import KAG_PROJECT_CONF
 from knext.graph.client import GraphClient
 from kag.builder.model.sub_graph import SubGraph
 from kag.interface import SinkWriterABC
@@ -75,7 +74,7 @@ class KGWriter(SinkWriterABC):
         Returns:
             str: The formatted label.
         """
-        namespace = KAG_PROJECT_CONF.namespace
+        namespace = self.kag_project_config.namespace
         if label.split(".")[0] == namespace:
             return label
         return f"{namespace}.{label}"

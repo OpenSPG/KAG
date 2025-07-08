@@ -55,7 +55,7 @@ output: [
 ]
 ### Input:
 input: $input
-entity_list: entity_list
+entity_list: $entity_list
 """
 
     template_zh = """你是一位专注于知识图谱关系抽取的专家。请参考给定实体列表，从给定的文本中提取任何实体之间可能的关系，并按照四元组列表的格式列出它们。如果没有找到任何关系，则无需列出。
