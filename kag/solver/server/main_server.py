@@ -17,18 +17,19 @@ def run_main_solver(task: TaskReq):
         params=task.config,
     )
 
+
 class KAGSolverServer:
     def __init__(self, service_name: str):
         """
-        初始化 FastAPI 服务实例
+        Initialize a FastAPI service instance
 
         Args:
-            service_name (str): 服务名称，决定加载哪个路由逻辑
+            service_name (str): Service name, determines which routing logic to load
         """
         self.service_name = service_name
         self.app = FastAPI(title=f"{service_name} API")
 
-        # 根据服务名绑定路由
+        # Bind routes according to service name
         self._setup_routes()
         self.async_manager = AsyncTaskManager()
 
@@ -36,9 +37,9 @@ class KAGSolverServer:
         if task.cmd == "submit":
 
             return {
-                'success': True,
-                'status': 'init',
-                'result': self.async_manager.submit_task(run_main_solver, task)
+                "success": True,
+                "status": "init",
+                "result": self.async_manager.submit_task(run_main_solver, task),
             }
         elif task.cmd == "query":
             return self.async_manager.get_task_result(task_id=task.req_id)
@@ -50,12 +51,13 @@ class KAGSolverServer:
             }
 
     def _setup_routes(self):
-        """根据服务名动态绑定路由"""
+        """Dynamically bind routes according to service name"""
+
         @self.app.post("/process")
         def process(req: FeatureRequest):
             return self.sync_task(task=req.features.task_req)
 
     def run(self, host="0.0.0.0", port=8000):
-        """启动服务"""
+        """Start the service"""
         print(f"Starting {self.service_name} service on {host}:{port}")
         uvicorn.run(self.app, host=host, port=port)

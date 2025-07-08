@@ -306,7 +306,9 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
         self.report_content(reporter, "thinker", tag_id, "", "INIT", step=task.name)
         try:
             try:
-                retrieved_data = self.do_main(task_query, tag_id, task, context, **kwargs)
+                retrieved_data = self.do_main(
+                    task_query, tag_id, task, context, **kwargs
+                )
             except Exception as e:
                 logger.warning(f"kag hybrid retrieval failed! {e}", exc_info=True)
                 retrieved_data = RetrieverOutput(
@@ -367,7 +369,15 @@ class KAGHybridRetrievalExecutor(ExecutorABC):
             )
             return retrieved_data
         finally:
-            self.report_content(reporter, "thinker", tag_id, "", "FINISH", step=task.name, overwrite=False,)
+            self.report_content(
+                reporter,
+                "thinker",
+                tag_id,
+                "",
+                "FINISH",
+                step=task.name,
+                overwrite=False,
+            )
 
     def schema(self) -> dict:
         """Function schema definition for OpenAI Function Calling

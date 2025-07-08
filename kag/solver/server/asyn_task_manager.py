@@ -23,7 +23,10 @@ class AsyncTaskManager:
         self.result_cache = TTLCache(maxsize=1000, ttl=ttl)
         self.result_cache_lock = threading.Lock()  # Protect cache from race conditions
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
-        self.workers = [threading.Thread(target=self.worker, daemon=True) for _ in range(max_workers)]
+        self.workers = [
+            threading.Thread(target=self.worker, daemon=True)
+            for _ in range(max_workers)
+        ]
         for w in self.workers:
             w.start()
 
@@ -45,7 +48,7 @@ class AsyncTaskManager:
                     self.result_cache[task_id] = {
                         "task_id": task_id,
                         "status": "running",
-                        "result": None
+                        "result": None,
                     }
 
                 # Execute task
@@ -69,7 +72,7 @@ class AsyncTaskManager:
                     self.result_cache[task_id] = {
                         "task_id": task_id,
                         "status": status,
-                        "result": result
+                        "result": result,
                     }
                 logger.info(f"Task {task_id} completed with status: {status}")
             finally:
@@ -105,7 +108,11 @@ class AsyncTaskManager:
         with self.result_cache_lock:
             return self.result_cache.get(
                 task_id,
-                {"task_id": task_id, "status": "failed", "result": "Result not found or expired"}
+                {
+                    "task_id": task_id,
+                    "status": "failed",
+                    "result": "Result not found or expired",
+                },
             )
 
     def shutdown(self):
@@ -133,12 +140,10 @@ if __name__ == "__main__":
     # Create task manager instance
     task_manager = AsyncTaskManager(max_workers=5, ttl=600)
 
-
     # Example task function
     def example_task(x, y):
         time.sleep(1)  # Simulate work
         return x
-
 
     # Submit test tasks
     task_ids = [task_manager.submit_task(example_task, i, i + 1) for i in range(6)]
@@ -147,7 +152,10 @@ if __name__ == "__main__":
     try:
         while True:
             time.sleep(1)
-            if all("completed" in task_manager.get_task_result(tid)["status"] for tid in task_ids):
+            if all(
+                "completed" in task_manager.get_task_result(tid)["status"]
+                for tid in task_ids
+            ):
                 break
     except KeyboardInterrupt:
         logger.info("Shutting down due to user interrupt")
