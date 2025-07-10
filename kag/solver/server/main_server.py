@@ -14,7 +14,7 @@ def run_main_solver(task: TaskReq):
         is_report=task.req.report,
         host_addr=task.req.host_addr,
         app_id=task.app_id,
-        params=task.config,
+        params={"config": task.config},
     )
 
 
