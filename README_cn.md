@@ -184,19 +184,21 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
 如果您使用本软件，请以下面的方式引用：
 
 * [KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation](https://arxiv.org/abs/2409.13731)
-* KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection
+* [KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection](https://dl.acm.org/doi/10.14778/3685800.3685810)
 
 ```bibtex
 @article{liang2024kag,
   title={KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation},
   author={Liang, Lei and Sun, Mengshu and Gui, Zhengke and Zhu, Zhongshu and Jiang, Zhouyu and Zhong, Ling and Zhao, Peilong and Bo, Zhongpu and Yang, Jin and others},
-  journal={arXiv preprint arXiv:2409.13731},
+  series = {WWW '25},
   year={2024}
 }
 
 @article{yikgfabric,
   title={KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection},
   author={Yi, Peng and Liang, Lei and Da Zhang, Yong Chen and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and Zhou, Jun}
+  journal = {Proc. VLDB Endow.},
+  year={2024}
 }
 ```
 
@@ -205,4 +207,4 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
 [Apache License 2.0](LICENSE)
 
 # KAG 核心团队
-梁磊，孙梦姝，桂正科，朱仲书，江洲钰，钟玲，赵培龙，伯仲璞，阳进，熊怀东，袁琳，徐军，汪兆洋，张志强，张文，陈华钧，陈文光，周俊，王昊奋
+梁磊，孙梦姝，桂正科，朱仲书，江洲钰，钟玲，赵培龙，伯仲璞，阳进，熊怀东，袁琳，徐军，汪兆洋，张志强，张文，陈华钧，陈文光，周俊，王昊奋, 易鹏，张达，陈勇，林昊，丁名时，陈嘉林，祝锦烨，刘翔宇

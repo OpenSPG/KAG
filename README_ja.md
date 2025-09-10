@@ -292,27 +292,30 @@ kag
 
 このソフトウェアを使用する場合は、以下の方法で引用してください：
 
-* [KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation](https://arxiv.org/abs/2409.13731)
+* [KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation](https://dl.acm.org/doi/10.1145/3701716.3715240)
 
-* KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection
+* [KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection](https://dl.acm.org/doi/10.14778/3685800.3685810)
 
 ```bibtex
 @article{liang2024kag,
   title={KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation},
   author={Liang, Lei and Sun, Mengshu and Gui, Zhengke and Zhu, Zhongshu and Jiang, Zhouyu and Zhong, Ling and Zhao, Peilong and Bo, Zhongpu and Yang, Jin and others},
-  journal={arXiv preprint arXiv:2409.13731},
+  series = {WWW '25},
   year={2024}
 }
 
 @article{yikgfabric,
   title={KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection},
   author={Yi, Peng and Liang, Lei and Da Zhang, Yong Chen and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and Zhou, Jun}
+  journal = {Proc. VLDB Endow.},
+  year={2024}
 }
 ```
+
 
 # ライセンス
 
 [Apache License 2.0](LICENSE)
 
 # KAG Core Team
-Lei Liang, Mengshu Sun, Zhengke Gui, Zhongshu Zhu, Zhouyu Jiang, Ling Zhong, Peilong Zhao, Zhongpu Bo, Jin Yang, Huaidong Xiong, Lin Yuan, Jun Xu, Zaoyang Wang, Zhiqiang Zhang, Wen Zhang, Huajun Chen, Wenguang Chen, Jun Zhou, Haofen Wang
+Lei Liang, Mengshu Sun, Zhengke Gui, Zhongshu Zhu, Zhouyu Jiang, Ling Zhong, Peilong Zhao, Zhongpu Bo, Jin Yang, Huaidong Xiong, Lin Yuan, Jun Xu, Zaoyang Wang, Zhiqiang Zhang, Wen Zhang, Huajun Chen, Wenguang Chen, Jun Zhou, Haofen Wang, Yi Peng, Da Zhang, Yong Chen, Hao Lin, Mingshi Ding, Jialin Chen, Jinye Zhu, Xiangyu Liu
