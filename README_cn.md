@@ -187,18 +187,23 @@ kg-solver 采用逻辑形式引导的混合求解和推理引擎，该引擎包�
 * [KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection](https://dl.acm.org/doi/10.14778/3685800.3685810)
 
 ```bibtex
-@article{liang2024kag,
-  title={KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation},
-  author={Liang, Lei and Sun, Mengshu and Gui, Zhengke and Zhu, Zhongshu and Jiang, Zhouyu and Zhong, Ling and Zhao, Peilong and Bo, Zhongpu and Yang, Jin and others},
-  series = {WWW '25},
-  year={2024}
+@inproceedings{liang2025kag,
+  title={Kag: Boosting llms in professional domains via knowledge augmented generation},
+  author={Liang, Lei and Bo, Zhongpu and Gui, Zhengke and Zhu, Zhongshu and Zhong, Ling and Zhao, Peilong and Sun, Mengshu and Zhang, Zhiqiang and Zhou, Jun and Chen, Wenguang and others},
+  booktitle={Companion Proceedings of the ACM on Web Conference 2025},
+  pages={334--343},
+  year={2025}
 }
 
-@article{yikgfabric,
+@article{yi2024kgfabric,
   title={KGFabric: A Scalable Knowledge Graph Warehouse for Enterprise Data Interconnection},
-  author={Yi, Peng and Liang, Lei and Da Zhang, Yong Chen and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and Zhou, Jun}
-  journal = {Proc. VLDB Endow.},
-  year={2024}
+  author={Yi, Peng and Liang, Lei and Zhang, Da and Chen, Yong and Zhu, Jinye and Liu, Xiangyu and Tang, Kun and Chen, Jialin and Lin, Hao and Qiu, Leijie and others},
+  journal={Proceedings of the VLDB Endowment},
+  volume={17},
+  number={12},
+  pages={3841--3854},
+  year={2024},
+  publisher={VLDB Endowment}
 }
 ```
 
