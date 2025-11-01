@@ -584,10 +584,24 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                 {"name": knowledge_id, "category": "KnowledgeUnit"}
             )
             core_entities = {}
-            for item in knowledge_value.get("core_entities", "").split(","):
-                if not item.strip():
-                    continue
-                core_entities[item.strip()] = "Others"
+            core_entities_raw = knowledge_value.get("core_entities", "")
+
+            # Handle both string and dict formats for core_entities
+            if isinstance(core_entities_raw, dict):
+                # Dict format: {entity_name: entity_type}
+                core_entities = core_entities_raw
+            elif isinstance(core_entities_raw, str):
+                # String format: comma-separated values
+                for item in core_entities_raw.split(","):
+                    if not item.strip():
+                        continue
+                    core_entities[item.strip()] = "Others"
+            else:
+                # Handle unexpected types gracefully
+                logger.warning(
+                    f"Unexpected type for core_entities: {type(core_entities_raw)}, "
+                    f"expected str or dict. Value: {core_entities_raw}"
+                )
 
             for core_entity, ent_type in core_entities.items():
                 if core_entity == "":
