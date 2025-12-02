@@ -20,7 +20,7 @@ Jinja2>=3.0.3
 cachetools==5.3.2
 numpy>=1.23.1
 pypdf
-pandas
+pandas==2.3.2
 pycryptodome
 markdown==3.7
 bs4
