@@ -35,14 +35,15 @@ class McpExecutor(ExecutorABC):
         super().__init__(**kwargs)
         self.name = name
         self.description = description
+        # get project config
+        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
+        kag_config = KAGConfigAccessor.get_config(task_id)
+        self.kag_project_config = kag_config.global_config
         self.mcp_file_path = self.download_data(store_path)
         self.prompt = prompt
         self.env = dict(env)
         self.llm = llm
         self.mcp_client = MCPClient(self.llm, self.prompt)
-        task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
-        kag_config = KAGConfigAccessor.get_config(task_id)
-        self.kag_project_config = kag_config.global_config
 
     def download_data(self, input: str, **kwargs):
         """
