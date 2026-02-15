@@ -34,7 +34,7 @@ from shutil import copystat, copy2
 from typing import Any, Union
 from jinja2 import Environment, FileSystemLoader, Template
 from stat import S_IWUSR as OWNER_WRITE_PERMISSION
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_exponential
 from aiolimiter import AsyncLimiter
 
 reset = "\033[0m"
@@ -279,7 +279,11 @@ def generate_hash_id(value):
     return hasher.hexdigest()
 
 
-@retry(stop=stop_after_attempt(3), reraise=True)
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    reraise=True,
+)
 def download_from_http(url: str, dest: str = None) -> str:
     """Downloads a file from an HTTP URL and saves it to a temporary directory.
 
@@ -287,8 +291,13 @@ def download_from_http(url: str, dest: str = None) -> str:
     HTTP URL and saves it to the system's temporary directory. After the download
     is complete, it returns the local path of the downloaded file.
 
+    The function includes retry logic with exponential backoff to handle transient
+    network errors and service unavailability (e.g., MinIO 503 errors).
+
     Args:
         url (str): The HTTP URL of the file to be downloaded.
+        dest (str, optional): The destination path for the downloaded file.
+            If not specified, a temporary file will be created.
 
     Returns:
         str: The local path of the downloaded file.
