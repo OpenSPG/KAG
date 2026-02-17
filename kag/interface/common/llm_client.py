@@ -326,6 +326,8 @@ class LLMClient(Registrable):
         tools = kwargs.get("tools", None)
         if tools:
             with_json_parse = False
+        context = kwargs.get("context", None)
+        segment_name = kwargs.get("segment_name", None)
         try:
             self.sync_limiter.acquire()
             response = (
@@ -335,6 +337,11 @@ class LLMClient(Registrable):
             )
             if tools:
                 return response
+            if context and segment_name and hasattr(context, "add_kwargs"):
+                try:
+                    context.add_kwargs(segment_name, response)
+                except Exception as e:
+                    logger.warning(f"Failed to add kwargs to context: {e}")
             result = prompt_op.parse_response(response, model=self.model, **variables)
             logger.debug(f"Result: {result}")
             return result

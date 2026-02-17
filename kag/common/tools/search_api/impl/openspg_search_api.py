@@ -1,8 +1,11 @@
+import logging
 from typing import List
 
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.common.tools.search_api.search_api_abc import SearchApiABC
 from knext.search.client import SearchClient
+
+logger = logging.getLogger(__name__)
 
 
 @SearchApiABC.register("openspg_search_api", as_default=True)
@@ -25,12 +28,15 @@ class OpenSPGSearchAPI(SearchApiABC):
         self, query_string, label_constraints=None, topk=10, params=None
     ) -> List:
         if self.sc:
-            return self.sc.search_text(
-                query_string=query_string,
-                label_constraints=label_constraints,
-                topk=topk,
-                params=params,
-            )
+            try:
+                return self.sc.search_text(
+                    query_string=query_string,
+                    label_constraints=label_constraints,
+                    topk=topk,
+                    params=params,
+                )
+            except Exception as e:
+                logger.debug(f"search_vector  error {e}", exc_info=True)
         return []
 
     def search_vector(
@@ -38,14 +44,18 @@ class OpenSPGSearchAPI(SearchApiABC):
     ) -> List:
         if self.sc is None:
             return []
-        res = self.sc.search_vector(
-            label=label,
-            property_key=property_key,
-            query_vector=query_vector,
-            topk=topk,
-            ef_search=ef_search,
-            params=params,
-        )
+        try:
+            res = self.sc.search_vector(
+                label=label,
+                property_key=property_key,
+                query_vector=query_vector,
+                topk=topk,
+                ef_search=ef_search,
+                params=params,
+            )
+        except Exception as e:
+            logger.debug(f"search_vector  error {e}", exc_info=True)
+            res = []
         if res is None:
             return []
         return res

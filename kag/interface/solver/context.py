@@ -14,6 +14,23 @@ class Context:
         self.variables_graph = KgGraph()
         self.kwargs = {}
 
+    def add_kwargs(self, key, value):
+        """
+        Adds a key-value pair to the context's keyword arguments dictionary.
+
+        This method stores arbitrary key-value data in the context that can be
+        accessed by other components during pipeline execution.
+
+        Args:
+            key: The string key to store the value under
+            value: The value to be stored, can be of any type
+
+        Example:
+            context.add_kwargs("temperature", 0.7)
+            context.add_kwargs("max_tokens", 1000)
+        """
+        self.kwargs[key] = value
+
     def add_task(self, task: Task):
         """Adds a task to the context.
 
