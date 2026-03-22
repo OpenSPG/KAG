@@ -29,6 +29,9 @@
    <a href="https://discord.gg/PURG77zhQ7">
         <img src="https://img.shields.io/discord/1329648479709958236?style=for-the-badge&logo=discord&label=Discord" alt="Discord">
    </a>
+   <a href="https://gitcgr.com/openspg/kag">
+     <img src="https://gitcgr.com/badge/openspg/kag.svg" alt="gitcgr" />
+   </a>
 </p>
 
 # 1. What is KAG?
