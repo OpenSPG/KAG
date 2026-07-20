@@ -150,7 +150,7 @@ class ScannerABC(BuilderComponent, ABC):
         Invokes the component to process input data and return a list of processed results.
 
         This method generates items from the input source and returns them as a list.
-        TODO: relpace sync read to async read
+        TODO: replace sync read to async read
         Args:
             input (Input): The input source to load data from.
             **kwargs: Additional keyword arguments.
