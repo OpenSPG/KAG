@@ -198,6 +198,18 @@ def processing_phrases(phrase):
     return re.sub("[^A-Za-z0-9\u4e00-\u9fa5 ]", " ", phrase.lower()).strip()
 
 
+def processing_phrases_preserve_punct(phrase):
+    """Normalize a phrase for storage while keeping its punctuation.
+
+    ``processing_phrases`` drops every non-alphanumeric/non-CJK character by
+    turning it into a space, so an extracted name like "30cm/s" is written to
+    the graph as "30cm s". Use this variant when punctuation must be preserved
+    in the stored entity ``name``/``id``; keep ``processing_phrases`` for
+    matching/dedup keys.
+    """
+    return re.sub(r"\s+", " ", str(phrase).strip().lower())
+
+
 def to_camel_case(phrase):
     s = processing_phrases(phrase).replace(" ", "_")
     return "".join(

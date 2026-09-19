@@ -22,7 +22,7 @@ def test_kag_extractor():
     with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:
         content = reader.read()
     chunk = Chunk(id="111", name="test", content=content)
-    subgraph = extractor.invoke(chunk)[0]
+    subgraph = extractor.invoke(chunk)[0].data
     print(subgraph)
     print(type(subgraph))
     assert isinstance(subgraph, SubGraph)
@@ -40,7 +40,7 @@ async def atest_kag_extractor():
         content = reader.read()
     chunk = Chunk(id="111", name="test", content=content)
     subgraph = await extractor.ainvoke(chunk)
-    subgraph = subgraph[0]
+    subgraph = subgraph[0].data
     print(subgraph)
     print(type(subgraph))
     assert isinstance(subgraph, SubGraph)
@@ -61,7 +61,7 @@ def test_spg_extractor():
     with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:
         content = reader.read()
     chunk = Chunk(id="111", name="test", content=content)
-    subgraph = extractor.invoke(chunk)[0]
+    subgraph = extractor.invoke(chunk)[0].data
     print(subgraph)
     print(type(subgraph))
     assert isinstance(subgraph, SubGraph)
@@ -78,8 +78,8 @@ async def atest_spg_extractor():
     with open(os.path.join(pwd, "../data/test_txt.txt"), "r") as reader:
         content = reader.read()
     chunk = Chunk(id="111", name="test", content=content)
-    subgraph = await extractor.invoke(chunk)
-    subgraph = subgraph[0]
+    subgraph = await extractor.ainvoke(chunk)
+    subgraph = subgraph[0].data
     print(subgraph)
     print(type(subgraph))
     assert isinstance(subgraph, SubGraph)

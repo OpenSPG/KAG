@@ -87,21 +87,20 @@ class McpExecutor(ExecutorABC):
         task.update_result(response)
         return response
 
+    def schema(self, func_name: str = None) -> dict:
+        """Function schema definition for OpenAI Function Calling
 
-def schema(self, func_name: str = None) -> dict:
-    """Function schema definition for OpenAI Function Calling
-
-    Returns:
-        dict: Schema definition in OpenAI Function format
-    """
-    return {
-        "name": self.name,
-        "description": self.description,
-        "parameters": {
-            "query": {
-                "type": "string",
-                "description": "User-provided query for retrieval.",
-                "optional": False,
+        Returns:
+            dict: Schema definition in OpenAI Function format
+        """
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "description": "User-provided query for retrieval.",
+                    "optional": False,
+                },
             },
-        },
-    }
+        }
