@@ -19,7 +19,7 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
-from kag.common.utils import processing_phrases, to_camel_case
+from kag.common.utils import processing_phrases_preserve_punct, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
@@ -329,7 +329,7 @@ class SchemaConstraintExtractor(ExtractorABC):
                 s_label = properties.pop("category", "")
             if not s_name or not s_label:
                 continue
-            s_name = processing_phrases(s_name)
+            s_name = processing_phrases_preserve_punct(s_name)
             root_nodes.append((s_name, s_label))
             tmp_properties = copy.deepcopy(properties)
             spg_type = self.schema.get(s_label)
@@ -367,7 +367,9 @@ class SchemaConstraintExtractor(ExtractorABC):
             graph.add_node(id=s_name, name=s_name, label=s_label, properties=properties)
 
             if "official_name" in record:
-                official_name = processing_phrases(record["official_name"])
+                official_name = processing_phrases_preserve_punct(
+                    record["official_name"]
+                )
                 if official_name != s_name:
                     graph.add_node(
                         id=official_name,
@@ -404,9 +406,9 @@ class SchemaConstraintExtractor(ExtractorABC):
             if len(rel) != 5:
                 continue
             s_name, s_category, predicate, o_name, o_category = rel
-            s_name = processing_phrases(s_name)
+            s_name = processing_phrases_preserve_punct(s_name)
             sub_graph.add_node(s_name, s_name, s_category)
-            o_name = processing_phrases(o_name)
+            o_name = processing_phrases_preserve_punct(o_name)
             sub_graph.add_node(o_name, o_name, o_category)
             edge_type = to_camel_case(predicate)
             if edge_type:

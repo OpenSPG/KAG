@@ -117,8 +117,10 @@ class TableRetriever(RetrieverABC):
         )
         node_dict = dict(node.items())
 
-        before_text = node_dict["beforeText"]
-        after_text = node_dict["afterText"]
+        # Table 构建侧以 snake_case 写入 before_text/after_text（见 table_extractor.py），
+        # 而 schema 声明为 camelCase（beforeText/afterText）。兼容两种命名，避免 KeyError。
+        before_text = node_dict.get("before_text", node_dict.get("beforeText", ""))
+        after_text = node_dict.get("after_text", node_dict.get("afterText", ""))
         content = node_dict["content"].replace("_split_0", "")
         content = f"{before_text}\n{content}\n{after_text}"
         return ChunkData(
