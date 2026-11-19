@@ -61,7 +61,13 @@ class TextSimilarity:
                     else:
                         need_call_emb_text.append(text)
                 if len(need_call_emb_text) > 0:
-                    emb_res = self.vectorize_model.vectorize(need_call_emb_text)
+                    if len(need_call_emb_text) <= 10:
+                        emb_res = self.vectorize_model.vectorize(need_call_emb_text)
+                    else:
+                        emb_res = []
+                        for i in range((len(need_call_emb_text) + 9 )// 10):
+                            emb_res_part = self.vectorize_model.vectorize(need_call_emb_text[i*10:(i+1)*10])
+                            emb_res += emb_res_part
                     for text, text_emb in zip(need_call_emb_text, emb_res):
                         tmp_map[text] = text_emb
                         if is_cached:
