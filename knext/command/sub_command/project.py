@@ -166,11 +166,25 @@ def create_project(
     llm_config_checker = LLMConfigChecker()
     vectorize_model_config_checker = VectorizeModelConfigChecker()
     llm_config = config.get("chat_llm", {})
-    vectorize_model_config = config.get("vectorizer", {})
+    vectorizer_config = config.get("vectorizer",{})
+    vectorize_model_config = config.get("vectorize_model", {})
+    if vectorizer_config:
+        vectorize_model_config = vectorizer_config
+    elif vectorize_model_config:
+        vectorizer_config = vectorize_model_config
+    else:
+        vectorizer_config = vectorize_model_config = {}
+
+    if vectorizer_config or vectorize_model_config:
+        config["vectorizer"] = vectorizer_config
+        config["vectorize_model"] = vectorize_model_config
     try:
         llm_config_checker.check(json.dumps(llm_config))
-        dim = vectorize_model_config_checker.check(json.dumps(vectorize_model_config))
-        config["vectorizer"]["vector_dimensions"] = dim
+        dim = vectorize_model_config_checker.check(json.dumps(vectorizer_config))
+        if isinstance(config.get("vectorizer"), dict):
+            config["vectorizer"]["vector_dimensions"] = dim
+        if isinstance(config.get("vectorize_model"), dict):
+            config["vectorize_model"]["vector_dimensions"] = dim
     except Exception as e:
         click.secho(f"Error: {e}", fg="bright_red")
         sys.exit()
