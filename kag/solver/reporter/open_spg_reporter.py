@@ -530,8 +530,6 @@ Rewritten question:
                     }
 
     def do_report(self):
-        if not self.client:
-            return
         content, status_enum, metrics = self.generate_report_data()
 
         request = TaskStreamRequest(
@@ -539,9 +537,12 @@ Rewritten question:
         )
         # logging.info(f"do_report:{request}")
         try:
-            ret = self.client.reasoner_dialog_report_completions_post(
-                task_stream_request=request
-            )
+            if self.client:
+                ret = self.client.reasoner_dialog_report_completions_post(
+                    task_stream_request=request
+                )
+            else:
+                ret = {}
             if self.last_report is None:
                 logger.info(f"begin do_report: {request} ret={ret}")
                 self.last_report = request

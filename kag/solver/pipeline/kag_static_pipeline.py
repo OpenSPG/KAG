@@ -129,21 +129,26 @@ class KAGStaticPipeline(SolverPipelineABC):
         while True:
             context: Context = Context()
             tasks = await self.planning(query, context, **kwargs)
-
-            for task in tasks:
-                context.add_task(task)
-
-            for task_group in context.gen_task(group=True):
-                await asyncio.gather(
-                    *[
-                        asyncio.create_task(
-                            self.execute_task(query, task, context, **kwargs)
-                        )
-                        for task in task_group
-                    ]
+            if not tasks:
+                think_response = context.kwargs.get("thinker", "")
+                answer = await self.generator.ainvoke(
+                    query + "\n" + think_response, context, **kwargs
                 )
+            else:
+                for task in tasks:
+                    context.add_task(task)
 
-            answer = await self.generator.ainvoke(query, context, **kwargs)
+                for task_group in context.gen_task(group=True):
+                    await asyncio.gather(
+                        *[
+                            asyncio.create_task(
+                                self.execute_task(query, task, context, **kwargs)
+                            )
+                            for task in task_group
+                        ]
+                    )
+
+                answer = await self.generator.ainvoke(query, context, **kwargs)
             from kag.common.utils import red, green, reset
 
             task_info = []
