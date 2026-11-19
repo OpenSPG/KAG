@@ -16,6 +16,7 @@ from typing import List
 from kag.common.conf import KAGConstants, KAGConfigAccessor
 from kag.interface import PromptABC
 from knext.schema.client import SchemaClient
+from knext.schema.model.base import SpgTypeEnum
 
 
 @PromptABC.register("medical_ner")
@@ -50,10 +51,18 @@ class OpenIENERPrompt(PromptABC):
         task_id = kwargs.get(KAGConstants.KAG_QA_TASK_CONFIG_KEY, None)
         kag_config = KAGConfigAccessor.get_config(task_id)
         kag_project_config = kag_config.global_config
-        self.schema = SchemaClient(
+        # 使用 Schema 的英文类型标识（load() 的 key），而非 extract_types() 返回的
+        # 中文展示名（language=zh 时为 name_zh）。否则 NER prompt 里的 "schema" 是
+        # 中文类别名，LLM 会返回中文 category，后续映射无法对齐回英文 SPG 类型标识。
+        project_schema = SchemaClient(
             host_addr=kag_project_config.host_addr,
             project_id=kag_project_config.project_id,
-        ).extract_types(kag_project_config.language)
+        ).load()
+        self.schema = [
+            name
+            for name, value in project_schema.items()
+            if value.spg_type_enum != SpgTypeEnum.Index
+        ]
         self.template = Template(self.template).safe_substitute(schema=self.schema)
 
     @property

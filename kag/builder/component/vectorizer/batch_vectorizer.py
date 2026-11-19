@@ -153,6 +153,24 @@ class EmbeddingVectorManager(object):
             embeddings.extend(sparse_vectorizer.vectorize(sub_texts))
         return embeddings
 
+    def _coalesce_vectors(self, results):
+        """Flatten per-batch vectorizer results, guarding against a None return.
+
+        Some vectorize models silently return ``None`` (e.g. when the embedding
+        service replies without a usable body). Iterating such a batch in the
+        flatten comprehension raises a bare ``TypeError: 'NoneType' object is
+        not iterable``; here we raise an explicit, actionable error instead.
+        """
+        flat = []
+        for idx, sublist in enumerate(results):
+            if sublist is None:
+                raise ValueError(
+                    f"[BatchVectorizer] vectorizer returned None for batch "
+                    f"index {idx}; check the embedding service/model config."
+                )
+            flat.extend(sublist)
+        return flat
+
     async def _agenerate_dense_vectors(
         self, dense_vectorizer, text_batch, batch_size=32
     ):
@@ -177,10 +195,10 @@ class EmbeddingVectorManager(object):
             if len(sub_texts) == 0:
                 continue
             tasks.append(
-                asyncio.create_task(dense_vectorizer.avectorize(texts[start:end]))
+                asyncio.create_task(dense_vectorizer.avectorize(sub_texts))
             )
         results = await asyncio.gather(*tasks)
-        return [item for sublist in results for item in sublist]
+        return self._coalesce_vectors(results)
 
     async def _agenerate_sparse_vectors(
         self, sparse_vectorizer, text_batch, batch_size=32
@@ -206,10 +224,10 @@ class EmbeddingVectorManager(object):
             if len(sub_texts) == 0:
                 continue
             tasks.append(
-                asyncio.create_task(sparse_vectorizer.avectorize(texts[start:end]))
+                asyncio.create_task(sparse_vectorizer.avectorize(sub_texts))
             )
         results = await asyncio.gather(*tasks)
-        return [item for sublist in results for item in sublist]
+        return self._coalesce_vectors(results)
 
     def _fill_vectors(self, vectors, text_batch):
         for vector, (_text, placeholders) in zip(vectors, text_batch.items()):

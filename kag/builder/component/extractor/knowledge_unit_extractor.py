@@ -20,7 +20,7 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
 from kag.common.conf import KAGConstants, KAGConfigAccessor
-from kag.common.utils import processing_phrases, to_camel_case
+from kag.common.utils import processing_phrases, processing_phrases_preserve_punct, to_camel_case
 from kag.builder.model.chunk import Chunk
 from kag.builder.model.sub_graph import SubGraph
 from kag.common.utils import generate_hash_id
@@ -451,7 +451,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             if len(tri) != 4:
                 continue
             s_category, s_name = get_category_and_name(entities, tri[0])
-            tri[0] = processing_phrases(tri[0])
+            tri[0] = processing_phrases_preserve_punct(tri[0])
             if tri[0] == "":
                 continue
             if s_category is None:
@@ -462,7 +462,7 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
             if o_name == "":
                 continue
             if o_category is None:
-                o_name = processing_phrases(tri[2])
+                o_name = processing_phrases_preserve_punct(tri[2])
                 o_category = OTHER_TYPE
                 sub_graph.add_node(o_name, o_name, o_category)
             edge_type = to_camel_case(tri[1])

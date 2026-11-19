@@ -1,0 +1,29 @@
+project:
+  biz_scene: default
+  host_addr: http://127.0.0.1:8887
+  id: '1'
+  language: en
+  namespace: TestProject
+
+llm:
+  type: maas
+  base_url: https://ai.wust.edu.cn/gpustack/v1
+  api_key: !ENV LLM_API_KEY
+  model: qwen2.5-72b-instruct
+
+vectorize_model: &vec
+  type: openai
+  base_url: https://ai.wust.edu.cn/gpustack/v1
+  api_key: !ENV LLM_API_KEY
+  model: Qwen3-Embedding-8B
+  vector_dimensions: 4096
+
+vectorizer:
+  type: batch_vectorizer
+  vectorize_model: *vec
+
+writer:
+  type: kg
+
+log:
+  level: INFO
