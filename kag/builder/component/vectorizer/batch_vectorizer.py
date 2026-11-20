@@ -180,7 +180,7 @@ class EmbeddingVectorManager(object):
                 asyncio.create_task(dense_vectorizer.avectorize(texts[start:end]))
             )
         results = await asyncio.gather(*tasks)
-        return [item for sublist in results for item in sublist]
+        return [item for sublist in results if sublist is not None for item in sublist]
 
     async def _agenerate_sparse_vectors(
         self, sparse_vectorizer, text_batch, batch_size=32
@@ -209,7 +209,7 @@ class EmbeddingVectorManager(object):
                 asyncio.create_task(sparse_vectorizer.avectorize(texts[start:end]))
             )
         results = await asyncio.gather(*tasks)
-        return [item for sublist in results for item in sublist]
+        return [item for sublist in results if sublist is not None for item in sublist]
 
     def _fill_vectors(self, vectors, text_batch):
         for vector, (_text, placeholders) in zip(vectors, text_batch.items()):
