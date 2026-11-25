@@ -19,7 +19,11 @@ from tenacity import stop_after_attempt, retry, wait_exponential
 
 from kag.interface import ExtractorABC, PromptABC, ExternalGraphLoaderABC
 
-from kag.common.utils import processing_phrases, to_camel_case
+from kag.common.utils import (
+    processing_phrases,
+    processing_phrases_preserve_punct,
+    to_camel_case,
+)
 from kag.builder.model.chunk import Chunk, ChunkTypeEnum
 from kag.builder.model.sub_graph import SubGraph
 from kag.builder.prompt.utils import init_prompt_with_fallback
@@ -341,7 +345,7 @@ class SchemaFreeExtractor(ExtractorABC):
             if tri is None or len(tri) != 3:
                 continue
             s_category, s_name = get_category_and_name(entities, tri[0])
-            tri[0] = processing_phrases(tri[0])
+            tri[0] = processing_phrases_preserve_punct(tri[0])
             if tri[0] == "":
                 continue
             if s_category is None:
@@ -352,7 +356,7 @@ class SchemaFreeExtractor(ExtractorABC):
             if o_name == "":
                 continue
             if o_category is None:
-                o_name = processing_phrases(tri[2])
+                o_name = processing_phrases_preserve_punct(tri[2])
                 o_category = OTHER_TYPE
                 sub_graph.add_node(o_name, o_name, o_category)
             edge_type = to_camel_case(tri[1])
@@ -421,7 +425,7 @@ class SchemaFreeExtractor(ExtractorABC):
         """
 
         for ent in entities:
-            name = processing_phrases(ent["name"])
+            name = processing_phrases_preserve_punct(ent["name"])
             sub_graph.add_node(
                 name,
                 name,
@@ -434,7 +438,7 @@ class SchemaFreeExtractor(ExtractorABC):
             )
 
             if "official_name" in ent:
-                official_name = processing_phrases(ent["official_name"])
+                official_name = processing_phrases_preserve_punct(ent["official_name"])
                 if official_name != name:
                     sub_graph.add_node(
                         official_name,
