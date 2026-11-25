@@ -584,10 +584,15 @@ class KnowledgeUnitSchemaFreeExtractor(ExtractorABC):
                 {"name": knowledge_id, "category": "KnowledgeUnit"}
             )
             core_entities = {}
-            for item in knowledge_value.get("core_entities", "").split(","):
-                if not item.strip():
-                    continue
-                core_entities[item.strip()] = "Others"
+            raw_core_entities = knowledge_value.get("core_entities", {})
+            if isinstance(raw_core_entities, dict):
+                for key, val in raw_core_entities.items():
+                    if key.strip():
+                        core_entities[key.strip()] = val if val else "Others"
+            else:
+                for item in str(raw_core_entities).split(","):
+                    if item.strip():
+                        core_entities[item.strip()] = "Others"
 
             for core_entity, ent_type in core_entities.items():
                 if core_entity == "":
